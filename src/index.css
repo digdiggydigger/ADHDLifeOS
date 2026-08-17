@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #F8F7F4;
+  --bg-dark: #111113;
+  --ink: #1C1C1A;
+  --ink-light: #FFFFFF;
+  --accent: #FF5B5B;
+  --card-light: #EFECE8;
+}
+
+@layer base {
+  body {
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .font-mono, .label, .font-space-mono {
+    font-family: 'Space Mono', monospace;
+  }
+  .hero-title {
+    font-family: 'Space Mono', monospace;
+    letter-spacing: -0.05em;
+  }
+}
+
+.label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  display: block;
+  font-weight: 700;
+}
+
+.dark-card {
+  background-color: var(--bg-dark);
+  color: var(--ink-light);
+}
+
+.light-card {
+  background-color: var(--card-light);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.progress-bar {
+  height: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 0.5s ease-out;
+}
+
+.progress-circle {
+  border: 6px solid var(--accent);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(28, 28, 26, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 91, 91, 0.5);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

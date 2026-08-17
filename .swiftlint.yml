@@ -1,0 +1,24 @@
+# Default ruleset. Adjustments below are flagged exceptions, not blanket disables.
+
+# Xcode auto-generates these type names from the project name ("ADHD LifeOS" -> "ADHD_LifeOS...")
+# for the @main app struct and the default test-target scaffolding it creates on `File > New`.
+# Renaming them would mean renaming the app target/scheme itself, which is an Xcode-GUI step
+# (out of scope for a Swift-source-only lint fix) rather than an actual naming quality issue.
+type_name:
+  excluded:
+    - ADHD_LifeOSApp
+    - ADHD_LifeOSTests
+    - ADHD_LifeOSUITests
+    - ADHD_LifeOSUITestsLaunchTests
+
+# p1-p4 mirror the web app's TaskPriority literal union ('p1' | 'p2' | 'p3' | 'p4') exactly —
+# a longer name here would break behavioral/naming parity with web for no real clarity gain.
+# `id` is restated here because setting `excluded` replaces (not appends to) SwiftLint's
+# built-in default rather than merging with it.
+identifier_name:
+  excluded:
+    - id
+    - p1
+    - p2
+    - p3
+    - p4

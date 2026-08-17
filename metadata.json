@@ -1,0 +1,6 @@
+{
+  "name": "ADHD LifeOS",
+  "description": "An ADHD-optimized executive function life operating system with quick capture, life area dashboards, task triage, focus countdown nudges, and journal logging.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

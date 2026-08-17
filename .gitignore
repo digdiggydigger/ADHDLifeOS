@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+
+# Local secrets
+.env
+
+# Claude Code
+.claude/
+
+# Xcode
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+DerivedData/
+*.xcresult/
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# Local Supabase credentials — same convention as the web project: not secret
+# (RLS protects data, not these values), but kept local per-machine by convention.
+ADHD LifeOS/Supabase.xcconfig
+
+# Test account credentials for UI tests that exercise real network writes — a real password,
+# never committed. Referenced only by the UI test target.
+ADHD LifeOSUITests/TestCredentials.swift
+
+# AWS Lambda build artifacts (reproducible from source)
+aws-backend/**/build/
+aws-backend/**/__pycache__/
+aws-backend/**/*.zip
+
+# ElevenLabs voice agent project (local-only agent configs, may include API refs)
+.agents/elevenlabs_voice/
+
+# Local agent tooling (not app code)
+.agents/
+skills-lock.json

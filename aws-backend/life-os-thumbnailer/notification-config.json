@@ -1,0 +1,22 @@
+{
+  "LambdaFunctionConfigurations": [
+    {
+      "Id": "thumbnail-original-jpg",
+      "LambdaFunctionArn": "arn:aws:lambda:us-east-1:891943683816:function:life-os-thumbnailer",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": { "Key": { "FilterRules": [ { "Name": "suffix", "Value": "original.jpg" } ] } }
+    },
+    {
+      "Id": "thumbnail-original-jpeg",
+      "LambdaFunctionArn": "arn:aws:lambda:us-east-1:891943683816:function:life-os-thumbnailer",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": { "Key": { "FilterRules": [ { "Name": "suffix", "Value": "original.jpeg" } ] } }
+    },
+    {
+      "Id": "thumbnail-original-png",
+      "LambdaFunctionArn": "arn:aws:lambda:us-east-1:891943683816:function:life-os-thumbnailer",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": { "Key": { "FilterRules": [ { "Name": "suffix", "Value": "original.png" } ] } }
+    }
+  ]
+}
