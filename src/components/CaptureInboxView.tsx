@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CaptureItem, LifeArea, Tag } from '../types';
-import { triggerHaptic } from '../utils/haptics';
+import { triggerHaptic, formatDigitalTime } from '../utils/haptics';
 import {
   Inbox,
   CheckCircle2,
@@ -17,6 +17,9 @@ import {
   Maximize2,
   Image as ImageIcon,
   Tag as TagIcon,
+  Play,
+  Pause,
+  Volume2,
 } from 'lucide-react';
 
 interface CaptureInboxViewProps {
@@ -78,6 +81,28 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
   const [journalContent, setJournalContent] = useState('');
   const [journalEnergy, setJournalEnergy] = useState<'low' | 'medium' | 'high'>('medium');
   const [journalMood, setJournalMood] = useState('⚡');
+
+  // Audio Playback state
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const audioInboxRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlayAudio = (capture: CaptureItem) => {
+    if (!capture.audioDataUrl) return;
+
+    if (playingAudioId === capture.id) {
+      if (audioInboxRef.current) {
+        audioInboxRef.current.pause();
+      }
+      setPlayingAudioId(null);
+    } else {
+      if (audioInboxRef.current) {
+        audioInboxRef.current.src = capture.audioDataUrl;
+        audioInboxRef.current.play().catch(() => {});
+      }
+      setPlayingAudioId(capture.id);
+      triggerHaptic('light');
+    }
+  };
 
   const filteredCaptures = captures.filter((c) =>
     activeTabFilter === 'unprocessed' ? c.status === 'unprocessed' : c.status === 'promoted'
@@ -199,6 +224,13 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
         </button>
       </div>
 
+      {/* Hidden audio element for voice capture playback */}
+      <audio
+        ref={audioInboxRef}
+        onEnded={() => setPlayingAudioId(null)}
+        className="hidden"
+      />
+
       {/* Captures List */}
       {filteredCaptures.length === 0 ? (
         <div className="light-card rounded-[32px] p-12 text-center space-y-3">
@@ -256,6 +288,38 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                       <p className="text-xs text-[#1C1C1A]/80 italic bg-white/70 p-2.5 rounded-xl border border-black/5 font-sans leading-relaxed">
                         "{capture.noteText || capture.transcript}"
                       </p>
+                    )}
+
+                    {/* Voice Memo Audio Player if voice recording present */}
+                    {capture.type === 'voice' && (
+                      <div className="pt-0.5">
+                        <div className="inline-flex items-center space-x-2 bg-rose-50 border border-rose-200/80 px-3 py-1.5 rounded-xl">
+                          {capture.audioDataUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => togglePlayAudio(capture)}
+                              className="w-6 h-6 rounded-full bg-[#FF5B5B] hover:bg-[#ff4242] text-white flex items-center justify-center shadow-2xs transition-transform active:scale-95 cursor-pointer"
+                              title={playingAudioId === capture.id ? 'Pause Voice Memo' : 'Play Voice Memo'}
+                            >
+                              {playingAudioId === capture.id ? (
+                                <Pause className="w-3 h-3 fill-current" />
+                              ) : (
+                                <Play className="w-3 h-3 fill-current ml-0.5" />
+                              )}
+                            </button>
+                          ) : (
+                            <Volume2 className="w-3.5 h-3.5 text-[#FF5B5B]" />
+                          )}
+                          <span className="text-[11px] font-mono font-bold text-[#FF5B5B]">
+                            {playingAudioId === capture.id ? 'Playing Voice Memo...' : 'Voice Recording'}
+                          </span>
+                          {capture.audioDurationSeconds !== undefined && (
+                            <span className="text-[10px] font-mono text-[#1C1C1A]/50 bg-white px-1.5 py-0.5 rounded-md border border-rose-200">
+                              {formatDigitalTime(capture.audioDurationSeconds)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     )}
 
                     {/* Photo Thumbnail if present */}

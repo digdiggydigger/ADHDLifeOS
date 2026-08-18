@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TaskItem, LifeArea, Tag, TaskStatus, TaskPriority } from '../types';
 import { TaskDetailModal } from './TaskDetailModal';
+import { SwipeableTaskCard } from './SwipeableTaskCard';
+import { getAreaColorConfig } from '../utils/areaColors';
 import { triggerHaptic, formatFocusDuration } from '../utils/haptics';
 import {
   CheckSquare,
@@ -16,6 +18,8 @@ import {
   Flame,
   ArrowUpDown,
   Bell,
+  Sparkles,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 interface TaskListViewProps {
@@ -340,29 +344,86 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
           </select>
         </div>
 
-        {/* Status Pills */}
-        <div className="flex items-center space-x-2 pt-2 border-t border-black/5 overflow-x-auto text-xs font-mono uppercase tracking-wider">
-          {(['all', 'todo', 'in_progress', 'completed'] as const).map((status) => (
+        {/* Status & Life Area Filter Pills */}
+        <div className="space-y-2.5 pt-2 border-t border-black/5">
+          {/* Status Filter Row */}
+          <div className="flex items-center space-x-2 overflow-x-auto text-xs font-mono uppercase tracking-wider pb-1">
+            {(['all', 'todo', 'in_progress', 'completed'] as const).map((status) => (
+              <button
+                key={status}
+                id={`task-filter-status-${status}`}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  statusFilter === status
+                    ? 'bg-[#111113] text-white'
+                    : 'bg-white/60 text-[#1C1C1A]/70 hover:bg-white hover:text-[#1C1C1A]'
+                }`}
+              >
+                {status === 'all'
+                  ? 'All Tasks'
+                  : status === 'todo'
+                  ? 'To Do'
+                  : status === 'in_progress'
+                  ? 'In Progress'
+                  : 'Completed'}
+              </button>
+            ))}
+          </div>
+
+          {/* Life Area Color Filter Chips */}
+          <div className="flex items-center space-x-1.5 overflow-x-auto text-xs font-mono pb-1">
             <button
-              key={status}
-              id={`task-filter-status-${status}`}
-              onClick={() => setStatusFilter(status)}
-              className={`px-4 py-1.5 rounded-full font-bold transition-all whitespace-nowrap cursor-pointer ${
-                statusFilter === status
-                  ? 'bg-[#111113] text-white'
-                  : 'bg-white/60 text-[#1C1C1A]/70 hover:bg-white hover:text-[#1C1C1A]'
+              type="button"
+              id="filter-chip-all-areas"
+              onClick={() => setLifeAreaFilter('all')}
+              className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
+                lifeAreaFilter === 'all'
+                  ? 'bg-[#1C1C1A] text-white border-[#1C1C1A] shadow-2xs'
+                  : 'bg-white/80 text-[#1C1C1A]/70 border-black/10 hover:bg-white'
               }`}
             >
-              {status === 'all'
-                ? 'All Tasks'
-                : status === 'todo'
-                ? 'To Do'
-                : status === 'in_progress'
-                ? 'In Progress'
-                : 'Completed'}
+              <span>All Areas</span>
             </button>
-          ))}
+
+            {lifeAreas.map((area) => {
+              const colorConfig = getAreaColorConfig(area.color);
+              const isSelected = lifeAreaFilter === area.id;
+              const areaTaskCount = tasks.filter((t) => t.lifeAreaId === area.id && t.status !== 'completed').length;
+
+              return (
+                <button
+                  key={area.id}
+                  id={`filter-chip-area-${area.id}`}
+                  onClick={() => setLifeAreaFilter(isSelected ? 'all' : area.id)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
+                    isSelected
+                      ? 'bg-[#1C1C1A] text-white border-[#1C1C1A] shadow-xs'
+                      : 'bg-white/80 text-[#1C1C1A]/80 border-black/10 hover:bg-white'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${colorConfig.dotClass} shrink-0 ring-1 ring-black/10`} />
+                  <span>{area.emoji} {area.name}</span>
+                  {areaTaskCount > 0 && (
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-black/5 text-[#1C1C1A]/60'}`}>
+                      {areaTaskCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
+      </div>
+
+      {/* Mobile Swipe Gesture Tip */}
+      <div className="flex items-center justify-between px-3 py-1.5 rounded-2xl bg-[#EFECE8]/70 border border-black/5 text-[11px] font-mono text-[#1C1C1A]/60">
+        <div className="flex items-center space-x-2">
+          <ArrowLeftRight className="w-3.5 h-3.5 text-[#FF5B5B]" />
+          <span><strong className="text-[#1C1C1A]">Mobile Gestures:</strong> Swipe right ➔ to Complete • Swipe left ⇦ to Delete</span>
+        </div>
+        <span className="text-[10px] uppercase font-bold text-[#FF5B5B]/80 hidden sm:inline">
+          Interactive Cards
+        </span>
       </div>
 
       {/* Task List items */}
@@ -377,134 +438,18 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
           <AnimatePresence mode="popLayout">
             {filteredTasks.map((task) => {
               const area = lifeAreas.find((a) => a.id === task.lifeAreaId);
-              const isCompleted = task.status === 'completed';
 
               return (
-                <motion.div
+                <SwipeableTaskCard
                   key={task.id}
-                  layout
-                  initial={{ opacity: 0, y: 14, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -14, scale: 0.98 }}
-                  transition={{
-                    opacity: { duration: 0.15 },
-                    layout: { type: 'spring', stiffness: 350, damping: 28 },
-                    y: { type: 'spring', stiffness: 350, damping: 28 },
-                  }}
-                  id={`task-item-card-${task.id}`}
-                  className={`rounded-3xl p-4 sm:p-5 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                    isCompleted
-                      ? 'bg-[#EFECE8]/60 border-black/5 opacity-60'
-                      : 'bg-[#EFECE8] border-black/5 hover:border-black/20 shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-start space-x-3.5">
-                    <button
-                      id={`task-checkbox-${task.id}`}
-                      onClick={() => {
-                        triggerHaptic('toggle');
-                        onToggleTaskStatus(task.id);
-                      }}
-                      className="mt-0.5 text-[#1C1C1A]/40 hover:text-[#FF5B5B] cursor-pointer transition-colors"
-                      title={isCompleted ? 'Mark incomplete' : 'Mark complete'}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5 text-[#FF5B5B] fill-[#FF5B5B]/20" />
-                      ) : (
-                        <Circle className="w-5 h-5" />
-                      )}
-                    </button>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                        <span
-                          onClick={() => setInspectingTask(task)}
-                          className={`text-sm sm:text-base font-bold cursor-pointer hover:text-[#FF5B5B] transition-colors ${
-                            isCompleted ? 'line-through text-[#1C1C1A]/40' : 'text-[#1C1C1A]'
-                          }`}
-                        >
-                          {task.title}
-                        </span>
-
-                        {area && (
-                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-white border border-black/5 text-[#1C1C1A]/70 font-mono">
-                            {area.emoji} {area.name}
-                          </span>
-                        )}
-
-                        {/* Priority Badge with direct click-to-cycle */}
-                        <button
-                          type="button"
-                          id={`task-priority-badge-${task.id}`}
-                          onClick={(e) => handleCyclePriority(e, task)}
-                          title="Click to cycle priority (Low / Medium / High)"
-                          className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full transition-all cursor-pointer flex items-center space-x-1 ${
-                            task.priority === 'high'
-                              ? 'bg-[#FF5B5B]/15 text-[#FF5B5B] hover:bg-[#FF5B5B]/25'
-                              : task.priority === 'medium'
-                              ? 'bg-amber-500/15 text-amber-700 hover:bg-amber-500/25'
-                              : 'bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25'
-                          }`}
-                        >
-                          {task.priority === 'high' && <span className="w-1.5 h-1.5 rounded-full bg-[#FF5B5B]"></span>}
-                          {task.priority === 'medium' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>}
-                          {task.priority === 'low' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
-                          <span>{task.priority} urgency</span>
-                        </button>
-                      </div>
-
-                      {task.description && (
-                        <p className="text-xs text-[#1C1C1A]/70 line-clamp-1">{task.description}</p>
-                      )}
-
-                      <div className="flex items-center space-x-3 text-xs font-mono text-[#1C1C1A]/60 pt-0.5 flex-wrap gap-y-1">
-                        {task.dueDate && (
-                          <span className="flex items-center space-x-1">
-                            <Clock className="w-3.5 h-3.5 text-[#FF5B5B]" />
-                            <span>Due: {task.dueDate}</span>
-                          </span>
-                        )}
-
-                        <span className="text-[#1C1C1A] font-bold flex items-center space-x-1 bg-black/5 px-2 py-0.5 rounded-md">
-                          <span>⏱️ {formatFocusDuration(task.focusDurationSeconds || (task.focusMinutesTarget || 15) * 60)}</span>
-                          <span className="text-[#FF5B5B]">({typeof task.nudgesCount === 'number' ? task.nudgesCount : (task.focusDurationSeconds || 900) <= 60 ? 1 : 2} 🔔)</span>
-                        </span>
-
-                        {task.tags.map((tg) => (
-                          <span key={tg} className="text-[#1C1C1A]/40">
-                            #{tg}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Focus Timer Trigger Button */}
-                  {!isCompleted && (
-                    <div className="flex items-center space-x-2 self-end sm:self-center shrink-0">
-                      <button
-                        id={`task-start-focus-${task.id}`}
-                        onClick={() => {
-                          const secs = task.focusDurationSeconds || (task.focusMinutesTarget ? task.focusMinutesTarget * 60 : 15 * 60);
-                          const nudges = typeof task.nudgesCount === 'number' ? task.nudgesCount : secs <= 60 ? 1 : 2;
-                          onStartFocus(task, secs, nudges);
-                        }}
-                        className="flex items-center space-x-1.5 bg-[#FF5B5B] hover:bg-[#ff4242] text-white px-4 py-2 rounded-full text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs hover:scale-105 active:scale-95"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>Start Focus</span>
-                      </button>
-
-                      <button
-                        id={`task-edit-${task.id}`}
-                        onClick={() => setInspectingTask(task)}
-                        className="text-xs text-[#1C1C1A]/70 hover:text-[#1C1C1A] font-mono px-3 py-2 rounded-full hover:bg-black/5 cursor-pointer font-bold uppercase"
-                      >
-                        Details
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
+                  task={task}
+                  area={area}
+                  onToggleStatus={onToggleTaskStatus}
+                  onDelete={onDeleteTask}
+                  onCyclePriority={handleCyclePriority}
+                  onInspect={setInspectingTask}
+                  onStartFocus={onStartFocus}
+                />
               );
             })}
           </AnimatePresence>

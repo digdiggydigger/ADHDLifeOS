@@ -9,6 +9,7 @@ import { QuickCaptureModal } from './components/QuickCaptureModal';
 import { TaskListView } from './components/TaskListView';
 import { JournalView } from './components/JournalView';
 import { NudgesView } from './components/NudgesView';
+import { DailySummaryView } from './components/DailySummaryView';
 import { SettingsView } from './components/SettingsView';
 import { FocusTimerBar } from './components/FocusTimerBar';
 import { Footer } from './components/Footer';
@@ -162,6 +163,17 @@ export function App() {
             nudgeHistory={nudgeHistory}
             onAddNudgeReaction={addNudgeReaction}
             onClearNudgeHistory={clearNudgeHistory}
+          />
+        )}
+
+        {activeTab === 'summary' && (
+          <DailySummaryView
+            tasks={tasks}
+            journal={journal}
+            captures={captures}
+            lifeAreas={lifeAreas}
+            onOpenQuickCapture={() => setIsQuickCaptureOpen(true)}
+            onNavigateToTasks={() => setActiveTab('tasks')}
           />
         )}
 

@@ -227,7 +227,9 @@ export function useLifeOSState() {
     transcript?: string,
     suggestedLifeAreaId?: string,
     imageUrl?: string,
-    noteText?: string
+    noteText?: string,
+    audioDurationSeconds?: number,
+    audioDataUrl?: string
   ) => {
     triggerHaptic('capture');
     const newItem: CaptureItem = {
@@ -237,6 +239,8 @@ export function useLifeOSState() {
       transcript: transcript || noteText,
       noteText: noteText || transcript,
       imageUrl,
+      audioDurationSeconds,
+      audioDataUrl,
       createdAt: new Date().toISOString(),
       status: 'unprocessed',
       suggestedLifeAreaId,

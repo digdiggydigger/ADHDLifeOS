@@ -56,6 +56,25 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-2.5 mt-1 sm:mt-2">
+            {/* Daily Summary Button */}
+            <button
+              id="header-daily-summary-btn"
+              onClick={() => {
+                triggerHaptic('light');
+                setActiveTab('summary');
+              }}
+              className={`flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-mono font-bold transition-all cursor-pointer ${
+                activeTab === 'summary'
+                  ? 'bg-[#111113] text-white shadow-xs'
+                  : 'bg-white hover:bg-[#F2EFE9] text-[#1C1C1A] border border-black/10'
+              }`}
+              title="Daily Summary & AI Highlights"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#FF5B5B]" />
+              <span className="hidden sm:inline">Daily Summary</span>
+              <span className="sm:hidden">Summary</span>
+            </button>
+
             {/* Running timer pill indicator */}
             {focusSession.isRunning && (
               <button

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LifeArea,
@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { ProductivityTrendChart } from './ProductivityTrendChart';
 import { WeeklyFocusSummaryWidget } from './WeeklyFocusSummaryWidget';
+import { getAreaColorConfig } from '../utils/areaColors';
 import { triggerHaptic, formatFocusDuration } from '../utils/haptics';
 import {
   ArrowUpDown,
@@ -23,6 +24,12 @@ import {
   TrendingUp,
   Maximize2,
   Minimize2,
+  SlidersHorizontal,
+  Sparkles,
+  Eye,
+  EyeOff,
+  Flame,
+  Clock,
 } from 'lucide-react';
 
 interface HomeViewProps {
@@ -51,8 +58,42 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onStartFocus,
 }) => {
   const [isArranging, setIsArranging] = useState(false);
-  const [isWeeklyFocusExpanded, setIsWeeklyFocusExpanded] = useState(true);
-  const [isTrendChartExpanded, setIsTrendChartExpanded] = useState(true);
+
+  // Persistent statistics widget expansion states with localStorage
+  const [isWeeklyFocusExpanded, setIsWeeklyFocusExpanded] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('lifeos_weekly_focus_expanded');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const [isTrendChartExpanded, setIsTrendChartExpanded] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('lifeos_trend_chart_expanded');
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Save changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('lifeos_weekly_focus_expanded', JSON.stringify(isWeeklyFocusExpanded));
+    } catch {
+      // ignore
+    }
+  }, [isWeeklyFocusExpanded]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('lifeos_trend_chart_expanded', JSON.stringify(isTrendChartExpanded));
+    } catch {
+      // ignore
+    }
+  }, [isTrendChartExpanded]);
 
   const activeAreas = lifeAreas
     .filter((a) => !a.isArchived)
@@ -62,6 +103,27 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const dueNudges = nudges.filter((n) => n.isDue);
   const openTasks = tasks.filter((t) => t.status !== 'completed');
   const completedTasks = tasks.filter((t) => t.status === 'completed');
+
+  // Compute key summarized metrics for collapsed stats badges
+  const statsSummary = useMemo(() => {
+    let totalFocusSeconds = 0;
+    let totalSprints = 0;
+    tasks.forEach((t) => {
+      if (t.focusHistory && t.focusHistory.length > 0) {
+        totalSprints += t.focusHistory.length;
+        t.focusHistory.forEach((h) => {
+          totalFocusSeconds += h.durationSeconds;
+        });
+      }
+    });
+
+    const completionRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
+    return {
+      totalFocusMinutes: Math.round(totalFocusSeconds / 60),
+      totalSprints,
+      completionRate,
+    };
+  }, [tasks, completedTasks]);
 
   // Overall task progress percentage
   const totalTasks = tasks.length;
@@ -106,7 +168,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   const toggleAllGraphs = (expand: boolean) => {
-    triggerHaptic('light');
+    triggerHaptic('medium');
     setIsWeeklyFocusExpanded(expand);
     setIsTrendChartExpanded(expand);
   };
@@ -270,36 +332,120 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* Global Charts Free-Viewing Header */}
-      <div className="flex items-center justify-between pt-2 border-t border-black/5">
-        <div className="flex items-center space-x-2">
-          <BarChart3 className="w-4 h-4 text-[#FF5B5B]" />
-          <span className="label text-[#1C1C1A]/70 text-[10px] sm:text-xs">Performance & Focus Intelligence</span>
+      {/* Daily Summary & Gemini AI Highlights Spotlight */}
+      <section
+        id="home-daily-summary-spotlight"
+        className="light-card rounded-2xl sm:rounded-[32px] p-5 sm:p-7 border-2 border-[#FF5B5B]/20 bg-gradient-to-r from-white via-white to-[#FF5B5B]/5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
+        <div className="flex items-start space-x-3 sm:space-x-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#FF5B5B]/10 text-[#FF5B5B] flex items-center justify-center shrink-0 shadow-2xs">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+          <div className="space-y-1">
+            <div className="inline-flex items-center space-x-2">
+              <span className="label text-[#FF5B5B] text-[10px] sm:text-xs font-mono font-bold">
+                Daily Highlights • Gemini 3.7 Flash
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                {completedTasks.length} Done Today
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-[#1C1C1A]">
+              Daily Executive Recap & Dopamine Wins
+            </h3>
+            <p className="text-xs text-[#1C1C1A]/70 max-w-xl">
+              Synthesize today's completed tasks, focus stamina, and journal reflections into a motivating, neurodivergent-friendly highlight reel.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => toggleAllGraphs(!isWeeklyFocusExpanded || !isTrendChartExpanded)}
-            className="flex items-center space-x-1.5 text-[11px] font-mono text-[#1C1C1A]/60 hover:text-[#1C1C1A] px-3 py-1 rounded-full border border-black/10 hover:border-black/20 bg-white cursor-pointer transition-colors"
-          >
-            {isWeeklyFocusExpanded && isTrendChartExpanded ? (
-              <>
-                <Minimize2 className="w-3 h-3" />
-                <span>Collapse Analytics</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="w-3 h-3" />
-                <span>Expand All Analytics</span>
-              </>
-            )}
-          </button>
+        <button
+          id="home-open-daily-summary-btn"
+          onClick={() => {
+            triggerHaptic('medium');
+            setActiveTab('summary');
+          }}
+          className="inline-flex items-center justify-center space-x-2 px-5 py-3 rounded-2xl bg-[#111113] hover:bg-black active:scale-95 text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer shrink-0"
+        >
+          <Sparkles className="w-4 h-4 text-[#FF5B5B]" />
+          <span>View Daily Summary</span>
+          <ArrowRight className="w-4 h-4 ml-0.5" />
+        </button>
+      </section>
+
+      {/* Global Charts Free-Viewing & Dashboard Space Customizer Header */}
+      <div className="bg-[#EFECE8] rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border border-black/5 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center space-x-2">
+            <div className="p-1.5 rounded-xl bg-white shadow-xs border border-black/5">
+              <BarChart3 className="w-4 h-4 text-[#FF5B5B]" />
+            </div>
+            <div>
+              <span className="label text-[#1C1C1A]/70 text-[10px] sm:text-xs block">Dashboard Workspace</span>
+              <h4 className="text-xs sm:text-sm font-bold text-[#1C1C1A] tracking-tight">Performance & Focus Intelligence</h4>
+            </div>
+          </div>
+
+          {/* Quick Toggle Toolbar */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {/* Weekly Focus Toggle Chip */}
+            <button
+              onClick={() => {
+                triggerHaptic('light');
+                setIsWeeklyFocusExpanded(!isWeeklyFocusExpanded);
+              }}
+              className={`flex items-center space-x-1.5 text-[11px] font-mono font-bold px-2.5 sm:px-3 py-1 rounded-full border transition-all cursor-pointer ${
+                isWeeklyFocusExpanded
+                  ? 'bg-[#FF5B5B] text-white border-[#FF5B5B] shadow-xs'
+                  : 'bg-white text-[#1C1C1A]/70 border-black/10 hover:border-black/20'
+              }`}
+              title={isWeeklyFocusExpanded ? 'Click to collapse Weekly Focus Sprints' : 'Click to show Weekly Focus Sprints'}
+            >
+              {isWeeklyFocusExpanded ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+              <span>Sprints Graph</span>
+            </button>
+
+            {/* Velocity Curve Toggle Chip */}
+            <button
+              onClick={() => {
+                triggerHaptic('light');
+                setIsTrendChartExpanded(!isTrendChartExpanded);
+              }}
+              className={`flex items-center space-x-1.5 text-[11px] font-mono font-bold px-2.5 sm:px-3 py-1 rounded-full border transition-all cursor-pointer ${
+                isTrendChartExpanded
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                  : 'bg-white text-[#1C1C1A]/70 border-black/10 hover:border-black/20'
+              }`}
+              title={isTrendChartExpanded ? 'Click to collapse Velocity Trend' : 'Click to show Velocity Trend'}
+            >
+              {isTrendChartExpanded ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+              <span>Velocity Curve</span>
+            </button>
+
+            {/* Expand / Collapse All Action */}
+            <button
+              onClick={() => toggleAllGraphs(!isWeeklyFocusExpanded || !isTrendChartExpanded)}
+              className="flex items-center space-x-1.5 text-[11px] font-mono font-bold text-[#1C1C1A]/70 hover:text-[#1C1C1A] px-2.5 sm:px-3 py-1 rounded-full border border-black/10 hover:border-black/25 bg-white cursor-pointer transition-colors shadow-xs"
+            >
+              {isWeeklyFocusExpanded && isTrendChartExpanded ? (
+                <>
+                  <Minimize2 className="w-3 h-3" />
+                  <span>Collapse All</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-3 h-3" />
+                  <span>Expand All</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* 2. Focus Sessions Weekly Summary Widget (Collapsible) */}
       <section id="weekly-focus-graph-container" className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-1">
           <button
             type="button"
             onClick={() => {
@@ -308,16 +454,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
             }}
             className="flex items-center space-x-2 text-xs font-mono font-bold text-[#1C1C1A]/80 hover:text-[#FF5B5B] cursor-pointer group"
           >
-            {isWeeklyFocusExpanded ? (
-              <ChevronUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
-            ) : (
-              <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
-            )}
+            <div className="w-5 h-5 rounded-full bg-[#EFECE8] flex items-center justify-center border border-black/5 group-hover:border-[#FF5B5B]">
+              {isWeeklyFocusExpanded ? (
+                <ChevronUp className="w-3.5 h-3.5 transition-transform group-hover:-translate-y-0.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 transition-transform group-hover:translate-y-0.5" />
+              )}
+            </div>
             <span>Weekly Focus Sprints Breakdown</span>
-            <span className="text-[10px] font-normal text-zinc-500">
-              {isWeeklyFocusExpanded ? '(Click to collapse)' : '(Collapsed — Click to expand)'}
+            <span className="text-[10px] font-normal text-zinc-500 hidden sm:inline">
+              {isWeeklyFocusExpanded ? '(Click to minimize)' : '(Minimized — Click to expand)'}
             </span>
           </button>
+
+          <span className="text-[10px] font-mono text-zinc-500">
+            {isWeeklyFocusExpanded ? 'Expanded' : 'Collapsed'}
+          </span>
         </div>
 
         <AnimatePresence initial={false}>
@@ -340,17 +492,41 @@ export const HomeView: React.FC<HomeViewProps> = ({
           ) : (
             <motion.div
               key="weekly-focus-collapsed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsWeeklyFocusExpanded(true)}
-              className="bg-[#EFECE8] hover:bg-[#eae6e1] p-3 rounded-2xl border border-black/5 flex items-center justify-between text-xs font-mono text-[#1C1C1A]/70 cursor-pointer transition-colors"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              onClick={() => {
+                triggerHaptic('light');
+                setIsWeeklyFocusExpanded(true);
+              }}
+              className="bg-white hover:bg-[#FAF8F5] p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-black/10 hover:border-[#FF5B5B]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-[#1C1C1A]/80 cursor-pointer transition-all shadow-xs group"
             >
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="w-4 h-4 text-[#FF5B5B]" />
-                <span>Focus Sprint Analytics (Minimized)</span>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-xl bg-[#FF5B5B]/10 text-[#FF5B5B] flex items-center justify-center font-bold">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-[#1C1C1A]">Focus Sprints Summary</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/5 text-zinc-600 font-normal">
+                      Minimized
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-zinc-500 block mt-0.5">
+                    {statsSummary.totalSprints} recorded focus sprints ({statsSummary.totalFocusMinutes} min total flow time)
+                  </span>
+                </div>
               </div>
-              <span className="text-[11px] text-[#FF5B5B] font-bold">Expand graph +</span>
+
+              <div className="flex items-center justify-between sm:justify-end space-x-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/5">
+                <div className="flex items-center space-x-1.5 text-xs text-[#FF5B5B] font-bold">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{statsSummary.totalFocusMinutes} mins</span>
+                </div>
+                <span className="text-[11px] text-white bg-[#1C1C1A] px-3 py-1 rounded-full font-bold group-hover:bg-[#FF5B5B] transition-colors">
+                  Expand Chart +
+                </span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -358,7 +534,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       {/* 3. 7-Day Productivity Velocity Trend Chart (Collapsible) */}
       <section id="productivity-trend-graph-container" className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-1">
           <button
             type="button"
             onClick={() => {
@@ -367,16 +543,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
             }}
             className="flex items-center space-x-2 text-xs font-mono font-bold text-[#1C1C1A]/80 hover:text-[#FF5B5B] cursor-pointer group"
           >
-            {isTrendChartExpanded ? (
-              <ChevronUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
-            ) : (
-              <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
-            )}
+            <div className="w-5 h-5 rounded-full bg-[#EFECE8] flex items-center justify-center border border-black/5 group-hover:border-emerald-600">
+              {isTrendChartExpanded ? (
+                <ChevronUp className="w-3.5 h-3.5 transition-transform group-hover:-translate-y-0.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 transition-transform group-hover:translate-y-0.5" />
+              )}
+            </div>
             <span>7-Day Productivity Velocity Trend</span>
-            <span className="text-[10px] font-normal text-zinc-500">
-              {isTrendChartExpanded ? '(Click to collapse)' : '(Collapsed — Click to expand)'}
+            <span className="text-[10px] font-normal text-zinc-500 hidden sm:inline">
+              {isTrendChartExpanded ? '(Click to minimize)' : '(Minimized — Click to expand)'}
             </span>
           </button>
+
+          <span className="text-[10px] font-mono text-zinc-500">
+            {isTrendChartExpanded ? 'Expanded' : 'Collapsed'}
+          </span>
         </div>
 
         <AnimatePresence initial={false}>
@@ -397,17 +579,41 @@ export const HomeView: React.FC<HomeViewProps> = ({
           ) : (
             <motion.div
               key="trend-chart-collapsed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsTrendChartExpanded(true)}
-              className="bg-[#EFECE8] hover:bg-[#eae6e1] p-3 rounded-2xl border border-black/5 flex items-center justify-between text-xs font-mono text-[#1C1C1A]/70 cursor-pointer transition-colors"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              onClick={() => {
+                triggerHaptic('light');
+                setIsTrendChartExpanded(true);
+              }}
+              className="bg-white hover:bg-[#FAF8F5] p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-black/10 hover:border-emerald-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-[#1C1C1A]/80 cursor-pointer transition-all shadow-xs group"
             >
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4 text-emerald-600" />
-                <span>Productivity Velocity Curve (Minimized)</span>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-[#1C1C1A]">Productivity Velocity Trend</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/5 text-zinc-600 font-normal">
+                      Minimized
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-zinc-500 block mt-0.5">
+                    {completedTasks.length} tasks completed ({statsSummary.completionRate}% completion rate)
+                  </span>
+                </div>
               </div>
-              <span className="text-[11px] text-[#FF5B5B] font-bold">Expand graph +</span>
+
+              <div className="flex items-center justify-between sm:justify-end space-x-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/5">
+                <div className="flex items-center space-x-1.5 text-xs text-emerald-600 font-bold">
+                  <Flame className="w-3.5 h-3.5" />
+                  <span>{statsSummary.completionRate}% Rate</span>
+                </div>
+                <span className="text-[11px] text-white bg-[#1C1C1A] px-3 py-1 rounded-full font-bold group-hover:bg-emerald-600 transition-colors">
+                  Expand Chart +
+                </span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -489,6 +695,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {activeAreas.map((area) => {
+              const colorConfig = getAreaColorConfig(area.color);
               const areaTasks = tasks.filter((t) => t.lifeAreaId === area.id);
               const areaCompleted = areaTasks.filter((t) => t.status === 'completed');
               const areaOpen = areaTasks.filter((t) => t.status !== 'completed');
@@ -498,15 +705,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   key={area.id}
                   id={`home-life-area-${area.id}`}
                   onClick={() => onSelectLifeArea(area.id)}
-                  className="bg-[#EFECE8] hover:bg-[#eae6e1] border border-black/5 hover:border-black/15 p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all cursor-pointer group flex flex-col justify-between min-h-[130px] sm:min-h-[140px]"
+                  className={`bg-[#EFECE8] hover:bg-[#eae6e1] border border-black/5 hover:border-black/15 p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all cursor-pointer group flex flex-col justify-between min-h-[130px] sm:min-h-[140px] border-l-4 ${colorConfig.borderLeftClass}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2.5">
                       <span className="text-2xl p-1 bg-white/60 rounded-xl shadow-xs">{area.emoji}</span>
                       <div>
-                        <h4 className="font-bold text-sm sm:text-base text-[#1C1C1A] group-hover:text-[#FF5B5B] transition-colors">
-                          {area.name}
-                        </h4>
+                        <div className="flex items-center space-x-1.5">
+                          <h4 className="font-bold text-sm sm:text-base text-[#1C1C1A] group-hover:text-[#FF5B5B] transition-colors truncate">
+                            {area.name}
+                          </h4>
+                          <span className={`w-2 h-2 rounded-full ${colorConfig.dotClass} shrink-0 ring-1 ring-black/10`} />
+                        </div>
                         <span className="text-[10px] sm:text-[11px] font-mono text-[#1C1C1A]/50 uppercase">
                           Channel
                         </span>

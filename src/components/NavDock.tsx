@@ -27,6 +27,7 @@ export const NavDock: React.FC<NavDockProps> = ({
     { tab: 'tasks', label: 'Tasks', badge: openTasksCount, badgeColor: 'bg-white/20' },
     { tab: 'journal', label: 'Journal' },
     { tab: 'nudges', label: 'Nudges', badge: dueNudgesCount, badgeColor: 'bg-[#FF5B5B]' },
+    { tab: 'summary', label: 'Summary' },
   ];
 
   return (

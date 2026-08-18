@@ -25,6 +25,7 @@ export interface CaptureItem {
   type: CaptureType;
   transcript?: string;
   audioDurationSeconds?: number;
+  audioDataUrl?: string;
   imageUrl?: string;
   noteText?: string;
   createdAt: string;
@@ -99,4 +100,18 @@ export interface NudgeHistoryRecord {
   reaction?: 'on_track' | 'refocused' | 'needed_break' | 'completed_step';
 }
 
-export type ActiveTab = 'home' | 'capture' | 'tasks' | 'journal' | 'nudges' | 'settings';
+export interface DailySummaryData {
+  date: string;
+  headline: string;
+  dopamineWins: string[];
+  journalReflections: string;
+  focusStaminaInsight: string;
+  gentleTomorrowKickstart: string[];
+  fullNarrativeMarkdown: string;
+  source?: string;
+  generatedAt: string;
+  tone: 'energizing' | 'gentle' | 'bulleted' | 'coaching';
+}
+
+export type ActiveTab = 'home' | 'capture' | 'tasks' | 'journal' | 'nudges' | 'summary' | 'settings';
+

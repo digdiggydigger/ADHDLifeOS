@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LifeArea, Tag } from '../types';
 import {
+  AVAILABLE_AREA_COLORS,
+  AREA_COLOR_PALETTE,
+  getAreaColorConfig,
+} from '../utils/areaColors';
+import { triggerHaptic } from '../utils/haptics';
+import {
   Settings,
   Plus,
   RotateCcw,
@@ -11,6 +17,7 @@ import {
   FolderTree,
   Tags,
   CheckCircle2,
+  Palette,
 } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -21,7 +28,7 @@ interface SettingsViewProps {
   onResetAllData: () => void;
 }
 
-const colorOptions = ['indigo', 'emerald', 'amber', 'purple', 'rose', 'sky'];
+const colorOptions = AVAILABLE_AREA_COLORS;
 const emojiOptions = ['💼', '🏋️', '📝', '🧘', '🎨', '🏠', '🚀', '📚', '💰', '🌱', '⚡', '☕'];
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -65,6 +72,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setLifeAreas((prev) => [...prev, newArea]);
     setNewAreaName('');
     setShowAddArea(false);
+  };
+
+  const handleUpdateAreaColor = (areaId: string, newColor: string) => {
+    triggerHaptic('light');
+    setLifeAreas((prev) =>
+      prev.map((a) => (a.id === areaId ? { ...a, color: newColor } : a))
+    );
   };
 
   const toggleArchiveArea = (id: string) => {
@@ -257,19 +271,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </div>
 
                     <div>
-                      <label className="label text-white/60 mb-1">Color Theme</label>
-                      <select
-                        id="settings-area-color-select"
-                        value={newAreaColor}
-                        onChange={(e) => setNewAreaColor(e.target.value)}
-                        className="w-full px-3.5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white font-mono"
-                      >
-                        {colorOptions.map((c) => (
-                          <option key={c} value={c} className="bg-[#111113]">
-                            {c.toUpperCase()}
-                          </option>
-                        ))}
-                      </select>
+                      <label className="label text-white/60 mb-1">Color Palette</label>
+                      <div className="flex flex-wrap gap-1.5 bg-white/5 p-2 rounded-xl sm:rounded-2xl border border-white/10">
+                        {AVAILABLE_AREA_COLORS.map((c) => {
+                          const config = getAreaColorConfig(c);
+                          const isSelected = newAreaColor === c;
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setNewAreaColor(c)}
+                              title={config.label}
+                              className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-white text-[#1C1C1A] font-bold ring-2 ring-white/60 shadow-xs'
+                                  : 'bg-white/10 text-white/80 hover:bg-white/20'
+                              }`}
+                            >
+                              <span className={`w-2.5 h-2.5 rounded-full ${config.dotClass}`} />
+                              <span className="capitalize text-[11px]">{config.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 
@@ -294,39 +318,99 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               {/* Life Areas List */}
               <div className="space-y-2 sm:space-y-2.5">
-                {lifeAreas.map((area) => (
-                  <div
-                    key={area.id}
-                    className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center justify-between gap-3 transition-all ${
-                      area.isArchived
-                        ? 'bg-black/5 border-black/5 opacity-60'
-                        : 'bg-white border-black/5 shadow-xs'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-                      <span className="text-xl sm:text-2xl p-1 sm:p-1.5 rounded-xl bg-black/5 shrink-0">{area.emoji}</span>
-                      <div className="min-w-0">
-                        <h4 className="text-xs sm:text-sm font-bold text-[#1C1C1A] truncate">{area.name}</h4>
-                        <span className="text-[10px] sm:text-[11px] font-mono text-[#1C1C1A]/50 capitalize block truncate">
-                          Color: {area.color} {area.isArchived ? '• Archived' : '• Active'}
-                        </span>
-                      </div>
-                    </div>
+                {lifeAreas.map((area) => {
+                  const areaConfig = getAreaColorConfig(area.color);
 
-                    <button
-                      id={`toggle-archive-area-${area.id}`}
-                      onClick={() => toggleArchiveArea(area.id)}
-                      className={`flex items-center space-x-1 px-2.5 sm:px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-mono font-bold uppercase transition-all cursor-pointer shrink-0 ${
+                  return (
+                    <div
+                      key={area.id}
+                      className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all border-l-4 ${
+                        areaConfig.borderLeftClass
+                      } ${
                         area.isArchived
-                          ? 'bg-[#FF5B5B]/20 text-[#FF5B5B]'
-                          : 'bg-black/5 text-[#1C1C1A] hover:bg-black/10'
+                          ? 'bg-black/5 border-black/5 opacity-60'
+                          : 'bg-white border-black/5 shadow-xs'
                       }`}
                     >
-                      <Archive className="w-3.5 h-3.5" />
-                      <span>{area.isArchived ? 'Unarchive' : 'Archive'}</span>
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                        <span className="text-xl sm:text-2xl p-1 sm:p-1.5 rounded-xl bg-black/5 shrink-0">
+                          {area.emoji}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <h4 className="text-xs sm:text-sm font-bold text-[#1C1C1A] truncate">
+                              {area.name}
+                            </h4>
+                            <span
+                              className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-mono uppercase border ${areaConfig.badgeClass}`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${areaConfig.dotClass}`}
+                              />
+                              <span>{areaConfig.label}</span>
+                            </span>
+                          </div>
+                          <span className="text-[10px] sm:text-[11px] font-mono text-[#1C1C1A]/50 capitalize block truncate mt-0.5">
+                            {area.isArchived ? 'Archived Domain' : 'Active Domain'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Color Palette Selector & Archive button */}
+                      <div className="flex items-center space-x-2 shrink-0 self-end sm:self-center flex-wrap gap-y-1">
+                        {/* Quick Color Swatches */}
+                        <div className="flex items-center space-x-1 bg-black/5 p-1 rounded-xl">
+                          {AVAILABLE_AREA_COLORS.slice(0, 6).map((c) => {
+                            const cConfig = getAreaColorConfig(c);
+                            const isActive = (area.color || 'indigo').toLowerCase() === c;
+                            return (
+                              <button
+                                key={c}
+                                type="button"
+                                id={`set-color-${area.id}-${c}`}
+                                onClick={() => handleUpdateAreaColor(area.id, c)}
+                                title={`Set ${area.name} color to ${cConfig.label}`}
+                                className={`w-4.5 h-4.5 rounded-full ${cConfig.dotClass} transition-transform cursor-pointer flex items-center justify-center ${
+                                  isActive
+                                    ? 'ring-2 ring-[#1C1C1A] scale-110 shadow-xs'
+                                    : 'opacity-60 hover:opacity-100 hover:scale-105'
+                                }`}
+                              />
+                            );
+                          })}
+
+                          {/* Dropdown for remaining colors */}
+                          <select
+                            id={`select-color-${area.id}`}
+                            value={area.color || 'indigo'}
+                            onChange={(e) => handleUpdateAreaColor(area.id, e.target.value)}
+                            title="More colors"
+                            className="bg-transparent text-[10px] font-mono text-[#1C1C1A] cursor-pointer ml-1 pr-1 outline-hidden"
+                          >
+                            {AVAILABLE_AREA_COLORS.map((c) => (
+                              <option key={c} value={c}>
+                                {getAreaColorConfig(c).label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <button
+                          id={`toggle-archive-area-${area.id}`}
+                          onClick={() => toggleArchiveArea(area.id)}
+                          className={`flex items-center space-x-1 px-2.5 sm:px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-mono font-bold uppercase transition-all cursor-pointer shrink-0 ${
+                            area.isArchived
+                              ? 'bg-[#FF5B5B]/20 text-[#FF5B5B]'
+                              : 'bg-black/5 text-[#1C1C1A] hover:bg-black/10'
+                          }`}
+                        >
+                          <Archive className="w-3.5 h-3.5" />
+                          <span>{area.isArchived ? 'Unarchive' : 'Archive'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
           )}
