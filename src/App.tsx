@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ActiveTab, TaskItem } from './types';
-import { useLifeOSState } from './hooks/useLifeOSState';
+import { useLifeOSState, calculateNudgeCheckpoints } from './hooks/useLifeOSState';
 import { Header } from './components/Header';
 import { NavDock } from './components/NavDock';
 import { HomeView } from './components/HomeView';
@@ -11,6 +11,7 @@ import { JournalView } from './components/JournalView';
 import { NudgesView } from './components/NudgesView';
 import { SettingsView } from './components/SettingsView';
 import { FocusTimerBar } from './components/FocusTimerBar';
+import { Footer } from './components/Footer';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -31,6 +32,9 @@ export function App() {
     setJournal,
     nudges,
     setNudges,
+    nudgeHistory,
+    addNudgeReaction,
+    clearNudgeHistory,
     focusSession,
     setFocusSession,
     addCapture,
@@ -46,6 +50,8 @@ export function App() {
     startFocusSession,
     pauseFocusSession,
     stopFocusSession,
+    updateFocusSessionNudges,
+    startFocusSession30sTest,
     resetAllData,
   } = useLifeOSState();
 
@@ -58,17 +64,27 @@ export function App() {
     setActiveTab('tasks');
   };
 
-  const handleStartFocusTask = (task: TaskItem, durationMinutes: number = 15) => {
-    startFocusSession(task, durationMinutes);
+  const handleStartFocusTask = (
+    task: TaskItem,
+    durationSeconds?: number,
+    nudgesCount?: number
+  ) => {
+    startFocusSession(task, durationSeconds, nudgesCount);
     setIsFocusModalOpen(true);
   };
 
-  const handleAddMinutesToFocus = (minutes: number) => {
-    setFocusSession((prev) => ({
-      ...prev,
-      durationSeconds: prev.durationSeconds + minutes * 60,
-      remainingSeconds: prev.remainingSeconds + minutes * 60,
-    }));
+  const handleAddSecondsToFocus = (seconds: number) => {
+    setFocusSession((prev) => {
+      const newDuration = prev.durationSeconds + seconds;
+      const newRemaining = prev.remainingSeconds + seconds;
+      const newCheckpoints = calculateNudgeCheckpoints(newDuration, prev.nudgesCount);
+      return {
+        ...prev,
+        durationSeconds: newDuration,
+        remainingSeconds: newRemaining,
+        nudgeCheckpoints: newCheckpoints,
+      };
+    });
   };
 
   return (
@@ -143,6 +159,9 @@ export function App() {
             nudges={nudges}
             setNudges={setNudges}
             onDismissNudge={dismissNudge}
+            nudgeHistory={nudgeHistory}
+            onAddNudgeReaction={addNudgeReaction}
+            onClearNudgeHistory={clearNudgeHistory}
           />
         )}
 
@@ -156,6 +175,9 @@ export function App() {
           />
         )}
       </main>
+
+      {/* Outlined Application Footer with Settings Action */}
+      <Footer activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Floating Bottom NavDock */}
       <NavDock
@@ -180,9 +202,11 @@ export function App() {
         focusSession={focusSession}
         onPause={pauseFocusSession}
         onStop={stopFocusSession}
-        onAddMinutes={handleAddMinutesToFocus}
+        onAddSeconds={handleAddSecondsToFocus}
         isOpenModal={isFocusModalOpen}
         onCloseModal={() => setIsFocusModalOpen(false)}
+        onUpdateNudges={updateFocusSessionNudges}
+        onStart30sTest={startFocusSession30sTest}
       />
     </div>
   );

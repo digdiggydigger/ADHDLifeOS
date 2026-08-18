@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ActiveTab } from '../types';
+import { triggerHaptic } from '../utils/haptics';
 import { LayoutGrid, Inbox, CheckSquare, BookOpen, Bell, Settings, Plus } from 'lucide-react';
 
 interface NavDockProps {
@@ -26,7 +27,6 @@ export const NavDock: React.FC<NavDockProps> = ({
     { tab: 'tasks', label: 'Tasks', badge: openTasksCount, badgeColor: 'bg-white/20' },
     { tab: 'journal', label: 'Journal' },
     { tab: 'nudges', label: 'Nudges', badge: dueNudgesCount, badgeColor: 'bg-[#FF5B5B]' },
-    { tab: 'settings', label: 'Settings' },
   ];
 
   return (
@@ -51,23 +51,41 @@ export const NavDock: React.FC<NavDockProps> = ({
                 <button
                   key={item.tab}
                   id={`nav-link-${item.tab}`}
-                  onClick={() => setActiveTab(item.tab)}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setActiveTab(item.tab);
+                  }}
                   className={`shrink-0 whitespace-nowrap relative flex items-center space-x-1.5 font-mono text-[11px] sm:text-xs font-bold uppercase tracking-[0.12em] sm:tracking-[0.15em] transition-all cursor-pointer py-1 px-1 sm:px-0 ${
                     isActive ? 'text-white' : 'text-[#AFAFAF] hover:text-white'
                   }`}
                 >
                   <span>{item.label}</span>
                   {typeof item.badge === 'number' && item.badge > 0 && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold leading-none shrink-0 ${
-                        item.badgeColor || 'bg-[#FF5B5B]'
-                      } text-white`}
-                    >
-                      {item.badge}
-                    </motion.span>
+                    <span className="relative inline-flex items-center justify-center shrink-0">
+                      <AnimatePresence mode="popLayout">
+                        <motion.span
+                          key={`${item.tab}-${item.badge}`}
+                          initial={{ opacity: 0.7 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className={`nav-notification-badge rounded-full font-bold leading-none shrink-0 relative ${
+                            item.badgeColor || 'bg-[#FF5B5B]'
+                          } text-white`}
+                        >
+                          {/* Subtle Ping Wave on count change */}
+                          <motion.span
+                            key={`ping-${item.tab}-${item.badge}`}
+                            initial={{ scale: 1, opacity: 0.75 }}
+                            animate={{ scale: 1.85, opacity: 0 }}
+                            transition={{ duration: 0.55, ease: 'easeOut' }}
+                            className={`absolute inset-0 rounded-full pointer-events-none ${
+                              item.badgeColor || 'bg-[#FF5B5B]'
+                            }`}
+                          />
+                          <span className="relative z-10">{item.badge}</span>
+                        </motion.span>
+                      </AnimatePresence>
+                    </span>
                   )}
                   {isActive && (
                     <motion.span
@@ -89,7 +107,10 @@ export const NavDock: React.FC<NavDockProps> = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.94 }}
             id="nav-dock-quick-capture"
-            onClick={onOpenQuickCapture}
+            onClick={() => {
+              triggerHaptic('capture');
+              onOpenQuickCapture();
+            }}
             className="shrink-0 whitespace-nowrap flex items-center space-x-1.5 bg-[#FF5B5B] hover:bg-[#ff4242] active:bg-[#e04545] text-white px-3.5 sm:px-4 py-2 rounded-full font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-[0_2px_12px_rgba(255,91,91,0.4)] ml-1"
             title="Quick Capture thought (Always accessible)"
           >

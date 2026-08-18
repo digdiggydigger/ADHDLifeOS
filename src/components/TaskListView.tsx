@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TaskItem, LifeArea, Tag, TaskStatus, TaskPriority } from '../types';
 import { TaskDetailModal } from './TaskDetailModal';
+import { triggerHaptic, formatFocusDuration } from '../utils/haptics';
 import {
   CheckSquare,
   Plus,
@@ -11,6 +12,10 @@ import {
   CheckCircle2,
   Circle,
   X,
+  AlertCircle,
+  Flame,
+  ArrowUpDown,
+  Bell,
 } from 'lucide-react';
 
 interface TaskListViewProps {
@@ -21,7 +26,7 @@ interface TaskListViewProps {
   onAddTask: (task: Omit<TaskItem, 'id' | 'createdAt' | 'focusMinutesLogged'>) => void;
   onUpdateTask: (id: string, updates: Partial<TaskItem>) => void;
   onDeleteTask: (id: string) => void;
-  onStartFocus: (task: TaskItem, durationMinutes?: number) => void;
+  onStartFocus: (task: TaskItem, durationSeconds?: number, nudgesCount?: number) => void;
   selectedLifeAreaId?: string;
   onClearLifeAreaFilter?: () => void;
 }
@@ -42,33 +47,46 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | TaskStatus>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | TaskPriority>('all');
   const [lifeAreaFilter, setLifeAreaFilter] = useState<string>(selectedLifeAreaId || 'all');
-  const [tagFilter, setTagFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'default' | 'priority' | 'due'>('default');
 
   const [inspectingTask, setInspectingTask] = useState<TaskItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // New task form state
+  // Inline quick-add state
+  const [inlineTitle, setInlineTitle] = useState('');
+  const [inlinePriority, setInlinePriority] = useState<TaskPriority>('medium');
+  const [inlineAreaId, setInlineAreaId] = useState(lifeAreas[0]?.id || 'area-1');
+
+  // Modal new task form state
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newAreaId, setNewAreaId] = useState(lifeAreas[0]?.id || '');
   const [newPriority, setNewPriority] = useState<TaskPriority>('medium');
   const [newDueDate, setNewDueDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const filteredTasks = tasks.filter((task) => {
-    if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    if (statusFilter !== 'all' && task.status !== statusFilter) return false;
-    if (priorityFilter !== 'all' && task.priority !== priorityFilter) return false;
-    if (lifeAreaFilter !== 'all' && task.lifeAreaId !== lifeAreaFilter) return false;
-    if (tagFilter !== 'all' && !task.tags.includes(tagFilter)) return false;
-    return true;
-  });
+  const handleInlineQuickAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inlineTitle.trim()) return;
+
+    triggerHaptic('capture');
+    onAddTask({
+      title: inlineTitle.trim(),
+      lifeAreaId: inlineAreaId || lifeAreas[0]?.id || 'area-1',
+      status: 'todo',
+      priority: inlinePriority,
+      dueDate: new Date().toISOString().split('T')[0],
+      tags: [],
+      focusMinutesTarget: 15,
+    });
+
+    setInlineTitle('');
+  };
 
   const handleCreateTaskSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newAreaId) return;
 
+    triggerHaptic('success');
     onAddTask({
       title: newTitle.trim(),
       description: newDesc.trim() || undefined,
@@ -85,6 +103,45 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
     setShowCreateModal(false);
   };
 
+  // Cycle priority directly on the card
+  const handleCyclePriority = (e: React.MouseEvent, task: TaskItem) => {
+    e.stopPropagation();
+    triggerHaptic('light');
+    const order: TaskPriority[] = ['low', 'medium', 'high'];
+    const currentIndex = order.indexOf(task.priority);
+    const nextPriority = order[(currentIndex + 1) % order.length];
+    onUpdateTask(task.id, { priority: nextPriority });
+  };
+
+  const priorityWeight: Record<TaskPriority, number> = {
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
+  const filteredTasks = tasks
+    .filter((task) => {
+      if (searchQuery && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      if (statusFilter !== 'all' && task.status !== statusFilter) return false;
+      if (priorityFilter !== 'all' && task.priority !== priorityFilter) return false;
+      if (lifeAreaFilter !== 'all' && task.lifeAreaId !== lifeAreaFilter) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'priority') {
+        // High priority first
+        return priorityWeight[b.priority] - priorityWeight[a.priority];
+      }
+      if (sortBy === 'due') {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      }
+      return 0;
+    });
+
   return (
     <div className="space-y-6 pb-28">
       {/* Header & New Task Button */}
@@ -93,13 +150,16 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
           <div className="label text-[#FF5B5B]">Focus Stack</div>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1C1C1A] tracking-tight">Tasks & Micro-steps</h2>
           <p className="text-xs text-[#1C1C1A]/60 font-mono uppercase tracking-wider mt-1">
-            Break tasks down to overcome ADHD activation resistance
+            Categorise tasks by urgency and overcome ADHD activation resistance
           </p>
         </div>
 
         <button
           id="task-list-create-btn"
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            triggerHaptic('light');
+            setShowCreateModal(true);
+          }}
           className="flex items-center justify-center space-x-2 bg-[#FF5B5B] hover:bg-[#ff4242] text-white px-5 py-3 rounded-full text-xs font-mono font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
@@ -125,6 +185,103 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
           </button>
         </div>
       )}
+
+      {/* Fast Inline Quick-Add Task Bar with Urgency Selector */}
+      <div className="light-card rounded-3xl p-4 sm:p-5 shadow-xs border border-black/5 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-mono uppercase font-bold text-[#FF5B5B] flex items-center space-x-1.5">
+            <Plus className="w-3.5 h-3.5" />
+            <span>Quick-Add Task</span>
+          </span>
+          <span className="text-[11px] font-mono text-[#1C1C1A]/50">Press Enter to Add</span>
+        </div>
+
+        <form onSubmit={handleInlineQuickAdd} className="flex flex-col md:flex-row gap-2.5">
+          <input
+            type="text"
+            id="quick-add-task-input"
+            value={inlineTitle}
+            onChange={(e) => setInlineTitle(e.target.value)}
+            placeholder="Type a new task or micro-step... (e.g. Schedule meeting, Draft proposal)"
+            className="flex-1 px-4 py-2.5 rounded-2xl bg-white border border-black/10 text-sm text-[#1C1C1A] placeholder:text-zinc-400 focus:outline-hidden focus:border-[#FF5B5B] font-sans"
+          />
+
+          {/* Priority / Urgency Segmented Selector */}
+          <div className="flex items-center bg-white border border-black/10 rounded-2xl p-1 gap-1">
+            <span className="text-[10px] font-mono uppercase font-bold text-[#1C1C1A]/40 px-2">Urgency:</span>
+            <button
+              type="button"
+              id="inline-priority-low"
+              onClick={() => {
+                triggerHaptic('light');
+                setInlinePriority('low');
+              }}
+              className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center space-x-1 ${
+                inlinePriority === 'low'
+                  ? 'bg-emerald-500 text-white shadow-xs'
+                  : 'text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              <span>Low</span>
+            </button>
+
+            <button
+              type="button"
+              id="inline-priority-medium"
+              onClick={() => {
+                triggerHaptic('light');
+                setInlinePriority('medium');
+              }}
+              className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center space-x-1 ${
+                inlinePriority === 'medium'
+                  ? 'bg-amber-500 text-white shadow-xs'
+                  : 'text-amber-700 hover:bg-amber-50'
+              }`}
+            >
+              <span>Medium</span>
+            </button>
+
+            <button
+              type="button"
+              id="inline-priority-high"
+              onClick={() => {
+                triggerHaptic('light');
+                setInlinePriority('high');
+              }}
+              className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center space-x-1 ${
+                inlinePriority === 'high'
+                  ? 'bg-[#FF5B5B] text-white shadow-xs'
+                  : 'text-[#FF5B5B] hover:bg-rose-50'
+              }`}
+            >
+              <span>High</span>
+            </button>
+          </div>
+
+          {/* Life Area dropdown */}
+          <select
+            id="inline-task-area"
+            value={inlineAreaId}
+            onChange={(e) => setInlineAreaId(e.target.value)}
+            className="px-3 py-2.5 rounded-2xl bg-white border border-black/10 text-xs font-mono text-[#1C1C1A]"
+          >
+            {lifeAreas.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.emoji} {a.name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="submit"
+            id="inline-task-submit"
+            disabled={!inlineTitle.trim()}
+            className="bg-[#FF5B5B] hover:bg-[#ff4242] disabled:opacity-40 text-white px-5 py-2.5 rounded-2xl font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0"
+          >
+            Add
+          </button>
+        </form>
+      </div>
 
       {/* Search & Filter Controls */}
       <div className="light-card rounded-3xl p-5 shadow-xs space-y-4">
@@ -164,10 +321,22 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
             onChange={(e) => setPriorityFilter(e.target.value as any)}
             className="px-4 py-2.5 rounded-2xl bg-white border border-black/10 text-sm text-[#1C1C1A] font-mono"
           >
-            <option value="all">All Priorities</option>
-            <option value="low">Low Energy / Quick Win</option>
-            <option value="medium">Medium Energy</option>
-            <option value="high">High Energy Required</option>
+            <option value="all">All Urgency Levels</option>
+            <option value="high">🔴 High Urgency</option>
+            <option value="medium">🟡 Medium Urgency</option>
+            <option value="low">🟢 Low Urgency / Quick Win</option>
+          </select>
+
+          {/* Sort By dropdown */}
+          <select
+            id="task-sort-by"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="px-4 py-2.5 rounded-2xl bg-white border border-black/10 text-sm text-[#1C1C1A] font-mono"
+          >
+            <option value="default">Default Order</option>
+            <option value="priority">Sort by Urgency (High → Low)</option>
+            <option value="due">Sort by Due Date</option>
           </select>
         </div>
 
@@ -201,7 +370,7 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
         <div className="light-card rounded-3xl p-12 text-center space-y-3">
           <CheckSquare className="w-8 h-8 mx-auto text-[#1C1C1A]/30" />
           <h3 className="text-base font-bold text-[#1C1C1A]">No tasks match your filters</h3>
-          <p className="text-xs text-[#1C1C1A]/60 font-mono">Try adjusting your search or filters.</p>
+          <p className="text-xs text-[#1C1C1A]/60 font-mono">Try adjusting your search, priority filter, or life area.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -219,8 +388,8 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                   exit={{ opacity: 0, y: -14, scale: 0.98 }}
                   transition={{
                     opacity: { duration: 0.15 },
-                    layout: { type: "spring", stiffness: 350, damping: 28 },
-                    y: { type: "spring", stiffness: 350, damping: 28 },
+                    layout: { type: 'spring', stiffness: 350, damping: 28 },
+                    y: { type: 'spring', stiffness: 350, damping: 28 },
                   }}
                   id={`task-item-card-${task.id}`}
                   className={`rounded-3xl p-4 sm:p-5 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
@@ -232,8 +401,12 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                   <div className="flex items-start space-x-3.5">
                     <button
                       id={`task-checkbox-${task.id}`}
-                      onClick={() => onToggleTaskStatus(task.id)}
+                      onClick={() => {
+                        triggerHaptic('toggle');
+                        onToggleTaskStatus(task.id);
+                      }}
                       className="mt-0.5 text-[#1C1C1A]/40 hover:text-[#FF5B5B] cursor-pointer transition-colors"
+                      title={isCompleted ? 'Mark incomplete' : 'Mark complete'}
                     >
                       {isCompleted ? (
                         <CheckCircle2 className="w-5 h-5 text-[#FF5B5B] fill-[#FF5B5B]/20" />
@@ -259,17 +432,25 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                           </span>
                         )}
 
-                        <span
-                          className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full ${
+                        {/* Priority Badge with direct click-to-cycle */}
+                        <button
+                          type="button"
+                          id={`task-priority-badge-${task.id}`}
+                          onClick={(e) => handleCyclePriority(e, task)}
+                          title="Click to cycle priority (Low / Medium / High)"
+                          className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full transition-all cursor-pointer flex items-center space-x-1 ${
                             task.priority === 'high'
-                              ? 'bg-[#FF5B5B]/15 text-[#FF5B5B]'
+                              ? 'bg-[#FF5B5B]/15 text-[#FF5B5B] hover:bg-[#FF5B5B]/25'
                               : task.priority === 'medium'
-                              ? 'bg-amber-500/15 text-amber-700'
-                              : 'bg-black/5 text-[#1C1C1A]/70'
+                              ? 'bg-amber-500/15 text-amber-700 hover:bg-amber-500/25'
+                              : 'bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25'
                           }`}
                         >
-                          {task.priority} energy
-                        </span>
+                          {task.priority === 'high' && <span className="w-1.5 h-1.5 rounded-full bg-[#FF5B5B]"></span>}
+                          {task.priority === 'medium' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>}
+                          {task.priority === 'low' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
+                          <span>{task.priority} urgency</span>
+                        </button>
                       </div>
 
                       {task.description && (
@@ -284,11 +465,10 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                           </span>
                         )}
 
-                        {task.focusMinutesTarget && (
-                          <span className="text-[#1C1C1A] font-bold">
-                            ⏱️ {task.focusMinutesLogged || 0} / {task.focusMinutesTarget}m logged
-                          </span>
-                        )}
+                        <span className="text-[#1C1C1A] font-bold flex items-center space-x-1 bg-black/5 px-2 py-0.5 rounded-md">
+                          <span>⏱️ {formatFocusDuration(task.focusDurationSeconds || (task.focusMinutesTarget || 15) * 60)}</span>
+                          <span className="text-[#FF5B5B]">({typeof task.nudgesCount === 'number' ? task.nudgesCount : (task.focusDurationSeconds || 900) <= 60 ? 1 : 2} 🔔)</span>
+                        </span>
 
                         {task.tags.map((tg) => (
                           <span key={tg} className="text-[#1C1C1A]/40">
@@ -304,7 +484,11 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                     <div className="flex items-center space-x-2 self-end sm:self-center shrink-0">
                       <button
                         id={`task-start-focus-${task.id}`}
-                        onClick={() => onStartFocus(task, task.focusMinutesTarget || 15)}
+                        onClick={() => {
+                          const secs = task.focusDurationSeconds || (task.focusMinutesTarget ? task.focusMinutesTarget * 60 : 15 * 60);
+                          const nudges = typeof task.nudgesCount === 'number' ? task.nudgesCount : secs <= 60 ? 1 : 2;
+                          onStartFocus(task, secs, nudges);
+                        }}
                         className="flex items-center space-x-1.5 bg-[#FF5B5B] hover:bg-[#ff4242] text-white px-4 py-2 rounded-full text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs hover:scale-105 active:scale-95"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
@@ -403,35 +587,76 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label text-white/60 mb-1">
-                      Energy Level
-                    </label>
-                    <select
-                      id="new-task-priority-select"
-                      value={newPriority}
-                      onChange={(e) => setNewPriority(e.target.value as any)}
-                      className="w-full px-4 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
+                {/* Priority / Urgency Selection with segmented buttons */}
+                <div>
+                  <label className="label text-white/60 mb-1.5">
+                    Priority / Urgency Level
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      id="modal-priority-low"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setNewPriority('low');
+                      }}
+                      className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                        newPriority === 'low'
+                          ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 font-bold'
+                          : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
+                      }`}
                     >
-                      <option value="low" className="bg-[#111113]">Low / Quick Win</option>
-                      <option value="medium" className="bg-[#111113]">Medium Focus</option>
-                      <option value="high" className="bg-[#111113]">High Energy Required</option>
-                    </select>
-                  </div>
+                      <span className="text-xs font-mono block">🟢 Low</span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">Quick Win</span>
+                    </button>
 
-                  <div>
-                    <label className="label text-white/60 mb-1">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      id="new-task-due-date"
-                      value={newDueDate}
-                      onChange={(e) => setNewDueDate(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
-                    />
+                    <button
+                      type="button"
+                      id="modal-priority-medium"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setNewPriority('medium');
+                      }}
+                      className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                        newPriority === 'medium'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-400 font-bold'
+                          : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xs font-mono block">🟡 Medium</span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">Standard</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      id="modal-priority-high"
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setNewPriority('high');
+                      }}
+                      className={`p-2.5 rounded-2xl border text-center transition-all cursor-pointer ${
+                        newPriority === 'high'
+                          ? 'bg-[#FF5B5B]/20 border-[#FF5B5B] text-[#FF5B5B] font-bold'
+                          : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xs font-mono block">🔴 High</span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">Urgent</span>
+                    </button>
                   </div>
+                </div>
+
+                <div>
+                  <label className="label text-white/60 mb-1">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    id="new-task-due-date"
+                    value={newDueDate}
+                    onChange={(e) => setNewDueDate(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
+                  />
                 </div>
 
                 <div className="flex items-center justify-end space-x-3 pt-3">
@@ -458,3 +683,4 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
     </div>
   );
 };
+

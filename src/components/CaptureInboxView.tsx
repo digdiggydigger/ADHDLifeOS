@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CaptureItem, LifeArea, Tag } from '../types';
+import { triggerHaptic } from '../utils/haptics';
 import {
   Inbox,
   CheckCircle2,
@@ -13,6 +14,9 @@ import {
   Sparkles,
   Plus,
   X,
+  Maximize2,
+  Image as ImageIcon,
+  Tag as TagIcon,
 } from 'lucide-react';
 
 interface CaptureInboxViewProps {
@@ -30,6 +34,7 @@ interface CaptureInboxViewProps {
       dueDate?: string;
       tags: string[];
       focusMinutesTarget?: number;
+      imageUrl?: string;
     }
   ) => void;
   onPromoteToJournal: (
@@ -58,6 +63,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
   const [activeTabFilter, setActiveTabFilter] = useState<'unprocessed' | 'promoted'>('unprocessed');
   const [promotingCapture, setPromotingCapture] = useState<CaptureItem | null>(null);
   const [promoteMode, setPromoteMode] = useState<'task' | 'journal'>('task');
+  const [selectedPhotoPreview, setSelectedPhotoPreview] = useState<{ url: string; title: string; notes?: string } | null>(null);
 
   // Promote Task form state
   const [taskTitle, setTaskTitle] = useState('');
@@ -81,13 +87,18 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
     setPromotingCapture(capture);
     setPromoteMode(mode);
     setTaskTitle(capture.title);
-    setTaskDescription(capture.transcript || '');
+    const initialDesc = capture.noteText || capture.transcript || '';
+    setTaskDescription(initialDesc);
     setTaskLifeAreaId(capture.suggestedLifeAreaId || lifeAreas[0]?.id || '');
     setTaskPriority('medium');
     setTaskDueDate(new Date().toISOString().split('T')[0]);
     setTaskSelectedTags([]);
     setTaskFocusTarget(15);
-    setJournalContent(capture.transcript || capture.title);
+    setJournalContent(
+      initialDesc
+        ? `${capture.title}\n\n${initialDesc}`
+        : capture.title
+    );
   };
 
   const handleConfirmTaskPromote = (e: React.FormEvent) => {
@@ -102,6 +113,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
       dueDate: taskDueDate || undefined,
       tags: taskSelectedTags,
       focusMinutesTarget: taskFocusTarget,
+      imageUrl: promotingCapture.imageUrl,
     });
 
     setPromotingCapture(null);
@@ -137,13 +149,16 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
           <div className="label text-[#FF5B5B]">Frictionless Ingestion</div>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1C1C1A] tracking-tight">Capture Inbox</h2>
           <p className="text-xs text-[#1C1C1A]/60 font-mono uppercase tracking-wider mt-1">
-            Dump thoughts instantly, triage when executive bandwidth allows
+            Dump thoughts & photos instantly, triage when executive bandwidth allows
           </p>
         </div>
 
         <button
           id="inbox-quick-capture-btn"
-          onClick={onOpenQuickCapture}
+          onClick={() => {
+            triggerHaptic('capture');
+            onOpenQuickCapture();
+          }}
           className="flex items-center justify-center space-x-2 bg-[#FF5B5B] hover:bg-[#ff4242] text-white px-5 py-3 rounded-full text-xs font-mono font-bold uppercase tracking-wider shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
@@ -155,7 +170,10 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
       <div className="flex items-center space-x-2 border-b border-black/5 pb-2 text-xs font-mono uppercase tracking-wider">
         <button
           id="inbox-filter-unprocessed"
-          onClick={() => setActiveTabFilter('unprocessed')}
+          onClick={() => {
+            triggerHaptic('light');
+            setActiveTabFilter('unprocessed');
+          }}
           className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer ${
             activeTabFilter === 'unprocessed'
               ? 'bg-[#111113] text-white'
@@ -167,7 +185,10 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
 
         <button
           id="inbox-filter-promoted"
-          onClick={() => setActiveTabFilter('promoted')}
+          onClick={() => {
+            triggerHaptic('light');
+            setActiveTabFilter('promoted');
+          }}
           className={`px-4 py-2 rounded-full font-bold transition-all cursor-pointer ${
             activeTabFilter === 'promoted'
               ? 'bg-[#111113] text-white'
@@ -189,7 +210,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
           </h3>
           <p className="text-xs text-[#1C1C1A]/60 max-w-sm mx-auto font-mono">
             {activeTabFilter === 'unprocessed'
-              ? 'All captured thoughts have been converted into action tasks or logs. Tap Quick Capture to record any idea.'
+              ? 'All captured thoughts and photos have been converted into action tasks or logs. Tap Quick Capture to record any idea.'
               : 'Triaged thoughts will appear here once promoted.'}
           </p>
         </div>
@@ -202,10 +223,10 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
               <div
                 key={capture.id}
                 id={`inbox-item-${capture.id}`}
-                className="light-card rounded-3xl p-5 shadow-xs hover:border-black/20 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="light-card rounded-3xl p-4 sm:p-5 shadow-xs hover:border-black/20 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
-                <div className="flex items-start space-x-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-white border border-black/5 text-[#1C1C1A] flex items-center justify-center shrink-0">
+                <div className="flex items-start space-x-3.5 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-white border border-black/5 text-[#1C1C1A] flex items-center justify-center shrink-0 shadow-2xs">
                     {capture.type === 'voice' ? (
                       <Mic className="w-5 h-5 text-[#FF5B5B]" />
                     ) : capture.type === 'photo' ? (
@@ -215,20 +236,56 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                     )}
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2 flex-wrap">
-                      <span className="text-sm sm:text-base font-bold text-[#1C1C1A]">{capture.title}</span>
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      <span className="text-sm sm:text-base font-bold text-[#1C1C1A] break-words">{capture.title}</span>
                       {suggestedArea && (
                         <span className="text-xs px-2.5 py-0.5 rounded-full bg-white border border-black/5 text-[#1C1C1A]/70 font-mono">
                           {suggestedArea.emoji} {suggestedArea.name}
                         </span>
                       )}
+                      {capture.type === 'photo' && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-mono border border-purple-200">
+                          Photo Note
+                        </span>
+                      )}
                     </div>
 
-                    {capture.transcript && (
-                      <p className="text-xs text-[#1C1C1A]/80 italic bg-white/70 p-2.5 rounded-xl border border-black/5 font-sans">
-                        "{capture.transcript}"
+                    {/* Accompanying Notes / Thoughts display */}
+                    {(capture.noteText || capture.transcript) && (
+                      <p className="text-xs text-[#1C1C1A]/80 italic bg-white/70 p-2.5 rounded-xl border border-black/5 font-sans leading-relaxed">
+                        "{capture.noteText || capture.transcript}"
                       </p>
+                    )}
+
+                    {/* Photo Thumbnail if present */}
+                    {capture.imageUrl && (
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            triggerHaptic('light');
+                            setSelectedPhotoPreview({
+                              url: capture.imageUrl!,
+                              title: capture.title,
+                              notes: capture.noteText || capture.transcript,
+                            });
+                          }}
+                          className="relative group rounded-xl overflow-hidden border border-black/10 hover:border-purple-500/50 transition-all inline-block shadow-2xs cursor-pointer"
+                        >
+                          <img
+                            src={capture.imageUrl}
+                            alt={capture.title}
+                            className="w-28 h-20 sm:w-36 sm:h-24 object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                            <Maximize2 className="w-4 h-4" />
+                          </div>
+                          <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] font-mono px-1.5 py-0.5 rounded-sm">
+                            View Photo
+                          </div>
+                        </button>
+                      </div>
                     )}
 
                     <span className="text-[11px] text-[#1C1C1A]/50 font-mono block">
@@ -274,6 +331,59 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
         </div>
       )}
 
+      {/* Lightbox Photo Preview Modal */}
+      <AnimatePresence>
+        {selectedPhotoPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+            onClick={() => setSelectedPhotoPreview(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#1C1C1A] text-white rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl space-y-4 border border-white/10"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center space-x-2">
+                  <Camera className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                    {selectedPhotoPreview.title}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedPhotoPreview(null)}
+                  className="p-1.5 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden bg-black/60 border border-white/10 max-h-[65vh] flex items-center justify-center">
+                <img
+                  src={selectedPhotoPreview.url}
+                  alt={selectedPhotoPreview.title}
+                  className="max-h-[60vh] w-auto max-w-full object-contain"
+                />
+              </div>
+
+              {selectedPhotoPreview.notes && (
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-xs text-white/80 font-sans">
+                  <span className="font-mono font-bold text-[#FF5B5B] block mb-1 uppercase text-[10px]">
+                    Captured Thoughts / Context:
+                  </span>
+                  "{selectedPhotoPreview.notes}"
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Promote Triage Modal */}
       <AnimatePresence>
         {promotingCapture && (
@@ -282,7 +392,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs overflow-y-auto"
             onClick={() => setPromotingCapture(null)}
           >
             <motion.div
@@ -291,28 +401,45 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
               exit={{ opacity: 0, scale: 0.94, y: 16 }}
               transition={{ type: 'spring', stiffness: 350, damping: 28 }}
               onClick={(e) => e.stopPropagation()}
-              className="dark-card text-white rounded-[32px] max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5"
+              className="dark-card text-white rounded-3xl sm:rounded-[36px] max-w-lg w-full p-5 sm:p-7 shadow-2xl space-y-4 my-auto max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <div className="flex items-center space-x-2">
                   <Sparkles className="w-5 h-5 text-[#FF5B5B]" />
-                  <h3 className="text-xl font-bold text-white">
+                  <h3 className="text-lg sm:text-xl font-bold text-white">
                     {promoteMode === 'task' ? 'Promote Thought to Action Task' : 'Log Thought to Journal'}
                   </h3>
                 </div>
                 <button
                   id="promote-modal-close"
                   onClick={() => setPromotingCapture(null)}
-                  className="text-white/50 hover:text-white p-1 rounded-full cursor-pointer"
+                  className="text-white/50 hover:text-white p-1 rounded-full cursor-pointer hover:bg-white/10"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
+              {/* Show attached photo thumbnail in the modal if present */}
+              {promotingCapture.imageUrl && (
+                <div className="flex items-center space-x-3 p-2.5 bg-white/5 border border-white/10 rounded-2xl">
+                  <img
+                    src={promotingCapture.imageUrl}
+                    alt="Attached Capture"
+                    className="w-14 h-14 rounded-xl object-cover border border-white/15 shrink-0"
+                  />
+                  <div className="text-xs">
+                    <span className="font-mono text-purple-300 font-bold block">Photo Attachment Linked</span>
+                    <span className="text-white/60 text-[11px]">
+                      This photo will remain bound to this {promoteMode === 'task' ? 'task' : 'journal entry'}.
+                    </span>
+                  </div>
+                </div>
+              )}
+
             {promoteMode === 'task' ? (
               <form onSubmit={handleConfirmTaskPromote} className="space-y-4">
                 <div>
-                  <label className="label text-white/60 mb-1">
+                  <label className="label text-white/60 mb-1 text-[11px]">
                     Task Title
                   </label>
                   <input
@@ -326,7 +453,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="label text-white/60 mb-1">
+                  <label className="label text-white/60 mb-1 text-[11px]">
                     Description & Micro-steps
                   </label>
                   <textarea
@@ -335,13 +462,13 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                     value={taskDescription}
                     onChange={(e) => setTaskDescription(e.target.value)}
                     placeholder="Break into tiny 2-min starter steps..."
-                    className="w-full px-4 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white focus:outline-hidden focus:border-[#FF5B5B] placeholder:text-zinc-400"
+                    className="w-full px-4 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white focus:outline-hidden focus:border-[#FF5B5B] placeholder:text-zinc-400"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label text-white/60 mb-1">
+                    <label className="label text-white/60 mb-1 text-[11px]">
                       Life Area
                     </label>
                     <select
@@ -349,7 +476,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                       id="promote-task-life-area-select"
                       value={taskLifeAreaId}
                       onChange={(e) => setTaskLifeAreaId(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white font-mono"
                     >
                       {lifeAreas.map((area) => (
                         <option key={area.id} value={area.id} className="bg-[#111113]">
@@ -360,14 +487,14 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="label text-white/60 mb-1">
+                    <label className="label text-white/60 mb-1 text-[11px]">
                       Priority / Energy Level
                     </label>
                     <select
                       id="promote-task-priority-select"
                       value={taskPriority}
                       onChange={(e) => setTaskPriority(e.target.value as any)}
-                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white font-mono"
                     >
                       <option value="low" className="bg-[#111113]">Low Energy / Quick Win</option>
                       <option value="medium" className="bg-[#111113]">Medium Focus</option>
@@ -378,7 +505,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label text-white/60 mb-1">
+                    <label className="label text-white/60 mb-1 text-[11px]">
                       Due Date
                     </label>
                     <input
@@ -386,32 +513,32 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                       id="promote-task-due-date"
                       value={taskDueDate}
                       onChange={(e) => setTaskDueDate(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="label text-white/60 mb-1">
+                    <label className="label text-white/60 mb-1 text-[11px]">
                       Target Focus (mins)
                     </label>
                     <input
                       type="number"
-                      min={5}
+                      min={1}
                       max={120}
-                      step={5}
+                      step={1}
                       id="promote-task-focus-mins"
                       value={taskFocusTarget}
                       onChange={(e) => setTaskFocusTarget(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white font-mono"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end space-x-3 pt-3">
+                <div className="flex items-center justify-end space-x-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setPromotingCapture(null)}
-                    className="px-4 py-2 text-xs font-mono uppercase text-white/60 hover:text-white rounded-full cursor-pointer"
+                    className="px-4 py-2 text-xs font-mono uppercase text-white/60 hover:text-white rounded-full cursor-pointer font-bold"
                   >
                     Cancel
                   </button>
@@ -427,7 +554,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
             ) : (
               <form onSubmit={handleConfirmJournalPromote} className="space-y-4">
                 <div>
-                  <label className="label text-white/60 mb-1">
+                  <label className="label text-white/60 mb-1 text-[11px]">
                     Journal Title
                   </label>
                   <input
@@ -441,7 +568,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="label text-white/60 mb-1">
+                  <label className="label text-white/60 mb-1 text-[11px]">
                     Journal Reflection
                   </label>
                   <textarea
@@ -450,13 +577,13 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                     id="promote-journal-content-input"
                     value={journalContent}
                     onChange={(e) => setJournalContent(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white focus:outline-hidden focus:border-[#FF5B5B]"
+                    className="w-full px-4 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white focus:outline-hidden focus:border-[#FF5B5B]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label text-white/60 mb-1">
+                    <label className="label text-white/60 mb-1 text-[11px]">
                       Life Area
                     </label>
                     <select
@@ -464,7 +591,7 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                       id="promote-journal-life-area-select"
                       value={taskLifeAreaId}
                       onChange={(e) => setTaskLifeAreaId(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white font-mono"
                     >
                       {lifeAreas.map((area) => (
                         <option key={area.id} value={area.id} className="bg-[#111113]">
@@ -475,14 +602,14 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="label text-white/60 mb-1">
+                    <label className="label text-white/60 mb-1 text-[11px]">
                       Energy Level
                     </label>
                     <select
                       id="promote-journal-energy-select"
                       value={journalEnergy}
                       onChange={(e) => setJournalEnergy(e.target.value as any)}
-                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-sm text-white font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-white/10 border border-white/10 text-xs sm:text-sm text-white font-mono"
                     >
                       <option value="low" className="bg-[#111113]">Low Energy</option>
                       <option value="medium" className="bg-[#111113]">Medium Energy</option>
@@ -491,11 +618,11 @@ export const CaptureInboxView: React.FC<CaptureInboxViewProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end space-x-3 pt-3">
+                <div className="flex items-center justify-end space-x-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setPromotingCapture(null)}
-                    className="px-4 py-2 text-xs font-mono uppercase text-white/60 hover:text-white rounded-full cursor-pointer"
+                    className="px-4 py-2 text-xs font-mono uppercase text-white/60 hover:text-white rounded-full cursor-pointer font-bold"
                   >
                     Cancel
                   </button>

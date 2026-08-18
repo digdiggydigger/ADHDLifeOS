@@ -25,6 +25,8 @@ export interface CaptureItem {
   type: CaptureType;
   transcript?: string;
   audioDurationSeconds?: number;
+  imageUrl?: string;
+  noteText?: string;
   createdAt: string;
   status: CaptureStatus;
   suggestedLifeAreaId?: string;
@@ -42,8 +44,11 @@ export interface TaskItem {
   createdAt: string;
   completedAt?: string;
   focusMinutesTarget?: number;
+  focusDurationSeconds?: number; // Minimum 30 seconds
+  nudgesCount?: number; // Number of nudges during the session
   focusMinutesLogged?: number;
   captureItemId?: string;
+  imageUrl?: string;
 }
 
 export interface JournalEntry {
@@ -74,6 +79,24 @@ export interface FocusSessionState {
   remainingSeconds: number;
   isRunning: boolean;
   isPaused: boolean;
+  nudgesCount: number;
+  nudgeCheckpoints: number[]; // Elapsed seconds when nudges are triggered
+  triggeredNudgeIndices: number[]; // Checkpoints that already fired
+  lastNudgeMessage?: string;
+  lastNudgeTimestamp?: number;
+}
+
+export interface NudgeHistoryRecord {
+  id: string;
+  taskId: string | null;
+  taskTitle: string;
+  lifeAreaEmoji: string;
+  timestamp: string;
+  elapsedSeconds: number;
+  totalDurationSeconds: number;
+  nudgeIndex: number;
+  totalNudges: number;
+  reaction?: 'on_track' | 'refocused' | 'needed_break' | 'completed_step';
 }
 
 export type ActiveTab = 'home' | 'capture' | 'tasks' | 'journal' | 'nudges' | 'settings';
