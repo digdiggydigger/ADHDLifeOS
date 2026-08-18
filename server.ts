@@ -300,12 +300,12 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distPath));
     // For SPA fallback in Express 5
     app.use((req, res, next) => {
       if (req.method === 'GET' && !req.path.startsWith('/api/')) {
-        return res.sendFile(path.join(distPath, 'index.html'));
+        return res.sendFile(path.resolve(distPath, 'index.html'));
       }
       next();
     });
