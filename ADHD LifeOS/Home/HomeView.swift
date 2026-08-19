@@ -157,6 +157,12 @@ struct HomeView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    DailySummaryView(
+                        openTaskCount: counts.reduce(0) { $0 + $1.openTaskCount },
+                        lifeAreaCount: counts.count,
+                        inboxCount: inboxCount,
+                        dueNudgeCount: nudgesService.dueNudges().count
+                    )
                     supabaseBridgeWarningBanner
                     dueNudgesStrip
                     // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
