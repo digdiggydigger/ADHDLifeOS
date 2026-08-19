@@ -39,9 +39,13 @@ final class CaptureInboxService: ObservableObject {
     /// failure; this guards *concurrency*. Cleared on every exit path via `defer`.
     private var capturesBeingPromoted: Set<UUID> = []
 
-    init(client: CaptureClientAdapting, transcriber: VoiceTranscribing = SFSpeechVoiceTranscriber()) {
+    /// `transcriber` defaults via `nil` rather than `= SFSpeechVoiceTranscriber()`: a default
+    /// argument is evaluated in the caller's context, which is synchronous nonisolated — calling
+    /// the main-actor-isolated `SFSpeechVoiceTranscriber.init` there was a concurrency warning.
+    /// Resolving the default inside this `@MainActor` init is isolation-correct.
+    init(client: CaptureClientAdapting, transcriber: VoiceTranscribing? = nil) {
         self.client = client
-        self.transcriber = transcriber
+        self.transcriber = transcriber ?? SFSpeechVoiceTranscriber()
     }
 
     var captures: [Capture] {

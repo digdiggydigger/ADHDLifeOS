@@ -40,7 +40,11 @@ final class VoiceCapturePlayer: NSObject, ObservableObject {
         endObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.isPlaying = false }
+            // Rebind before the Task: a `weak` capture is a mutable binding, and the inner
+            // closure referencing it directly is a Swift 6 concurrency error. The strong
+            // binding lives only for the one main-actor hop below.
+            guard let self else { return }
+            Task { @MainActor in self.isPlaying = false }
         }
     }
 

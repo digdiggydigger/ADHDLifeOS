@@ -5,10 +5,30 @@
 //  Created by E Anthony on 17/07/2026.
 //
 
+import FirebaseCore
 import SwiftUI
+
+/// Configures Firebase at the earliest app-lifecycle point, per Firebase's canonical setup. The
+/// `FirebaseApp.app() == nil` guard is load-bearing in BOTH places it appears: `ADHD_LifeOSApp.init`
+/// runs before this delegate callback and constructs the Firebase adapters, so `FirebaseManager`'s
+/// own lazy configure usually wins the race — and calling `configure()` twice raises an exception.
+/// Keeping both guarded paths means configuration is exactly-once and always precedes any
+/// Firestore/Auth access, regardless of which entry point runs first.
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
+        return true
+    }
+}
 
 @main
 struct ADHD_LifeOSApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var authService: AuthService
     private let homeClient: HomeClientAdapting
     private let tasksClient: TasksClientAdapting

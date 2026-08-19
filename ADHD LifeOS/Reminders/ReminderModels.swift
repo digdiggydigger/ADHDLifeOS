@@ -118,23 +118,28 @@ struct RemindersResponseEnvelope: Decodable {
 /// correct because it genuinely is UTC; for `datetime` this is a deliberate choice to treat it as
 /// a naive wall-clock value and never shift it, avoiding the BST/UTC off-by-one-hour bug class
 /// already documented in `ARCHITECTURE.md` (web's `isNudgeDue` fires an hour late during BST).
+/// All members are `nonisolated`: these pure helpers are called from synchronous nonisolated
+/// contexts (`Reminder.init(from:)` decoding off the main actor), so under the module's
+/// default-MainActor isolation they must opt out explicitly. Plain `nonisolated` is sufficient
+/// for the formatter constants too — `DateFormatter` is `Sendable` (and thread-safe for
+/// formatting/parsing) in current SDKs, and these are never mutated after init.
 enum ReminderDateParsing {
-    static func parseCreated(_ string: String) -> Date? {
+    nonisolated static func parseCreated(_ string: String) -> Date? {
         createdFormatter.date(from: string)
     }
 
-    static func parseDatetime(_ string: String) -> Date? {
+    nonisolated static func parseDatetime(_ string: String) -> Date? {
         datetimeFormatter.date(from: string)
     }
 
     /// Renders a parsed date back to display text with no device-timezone shift — the formatter
     /// is pinned to UTC, the same zone used to parse, so the digits shown always match the
     /// original string's wall-clock hour exactly.
-    static func displayString(for date: Date) -> String {
+    nonisolated static func displayString(for date: Date) -> String {
         displayFormatter.string(from: date)
     }
 
-    private static func makeFormatter(dateFormat: String) -> DateFormatter {
+    nonisolated private static func makeFormatter(dateFormat: String) -> DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(identifier: "UTC")
@@ -142,7 +147,10 @@ enum ReminderDateParsing {
         return formatter
     }
 
-    private static let createdFormatter = makeFormatter(dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
-    private static let datetimeFormatter = makeFormatter(dateFormat: "yyyy-MM-dd'T'HH:mm:ss")
-    private static let displayFormatter = makeFormatter(dateFormat: "MMM d, yyyy 'at' h:mm a")
+    nonisolated private static let createdFormatter =
+        makeFormatter(dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
+    nonisolated private static let datetimeFormatter =
+        makeFormatter(dateFormat: "yyyy-MM-dd'T'HH:mm:ss")
+    nonisolated private static let displayFormatter =
+        makeFormatter(dateFormat: "MMM d, yyyy 'at' h:mm a")
 }
