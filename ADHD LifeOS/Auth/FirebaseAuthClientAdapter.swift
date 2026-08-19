@@ -25,7 +25,13 @@ struct FirebaseAuthClientAdapter: AuthClientAdapting {
     }
 
     func restoredUser() async -> AuthUser? {
-        manager.currentUser.map(Self.authUser(from:))
+        guard let user = manager.currentUser else { return nil }
+        // Same best-effort seeding hook as signIn/signUp: an account whose first entry into the
+        // app is a restored session (console-created account, reinstalled device) — or whose
+        // data was cleared server-side — still gets the starter content. The `seeded_at` marker
+        // makes this a single cheap read on every normal launch.
+        try? await manager.seedDefaultContentIfNeeded()
+        return Self.authUser(from: user)
     }
 
     func signIn(email: String, password: String) async throws -> AuthUser {
