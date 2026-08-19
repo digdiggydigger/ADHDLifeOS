@@ -1,6 +1,36 @@
 {
   "images" : [
     {
+      "filename" : "AppIcon-1024.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "AppIcon-1024-dark.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "tinted"
+        }
+      ],
+      "filename" : "AppIcon-1024-tinted.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
       "filename" : "AppIcon-20@2x.png",
       "idiom" : "iphone",
       "scale" : "2x",
@@ -49,33 +79,8 @@
       "size" : "60x60"
     },
     {
-      "filename" : "AppIcon-1024.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "AppIcon-1024-dark.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "tinted"
-        }
-      ],
-      "filename" : "AppIcon-1024-tinted.png",
-      "idiom" : "universal",
-      "platform" : "ios",
+      "idiom" : "ios-marketing",
+      "scale" : "1x",
       "size" : "1024x1024"
     }
   ],
