@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// ADHD LifeOS — Firestore security rules (2026-08-19).
+// Schema: everything lives in per-user subcollections under users/{uid}; document IDs are the
+// app models' UUID strings. These rules close the test-mode gap found during the 2026-08-19
+// account clear (any authenticated user could read/write anyone's data).
+//
+// Two structural decisions mirrored from the app layer (FirebaseManager):
+// - Per-user isolation: only the signed-in owner reaches users/{uid} and its subcollections.
+// - logs is APPEND-ONLY: create/read allowed, update/delete denied — the same design the old
+//   Supabase RLS enforced and LogModels.swift documents. Note Firestore allows are additive
+//   across overlapping matches, so the generic collection rule below must NOT list 'logs',
+//   otherwise it would silently re-grant update/delete here.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      // The profile document itself: email, created_at, and the seeded_at first-login marker.
+      allow read, write: if isOwner(uid);
+
+      // Append-only journal/log entries.
+      match /logs/{logId} {
+        allow read, create: if isOwner(uid);
+        allow update, delete: if false;
+      }
+
+      // Every other app collection gets full owner CRUD. Enumerated rather than a bare
+      // wildcard so an unexpected collection name is denied by default ('logs' deliberately
+      // absent — see header).
+      match /{collection}/{docId} {
+        allow read, write: if isOwner(uid)
+          && collection in ['tasks', 'life_areas', 'tags', 'captures', 'nudges', 'reminders'];
+      }
+    }
+  }
+}

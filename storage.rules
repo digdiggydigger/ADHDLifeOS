@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// ADHD LifeOS — Firebase Storage rules (2026-08-19).
+// Capture media (voice notes, photos) is uploaded by FirebaseManager+Storage.swift to
+// users/{uid}/captures/{uuid}.{ext}. Same per-user isolation as Firestore, plus a size cap so
+// a runaway upload can't fill the bucket (largest legitimate object is a camera photo).
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 25 * 1024 * 1024;
+    }
+  }
+}
