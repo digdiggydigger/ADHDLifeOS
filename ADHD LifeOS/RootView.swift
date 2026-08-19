@@ -20,6 +20,7 @@ struct RootView: View {
     let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
     @State private var isPresentingQuickCapture = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
     /// for exactly this reason. The factory adds Live Activity mirroring on iOS 16.1+ (§7 gate),
     /// so the countdown also lives on the Lock Screen / Dynamic Island.
@@ -82,19 +83,26 @@ struct RootView: View {
                 }
                 .overlay(alignment: .bottom) {
                     // Sits above the tab bar, mirroring the web's `fixed bottom-24` placement.
-                    FocusTimerBar(service: focusService)
-                        .padding(.bottom, 60)
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    Button {
-                        isPresentingQuickCapture = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 48))
+                    // The quick-capture button shares this stack so an active sprint pushes it
+                    // ABOVE the timer bar instead of letting it occlude the bar's controls
+                    // (E's bug report, 2026-08-19).
+                    VStack(alignment: .trailing, spacing: 8) {
+                        Button {
+                            isPresentingQuickCapture = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 48))
+                        }
+                        .padding(.trailing, 20)
+                        .accessibilityIdentifier("quickCaptureButton")
+
+                        FocusTimerBar(service: focusService)
                     }
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 70)
-                    .accessibilityIdentifier("quickCaptureButton")
+                    .padding(.bottom, 60)
+                    .animation(
+                        reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+                        value: focusService.isActive
+                    )
                 }
                 .sheet(isPresented: $isPresentingQuickCapture) {
                     QuickCaptureView(client: captureClient) {}

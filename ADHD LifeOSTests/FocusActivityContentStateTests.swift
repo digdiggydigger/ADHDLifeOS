@@ -83,6 +83,46 @@ final class FocusActivityContentStateTests: XCTestCase {
         XCTAssertEqual(state.frozenProgress, 1)
     }
 
+    // MARK: - frozenRemainingText (the paused frame's static readout)
+
+    // `Text(timerInterval:pauseTime:)` does not actually freeze inside Live Activity
+    // presentations (observed live on E's iPhone, 2026-08-19), so the paused frame renders this
+    // static string instead — formatted like the OS timer's `showsHours: false` style (unpadded
+    // minutes, padded seconds) so pausing doesn't visibly shift the format.
+
+    func testFrozenRemainingText_whilePaused_isTheFrozenRemainder() {
+        let state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(durationSeconds: 900, pausedRemainingSeconds: 300), now: now
+        )
+
+        XCTAssertEqual(state.frozenRemainingText, "5:00")
+    }
+
+    func testFrozenRemainingText_padsSecondsButNotMinutes() {
+        let state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(durationSeconds: 900, pausedRemainingSeconds: 65), now: now
+        )
+
+        XCTAssertEqual(state.frozenRemainingText, "1:05")
+    }
+
+    func testFrozenRemainingText_rollsHoursIntoMinutes() {
+        let state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(durationSeconds: 7200, pausedRemainingSeconds: 3900), now: now
+        )
+
+        XCTAssertEqual(state.frozenRemainingText, "65:00")
+    }
+
+    func testFrozenRemainingText_neverGoesNegative() {
+        var state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(durationSeconds: 900, pausedRemainingSeconds: 0), now: now
+        )
+        state.deadline = now.addingTimeInterval(-30)
+
+        XCTAssertEqual(state.frozenRemainingText, "0:00")
+    }
+
     func testFrozenProgress_withZeroDuration_isZeroNotNaN() {
         let state = FocusActivityAttributes.ContentState(
             snapshot: snapshot(durationSeconds: 0, pausedRemainingSeconds: 0), now: now

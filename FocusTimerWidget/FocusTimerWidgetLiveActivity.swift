@@ -54,10 +54,9 @@ struct FocusTimerWidgetLiveActivity: Widget {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    FocusCountdownReadout(state: context.state, isComplete: isComplete)
+                    FocusCountdownReadout(state: context.state, isComplete: isComplete, timerMaxWidth: 72)
                         .font(.title3.weight(.bold))
                         .foregroundStyle(Color.sprintAccent)
-                        .frame(maxWidth: 72, alignment: .trailing)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     FocusSprintProgressTrack(state: context.state, isComplete: isComplete)
@@ -66,10 +65,9 @@ struct FocusTimerWidgetLiveActivity: Widget {
             } compactLeading: {
                 Text(context.state.lifeAreaEmoji)
             } compactTrailing: {
-                FocusCountdownReadout(state: context.state, isComplete: isComplete)
+                FocusCountdownReadout(state: context.state, isComplete: isComplete, timerMaxWidth: 56)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(Color.sprintAccent)
-                    .frame(maxWidth: 56, alignment: .trailing)
             } minimal: {
                 if isComplete {
                     Image(systemName: "checkmark.circle.fill")
@@ -97,12 +95,15 @@ struct FocusLiveActivityLockScreenView: View {
 
     private var isComplete: Bool { state.isCompleted || isStale }
 
+    // Prominence pass (E, 2026-08-19): the countdown is the hero — a large coral numeral rather
+    // than the earlier small pill — with 16pt group separation so the banner reads airy, not
+    // cramped, at a glance.
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 8) {
                 Text(state.lifeAreaEmoji)
-                    .font(.title3)
-                    .frame(width: 40, height: 40)
+                    .font(.title2)
+                    .frame(width: 44, height: 44)
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -111,66 +112,63 @@ struct FocusLiveActivityLockScreenView: View {
                         .textCase(.uppercase)
                         .foregroundStyle(isComplete ? Color.sprintAccent : Color.secondary)
                     Text(state.taskTitle)
-                        .font(.footnote.weight(.bold))
+                        .font(.subheadline.weight(.bold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
 
                 Spacer(minLength: 8)
 
-                countdownPill
+                FocusCountdownReadout(state: state, isComplete: isComplete)
+                    .font(.title.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Color.sprintAccent)
             }
 
-            FocusSprintProgressTrack(state: state, isComplete: isComplete)
+            VStack(alignment: .leading, spacing: 8) {
+                FocusSprintProgressTrack(state: state, isComplete: isComplete)
 
-            if !isComplete, state.checkpointCount > 0 {
-                Text("\(state.checkpointsReached) of \(state.checkpointCount) checkpoints")
-                    .font(.caption2.monospaced())
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    /// The tinted capsule mirroring the in-app bar's `MM:SS` pill.
-    private var countdownPill: some View {
-        Group {
-            if isComplete {
-                Image(systemName: "checkmark")
-                    .font(.callout.weight(.bold))
-            } else {
-                FocusCountdownReadout(state: state, isComplete: false)
-                    .font(.callout.monospacedDigit().weight(.bold))
+                if !isComplete, state.checkpointCount > 0 {
+                    Text("\(state.checkpointsReached) of \(state.checkpointCount) checkpoints")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
             }
         }
-        .foregroundStyle(.white)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(Color.sprintAccent, in: Capsule())
     }
 }
 
-/// The single countdown readout every presentation shares. While paused, `pauseTime` pins the
-/// OS-rendered clock to the frozen remainder; when complete, a checkmark replaces it.
+/// The single countdown readout every presentation shares. While paused it renders a static
+/// string; when complete, a checkmark replaces it.
 private struct FocusCountdownReadout: View {
     let state: FocusActivityAttributes.ContentState
     let isComplete: Bool
+    /// Cap for the RUNNING timer text only — `Text(timerInterval:)` claims greedy width in the
+    /// island's compact slots. The static branches size to their content and must NOT share the
+    /// cap: it clipped the paused readout's leading digit ("13:50" → "3:50", observed
+    /// in-simulator 2026-08-19).
+    var timerMaxWidth: CGFloat?
 
     var body: some View {
-        if isComplete {
-            Image(systemName: "checkmark.circle.fill")
-        } else {
-            Text(
-                timerInterval: state.timerInterval,
-                pauseTime: state.pausedAt,
-                countsDown: true,
-                showsHours: false
-            )
-            .monospacedDigit()
-            .multilineTextAlignment(.trailing)
-            // §1 layout safety: the island's trailing regions are narrow — scale, never wrap.
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
+        Group {
+            if isComplete {
+                Image(systemName: "checkmark.circle.fill")
+            } else if state.isPaused {
+                // Static text, NOT `Text(timerInterval:pauseTime:)` — the pauseTime freeze does
+                // not take effect inside Live Activity presentations (observed on-device), so a
+                // "paused" sprint kept counting down. The engine's frozen remainder is rendered
+                // directly instead.
+                Text(state.frozenRemainingText)
+                    .monospacedDigit()
+            } else {
+                Text(timerInterval: state.timerInterval, countsDown: true, showsHours: false)
+                    .monospacedDigit()
+                    .frame(maxWidth: timerMaxWidth, alignment: .trailing)
+            }
         }
+        .multilineTextAlignment(.trailing)
+        // §1 layout safety: the island's trailing regions are narrow — scale, never wrap.
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
     }
 }
 

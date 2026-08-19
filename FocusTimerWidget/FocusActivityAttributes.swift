@@ -47,5 +47,15 @@ nonisolated struct FocusActivityAttributes: ActivityAttributes {
             let remaining = pausedAt.map { deadline.timeIntervalSince($0) } ?? 0
             return min(1, max(0, (Double(durationSeconds) - remaining) / Double(durationSeconds)))
         }
+
+        /// The paused frame's readout, rendered as plain text because
+        /// `Text(timerInterval:pauseTime:)` does not actually freeze inside Live Activity
+        /// presentations (observed live on-device, 2026-08-19). Formatted like the OS timer's
+        /// `showsHours: false` rendering — unpadded minutes, padded seconds, hours rolled into
+        /// minutes — so pausing doesn't visibly shift the format. Meaningful only while paused.
+        var frozenRemainingText: String {
+            let remaining = max(0, Int((pausedAt.map { deadline.timeIntervalSince($0) } ?? 0).rounded()))
+            return "\(remaining / 60):" + String(format: "%02d", remaining % 60)
+        }
     }
 }
