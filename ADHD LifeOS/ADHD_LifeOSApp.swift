@@ -7,6 +7,7 @@
 
 import FirebaseCore
 import SwiftUI
+import UserNotifications
 
 /// Configures Firebase at the earliest app-lifecycle point, per Firebase's canonical setup. The
 /// `FirebaseApp.app() == nil` guard is load-bearing in BOTH places it appears: `ADHD_LifeOSApp.init`
@@ -22,7 +23,33 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
         }
+        // Without a delegate, iOS SILENTLY SUPPRESSES every notification while the app is
+        // foregrounded — which is why correctly-scheduled task nudges, due-moment alerts and
+        // Nudges-tab reminders all appeared to do nothing when tested with the app open (found
+        // 2026-08-20). Registering here, before any scheduling can occur, is the only supported
+        // place: the delegate must be set before the app finishes launching.
+        UNUserNotificationCenter.current().delegate = ForegroundNotificationPresenter.shared
         return true
+    }
+}
+
+/// Presents notifications that come due while the app is in the foreground.
+///
+/// A focus checkpoint is worth interrupting for even when the user is staring at the app — that is
+/// the entire point of a nudge — so these are shown as a banner with sound rather than swallowed.
+final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = ForegroundNotificationPresenter()
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        if #available(iOS 14.0, *) {
+            completionHandler([.banner, .list, .sound])
+        } else {
+            completionHandler([.alert, .sound])
+        }
     }
 }
 

@@ -142,17 +142,26 @@ extension FocusSessionService {
     /// awaits the mirror's pending ActivityKit call so the redraw lands before the system
     /// re-suspends the app.
     static func withLiveActivityMirroring(logger: FocusSessionLogging) -> FocusSessionService {
-        guard #available(iOS 16.1, *) else { return FocusSessionService(logger: logger) }
+        let notifications = NotificationCenterFocusNudgeAdapter()
+        guard #available(iOS 16.1, *) else {
+            return FocusSessionService(logger: logger, notificationScheduler: notifications)
+        }
         let mirror = FocusActivityKitMirror()
-        let service = FocusSessionService(logger: logger, activityMirror: mirror)
+        let service = FocusSessionService(
+            logger: logger, activityMirror: mirror, notificationScheduler: notifications
+        )
         if #available(iOS 17.0, *) {
             FocusSprintIntentActions.pauseResume = { [weak service, weak mirror] in
                 service?.togglePause()
                 await mirror?.waitForPendingUpdates()
+                // A pause must also WITHDRAW the pending nudges before the app is re-suspended,
+                // or the OS still fires them while the sprint sits frozen.
+                await service?.pendingNotificationWork()
             }
             FocusSprintIntentActions.stop = { [weak service, weak mirror] in
                 await service?.stop()
                 await mirror?.waitForPendingUpdates()
+                await service?.pendingNotificationWork()
             }
         }
         return service
