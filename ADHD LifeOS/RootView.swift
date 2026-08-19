@@ -17,7 +17,6 @@ struct RootView: View {
     let taskCountdownNudgeSchedulingClient: TaskCountdownNudgeSchedulingAdapting
     let nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting
     let lifeAreaDetailClient: LifeAreaDetailClientAdapting
-    let remindersClient: RemindersClientAdapting
 
     @State private var isPresentingQuickCapture = false
 
@@ -50,21 +49,17 @@ struct RootView: View {
                         .tabItem { Label("Tasks", systemImage: "checklist") }
                     JournalView(client: journalClient)
                         .tabItem { Label("Journal", systemImage: "book") }
-                    // TEMPORARY TAB SWAP (E's decision 2026-07-22, see ARCHITECTURE.md §3 and the
-                    // AWS Reminders View feature block in the CC handoff doc) — Nudges tab entry
-                    // commented out, not deleted. Restoring it is uncommenting this block and
-                    // removing the Reminders tab below.
-                    // NavigationStack {
-                    //     NudgesView(
-                    //         client: nudgesClient,
-                    //         notificationSchedulingClient: nudgeNotificationSchedulingClient
-                    //     )
-                    // }
-                    //     .tabItem { Label("Nudges", systemImage: "bell") }
+                    // Tab swap reverted (E, 2026-08-19): Nudges is back, Reminders removed — its
+                    // Poke/DynamoDB source didn't survive the Firebase cutover, so the tab only
+                    // ever showed an empty list. The Reminders feature files stay compiled but
+                    // dormant, the same arrangement Nudges had during the 2026-07-22 swap.
                     NavigationStack {
-                        RemindersView(client: remindersClient)
+                        NudgesView(
+                            client: nudgesClient,
+                            notificationSchedulingClient: nudgeNotificationSchedulingClient
+                        )
                     }
-                        .tabItem { Label("Reminders", systemImage: "clock.badge") }
+                        .tabItem { Label("Nudges", systemImage: "bell") }
                 }
                 .overlay(alignment: .bottomTrailing) {
                     Button {
@@ -194,10 +189,6 @@ struct RootView: View {
         func fetchLogs(lifeAreaId: UUID) async throws -> [Log] { [] }
     }
 
-    struct PreviewRemindersClient: RemindersClientAdapting {
-        func fetchReminders() async throws -> [Reminder] { [] }
-    }
-
     return RootView(
         authService: AuthService(client: PreviewAuthClient()),
         homeClient: PreviewHomeClient(),
@@ -209,7 +200,6 @@ struct RootView: View {
         journalClient: PreviewJournalClient(),
         taskCountdownNudgeSchedulingClient: PreviewNudgeSchedulingClient(),
         nudgeNotificationSchedulingClient: PreviewNudgeNotificationSchedulingClient(),
-        lifeAreaDetailClient: PreviewLifeAreaDetailClient(),
-        remindersClient: PreviewRemindersClient()
+        lifeAreaDetailClient: PreviewLifeAreaDetailClient()
     )
 }

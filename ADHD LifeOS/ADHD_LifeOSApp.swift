@@ -20,7 +20,6 @@ struct ADHD_LifeOSApp: App {
     private let taskCountdownNudgeSchedulingClient: TaskCountdownNudgeSchedulingAdapting
     private let nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
-    private let remindersClient: RemindersClientAdapting
 
     init() {
         // Single backend: everything below is Firestore/Firebase Auth via `FirebaseManager` —
@@ -38,7 +37,6 @@ struct ADHD_LifeOSApp: App {
         taskCountdownNudgeSchedulingClient = NotificationCenterCountdownNudgeAdapter()
         nudgeNotificationSchedulingClient = NotificationCenterNudgeAdapter()
         lifeAreaDetailClient = FirebaseLifeAreaDetailClientAdapter()
-        remindersClient = FirebaseRemindersClientAdapter()
     }
 
     var body: some Scene {
@@ -54,8 +52,7 @@ struct ADHD_LifeOSApp: App {
                 journalClient: journalClient,
                 taskCountdownNudgeSchedulingClient: taskCountdownNudgeSchedulingClient,
                 nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
-                lifeAreaDetailClient: lifeAreaDetailClient,
-                remindersClient: remindersClient
+                lifeAreaDetailClient: lifeAreaDetailClient
             )
                 .onOpenURL { url in
                     Task { await authService.completeSession(from: url) }
