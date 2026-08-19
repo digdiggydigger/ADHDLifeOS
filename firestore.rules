@@ -7,10 +7,11 @@ rules_version = '2';
 //
 // Two structural decisions mirrored from the app layer (FirebaseManager):
 // - Per-user isolation: only the signed-in owner reaches users/{uid} and its subcollections.
-// - logs is APPEND-ONLY: create/read allowed, update/delete denied — the same design the old
-//   Supabase RLS enforced and LogModels.swift documents. Note Firestore allows are additive
-//   across overlapping matches, so the generic collection rule below must NOT list 'logs',
-//   otherwise it would silently re-grant update/delete here.
+// - logs is append-only for EDITS: create/read/delete allowed, update denied. Entries can never
+//   be rewritten (the design the old Supabase RLS enforced and LogModels.swift documents), but
+//   owner delete is allowed as of 2026-08-19 so in-app account deletion can cascade the journal.
+//   Note Firestore allows are additive across overlapping matches, so the generic collection
+//   rule below must NOT list 'logs', otherwise it would silently re-grant update here.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(uid) {
