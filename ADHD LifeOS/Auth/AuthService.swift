@@ -111,6 +111,15 @@ final class AuthService: ObservableObject {
         }
     }
 
+    /// Hand-off from a completed account deletion: the Firebase user no longer exists, so this
+    /// deliberately does NOT route through `signOut()` (whose client call could fail against a
+    /// dead session) — it only resets local state, which `RootView` animates back to `LoginView`.
+    func completeAccountDeletion() {
+        errorMessage = nil
+        supabaseBridgeWarning = nil
+        state = .signedOut
+    }
+
     func signOut() async {
         errorMessage = nil
         do {

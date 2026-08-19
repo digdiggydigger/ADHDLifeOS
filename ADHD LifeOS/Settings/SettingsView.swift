@@ -16,6 +16,9 @@ struct SettingsView: View {
     private let authorizationReader: NotificationAuthorizationReading
     private let tagEditorClient: TagEditorClientAdapting
     private let lifeAreaEditorClient: LifeAreaEditorClientAdapting
+    /// Owned here (not by the section) so the flow's phase survives the section's own identity
+    /// changes, and previews/tests can inject a fake client through the same default-param door.
+    @StateObject private var accountDeletionService: AccountDeletionService
     @Environment(\.dismiss) private var dismiss
     @State private var permissionState: NotificationPermissionState = .unknown
 
@@ -23,7 +26,8 @@ struct SettingsView: View {
         authService: AuthService,
         authorizationReader: NotificationAuthorizationReading = NotificationCenterAuthorizationReader(),
         tagEditorClient: TagEditorClientAdapting? = nil,
-        lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil
+        lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
+        accountDeletionClient: AccountDeletionClientAdapting? = nil
     ) {
         self.authService = authService
         self.authorizationReader = authorizationReader
@@ -32,6 +36,9 @@ struct SettingsView: View {
         // scoping via `FirebaseManager`, so no auth client gets threaded through anymore.
         self.tagEditorClient = tagEditorClient ?? FirebaseTagEditorClientAdapter()
         self.lifeAreaEditorClient = lifeAreaEditorClient ?? FirebaseLifeAreaEditorClientAdapter()
+        _accountDeletionService = StateObject(wrappedValue: AccountDeletionService(
+            client: accountDeletionClient ?? FirebaseAccountDeletionAdapter()
+        ))
     }
 
     var body: some View {
@@ -42,6 +49,11 @@ struct SettingsView: View {
                 accountSection
                 aboutSection
                 tagEditorSection
+                // Destructive actions sit LAST, isolated in their own section, per HIG.
+                AccountDeletionSection(service: accountDeletionService) {
+                    authService.completeAccountDeletion()
+                    dismiss()
+                }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)

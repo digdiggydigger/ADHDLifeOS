@@ -21,10 +21,13 @@ service cloud.firestore {
       // The profile document itself: email, created_at, and the seeded_at first-login marker.
       allow read, write: if isOwner(uid);
 
-      // Append-only journal/log entries.
+      // Journal/log entries: append-only for EDITS (no update path, preserving the original
+      // Supabase RLS design), but owner delete is allowed as of 2026-08-19 — in-app account
+      // deletion (App Store 5.1.1(v)) must be able to cascade the journal, and "no rewriting
+      // history" never meant "no right to erasure".
       match /logs/{logId} {
-        allow read, create: if isOwner(uid);
-        allow update, delete: if false;
+        allow read, create, delete: if isOwner(uid);
+        allow update: if false;
       }
 
       // Every other app collection gets full owner CRUD. Enumerated rather than a bare

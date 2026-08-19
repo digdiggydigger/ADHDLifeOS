@@ -145,7 +145,9 @@ final class FirebaseManager {
     // MARK: - Firestore plumbing (internal so the per-feature `Firebase*ClientAdapter`s and the
     // manager's own extension files can build on it without re-implementing auth scoping)
 
-    enum Collection: String {
+    /// `CaseIterable` so account deletion can cascade over every per-user collection — a new
+    /// collection added here is automatically included in the wipe.
+    enum Collection: String, CaseIterable {
         case tasks
         case lifeAreas = "life_areas"
         case logs
