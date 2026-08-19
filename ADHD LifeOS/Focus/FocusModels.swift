@@ -18,9 +18,11 @@ struct FocusSession: Equatable, Sendable {
     var durationSeconds: Int
     var remainingSeconds: Int
     var isPaused: Bool
-    /// Elapsed-second offsets at which a checkpoint nudge fires.
-    let nudgeCheckpoints: [Int]
-    var triggeredCheckpointIndices: Set<Int>
+    /// Elapsed-second offsets at which a checkpoint nudge fires. Mutable only through
+    /// `replanCheckpoints(to:)`, which is the one operation allowed to reshape the plan — and
+    /// which never disturbs a mark the sprint already crossed.
+    private(set) var nudgeCheckpoints: [Int]
+    private(set) var triggeredCheckpointIndices: Set<Int>
 
     init(
         taskId: UUID?,
@@ -74,6 +76,25 @@ struct FocusSession: Equatable, Sendable {
             .map(\.offset)
         triggeredCheckpointIndices.formUnion(crossed)
         return crossed.sorted()
+    }
+
+    /// Re-plans the sprint's remaining checkpoints under a new cadence, mid-flight.
+    ///
+    /// The rule, and the reason this can't just recompute `nudgeCheckpoints`: **the past is
+    /// immutable.** Every mark the sprint already crossed keeps its position and stays counted (so
+    /// the "N of M passed" readout and the history record never rewrite themselves), while every
+    /// un-fired mark is discarded and replaced by the new cadence's marks that are still ahead of
+    /// the playhead. A new mark that lands behind the playhead is dropped rather than fired — it
+    /// is a moment that has already gone by.
+    mutating func replanCheckpoints(to cadence: FocusNudgeCadence) {
+        let replanned = FocusCheckpoints.replanned(
+            existing: nudgeCheckpoints,
+            triggeredIndices: triggeredCheckpointIndices,
+            proposed: cadence.checkpoints(forDurationSeconds: durationSeconds),
+            elapsedSeconds: elapsedSeconds
+        )
+        nudgeCheckpoints = replanned.checkpoints
+        triggeredCheckpointIndices = replanned.triggeredIndices
     }
 
     /// ADHD coaching copy for a checkpoint, ported verbatim in spirit from the web's
@@ -146,6 +167,27 @@ enum FocusCheckpoints {
         let safeInterval = max(minimumIntervalSeconds, intervalSeconds)
         guard durationSeconds > 0 else { return [] }
         return Array(stride(from: safeInterval, to: durationSeconds, by: safeInterval))
+    }
+
+    /// Merges a freshly-computed plan into a sprint already in flight — the maths behind
+    /// `FocusSession.replanCheckpoints(to:)`, split out so the rule is testable without a session.
+    ///
+    /// Fired marks (`triggeredIndices` into `existing`) are preserved verbatim; un-fired ones are
+    /// dropped; `proposed` contributes only its marks strictly ahead of the playhead. Because every
+    /// kept mark is behind the playhead and every contributed one ahead of it, the two sets never
+    /// overlap and the fired indices always come out as the leading prefix of the merged plan.
+    static func replanned(
+        existing: [Int],
+        triggeredIndices: Set<Int>,
+        proposed: [Int],
+        elapsedSeconds: Int
+    ) -> (checkpoints: [Int], triggeredIndices: Set<Int>) {
+        let kept = existing.enumerated()
+            .filter { triggeredIndices.contains($0.offset) }
+            .map(\.element)
+            .sorted()
+        let upcoming = proposed.filter { $0 > elapsedSeconds }.sorted()
+        return (kept + upcoming, Set(kept.indices))
     }
 }
 

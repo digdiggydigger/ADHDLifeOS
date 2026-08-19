@@ -62,6 +62,10 @@ final class FocusSessionService: ObservableObject {
     /// the history write landed). Home threads it into `FocusAnalyticsSection` as a reload
     /// token, so the analytics refresh right after a sprint instead of on the next cold launch.
     @Published private(set) var completedSprintCount = 0
+    /// The cadence the running sprint was last planned with — `start`'s argument until the modal's
+    /// live editor replaces it. Published so the editor seeds from what is actually scheduled
+    /// rather than from a guess reverse-engineered out of the checkpoint marks.
+    @Published private(set) var cadence: FocusNudgeCadence = .count(1)
 
     private let logger: FocusSessionLogging?
     /// Mirrors sprint lifecycle events into the Lock Screen / Dynamic Island Live Activity.
@@ -116,6 +120,7 @@ final class FocusSessionService: ObservableObject {
             nudgeCheckpoints: cadence.checkpoints(forDurationSeconds: duration)
         )
         session = started
+        self.cadence = cadence
         startedAt = now()
         deadline = now().addingTimeInterval(TimeInterval(duration))
         checkpointBanner = nil
@@ -169,6 +174,26 @@ final class FocusSessionService: ObservableObject {
         if !current.isPaused {
             deadline = now().addingTimeInterval(TimeInterval(current.remainingSeconds))
         }
+        activityMirror?.sprintUpdated(activitySnapshot(for: current))
+    }
+
+    /// Re-plans the running sprint's nudge cadence mid-flight — the modal's live cadence editor.
+    ///
+    /// Checkpoints are computed once at `start` and deliberately never re-spaced by `addSeconds`,
+    /// because moving a mark the user already passed would re-fire it. This is the one sanctioned
+    /// way to change the plan: `FocusSession.replanCheckpoints(to:)` preserves every fired mark and
+    /// only re-spaces what is still ahead. The countdown, the deadline and the paused state are all
+    /// untouched — only the nudge schedule moves.
+    ///
+    /// A cadence change moves `checkpointCount`, which the Live Activity displays, so it is a
+    /// legitimate `sprintUpdated` event (plain ticks still never are — the OS renders the countdown
+    /// itself).
+    func updateCadence(_ cadence: FocusNudgeCadence) {
+        syncToWallClock()
+        guard var current = session else { return }
+        self.cadence = cadence
+        current.replanCheckpoints(to: cadence)
+        session = current
         activityMirror?.sprintUpdated(activitySnapshot(for: current))
     }
 

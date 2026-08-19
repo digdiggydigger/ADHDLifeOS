@@ -18,12 +18,12 @@ import SwiftUI
 ///   NOT ported: it is a development harness that asserts the checkpoint maths in the UI. Its
 ///   assertions live in `FocusCheckpointsTests` / `FocusSessionServiceTests` instead, which is
 ///   where they belong in a native app.
-/// - The full-screen focus modal (timeline inspector, live cadence editor) is out of scope for
-///   this block; the bar carries every control needed to run a sprint. `FocusSessionService`
-///   already exposes the cadence API the modal would need.
+/// - The full-screen focus modal (timeline inspector, live cadence editor) now exists as
+///   `FocusSprintDetailView`, presented as a sheet by tapping the bar's task row.
 struct FocusTimerBar: View {
     @ObservedObject var service: FocusSessionService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isPresentingDetail = false
 
     var body: some View {
         if let session = service.session {
@@ -36,47 +36,60 @@ struct FocusTimerBar: View {
                         .accessibilityIdentifier("focusCheckpointBanner")
                 }
 
-                HStack(spacing: 8) {
-                    Text(session.lifeAreaEmoji)
-                        .font(.title3)
-                        .frame(width: 40, height: 40)
-                        .background(
-                            Color(.tertiarySystemFill),
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        )
+                // The whole task row opens the full sprint view (timeline inspector + live cadence
+                // editor) — the web's `isOpenModal`, which the bar likewise raised on tap.
+                Button {
+                    isPresentingDetail = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(session.lifeAreaEmoji)
+                            .font(.title3)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                Color(.tertiarySystemFill),
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            )
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
-                            Text(session.taskTitle)
-                                .font(.footnote.weight(.bold))
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
-                            Text(FocusTimeFormatting.digital(session.remainingSeconds))
-                                .font(.caption.monospaced().weight(.bold))
-                                .foregroundStyle(Color(.systemBackground))
-                                .padding(.vertical, 4)
-                                .padding(.horizontal, 8)
-                                .background(.tint, in: Capsule())
-                                .accessibilityIdentifier("focusRemainingTime")
-                        }
-
-                        timelineTrack(session: session)
-
-                        Group {
-                            if let untilNext = session.secondsUntilNextCheckpoint {
-                                Text("🔔 Next checkpoint in \(FocusTimeFormatting.digital(untilNext))")
-                                    .foregroundStyle(.orange)
-                            } else if session.nudgeCheckpoints.isEmpty {
-                                Text("No checkpoints this sprint")
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 8) {
+                                Text(session.taskTitle)
+                                    .font(.footnote.weight(.bold))
+                                    .lineLimit(1)
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.up")
+                                    .font(.caption2.weight(.bold))
                                     .foregroundStyle(.secondary)
-                            } else {
-                                Text("✓ All \(session.nudgeCheckpoints.count) checkpoints reached")
-                                    .foregroundStyle(.green)
+                                Text(FocusTimeFormatting.digital(session.remainingSeconds))
+                                    .font(.caption.monospaced().weight(.bold))
+                                    .foregroundStyle(Color(.systemBackground))
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 8)
+                                    .background(.tint, in: Capsule())
+                                    .accessibilityIdentifier("focusRemainingTime")
                             }
+
+                            timelineTrack(session: session)
+
+                            Group {
+                                if let untilNext = session.secondsUntilNextCheckpoint {
+                                    Text("🔔 Next checkpoint in \(FocusTimeFormatting.digital(untilNext))")
+                                        .foregroundStyle(.orange)
+                                } else if session.nudgeCheckpoints.isEmpty {
+                                    Text("No checkpoints this sprint")
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text("✓ All \(session.nudgeCheckpoints.count) checkpoints reached")
+                                        .foregroundStyle(.green)
+                                }
+                            }
+                            .font(.caption2.monospaced())
                         }
-                        .font(.caption2.monospaced())
                     }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the full sprint view")
+                .accessibilityIdentifier("focusBarExpand")
 
                 HStack(spacing: 8) {
                     controlButton(
@@ -113,6 +126,9 @@ struct FocusTimerBar: View {
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: session.isPaused)
             .accessibilityIdentifier("focusTimerBar")
+            .sheet(isPresented: $isPresentingDetail) {
+                FocusSprintDetailView(service: service)
+            }
         }
     }
 
