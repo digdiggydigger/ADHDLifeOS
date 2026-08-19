@@ -11,6 +11,10 @@ struct TaskListView: View {
     private let taskDetailClient: TaskDetailClientAdapting
     private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     @State private var isPresentingTaskCreate = false
+    /// Non-nil while a task's detail screen is pushed. Drives `navigationDestination(isPresented:)`
+    /// — the swipe card can't be a `NavigationLink` (its own `DragGesture` would fight the link's
+    /// tap), so tap-to-inspect is programmatic.
+    @State private var inspectingTask: TaskItem?
 
     init(
         tasksClient: TasksClientAdapting,
@@ -45,28 +49,7 @@ struct TaskListView: View {
                         if groups.isEmpty {
                             emptyState
                         } else {
-                            List {
-                                ForEach(groups) { group in
-                                    Section(group.lifeAreaName) {
-                                        ForEach(group.tasks) { task in
-                                            NavigationLink(value: task) {
-                                                TaskRowView(task: task)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            .listStyle(.insetGrouped)
-                            .navigationDestination(for: TaskItem.self) { task in
-                                TaskDetailView(
-                                    taskId: task.id,
-                                    lifeAreas: tasksService.lifeAreas,
-                                    client: taskDetailClient,
-                                    schedulingClient: schedulingClient
-                                ) {
-                                    Task { await tasksService.load() }
-                                }
-                            }
+                            taskList(groups: groups)
                         }
                     case .failed(let message):
                         VStack(spacing: 12) {
@@ -106,6 +89,65 @@ struct TaskListView: View {
             .task {
                 await tasksService.load()
             }
+            .navigationDestination(isPresented: Binding(
+                get: { inspectingTask != nil },
+                set: { if !$0 { inspectingTask = nil } }
+            )) {
+                if let task = inspectingTask {
+                    TaskDetailView(
+                        taskId: task.id,
+                        lifeAreas: tasksService.lifeAreas,
+                        client: taskDetailClient,
+                        schedulingClient: schedulingClient
+                    ) {
+                        Task { await tasksService.load() }
+                    }
+                }
+            }
+            .alert(
+                "Couldn't update the task",
+                isPresented: Binding(
+                    get: { tasksService.mutationErrorMessage != nil },
+                    set: { if !$0 { tasksService.mutationErrorMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(tasksService.mutationErrorMessage ?? "")
+            }
+        }
+    }
+
+    /// The grouped task list, rendered as a `ScrollView` + `LazyVStack` of `SwipeableTaskCard`s
+    /// (CLAUDE.md §2 favours this over `List` for non-Settings screens) — `List` also can't host
+    /// the card's horizontal `DragGesture` without its own row-swipe intercepting it.
+    private func taskList(groups: [LifeAreaTaskGroup]) -> some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 24, pinnedViews: [.sectionHeaders]) {
+                ForEach(groups) { group in
+                    Section {
+                        VStack(spacing: 8) {
+                            ForEach(group.tasks) { task in
+                                SwipeableTaskCard(
+                                    task: task,
+                                    lifeArea: tasksService.lifeAreas.first { $0.id == task.lifeAreaId },
+                                    onToggle: { Task { await tasksService.toggleStatus(task) } },
+                                    onDelete: { Task { await tasksService.delete(task) } },
+                                    onInspect: { inspectingTask = task }
+                                )
+                            }
+                        }
+                    } header: {
+                        Text(group.lifeAreaName)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 4)
+                            .background(.bar)
+                    }
+                }
+            }
+            .padding(16)
         }
     }
 
@@ -118,33 +160,9 @@ struct TaskListView: View {
     }
 }
 
-private struct TaskRowView: View {
-    let task: TaskItem
-
-    var body: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
-                    .font(.body)
-                    .strikethrough(task.status == .done)
-                    .foregroundStyle(task.status == .done ? .secondary : .primary)
-                if let dueDate = task.dueDate {
-                    Text(dueDate.formatted(date: .abbreviated, time: .omitted))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
-            Text(task.priority.rawValue.uppercased())
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
 #if DEBUG
 private struct PreviewTasksClientAdapting: TasksClientAdapting {
-    let lifeArea = LifeArea(id: UUID(), name: "Health", colour: "#4A90D9", sortOrder: 0)
+    let lifeArea = LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)
 
     func fetchLifeAreas() async throws -> [LifeArea] { [lifeArea] }
 
@@ -160,6 +178,9 @@ private struct PreviewTasksClientAdapting: TasksClientAdapting {
             )
         ]
     }
+
+    func setStatus(taskId: UUID, status: TaskStatus) async throws {}
+    func deleteTask(taskId: UUID) async throws {}
 }
 
 private struct PreviewTaskCreateClientAdapting: TaskCreateClientAdapting {

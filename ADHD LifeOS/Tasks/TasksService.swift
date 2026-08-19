@@ -32,6 +32,10 @@ final class TasksService: ObservableObject {
             recomputeGroups()
         }
     }
+    /// Set when a swipe mutation (toggle/delete) fails after its optimistic local change has
+    /// already been reverted — so the list can surface it without the row silently snapping back
+    /// with no explanation.
+    @Published var mutationErrorMessage: String?
 
     private let client: TasksClientAdapting
     private(set) var lifeAreas: [LifeArea] = []
@@ -54,6 +58,38 @@ final class TasksService: ObservableObject {
         } catch {
             hasLoadedOnce = false
             state = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+        }
+    }
+
+    /// Swipe-right: flip a task between open and done. Optimistic — the local flip and regroup
+    /// happen immediately (so the row re-sorts under the active filter without waiting on the
+    /// network), then the write-through persists to Firestore. A failed write reloads from the
+    /// server so the UI never diverges from stored truth.
+    func toggleStatus(_ task: TaskItem) async {
+        guard hasLoadedOnce, let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
+        let newStatus: TaskStatus = task.status == .done ? .open : .done
+        tasks[index].status = newStatus
+        recomputeGroups()
+        do {
+            try await client.setStatus(taskId: task.id, status: newStatus)
+        } catch {
+            mutationErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            await load()
+        }
+    }
+
+    /// Swipe-left: delete a task. Optimistic removal, reverted on a failed delete.
+    func delete(_ task: TaskItem) async {
+        guard hasLoadedOnce, tasks.contains(where: { $0.id == task.id }) else { return }
+        let snapshot = tasks
+        tasks.removeAll { $0.id == task.id }
+        recomputeGroups()
+        do {
+            try await client.deleteTask(taskId: task.id)
+        } catch {
+            tasks = snapshot
+            recomputeGroups()
+            mutationErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 

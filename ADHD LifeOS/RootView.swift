@@ -104,6 +104,8 @@ struct RootView: View {
     struct PreviewTasksClient: TasksClientAdapting {
         func fetchLifeAreas() async throws -> [LifeArea] { [] }
         func fetchAllTasks() async throws -> [TaskItem] { [] }
+        func setStatus(taskId: UUID, status: TaskStatus) async throws {}
+        func deleteTask(taskId: UUID) async throws {}
     }
 
     struct PreviewTaskCreateClient: TaskCreateClientAdapting {
