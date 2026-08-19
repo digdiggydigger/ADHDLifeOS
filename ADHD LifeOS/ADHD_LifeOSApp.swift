@@ -75,6 +75,9 @@ struct ADHD_LifeOSApp: App {
                 lifeAreaDetailClient: lifeAreaDetailClient
             )
                 .onOpenURL { url in
+                    // A widget tap arrives on the same registered scheme as the auth callback;
+                    // launching the app is the whole action, so it must NOT reach the auth layer.
+                    guard AppDeepLink.route(url) == .authCallback else { return }
                     Task { await authService.completeSession(from: url) }
                 }
         }

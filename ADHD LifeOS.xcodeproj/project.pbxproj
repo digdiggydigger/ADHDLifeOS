@@ -66,6 +66,7 @@
 		AA62CFCB3036187E009FA90C /* Exceptions for "FocusTimerWidget" folder in "FocusTimerWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FocusTimerWidget.entitlements,
 				Info.plist,
 			);
 			target = AA62CFB13036187B009FA90C /* FocusTimerWidgetExtension */;
@@ -75,6 +76,7 @@
 			membershipExceptions = (
 				FocusActivityAttributes.swift,
 				FocusSprintIntents.swift,
+				FocusWidgetSnapshot.swift,
 			);
 			target = AAF46F433009F8BE008ECC13 /* ADHD LifeOS */;
 		};
@@ -421,6 +423,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FocusTimerWidget/FocusTimerWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3U587KEQ5C;
@@ -452,6 +455,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FocusTimerWidget/FocusTimerWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 3U587KEQ5C;

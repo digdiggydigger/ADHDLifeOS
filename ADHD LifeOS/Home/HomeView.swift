@@ -20,6 +20,11 @@ struct HomeView: View {
     /// pull-to-refresh count it forms the analytics reload token, so finished sprints AND pulls
     /// both refetch focus history without waiting for a cold launch.
     private let focusReloadToken: Int
+    /// Publishes the Home Screen widget's snapshot. Home is the right owner: it is the one screen
+    /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
+    private let widgetPublisher: FocusWidgetPublishing
+    /// The most recent history read, kept so a life-areas reload can republish without refetching.
+    @State private var publishedHistory: [CompletedFocusSession] = []
     @State private var pullRefreshCount = 0
     @State private var showSettings = false
     @State private var isPresentingInbox = false
@@ -42,7 +47,8 @@ struct HomeView: View {
         taskDetailClient: TaskDetailClientAdapting,
         schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
-        focusReloadToken: Int = 0
+        focusReloadToken: Int = 0,
+        widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher()
     ) {
         self.authService = authService
         self.captureClient = captureClient
@@ -51,6 +57,7 @@ struct HomeView: View {
         self.schedulingClient = schedulingClient
         self.onStartFocus = onStartFocus
         self.focusReloadToken = focusReloadToken
+        self.widgetPublisher = widgetPublisher
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
         _nudgesService = StateObject(
             wrappedValue: NudgesService(
@@ -131,6 +138,9 @@ struct HomeView: View {
             }
             .task {
                 await homeService.load()
+                // The Active Goal may have changed (a task closed, a new one topping the list),
+                // so republish even though the history hasn't moved.
+                publishWidgetSnapshot()
             }
             .task {
                 await refreshInboxCount()
@@ -193,7 +203,13 @@ struct HomeView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    FocusAnalyticsSection(reloadToken: focusReloadToken + pullRefreshCount)
+                    FocusAnalyticsSection(reloadToken: focusReloadToken + pullRefreshCount) { sessions in
+                        // Fires on first load, on pull-to-refresh, and on every finished sprint
+                        // (`focusReloadToken` is RootView's completedSprintCount) — so the Home
+                        // Screen widget follows the same three triggers the in-app charts do.
+                        publishedHistory = sessions
+                        publishWidgetSnapshot()
+                    }
                 }
                 .padding()
             }
@@ -206,8 +222,23 @@ struct HomeView: View {
                 async let nudges: Void = nudgesService.load()
                 async let inbox: Void = refreshInboxCount()
                 _ = await (home, nudges, inbox)
+                publishWidgetSnapshot()
             }
         }
+    }
+
+    /// Rebuilds and publishes the Home Screen widget's payload from whatever Home currently knows.
+    /// Cheap, pure and idempotent (`FocusWidgetSnapshotBuilder` does the work), so calling it from
+    /// every path that changes either half is simpler — and more reliable — than trying to work out
+    /// which half moved.
+    private func publishWidgetSnapshot() {
+        widgetPublisher.publish(
+            FocusWidgetSnapshotBuilder.snapshot(
+                activeGoal: homeService.activeGoal,
+                lifeAreas: homeService.lifeAreas,
+                sessions: publishedHistory
+            )
+        )
     }
 
     /// The Active Goal hero for the current top open task (see `ActiveGoalSelection` for the

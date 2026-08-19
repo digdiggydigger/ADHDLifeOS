@@ -19,9 +19,19 @@ struct FocusAnalyticsSection: View {
     /// Reload trigger: `.task(id:)` re-runs the history fetch whenever this changes. Home feeds
     /// it completed-sprint count + pull-to-refresh count, so both paths share one mechanism.
     private let reloadToken: Int
+    /// Handed the history the moment a read LANDS, so Home can publish the Home Screen widget's
+    /// snapshot from the same fetch these charts render — one Firestore read, two consumers. Never
+    /// called on failure: republishing zeros over a good snapshot would blank the widget for a
+    /// transient network error.
+    private let onHistoryLoaded: ([CompletedFocusSession]) -> Void
 
-    init(reloadToken: Int = 0, reader: FocusHistoryReading? = nil) {
+    init(
+        reloadToken: Int = 0,
+        reader: FocusHistoryReading? = nil,
+        onHistoryLoaded: @escaping ([CompletedFocusSession]) -> Void = { _ in }
+    ) {
         self.reloadToken = reloadToken
+        self.onHistoryLoaded = onHistoryLoaded
         _service = StateObject(
             wrappedValue: FocusAnalyticsService(reader: reader ?? FirebaseFocusSessionAdapter())
         )
@@ -50,6 +60,9 @@ struct FocusAnalyticsSection: View {
         }
         .task(id: reloadToken) {
             await service.load()
+            if case .loaded(let sessions) = service.state {
+                onHistoryLoaded(sessions)
+            }
         }
     }
 }
