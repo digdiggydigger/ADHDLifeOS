@@ -175,6 +175,7 @@ struct HomeView: View {
                             .buttonStyle(.plain)
                         }
                     }
+                    FocusAnalyticsSection()
                 }
                 .padding()
             }

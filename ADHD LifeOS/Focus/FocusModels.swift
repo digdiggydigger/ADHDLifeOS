@@ -156,4 +156,14 @@ enum FocusTimeFormatting {
         let clamped = max(0, seconds)
         return String(format: "%02d:%02d", clamped / 60, clamped % 60)
     }
+
+    /// Human duration for the analytics cards — the web's `formatFocusDuration`. Whole minutes
+    /// below an hour (`45m`), hours-and-minutes above (`1h 25m`, `2h`), and `0m` for nothing.
+    static func duration(seconds: Int) -> String {
+        let minutes = max(0, seconds) / 60
+        guard minutes >= 60 else { return "\(minutes)m" }
+        let hours = minutes / 60
+        let remainder = minutes % 60
+        return remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m"
+    }
 }
