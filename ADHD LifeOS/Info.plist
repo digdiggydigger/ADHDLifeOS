@@ -13,13 +13,5 @@
 			</array>
 		</dict>
 	</array>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>ADHD LifeOS uses your photo library to attach a photo to a capture.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>ADHD LifeOS uses the camera to take a photo for a capture.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>ADHD LifeOS uses the microphone to record a voice note for a capture.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>ADHD LifeOS uses speech recognition to transcribe your voice note.</string>
 </dict>
 </plist>
