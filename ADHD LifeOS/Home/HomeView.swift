@@ -16,6 +16,11 @@ struct HomeView: View {
     /// Threaded Home → LifeAreaDetail → TaskDetail so the detail screen reached from a life-area
     /// card can launch a sprint on `RootView`'s app-level `FocusSessionService`.
     private let onStartFocus: ((FocusSprintPlan) -> Void)?
+    /// `RootView` passes `focusService.completedSprintCount` here; combined with the local
+    /// pull-to-refresh count it forms the analytics reload token, so finished sprints AND pulls
+    /// both refetch focus history without waiting for a cold launch.
+    private let focusReloadToken: Int
+    @State private var pullRefreshCount = 0
     @State private var showSettings = false
     @State private var isPresentingInbox = false
     @State private var inboxCount = 0
@@ -36,7 +41,8 @@ struct HomeView: View {
         lifeAreaDetailClient: LifeAreaDetailClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
         schedulingClient: TaskCountdownNudgeSchedulingAdapting,
-        onStartFocus: ((FocusSprintPlan) -> Void)? = nil
+        onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
+        focusReloadToken: Int = 0
     ) {
         self.authService = authService
         self.captureClient = captureClient
@@ -44,6 +50,7 @@ struct HomeView: View {
         self.taskDetailClient = taskDetailClient
         self.schedulingClient = schedulingClient
         self.onStartFocus = onStartFocus
+        self.focusReloadToken = focusReloadToken
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
         _nudgesService = StateObject(
             wrappedValue: NudgesService(
@@ -186,9 +193,19 @@ struct HomeView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    FocusAnalyticsSection()
+                    FocusAnalyticsSection(reloadToken: focusReloadToken + pullRefreshCount)
                 }
                 .padding()
+            }
+            // Pull-to-refresh reloads every Home data source in parallel; the analytics section
+            // refetches through its reload token rather than a service reference (it owns its
+            // own service by design).
+            .refreshable {
+                pullRefreshCount += 1
+                async let home: Void = homeService.load()
+                async let nudges: Void = nudgesService.load()
+                async let inbox: Void = refreshInboxCount()
+                _ = await (home, nudges, inbox)
             }
         }
     }

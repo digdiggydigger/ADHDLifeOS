@@ -51,7 +51,8 @@ struct RootView: View {
                         lifeAreaDetailClient: lifeAreaDetailClient,
                         taskDetailClient: taskDetailClient,
                         schedulingClient: taskCountdownNudgeSchedulingClient,
-                        onStartFocus: startFocus
+                        onStartFocus: startFocus,
+                        focusReloadToken: focusService.completedSprintCount
                     )
                         .tabItem { Label("Home", systemImage: "house") }
                     TaskListView(

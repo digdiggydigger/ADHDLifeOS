@@ -16,8 +16,12 @@ import SwiftUI
 /// failure indistinguishable from "no history", which cost a blind debugging session.
 struct FocusAnalyticsSection: View {
     @StateObject private var service: FocusAnalyticsService
+    /// Reload trigger: `.task(id:)` re-runs the history fetch whenever this changes. Home feeds
+    /// it completed-sprint count + pull-to-refresh count, so both paths share one mechanism.
+    private let reloadToken: Int
 
-    init(reader: FocusHistoryReading? = nil) {
+    init(reloadToken: Int = 0, reader: FocusHistoryReading? = nil) {
+        self.reloadToken = reloadToken
         _service = StateObject(
             wrappedValue: FocusAnalyticsService(reader: reader ?? FirebaseFocusSessionAdapter())
         )
@@ -44,7 +48,7 @@ struct FocusAnalyticsSection: View {
                 EmptyView()
             }
         }
-        .task {
+        .task(id: reloadToken) {
             await service.load()
         }
     }

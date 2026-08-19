@@ -58,6 +58,10 @@ final class FocusSessionService: ObservableObject {
     @Published private(set) var checkpointBanner: String?
     /// Set when persisting a finished sprint fails — the sprint itself still ended cleanly.
     @Published var logErrorMessage: String?
+    /// Bumped once per ENDED sprint (manual stop or natural completion, regardless of whether
+    /// the history write landed). Home threads it into `FocusAnalyticsSection` as a reload
+    /// token, so the analytics refresh right after a sprint instead of on the next cold launch.
+    @Published private(set) var completedSprintCount = 0
 
     private let logger: FocusSessionLogging?
     private let now: () -> Date
@@ -153,6 +157,8 @@ final class FocusSessionService: ObservableObject {
         session = nil
         startedAt = nil
         checkpointBanner = nil
+
+        completedSprintCount += 1
 
         let record = CompletedFocusSession(
             id: UUID(),

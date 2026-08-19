@@ -243,4 +243,39 @@ final class FocusSessionServiceTests: XCTestCase {
 
         XCTAssertTrue(logger.logged.isEmpty)
     }
+
+    // MARK: - completedSprintCount (the analytics post-sprint reload signal)
+
+    func testCompletedSprintCount_incrementsPerFinishedSprint() async {
+        let sut = makeSUT().service
+        XCTAssertEqual(sut.completedSprintCount, 0)
+
+        startSprint(sut, duration: 100)
+        await sut.stop()
+        XCTAssertEqual(sut.completedSprintCount, 1)
+
+        startSprint(sut, duration: 100)
+        await sut.stop(completedNaturally: true)
+        XCTAssertEqual(sut.completedSprintCount, 2)
+    }
+
+    func testCompletedSprintCount_incrementsEvenWhenLoggingFails() async {
+        // The reload signal tracks "a sprint ended", not "the write landed" — a failed write
+        // already has its own surface (the RootView alert), and reloading on it is harmless.
+        let env = makeSUT()
+        env.logger.error = TasksServiceError.fetchFailed("offline")
+        startSprint(env.service, duration: 100)
+
+        await env.service.stop()
+
+        XCTAssertEqual(env.service.completedSprintCount, 1)
+    }
+
+    func testCompletedSprintCount_unchangedByNoOpStop() async {
+        let sut = makeSUT().service
+
+        await sut.stop()
+
+        XCTAssertEqual(sut.completedSprintCount, 0)
+    }
 }
