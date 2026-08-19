@@ -13,6 +13,14 @@ struct LoginView: View {
     /// state machine (`AuthService.requestMagicLink`/`.linkSent`) stays intact for a future
     /// reintroduction — stub-and-hide, not deletion.
     var showsMagicLink: Bool = false
+    /// Sign in with Apple is HIDDEN (E, 2026-08-19): the free Apple Developer account blocks
+    /// device deployment while the `com.apple.developer.applesignin` entitlement is attached, so
+    /// E removed the capability in Xcode. Same stub-and-hide precedent as `showsMagicLink` — the
+    /// whole pipeline underneath (`AppleSignInNonce`, `AuthService.signInWithApple`,
+    /// `FirebaseManager.signInWithApple`, the reauth path in account deletion) stays compiled and
+    /// tested. To reactivate on a paid account: re-add the capability in Xcode (which restores the
+    /// entitlement), enable the Apple provider in the Firebase console, and flip this to `true`.
+    var showsSignInWithApple: Bool = false
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -38,8 +46,10 @@ struct LoginView: View {
             if showsMagicLink, case .linkSent(let sentEmail) = authService.state {
                 checkYourEmailView(email: sentEmail)
             } else {
-                appleSection
-                orDivider
+                if showsSignInWithApple {
+                    appleSection
+                    orDivider
+                }
                 formView
             }
 

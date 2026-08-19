@@ -163,6 +163,9 @@ struct HomeView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    // Web bento Card 1: the Active Goal hero leads the screen. Hidden when no
+                    // task is open — never a fabricated placeholder (see ActiveGoalHeroCard).
+                    activeGoalHero
                     DailySummaryView(
                         openTaskCount: counts.reduce(0) { $0 + $1.openTaskCount },
                         lifeAreaCount: counts.count,
@@ -184,6 +187,21 @@ struct HomeView: View {
                     FocusAnalyticsSection()
                 }
                 .padding()
+            }
+        }
+    }
+
+    /// The Active Goal hero for the current top open task (see `ActiveGoalSelection` for the
+    /// rule). Start Session resolves the task's own focus config into a `FocusSprintPlan` and
+    /// hands it to `RootView`'s app-level `FocusSessionService` — the same funnel (and success
+    /// haptic) as every other start path. Manage pushes the task's ACTIVE life area; archived or
+    /// unassigned resolve to `nil`, which hides that button.
+    @ViewBuilder
+    private var activeGoalHero: some View {
+        if let goal = homeService.activeGoal {
+            let area = homeService.activeAreas.first { $0.id == goal.lifeAreaId }
+            ActiveGoalHeroCard(task: goal, lifeArea: area) {
+                onStartFocus?(FocusSprintPlan(summary: goal, lifeArea: area))
             }
         }
     }
@@ -243,8 +261,20 @@ struct HomeView: View {
         Task { await homeService.submitReorder(activeInNewOrder: arrangeAreas) }
     }
 
+    private func refreshInboxCount() async {
+        inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
+    }
+}
+
+// MARK: - Accessory strips
+//
+// Same-file extension so these still reach the view's private state; split out (same precedent
+// as TaskDetailView's sections) to keep the primary struct within SwiftLint's type_body_length
+// budget after the Active Goal hero landed.
+
+private extension HomeView {
     @ViewBuilder
-    private var supabaseBridgeWarningBanner: some View {
+    var supabaseBridgeWarningBanner: some View {
         if let warning = authService.supabaseBridgeWarning {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
@@ -263,7 +293,7 @@ struct HomeView: View {
     }
 
     @ViewBuilder
-    private var dueNudgesStrip: some View {
+    var dueNudgesStrip: some View {
         let due = nudgesService.dueNudges()
         if !due.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
@@ -283,10 +313,6 @@ struct HomeView: View {
             }
             .accessibilityIdentifier("homeDueNudgesStrip")
         }
-    }
-
-    private func refreshInboxCount() async {
-        inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
     }
 }
 

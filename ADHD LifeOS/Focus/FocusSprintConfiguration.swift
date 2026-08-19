@@ -71,4 +71,18 @@ struct FocusSprintPlan: Equatable, Sendable {
             )
         )
     }
+
+    /// Home's Active Goal hero start — same resolution, from the Home task projection.
+    init(summary: TaskSummary, lifeArea: LifeArea?) {
+        let duration = FocusSprintConfiguration.resolvedDuration(explicit: summary.focusDurationSeconds)
+        self.init(
+            taskId: summary.id,
+            taskTitle: summary.title,
+            lifeAreaEmoji: lifeArea?.colour ?? "🎯",
+            durationSeconds: duration,
+            nudgeCount: FocusSprintConfiguration.resolvedNudgeCount(
+                explicit: summary.nudgesCount, durationSeconds: duration
+            )
+        )
+    }
 }

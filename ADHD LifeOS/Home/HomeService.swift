@@ -37,6 +37,10 @@ final class HomeService: ObservableObject {
     /// picker of archived areas entirely.
     private(set) var lifeAreas: [LifeArea] = []
 
+    /// The open tasks behind the counts, retained for the Active Goal hero. `@Published` so the
+    /// hero re-renders when a reload changes the headline task.
+    @Published private(set) var openTasks: [TaskSummary] = []
+
     /// Serialisation state for TRAP 6 — exactly one reorder in flight at a time.
     private var isReordering = false
     /// The latest ordering produced while a reorder is in flight, coalesced to just the last one
@@ -57,17 +61,23 @@ final class HomeService: ObservableObject {
         lifeAreas.filter { $0.archived }.sorted { $0.sortOrder < $1.sortOrder }
     }
 
+    /// The task Home's Active Goal hero headlines; `nil` (hero hidden) when nothing is open.
+    var activeGoal: TaskSummary? {
+        ActiveGoalSelection.topTask(in: openTasks)
+    }
+
     func load() async {
         state = .loading
         do {
             async let lifeAreasResult = client.fetchLifeAreas()
-            async let openTasks = client.fetchOpenTasks()
+            async let openTasksResult = client.fetchOpenTasks()
             lifeAreas = try await lifeAreasResult
+            openTasks = try await openTasksResult
             // The grid excludes archived areas — the filter is applied HERE, at the view/service
             // layer, not in the adapter.
             let counts = LifeAreaTaskCounts.countOpenTasksByLifeArea(
                 lifeAreas: lifeAreas.filter { !$0.archived },
-                tasks: try await openTasks
+                tasks: openTasks
             )
             state = .loaded(counts)
         } catch {

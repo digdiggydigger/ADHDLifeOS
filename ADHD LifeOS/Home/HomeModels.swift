@@ -50,13 +50,50 @@ enum TaskStatus: String, Codable, Equatable, Sendable {
     case done
 }
 
+/// Home's projection of a task document. Originally just the badge-count pair
+/// (`lifeAreaId` + `status`); widened for the Active Goal hero, which needs the headline task's
+/// title, urgency, due date, notes and focus config — all decoded from the same open-tasks query,
+/// no extra fetch. New fields default in the memberwise init so the many count-only construction
+/// sites keep compiling.
 struct TaskSummary: Codable, Equatable, Sendable {
+    let id: UUID
     let lifeAreaId: UUID?
     let status: TaskStatus
+    let title: String
+    let priority: TaskPriority
+    let notes: String?
+    let dueDate: Date?
+    let focusDurationSeconds: Int?
+    let nudgesCount: Int?
+
+    init(
+        id: UUID = UUID(),
+        lifeAreaId: UUID?,
+        status: TaskStatus,
+        title: String = "",
+        priority: TaskPriority = .p3,
+        notes: String? = nil,
+        dueDate: Date? = nil,
+        focusDurationSeconds: Int? = nil,
+        nudgesCount: Int? = nil
+    ) {
+        self.id = id
+        self.lifeAreaId = lifeAreaId
+        self.status = status
+        self.title = title
+        self.priority = priority
+        self.notes = notes
+        self.dueDate = dueDate
+        self.focusDurationSeconds = focusDurationSeconds
+        self.nudgesCount = nudgesCount
+    }
 
     enum CodingKeys: String, CodingKey {
+        case id, status, title, priority, notes
         case lifeAreaId = "life_area_id"
-        case status
+        case dueDate = "due_date"
+        case focusDurationSeconds = "focus_duration_seconds"
+        case nudgesCount = "nudges_count"
     }
 }
 

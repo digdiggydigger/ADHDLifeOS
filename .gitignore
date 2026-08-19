@@ -18,13 +18,6 @@ DerivedData/
 .swiftpm/
 .build/
 
-# Local Supabase credentials — same convention as the web project: not secret
-# (RLS protects data, not these values), but kept local per-machine by convention.
-
-# Test account credentials for UI tests that exercise real network writes — a real password,
-# never committed. Referenced only by the UI test target.
-ADHD LifeOSUITests/TestCredentials.swift
-
 # AWS Lambda build artifacts (reproducible from source)
 aws-backend/**/build/
 aws-backend/**/__pycache__/
