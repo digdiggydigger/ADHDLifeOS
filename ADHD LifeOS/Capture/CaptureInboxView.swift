@@ -79,13 +79,21 @@ struct CaptureInboxView: View {
                                 await service.removeTag(capture: capture, tagId: tagId)
                             }
                         )
+                        .listRowBackground(Color.cardSurface)
                     }
+                    // Token alignment (2026-08-19 bento pass): rows on the CardSurface cream,
+                    // page behind them on PageBackground. Deliberately still a `List`, not
+                    // floating bento cards — rebuilding this heavily-tested triage screen's
+                    // container was judged out of scope for a styling pass; flagged in report.
+                    .scrollContentBackground(.hidden)
                     .refreshable {
                         await service.refresh()
                     }
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.pageBackground.ignoresSafeArea())
         .navigationTitle("Inbox")
         .task {
             await service.load()
@@ -271,8 +279,8 @@ private struct CaptureRowView: View {
                         .resizable()
                         .scaledToFill()
                 default:
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(.secondarySystemBackground))
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(.tertiarySystemFill))
                         .overlay(
                             Image(systemName: "link")
                                 .foregroundStyle(.secondary)
@@ -280,7 +288,7 @@ private struct CaptureRowView: View {
                 }
             }
             .frame(width: 44, height: 44)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .accessibilityIdentifier("captureLinkThumbnail")
 
             VStack(alignment: .leading, spacing: 4) {
@@ -557,8 +565,8 @@ private struct CaptureRowLeadingSlot: View {
     }
 
     private var glyphSlot: some View {
-        RoundedRectangle(cornerRadius: 10)
-            .fill(Color(.secondarySystemBackground))
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color(.tertiarySystemFill))
             .frame(width: 44, height: 44)
             .overlay(
                 Image(systemName: CaptureRowPresentation.glyphSystemImageName(for: capture.kind))
@@ -570,27 +578,27 @@ private struct CaptureRowLeadingSlot: View {
         AsyncImage(url: capture.photoDisplayURL) { phase in
             switch phase {
             case .empty:
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground))
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(.tertiarySystemFill))
                     .overlay(ProgressView())
             case .success(let image):
                 image
                     .resizable()
                     .scaledToFill()
             case .failure:
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground))
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(.tertiarySystemFill))
                     .overlay(
                         Image(systemName: "photo")
                             .foregroundStyle(.secondary)
                     )
             @unknown default:
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground))
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(.tertiarySystemFill))
             }
         }
         .frame(width: 44, height: 44)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityIdentifier("capturePhotoThumbnail")
     }
 
@@ -598,27 +606,27 @@ private struct CaptureRowLeadingSlot: View {
         AsyncImage(url: capture.linkPreview?.thumbnailURL) { phase in
             switch phase {
             case .empty:
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground))
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(.tertiarySystemFill))
                     .overlay(ProgressView())
             case .success(let image):
                 image
                     .resizable()
                     .scaledToFill()
             case .failure:
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground))
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(.tertiarySystemFill))
                     .overlay(
                         Image(systemName: "link")
                             .foregroundStyle(.secondary)
                     )
             @unknown default:
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.secondarySystemBackground))
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(.tertiarySystemFill))
             }
         }
         .frame(width: 44, height: 44)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

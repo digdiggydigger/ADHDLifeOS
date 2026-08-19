@@ -71,6 +71,7 @@ struct TaskListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .background(Color.pageBackground.ignoresSafeArea())
             .navigationTitle("Tasks")
             .searchable(text: $tasksService.searchText, prompt: "Search tasks")
             .toolbar {
@@ -150,11 +151,12 @@ struct TaskListView: View {
                             }
                         }
                     } header: {
+                        // The prototype's mono uppercase card-label voice for section headers.
                         Text(group.lifeAreaName)
-                            .font(.footnote.weight(.semibold))
+                            .sectionLabel()
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 8)
                             .background(.bar)
                     }
                 }

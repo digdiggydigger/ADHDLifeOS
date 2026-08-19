@@ -40,10 +40,7 @@ struct ActiveGoalHeroCard: View {
             sprintTargetRow
             actionsRow
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
+        .bentoCard()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("homeActiveGoalCard")
     }
@@ -51,8 +48,7 @@ struct ActiveGoalHeroCard: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(lifeArea.map { "Active Goal • \($0.name)" } ?? "Active Goal")
-                .font(.caption.monospaced().weight(.bold))
-                .textCase(.uppercase)
+                .sectionLabel()
                 .foregroundStyle(.tint)
             Spacer(minLength: 8)
             Text(task.priority.rawValue.uppercased())

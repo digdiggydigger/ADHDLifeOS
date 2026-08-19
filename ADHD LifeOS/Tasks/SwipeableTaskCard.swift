@@ -11,8 +11,9 @@ import SwiftUI
 /// priority chip, and due-date/details row.
 ///
 /// Deviations from the React source, per CLAUDE.md precedence:
-/// - §4 zero-hex: the web coral/ink/cream palette becomes adaptive semantic colour (`.tint`,
-///   `.green`, `Color(.secondarySystemBackground)`, `.primary`/`.secondary`), so dark mode is free.
+/// - Colour comes from the 2026-08-19 token layer (`Theme.swift`): the prototype's exact palette
+///   as ADAPTIVE named assets (`bentoCard` surface/border, `UrgencyPalette` bands, coral accent),
+///   hex confined to the asset catalog — so parity and dark mode both hold.
 /// - The priority chip is **display-only**, not click-to-cycle: the web cycles low/medium/high,
 ///   but this app's model is `p1`–`p4` with different semantics — cycling it here would invent a
 ///   mapping. Tapping the card opens Details, where priority is edited properly.
@@ -86,13 +87,15 @@ struct SwipeableTaskCard: View {
         }
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(revealColor, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .background(revealColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
+    /// Web parity: complete reveals emerald (`bg-emerald-600`), delete reveals the coral accent
+    /// (the prototype's `#FF5B5B` doubles as its destructive colour).
     private var revealColor: Color {
         switch action {
-        case .complete: return .green
-        case .delete: return .red
+        case .complete: return UrgencyPalette.color(for: .p4)
+        case .delete: return .accentColor
         case .none: return Color(.tertiarySystemFill)
         }
     }
@@ -112,7 +115,7 @@ struct SwipeableTaskCard: View {
             Button(action: onToggle) {
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(isCompleted ? Color.green : Color.secondary)
+                    .foregroundStyle(isCompleted ? UrgencyPalette.color(for: .p4) : Color.secondary)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
@@ -175,9 +178,7 @@ struct SwipeableTaskCard: View {
                     .accessibilityIdentifier("taskDetails-\(task.id.uuidString)")
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .bentoCard()
         .opacity(isCompleted ? 0.7 : 1)
         .contentShape(Rectangle())
     }
@@ -247,13 +248,10 @@ private struct PriorityChip: View {
             .accessibilityLabel("Priority \(priority.rawValue)")
     }
 
+    /// Prototype urgency bands via the shared palette (p2/p3 fold into medium — see
+    /// `UrgencyPaletteTests`).
     private var tint: Color {
-        switch priority {
-        case .p1: return .red
-        case .p2: return .orange
-        case .p3: return .yellow
-        case .p4: return .green
-        }
+        UrgencyPalette.color(for: priority)
     }
 }
 

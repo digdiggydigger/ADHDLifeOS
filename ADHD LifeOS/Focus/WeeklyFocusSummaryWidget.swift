@@ -45,12 +45,7 @@ struct WeeklyFocusSummaryWidget: View {
             chart
             goalBar
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            Color(.secondarySystemBackground),
-            in: RoundedRectangle(cornerRadius: 24, style: .continuous)
-        )
+        .bentoCard()
         .accessibilityIdentifier("weeklyFocusSummaryWidget")
     }
 

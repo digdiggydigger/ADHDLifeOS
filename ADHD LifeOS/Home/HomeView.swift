@@ -81,6 +81,8 @@ struct HomeView: View {
                     .accessibilityIdentifier("homeErrorMessage")
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.pageBackground.ignoresSafeArea())
             .navigationTitle("Home")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -250,6 +252,7 @@ struct HomeView: View {
             .onMove(perform: moveArrangeAreas)
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .environment(\.editMode, .constant(.active))
     }
 
@@ -287,7 +290,7 @@ private extension HomeView {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .accessibilityIdentifier("homeSupabaseBridgeWarningBanner")
         }
     }
@@ -306,9 +309,7 @@ private extension HomeView {
                         }
                         .accessibilityIdentifier("homeDueNudgeDismissButton-\(nudge.id)")
                     }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .bentoCard()
                 }
             }
             .accessibilityIdentifier("homeDueNudgesStrip")
@@ -344,9 +345,6 @@ private struct LifeAreaCardView: View {
             Text("\(count.openTaskCount)")
                 .font(.title.bold())
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .bentoCard()
     }
 }

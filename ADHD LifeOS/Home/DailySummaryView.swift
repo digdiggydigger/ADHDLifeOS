@@ -63,8 +63,7 @@ struct DailySummaryView: View {
                 Image(systemName: "sparkles")
                     .font(.caption2.weight(.bold))
                 Text("Today's Highlights")
-                    .font(.caption.monospaced().weight(.bold))
-                    .textCase(.uppercase)
+                    .sectionLabel()
             }
             .foregroundStyle(.tint)
             .padding(.vertical, 4)
@@ -91,9 +90,7 @@ struct DailySummaryView: View {
             .foregroundStyle(.secondary)
             .padding(.top, 4)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(24)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .bentoCard()
     }
 
     // MARK: - Highlight (web: accent-bordered AI highlight box; here: local synthesis)
@@ -107,8 +104,7 @@ struct DailySummaryView: View {
                     .frame(width: 24, height: 24)
                     .background(.tint, in: Circle())
                 Text("Daily Highlight")
-                    .font(.caption.monospaced().weight(.bold))
-                    .textCase(.uppercase)
+                    .sectionLabel()
                     .foregroundStyle(.tint)
             }
             Text(
@@ -122,11 +118,11 @@ struct DailySummaryView: View {
             .font(.title3.bold())
             .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .bentoCard()
+        // The web's accent-bordered highlight box keeps its 2pt accent ring on top of the
+        // shared hairline.
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(Color.accentColor.opacity(0.2), lineWidth: 2)
         )
     }
@@ -160,8 +156,7 @@ private struct DailyMetricCard: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(12)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .bentoCard(padding: 12)
         .accessibilityElement(children: .combine)
     }
 }
