@@ -14,12 +14,41 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
     var priority: TaskPriority
     var dueDate: Date?
     let createdAt: Date
+    /// Per-task focus-sprint config; `nil` on pre-existing documents (see `TaskItem`).
+    var focusDurationSeconds: Int?
+    var nudgesCount: Int?
+
+    init(
+        id: UUID,
+        lifeAreaId: UUID?,
+        title: String,
+        notes: String?,
+        status: TaskStatus,
+        priority: TaskPriority,
+        dueDate: Date?,
+        createdAt: Date,
+        focusDurationSeconds: Int? = nil,
+        nudgesCount: Int? = nil
+    ) {
+        self.id = id
+        self.lifeAreaId = lifeAreaId
+        self.title = title
+        self.notes = notes
+        self.status = status
+        self.priority = priority
+        self.dueDate = dueDate
+        self.createdAt = createdAt
+        self.focusDurationSeconds = focusDurationSeconds
+        self.nudgesCount = nudgesCount
+    }
 
     enum CodingKeys: String, CodingKey {
         case id, title, notes, status, priority
         case lifeAreaId = "life_area_id"
         case dueDate = "due_date"
         case createdAt = "created_at"
+        case focusDurationSeconds = "focus_duration_seconds"
+        case nudgesCount = "nudges_count"
     }
 }
 
@@ -37,6 +66,29 @@ struct TaskEditedFields: Equatable, Sendable {
     var lifeAreaId: UUID?
     var priority: TaskPriority
     var dueDate: Date?
+    /// Staged focus-sprint config. `nil` = the control was never rendered/touched (older call
+    /// sites), which normalization treats as "unchanged"; the detail view always stages the
+    /// concrete resolved values.
+    var focusDurationSeconds: Int?
+    var nudgesCount: Int?
+
+    init(
+        title: String,
+        notes: String,
+        lifeAreaId: UUID?,
+        priority: TaskPriority,
+        dueDate: Date?,
+        focusDurationSeconds: Int? = nil,
+        nudgesCount: Int? = nil
+    ) {
+        self.title = title
+        self.notes = notes
+        self.lifeAreaId = lifeAreaId
+        self.priority = priority
+        self.dueDate = dueDate
+        self.focusDurationSeconds = focusDurationSeconds
+        self.nudgesCount = nudgesCount
+    }
 }
 
 struct TaskUpdatePayload: Equatable, Sendable {
@@ -45,8 +97,13 @@ struct TaskUpdatePayload: Equatable, Sendable {
     var lifeAreaId: UUID??
     var priority: TaskPriority?
     var dueDate: Date??
+    /// Plain optionals (nil = unchanged) — the focus config is never cleared back to null, only
+    /// overwritten with a concrete value, matching `title`/`priority`.
+    var focusDurationSeconds: Int?
+    var nudgesCount: Int?
 
     var isEmpty: Bool {
         title == nil && notes == nil && lifeAreaId == nil && priority == nil && dueDate == nil
+            && focusDurationSeconds == nil && nudgesCount == nil
     }
 }

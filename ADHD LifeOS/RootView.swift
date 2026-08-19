@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct RootView: View {
     @ObservedObject var authService: AuthService
@@ -23,6 +24,15 @@ struct RootView: View {
     /// for exactly this reason.
     @StateObject private var focusService = FocusSessionService(logger: FirebaseFocusSessionAdapter())
 
+    /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
+    /// success haptic the web fires on start (`triggerHaptic('success')`) happens exactly once
+    /// per launch. `.sensoryFeedback` is iOS 17+, hence the UIKit generator (same §7 precedent
+    /// as `saveSuccessHaptic`).
+    private func startFocus(_ plan: FocusSprintPlan) {
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        focusService.start(plan: plan)
+    }
+
     var body: some View {
         Group {
             switch authService.state {
@@ -40,7 +50,8 @@ struct RootView: View {
                         nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
                         lifeAreaDetailClient: lifeAreaDetailClient,
                         taskDetailClient: taskDetailClient,
-                        schedulingClient: taskCountdownNudgeSchedulingClient
+                        schedulingClient: taskCountdownNudgeSchedulingClient,
+                        onStartFocus: startFocus
                     )
                         .tabItem { Label("Home", systemImage: "house") }
                     TaskListView(
@@ -48,16 +59,7 @@ struct RootView: View {
                         taskCreateClient: taskCreateClient,
                         taskDetailClient: taskDetailClient,
                         schedulingClient: taskCountdownNudgeSchedulingClient,
-                        onStartFocus: { task, lifeArea in
-                            let duration = FocusNudgeCadence.standardDurationSeconds
-                            focusService.start(
-                                taskId: task.id,
-                                taskTitle: task.title,
-                                lifeAreaEmoji: lifeArea?.colour ?? "🎯",
-                                durationSeconds: duration,
-                                cadence: .standard(forDurationSeconds: duration)
-                            )
-                        }
+                        onStartFocus: startFocus
                     )
                         .tabItem { Label("Tasks", systemImage: "checklist") }
                     JournalView(client: journalClient)

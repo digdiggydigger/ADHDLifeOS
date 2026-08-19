@@ -22,7 +22,13 @@ enum FocusNudgeCadence: Equatable, Sendable {
     /// The web's implicit default when a task carries no explicit nudge count: one checkpoint for
     /// a very short sprint, two for anything longer (`secs <= 60 ? 1 : 2`).
     static func standard(forDurationSeconds duration: Int) -> FocusNudgeCadence {
-        .count(duration <= 60 ? 1 : 2)
+        .count(standardCount(forDurationSeconds: duration))
+    }
+
+    /// The bare count behind `standard(forDurationSeconds:)`, exposed so
+    /// `FocusSprintConfiguration` resolves an unset per-task nudge count from the same rule.
+    static func standardCount(forDurationSeconds duration: Int) -> Int {
+        duration <= 60 ? 1 : 2
     }
 
     /// The default sprint length when a task has no target of its own — the web's `15 * 60`.
@@ -96,6 +102,17 @@ final class FocusSessionService: ObservableObject {
         deadline = now().addingTimeInterval(TimeInterval(duration))
         checkpointBanner = nil
         startTicking()
+    }
+
+    /// Starts a sprint from a resolved per-task plan (card tap, detail-screen launch).
+    func start(plan: FocusSprintPlan) {
+        start(
+            taskId: plan.taskId,
+            taskTitle: plan.taskTitle,
+            lifeAreaEmoji: plan.lifeAreaEmoji,
+            durationSeconds: plan.durationSeconds,
+            cadence: .count(plan.nudgeCount)
+        )
     }
 
     func togglePause() {

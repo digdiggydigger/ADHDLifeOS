@@ -157,6 +157,17 @@ enum FocusTimeFormatting {
         return String(format: "%02d:%02d", clamped / 60, clamped % 60)
     }
 
+    /// The web's `formatFocusDuration` verbatim: sub-minute sprints keep their seconds (`30s`),
+    /// whole minutes drop them (`15m`), and mixed values show both (`7m 30s`). Used wherever a
+    /// per-task sprint length is displayed (card chip, detail screen, launch button).
+    static func human(seconds: Int) -> String {
+        let clamped = max(0, seconds)
+        guard clamped >= 60 else { return "\(clamped)s" }
+        let minutes = clamped / 60
+        let remainder = clamped % 60
+        return remainder == 0 ? "\(minutes)m" : "\(minutes)m \(remainder)s"
+    }
+
     /// Human duration for the analytics cards — the web's `formatFocusDuration`. Whole minutes
     /// below an hour (`45m`), hours-and-minutes above (`1h 25m`, `2h`), and `0m` for nothing.
     static func duration(seconds: Int) -> String {

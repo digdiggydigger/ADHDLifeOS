@@ -37,6 +37,24 @@ struct SwipeableTaskCard: View {
     private var isCompleted: Bool { task.status == .done }
     private var action: SwipeAction { SwipeAction.resolved(forTranslation: dragOffset) }
 
+    private var resolvedSprint: (durationSeconds: Int, nudgeCount: Int) {
+        let duration = FocusSprintConfiguration.resolvedDuration(explicit: task.focusDurationSeconds)
+        return (duration, FocusSprintConfiguration.resolvedNudgeCount(
+            explicit: task.nudgesCount, durationSeconds: duration
+        ))
+    }
+
+    private var sprintSummary: String {
+        let sprint = resolvedSprint
+        return "\(FocusTimeFormatting.human(seconds: sprint.durationSeconds)) · \(sprint.nudgeCount)🔔"
+    }
+
+    private var sprintAccessibilitySummary: String {
+        let sprint = resolvedSprint
+        let nudges = sprint.nudgeCount == 1 ? "1 nudge" : "\(sprint.nudgeCount) nudges"
+        return "Focus sprint \(FocusTimeFormatting.human(seconds: sprint.durationSeconds)), \(nudges)"
+    }
+
     var body: some View {
         ZStack {
             revealLayer
@@ -117,11 +135,17 @@ struct SwipeableTaskCard: View {
                     PriorityChip(priority: task.priority)
                 }
 
-                if let dueDate = task.dueDate {
-                    Label(dueDate.formatted(date: .abbreviated, time: .omitted), systemImage: "clock")
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    if let dueDate = task.dueDate {
+                        Label(dueDate.formatted(date: .abbreviated, time: .omitted), systemImage: "clock")
+                    }
+                    // The web card's ⏱️/🔔 chip: the sprint this task is tuned to run, resolved
+                    // through the same defaults the start actions use.
+                    Label(sprintSummary, systemImage: "timer")
+                        .accessibilityLabel(sprintAccessibilitySummary)
                 }
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 

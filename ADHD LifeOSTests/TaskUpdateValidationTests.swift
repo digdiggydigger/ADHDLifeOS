@@ -141,4 +141,88 @@ final class TaskUpdateValidationTests: XCTestCase {
             XCTFail("Expected success")
         }
     }
+
+    // MARK: - Focus sprint config (duration + nudge count)
+
+    func testNormalizeUpdateTaskInput_focusFieldsUntouched_payloadStaysEmpty() {
+        let original = makeOriginal()
+
+        let result = TaskUpdateValidation.normalizeUpdateTaskInput(
+            original: original, edited: editedFields(matching: original)
+        )
+
+        switch result {
+        case .success(let payload):
+            XCTAssertNil(payload.focusDurationSeconds)
+            XCTAssertNil(payload.nudgesCount)
+            XCTAssertTrue(payload.isEmpty)
+        case .failure:
+            XCTFail("Expected success")
+        }
+    }
+
+    func testNormalizeUpdateTaskInput_stagedDefaultsOverNilOriginal_writeNothing() {
+        // A task with no stored config resolves to 15m / 2 nudges; staging exactly those
+        // resolved defaults is not an edit, so Save must not manufacture a write.
+        let original = makeOriginal()
+        var edited = editedFields(matching: original)
+        edited.focusDurationSeconds = 900
+        edited.nudgesCount = 2
+
+        let result = TaskUpdateValidation.normalizeUpdateTaskInput(original: original, edited: edited)
+
+        switch result {
+        case .success(let payload):
+            XCTAssertTrue(payload.isEmpty)
+        case .failure:
+            XCTFail("Expected success")
+        }
+    }
+
+    func testNormalizeUpdateTaskInput_focusDurationChanged_payloadCarriesClampedValue() {
+        let original = makeOriginal()
+        var edited = editedFields(matching: original)
+        edited.focusDurationSeconds = 300
+
+        let result = TaskUpdateValidation.normalizeUpdateTaskInput(original: original, edited: edited)
+
+        switch result {
+        case .success(let payload):
+            XCTAssertEqual(payload.focusDurationSeconds, 300)
+            XCTAssertNil(payload.nudgesCount)
+        case .failure:
+            XCTFail("Expected success")
+        }
+    }
+
+    func testNormalizeUpdateTaskInput_focusDurationBelowFloor_clampsToThirtySeconds() {
+        let original = makeOriginal()
+        var edited = editedFields(matching: original)
+        edited.focusDurationSeconds = 4
+
+        let result = TaskUpdateValidation.normalizeUpdateTaskInput(original: original, edited: edited)
+
+        switch result {
+        case .success(let payload):
+            XCTAssertEqual(payload.focusDurationSeconds, 30)
+        case .failure:
+            XCTFail("Expected success")
+        }
+    }
+
+    func testNormalizeUpdateTaskInput_nudgesCountChanged_payloadCarriesClampedValue() {
+        let original = makeOriginal()
+        var edited = editedFields(matching: original)
+        edited.nudgesCount = 99
+
+        let result = TaskUpdateValidation.normalizeUpdateTaskInput(original: original, edited: edited)
+
+        switch result {
+        case .success(let payload):
+            XCTAssertEqual(payload.nudgesCount, 10)
+            XCTAssertNil(payload.focusDurationSeconds)
+        case .failure:
+            XCTFail("Expected success")
+        }
+    }
 }

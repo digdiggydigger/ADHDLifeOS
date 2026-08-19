@@ -13,6 +13,9 @@ struct HomeView: View {
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
     private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
+    /// Threaded Home → LifeAreaDetail → TaskDetail so the detail screen reached from a life-area
+    /// card can launch a sprint on `RootView`'s app-level `FocusSessionService`.
+    private let onStartFocus: ((FocusSprintPlan) -> Void)?
     @State private var showSettings = false
     @State private var isPresentingInbox = false
     @State private var inboxCount = 0
@@ -32,13 +35,15 @@ struct HomeView: View {
         nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting,
         lifeAreaDetailClient: LifeAreaDetailClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting
+        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
+        onStartFocus: ((FocusSprintPlan) -> Void)? = nil
     ) {
         self.authService = authService
         self.captureClient = captureClient
         self.lifeAreaDetailClient = lifeAreaDetailClient
         self.taskDetailClient = taskDetailClient
         self.schedulingClient = schedulingClient
+        self.onStartFocus = onStartFocus
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
         _nudgesService = StateObject(
             wrappedValue: NudgesService(
@@ -106,7 +111,8 @@ struct HomeView: View {
                     lifeArea: lifeArea,
                     client: lifeAreaDetailClient,
                     taskDetailClient: taskDetailClient,
-                    schedulingClient: schedulingClient
+                    schedulingClient: schedulingClient,
+                    onStartFocus: onStartFocus
                 )
             }
             .onChange(of: isPresentingInbox) { isPresented in

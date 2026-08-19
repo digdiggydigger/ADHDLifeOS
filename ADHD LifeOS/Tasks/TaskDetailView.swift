@@ -9,6 +9,9 @@ import UIKit
 struct TaskDetailView: View {
     @StateObject private var service: TaskDetailService
     let lifeAreas: [LifeArea]
+    /// Starts an app-level focus sprint (owned by `RootView`'s `FocusSessionService`). `nil` in
+    /// hosts with no focus wiring, which hides the launch row but keeps the config editable.
+    let onStartFocus: ((FocusSprintPlan) -> Void)?
     let onUpdated: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -22,6 +25,8 @@ struct TaskDetailView: View {
     @State private var hasDueDate = false
     @State private var newTagName = ""
     @State private var pendingNudgeSelection: NudgeCountdownSelection = .none
+    @State private var focusDurationSeconds = FocusSprintConfiguration.defaultDurationSeconds
+    @State private var focusNudgeCount = 2
 
     // Staged-vs-immediate clarity state: discard-on-back gate (Part 4), the "Saved" affordance and
     // its haptic trigger (Part 3).
@@ -34,12 +39,14 @@ struct TaskDetailView: View {
         lifeAreas: [LifeArea],
         client: TaskDetailClientAdapting,
         schedulingClient: TaskCountdownNudgeSchedulingAdapting,
+        onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
         onUpdated: @escaping () -> Void
     ) {
         _service = StateObject(
             wrappedValue: TaskDetailService(taskId: taskId, client: client, schedulingClient: schedulingClient)
         )
         self.lifeAreas = lifeAreas
+        self.onStartFocus = onStartFocus
         self.onUpdated = onUpdated
     }
 
@@ -127,7 +134,10 @@ struct TaskDetailView: View {
     // MARK: - Dirty-state (Part 1 engine, consumed by Parts 2/4/5)
 
     var currentEditedFields: TaskEditedFields {
-        TaskEditedFields(title: title, notes: notes, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate)
+        TaskEditedFields(
+            title: title, notes: notes, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate,
+            focusDurationSeconds: focusDurationSeconds, nudgesCount: focusNudgeCount
+        )
     }
 
     /// Guarding on `hasInitializedFields` returns a clean state until `.onAppear` seeds the fields
@@ -154,6 +164,11 @@ private extension TaskDetailView {
         let dirty = dirtyState(for: task)
         return Form {
             titleAndStatusSection(for: task)
+            TaskFocusPlanSection(
+                durationSeconds: $focusDurationSeconds,
+                nudgeCount: $focusNudgeCount,
+                onStart: onStartFocus == nil ? nil : { Task { await startFocusSprint(for: task) } }
+            )
             addMoreInfoSection
             tagsSection
             nudgesSection(isDueDateDirty: dirty.isDueDateDirty)
@@ -170,8 +185,31 @@ private extension TaskDetailView {
             priority = task.priority
             dueDate = task.dueDate
             hasDueDate = task.dueDate != nil
+            focusDurationSeconds = FocusSprintConfiguration.resolvedDuration(explicit: task.focusDurationSeconds)
+            focusNudgeCount = FocusSprintConfiguration.resolvedNudgeCount(
+                explicit: task.nudgesCount, durationSeconds: focusDurationSeconds
+            )
             hasInitializedFields = true
         }
+    }
+
+    /// Save-then-start: unsaved staged edits (including the focus config itself) are persisted
+    /// first, so the sprint never runs against config the stored task lacks — and a failed save
+    /// aborts the launch, leaving `taskDetailErrorMessage` to explain. On success the screen pops
+    /// so the app-level `FocusTimerBar` is immediately visible.
+    func startFocusSprint(for task: TaskDetail) async {
+        if dirtyState(for: task).hasUnsavedChanges {
+            guard await service.save(edited: currentEditedFields) else { return }
+        }
+        onStartFocus?(FocusSprintPlan(
+            taskId: task.id,
+            taskTitle: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            lifeAreaEmoji: lifeAreas.first { $0.id == lifeAreaId }?.colour ?? "🎯",
+            durationSeconds: focusDurationSeconds,
+            nudgeCount: focusNudgeCount
+        ))
+        onUpdated()
+        dismiss()
     }
 
     func titleAndStatusSection(for task: TaskDetail) -> some View {

@@ -212,4 +212,38 @@ final class TaskDetailDirtyStateTests: XCTestCase {
         XCTAssertTrue(state.hasUnsavedChanges)
         XCTAssertFalse(state.isDueDateDirty)
     }
+
+    // MARK: - Focus sprint config participates in dirty tracking
+
+    func testFocusDurationEdited_isDirty() {
+        let original = makeOriginal()
+        var edited = editedFields(matching: original)
+        edited.focusDurationSeconds = 300
+
+        let state = TaskDetailDirtyState(original: original, edited: edited)
+
+        XCTAssertTrue(state.hasUnsavedChanges)
+        XCTAssertFalse(state.isDueDateDirty)
+    }
+
+    func testNudgesCountEdited_isDirty() {
+        let original = makeOriginal()
+        var edited = editedFields(matching: original)
+        edited.nudgesCount = 5
+
+        let state = TaskDetailDirtyState(original: original, edited: edited)
+
+        XCTAssertTrue(state.hasUnsavedChanges)
+    }
+
+    func testStagedResolvedDefaults_readAsClean() {
+        let original = makeOriginal()
+        var edited = editedFields(matching: original)
+        edited.focusDurationSeconds = 900
+        edited.nudgesCount = 2
+
+        let state = TaskDetailDirtyState(original: original, edited: edited)
+
+        XCTAssertFalse(state.hasUnsavedChanges)
+    }
 }

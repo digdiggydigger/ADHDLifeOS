@@ -222,6 +222,12 @@ extension FirebaseManager {
         Self.setNullable(payload.notes, forKey: "notes", in: &fields)
         Self.setNullable(payload.lifeAreaId, forKey: "life_area_id", in: &fields) { $0.uuidString }
         Self.setNullable(payload.dueDate, forKey: "due_date", in: &fields) { Timestamp(date: $0) }
+        if let focusDurationSeconds = payload.focusDurationSeconds {
+            fields["focus_duration_seconds"] = focusDurationSeconds
+        }
+        if let nudgesCount = payload.nudgesCount {
+            fields["nudges_count"] = nudgesCount
+        }
         try await update(id: id, fields: fields, in: .tasks)
     }
 

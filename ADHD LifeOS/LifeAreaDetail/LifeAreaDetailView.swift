@@ -10,17 +10,22 @@ struct LifeAreaDetailView: View {
     let lifeArea: LifeArea
     private let taskDetailClient: TaskDetailClientAdapting
     private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
+    /// Threaded through to the pushed `TaskDetailView` so its launch row can start an app-level
+    /// sprint; `nil` hides that row (previews and hosts with no `FocusSessionService`).
+    private let onStartFocus: ((FocusSprintPlan) -> Void)?
 
     init(
         lifeArea: LifeArea,
         client: LifeAreaDetailClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting
+        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
+        onStartFocus: ((FocusSprintPlan) -> Void)? = nil
     ) {
         _service = StateObject(wrappedValue: LifeAreaDetailService(lifeAreaId: lifeArea.id, client: client))
         self.lifeArea = lifeArea
         self.taskDetailClient = taskDetailClient
         self.schedulingClient = schedulingClient
+        self.onStartFocus = onStartFocus
     }
 
     var body: some View {
@@ -93,7 +98,8 @@ struct LifeAreaDetailView: View {
                     taskId: task.id,
                     lifeAreas: [lifeArea],
                     client: taskDetailClient,
-                    schedulingClient: schedulingClient
+                    schedulingClient: schedulingClient,
+                    onStartFocus: onStartFocus
                 ) {
                     Task { await service.load() }
                 }

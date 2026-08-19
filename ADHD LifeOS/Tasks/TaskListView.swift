@@ -10,9 +10,9 @@ struct TaskListView: View {
     private let taskCreateClient: TaskCreateClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
     private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
-    /// Starts an app-level focus sprint for a task. Owned by `RootView` (which holds the
-    /// `FocusSessionService`), so the running bar outlives this screen.
-    private let onStartFocus: (TaskItem, LifeArea?) -> Void
+    /// Starts an app-level focus sprint from a resolved plan. Owned by `RootView` (which holds
+    /// the `FocusSessionService`), so the running bar outlives this screen.
+    private let onStartFocus: (FocusSprintPlan) -> Void
     @State private var isPresentingTaskCreate = false
     /// Non-nil while a task's detail screen is pushed. Drives `navigationDestination(isPresented:)`
     /// — the swipe card can't be a `NavigationLink` (its own `DragGesture` would fight the link's
@@ -24,7 +24,7 @@ struct TaskListView: View {
         taskCreateClient: TaskCreateClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
         schedulingClient: TaskCountdownNudgeSchedulingAdapting,
-        onStartFocus: @escaping (TaskItem, LifeArea?) -> Void = { _, _ in }
+        onStartFocus: @escaping (FocusSprintPlan) -> Void = { _ in }
     ) {
         _tasksService = StateObject(wrappedValue: TasksService(client: tasksClient))
         self.taskCreateClient = taskCreateClient
@@ -72,7 +72,11 @@ struct TaskListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationTitle("Tasks")
+            .searchable(text: $tasksService.searchText, prompt: "Search tasks")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    refinementMenu
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isPresentingTaskCreate = true
@@ -103,7 +107,8 @@ struct TaskListView: View {
                         taskId: task.id,
                         lifeAreas: tasksService.lifeAreas,
                         client: taskDetailClient,
-                        schedulingClient: schedulingClient
+                        schedulingClient: schedulingClient,
+                        onStartFocus: onStartFocus
                     ) {
                         Task { await tasksService.load() }
                     }
@@ -140,7 +145,7 @@ struct TaskListView: View {
                                     onToggle: { Task { await tasksService.toggleStatus(task) } },
                                     onDelete: { Task { await tasksService.delete(task) } },
                                     onInspect: { inspectingTask = task },
-                                    onStartFocus: { onStartFocus(task, area) }
+                                    onStartFocus: { onStartFocus(FocusSprintPlan(task: task, lifeArea: area)) }
                                 )
                             }
                         }
@@ -164,6 +169,35 @@ struct TaskListView: View {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityIdentifier("tasksEmptyState")
+    }
+
+    /// Web-parity sort + urgency refinement (`TaskListView.tsx`'s dropdowns), as a native toolbar
+    /// menu of inline pickers. The glyph fills in when a non-default refinement is active, so the
+    /// state is visible without opening the menu (never colour alone — the fill is a shape change).
+    private var refinementMenu: some View {
+        Menu {
+            Picker("Sort", selection: $tasksService.sortOption) {
+                ForEach(TaskSortOption.allCases) { option in
+                    Text(option.label).tag(option)
+                }
+            }
+            Picker("Priority", selection: $tasksService.priorityFilter) {
+                Text("All Priorities").tag(TaskPriority?.none)
+                ForEach(TaskPriority.allCases, id: \.self) { option in
+                    Text(option.rawValue.uppercased()).tag(TaskPriority?.some(option))
+                }
+            }
+        } label: {
+            Image(systemName: isRefinementActive
+                ? "line.3.horizontal.decrease.circle.fill"
+                : "line.3.horizontal.decrease.circle")
+        }
+        .accessibilityLabel("Sort and filter")
+        .accessibilityIdentifier("taskRefinementMenu")
+    }
+
+    private var isRefinementActive: Bool {
+        tasksService.sortOption != .standard || tasksService.priorityFilter != nil
     }
 }
 

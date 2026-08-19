@@ -32,6 +32,26 @@ final class TasksService: ObservableObject {
             recomputeGroups()
         }
     }
+    /// Web-parity client-side refinement (`TaskListView.tsx`): title search, urgency filter and
+    /// sort, recomputed like `statusFilter` so the list responds as the user types/picks.
+    @Published var searchText = "" {
+        didSet {
+            guard hasLoadedOnce else { return }
+            recomputeGroups()
+        }
+    }
+    @Published var priorityFilter: TaskPriority? {
+        didSet {
+            guard hasLoadedOnce else { return }
+            recomputeGroups()
+        }
+    }
+    @Published var sortOption: TaskSortOption = .standard {
+        didSet {
+            guard hasLoadedOnce else { return }
+            recomputeGroups()
+        }
+    }
     /// Set when a swipe mutation (toggle/delete) fails after its optimistic local change has
     /// already been reverted — so the list can surface it without the row silently snapping back
     /// with no explanation.
@@ -94,7 +114,10 @@ final class TasksService: ObservableObject {
     }
 
     private func recomputeGroups() {
-        let filtered = TaskStatusFilter.filter(tasks: tasks, by: statusFilter)
-        state = .loaded(TaskGrouping.groupTasksByLifeArea(tasks: filtered, lifeAreas: lifeAreas))
+        let statusFiltered = TaskStatusFilter.filter(tasks: tasks, by: statusFilter)
+        let refined = TaskListRefinement.apply(
+            tasks: statusFiltered, searchText: searchText, priorityFilter: priorityFilter, sort: sortOption
+        )
+        state = .loaded(TaskGrouping.groupTasksByLifeArea(tasks: refined, lifeAreas: lifeAreas))
     }
 }
