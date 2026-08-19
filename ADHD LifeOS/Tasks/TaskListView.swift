@@ -10,6 +10,9 @@ struct TaskListView: View {
     private let taskCreateClient: TaskCreateClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
     private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
+    /// Starts an app-level focus sprint for a task. Owned by `RootView` (which holds the
+    /// `FocusSessionService`), so the running bar outlives this screen.
+    private let onStartFocus: (TaskItem, LifeArea?) -> Void
     @State private var isPresentingTaskCreate = false
     /// Non-nil while a task's detail screen is pushed. Drives `navigationDestination(isPresented:)`
     /// — the swipe card can't be a `NavigationLink` (its own `DragGesture` would fight the link's
@@ -20,12 +23,14 @@ struct TaskListView: View {
         tasksClient: TasksClientAdapting,
         taskCreateClient: TaskCreateClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting
+        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
+        onStartFocus: @escaping (TaskItem, LifeArea?) -> Void = { _, _ in }
     ) {
         _tasksService = StateObject(wrappedValue: TasksService(client: tasksClient))
         self.taskCreateClient = taskCreateClient
         self.taskDetailClient = taskDetailClient
         self.schedulingClient = schedulingClient
+        self.onStartFocus = onStartFocus
     }
 
     var body: some View {
@@ -128,12 +133,14 @@ struct TaskListView: View {
                     Section {
                         VStack(spacing: 8) {
                             ForEach(group.tasks) { task in
+                                let area = tasksService.lifeAreas.first { $0.id == task.lifeAreaId }
                                 SwipeableTaskCard(
                                     task: task,
-                                    lifeArea: tasksService.lifeAreas.first { $0.id == task.lifeAreaId },
+                                    lifeArea: area,
                                     onToggle: { Task { await tasksService.toggleStatus(task) } },
                                     onDelete: { Task { await tasksService.delete(task) } },
-                                    onInspect: { inspectingTask = task }
+                                    onInspect: { inspectingTask = task },
+                                    onStartFocus: { onStartFocus(task, area) }
                                 )
                             }
                         }

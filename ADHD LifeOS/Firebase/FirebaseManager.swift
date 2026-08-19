@@ -118,6 +118,7 @@ final class FirebaseManager {
         case tags
         case nudges
         case reminders
+        case focusSessions = "focus_sessions"
     }
 
     func requireUID() throws -> String {
@@ -367,6 +368,23 @@ extension FirebaseManager {
 
     func fetchNudge(id: UUID) async throws -> Nudge {
         try await collection(.nudges).document(id.uuidString).getDocument(as: Nudge.self)
+    }
+}
+
+// MARK: - Focus sessions
+
+extension FirebaseManager {
+    /// Append-only in practice: a finished sprint is a historical fact, so nothing updates or
+    /// deletes these — the weekly and trend analytics read them straight back.
+    func saveFocusSession(_ session: CompletedFocusSession) async throws {
+        try await save(session, id: session.id, in: .focusSessions)
+    }
+
+    /// Newest-first history, used by the focus analytics views.
+    func fetchFocusSessions() async throws -> [CompletedFocusSession] {
+        try await fetchAll(
+            CompletedFocusSession.self, from: .focusSessions, orderedBy: "ended_at", descending: true
+        )
     }
 
     func createNudge(_ nudge: Nudge) async throws {

@@ -32,7 +32,8 @@ service cloud.firestore {
       // absent — see header).
       match /{collection}/{docId} {
         allow read, write: if isOwner(uid)
-          && collection in ['tasks', 'life_areas', 'tags', 'captures', 'nudges', 'reminders'];
+          && collection in ['tasks', 'life_areas', 'tags', 'captures', 'nudges', 'reminders',
+                            'focus_sessions'];
       }
     }
   }

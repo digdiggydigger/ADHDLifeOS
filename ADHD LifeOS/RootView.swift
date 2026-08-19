@@ -19,6 +19,9 @@ struct RootView: View {
     let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
     @State private var isPresentingQuickCapture = false
+    /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
+    /// for exactly this reason.
+    @StateObject private var focusService = FocusSessionService(logger: FirebaseFocusSessionAdapter())
 
     var body: some View {
         Group {
@@ -44,7 +47,17 @@ struct RootView: View {
                         tasksClient: tasksClient,
                         taskCreateClient: taskCreateClient,
                         taskDetailClient: taskDetailClient,
-                        schedulingClient: taskCountdownNudgeSchedulingClient
+                        schedulingClient: taskCountdownNudgeSchedulingClient,
+                        onStartFocus: { task, lifeArea in
+                            let duration = FocusNudgeCadence.standardDurationSeconds
+                            focusService.start(
+                                taskId: task.id,
+                                taskTitle: task.title,
+                                lifeAreaEmoji: lifeArea?.colour ?? "🎯",
+                                durationSeconds: duration,
+                                cadence: .standard(forDurationSeconds: duration)
+                            )
+                        }
                     )
                         .tabItem { Label("Tasks", systemImage: "checklist") }
                     JournalView(client: journalClient)
@@ -60,6 +73,11 @@ struct RootView: View {
                         )
                     }
                         .tabItem { Label("Nudges", systemImage: "bell") }
+                }
+                .overlay(alignment: .bottom) {
+                    // Sits above the tab bar, mirroring the web's `fixed bottom-24` placement.
+                    FocusTimerBar(service: focusService)
+                        .padding(.bottom, 60)
                 }
                 .overlay(alignment: .bottomTrailing) {
                     Button {

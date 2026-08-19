@@ -16,8 +16,8 @@ import SwiftUI
 /// - The priority chip is **display-only**, not click-to-cycle: the web cycles low/medium/high,
 ///   but this app's model is `p1`–`p4` with different semantics — cycling it here would invent a
 ///   mapping. Tapping the card opens Details, where priority is edited properly.
-/// - "Start Focus" is not a standalone button: focus scheduling lives in `TaskDetailView`, so the
-///   card's tap-to-inspect leads there rather than duplicating the flow.
+/// - The "Start Focus" button IS ported (as "Focus") now that `FocusTimerBar` exists to receive
+///   it; it was omitted in the card's first pass purely because there was no destination yet.
 /// - Real-time = optimistic write-through: `onToggle`/`onDelete` flip local state immediately and
 ///   persist via `TasksService` → Firestore, reverting on a failed write. Not a snapshot listener
 ///   (the app is pull-based), but every swipe is immediately reflected and persisted.
@@ -27,6 +27,9 @@ struct SwipeableTaskCard: View {
     let onToggle: () -> Void
     let onDelete: () -> Void
     let onInspect: () -> Void
+    /// Starts a focus sprint for this task. Defaulted so existing call sites and previews that
+    /// predate `FocusTimerBar` keep compiling.
+    var onStartFocus: () -> Void = {}
 
     @State private var dragOffset: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -122,13 +125,31 @@ struct SwipeableTaskCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("Details", action: onInspect)
-                .font(.caption.monospaced().weight(.bold))
-                .textCase(.uppercase)
-                .buttonStyle(.plain)
-                .foregroundStyle(.tint)
-                .frame(minHeight: 44)
-                .accessibilityIdentifier("taskDetails-\(task.id.uuidString)")
+            VStack(alignment: .trailing, spacing: 4) {
+                if !isCompleted {
+                    Button(action: onStartFocus) {
+                        Label("Focus", systemImage: "play.fill")
+                            .font(.caption2.monospaced().weight(.bold))
+                            .textCase(.uppercase)
+                            .foregroundStyle(Color(.systemBackground))
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(.tint, in: Capsule())
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("taskStartFocus-\(task.id.uuidString)")
+                }
+
+                Button("Details", action: onInspect)
+                    .font(.caption.monospaced().weight(.bold))
+                    .textCase(.uppercase)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tint)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("taskDetails-\(task.id.uuidString)")
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
