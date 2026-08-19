@@ -244,6 +244,52 @@ final class FocusSessionServiceTests: XCTestCase {
         XCTAssertTrue(logger.logged.isEmpty)
     }
 
+    // MARK: - Replacement (starting a sprint while one is in flight)
+
+    func testStart_whileSprintRunning_keepsTheNewSprintAlive() async {
+        let env = makeSUT()
+        let sut = env.service
+        let clock = env.clock
+        startSprint(sut, duration: 100)
+        clock.advance(40)
+        await sut.tick()
+
+        sut.start(
+            taskId: UUID(), taskTitle: "The replacement", lifeAreaEmoji: "📚",
+            durationSeconds: 200, cadence: .count(1)
+        )
+        await drainDeferredTasks()
+
+        XCTAssertTrue(sut.isActive, "replacing a sprint must not tear the new one down")
+        XCTAssertEqual(sut.session?.taskTitle, "The replacement")
+        XCTAssertEqual(sut.session?.remainingSeconds, 200)
+    }
+
+    func testStart_whileSprintRunning_logsTheReplacedSprintNotTheNewOne() async {
+        let env = makeSUT()
+        let sut = env.service
+        let clock = env.clock
+        startSprint(sut, duration: 100)  // "Draft the review"
+        clock.advance(40)
+        await sut.tick()
+
+        sut.start(
+            taskId: UUID(), taskTitle: "The replacement", lifeAreaEmoji: "📚",
+            durationSeconds: 200, cadence: .count(1)
+        )
+        await drainDeferredTasks()
+
+        XCTAssertEqual(env.logger.logged.count, 1, "the replaced sprint is logged exactly once")
+        XCTAssertEqual(env.logger.logged.first?.taskTitle, "Draft the review")
+        XCTAssertEqual(env.logger.logged.first?.focusedSeconds, 40)
+        XCTAssertEqual(env.logger.logged.first?.completedNaturally, false)
+    }
+
+    /// Lets the fire-and-forget logging Task inside `start` run to completion before asserting.
+    private func drainDeferredTasks() async {
+        for _ in 0..<10 { await Task.yield() }
+    }
+
     // MARK: - completedSprintCount (the analytics post-sprint reload signal)
 
     func testCompletedSprintCount_incrementsPerFinishedSprint() async {

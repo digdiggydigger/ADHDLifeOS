@@ -21,8 +21,11 @@ struct RootView: View {
 
     @State private var isPresentingQuickCapture = false
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
-    /// for exactly this reason.
-    @StateObject private var focusService = FocusSessionService(logger: FirebaseFocusSessionAdapter())
+    /// for exactly this reason. The factory adds Live Activity mirroring on iOS 16.1+ (§7 gate),
+    /// so the countdown also lives on the Lock Screen / Dynamic Island.
+    @StateObject private var focusService = FocusSessionService.withLiveActivityMirroring(
+        logger: FirebaseFocusSessionAdapter()
+    )
 
     /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
     /// success haptic the web fires on start (`triggerHaptic('success')`) happens exactly once

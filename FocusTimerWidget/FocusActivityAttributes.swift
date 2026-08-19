@@ -1,0 +1,51 @@
+//
+//  FocusActivityAttributes.swift
+//  FocusTimerWidget
+//
+//  Compiled into BOTH the app and the widget extension (ActivityKit matches the Activity across
+//  the two processes by this type), so it must stay free of app-module dependencies.
+//  `nonisolated` because the app module compiles with default-MainActor isolation and the OS
+//  encodes/decodes this state off the main actor.
+//
+
+import ActivityKit
+import Foundation
+
+@available(iOS 16.1, *)
+nonisolated struct FocusActivityAttributes: ActivityAttributes {
+    /// Everything sprint-specific lives in the content state — a replacement sprint is just a
+    /// fresh Activity with fresh state — so the fixed attributes carry nothing.
+    nonisolated struct ContentState: Codable, Hashable {
+        var taskTitle: String
+        var lifeAreaEmoji: String
+        /// Total planned length including +30s/+5m extensions, for a truthful progress fill.
+        var durationSeconds: Int
+        /// When the countdown hits zero. While paused this is synthesized as `pausedAt` plus the
+        /// frozen remainder, so `Text(timerInterval:pauseTime:)` renders the frozen clock — the
+        /// OS formats every readout; neither process ever renders time per-second itself.
+        var deadline: Date
+        /// Non-nil while paused: the instant the countdown display is pinned to.
+        var pausedAt: Date?
+        var checkpointCount: Int
+        var checkpointsReached: Int
+        /// Set on the final frame of a naturally-finished sprint.
+        var isCompleted: Bool
+
+        var isPaused: Bool { pausedAt != nil }
+
+        /// The OS-rendered countdown range. The visual start is derived back from the deadline so
+        /// the elapsed fraction stays truthful across pauses and extensions.
+        var timerInterval: ClosedRange<Date> {
+            deadline.addingTimeInterval(-TimeInterval(max(0, durationSeconds)))...deadline
+        }
+
+        /// Static 0–1 progress for the paused and completed presentations, where the OS timer
+        /// view isn't running.
+        var frozenProgress: Double {
+            guard durationSeconds > 0 else { return 0 }
+            if isCompleted { return 1 }
+            let remaining = pausedAt.map { deadline.timeIntervalSince($0) } ?? 0
+            return min(1, max(0, (Double(durationSeconds) - remaining) / Double(durationSeconds)))
+        }
+    }
+}

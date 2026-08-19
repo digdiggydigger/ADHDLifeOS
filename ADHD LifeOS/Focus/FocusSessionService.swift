@@ -64,6 +64,10 @@ final class FocusSessionService: ObservableObject {
     @Published private(set) var completedSprintCount = 0
 
     private let logger: FocusSessionLogging?
+    /// Mirrors sprint lifecycle events into the Lock Screen / Dynamic Island Live Activity.
+    /// Optional because ActivityKit is iOS 16.1+ against the 16.0 floor (§7) — and so tests can
+    /// substitute a fake.
+    private let activityMirror: FocusActivityMirroring?
     private let now: () -> Date
     private var deadline: Date?
     private var startedAt: Date?
@@ -71,8 +75,13 @@ final class FocusSessionService: ObservableObject {
 
     var isActive: Bool { session != nil }
 
-    init(logger: FocusSessionLogging? = nil, now: @escaping () -> Date = Date.init) {
+    init(
+        logger: FocusSessionLogging? = nil,
+        activityMirror: FocusActivityMirroring? = nil,
+        now: @escaping () -> Date = Date.init
+    ) {
         self.logger = logger
+        self.activityMirror = activityMirror
         self.now = now
     }
 
@@ -91,21 +100,26 @@ final class FocusSessionService: ObservableObject {
         durationSeconds: Int,
         cadence: FocusNudgeCadence = .count(1)
     ) {
-        if session != nil {
-            Task { await stop() }
+        // Retire any sprint in flight SYNCHRONOUSLY, before the new session is installed. The
+        // previous deferred `Task { await stop() }` ran after this method body, so it tore down
+        // the replacement and logged IT (at ~0s) instead of the sprint being displaced.
+        if let replaced = finishCurrentSprint(completedNaturally: false) {
+            Task { await log(replaced) }
         }
         let duration = max(FocusCheckpoints.minimumIntervalSeconds, durationSeconds)
-        session = FocusSession(
+        let started = FocusSession(
             taskId: taskId,
             taskTitle: taskTitle,
             lifeAreaEmoji: lifeAreaEmoji.isEmpty ? "🎯" : lifeAreaEmoji,
             durationSeconds: duration,
             nudgeCheckpoints: cadence.checkpoints(forDurationSeconds: duration)
         )
+        session = started
         startedAt = now()
         deadline = now().addingTimeInterval(TimeInterval(duration))
         checkpointBanner = nil
         startTicking()
+        activityMirror?.sprintStarted(activitySnapshot(for: started))
     }
 
     /// Starts a sprint from a resolved per-task plan (card tap, detail-screen launch).
@@ -133,6 +147,7 @@ final class FocusSessionService: ObservableObject {
             ticker?.cancel()
             ticker = nil
         }
+        activityMirror?.sprintUpdated(activitySnapshot(for: current))
     }
 
     /// Extends a running sprint (+30s / +5m in the bar). Adds to both the remaining time and the
@@ -145,22 +160,32 @@ final class FocusSessionService: ObservableObject {
         if !current.isPaused {
             deadline = now().addingTimeInterval(TimeInterval(current.remainingSeconds))
         }
+        activityMirror?.sprintUpdated(activitySnapshot(for: current))
     }
 
     /// Ends the sprint and persists it. `completedNaturally` distinguishes a countdown that ran
     /// out from a manual stop, which the analytics views report separately.
     func stop(completedNaturally: Bool = false) async {
+        guard let record = finishCurrentSprint(completedNaturally: completedNaturally) else { return }
+        await log(record)
+    }
+
+    /// The synchronous teardown shared by `stop` and the replacement path in `start`: cancels the
+    /// ticker, clears all sprint state, ends the Live Activity, and returns the history record
+    /// for the caller to persist (awaited in `stop`, fire-and-forget on replacement).
+    private func finishCurrentSprint(completedNaturally: Bool) -> CompletedFocusSession? {
         ticker?.cancel()
         ticker = nil
         deadline = nil
-        guard let finished = session, let began = startedAt else { return }
+        guard let finished = session, let began = startedAt else { return nil }
         session = nil
         startedAt = nil
         checkpointBanner = nil
 
         completedSprintCount += 1
+        activityMirror?.sprintEnded(completedNaturally: completedNaturally)
 
-        let record = CompletedFocusSession(
+        return CompletedFocusSession(
             id: UUID(),
             taskId: finished.taskId,
             taskTitle: finished.taskTitle,
@@ -172,11 +197,26 @@ final class FocusSessionService: ObservableObject {
             startedAt: began,
             endedAt: now()
         )
+    }
+
+    private func log(_ record: CompletedFocusSession) async {
         do {
             try await logger?.logCompletedSession(record)
         } catch {
             logErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
+    }
+
+    private func activitySnapshot(for session: FocusSession) -> FocusActivitySnapshot {
+        FocusActivitySnapshot(
+            taskTitle: session.taskTitle,
+            lifeAreaEmoji: session.lifeAreaEmoji,
+            durationSeconds: session.durationSeconds,
+            deadline: session.isPaused ? nil : deadline,
+            pausedRemainingSeconds: session.isPaused ? session.remainingSeconds : nil,
+            checkpointCount: session.nudgeCheckpoints.count,
+            checkpointsReached: session.triggeredCheckpointIndices.count
+        )
     }
 
     // MARK: - Ticking
@@ -207,6 +247,10 @@ final class FocusSessionService: ObservableObject {
         }
         if current.isComplete {
             await stop(completedNaturally: true)
+        } else if !crossed.isEmpty {
+            // A checkpoint crossing is the one mid-sprint event the Activity shows (the reached
+            // count); plain ticks never touch it — the OS renders the countdown itself.
+            activityMirror?.sprintUpdated(activitySnapshot(for: current))
         }
     }
 }

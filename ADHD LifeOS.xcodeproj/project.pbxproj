@@ -7,12 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA62CFB53036187B009FA90C /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA62CFB43036187B009FA90C /* WidgetKit.framework */; };
+		AA62CFB73036187B009FA90C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA62CFB63036187B009FA90C /* SwiftUI.framework */; };
+		AA62CFC63036187E009FA90C /* FocusTimerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA62CFB23036187B009FA90C /* FocusTimerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FA0000043009F8C0008ECC04 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000023009F8C0008ECC02 /* FirebaseAuth */; };
 		FA0000053009F8C0008ECC05 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000033009F8C0008ECC03 /* FirebaseFirestore */; };
 		FA0000073009F8C0008ECC07 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000063009F8C0008ECC06 /* FirebaseStorage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		AA62CFC43036187E009FA90C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAF46F3C3009F8BE008ECC13 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA62CFB13036187B009FA90C;
+			remoteInfo = FocusTimerWidgetExtension;
+		};
 		AAF46F523009F8C0008ECC13 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AAF46F3C3009F8BE008ECC13 /* Project object */;
@@ -29,13 +39,44 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		AA62CFC73036187E009FA90C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA62CFC63036187E009FA90C /* FocusTimerWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		AA62CFB23036187B009FA90C /* FocusTimerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FocusTimerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA62CFB43036187B009FA90C /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		AA62CFB63036187B009FA90C /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		AAF46F443009F8BE008ECC13 /* ADHD LifeOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ADHD LifeOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF46F513009F8C0008ECC13 /* ADHD LifeOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ADHD LifeOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF46F5B3009F8C0008ECC13 /* ADHD LifeOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ADHD LifeOSUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA62CFCB3036187E009FA90C /* Exceptions for "FocusTimerWidget" folder in "FocusTimerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA62CFB13036187B009FA90C /* FocusTimerWidgetExtension */;
+		};
+		AA62CFCC3036187E009FA90C /* Exceptions for "FocusTimerWidget" folder in "ADHD LifeOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				FocusActivityAttributes.swift,
+			);
+			target = AAF46F433009F8BE008ECC13 /* ADHD LifeOS */;
+		};
 		AAF46F753009F8C0008ECC13 /* Exceptions for "ADHD LifeOS" folder in "ADHD LifeOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -46,6 +87,15 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		AA62CFB83036187B009FA90C /* FocusTimerWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA62CFCB3036187E009FA90C /* Exceptions for "FocusTimerWidget" folder in "FocusTimerWidgetExtension" target */,
+				AA62CFCC3036187E009FA90C /* Exceptions for "FocusTimerWidget" folder in "ADHD LifeOS" target */,
+			);
+			path = FocusTimerWidget;
+			sourceTree = "<group>";
+		};
 		AAF46F463009F8BE008ECC13 /* ADHD LifeOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -67,6 +117,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		AA62CFAF3036187B009FA90C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA62CFB73036187B009FA90C /* SwiftUI.framework in Frameworks */,
+				AA62CFB53036187B009FA90C /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AAF46F413009F8BE008ECC13 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -94,12 +153,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		AA62CFB33036187B009FA90C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				AA62CFB43036187B009FA90C /* WidgetKit.framework */,
+				AA62CFB63036187B009FA90C /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		AAF46F3B3009F8BE008ECC13 = {
 			isa = PBXGroup;
 			children = (
 				AAF46F463009F8BE008ECC13 /* ADHD LifeOS */,
 				AAF46F543009F8C0008ECC13 /* ADHD LifeOSTests */,
 				AAF46F5E3009F8C0008ECC13 /* ADHD LifeOSUITests */,
+				AA62CFB83036187B009FA90C /* FocusTimerWidget */,
+				AA62CFB33036187B009FA90C /* Frameworks */,
 				AAF46F453009F8BE008ECC13 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -110,6 +180,7 @@
 				AAF46F443009F8BE008ECC13 /* ADHD LifeOS.app */,
 				AAF46F513009F8C0008ECC13 /* ADHD LifeOSTests.xctest */,
 				AAF46F5B3009F8C0008ECC13 /* ADHD LifeOSUITests.xctest */,
+				AA62CFB23036187B009FA90C /* FocusTimerWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -117,6 +188,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AA62CFB13036187B009FA90C /* FocusTimerWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA62CFCA3036187E009FA90C /* Build configuration list for PBXNativeTarget "FocusTimerWidgetExtension" */;
+			buildPhases = (
+				AA62CFAE3036187B009FA90C /* Sources */,
+				AA62CFAF3036187B009FA90C /* Frameworks */,
+				AA62CFB03036187B009FA90C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA62CFB83036187B009FA90C /* FocusTimerWidget */,
+			);
+			name = FocusTimerWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = FocusTimerWidgetExtension;
+			productReference = AA62CFB23036187B009FA90C /* FocusTimerWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		AAF46F433009F8BE008ECC13 /* ADHD LifeOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AAF46F653009F8C0008ECC13 /* Build configuration list for PBXNativeTarget "ADHD LifeOS" */;
@@ -124,10 +217,12 @@
 				AAF46F403009F8BE008ECC13 /* Sources */,
 				AAF46F413009F8BE008ECC13 /* Frameworks */,
 				AAF46F423009F8BE008ECC13 /* Resources */,
+				AA62CFC73036187E009FA90C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AA62CFC53036187E009FA90C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AAF46F463009F8BE008ECC13 /* ADHD LifeOS */,
@@ -198,6 +293,9 @@
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					AA62CFB13036187B009FA90C = {
+						CreatedOnToolsVersion = 26.6;
+					};
 					AAF46F433009F8BE008ECC13 = {
 						CreatedOnToolsVersion = 26.6;
 					};
@@ -231,11 +329,19 @@
 				AAF46F433009F8BE008ECC13 /* ADHD LifeOS */,
 				AAF46F503009F8C0008ECC13 /* ADHD LifeOSTests */,
 				AAF46F5A3009F8C0008ECC13 /* ADHD LifeOSUITests */,
+				AA62CFB13036187B009FA90C /* FocusTimerWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AA62CFB03036187B009FA90C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AAF46F423009F8BE008ECC13 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -260,6 +366,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		AA62CFAE3036187B009FA90C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AAF46F403009F8BE008ECC13 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -284,6 +397,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		AA62CFC53036187E009FA90C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA62CFB13036187B009FA90C /* FocusTimerWidgetExtension */;
+			targetProxy = AA62CFC43036187E009FA90C /* PBXContainerItemProxy */;
+		};
 		AAF46F533009F8C0008ECC13 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = AAF46F433009F8BE008ECC13 /* ADHD LifeOS */;
@@ -297,6 +415,68 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		AA62CFC83036187E009FA90C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3U587KEQ5C;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FocusTimerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusTimerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ethananthony.ADHD-LifeOS.FocusTimerWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA62CFC93036187E009FA90C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3U587KEQ5C;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FocusTimerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FocusTimerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ethananthony.ADHD-LifeOS.FocusTimerWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		AAF46F633009F8C0008ECC13 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -436,6 +616,7 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ADHD LifeOS uses the microphone to record a voice note for a capture.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ADHD LifeOS uses your photo library to attach a photo to a capture.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "ADHD LifeOS uses speech recognition to transcribe your voice note.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -476,6 +657,7 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ADHD LifeOS uses the microphone to record a voice note for a capture.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ADHD LifeOS uses your photo library to attach a photo to a capture.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "ADHD LifeOS uses speech recognition to transcribe your voice note.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -581,6 +763,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		AA62CFCA3036187E009FA90C /* Build configuration list for PBXNativeTarget "FocusTimerWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA62CFC83036187E009FA90C /* Debug */,
+				AA62CFC93036187E009FA90C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		AAF46F3F3009F8BE008ECC13 /* Build configuration list for PBXProject "ADHD LifeOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
