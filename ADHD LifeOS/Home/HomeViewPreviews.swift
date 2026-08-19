@@ -16,6 +16,9 @@ private struct PreviewAuthClientAdapting: AuthClientAdapting {
     func completeSession(from url: URL) async throws -> AuthUser { fatalError("unused in preview") }
     func signOut() async throws {}
     func validIDToken() async throws -> String { "preview-token" }
+    func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> AuthUser {
+        fatalError("unused in preview")
+    }
 }
 
 private struct PreviewHomeClientAdapting: HomeClientAdapting {

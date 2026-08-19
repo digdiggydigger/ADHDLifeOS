@@ -42,6 +42,16 @@ struct FirebaseAuthClientAdapter: AuthClientAdapting {
         }
     }
 
+    func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> AuthUser {
+        do {
+            return Self.authUser(from: try await manager.signInWithApple(
+                idToken: idToken, rawNonce: rawNonce, displayName: displayName
+            ))
+        } catch {
+            throw AuthServiceError.appleSignInFailed(Self.message(for: error))
+        }
+    }
+
     func requestOTP(email: String, redirectTo: URL?) async throws {
         throw AuthServiceError.magicLinkUnavailable(
             "Magic-link sign-in isn't available — use your email and password."

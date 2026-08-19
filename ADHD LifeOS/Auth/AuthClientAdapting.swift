@@ -20,4 +20,11 @@ protocol AuthClientAdapting: Sendable {
     /// bearer-token auth; Supabase's own `AuthClient` never needed this since `PostgrestClient`
     /// read its session internally.
     func validIDToken() async throws -> String
+
+    /// Exchanges an Apple identity token (plus the raw nonce whose SHA-256 digest rode in the
+    /// authorization request) for a signed-in session. Takes Foundation values, not
+    /// `ASAuthorization` — the view extracts them, so this seam stays constructible in tests.
+    /// `displayName` is Apple's one-time-only full name from the FIRST authorization; adapters
+    /// should persist it, since Apple never sends it again.
+    func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> AuthUser
 }

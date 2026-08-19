@@ -103,6 +103,41 @@ final class FirebaseManager {
         return FirebaseAuthUser(uid: result.user.uid, email: result.user.email)
     }
 
+    /// Sign in with Apple: exchanges the Apple identity token + raw nonce for a Firebase
+    /// session via `OAuthProvider`. Firebase re-hashes `rawNonce` and checks it against the
+    /// digest embedded in the token, so a replayed token from another session is rejected.
+    ///
+    /// First authorization is also account creation (there is no separate Apple sign-up), so
+    /// the new-user path mirrors `signUp`: write the `users/{uid}` profile doc and persist the
+    /// display name — Apple sends the full name ONLY on that first grant, never again.
+    @discardableResult
+    func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> FirebaseAuthUser {
+        let credential = OAuthProvider.credential(providerID: .apple, idToken: idToken, rawNonce: rawNonce)
+        let result = try await auth.signIn(with: credential)
+
+        if result.additionalUserInfo?.isNewUser == true {
+            // Best-effort like the seeding below: the session is live, so a profile-write
+            // failure must not fail the sign-in the user just completed.
+            if let displayName, !displayName.isEmpty {
+                let change = result.user.createProfileChangeRequest()
+                change.displayName = displayName
+                try? await change.commitChanges()
+            }
+            var profile: [String: Any] = ["created_at": FieldValue.serverTimestamp()]
+            if let email = result.user.email {
+                profile["email"] = email
+            }
+            if let displayName, !displayName.isEmpty {
+                profile["display_name"] = displayName
+            }
+            try? await firestore.collection("users").document(result.user.uid).setData(profile, merge: true)
+        }
+        // Same best-effort seeding hook as `signIn`/`signUp` — first Apple sign-in gets the
+        // starter content; the `seeded_at` marker makes later calls a single cheap read.
+        try? await seedDefaultContentIfNeeded()
+        return FirebaseAuthUser(uid: result.user.uid, email: result.user.email)
+    }
+
     func signOut() throws {
         try auth.signOut()
     }

@@ -76,6 +76,21 @@ final class AuthService: ObservableObject {
         }
     }
 
+    /// Sign in with Apple, after the view has extracted the identity token and raw nonce from
+    /// `ASAuthorization`. No Supabase-bridge attempt: the bridge predates the Firebase cutover
+    /// and is `nil` in production wiring; an Apple identity has no bridge password anyway.
+    func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async {
+        errorMessage = nil
+        do {
+            let user = try await client.signInWithApple(
+                idToken: idToken, rawNonce: rawNonce, displayName: displayName
+            )
+            state = .signedIn(user)
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
     func requestMagicLink(email: String) async {
         errorMessage = nil
         do {

@@ -17,8 +17,15 @@ final class FakeAuthClientAdapting: AuthClientAdapting, @unchecked Sendable {
     )
     var signOutResult: Result<Void, Error> = .success(())
     var validIDTokenResult: Result<String, Error> = .success("fake-id-token")
+    var signInWithAppleResult: Result<AuthUser, Error> = .failure(
+        AuthServiceError.appleSignInFailed("not configured")
+    )
 
     private(set) var signInCallCount = 0
+    private(set) var signInWithAppleCallCount = 0
+    private(set) var lastAppleIDToken: String?
+    private(set) var lastAppleRawNonce: String?
+    private(set) var lastAppleDisplayName: String?
     private(set) var lastSignInEmail: String?
     private(set) var lastSignInPassword: String?
     private(set) var requestOTPCallCount = 0
@@ -57,5 +64,13 @@ final class FakeAuthClientAdapting: AuthClientAdapting, @unchecked Sendable {
     func validIDToken() async throws -> String {
         validIDTokenCallCount += 1
         return try validIDTokenResult.get()
+    }
+
+    func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> AuthUser {
+        signInWithAppleCallCount += 1
+        lastAppleIDToken = idToken
+        lastAppleRawNonce = rawNonce
+        lastAppleDisplayName = displayName
+        return try signInWithAppleResult.get()
     }
 }

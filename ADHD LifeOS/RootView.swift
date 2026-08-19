@@ -97,6 +97,9 @@ struct RootView: View {
                 }
             }
         }
+        // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
+        // Apple (or password sign-in) lands on Home gracefully (§5).
+        .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: authService.state)
         .task {
             if authService.state == .unknown {
                 await authService.restoreSession()
@@ -113,6 +116,9 @@ struct RootView: View {
         func completeSession(from url: URL) async throws -> AuthUser { fatalError("unused in preview") }
         func signOut() async throws {}
         func validIDToken() async throws -> String { "preview-token" }
+        func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> AuthUser {
+            fatalError("unused in preview")
+        }
     }
 
     struct PreviewHomeClient: HomeClientAdapting {
