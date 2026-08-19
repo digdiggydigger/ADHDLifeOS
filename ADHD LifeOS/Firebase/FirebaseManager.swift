@@ -87,12 +87,19 @@ final class FirebaseManager {
             ],
             merge: true
         )
+        // Best-effort (`try?`): the account exists and the session is live at this point, so a
+        // seeding failure (e.g. security rules not yet deployed) must not fail the sign-up —
+        // seeding retries on every future sign-in until the `seeded_at` marker lands.
+        try? await seedDefaultContentIfNeeded()
         return FirebaseAuthUser(uid: result.user.uid, email: result.user.email)
     }
 
     @discardableResult
     func signIn(email: String, password: String) async throws -> FirebaseAuthUser {
         let result = try await auth.signIn(withEmail: email, password: password)
+        // Same best-effort rationale as `signUp` — and this is the path that seeds accounts
+        // created in the Firebase console (there is no in-app sign-up UI).
+        try? await seedDefaultContentIfNeeded()
         return FirebaseAuthUser(uid: result.user.uid, email: result.user.email)
     }
 
@@ -124,9 +131,14 @@ final class FirebaseManager {
         firestore.batch()
     }
 
+    /// The signed-in user's root document (`users/{uid}`) — profile fields and the
+    /// `seeded_at` first-login marker live here.
+    func userDocument() throws -> DocumentReference {
+        firestore.collection("users").document(try requireUID())
+    }
+
     func collection(_ name: Collection) throws -> CollectionReference {
-        let uid = try requireUID()
-        return firestore.collection("users").document(uid).collection(name.rawValue)
+        try userDocument().collection(name.rawValue)
     }
 
     func fetchAll<Model: Decodable>(
