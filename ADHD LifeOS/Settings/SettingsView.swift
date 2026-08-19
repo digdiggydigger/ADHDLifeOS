@@ -28,11 +28,10 @@ struct SettingsView: View {
         self.authService = authService
         self.authorizationReader = authorizationReader
         // Default param keeps HomeView's `SettingsView(authService:)` call site unchanged (block-1
-        // precedent); tests/previews inject a fake. Built from the same Cognito client every other
-        // AWS screen uses.
-        self.tagEditorClient = tagEditorClient ?? AWSTagEditorClientAdapter(authClient: authService.authClient)
-        self.lifeAreaEditorClient = lifeAreaEditorClient
-            ?? AWSLifeAreaEditorClientAdapter(authClient: authService.authClient)
+        // precedent); tests/previews inject a fake. The Firebase adapters carry their own auth
+        // scoping via `FirebaseManager`, so no auth client gets threaded through anymore.
+        self.tagEditorClient = tagEditorClient ?? FirebaseTagEditorClientAdapter()
+        self.lifeAreaEditorClient = lifeAreaEditorClient ?? FirebaseLifeAreaEditorClientAdapter()
     }
 
     var body: some View {

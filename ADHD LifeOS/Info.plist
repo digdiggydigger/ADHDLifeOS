@@ -13,10 +13,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>SUPABASE_URL</key>
-	<string>$(SUPABASE_URL)</string>
-	<key>SUPABASE_ANON_KEY</key>
-	<string>$(SUPABASE_ANON_KEY)</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>ADHD LifeOS uses your photo library to attach a photo to a capture.</string>
 	<key>NSCameraUsageDescription</key>

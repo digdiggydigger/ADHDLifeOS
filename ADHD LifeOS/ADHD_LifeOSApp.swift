@@ -5,8 +5,6 @@
 //  Created by E Anthony on 17/07/2026.
 //
 
-import Auth
-import PostgREST
 import SwiftUI
 
 @main
@@ -25,30 +23,22 @@ struct ADHD_LifeOSApp: App {
     private let remindersClient: RemindersClientAdapting
 
     init() {
-        let authClient = ADHD_LifeOSApp.makeAuthClient()
-        let awsAuthClient = AWSAuthClientAdapter()
-        // STOPGAP (2026-07-22, FIX: "No Supabase session after Cognito-only sign-in") — see
-        // AuthService.supabaseBridge's doc comment for the full rationale and removal plan.
-        let supabaseBridgeAuthClient = SupabaseAuthClientAdapter(client: authClient)
-        _authService = StateObject(
-            wrappedValue: AuthService(
-                client: awsAuthClient,
-                redirectURL: SupabaseConfig.authCallbackURL,
-                supabaseBridge: supabaseBridgeAuthClient
-            )
-        )
-        let postgrestClient = ADHD_LifeOSApp.makePostgrestClient()
-        homeClient = AWSHomeClientAdapter(authClient: awsAuthClient)
-        tasksClient = AWSTasksClientAdapter(authClient: awsAuthClient)
-        taskCreateClient = AWSTaskCreateClientAdapter(authClient: awsAuthClient)
-        taskDetailClient = AWSTaskDetailClientAdapter(authClient: awsAuthClient)
-        captureClient = AWSCaptureClientAdapter(authClient: awsAuthClient)
-        nudgesClient = SupabaseNudgesClientAdapter(authClient: authClient, postgrestClient: postgrestClient)
-        journalClient = AWSJournalClientAdapter(authClient: awsAuthClient)
+        // Single backend: everything below is Firestore/Firebase Auth via `FirebaseManager` —
+        // the Cognito adapter, Supabase clients, and the Supabase auth bridge are gone with it.
+        // No `redirectURL`/`supabaseBridge`: Firebase has no magic-link flow here (the adapter
+        // throws `magicLinkUnavailable`, same stub-and-hide precedent as the AWS era).
+        _authService = StateObject(wrappedValue: AuthService(client: FirebaseAuthClientAdapter()))
+        homeClient = FirebaseHomeClientAdapter()
+        tasksClient = FirebaseTasksClientAdapter()
+        taskCreateClient = FirebaseTaskCreateClientAdapter()
+        taskDetailClient = FirebaseTaskDetailClientAdapter()
+        captureClient = FirebaseCaptureClientAdapter()
+        nudgesClient = FirebaseNudgesClientAdapter()
+        journalClient = FirebaseJournalClientAdapter()
         taskCountdownNudgeSchedulingClient = NotificationCenterCountdownNudgeAdapter()
         nudgeNotificationSchedulingClient = NotificationCenterNudgeAdapter()
-        lifeAreaDetailClient = AWSLifeAreaDetailClientAdapter(authClient: awsAuthClient)
-        remindersClient = AWSRemindersClientAdapter()
+        lifeAreaDetailClient = FirebaseLifeAreaDetailClientAdapter()
+        remindersClient = FirebaseRemindersClientAdapter()
     }
 
     var body: some Scene {
@@ -71,23 +61,5 @@ struct ADHD_LifeOSApp: App {
                     Task { await authService.completeSession(from: url) }
                 }
         }
-    }
-
-    private static func makeAuthClient() -> AuthClient {
-        AuthClient(
-            url: SupabaseConfig.authURL,
-            headers: [
-                "Authorization": "Bearer \(SupabaseConfig.anonKey)",
-                "Apikey": SupabaseConfig.anonKey
-            ],
-            localStorage: AuthClient.Configuration.defaultLocalStorage
-        )
-    }
-
-    private static func makePostgrestClient() -> PostgrestClient {
-        PostgrestClient(
-            url: SupabaseConfig.projectURL.appendingPathComponent("rest/v1"),
-            headers: ["apikey": SupabaseConfig.anonKey]
-        )
     }
 }

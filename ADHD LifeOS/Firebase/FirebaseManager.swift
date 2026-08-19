@@ -20,11 +20,16 @@ enum FirebaseManagerError: LocalizedError {
     /// Thrown by every Firestore method when no user is signed in — all app data lives in
     /// per-user subcollections, so there is no meaningful unauthenticated read or write.
     case notSignedIn
+    /// The `FirebaseApp` has no storage bucket configured — `GoogleService-Info.plist` is
+    /// missing its `STORAGE_BUCKET`, so media uploads cannot be addressed.
+    case storageUnavailable
 
     var errorDescription: String? {
         switch self {
         case .notSignedIn:
             return "You must be signed in to sync data."
+        case .storageUnavailable:
+            return "Media storage isn't configured for this build."
         }
     }
 }
@@ -95,23 +100,36 @@ final class FirebaseManager {
         try auth.signOut()
     }
 
-    // MARK: - Firestore plumbing
+    // MARK: - Firestore plumbing (internal so the per-feature `Firebase*ClientAdapter`s and the
+    // manager's own extension files can build on it without re-implementing auth scoping)
 
-    private enum Collection: String {
+    enum Collection: String {
         case tasks
         case lifeAreas = "life_areas"
         case logs
         case captures
         case tags
         case nudges
+        case reminders
     }
 
-    private func collection(_ name: Collection) throws -> CollectionReference {
+    func requireUID() throws -> String {
         guard let uid = auth.currentUser?.uid else { throw FirebaseManagerError.notSignedIn }
+        return uid
+    }
+
+    /// `firestore` itself is `private` (file-scoped); extension files that need multi-document
+    /// atomicity get a batch through this instead of direct client access.
+    func firestoreBatch() -> WriteBatch {
+        firestore.batch()
+    }
+
+    func collection(_ name: Collection) throws -> CollectionReference {
+        let uid = try requireUID()
         return firestore.collection("users").document(uid).collection(name.rawValue)
     }
 
-    private func fetchAll<Model: Decodable>(
+    func fetchAll<Model: Decodable>(
         _ type: Model.Type,
         from name: Collection,
         orderedBy field: String? = nil,
@@ -125,16 +143,28 @@ final class FirebaseManager {
         return try snapshot.documents.map { try $0.data(as: Model.self) }
     }
 
-    private func save<Model: Encodable>(_ value: Model, id: UUID, in name: Collection) async throws {
+    /// Equality-scoped fetch. Deliberately has no `order(by:)` — combining a `whereField` with an
+    /// order on a different field requires a Firestore composite index; callers sort client-side.
+    func fetchWhere<Model: Decodable>(
+        _ type: Model.Type,
+        from name: Collection,
+        field: String,
+        equals value: Any
+    ) async throws -> [Model] {
+        let snapshot = try await collection(name).whereField(field, isEqualTo: value).getDocuments()
+        return try snapshot.documents.map { try $0.data(as: Model.self) }
+    }
+
+    func save<Model: Encodable>(_ value: Model, id: UUID, in name: Collection) async throws {
         let data = try Firestore.Encoder().encode(value)
         try await collection(name).document(id.uuidString).setData(data)
     }
 
-    private func delete(id: UUID, from name: Collection) async throws {
+    func delete(id: UUID, from name: Collection) async throws {
         try await collection(name).document(id.uuidString).delete()
     }
 
-    private func update(id: UUID, fields: [String: Any], in name: Collection) async throws {
+    func update(id: UUID, fields: [String: Any], in name: Collection) async throws {
         guard !fields.isEmpty else { return }
         try await collection(name).document(id.uuidString).updateData(fields)
     }
@@ -142,7 +172,7 @@ final class FirebaseManager {
     /// Encodes the delta convention shared by `TaskUpdatePayload`/`NudgeUpdatePayload`: outer
     /// `nil` = field untouched (no write), `.some(nil)` = explicitly cleared, which Firestore
     /// expresses as `FieldValue.delete()`.
-    private static func setNullable<Wrapped>(
+    static func setNullable<Wrapped>(
         _ change: Wrapped??,
         forKey key: String,
         in fields: inout [String: Any],
@@ -189,6 +219,17 @@ extension FirebaseManager {
     func deleteTask(id: UUID) async throws {
         try await delete(id: id, from: .tasks)
     }
+
+    /// Home's badge-count query: only the open tasks, projected down to `TaskSummary`.
+    func fetchOpenTaskSummaries() async throws -> [TaskSummary] {
+        try await fetchWhere(TaskSummary.self, from: .tasks, field: "status", equals: TaskStatus.open.rawValue)
+    }
+
+    /// Server-side scoped to one life area, per `LifeAreaDetailClientAdapting`'s contract.
+    /// Unsorted (see `fetchWhere`) — `LifeAreaDetailService` orders for display.
+    func fetchTasks(lifeAreaId: UUID) async throws -> [TaskItem] {
+        try await fetchWhere(TaskItem.self, from: .tasks, field: "life_area_id", equals: lifeAreaId.uuidString)
+    }
 }
 
 // MARK: - Life areas
@@ -232,6 +273,11 @@ extension FirebaseManager {
     func appendLog(_ log: Log) async throws {
         try await save(log, id: log.id, in: .logs)
     }
+
+    /// Server-side scoped to one life area. Unsorted (see `fetchWhere`) — callers order for display.
+    func fetchLogs(lifeAreaId: UUID) async throws -> [Log] {
+        try await fetchWhere(Log.self, from: .logs, field: "life_area_id", equals: lifeAreaId.uuidString)
+    }
 }
 
 // MARK: - Captures
@@ -239,6 +285,38 @@ extension FirebaseManager {
 extension FirebaseManager {
     func fetchCaptures() async throws -> [Capture] {
         try await fetchAll(Capture.self, from: .captures, orderedBy: "created_at", descending: true)
+    }
+
+    func fetchCapture(id: UUID) async throws -> Capture {
+        try await collection(.captures).document(id.uuidString).getDocument(as: Capture.self)
+    }
+
+    /// The inbox query. Unsorted (see `fetchWhere`) — the adapter orders newest-first client-side.
+    func fetchUnprocessedCaptures() async throws -> [Capture] {
+        try await fetchWhere(Capture.self, from: .captures, field: "processed", equals: false)
+    }
+
+    /// Triage's partial update — never a whole-document overwrite, so the `tag_ids` membership
+    /// array (managed in `FirebaseManager+Tags.swift`, not part of `Capture`'s `Codable`) survives.
+    func updateCapture(id: UUID, changes: CaptureUpdate) async throws {
+        var fields: [String: Any] = [:]
+        if let status = changes.status {
+            fields["status"] = status.rawValue
+            fields["processed"] = status == .processed
+        }
+        if let title = changes.title {
+            fields["title"] = title
+        }
+        Self.setNullable(changes.lifeAreaId, forKey: "lifeAreaId", in: &fields) { $0.uuidString }
+        try await update(id: id, fields: fields, in: .captures)
+    }
+
+    func markCaptureProcessed(id: UUID) async throws {
+        try await update(
+            id: id,
+            fields: ["processed": true, "status": CaptureStatus.processed.rawValue],
+            in: .captures
+        )
     }
 
     /// Creates or fully overwrites one capture — covers content edits, triage (`status`/
@@ -273,6 +351,10 @@ extension FirebaseManager {
 extension FirebaseManager {
     func fetchNudges() async throws -> [Nudge] {
         try await fetchAll(Nudge.self, from: .nudges, orderedBy: "created_at")
+    }
+
+    func fetchNudge(id: UUID) async throws -> Nudge {
+        try await collection(.nudges).document(id.uuidString).getDocument(as: Nudge.self)
     }
 
     func createNudge(_ nudge: Nudge) async throws {

@@ -7,10 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AAF46F723009F8C0008ECC13 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = AAF46F713009F8C0008ECC13 /* Auth */; };
-		AAF46F783009F8C0008ECC13 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = AAF46F773009F8C0008ECC13 /* PostgREST */; };
 		FA0000043009F8C0008ECC04 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000023009F8C0008ECC02 /* FirebaseAuth */; };
 		FA0000053009F8C0008ECC05 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000033009F8C0008ECC03 /* FirebaseFirestore */; };
+		FA0000073009F8C0008ECC07 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000063009F8C0008ECC06 /* FirebaseStorage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,7 +33,6 @@
 		AAF46F443009F8BE008ECC13 /* ADHD LifeOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ADHD LifeOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF46F513009F8C0008ECC13 /* ADHD LifeOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ADHD LifeOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAF46F5B3009F8C0008ECC13 /* ADHD LifeOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ADHD LifeOSUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		AAF46F743009F8C0008ECC13 /* ADHD LifeOS/Supabase.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "ADHD LifeOS/Supabase.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -42,7 +40,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Supabase.xcconfig,
 			);
 			target = AAF46F433009F8BE008ECC13 /* ADHD LifeOS */;
 		};
@@ -74,10 +71,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AAF46F723009F8C0008ECC13 /* Auth in Frameworks */,
-				AAF46F783009F8C0008ECC13 /* PostgREST in Frameworks */,
 				FA0000043009F8C0008ECC04 /* FirebaseAuth in Frameworks */,
 				FA0000053009F8C0008ECC05 /* FirebaseFirestore in Frameworks */,
+				FA0000073009F8C0008ECC07 /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,14 +94,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		AA70B39D300C921D0043F3F2 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				AAF46F743009F8C0008ECC13 /* ADHD LifeOS/Supabase.xcconfig */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
 		AAF46F3B3009F8BE008ECC13 = {
 			isa = PBXGroup;
 			children = (
@@ -113,7 +101,6 @@
 				AAF46F543009F8C0008ECC13 /* ADHD LifeOSTests */,
 				AAF46F5E3009F8C0008ECC13 /* ADHD LifeOSUITests */,
 				AAF46F453009F8BE008ECC13 /* Products */,
-				AA70B39D300C921D0043F3F2 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -147,10 +134,9 @@
 			);
 			name = "ADHD LifeOS";
 			packageProductDependencies = (
-				AAF46F713009F8C0008ECC13 /* Auth */,
-				AAF46F773009F8C0008ECC13 /* PostgREST */,
 				FA0000023009F8C0008ECC02 /* FirebaseAuth */,
 				FA0000033009F8C0008ECC03 /* FirebaseFirestore */,
+				FA0000063009F8C0008ECC06 /* FirebaseStorage */,
 			);
 			productName = "ADHD LifeOS";
 			productReference = AAF46F443009F8BE008ECC13 /* ADHD LifeOS.app */;
@@ -235,7 +221,6 @@
 			mainGroup = AAF46F3B3009F8BE008ECC13;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				AAF46F703009F8C0008ECC13 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -435,7 +420,6 @@
 		};
 		AAF46F663009F8C0008ECC13 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AAF46F743009F8C0008ECC13 /* ADHD LifeOS/Supabase.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -469,7 +453,6 @@
 		};
 		AAF46F673009F8C0008ECC13 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AAF46F743009F8C0008ECC13 /* ADHD LifeOS/Supabase.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -623,16 +606,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		AAF46F703009F8C0008ECC13 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase/supabase-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-			traits = (
-			);
-		};
 		FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -644,16 +617,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AAF46F713009F8C0008ECC13 /* Auth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AAF46F703009F8C0008ECC13 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Auth;
-		};
-		AAF46F773009F8C0008ECC13 /* PostgREST */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AAF46F703009F8C0008ECC13 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = PostgREST;
-		};
 		FA0000023009F8C0008ECC02 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
@@ -663,6 +626,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		FA0000063009F8C0008ECC06 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
