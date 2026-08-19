@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		AAF46F723009F8C0008ECC13 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = AAF46F713009F8C0008ECC13 /* Auth */; };
 		AAF46F783009F8C0008ECC13 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = AAF46F773009F8C0008ECC13 /* PostgREST */; };
+		FA0000043009F8C0008ECC04 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000023009F8C0008ECC02 /* FirebaseAuth */; };
+		FA0000053009F8C0008ECC05 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000033009F8C0008ECC03 /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +76,8 @@
 			files = (
 				AAF46F723009F8C0008ECC13 /* Auth in Frameworks */,
 				AAF46F783009F8C0008ECC13 /* PostgREST in Frameworks */,
+				FA0000043009F8C0008ECC04 /* FirebaseAuth in Frameworks */,
+				FA0000053009F8C0008ECC05 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -145,6 +149,8 @@
 			packageProductDependencies = (
 				AAF46F713009F8C0008ECC13 /* Auth */,
 				AAF46F773009F8C0008ECC13 /* PostgREST */,
+				FA0000023009F8C0008ECC02 /* FirebaseAuth */,
+				FA0000033009F8C0008ECC03 /* FirebaseFirestore */,
 			);
 			productName = "ADHD LifeOS";
 			productReference = AAF46F443009F8BE008ECC13 /* ADHD LifeOS.app */;
@@ -230,6 +236,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AAF46F703009F8C0008ECC13 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AAF46F453009F8BE008ECC13 /* Products */;
@@ -624,6 +631,14 @@
 			traits = (
 			);
 		};
+		FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -636,6 +651,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AAF46F703009F8C0008ECC13 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = PostgREST;
+		};
+		FA0000023009F8C0008ECC02 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		FA0000033009F8C0008ECC03 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0000013009F8C0008ECC01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
