@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Bootstrapped — SwiftUI app shell created in Xcode, no feature code yet. When a feature has been designed (see Workflow below), implement it per the TODO; don't invent architecture ahead of that.
+**Feature-complete native port (as of 2026-08-19), running on E's physical iPhone.** The React
+prototype (`src/`, reference-only) is fully ported to SwiftUI on Firebase: Home (Active Goal hero,
+life-area grid + reorder, daily summary, focus analytics), Tasks (swipeable cards, search/sort,
+detail with focus-sprint planner), Capture inbox triage, Journal, Nudges, Settings (incl. account
+deletion), auth (email/password live; Sign in with Apple built but dormant — free dev account),
+and the app-wide focus timer with per-task sprint config, plus a design-token layer mirroring the
+prototype palette. **The unchecked items in `TODO-CLAUDE-CODE.md` predate the Firebase cutover and
+are stale** — treat direct instructions from E as the work queue until Cowork writes new blocks.
 
 ## Workflow: Cowork ↔ Claude Code
 
@@ -35,8 +42,15 @@ swiftlint lint            # lint check, no errors allowed
 
 xcodebuild test -project "ADHD LifeOS.xcodeproj" -scheme "ADHD LifeOS" \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -skip-testing:"ADHD LifeOSUITests" \
   -enableCodeCoverage YES -resultBundlePath TestResults.xcresult
-xcrun xccov view --report TestResults.xcresult   # coverage report (threshold: 70%)
+xcrun xccov view --report TestResults.xcresult   # coverage report
+```
+
+UI tests are skipped in the standard run — they are credential-free and compile on a fresh clone,
+but need a booted simulator and live network; run them deliberately, not per-block.
+
+```bash
 
 xcodebuild build -project "ADHD LifeOS.xcodeproj" -scheme "ADHD LifeOS" \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
@@ -47,11 +61,17 @@ installed — there is no iPhone 15 Pro simulator, so the previously documented 
 runnable. If `xcodebuild` reports the destination is unavailable, run
 `xcrun simctl list devices available` and use an installed device rather than guessing.
 
-A feature isn't done until `swiftlint lint`, the test suite (≥70% coverage), and the build all pass — and the real terminal output has been pasted for review, not just a "done" summary.
+A feature isn't done until `swiftlint lint`, the full test suite, and the build all pass — and the
+real terminal output has been pasted for review, not just a "done" summary. **Coverage reality
+(2026-08-19):** overall coverage sits near 19%, not the original 70% bar — a known, accepted
+consequence of the Firebase cutover deleting the heavily-tested AWS adapters; the thin
+`Firebase*ClientAdapter` wrappers have no emulator harness yet. The operative rule until that
+exists: every piece of NEW pure logic ships with tests written first (TDD below), and no block may
+claim the 70% bar is met.
 
 ## Version Control
 
-Repo: https://github.com/digdiggydigger/es-life-os-mobile (private, branch `main`).
+Repo: https://github.com/digdiggydigger/ADHDLifeOS (private, branch `main`).
 
 To guarantee no work is ever lost:
 - Commit after every completed FEATURE block (the same moment you mark it `[x] COMPLETED` in `TODO-CLAUDE-CODE.md`), before waiting for review.
@@ -88,9 +108,19 @@ unpushed) and push it as your first action if so.
 
 ## Architecture notes
 
-- SwiftUI, Swift, targeting iOS (minimum version TBD in `docs/ARCHITECTURE.md`).
-- Backend: same Supabase project as the Es_Life_OS web app (Postgres + Auth), reached via `supabase-swift`. No local persistence layer (no Core Data) — Supabase is the source of truth.
-- Supabase migrations are applied manually by E via the SQL Editor, same as the web project — Claude Code has no CLI auth to do this itself.
+- SwiftUI, Swift, `IPHONEOS_DEPLOYMENT_TARGET = 16.0` — any iOS 17+ API must be
+  `#available`-gated (see §7's `.sensoryFeedback` precedent).
+- **Backend: Firebase** (Auth + Firestore + Storage, project `adhdlifeos-acb49`;
+  `GoogleService-Info.plist` is committed — private repo, client identifiers only). The Supabase
+  and AWS layers this doc previously described were deleted at E's direction in commit `5244650`
+  ("cut all services over to Firebase"). No local persistence layer — Firestore is the source of
+  truth. Everything goes through per-feature `Firebase*ClientAdapter` structs over the shared
+  `FirebaseManager` (`ADHD LifeOS/Firebase/`).
+- Schema: per-user subcollections under `users/{uid}` (tasks, life_areas, tags, logs, captures,
+  nudges, reminders, focus_sessions); document IDs are UPPERCASE `uuidString`.
+- Security rules live in-repo (`firestore.rules`, `storage.rules`) but are published manually by
+  E in the Firebase console — Claude Code has no Firebase CLI auth. A rules change is not live
+  until E republishes; say so in the block report.
 - Manual-step convention (same as web project): anything requiring the Xcode GUI beyond CLI builds — code signing, provisioning profiles, App Store Connect/TestFlight — is E's job, never attempted by Claude Code directly.
 - Lint: SwiftLint, config at `.swiftlint.yml` (default ruleset unless a rule is explicitly flagged as too noisy and adjusted).
 - Tests live in `ADHD LifeOSTests/` (XCTest), UI tests in `ADHD LifeOSUITests/`.
@@ -122,7 +152,12 @@ Implement layouts as an elite Apple Design Engineer. Every view must look handcr
 - **Button Visual States**: Write explicit custom primitive `ButtonStyle` structures to scale interactive objects (e.g., scale down slightly to `0.97` upon active press). Raw opacity filters are prohibited.
 
 ### 4. Semantic Color Assets & Accessibility
-- **Zero Hex Declarations**: Never inject hardcoded color strings or static RGB code paths.
+- **Zero Hex Declarations**: Never inject hardcoded color strings or static RGB code paths **in
+  Swift**. The one sanctioned home for hex is the asset catalog's colorsets (E's 2026-08-19
+  design-token direction): the prototype palette lives there with light+dark variants, and views
+  consume it via the generated symbols / `Theme.swift` helpers (`.bentoCard()`, `UrgencyPalette`,
+  `sectionLabel()`, `Color.cardSurface`/`.pageBackground`/`.cardBorder`, coral `AccentColor`).
+  Do not bypass the token layer with new inline colors — extend it.
 - **Adaptive Semantic Colors**: Use dynamic system assets natively (`Color(.systemBackground)`, `Color(.secondarySystemBackground)`, `Color.primary`, `Color.secondary`).
 - **Contrast Ratios**: Maintain high WCAG contrast safety thresholds. Prefer semantic styling methods such as `.foregroundStyle(.secondary)` over `.opacity(0.5)` to align with active system accessibility overrides.
 

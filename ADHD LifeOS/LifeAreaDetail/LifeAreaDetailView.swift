@@ -49,6 +49,8 @@ struct LifeAreaDetailView: View {
                 .accessibilityIdentifier("lifeAreaDetailErrorMessage")
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.pageBackground.ignoresSafeArea())
         .navigationTitle(lifeArea.name)
         .task {
             await service.load()
@@ -80,6 +82,7 @@ struct LifeAreaDetailView: View {
                         }
                     }
                 }
+                .listRowBackground(Color.cardSurface)
                 Section("Journal") {
                     if service.logs.isEmpty {
                         Text("No journal entries for this area")
@@ -91,8 +94,11 @@ struct LifeAreaDetailView: View {
                         }
                     }
                 }
+                .listRowBackground(Color.cardSurface)
             }
             .listStyle(.insetGrouped)
+            // 2026-08-19 bento token pass: prototype page + card-surface rows.
+            .scrollContentBackground(.hidden)
             .navigationDestination(for: TaskItem.self) { task in
                 TaskDetailView(
                     taskId: task.id,
@@ -139,10 +145,10 @@ private struct LifeAreaDetailLogRowView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(log.type == .journal ? "Journal" : "Log")
-                    .font(.caption.bold())
+                    .sectionLabel()
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(.secondarySystemBackground))
+                    .background(Color(.tertiarySystemFill))
                     .clipShape(Capsule())
                 Spacer()
                 Text(log.entryDate.formatted(date: .abbreviated, time: .shortened))

@@ -36,8 +36,10 @@ struct JournalView: View {
                         } else {
                             List(logs) { log in
                                 LogRowView(log: log, lifeAreas: journalService.lifeAreas)
+                                    .listRowBackground(Color.cardSurface)
                             }
                             .listStyle(.plain)
+                            .scrollContentBackground(.hidden)
                         }
                     case .failed(let message):
                         VStack(spacing: 12) {
@@ -54,6 +56,9 @@ struct JournalView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            // 2026-08-19 bento token pass: prototype page + card-surface rows (same treatment
+            // as Tasks/Inbox).
+            .background(Color.pageBackground.ignoresSafeArea())
             .navigationTitle("Journal")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -104,10 +109,12 @@ private struct LogRowView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(log.type == .journal ? "Journal" : "Log")
-                    .font(.caption.bold())
+                    .sectionLabel()
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(.secondarySystemBackground))
+                    // Tertiary fill, not the card surface — the row itself now sits on
+                    // `cardSurface`, which would make the chip invisible.
+                    .background(Color(.tertiarySystemFill))
                     .clipShape(Capsule())
                 Spacer()
                 Text(log.entryDate.formatted(date: .abbreviated, time: .shortened))

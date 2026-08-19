@@ -35,11 +35,18 @@ struct NudgesView: View {
             case .loaded:
                 List {
                     addNudgeSection
+                        .listRowBackground(Color.cardSurface)
                     dueSection
+                        .listRowBackground(Color.cardSurface)
                     allNudgesSection
+                        .listRowBackground(Color.cardSurface)
                 }
+                .scrollContentBackground(.hidden)
             }
         }
+        // 2026-08-19 bento token pass: prototype page + card-surface rows.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.pageBackground.ignoresSafeArea())
         .navigationTitle("Nudges")
         .task {
             await service.load()

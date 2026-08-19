@@ -95,6 +95,21 @@ struct RootView: View {
                 .sheet(isPresented: $isPresentingQuickCapture) {
                     QuickCaptureView(client: captureClient) {}
                 }
+                // A finished sprint's history write is best-effort, but its failure must not be
+                // SILENT (found 2026-08-19: `logErrorMessage` was set and displayed nowhere) —
+                // same alert pattern as the task list's mutation errors. The sprint itself ended
+                // cleanly; only the history record is affected.
+                .alert(
+                    "Focus session couldn't be saved",
+                    isPresented: Binding(
+                        get: { focusService.logErrorMessage != nil },
+                        set: { if !$0 { focusService.logErrorMessage = nil } }
+                    )
+                ) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(focusService.logErrorMessage ?? "")
+                }
             }
         }
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
