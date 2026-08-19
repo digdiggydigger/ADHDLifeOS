@@ -100,6 +100,7 @@ final class FocusSessionService: ObservableObject {
         durationSeconds: Int,
         cadence: FocusNudgeCadence = .count(1)
     ) {
+        syncToWallClock()
         // Retire any sprint in flight SYNCHRONOUSLY, before the new session is installed. The
         // previous deferred `Task { await stop() }` ran after this method body, so it tore down
         // the replacement and logged IT (at ~0s) instead of the sprint being displaced.
@@ -134,7 +135,14 @@ final class FocusSessionService: ObservableObject {
     }
 
     func togglePause() {
+        syncToWallClock()
         guard var current = session else { return }
+        if !current.isPaused, current.isComplete {
+            // The countdown ran out while the app was suspended (a Lock Screen pause arriving
+            // late): complete the sprint rather than freezing a finished one at 00:00.
+            Task { await stop(completedNaturally: true) }
+            return
+        }
         if current.isPaused {
             current.isPaused = false
             deadline = now().addingTimeInterval(TimeInterval(current.remainingSeconds))
@@ -153,6 +161,7 @@ final class FocusSessionService: ObservableObject {
     /// Extends a running sprint (+30s / +5m in the bar). Adds to both the remaining time and the
     /// total, so the progress fill stays truthful rather than jumping backwards.
     func addSeconds(_ seconds: Int) {
+        syncToWallClock()
         guard var current = session, seconds > 0 else { return }
         current.durationSeconds += seconds
         current.remainingSeconds += seconds
@@ -166,7 +175,11 @@ final class FocusSessionService: ObservableObject {
     /// Ends the sprint and persists it. `completedNaturally` distinguishes a countdown that ran
     /// out from a manual stop, which the analytics views report separately.
     func stop(completedNaturally: Bool = false) async {
-        guard let record = finishCurrentSprint(completedNaturally: completedNaturally) else { return }
+        syncToWallClock()
+        // A manual stop that arrives after the deadline already passed (Lock Screen button on a
+        // suspended app) is a countdown that genuinely ran out — record it as such.
+        let ranOut = session.map { !$0.isPaused && $0.isComplete } ?? false
+        guard let record = finishCurrentSprint(completedNaturally: completedNaturally || ranOut) else { return }
         await log(record)
     }
 
@@ -236,10 +249,8 @@ final class FocusSessionService: ObservableObject {
     /// One countdown step. Internal rather than private so tests can drive it directly with an
     /// injected clock instead of waiting on real time.
     func tick() async {
-        guard var current = session, !current.isPaused, let deadline else { return }
-        let remaining = Int(deadline.timeIntervalSince(now()).rounded(.up))
-        let crossed = current.advance(toRemaining: remaining)
-        session = current
+        let crossed = syncToWallClock()
+        guard let current = session, !current.isPaused else { return }
         if let last = crossed.last {
             checkpointBanner = FocusSession.checkpointPrompt(
                 index: last, total: current.nudgeCheckpoints.count
@@ -252,5 +263,18 @@ final class FocusSessionService: ObservableObject {
             // count); plain ticks never touch it — the OS renders the countdown itself.
             activityMirror?.sprintUpdated(activitySnapshot(for: current))
         }
+    }
+
+    /// Re-derives the countdown from the deadline, returning any checkpoints the move crossed.
+    /// The ticker does this every 500ms while the app is live, but Lock Screen intents run in an
+    /// app process that may have been suspended for minutes — every mutation resyncs first so it
+    /// never acts on a stale `remainingSeconds`.
+    @discardableResult
+    private func syncToWallClock() -> [Int] {
+        guard var current = session, !current.isPaused, let deadline else { return [] }
+        let remaining = Int(deadline.timeIntervalSince(now()).rounded(.up))
+        let crossed = current.advance(toRemaining: remaining)
+        session = current
+        return crossed
     }
 }

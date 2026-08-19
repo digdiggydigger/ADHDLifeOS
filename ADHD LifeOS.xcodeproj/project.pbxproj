@@ -74,6 +74,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				FocusActivityAttributes.swift,
+				FocusSprintIntents.swift,
 			);
 			target = AAF46F433009F8BE008ECC13 /* ADHD LifeOS */;
 		};

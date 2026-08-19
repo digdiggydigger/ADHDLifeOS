@@ -4,6 +4,7 @@
 //
 
 import ActivityKit
+import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -59,8 +60,17 @@ struct FocusTimerWidgetLiveActivity: Widget {
                         .foregroundStyle(Color.sprintAccent)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    FocusSprintProgressTrack(state: context.state, isComplete: isComplete)
-                        .padding(.top, 4)
+                    VStack(alignment: .leading, spacing: 8) {
+                        FocusSprintProgressTrack(state: context.state, isComplete: isComplete)
+                        if !isComplete, #available(iOS 17.0, *) {
+                            HStack(spacing: 8) {
+                                Spacer(minLength: 0)
+                                FocusSprintControls(state: context.state)
+                                Spacer(minLength: 0)
+                            }
+                        }
+                    }
+                    .padding(.top, 4)
                 }
             } compactLeading: {
                 Text(context.state.lifeAreaEmoji)
@@ -127,13 +137,64 @@ struct FocusLiveActivityLockScreenView: View {
             VStack(alignment: .leading, spacing: 8) {
                 FocusSprintProgressTrack(state: state, isComplete: isComplete)
 
-                if !isComplete, state.checkpointCount > 0 {
-                    Text("\(state.checkpointsReached) of \(state.checkpointCount) checkpoints")
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    if !isComplete, state.checkpointCount > 0 {
+                        Text("\(state.checkpointsReached) of \(state.checkpointCount) checkpoints")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if !isComplete, #available(iOS 17.0, *) {
+                        FocusSprintControls(state: state)
+                    }
                 }
             }
         }
+    }
+}
+
+/// The sprint controls, mirroring the in-app bar: pause/resume in coral, stop in red. Their
+/// `LiveActivityIntent`s run in the app's process, so they drive the real engine — no push
+/// plumbing, works on the free account.
+///
+/// iOS 17+ (`Button(intent:)`); on 16.x the Activity stays display-only. Two §-notes for the
+/// build report: §3's 44pt targets can't fit the Live Activity's 160pt height cap alongside the
+/// prominence layout (these sit at ~38pt, the size the system Timer Activity uses), and §3's
+/// custom pressed-scale ButtonStyle can't run in archived Activity rendering — the system
+/// provides its own press highlight.
+@available(iOS 17.0, *)
+private struct FocusSprintControls: View {
+    let state: FocusActivityAttributes.ContentState
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(intent: PauseResumeFocusSprintIntent()) {
+                Label(
+                    state.isPaused ? "Resume" : "Pause",
+                    systemImage: state.isPaused ? "play.fill" : "pause.fill"
+                )
+                .font(.caption.weight(.bold))
+                .padding(.vertical, 4)
+            }
+            .tint(Color.sprintAccent)
+
+            Button(intent: StopFocusSprintIntent()) {
+                Label("Stop", systemImage: "stop.fill")
+                    .font(.caption.weight(.bold))
+                    .padding(.vertical, 4)
+            }
+            .tint(.red)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .lineLimit(1)
+        // The buttons never truncate ("Resume" → "Res…"); the checkpoint caption beside them
+        // scales down instead.
+        .fixedSize()
     }
 }
 

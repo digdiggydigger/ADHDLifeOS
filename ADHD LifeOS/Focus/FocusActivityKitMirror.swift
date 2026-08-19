@@ -25,20 +25,20 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
     private var activity: Activity<FocusActivityAttributes>?
     private var lastState: FocusActivityAttributes.ContentState?
     private let now: () -> Date
+    /// The most recent fire-and-forget ActivityKit call, retained so Lock Screen intents can
+    /// await it — their app process is re-suspended soon after `perform()` returns, and the
+    /// Activity's redraw must land first.
+    private var lastActivityTask: Task<Void, Never>?
 
     init(now: @escaping () -> Date = Date.init) {
         self.now = now
         // Anything alive at construction is an orphan from a killed process — no sprint can be
         // running before RootView exists — so clear the Lock Screen of stale countdowns.
-        for orphan in Activity<FocusActivityAttributes>.activities {
-            Task {
-                if #available(iOS 16.2, *) {
-                    await orphan.end(nil, dismissalPolicy: .immediate)
-                } else {
-                    await orphan.end(using: nil, dismissalPolicy: .immediate)
-                }
-            }
-        }
+        Task { await FocusActivityAttributes.endAllActivities() }
+    }
+
+    func waitForPendingUpdates() async {
+        await lastActivityTask?.value
     }
 
     func sprintStarted(_ snapshot: FocusActivitySnapshot) {
@@ -69,7 +69,7 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
         let state = FocusActivityAttributes.ContentState(snapshot: snapshot, now: now())
         lastState = state
         let staleDate = staleDate(for: state)
-        Task {
+        lastActivityTask = Task {
             if #available(iOS 16.2, *) {
                 await activity.update(ActivityContent(state: state, staleDate: staleDate))
             } else {
@@ -92,7 +92,7 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
             : .immediate
         self.activity = nil
         lastState = nil
-        Task {
+        lastActivityTask = Task {
             if #available(iOS 16.2, *) {
                 await activity.end(
                     finalState.map { ActivityContent(state: $0, staleDate: nil) },
@@ -136,8 +136,25 @@ extension FocusActivityAttributes.ContentState {
 extension FocusSessionService {
     /// RootView's app-wide instance: Firebase history logging plus, where the OS has ActivityKit,
     /// Live Activity mirroring (§7: 16.1+ API over the 16.0 floor, so the mirror is opt-in).
+    ///
+    /// On iOS 17+ this also arms the Lock Screen buttons: their `LiveActivityIntent`s run in this
+    /// app process and reach the live engine through `FocusSprintIntentActions`. Each action
+    /// awaits the mirror's pending ActivityKit call so the redraw lands before the system
+    /// re-suspends the app.
     static func withLiveActivityMirroring(logger: FocusSessionLogging) -> FocusSessionService {
         guard #available(iOS 16.1, *) else { return FocusSessionService(logger: logger) }
-        return FocusSessionService(logger: logger, activityMirror: FocusActivityKitMirror())
+        let mirror = FocusActivityKitMirror()
+        let service = FocusSessionService(logger: logger, activityMirror: mirror)
+        if #available(iOS 17.0, *) {
+            FocusSprintIntentActions.pauseResume = { [weak service, weak mirror] in
+                service?.togglePause()
+                await mirror?.waitForPendingUpdates()
+            }
+            FocusSprintIntentActions.stop = { [weak service, weak mirror] in
+                await service?.stop()
+                await mirror?.waitForPendingUpdates()
+            }
+        }
+        return service
     }
 }
