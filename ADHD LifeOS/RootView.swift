@@ -62,6 +62,7 @@ struct RootView: View {
                         activeSprint: focusService.session.map {
                             ActiveSprintStatus(taskId: $0.taskId, isPaused: $0.isPaused)
                         },
+                        widgetSprint: focusService.widgetSprint,
                         onToggleSprintPause: { focusService.togglePause() }
                     )
                         .tabItem { Label("Home", systemImage: "house") }

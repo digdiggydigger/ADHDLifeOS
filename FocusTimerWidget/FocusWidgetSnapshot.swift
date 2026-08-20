@@ -19,7 +19,9 @@ import Foundation
 nonisolated struct FocusWidgetSnapshot: Codable, Equatable, Sendable {
     /// Bump whenever the shape changes. An older app writing v1 while a newer widget expects v2
     /// (or the reverse, mid-upgrade) then shows the empty state instead of wrong numbers.
-    static let currentVersion = 1
+    ///
+    /// v2 (2026-08-20) added `activeSprint`.
+    static let currentVersion = 2
 
     /// Home's Active Goal hero, projected. `nil` when nothing is open — the hero hides itself in
     /// that state, and the widget does the same rather than inventing a task.
@@ -57,15 +59,75 @@ nonisolated struct FocusWidgetSnapshot: Codable, Equatable, Sendable {
         )
     }
 
+    /// The sprint running right now, when there is one.
+    ///
+    /// Everything here is **deadline-derived rather than countdown-derived**: the widget is drawn by
+    /// another process long after the app published this, very likely while the app is suspended and
+    /// in no position to publish again. So there is no "remaining seconds" to go stale — the OS
+    /// renders the clock itself from `deadline` (`Text(timerInterval:)`), exactly as the Live
+    /// Activity does. `nil` whenever no sprint is running; the section hides rather than showing a
+    /// stopped timer.
+    nonisolated struct ActiveSprint: Codable, Equatable, Sendable {
+        let taskTitle: String
+        /// The life area's emoji, or the unassigned target glyph.
+        let emoji: String
+        /// Total planned length including +30s/+5m extensions, so the countdown's span stays
+        /// truthful.
+        let durationSeconds: Int
+        /// When the countdown hits zero; `nil` while paused, where there is no live deadline at all.
+        let deadline: Date?
+        /// The frozen remainder while paused; `nil` while running.
+        let pausedRemainingSeconds: Int?
+        let checkpointsReached: Int
+        let checkpointCount: Int
+
+        var isPaused: Bool { deadline == nil }
+
+        /// Whether the countdown has run out as of `now` — the widget's equivalent of the Live
+        /// Activity's `hasElapsed`. A timeline entry scheduled AT the deadline uses this to retire
+        /// the live section on time without the app having to publish anything.
+        ///
+        /// A paused sprint never elapses: it has no deadline to pass.
+        func hasElapsed(asOf now: Date) -> Bool {
+            guard let deadline else { return false }
+            return deadline <= now
+        }
+
+        /// The OS-rendered countdown range, or `nil` while paused. The visual start is derived back
+        /// from the deadline so the elapsed fraction survives pauses and extensions.
+        var timerInterval: ClosedRange<Date>? {
+            deadline.map { $0.addingTimeInterval(-TimeInterval(max(0, durationSeconds)))...$0 }
+        }
+
+        /// The paused readout, formatted like the OS timer's `showsHours: false` rendering —
+        /// unpadded minutes, padded seconds, hours rolled into minutes — so pausing doesn't visibly
+        /// shift the format. The same rule the Live Activity's paused frame follows.
+        var frozenRemainingText: String {
+            let remaining = max(0, pausedRemainingSeconds ?? 0)
+            return "\(remaining / 60):" + String(format: "%02d", remaining % 60)
+        }
+
+        var checkpointSummary: String? {
+            FocusCheckpointCopy.summary(reached: checkpointsReached, total: checkpointCount)
+        }
+    }
+
     let version: Int
     let generatedAt: Date
     let activeGoal: ActiveGoal?
+    let activeSprint: ActiveSprint?
     let week: WeekStats
 
-    init(generatedAt: Date, activeGoal: ActiveGoal?, week: WeekStats) {
+    init(
+        generatedAt: Date,
+        activeGoal: ActiveGoal?,
+        activeSprint: ActiveSprint? = nil,
+        week: WeekStats
+    ) {
         self.version = Self.currentVersion
         self.generatedAt = generatedAt
         self.activeGoal = activeGoal
+        self.activeSprint = activeSprint
         self.week = week
     }
 
@@ -73,6 +135,20 @@ nonisolated struct FocusWidgetSnapshot: Codable, Equatable, Sendable {
     static let placeholder = FocusWidgetSnapshot(
         generatedAt: Date(timeIntervalSince1970: 0), activeGoal: nil, week: .empty
     )
+}
+
+/// The one place "N of M checkpoints" is spelled, shared by the two payloads that cross a process
+/// boundary — the Live Activity's content state and the Home Screen widget's snapshot. It lives in
+/// this file for the same reason `FocusWidgetFormatting` does: both targets compile it, and the
+/// app-side test target can therefore assert the copy.
+nonisolated enum FocusCheckpointCopy {
+    /// `nil` when the sprint plans no checkpoints, so no surface draws an empty caption. The reached
+    /// count is clamped to the plan — the caption must never read "3 of 2".
+    static func summary(reached: Int, total: Int) -> String? {
+        guard total > 0 else { return nil }
+        let clamped = min(max(0, reached), total)
+        return "\(clamped) of \(total) checkpoint" + (total == 1 ? "" : "s")
+    }
 }
 
 /// The duration formatters the widget renders with. They live in the SHARED file (rather than

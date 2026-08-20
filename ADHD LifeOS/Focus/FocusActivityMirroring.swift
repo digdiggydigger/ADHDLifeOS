@@ -22,6 +22,11 @@ struct FocusActivitySnapshot: Equatable, Sendable {
     let pausedRemainingSeconds: Int?
     let checkpointCount: Int
     let checkpointsReached: Int
+    /// Elapsed-second offsets of every checkpoint in the plan, so the Activity can draw real
+    /// markers on its track. Carried alongside the count rather than derived from it: a mid-sprint
+    /// cadence re-plan keeps fired marks exactly where they were, so an evenly-spaced guess in the
+    /// extension would move marks the sprint has already passed.
+    let checkpointSeconds: [Int]
 }
 
 /// Seam over ActivityKit: the service reports sprint lifecycle events, the live implementation

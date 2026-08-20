@@ -26,7 +26,8 @@ final class FocusActivityContentStateTests: XCTestCase {
             deadline: deadline,
             pausedRemainingSeconds: pausedRemainingSeconds,
             checkpointCount: 2,
-            checkpointsReached: 1
+            checkpointsReached: 1,
+            checkpointSeconds: [durationSeconds / 3, durationSeconds * 2 / 3]
         )
     }
 

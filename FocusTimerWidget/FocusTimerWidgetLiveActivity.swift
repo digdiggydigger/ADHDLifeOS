@@ -18,15 +18,8 @@ import WidgetKit
 ///
 /// §4 note: the extension can't see the app's asset catalog, so the coral `AccentColor` colorset
 /// is duplicated into this target's catalog (hex stays in colorsets only) and everything else is
-/// semantic system colour.
-///
-/// The token is consumed by catalog name rather than `.tint`/`Color.accentColor` — Live Activity
-/// presentations don't apply the widget's global accent (verified in-simulator: they fall back to
-/// system blue) — and rather than the generated `Color.accent` symbol, whose `ColorResource` is
-/// iOS 17+ against this target's 16.1 floor. Still the colorset token; zero hex in Swift (§4).
-private extension Color {
-    static let sprintAccent = Color("AccentColor")
-}
+/// semantic system colour. The shared pieces — the marked progress track, the countdown readout,
+/// the checkpoint caption — live in `FocusActivityComponents`.
 struct FocusTimerWidgetLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FocusActivityAttributes.self) { context in
@@ -63,11 +56,18 @@ struct FocusTimerWidgetLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 8) {
                         FocusSprintProgressTrack(state: context.state, isComplete: isComplete)
-                        if !isComplete, #available(iOS 17.0, *) {
-                            HStack(spacing: 8) {
-                                Spacer(minLength: 0)
+
+                        HStack(spacing: 8) {
+                            // The expanded island drew the track but never said how many
+                            // checkpoints the sprint had passed — the one number the markers
+                            // beneath it can only hint at. It now reads out on every frame,
+                            // finished ones included.
+                            FocusCheckpointCaption(state: context.state, isComplete: isComplete)
+
+                            Spacer(minLength: 0)
+
+                            if !isComplete, #available(iOS 17.0, *) {
                                 FocusSprintControls(state: context.state)
-                                Spacer(minLength: 0)
                             }
                         }
                     }
@@ -142,13 +142,9 @@ struct FocusLiveActivityLockScreenView: View {
                 FocusSprintProgressTrack(state: state, isComplete: isComplete)
 
                 HStack(spacing: 8) {
-                    if !isComplete, state.checkpointCount > 0 {
-                        Text("\(state.checkpointsReached) of \(state.checkpointCount) checkpoints")
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
+                    // Shown on the completed frame too, where it becomes the acknowledgement:
+                    // "3 of 3 checkpoints" is what the sprint actually achieved.
+                    FocusCheckpointCaption(state: state, isComplete: isComplete)
 
                     Spacer(minLength: 0)
 
@@ -202,75 +198,6 @@ private struct FocusSprintControls: View {
     }
 }
 
-/// The single countdown readout every presentation shares. While paused it renders a static
-/// string; when complete, a checkmark replaces it.
-private struct FocusCountdownReadout: View {
-    let state: FocusActivityAttributes.ContentState
-    let isComplete: Bool
-    /// Cap for the RUNNING timer text only — `Text(timerInterval:)` claims greedy width in the
-    /// island's compact slots. The static branches size to their content and must NOT share the
-    /// cap: it clipped the paused readout's leading digit ("13:50" → "3:50", observed
-    /// in-simulator 2026-08-19).
-    var timerMaxWidth: CGFloat?
-
-    var body: some View {
-        Group {
-            if isComplete {
-                Image(systemName: "checkmark.circle.fill")
-            } else if state.isPaused {
-                // Static text, NOT `Text(timerInterval:pauseTime:)` — the pauseTime freeze does
-                // not take effect inside Live Activity presentations (observed on-device), so a
-                // "paused" sprint kept counting down. The engine's frozen remainder is rendered
-                // directly instead.
-                Text(state.frozenRemainingText)
-                    .monospacedDigit()
-            } else {
-                Text(timerInterval: state.timerInterval, countsDown: true, showsHours: false)
-                    .monospacedDigit()
-                    .frame(maxWidth: timerMaxWidth, alignment: .trailing)
-            }
-        }
-        .multilineTextAlignment(.trailing)
-        // §1 layout safety: the island's trailing regions are narrow — scale, never wrap.
-        .lineLimit(1)
-        .minimumScaleFactor(0.6)
-    }
-}
-
-/// Progress fill: OS-animated while running, frozen while paused, full when complete.
-private struct FocusSprintProgressTrack: View {
-    let state: FocusActivityAttributes.ContentState
-    let isComplete: Bool
-
-    var body: some View {
-        Group {
-            if state.isPaused || isComplete {
-                ProgressView(value: isComplete ? 1 : state.frozenProgress)
-            } else {
-                ProgressView(timerInterval: state.timerInterval, countsDown: false) {
-                    EmptyView()
-                } currentValueLabel: {
-                    EmptyView()
-                }
-            }
-        }
-        .progressViewStyle(.linear)
-        .tint(Color.sprintAccent)
-        .accessibilityHidden(true)
-    }
-}
-
-/// Status copy shared by the Lock Screen and expanded island headers, so state is never conveyed
-/// by colour alone.
-private enum FocusActivityCopy {
-    static func status(
-        for state: FocusActivityAttributes.ContentState, isComplete: Bool
-    ) -> String {
-        if isComplete { return "Sprint complete" }
-        return state.isPaused ? "Paused" : "Focus sprint"
-    }
-}
-
 #if DEBUG
 private extension FocusActivityAttributes.ContentState {
     static func sample(pausedAt: Date? = nil, isCompleted: Bool = false) -> Self {
@@ -282,6 +209,7 @@ private extension FocusActivityAttributes.ContentState {
             pausedAt: pausedAt,
             checkpointCount: 3,
             checkpointsReached: 1,
+            checkpointSeconds: [225, 450, 675],
             isCompleted: isCompleted
         )
     }

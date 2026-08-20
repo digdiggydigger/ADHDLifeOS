@@ -20,7 +20,7 @@ import WidgetKit
 struct FocusStatsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: FocusWidgetSnapshotStore.widgetKind, provider: FocusStatsProvider()) { entry in
-            FocusStatsWidgetView(snapshot: entry.snapshot)
+            FocusStatsWidgetView(snapshot: entry.snapshot, now: entry.date)
         }
         .configurationDisplayName("Focus")
         .description("Your active goal and this week's focus time.")
@@ -48,14 +48,22 @@ struct FocusStatsProvider: TimelineProvider {
         completion(FocusStatsEntry(date: Date(), snapshot: store.read()))
     }
 
-    /// One entry, refreshed at midnight. There is nothing here that changes minute to minute — the
-    /// app reloads this timeline the moment its own numbers move (`AppGroupFocusWidgetPublisher`),
-    /// so the only *time*-driven change is the week rolling over.
+    /// One entry now, one at a running sprint's deadline, refreshed at midnight.
+    ///
+    /// Nothing else here changes minute to minute — the app reloads this timeline the moment its own
+    /// numbers move (`AppGroupFocusWidgetPublisher`), so the only *time*-driven changes are the week
+    /// rolling over and a sprint ending. That second entry matters: a sprint that runs out behind a
+    /// locked screen ends with the app suspended and unable to publish anything, and without it the
+    /// Home Screen would keep a dead countdown until the user next opened the app.
     func getTimeline(in context: Context, completion: @escaping (Timeline<FocusStatsEntry>) -> Void) {
         let now = Date()
-        let entry = FocusStatsEntry(date: now, snapshot: store.read())
+        let snapshot = store.read()
+        var entries = [FocusStatsEntry(date: now, snapshot: snapshot)]
+        if let deadline = snapshot?.activeSprint?.deadline, deadline > now {
+            entries.append(FocusStatsEntry(date: deadline, snapshot: snapshot))
+        }
         let nextMidnight = Calendar.current.startOfDay(for: now.addingTimeInterval(24 * 60 * 60))
-        completion(Timeline(entries: [entry], policy: .after(nextMidnight)))
+        completion(Timeline(entries: entries, policy: .after(nextMidnight)))
     }
 }
 
@@ -63,29 +71,45 @@ struct FocusStatsProvider: TimelineProvider {
 
 struct FocusStatsWidgetView: View {
     let snapshot: FocusWidgetSnapshot?
+    /// The timeline ENTRY's date, not `Date()`. A widget renders whenever the system feels like it,
+    /// and the entry scheduled at a sprint's deadline is precisely how the live section learns it
+    /// has finished — judging that against a fresh `Date()` would make the entry pointless.
+    let now: Date
 
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
         Group {
             if family == .systemMedium {
-                FocusStatsMediumView(snapshot: snapshot)
+                FocusStatsMediumView(snapshot: snapshot, liveSprint: liveSprint)
             } else {
-                FocusStatsSmallView(snapshot: snapshot)
+                FocusStatsSmallView(snapshot: snapshot, liveSprint: liveSprint)
             }
         }
         .widgetURL(URL(string: "adhdlifeos://widget/focus"))
         .focusWidgetBackground()
     }
+
+    /// The published sprint, but only while it is genuinely still running. Once its deadline has
+    /// passed the widget falls back to the Active Goal rather than parking a finished countdown on
+    /// the Home Screen forever — the sprint's own acknowledgement is the notification, not this.
+    private var liveSprint: FocusWidgetSnapshot.ActiveSprint? {
+        guard let sprint = snapshot?.activeSprint, !sprint.hasElapsed(asOf: now) else { return nil }
+        return sprint
+    }
 }
 
-/// Small: the Active Goal it wants you to start, over this week's headline number.
+/// Small: the sprint in flight (or the Active Goal it wants you to start), over this week's
+/// headline number.
 struct FocusStatsSmallView: View {
     let snapshot: FocusWidgetSnapshot?
+    var liveSprint: FocusWidgetSnapshot.ActiveSprint?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let goal = snapshot?.activeGoal {
+            if let sprint = liveSprint {
+                FocusSprintWidgetSection(sprint: sprint, isCompact: true)
+            } else if let goal = snapshot?.activeGoal {
                 FocusWidgetLabel(text: goal.lifeAreaName ?? "Active goal")
                 HStack(alignment: .top, spacing: 4) {
                     Text(goal.emoji)
@@ -114,14 +138,19 @@ struct FocusStatsSmallView: View {
     }
 }
 
-/// Medium: the Active Goal with its sprint plan on the left, the week's shape on the right.
+/// Medium: the running sprint — or the Active Goal with its sprint plan — on the left, the week's
+/// shape on the right.
 struct FocusStatsMediumView: View {
     let snapshot: FocusWidgetSnapshot?
+    var liveSprint: FocusWidgetSnapshot.ActiveSprint?
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                if let goal = snapshot?.activeGoal {
+                if let sprint = liveSprint {
+                    FocusSprintWidgetSection(sprint: sprint)
+                    Spacer(minLength: 0)
+                } else if let goal = snapshot?.activeGoal {
                     FocusWidgetLabel(text: goal.lifeAreaName ?? "Active goal")
                     HStack(alignment: .top, spacing: 4) {
                         Text(goal.emoji)
@@ -312,33 +341,41 @@ private let previewSnapshot = FocusWidgetSnapshot(
 
 /// Previews the views at real widget dimensions rather than through `#Preview(as:)`, which is an
 /// iOS 17+ macro this 16.1 target can't adopt — the same call `FocusTimerWidgetLiveActivity` made.
+private let previewSprint = FocusWidgetSnapshot.ActiveSprint(
+    taskTitle: "Draft the quarterly review", emoji: "💼", durationSeconds: 900,
+    deadline: Date().addingTimeInterval(420), pausedRemainingSeconds: nil,
+    checkpointsReached: 1, checkpointCount: 3
+)
+
 private struct FocusStatsWidgetGallery: View {
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 16) {
-                FocusStatsSmallView(snapshot: previewSnapshot)
-                    .padding(16)
-                    .frame(width: 158, height: 158)
-                    .background(Color("PageBackground"))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                FocusStatsSmallView(snapshot: nil)
-                    .padding(16)
-                    .frame(width: 158, height: 158)
-                    .background(Color("PageBackground"))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                small(FocusStatsSmallView(snapshot: previewSnapshot))
+                small(FocusStatsSmallView(snapshot: previewSnapshot, liveSprint: previewSprint))
+                small(FocusStatsSmallView(snapshot: nil))
             }
-            FocusStatsMediumView(snapshot: previewSnapshot)
-                .padding(16)
-                .frame(width: 338, height: 158)
-                .background(Color("PageBackground"))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            FocusStatsMediumView(snapshot: nil)
-                .padding(16)
-                .frame(width: 338, height: 158)
-                .background(Color("PageBackground"))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            medium(FocusStatsMediumView(snapshot: previewSnapshot))
+            medium(FocusStatsMediumView(snapshot: previewSnapshot, liveSprint: previewSprint))
+            medium(FocusStatsMediumView(snapshot: nil))
         }
         .padding(16)
+    }
+
+    private func small(_ view: some View) -> some View {
+        view
+            .padding(16)
+            .frame(width: 158, height: 158)
+            .background(Color("PageBackground"))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func medium(_ view: some View) -> some View {
+        view
+            .padding(16)
+            .frame(width: 338, height: 158)
+            .background(Color("PageBackground"))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

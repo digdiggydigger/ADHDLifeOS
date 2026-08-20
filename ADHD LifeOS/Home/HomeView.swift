@@ -26,6 +26,11 @@ struct HomeView: View {
     /// The app-wide sprint, so the Active Goal hero can show it is running rather than offering
     /// to start a second one over the top.
     private let activeSprint: ActiveSprintStatus?
+    /// The same sprint, projected for the Home Screen widget. Separate from `activeSprint` because
+    /// the two answer different questions: the hero only needs "is THIS task's sprint running", the
+    /// widget needs the whole deadline-derived payload. Kept deadline-derived and therefore stable
+    /// while a sprint merely counts down, so `onChange` fires on real events, not on every tick.
+    private let widgetSprint: FocusWidgetSnapshot.ActiveSprint?
     private let onToggleSprintPause: () -> Void
     /// Publishes the Home Screen widget's snapshot. Home is the right owner: it is the one screen
     /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
@@ -57,6 +62,7 @@ struct HomeView: View {
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
         focusReloadToken: Int = 0,
         activeSprint: ActiveSprintStatus? = nil,
+        widgetSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
         onToggleSprintPause: @escaping () -> Void = {},
         widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher()
     ) {
@@ -69,6 +75,7 @@ struct HomeView: View {
         self.onStartFocus = onStartFocus
         self.focusReloadToken = focusReloadToken
         self.activeSprint = activeSprint
+        self.widgetSprint = widgetSprint
         self.onToggleSprintPause = onToggleSprintPause
         self.widgetPublisher = widgetPublisher
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
@@ -149,11 +156,24 @@ struct HomeView: View {
                     Task { await refreshInboxCount() }
                 }
             }
+            // Start, pause, resume, extend, re-plan, checkpoint crossing, end — every event that
+            // moves the sprint the Home Screen is showing. Nothing else: the projection is
+            // deadline-derived, so a sprint merely counting down leaves this value untouched and
+            // WidgetKit is never asked to reload for the passage of time.
+            // The NEW value is republished, never `self.widgetSprint`. `onChange`'s action closure
+            // captures the view value it was installed with, so re-reading the stored `let` here
+            // publishes the sprint as it was BEFORE the change — which shipped an `activeSprint` of
+            // `nil` to the Home Screen at the exact moment a sprint started (caught in-simulator by
+            // reading the App Group container, 2026-08-20). `@State`/`@StateObject` reads below are
+            // unaffected: those go through storage that is always current.
+            .onChange(of: widgetSprint) { sprint in
+                publishWidgetSnapshot(sprint: sprint)
+            }
             .task {
                 await homeService.load()
                 // The Active Goal may have changed (a task closed, a new one topping the list),
                 // so republish even though the history hasn't moved.
-                publishWidgetSnapshot()
+                publishWidgetSnapshot(sprint: widgetSprint)
             }
             .task {
                 await refreshInboxCount()
@@ -221,7 +241,7 @@ struct HomeView: View {
                         // (`focusReloadToken` is RootView's completedSprintCount) — so the Home
                         // Screen widget follows the same three triggers the in-app charts do.
                         publishedHistory = sessions
-                        publishWidgetSnapshot()
+                        publishWidgetSnapshot(sprint: widgetSprint)
                     }
                 }
                 .padding()
@@ -235,19 +255,23 @@ struct HomeView: View {
                 async let nudges: Void = nudgesService.load()
                 async let inbox: Void = refreshInboxCount()
                 _ = await (home, nudges, inbox)
-                publishWidgetSnapshot()
+                publishWidgetSnapshot(sprint: widgetSprint)
             }
         }
     }
 
     /// Rebuilds and publishes the Home Screen widget's payload. Cheap, pure and idempotent, so
     /// calling it from every path that changes either half beats working out which half moved.
-    private func publishWidgetSnapshot() {
+    /// The sprint is passed in rather than read off `self` — and required, not defaulted, because
+    /// "no sprint" is a real value here (a sprint ENDING is exactly when the live section must
+    /// disappear) and a default would quietly re-read the stale stored property instead.
+    private func publishWidgetSnapshot(sprint: FocusWidgetSnapshot.ActiveSprint?) {
         widgetPublisher.publish(
             FocusWidgetSnapshotBuilder.snapshot(
                 activeGoal: homeService.activeGoal,
                 lifeAreas: homeService.lifeAreas,
-                sessions: publishedHistory
+                sessions: publishedHistory,
+                activeSprint: sprint
             )
         )
     }

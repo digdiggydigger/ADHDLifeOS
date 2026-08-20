@@ -61,6 +61,40 @@ final class FocusSessionServiceActivityTests: XCTestCase {
         XCTAssertEqual(snapshot?.checkpointsReached, 0)
     }
 
+    /// The Activity draws real markers on its track, so the count alone is not enough — it needs to
+    /// know WHERE each checkpoint sits. The positions are not derivable from the count either: a
+    /// mid-sprint cadence re-plan keeps fired marks exactly where they were.
+    func testStart_mirrorsTheCheckpointPositionsNotJustTheCount() {
+        let env = makeSUT()
+
+        env.service.start(
+            taskId: UUID(), taskTitle: "Draft the review", lifeAreaEmoji: "💼",
+            durationSeconds: 900, cadence: .count(2)
+        )
+
+        XCTAssertEqual(
+            env.mirror.startedSnapshots.first?.checkpointSeconds,
+            FocusCheckpoints.evenlySpaced(durationSeconds: 900, count: 2)
+        )
+    }
+
+    func testCadenceReplan_mirrorsTheReplannedPositions() async {
+        let env = makeSUT()
+        // One checkpoint across 900s lands at 450s elapsed; 460s puts the playhead just past it.
+        startSprint(env.service, duration: 900)
+        env.clock.advance(460)
+        await env.service.tick()
+
+        env.service.updateCadence(.interval(seconds: 120))
+
+        let mirrored = env.mirror.updatedSnapshots.last?.checkpointSeconds
+        XCTAssertEqual(mirrored?.first, 450, "the fired mark keeps its position")
+        XCTAssertEqual(
+            mirrored?.dropFirst().first, 480,
+            "and only what is still ahead is re-spaced onto the new cadence"
+        )
+    }
+
     func testReplacementStart_endsTheOldActivityBeforeStartingTheNewOne() {
         let env = makeSUT()
         startSprint(env.service, duration: 100)

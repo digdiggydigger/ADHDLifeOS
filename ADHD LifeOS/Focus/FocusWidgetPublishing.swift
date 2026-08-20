@@ -21,6 +21,7 @@ enum FocusWidgetSnapshotBuilder {
         activeGoal: TaskSummary?,
         lifeAreas: [LifeArea],
         sessions: [CompletedFocusSession],
+        activeSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
         now: Date = Date(),
         calendar: Calendar = .current
     ) -> FocusWidgetSnapshot {
@@ -41,6 +42,7 @@ enum FocusWidgetSnapshotBuilder {
                     )
                 )
             },
+            activeSprint: activeSprint,
             week: FocusWidgetSnapshot.WeekStats(
                 focusedSeconds: FocusAnalytics.totalFocusedSeconds(buckets),
                 sessionCount: FocusAnalytics.totalSessions(buckets),
@@ -50,6 +52,29 @@ enum FocusWidgetSnapshotBuilder {
                 dailyGoalMinutes: dailyGoalMinutes,
                 dailyFocusedSeconds: buckets.map(\.focusedSeconds)
             )
+        )
+    }
+}
+
+extension FocusSessionService {
+    /// The running sprint, projected for the Home Screen widget — `nil` when none is running.
+    ///
+    /// Deliberately built from the DEADLINE rather than from `remainingSeconds`, for two reasons.
+    /// It has to survive the trip: the widget is drawn by another process long after this was
+    /// written, so a countdown value would arrive stale while a deadline stays correct. And it has
+    /// to be STABLE while a sprint simply runs — Home republishes whenever this value changes, and a
+    /// value that moved twice a second would hand WidgetKit a reload storm. What legitimately moves
+    /// it is pause, resume, extend, a cadence re-plan, and a checkpoint crossing.
+    var widgetSprint: FocusWidgetSnapshot.ActiveSprint? {
+        guard let session else { return nil }
+        return FocusWidgetSnapshot.ActiveSprint(
+            taskTitle: session.taskTitle,
+            emoji: session.lifeAreaEmoji,
+            durationSeconds: session.durationSeconds,
+            deadline: session.isPaused ? nil : sprintDeadline,
+            pausedRemainingSeconds: session.isPaused ? session.remainingSeconds : nil,
+            checkpointsReached: session.triggeredCheckpointIndices.count,
+            checkpointCount: session.nudgeCheckpoints.count
         )
     }
 }

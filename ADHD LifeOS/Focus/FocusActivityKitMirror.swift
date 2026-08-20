@@ -132,6 +132,7 @@ extension FocusActivityAttributes.ContentState {
             pausedAt: snapshot.deadline == nil ? now : nil,
             checkpointCount: snapshot.checkpointCount,
             checkpointsReached: snapshot.checkpointsReached,
+            checkpointSeconds: snapshot.checkpointSeconds,
             isCompleted: false
         )
     }

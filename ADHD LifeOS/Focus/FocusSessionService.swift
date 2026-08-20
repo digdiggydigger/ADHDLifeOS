@@ -296,9 +296,18 @@ final class FocusSessionService: ObservableObject {
             deadline: session.isPaused ? nil : deadline,
             pausedRemainingSeconds: session.isPaused ? session.remainingSeconds : nil,
             checkpointCount: session.nudgeCheckpoints.count,
-            checkpointsReached: session.triggeredCheckpointIndices.count
+            checkpointsReached: session.triggeredCheckpointIndices.count,
+            checkpointSeconds: session.nudgeCheckpoints
         )
     }
+
+    /// The running sprint's countdown deadline; `nil` while paused or idle.
+    ///
+    /// Exposed read-only so the Home Screen widget's projection (`widgetSprint`) can be built
+    /// outside the engine without the engine growing a second presentation concern. The deadline is
+    /// deliberately what leaves this type rather than `remainingSeconds`: it is stable while a
+    /// sprint merely counts down, which is what lets Home republish on change without churn.
+    var sprintDeadline: Date? { deadline }
 
     // MARK: - Ticking
 

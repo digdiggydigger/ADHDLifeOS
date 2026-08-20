@@ -142,6 +142,27 @@ final class FocusWidgetSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(build(activeGoal: nil).week.dailyGoalMinutes, 30)
     }
 
+    // MARK: - Active sprint
+
+    func testActiveSprint_isCarriedThroughUntouched() {
+        let sprint = FocusWidgetSnapshot.ActiveSprint(
+            taskTitle: "Draft the review", emoji: "💼", durationSeconds: 900,
+            deadline: now.addingTimeInterval(600), pausedRemainingSeconds: nil,
+            checkpointsReached: 1, checkpointCount: 2
+        )
+
+        let snapshot = FocusWidgetSnapshotBuilder.snapshot(
+            activeGoal: nil, lifeAreas: [], sessions: [], activeSprint: sprint,
+            now: now, calendar: calendar
+        )
+
+        XCTAssertEqual(snapshot.activeSprint, sprint)
+    }
+
+    func testNoActiveSprint_leavesTheFieldNil() {
+        XCTAssertNil(build(activeGoal: nil).activeSprint, "the widget's live section hides itself")
+    }
+
     // MARK: - Envelope
 
     func testSnapshot_stampsGenerationTimeAndVersion() {
