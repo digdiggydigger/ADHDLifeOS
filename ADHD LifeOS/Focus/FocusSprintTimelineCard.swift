@@ -80,8 +80,9 @@ struct FocusSprintTimelineCard: View {
     }
 
     private func pin(index: Int, mark: Int) -> some View {
-        let isTriggered = session.triggeredCheckpointIndices.contains(index)
-        let isNext = session.nextCheckpoint?.index == index
+        let state = FocusCheckpointDotState.resolve(index: index, session: session)
+        let isTriggered = state == .reached
+        let isNext = state == .next
         let isSelected = selectedCheckpointIndex == index
 
         return Button {
@@ -106,13 +107,16 @@ struct FocusSprintTimelineCard: View {
         }
         .buttonStyle(CheckpointPinButtonStyle())
         .accessibilityLabel("Checkpoint \(index + 1) at \(FocusTimeFormatting.human(seconds: mark))")
-        .accessibilityValue(isTriggered ? "Reached" : (isNext ? "Up next" : "Scheduled"))
+        .accessibilityValue(state.accessibilityDescription)
         .accessibilityIdentifier("focusCheckpointPin\(index)")
     }
 
+    /// Shares `FocusCheckpointDotState`'s palette with the bar, so "next" means the same colour
+    /// on both tracks — it used to be orange here and orange there, both washing out against the
+    /// coral fill (E, 2026-08-20).
     private func pinFill(isTriggered: Bool, isNext: Bool) -> Color {
-        if isTriggered { return .green }
-        if isNext { return .orange }
+        if isTriggered { return FocusCheckpointDotState.reached.color }
+        if isNext { return FocusCheckpointDotState.next.color }
         return Color.cardSurface
     }
 

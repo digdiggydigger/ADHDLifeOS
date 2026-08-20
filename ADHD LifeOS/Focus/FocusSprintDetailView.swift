@@ -32,6 +32,7 @@ struct FocusSprintDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var controlHapticTrigger = false
+    @State private var isConfirmingStop = false
 
     var body: some View {
         NavigationStack {
@@ -198,13 +199,27 @@ struct FocusSprintDetailView: View {
 
             Button("Complete & stop") {
                 controlHapticTrigger.toggle()
-                Task {
-                    await service.stop()
-                    dismiss()
-                }
+                isConfirmingStop = true
             }
             .buttonStyle(PrimaryActionButtonStyle())
             .accessibilityIdentifier("focusModalStop")
+            // Stop ends the sprint and writes history; it sits a thumb-width from +5m, and a
+            // mis-tap used to be unrecoverable (E, 2026-08-20).
+            .confirmationDialog(
+                FocusStopConfirmation.title,
+                isPresented: $isConfirmingStop,
+                titleVisibility: .visible
+            ) {
+                Button(FocusStopConfirmation.confirmTitle, role: .destructive) {
+                    Task {
+                        await service.stop()
+                        dismiss()
+                    }
+                }
+                Button(FocusStopConfirmation.cancelTitle, role: .cancel) {}
+            } message: {
+                Text(FocusStopConfirmation.message(for: session))
+            }
         }
     }
 

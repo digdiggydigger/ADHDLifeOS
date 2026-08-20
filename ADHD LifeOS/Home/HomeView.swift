@@ -7,8 +7,10 @@ import SwiftUI
 
 struct HomeView: View {
     @ObservedObject var authService: AuthService
-    @StateObject private var homeService: HomeService
-    @StateObject private var nudgesService: NudgesService
+    /// Internal, not private: `HomeAccessoryStrips` reaches it for the reorder list.
+    @StateObject var homeService: HomeService
+    /// Internal, not private: `HomeAccessoryStrips` reads it from its own file.
+    @StateObject var nudgesService: NudgesService
     private let captureClient: CaptureClientAdapting
     private let journalClient: JournalClientAdapting?
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
@@ -21,6 +23,10 @@ struct HomeView: View {
     /// pull-to-refresh count it forms the analytics reload token, so finished sprints AND pulls
     /// both refetch focus history without waiting for a cold launch.
     private let focusReloadToken: Int
+    /// The app-wide sprint, so the Active Goal hero can show it is running rather than offering
+    /// to start a second one over the top.
+    private let activeSprint: ActiveSprintStatus?
+    private let onToggleSprintPause: () -> Void
     /// Publishes the Home Screen widget's snapshot. Home is the right owner: it is the one screen
     /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
     private let widgetPublisher: FocusWidgetPublishing
@@ -34,7 +40,7 @@ struct HomeView: View {
     /// settled mechanism); `arrangeAreas` is the live, optimistic ordering the drag mutates. This is
     /// NOT the parked `List`→`LazyVStack` container item — it is a new, separate container.
     @State private var isArranging = false
-    @State private var arrangeAreas: [LifeArea] = []
+    @State var arrangeAreas: [LifeArea] = []
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 16)]
 
@@ -50,6 +56,8 @@ struct HomeView: View {
         schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
         focusReloadToken: Int = 0,
+        activeSprint: ActiveSprintStatus? = nil,
+        onToggleSprintPause: @escaping () -> Void = {},
         widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher()
     ) {
         self.authService = authService
@@ -60,6 +68,8 @@ struct HomeView: View {
         self.schedulingClient = schedulingClient
         self.onStartFocus = onStartFocus
         self.focusReloadToken = focusReloadToken
+        self.activeSprint = activeSprint
+        self.onToggleSprintPause = onToggleSprintPause
         self.widgetPublisher = widgetPublisher
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
         _nudgesService = StateObject(
@@ -251,9 +261,13 @@ struct HomeView: View {
     private var activeGoalHero: some View {
         if let goal = homeService.activeGoal {
             let area = homeService.activeAreas.first { $0.id == goal.lifeAreaId }
-            ActiveGoalHeroCard(task: goal, lifeArea: area) {
-                onStartFocus?(FocusSprintPlan(summary: goal, lifeArea: area))
-            }
+            ActiveGoalHeroCard(
+                task: goal,
+                lifeArea: area,
+                onStartSession: { onStartFocus?(FocusSprintPlan(summary: goal, lifeArea: area)) },
+                activeSprint: activeSprint,
+                onToggleSprintPause: onToggleSprintPause
+            )
         }
     }
 
@@ -290,110 +304,5 @@ struct HomeView: View {
     /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
     private func refreshInboxCount() async {
         inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
-    }
-}
-
-// MARK: - Accessory strips
-//
-// Same-file extension so these still reach the view's private state; split out (same precedent
-// as TaskDetailView's sections) to keep the primary struct within SwiftLint's type_body_length
-// budget after the Active Goal hero landed.
-
-private extension HomeView {
-    private var reorderList: some View {
-        List {
-            ForEach(arrangeAreas) { area in
-                HStack(spacing: 8) {
-                    Text(area.colour)
-                    Text(area.name)
-                        .font(.body)
-                }
-                .accessibilityIdentifier("homeReorderRow-\(area.id.uuidString)")
-            }
-            .onMove(perform: moveArrangeAreas)
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .environment(\.editMode, .constant(.active))
-    }
-
-    /// Each completed drag persists immediately (E's per-move decision): reorder `arrangeAreas`
-    /// optimistically, then fire ONE serialised bulk reorder carrying the full ordering. TRAP 6's
-    /// serialisation + coalescing lives in `HomeService.submitReorder`.
-    private func moveArrangeAreas(from source: IndexSet, to destination: Int) {
-        arrangeAreas.move(fromOffsets: source, toOffset: destination)
-        Task { await homeService.submitReorder(activeInNewOrder: arrangeAreas) }
-    }
-
-    @ViewBuilder
-    var supabaseBridgeWarningBanner: some View {
-        if let warning = authService.supabaseBridgeWarning {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                Text(warning)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .accessibilityIdentifier("homeSupabaseBridgeWarningBanner")
-        }
-    }
-
-    @ViewBuilder
-    var dueNudgesStrip: some View {
-        let due = nudgesService.dueNudges()
-        if !due.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(due) { nudge in
-                    HStack {
-                        Text(nudge.label)
-                        Spacer()
-                        Button("Dismiss") {
-                            Task { await nudgesService.dismiss(nudge) }
-                        }
-                        .accessibilityIdentifier("homeDueNudgeDismissButton-\(nudge.id)")
-                    }
-                    .bentoCard()
-                }
-            }
-            .accessibilityIdentifier("homeDueNudgesStrip")
-        }
-    }
-}
-
-/// Pure sizing logic for `LifeAreaCardView`'s emoji glyph, split out so it's unit-testable
-/// without a `GeometryReader` host.
-enum LifeAreaCardMetrics {
-    static let emojiWidthFraction: CGFloat = 0.7
-
-    static func emojiFontSize(forCardWidth width: CGFloat) -> CGFloat {
-        width * emojiWidthFraction
-    }
-}
-
-private struct LifeAreaCardView: View {
-    let count: LifeAreaTaskCount
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            GeometryReader { geometry in
-                Text(count.lifeArea.colour)
-                    .font(.system(size: LifeAreaCardMetrics.emojiFontSize(forCardWidth: geometry.size.width)))
-                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
-                    .minimumScaleFactor(0.5)
-                    .lineLimit(1)
-            }
-            .aspectRatio(1, contentMode: .fit)
-            Text(count.lifeArea.name)
-                .font(.headline)
-            Text("\(count.openTaskCount)")
-                .font(.title.bold())
-        }
-        .bentoCard()
     }
 }

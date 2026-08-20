@@ -144,10 +144,21 @@ struct FocusTimerBar: View {
                     .fill(.tint)
                     .frame(width: width * session.progress)
                 ForEach(Array(session.nudgeCheckpoints.enumerated()), id: \.offset) { index, checkpoint in
+                    let state = FocusCheckpointDotState.resolve(index: index, session: session)
                     Circle()
-                        .fill(dotColor(index: index, session: session))
-                        .frame(width: 8, height: 8)
-                        .offset(x: dotOffset(checkpoint: checkpoint, session: session, width: width))
+                        .fill(state.color)
+                        .frame(width: state.diameter, height: state.diameter)
+                        // A ring in the page colour separates the marker from the coral fill it
+                        // sits on, so the next checkpoint reads as a distinct object, not a tint.
+                        .overlay(
+                            Circle().strokeBorder(Color(.systemBackground), lineWidth: state == .next ? 2 : 0)
+                        )
+                        .offset(
+                            x: dotOffset(
+                                checkpoint: checkpoint, session: session,
+                                width: width, diameter: state.diameter
+                            )
+                        )
                 }
             }
         }
@@ -155,16 +166,12 @@ struct FocusTimerBar: View {
         .accessibilityHidden(true)
     }
 
-    private func dotColor(index: Int, session: FocusSession) -> Color {
-        if session.triggeredCheckpointIndices.contains(index) { return .green }
-        if session.nextCheckpoint?.index == index { return .orange }
-        return Color(.systemFill)
-    }
-
-    private func dotOffset(checkpoint: Int, session: FocusSession, width: CGFloat) -> CGFloat {
+    private func dotOffset(
+        checkpoint: Int, session: FocusSession, width: CGFloat, diameter: CGFloat
+    ) -> CGFloat {
         guard session.durationSeconds > 0 else { return 0 }
         let fraction = min(1, max(0, Double(checkpoint) / Double(session.durationSeconds)))
-        return (width * fraction) - 4  // centre the 8pt dot on its position
+        return (width * fraction) - (diameter / 2)  // centre the marker on its position
     }
 
     private func controlButton(

@@ -25,6 +25,15 @@ struct ActiveGoalHeroCard: View {
     /// sprint's emoji. `nil` for unassigned/archived-area tasks.
     let lifeArea: LifeArea?
     let onStartSession: () -> Void
+    /// The app-wide sprint, if one is running — so this card can say so instead of offering to
+    /// start a second one over the top of it.
+    var activeSprint: ActiveSprintStatus?
+    /// Pause/resume for a sprint that belongs to THIS task. Unused while idle.
+    var onToggleSprintPause: () -> Void = {}
+
+    private var sprintState: ActiveGoalSprintState {
+        ActiveGoalSprintState.resolve(taskId: task.id, sprint: activeSprint)
+    }
 
     private var sprint: (durationSeconds: Int, nudgeCount: Int) {
         let duration = FocusSprintConfiguration.resolvedDuration(explicit: task.focusDurationSeconds)
@@ -100,13 +109,21 @@ struct ActiveGoalHeroCard: View {
 
     private var actionsRow: some View {
         HStack(spacing: 8) {
-            Button(action: onStartSession) {
-                Label("Start Session", systemImage: "play.fill")
+            Button {
+                sprintState == .idle ? onStartSession() : onToggleSprintPause()
+            } label: {
+                Label(sprintState.title, systemImage: sprintState.systemImage)
                     .font(.footnote.monospaced().weight(.bold))
                     .textCase(.uppercase)
                     .frame(minHeight: 32)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .buttonStyle(.borderedProminent)
+            // A paused sprint is a held state, not the live one — the tinted button stops shouting
+            // while it waits to be resumed.
+            .tint(sprintState == .paused ? Color(.secondaryLabel) : Color.accentColor)
+            .accessibilityHint(sprintState.accessibilityHint)
             .accessibilityIdentifier("homeStartSessionButton")
 
             if let lifeArea {

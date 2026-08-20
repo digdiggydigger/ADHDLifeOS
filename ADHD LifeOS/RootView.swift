@@ -58,7 +58,11 @@ struct RootView: View {
                         taskDetailClient: taskDetailClient,
                         schedulingClient: taskCountdownNudgeSchedulingClient,
                         onStartFocus: startFocus,
-                        focusReloadToken: focusService.completedSprintCount
+                        focusReloadToken: focusService.completedSprintCount,
+                        activeSprint: focusService.session.map {
+                            ActiveSprintStatus(taskId: $0.taskId, isPaused: $0.isPaused)
+                        },
+                        onToggleSprintPause: { focusService.togglePause() }
                     )
                         .tabItem { Label("Home", systemImage: "house") }
                     TaskListView(
