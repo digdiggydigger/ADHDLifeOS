@@ -55,24 +55,19 @@ struct CreateTaskButton: View {
 }
 
 /// The single, always-present 44×44 leading element every collapsed row gets. Extracted into its
-/// own view so `CaptureRowView` stays within its type-body budget. Media rows keep their existing
-/// thumbnail/playback control; link rows with a landed preview thumbnail render it; every other
-/// kind gets a centred SF Symbol placeholder in a matching 10pt-radius tile.
+/// own view so `CaptureRowView` stays within its type-body budget. Voice rows keep their playback
+/// control; link rows with a landed preview thumbnail render it; every other kind gets a centred
+/// SF Symbol placeholder in a matching 10pt-radius tile.
+///
+/// Photo rows deliberately show the GLYPH here, not the picture: the row already renders the photo
+/// at a size you can actually see it (`CapturePhotoPreview`), and putting it in both places printed
+/// the same image twice (E's inbox, 2026-08-20). The web original does the same — a purple camera
+/// in the slot, the photo once, large.
 struct CaptureRowLeadingSlot: View {
     let capture: Capture
-    /// Opens the full-screen photo preview. Only photo rows use it — the thumbnail is 44pt, which
-    /// is enough to recognise a shot and nowhere near enough to read one.
-    var onOpenPhoto: () -> Void = {}
 
     var body: some View {
         switch capture.kind {
-        case .photo:
-            Button(action: onOpenPhoto) {
-                photoThumbnail
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open photo")
-            .accessibilityIdentifier("captureOpenPhotoButton")
         case .voice:
             VoicePlaybackButton(url: capture.mediaURL)
         case .link where capture.linkPreview?.thumbnailURL != nil:
@@ -94,34 +89,6 @@ struct CaptureRowLeadingSlot: View {
                     .foregroundStyle(CaptureKindAccent.color(for: capture.kind))
             )
             .accessibilityLabel(CaptureRowPresentation.kindLabel(for: capture.kind))
-    }
-
-    private var photoThumbnail: some View {
-        AsyncImage(url: capture.photoDisplayURL) { phase in
-            switch phase {
-            case .empty:
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(.tertiarySystemFill))
-                    .overlay(ProgressView())
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            case .failure:
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(.tertiarySystemFill))
-                    .overlay(
-                        Image(systemName: "photo")
-                            .foregroundStyle(.secondary)
-                    )
-            @unknown default:
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(.tertiarySystemFill))
-            }
-        }
-        .frame(width: 44, height: 44)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .accessibilityIdentifier("capturePhotoThumbnail")
     }
 
     private var linkThumbnail: some View {

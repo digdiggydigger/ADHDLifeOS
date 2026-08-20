@@ -154,7 +154,7 @@ struct CaptureRowSummary<ExpandedLinkContent: View>: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            CaptureRowLeadingSlot(capture: capture, onOpenPhoto: onOpenPhoto)
+            CaptureRowLeadingSlot(capture: capture)
             VStack(alignment: .leading, spacing: 4) {
                 titleLine
                 if isExpanded, capture.kind == .link {
