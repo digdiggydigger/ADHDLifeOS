@@ -62,4 +62,46 @@ private struct PreviewCaptureClientAdapting: CaptureClientAdapting {
     }
     .preferredColorScheme(.dark)
 }
+
+/// Returns nothing, so the empty state — the one a user with a healthy triage habit sees most —
+/// can be previewed rather than only ever reached at runtime.
+private struct EmptyInboxPreviewClient: CaptureClientAdapting {
+    private let backing = PreviewCaptureClientAdapting()
+
+    func createCapture(_ input: NormalizedCreateCaptureInput) async throws -> Capture {
+        try await backing.createCapture(input)
+    }
+    func fetchUnprocessedCaptures() async throws -> [Capture] { [] }
+    func fetchCapture(id: UUID) async throws -> Capture { try await backing.fetchCapture(id: id) }
+    func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
+        try await backing.createTask(input)
+    }
+    func markProcessed(captureId: UUID) async throws {}
+    func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
+        try await backing.requestUploadURL(kind: kind, contentType: contentType)
+    }
+    func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
+    func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
+        try await backing.updateCapture(id: id, changes: changes)
+    }
+    func fetchAllTags() async throws -> [Tag] { [] }
+    func createTag(name: String) async throws -> Tag { Tag(id: UUID(), name: name) }
+    func fetchTags(captureId: UUID) async throws -> [Tag] { [] }
+    func addTag(captureId: UUID, tagId: UUID) async throws {}
+    func removeTag(captureId: UUID, tagId: UUID) async throws {}
+}
+
+#Preview("Empty — Light") {
+    NavigationStack {
+        CaptureInboxView(client: EmptyInboxPreviewClient(), lifeAreas: [])
+    }
+    .preferredColorScheme(.light)
+}
+
+#Preview("Empty — Dark") {
+    NavigationStack {
+        CaptureInboxView(client: EmptyInboxPreviewClient(), lifeAreas: [])
+    }
+    .preferredColorScheme(.dark)
+}
 #endif
