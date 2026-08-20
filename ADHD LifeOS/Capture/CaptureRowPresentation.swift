@@ -50,6 +50,14 @@ enum CaptureRowPresentation {
         kind.rawValue.capitalized
     }
 
+    /// One caption line reading "Kind · time ago" — identical shape on every row, so the collapsed
+    /// list has a consistent second line whatever the capture is. Moved here from the row in the
+    /// 2026-08-20 Inbox pass: it decides a string, which is this type's job.
+    static func caption(for capture: Capture) -> String {
+        let when = capture.createdAt.formatted(.relative(presentation: .named))
+        return "\(kindLabel(for: capture.kind)) · \(when)"
+    }
+
     private static func isNonEmpty(_ value: String) -> Bool {
         !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }

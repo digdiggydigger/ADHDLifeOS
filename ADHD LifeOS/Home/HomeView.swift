@@ -10,6 +10,7 @@ struct HomeView: View {
     @StateObject private var homeService: HomeService
     @StateObject private var nudgesService: NudgesService
     private let captureClient: CaptureClientAdapting
+    private let journalClient: JournalClientAdapting?
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
     private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
@@ -41,6 +42,7 @@ struct HomeView: View {
         authService: AuthService,
         homeClient: HomeClientAdapting,
         captureClient: CaptureClientAdapting,
+        journalClient: JournalClientAdapting? = nil,
         nudgesClient: NudgesClientAdapting,
         nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting,
         lifeAreaDetailClient: LifeAreaDetailClientAdapting,
@@ -52,6 +54,7 @@ struct HomeView: View {
     ) {
         self.authService = authService
         self.captureClient = captureClient
+        self.journalClient = journalClient
         self.lifeAreaDetailClient = lifeAreaDetailClient
         self.taskDetailClient = taskDetailClient
         self.schedulingClient = schedulingClient
@@ -120,7 +123,7 @@ struct HomeView: View {
                 SettingsView(authService: authService)
             }
             .navigationDestination(isPresented: $isPresentingInbox) {
-                CaptureInboxView(client: captureClient, lifeAreas: lifeAreasForPicker)
+                CaptureInboxView(client: captureClient, journalClient: journalClient, lifeAreas: lifeAreasForPicker)
             }
             .navigationDestination(for: LifeArea.self) { lifeArea in
                 LifeAreaDetailView(
@@ -227,10 +230,8 @@ struct HomeView: View {
         }
     }
 
-    /// Rebuilds and publishes the Home Screen widget's payload from whatever Home currently knows.
-    /// Cheap, pure and idempotent (`FocusWidgetSnapshotBuilder` does the work), so calling it from
-    /// every path that changes either half is simpler — and more reliable — than trying to work out
-    /// which half moved.
+    /// Rebuilds and publishes the Home Screen widget's payload. Cheap, pure and idempotent, so
+    /// calling it from every path that changes either half beats working out which half moved.
     private func publishWidgetSnapshot() {
         widgetPublisher.publish(
             FocusWidgetSnapshotBuilder.snapshot(
@@ -287,6 +288,18 @@ struct HomeView: View {
     /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
     /// Chosen over a hand-rolled grid drag because `.onMove` supplies native drag, auto-scroll,
     /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
+    private func refreshInboxCount() async {
+        inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
+    }
+}
+
+// MARK: - Accessory strips
+//
+// Same-file extension so these still reach the view's private state; split out (same precedent
+// as TaskDetailView's sections) to keep the primary struct within SwiftLint's type_body_length
+// budget after the Active Goal hero landed.
+
+private extension HomeView {
     private var reorderList: some View {
         List {
             ForEach(arrangeAreas) { area in
@@ -312,18 +325,6 @@ struct HomeView: View {
         Task { await homeService.submitReorder(activeInNewOrder: arrangeAreas) }
     }
 
-    private func refreshInboxCount() async {
-        inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
-    }
-}
-
-// MARK: - Accessory strips
-//
-// Same-file extension so these still reach the view's private state; split out (same precedent
-// as TaskDetailView's sections) to keep the primary struct within SwiftLint's type_body_length
-// budget after the Active Goal hero landed.
-
-private extension HomeView {
     @ViewBuilder
     var supabaseBridgeWarningBanner: some View {
         if let warning = authService.supabaseBridgeWarning {

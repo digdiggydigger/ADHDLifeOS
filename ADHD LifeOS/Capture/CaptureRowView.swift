@@ -27,6 +27,12 @@ struct CaptureRowView: View {
     let onAddExistingTag: (UUID) async -> Void
     let onCreateTag: (String) async -> Void
     let onRemoveTag: (UUID) async -> Void
+    /// Writes the capture into the journal and retires it — the triage exit for a thought that
+    /// is worth keeping but isn't a task.
+    let onLogToJournal: () async -> Bool
+    /// Deletes the capture outright. Confirmed before it fires: this is the one irreversible
+    /// action on the screen.
+    let onDiscard: () async -> Bool
 
     @State private var priority: TaskPriority = .p4
     @State private var dueDate: Date?
@@ -44,6 +50,9 @@ struct CaptureRowView: View {
     /// The in-flight life-area PATCH task, held so a newer pick can cancel a superseded one before
     /// it gets a chance to write stale `@State` (the 345233b revert race).
     @State private var lifeAreaTask: Task<Void, Never>?
+    @State private var isConfirmingDiscard = false
+    @State private var isLoggingToJournal = false
+    @State private var isPresentingPhoto = false
 
     init(
         capture: Capture,
@@ -59,7 +68,9 @@ struct CaptureRowView: View {
         onLoadAllTags: @escaping () async -> [Tag],
         onAddExistingTag: @escaping (UUID) async -> Void,
         onCreateTag: @escaping (String) async -> Void,
-        onRemoveTag: @escaping (UUID) async -> Void
+        onRemoveTag: @escaping (UUID) async -> Void,
+        onLogToJournal: @escaping () async -> Bool,
+        onDiscard: @escaping () async -> Bool
     ) {
         self.capture = capture
         self.lifeAreas = lifeAreas
@@ -75,6 +86,8 @@ struct CaptureRowView: View {
         self.onAddExistingTag = onAddExistingTag
         self.onCreateTag = onCreateTag
         self.onRemoveTag = onRemoveTag
+        self.onLogToJournal = onLogToJournal
+        self.onDiscard = onDiscard
         _triageLifeAreaId = State(initialValue: capture.lifeAreaId)
         _lastCommittedLifeAreaId = State(initialValue: capture.lifeAreaId)
     }
@@ -92,6 +105,12 @@ struct CaptureRowView: View {
         .contentShape(Rectangle())
         .expandCollapseHaptic(trigger: isExpanded)
         .accessibilityIdentifier("captureRow-\(capture.id)")
+        .captureRowPresentations(
+            capture: capture,
+            isPresentingPhoto: $isPresentingPhoto,
+            isConfirmingDiscard: $isConfirmingDiscard,
+            onDiscard: onDiscard
+        )
     }
 
     /// At accessibility text sizes the "Promote" button and the row's primary text still cannot
@@ -119,7 +138,7 @@ struct CaptureRowView: View {
 
     private var headerContent: some View {
         HStack(alignment: .top, spacing: 8) {
-            CaptureRowLeadingSlot(capture: capture)
+            CaptureRowLeadingSlot(capture: capture) { isPresentingPhoto = true }
             VStack(alignment: .leading, spacing: 4) {
                 Text(CaptureRowPresentation.primaryText(for: capture))
                     .lineLimit(isExpanded ? nil : 1)
@@ -128,7 +147,7 @@ struct CaptureRowView: View {
                 if isExpanded, capture.kind == .link {
                     expandedLinkContent
                 }
-                Text(captionText)
+                Text(CaptureRowPresentation.caption(for: capture))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -141,7 +160,19 @@ struct CaptureRowView: View {
     /// Now a real chip rather than bare text (2026-08-20 Inbox pass): on a flat `List` row plain
     /// text read as a label, and inside a bento card it read as part of the content. It also sat
     /// well under §3's 44pt target — the primary action on every row in the triage screen.
+    @ViewBuilder
     private var promoteButton: some View {
+        // An already-triaged capture (the Promoted tab) has nothing left to promote — offering the
+        // button anyway invited a tap that could only ever be refused (found in-simulator,
+        // 2026-08-20). It becomes a status chip instead.
+        if capture.processed {
+            CapturePromotedChip()
+        } else {
+            promoteToggle
+        }
+    }
+
+    private var promoteToggle: some View {
         Button {
             onToggleExpanded()
         } label: {
@@ -155,14 +186,6 @@ struct CaptureRowView: View {
         }
         .buttonStyle(ChoiceChipButtonStyle(isSelected: false))
         .accessibilityIdentifier("capturePromoteButton")
-    }
-
-    /// One caption line reading "Kind · time ago" — identical shape on every row so the collapsed
-    /// list has a consistent second line.
-    private var captionText: String {
-        let kind = CaptureRowPresentation.kindLabel(for: capture.kind)
-        let when = capture.createdAt.formatted(.relative(presentation: .named))
-        return "\(kind) · \(when)"
     }
 
     /// The rich link preview, shown only once the row is expanded so collapsed link rows share the
@@ -294,6 +317,12 @@ struct CaptureRowView: View {
 
             CreateTaskButton(
                 lifeAreaId: triageLifeAreaId, priority: priority, dueDate: dueDate, onCreateTask: onCreateTask
+            )
+
+            CaptureSecondaryTriageActions(
+                isLoggingToJournal: $isLoggingToJournal,
+                onLogToJournal: onLogToJournal,
+                onRequestDiscard: { isConfirmingDiscard = true }
             )
         }
     }

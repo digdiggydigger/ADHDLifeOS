@@ -17,18 +17,26 @@ final class CaptureInboxSummaryTests: XCTestCase {
     // MARK: - Headline
 
     func testHeadline_countsWhatIsWaiting() {
-        XCTAssertEqual(CaptureInboxSummary.headline(count: 3), "3 to triage")
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 3, filter: .unprocessed), "3 to triage")
     }
 
     func testHeadline_singularAtOne() {
-        XCTAssertEqual(CaptureInboxSummary.headline(count: 1), "1 to triage")
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 1, filter: .unprocessed), "1 to triage")
     }
 
     func testHeadline_emptyInboxReadsAsDone_notAsZero() {
         XCTAssertEqual(
-            CaptureInboxSummary.headline(count: 0), "Inbox clear",
+            CaptureInboxSummary.headline(count: 0, filter: .unprocessed), "Inbox clear",
             "'0 to triage' frames an empty inbox as a deficit; it is the win state"
         )
+    }
+
+    /// Found in-simulator, 2026-08-20: the Promoted tab was headed "1 to triage", which is exactly
+    /// backwards — those captures are the ones already dealt with.
+    func testHeadline_onThePromotedTab_describesWhatWasTriaged() {
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 3, filter: .promoted), "3 promoted")
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 1, filter: .promoted), "1 promoted")
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 0, filter: .promoted), "Nothing promoted yet")
     }
 
     // MARK: - Breakdown

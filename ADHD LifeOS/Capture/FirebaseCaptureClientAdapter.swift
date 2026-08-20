@@ -48,6 +48,15 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    func fetchProcessedCaptures() async throws -> [Capture] {
+        try await manager.fetchProcessedCaptures()
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func deleteCapture(id: UUID) async throws {
+        try await manager.deleteCapture(id: id)
+    }
+
     func fetchCapture(id: UUID) async throws -> Capture {
         try await manager.fetchCapture(id: id)
     }

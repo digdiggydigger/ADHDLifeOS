@@ -29,27 +29,37 @@ struct CaptureInboxView: View {
     @State private var expandedCaptureId: UUID?
     @State private var isPresentingQuickCapture = false
 
-    init(client: CaptureClientAdapting, lifeAreas: [LifeArea]) {
-        _service = StateObject(wrappedValue: CaptureInboxService(client: client))
+    init(
+        client: CaptureClientAdapting,
+        journalClient: JournalClientAdapting? = nil,
+        lifeAreas: [LifeArea]
+    ) {
+        _service = StateObject(
+            wrappedValue: CaptureInboxService(client: client, journalClient: journalClient)
+        )
         self.lifeAreas = lifeAreas
         self.captureClient = client
     }
 
     var body: some View {
-        Group {
-            switch service.state {
-            case .loading:
-                ProgressView()
-                    .accessibilityIdentifier("captureInboxLoadingIndicator")
-            case .failed(let message):
-                failedState(message)
-            case .loaded(let captures):
-                if captures.isEmpty {
-                    emptyState
-                } else {
-                    loadedState(captures)
+        VStack(spacing: 0) {
+            filterPicker
+            Group {
+                switch service.state {
+                case .loading:
+                    ProgressView()
+                        .accessibilityIdentifier("captureInboxLoadingIndicator")
+                case .failed(let message):
+                    failedState(message)
+                case .loaded(let captures):
+                    if captures.isEmpty {
+                        emptyState
+                    } else {
+                        loadedState(captures)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.pageBackground.ignoresSafeArea())
@@ -62,6 +72,27 @@ struct CaptureInboxView: View {
         .task {
             await service.load()
         }
+    }
+
+    /// The web inbox's Unprocessed / Promoted tabs. Sits above every state — including the empty
+    /// one — so a user who lands on an empty Promoted tab can still get back.
+    private var filterPicker: some View {
+        Picker("Show", selection: filterBinding) {
+            ForEach(CaptureInboxService.Filter.allCases) { option in
+                Text(option.title).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+        .accessibilityIdentifier("captureInboxFilterPicker")
+    }
+
+    private var filterBinding: Binding<CaptureInboxService.Filter> {
+        Binding(
+            get: { service.filter },
+            set: { newValue in Task { await service.select(filter: newValue) } }
+        )
     }
 
     // MARK: - States
@@ -85,7 +116,7 @@ struct CaptureInboxView: View {
 
     private func summaryHeader(_ captures: [Capture]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(CaptureInboxSummary.headline(count: captures.count))
+            Text(CaptureInboxSummary.headline(count: captures.count, filter: service.filter))
                 .font(.title2.bold())
                 .tracking(-0.5)
                 .minimumScaleFactor(0.8)
@@ -106,25 +137,29 @@ struct CaptureInboxView: View {
     /// achievement and points at the one thing worth doing next.
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "tray")
+            Image(systemName: service.filter == .promoted ? "checkmark.circle" : "tray")
                 .font(.largeTitle)
                 .foregroundStyle(Color.accentColor)
-            Text("Inbox clear")
+            Text(service.filter == .promoted ? "Nothing promoted yet" : "Inbox clear")
                 .font(.title2.bold())
                 .tracking(-0.5)
             Text(
-                "Nothing waiting to be triaged. Anything you capture lands here first, "
-                    + "so your head doesn't have to hold it."
+                service.filter == .promoted
+                    ? "Captures you turn into tasks or journal entries show up here."
+                    : "Nothing waiting to be triaged. Anything you capture lands here first, "
+                        + "so your head doesn't have to hold it."
             )
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("Capture something") {
-                isPresentingQuickCapture = true
+            if service.filter == .unprocessed {
+                Button("Capture something") {
+                    isPresentingQuickCapture = true
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .accessibilityIdentifier("captureInboxEmptyCaptureButton")
             }
-            .buttonStyle(PrimaryActionButtonStyle())
-            .accessibilityIdentifier("captureInboxEmptyCaptureButton")
         }
         .padding(24)
         .frame(maxWidth: 420)
@@ -190,6 +225,14 @@ struct CaptureInboxView: View {
             },
             onRemoveTag: { tagId in
                 await service.removeTag(capture: capture, tagId: tagId)
+            },
+            onLogToJournal: {
+                let succeeded = await service.logToJournal(capture: capture)
+                if succeeded { expandedCaptureId = nil }
+                return succeeded
+            },
+            onDiscard: {
+                await service.discard(capture: capture)
             }
         )
     }

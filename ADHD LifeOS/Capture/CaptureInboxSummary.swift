@@ -12,10 +12,18 @@ import Foundation
 /// to relieve. Naming the shape of the backlog ("2 notes · 1 voice memo") up front lets the user
 /// decide how to attack it before reading a single row.
 enum CaptureInboxSummary {
-    /// The headline count. Zero is deliberately NOT "0 to triage": an empty inbox is the win
-    /// state, not a deficit, and should read like one.
-    static func headline(count: Int) -> String {
-        count <= 0 ? "Inbox clear" : "\(count) to triage"
+    /// The headline count. Zero on the triage tab is deliberately NOT "0 to triage": an empty inbox
+    /// is the win state, not a deficit, and should read like one.
+    ///
+    /// The tab matters — the Promoted tab lists captures already dealt with, so heading it
+    /// "N to triage" says the opposite of the truth (seen in-simulator, 2026-08-20).
+    static func headline(count: Int, filter: CaptureInboxService.Filter) -> String {
+        switch filter {
+        case .unprocessed:
+            return count <= 0 ? "Inbox clear" : "\(count) to triage"
+        case .promoted:
+            return count <= 0 ? "Nothing promoted yet" : "\(count) promoted"
+        }
     }
 
     /// "2 notes · 1 voice memo" — every kind with something waiting, in a fixed order so the same

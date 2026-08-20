@@ -14,18 +14,39 @@ final class CaptureInboxService: ObservableObject {
         case failed(String)
     }
 
+    /// Which slice of the inbox is on screen — the web's `activeTabFilter`.
+    enum Filter: String, CaseIterable, Identifiable, Equatable, Sendable {
+        case unprocessed
+        case promoted
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .unprocessed: return "To triage"
+            case .promoted: return "Promoted"
+            }
+        }
+    }
+
     @Published private(set) var state: ListState = .loading
+    @Published private(set) var filter: Filter = .unprocessed
     @Published var content = ""
     @Published var kind: CaptureKind = CaptureValidation.defaultKind
-    @Published private(set) var isSubmittingCapture = false
+    /// `private(set)` relaxed to internal so `CaptureInboxService+Media` can drive it — the
+    /// media capture flows moved there to keep this type inside its length budget.
+    @Published var isSubmittingCapture = false
     @Published var createCaptureErrorMessage: String?
     @Published private(set) var createdTask: TaskItem?
     @Published var warningMessage: String?
     @Published var errorMessage: String?
     @Published var triageErrorMessage: String?
 
-    private let client: CaptureClientAdapting
-    private let transcriber: VoiceTranscribing
+    let client: CaptureClientAdapting
+    /// Used only by `logToJournal` — the triage exit that writes a journal entry instead of a task.
+    /// Injected rather than folded into `CaptureClientAdapting` so the journal keeps one owner.
+    let journalClient: JournalClientAdapting?
+    let transcriber: VoiceTranscribing
     /// Tracks a capture whose task was already created but whose `markProcessed` call failed, so a
     /// retry tap on the same still-unprocessed row only retries the mark-processed step rather than
     /// creating a second task.
@@ -43,8 +64,13 @@ final class CaptureInboxService: ObservableObject {
     /// argument is evaluated in the caller's context, which is synchronous nonisolated — calling
     /// the main-actor-isolated `SFSpeechVoiceTranscriber.init` there was a concurrency warning.
     /// Resolving the default inside this `@MainActor` init is isolation-correct.
-    init(client: CaptureClientAdapting, transcriber: VoiceTranscribing? = nil) {
+    init(
+        client: CaptureClientAdapting,
+        journalClient: JournalClientAdapting? = nil,
+        transcriber: VoiceTranscribing? = nil
+    ) {
         self.client = client
+        self.journalClient = journalClient
         self.transcriber = transcriber ?? SFSpeechVoiceTranscriber()
     }
 
@@ -65,10 +91,24 @@ final class CaptureInboxService: ObservableObject {
     func load() async {
         state = .loading
         do {
-            let captures = try await client.fetchUnprocessedCaptures()
-            state = .loaded(captures)
+            state = .loaded(try await fetchCurrentFilter())
         } catch {
             state = .failed(Self.message(for: error))
+        }
+    }
+
+    /// Switches tabs and loads that slice. Re-selecting the tab already showing is a no-op — the
+    /// user tapping where they already are shouldn't cost a fetch or blank the list mid-read.
+    func select(filter newFilter: Filter) async {
+        guard newFilter != filter else { return }
+        filter = newFilter
+        await load()
+    }
+
+    private func fetchCurrentFilter() async throws -> [Capture] {
+        switch filter {
+        case .unprocessed: return try await client.fetchUnprocessedCaptures()
+        case .promoted: return try await client.fetchProcessedCaptures()
         }
     }
 
@@ -79,7 +119,7 @@ final class CaptureInboxService: ObservableObject {
     /// captures on screen rather than surfacing an error — a transient refresh hiccup shouldn't
     /// blank a list the user can already see.
     func refresh() async {
-        guard let captures = try? await client.fetchUnprocessedCaptures() else { return }
+        guard let captures = try? await fetchCurrentFilter() else { return }
         state = .loaded(captures)
     }
 
@@ -100,84 +140,6 @@ final class CaptureInboxService: ObservableObject {
         defer { isSubmittingCapture = false }
 
         do {
-            _ = try await client.createCapture(normalized)
-            content = ""
-            kind = CaptureValidation.defaultKind
-            return true
-        } catch {
-            createCaptureErrorMessage = Self.message(for: error)
-            return false
-        }
-    }
-
-    /// Photo capture flow: mint an upload URL, PUT the (already-downscaled, JPEG-encoded) image
-    /// bytes to S3, then create the capture referencing the returned keys. `content` doubles as the
-    /// optional caption, same field the text-capture composer uses.
-    @discardableResult
-    func createPhotoCapture(imageData: Data) async -> Bool {
-        createCaptureErrorMessage = nil
-        isSubmittingCapture = true
-        defer { isSubmittingCapture = false }
-
-        do {
-            let target = try await client.requestUploadURL(kind: .photo, contentType: Self.photoContentType)
-            try await client.uploadMedia(to: target.uploadURL, data: imageData, contentType: Self.photoContentType)
-
-            guard case .success(let normalized) = CaptureValidation.normalizeCreateCaptureInput(
-                content: content, kind: .photo, mediaKey: target.mediaKey,
-                mediaContentType: Self.photoContentType, thumbnailKey: target.thumbnailKey
-            ) else {
-                createCaptureErrorMessage = CaptureValidationError.emptyContent.errorDescription
-                return false
-            }
-
-            _ = try await client.createCapture(normalized)
-            content = ""
-            kind = CaptureValidation.defaultKind
-            return true
-        } catch {
-            createCaptureErrorMessage = Self.message(for: error)
-            return false
-        }
-    }
-
-    /// Voice capture flow: transcribe the recorded `.m4a` on-device first (no upload attempted if
-    /// transcription fails/is denied/comes back empty), then mint an upload URL, PUT the audio bytes
-    /// to S3, then create the capture with the transcription as `content`. There is no server-side
-    /// transcription and no thumbnail concept for audio.
-    @discardableResult
-    func createVoiceCapture(audioFileURL: URL) async -> Bool {
-        createCaptureErrorMessage = nil
-        isSubmittingCapture = true
-        defer { isSubmittingCapture = false }
-
-        let transcription: String
-        do {
-            transcription = try await transcriber.transcribe(audioURL: audioFileURL)
-        } catch {
-            createCaptureErrorMessage = Self.message(for: error)
-            return false
-        }
-
-        let trimmedTranscription = transcription.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedTranscription.isEmpty else {
-            createCaptureErrorMessage = VoiceTranscriptionError.emptyTranscription.errorDescription
-            return false
-        }
-
-        do {
-            let audioData = try Data(contentsOf: audioFileURL)
-            let target = try await client.requestUploadURL(kind: .voice, contentType: Self.voiceContentType)
-            try await client.uploadMedia(to: target.uploadURL, data: audioData, contentType: Self.voiceContentType)
-
-            guard case .success(let normalized) = CaptureValidation.normalizeCreateCaptureInput(
-                content: trimmedTranscription, kind: .voice, mediaKey: target.mediaKey,
-                mediaContentType: Self.voiceContentType, thumbnailKey: target.thumbnailKey
-            ) else {
-                createCaptureErrorMessage = CaptureValidationError.emptyContent.errorDescription
-                return false
-            }
-
             _ = try await client.createCapture(normalized)
             content = ""
             kind = CaptureValidation.defaultKind
@@ -289,6 +251,14 @@ final class CaptureInboxService: ObservableObject {
         }
     }
 
+    /// Drops a retired capture from the loaded list without a refetch. Lives here rather than in
+    /// `CaptureInboxService+Triage` because `state` has a `private(set)` setter — the only writers
+    /// must be in this file.
+    func removeCapture(id: UUID) {
+        guard case .loaded(let captures) = state else { return }
+        state = .loaded(captures.filter { $0.id != id })
+    }
+
     private func replaceCapture(_ updated: Capture) {
         guard case .loaded(let captures) = state else { return }
         state = .loaded(captures.map { $0.id == updated.id ? updated : $0 })
@@ -321,7 +291,7 @@ final class CaptureInboxService: ObservableObject {
         }
     }
 
-    private static func message(for error: Error) -> String {
+    static func message(for error: Error) -> String {
         (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
     }
 
@@ -340,6 +310,6 @@ final class CaptureInboxService: ObservableObject {
         return capture.content
     }
 
-    private static let photoContentType = "image/jpeg"
-    private static let voiceContentType = "audio/m4a"
+    static let photoContentType = "image/jpeg"
+    static let voiceContentType = "audio/m4a"
 }

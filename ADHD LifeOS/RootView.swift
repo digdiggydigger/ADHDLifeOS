@@ -51,6 +51,7 @@ struct RootView: View {
                         authService: authService,
                         homeClient: homeClient,
                         captureClient: captureClient,
+                        journalClient: journalClient,
                         nudgesClient: nudgesClient,
                         nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
                         lifeAreaDetailClient: lifeAreaDetailClient,
@@ -202,6 +203,9 @@ struct RootView: View {
         func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
             fatalError("unused in preview")
         }
+
+    func fetchProcessedCaptures() async throws -> [Capture] { [] }
+    func deleteCapture(id: UUID) async throws {}
         func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
         func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
             fatalError("unused in preview")

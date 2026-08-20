@@ -60,11 +60,19 @@ struct CreateTaskButton: View {
 /// kind gets a centred SF Symbol placeholder in a matching 10pt-radius tile.
 struct CaptureRowLeadingSlot: View {
     let capture: Capture
+    /// Opens the full-screen photo preview. Only photo rows use it — the thumbnail is 44pt, which
+    /// is enough to recognise a shot and nowhere near enough to read one.
+    var onOpenPhoto: () -> Void = {}
 
     var body: some View {
         switch capture.kind {
         case .photo:
-            photoThumbnail
+            Button(action: onOpenPhoto) {
+                photoThumbnail
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open photo")
+            .accessibilityIdentifier("captureOpenPhotoButton")
         case .voice:
             VoicePlaybackButton(url: capture.mediaURL)
         case .link where capture.linkPreview?.thumbnailURL != nil:
@@ -229,5 +237,157 @@ struct CaptureLinkPreviewCard: View {
             }
         }
         .accessibilityIdentifier("captureLinkPreviewCard")
+    }
+}
+
+/// Full-screen preview for a photo capture — the web inbox's lightbox.
+///
+/// A 44pt thumbnail is enough to recognise a photo and useless for reading one, which is exactly
+/// what a photo capture of a whiteboard, a form or a receipt needs. Deliberately plain: a fitted
+/// image on black with one obvious way out, so it can never become a place you get stuck.
+struct CapturePhotoLightbox: View {
+    let url: URL?
+    let title: String
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                HStack {
+                    Text(title)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                    Spacer(minLength: 8)
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label("Done", systemImage: "xmark")
+                            .labelStyle(.titleOnly)
+                            .font(.footnote.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityIdentifier("capturePhotoLightboxCloseButton")
+                }
+                .padding(.horizontal, 16)
+
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    case .failure:
+                        Label("Couldn't load this photo.", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.white)
+                    default:
+                        ProgressView()
+                            .tint(.white)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityIdentifier("capturePhotoLightboxImage")
+            }
+            .padding(.vertical, 16)
+        }
+        .accessibilityIdentifier("capturePhotoLightbox")
+    }
+}
+
+/// The triage exits that are not "make this a task". Before these, promote-to-task was the only way
+/// out of the inbox, so anything that wasn't a task simply accumulated.
+///
+/// Discard only REQUESTS the confirmation — the dialog itself lives on the row, because it is the
+/// row that knows which capture is about to go.
+struct CaptureSecondaryTriageActions: View {
+    @Binding var isLoggingToJournal: Bool
+    let onLogToJournal: () async -> Bool
+    let onRequestDiscard: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button {
+                Task {
+                    isLoggingToJournal = true
+                    _ = await onLogToJournal()
+                    isLoggingToJournal = false
+                }
+            } label: {
+                Label("Log to journal", systemImage: "book")
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(ChoiceChipButtonStyle(isSelected: false))
+            .disabled(isLoggingToJournal)
+            .accessibilityIdentifier("captureLogToJournalButton")
+
+            Button(action: onRequestDiscard) {
+                Label("Discard", systemImage: "trash")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.red)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(ChoiceChipButtonStyle(isSelected: false))
+            .accessibilityIdentifier("captureDiscardButton")
+        }
+    }
+}
+
+extension View {
+    /// The row's photo lightbox and its discard confirmation, bundled so `CaptureRowView` stays
+    /// inside its body-length budget. Behaviour is unchanged: the dialog names the consequence,
+    /// because discard is the one irreversible action on the screen.
+    func captureRowPresentations(
+        capture: Capture,
+        isPresentingPhoto: Binding<Bool>,
+        isConfirmingDiscard: Binding<Bool>,
+        onDiscard: @escaping () async -> Bool
+    ) -> some View {
+        fullScreenCover(isPresented: isPresentingPhoto) {
+            CapturePhotoLightbox(
+                url: capture.photoDisplayURL,
+                title: CaptureRowPresentation.primaryText(for: capture)
+            )
+        }
+        .confirmationDialog(
+            "Discard this capture?",
+            isPresented: isConfirmingDiscard,
+            titleVisibility: .visible
+        ) {
+            Button("Discard", role: .destructive) {
+                Task { await onDiscard() }
+            }
+            Button("Keep it", role: .cancel) {}
+        } message: {
+            Text("It won't become a task or a journal entry. This can't be undone.")
+        }
+    }
+}
+
+/// The Promoted tab's status chip, standing in for the Promote button on a capture that has already
+/// been triaged. Icon + text, never colour alone (§4).
+struct CapturePromotedChip: View {
+    var body: some View {
+        Label("Promoted", systemImage: "checkmark.circle.fill")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.green)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, 16)
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("capturePromotedChip")
     }
 }

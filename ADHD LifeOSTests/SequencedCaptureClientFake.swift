@@ -121,6 +121,9 @@ final class SequencedCaptureClientFake: CaptureClientAdapting, @unchecked Sendab
     func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
         CaptureUploadTarget(uploadURL: URL(string: "https://example.com/upload")!, mediaKey: "key", thumbnailKey: nil)
     }
+
+    func fetchProcessedCaptures() async throws -> [Capture] { [] }
+    func deleteCapture(id: UUID) async throws {}
     func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
     func fetchAllTags() async throws -> [Tag] { [] }
     func createTag(name: String) async throws -> Tag { Tag(id: UUID(), name: name) }

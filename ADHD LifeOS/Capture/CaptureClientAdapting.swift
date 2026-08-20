@@ -48,9 +48,15 @@ enum CaptureServiceError: LocalizedError, Equatable {
 protocol CaptureClientAdapting: Sendable {
     func createCapture(_ input: NormalizedCreateCaptureInput) async throws -> Capture
     func fetchUnprocessedCaptures() async throws -> [Capture]
+    /// Captures already triaged — the Promoted tab. Separate call rather than a filter argument so
+    /// the tab the user isn't looking at is never fetched.
+    func fetchProcessedCaptures() async throws -> [Capture]
     func fetchCapture(id: UUID) async throws -> Capture
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem
     func markProcessed(captureId: UUID) async throws
+    /// Discards a capture outright — the triage exit for something that is neither a task nor worth
+    /// keeping. `captures` already grants owner delete in `firestore.rules`, so no rules change.
+    func deleteCapture(id: UUID) async throws
 
     /// Partial update (status/lifeAreaId/title) — the triage screen's Life Area picker path.
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture

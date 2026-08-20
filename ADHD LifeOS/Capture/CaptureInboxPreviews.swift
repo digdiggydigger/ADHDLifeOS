@@ -29,6 +29,9 @@ private struct PreviewCaptureClientAdapting: CaptureClientAdapting {
     func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
         fatalError("unused in preview")
     }
+
+    func fetchProcessedCaptures() async throws -> [Capture] { [] }
+    func deleteCapture(id: UUID) async throws {}
     func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
 
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
@@ -72,6 +75,8 @@ private struct EmptyInboxPreviewClient: CaptureClientAdapting {
         try await backing.createCapture(input)
     }
     func fetchUnprocessedCaptures() async throws -> [Capture] { [] }
+    func fetchProcessedCaptures() async throws -> [Capture] { [] }
+    func deleteCapture(id: UUID) async throws {}
     func fetchCapture(id: UUID) async throws -> Capture { try await backing.fetchCapture(id: id) }
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
         try await backing.createTask(input)

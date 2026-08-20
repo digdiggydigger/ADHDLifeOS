@@ -352,6 +352,10 @@ extension FirebaseManager {
         try await fetchWhere(Capture.self, from: .captures, field: "processed", equals: false)
     }
 
+    func fetchProcessedCaptures() async throws -> [Capture] {
+        try await fetchWhere(Capture.self, from: .captures, field: "processed", equals: true)
+    }
+
     /// Triage's partial update — never a whole-document overwrite, so the `tag_ids` membership
     /// array (managed in `FirebaseManager+Tags.swift`, not part of `Capture`'s `Codable`) survives.
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws {

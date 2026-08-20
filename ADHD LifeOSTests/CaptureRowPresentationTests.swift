@@ -128,4 +128,26 @@ final class CaptureRowPresentationTests: XCTestCase {
         XCTAssertEqual(CaptureRowPresentation.kindLabel(for: .photo), "Photo")
         XCTAssertEqual(CaptureRowPresentation.kindLabel(for: .voice), "Voice")
     }
+
+    // MARK: - Caption
+
+    func testCaption_namesTheKindThenHowLongAgo() {
+        let capture = Capture(
+            id: UUID(), content: "A note", kind: .voice, processed: false, createdAt: Date()
+        )
+
+        let caption = CaptureRowPresentation.caption(for: capture)
+
+        XCTAssertTrue(caption.hasPrefix("Voice · "), "kind leads, so the list scans by type: \(caption)")
+    }
+
+    func testCaption_hasTheSameShapeForEveryKind() {
+        let captions = CaptureKind.allCases.map { kind in
+            CaptureRowPresentation.caption(
+                for: Capture(id: UUID(), content: "x", kind: kind, processed: false, createdAt: Date())
+            )
+        }
+
+        XCTAssertTrue(captions.allSatisfy { $0.contains(" · ") }, "one separator, every row")
+    }
 }
