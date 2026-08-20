@@ -822,7 +822,7 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 						<key>attachmentsByRange</key>
 						<dict/>
 						<key>string</key>
-						<string>https://us-central1-adhdlifeos-acb49.cloudfunctions.net/capture</string>
+						<string>https://capture-dg5rypfbaq-uc.a.run.app</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenString</string>

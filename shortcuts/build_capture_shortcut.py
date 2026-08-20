@@ -7,7 +7,7 @@ Storage upload and the download URL, so the Shortcut is one menu and one POST.
 import plistlib
 
 PH = "￼"
-ENDPOINT = "https://us-central1-adhdlifeos-acb49.cloudfunctions.net/capture"
+ENDPOINT = "https://capture-dg5rypfbaq-uc.a.run.app"
 
 U = {
     "key": "169396F7-31E6-4F4C-B11A-4719E91C4FF0",
