@@ -36,15 +36,44 @@ final class CaptureInboxFilterTests: XCTestCase {
     }
 
     func testLoad_withUnprocessedFilter_showsOnlyWhatStillNeedsTriage() async {
+        let env = makeSUT(
+            unprocessed: [capture("Buy milk", processed: false)],
+            processed: [capture("Already a task", processed: true)]
+        )
+
+        await env.service.load()
+
+        XCTAssertEqual(
+            env.service.captures.map(\.content), ["Buy milk"],
+            "the promoted tab's captures never reach the list, even though its COUNT is now fetched"
+        )
+    }
+
+    /// The counts behind the filter picker's "To triage (1)" / "Promoted (2)" labels — the web
+    /// original puts a number on BOTH tabs, so `load` learns the inactive one's count too.
+    func testLoad_learnsTheCountForBothTabs() async {
+        let env = makeSUT(
+            unprocessed: [capture("Buy milk", processed: false)],
+            processed: [capture("Booked it", processed: true), capture("Filed it", processed: true)]
+        )
+
+        await env.service.load()
+
+        XCTAssertEqual(env.service.counts[.unprocessed], 1)
+        XCTAssertEqual(env.service.counts[.promoted], 2, "the tab you are not on still carries a number")
+    }
+
+    /// A count is decoration on a tab the user is not looking at. It must never turn a perfectly
+    /// good load into a failure.
+    func testLoad_whenTheInactiveTabsFetchFails_stillLoadsAndJustOmitsThatCount() async {
         let env = makeSUT(unprocessed: [capture("Buy milk", processed: false)])
+        env.client.fetchProcessedCapturesResult = .failure(CaptureServiceError.fetchFailed("Network error"))
 
         await env.service.load()
 
         XCTAssertEqual(env.service.captures.map(\.content), ["Buy milk"])
-        XCTAssertEqual(
-            env.client.fetchProcessedCapturesCallCount, 0,
-            "the promoted tab must not be fetched until it is asked for"
-        )
+        XCTAssertEqual(env.service.counts[.unprocessed], 1)
+        XCTAssertNil(env.service.counts[.promoted], "unknown, which is not the same as zero")
     }
 
     func testSelectingPromoted_fetchesAndShowsTriagedCaptures() async {

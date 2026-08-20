@@ -43,6 +43,7 @@ struct CaptureInboxView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            purposeHeader
             filterPicker
             Group {
                 switch service.state {
@@ -63,7 +64,11 @@ struct CaptureInboxView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.pageBackground.ignoresSafeArea())
-        .navigationTitle("Inbox")
+        // The purpose header below IS the title, so the bar keeps only its back chevron rather than
+        // saying "Inbox" directly above a larger "Capture Inbox". Hiding the bar outright would take
+        // the way back with it.
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isPresentingQuickCapture) {
             QuickCaptureView(client: captureClient) {
                 Task { await service.refresh() }
@@ -74,18 +79,55 @@ struct CaptureInboxView: View {
         }
     }
 
+    /// The web original's masthead: an eyebrow, the real title, and — the part that matters — a line
+    /// saying what this screen is FOR. "Dump thoughts & photos instantly, triage when executive
+    /// bandwidth allows" is the promise the whole inbox rests on, and a bare "Inbox" nav title makes
+    /// it once again a pile you have to remember the point of.
+    ///
+    /// Given a purpose line, the nav title becomes a duplicate, so it is hidden (the back button
+    /// stays).
+    private var purposeHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Frictionless ingestion")
+                .sectionLabel()
+                .foregroundStyle(Color.accentColor)
+            Text("Capture Inbox")
+                .font(.largeTitle.bold())
+                .tracking(-0.5)
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
+            Text("Dump thoughts and photos instantly, triage when executive bandwidth allows.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("captureInboxPurposeHeader")
+    }
+
     /// The web inbox's Unprocessed / Promoted tabs. Sits above every state — including the empty
     /// one — so a user who lands on an empty Promoted tab can still get back.
+    ///
+    /// Each tab carries its own count, as the web's do. A tab whose count is not yet known renders
+    /// its bare title rather than "(0)" — never having looked is not the same as nothing being there.
     private var filterPicker: some View {
         Picker("Show", selection: filterBinding) {
             ForEach(CaptureInboxService.Filter.allCases) { option in
-                Text(option.title).tag(option)
+                Text(tabTitle(for: option)).tag(option)
             }
         }
         .pickerStyle(.segmented)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .accessibilityIdentifier("captureInboxFilterPicker")
+    }
+
+    private func tabTitle(for option: CaptureInboxService.Filter) -> String {
+        guard let count = service.counts[option] else { return option.title }
+        return "\(option.title) (\(count))"
     }
 
     private var filterBinding: Binding<CaptureInboxService.Filter> {

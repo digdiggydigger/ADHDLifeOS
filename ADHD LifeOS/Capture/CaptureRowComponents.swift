@@ -82,14 +82,18 @@ struct CaptureRowLeadingSlot: View {
         }
     }
 
+    /// Colour-coded per kind, like the web's coral mic / purple camera / amber note — a uniform grey
+    /// tile made every row look identical in the one list whose whole job is telling them apart.
+    /// The glyph still differs per kind, so nothing is conveyed by colour alone (§4).
     private var glyphSlot: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(Color(.tertiarySystemFill))
+            .fill(CaptureKindAccent.color(for: capture.kind).opacity(0.12))
             .frame(width: 44, height: 44)
             .overlay(
                 Image(systemName: CaptureRowPresentation.glyphSystemImageName(for: capture.kind))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(CaptureKindAccent.color(for: capture.kind))
             )
+            .accessibilityLabel(CaptureRowPresentation.kindLabel(for: capture.kind))
     }
 
     private var photoThumbnail: some View {
@@ -187,7 +191,14 @@ private struct VoicePlaybackButton: View {
         } label: {
             Image(systemName: player.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                 .font(.title2)
+                // Same tinted tile as every other kind's slot, so a voice row doesn't read as an
+                // unfinished one sitting next to them (§4 parity, 2026-08-20 Inbox pass).
+                .foregroundStyle(CaptureKindAccent.color(for: .voice))
                 .frame(width: 44, height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(CaptureKindAccent.color(for: .voice).opacity(0.12))
+                )
         }
         .buttonStyle(.plain)
         .disabled(url == nil)

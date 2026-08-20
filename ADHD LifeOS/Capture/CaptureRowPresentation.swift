@@ -44,18 +44,52 @@ enum CaptureRowPresentation {
         }
     }
 
-    /// The human-readable kind name shown in the caption line, preserving the prior on-screen
-    /// wording exactly (`kind.rawValue.capitalized`).
+    /// The human-readable kind name shown wherever a kind is named on its own.
     static func kindLabel(for kind: CaptureKind) -> String {
         kind.rawValue.capitalized
     }
 
-    /// One caption line reading "Kind · time ago" — identical shape on every row, so the collapsed
-    /// list has a consistent second line whatever the capture is. Moved here from the row in the
-    /// 2026-08-20 Inbox pass: it decides a string, which is this type's job.
-    static func caption(for capture: Capture) -> String {
-        let when = capture.createdAt.formatted(.relative(presentation: .named))
-        return "\(kindLabel(for: capture.kind)) · \(when)"
+    /// The capture's own words, quoted beneath the title — the web card's italic note/transcript
+    /// block.
+    ///
+    /// `nil` when there is nothing to add: either the capture has no content, or `primaryText`
+    /// already fell through to that same content because there was no title. Without the second
+    /// guard an untitled note printed the identical sentence twice, once as headline and once as
+    /// quote.
+    static func secondaryText(for capture: Capture) -> String? {
+        let trimmed = capture.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != primaryText(for: capture) else { return nil }
+        return trimmed
+    }
+
+    /// "Captured 14:32 · voice note" — the web's caption, which says WHEN the thought was dumped.
+    /// That is the useful fact when scanning a backlog; the previous "Note · 2 minutes ago" led
+    /// with the kind, which the glyph beside it already says.
+    ///
+    /// One deliberate improvement on the web, which prints a bare clock time and is therefore
+    /// useless on anything older than today: a capture from another day carries its date too.
+    static func caption(for capture: Capture, now: Date = Date(), calendar: Calendar = .current) -> String {
+        // Against the CALLER's `now`, not the real clock — an injected `now` that the body then
+        // ignored would make this untestable and quietly wrong under a fixed date.
+        let when: String = calendar.isDate(capture.createdAt, inSameDayAs: now)
+            ? capture.createdAt.formatted(date: .omitted, time: .shortened)
+            : capture.createdAt.formatted(date: .abbreviated, time: .shortened)
+        return "Captured \(when) · \(kindNoun(for: capture.kind))"
+    }
+
+    /// Lower-case, because it sits mid-sentence in the caption.
+    ///
+    /// The web appends a bare " note" to every kind, which reads "note note" for the commonest kind
+    /// of all (seen in-simulator, 2026-08-20). Each kind names itself properly instead: `voice` and
+    /// `photo` are adjectives and take the noun, the rest already are nouns.
+    private static func kindNoun(for kind: CaptureKind) -> String {
+        switch kind {
+        case .note: return "note"
+        case .task: return "task"
+        case .link: return "link"
+        case .photo: return "photo note"
+        case .voice: return "voice note"
+        }
     }
 
     private static func isNonEmpty(_ value: String) -> Bool {

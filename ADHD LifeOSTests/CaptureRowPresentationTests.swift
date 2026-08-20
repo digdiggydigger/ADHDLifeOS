@@ -131,15 +131,10 @@ final class CaptureRowPresentationTests: XCTestCase {
 
     // MARK: - Caption
 
-    func testCaption_namesTheKindThenHowLongAgo() {
-        let capture = Capture(
-            id: UUID(), content: "A note", kind: .voice, processed: false, createdAt: Date()
-        )
-
-        let caption = CaptureRowPresentation.caption(for: capture)
-
-        XCTAssertTrue(caption.hasPrefix("Voice · "), "kind leads, so the list scans by type: \(caption)")
-    }
+    // The caption led with the kind until the 2026-08-20 Inbox parity pass, when it moved to the
+    // web original's "Captured 14:32 · voice note": the glyph beside it already says the kind, and
+    // WHEN a thought was dumped is the fact you actually scan a backlog for. The shape itself is
+    // covered in `CaptureRowDetailTests`; what stays here is the invariant every row shares.
 
     func testCaption_hasTheSameShapeForEveryKind() {
         let captions = CaptureKind.allCases.map { kind in

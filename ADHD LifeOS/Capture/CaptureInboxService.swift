@@ -88,13 +88,32 @@ final class CaptureInboxService: ObservableObject {
         return false
     }
 
+    /// Per-tab counts for the filter picker, so both tabs carry a number the way the web original's
+    /// do ("Unprocessed (3)"). A filter with no entry has simply never loaded — the tab renders
+    /// without a count rather than claiming zero, which is a different and much worse statement.
+    @Published private(set) var counts: [Filter: Int] = [:]
+
     func load() async {
         state = .loading
         do {
-            state = .loaded(try await fetchCurrentFilter())
+            let captures = try await fetchCurrentFilter()
+            counts[filter] = captures.count
+            state = .loaded(captures)
         } catch {
             state = .failed(Self.message(for: error))
         }
+        await refreshInactiveCount()
+    }
+
+    /// Learns the OTHER tab's count so the picker isn't half-labelled on a cold start.
+    ///
+    /// Deliberately after the main load and deliberately failure-tolerant: this is decoration on
+    /// the tab the user is not looking at, and it must never delay the list they are, nor turn a
+    /// perfectly good load into an error. A failure just leaves that count unknown.
+    private func refreshInactiveCount() async {
+        let inactive: Filter = filter == .unprocessed ? .promoted : .unprocessed
+        guard let captures = try? await fetch(inactive) else { return }
+        counts[inactive] = captures.count
     }
 
     /// Switches tabs and loads that slice. Re-selecting the tab already showing is a no-op — the
@@ -106,6 +125,10 @@ final class CaptureInboxService: ObservableObject {
     }
 
     private func fetchCurrentFilter() async throws -> [Capture] {
+        try await fetch(filter)
+    }
+
+    private func fetch(_ filter: Filter) async throws -> [Capture] {
         switch filter {
         case .unprocessed: return try await client.fetchUnprocessedCaptures()
         case .promoted: return try await client.fetchProcessedCaptures()
@@ -120,6 +143,7 @@ final class CaptureInboxService: ObservableObject {
     /// blank a list the user can already see.
     func refresh() async {
         guard let captures = try? await fetchCurrentFilter() else { return }
+        counts[filter] = captures.count
         state = .loaded(captures)
     }
 

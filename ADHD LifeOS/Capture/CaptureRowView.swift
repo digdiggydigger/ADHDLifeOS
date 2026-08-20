@@ -137,24 +137,13 @@ struct CaptureRowView: View {
     }
 
     private var headerContent: some View {
-        HStack(alignment: .top, spacing: 8) {
-            CaptureRowLeadingSlot(capture: capture) { isPresentingPhoto = true }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(CaptureRowPresentation.primaryText(for: capture))
-                    .lineLimit(isExpanded ? nil : 1)
-                    .truncationMode(.tail)
-                    .minimumScaleFactor(0.8)
-                if isExpanded, capture.kind == .link {
-                    expandedLinkContent
-                }
-                Text(CaptureRowPresentation.caption(for: capture))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            .layoutPriority(1)
-        }
+        CaptureRowSummary(
+            capture: capture,
+            lifeAreas: lifeAreas,
+            isExpanded: isExpanded,
+            onOpenPhoto: { isPresentingPhoto = true },
+            expandedLinkContent: { expandedLinkContent }
+        )
     }
 
     /// Now a real chip rather than bare text (2026-08-20 Inbox pass): on a flat `List` row plain
