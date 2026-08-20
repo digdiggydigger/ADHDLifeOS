@@ -24,6 +24,7 @@ struct FocusTimerBar: View {
     @ObservedObject var service: FocusSessionService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPresentingDetail = false
+    @State private var isConfirmingStop = false
 
     var body: some View {
         if let session = service.session {
@@ -59,12 +60,26 @@ struct FocusTimerBar: View {
                                 Image(systemName: "chevron.up")
                                     .font(.caption2.weight(.bold))
                                     .foregroundStyle(.secondary)
+                                if let badge = FocusBarStatus.pausedBadge(for: session) {
+                                    Text(badge)
+                                        .font(.caption2.monospaced().weight(.bold))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(.secondary)
+                                        .accessibilityHidden(true)
+                                        .accessibilityIdentifier("focusBarPausedBadge")
+                                }
                                 Text(FocusTimeFormatting.digital(session.remainingSeconds))
                                     .font(.caption.monospaced().weight(.bold))
                                     .foregroundStyle(Color(.systemBackground))
                                     .padding(.vertical, 4)
                                     .padding(.horizontal, 8)
-                                    .background(.tint, in: Capsule())
+                                    // A paused countdown is a held state, not the live one — the
+                                    // pill stops shouting in coral until it is resumed.
+                                    .background(
+                                        session.isPaused ? AnyShapeStyle(Color(.secondaryLabel)) : AnyShapeStyle(.tint),
+                                        in: Capsule()
+                                    )
+                                    .accessibilityLabel(FocusBarStatus.accessibilityLabel(for: session))
                                     .accessibilityIdentifier("focusRemainingTime")
                             }
 
@@ -111,7 +126,7 @@ struct FocusTimerBar: View {
                     Spacer(minLength: 0)
 
                     controlButton("Stop", systemImage: "stop.fill", identifier: "focusBarStop", isDestructive: true) {
-                        Task { await service.stop() }
+                        isConfirmingStop = true
                     }
                 }
             }
@@ -129,6 +144,20 @@ struct FocusTimerBar: View {
             .sheet(isPresented: $isPresentingDetail) {
                 FocusSprintDetailView(service: service)
             }
+            // The same guard the modal's Complete & stop has (E, 2026-08-20): this Stop is the one
+            // most likely to be mis-tapped — it sits beside +5m in a bar that is always on screen.
+            .confirmationDialog(
+                FocusStopConfirmation.title,
+                isPresented: $isConfirmingStop,
+                titleVisibility: .visible
+            ) {
+                Button(FocusStopConfirmation.confirmTitle, role: .destructive) {
+                    Task { await service.stop() }
+                }
+                Button(FocusStopConfirmation.cancelTitle, role: .cancel) {}
+            } message: {
+                Text(FocusStopConfirmation.message(for: session))
+            }
         }
     }
 
@@ -140,9 +169,10 @@ struct FocusTimerBar: View {
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Color(.tertiarySystemFill))
+                    .frame(height: 8)
                 Capsule()
                     .fill(.tint)
-                    .frame(width: width * session.progress)
+                    .frame(width: width * session.progress, height: 8)
                 ForEach(Array(session.nudgeCheckpoints.enumerated()), id: \.offset) { index, checkpoint in
                     let state = FocusCheckpointDotState.resolve(index: index, session: session)
                     Circle()
@@ -162,7 +192,7 @@ struct FocusTimerBar: View {
                 }
             }
         }
-        .frame(height: 8)
+        .frame(height: 16)
         .accessibilityHidden(true)
     }
 

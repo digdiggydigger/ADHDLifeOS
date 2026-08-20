@@ -120,4 +120,32 @@ final class FocusSprintPresentationTests: XCTestCase {
         XCTAssertEqual(FocusStopConfirmation.confirmTitle, "Stop sprint")
         XCTAssertEqual(FocusStopConfirmation.cancelTitle, "Keep going")
     }
+
+    // MARK: - Floating bar status
+
+    /// The always-visible bar is where a sprint is actually managed, so it must state paused-ness
+    /// as plainly as the Home hero does — a "Resume" button alone reads as an option, not a state
+    /// (E, 2026-08-20).
+    func testBarStatus_whileRunning_showsNoBadge() {
+        let sut = session(checkpoints: [], remaining: 600)
+
+        XCTAssertNil(FocusBarStatus.pausedBadge(for: sut))
+    }
+
+    func testBarStatus_whilePaused_saysSo() {
+        var sut = session(checkpoints: [], remaining: 600)
+        sut.isPaused = true
+
+        XCTAssertEqual(FocusBarStatus.pausedBadge(for: sut), "Paused")
+    }
+
+    func testBarAccessibilityLabel_carriesTheStateNotJustTheClock() {
+        var sut = session(checkpoints: [], remaining: 600)
+        sut.isPaused = true
+
+        let label = FocusBarStatus.accessibilityLabel(for: sut)
+
+        XCTAssertTrue(label.contains("Paused"), "VoiceOver must hear the state too: \(label)")
+        XCTAssertTrue(label.contains("10:00"))
+    }
 }

@@ -100,6 +100,26 @@ enum FocusCheckpointDotState: Equatable {
     }
 }
 
+/// The always-visible floating bar's status.
+///
+/// The bar is where a sprint is actually managed — it outlives every screen — so it has to state
+/// paused-ness as plainly as Home's hero does. A "Resume" button on its own reads as an option you
+/// could take, not as the state you are already in (E, 2026-08-20).
+enum FocusBarStatus {
+    /// The badge shown beside the countdown while paused; `nil` while running, so a live sprint
+    /// stays uncluttered.
+    static func pausedBadge(for session: FocusSession) -> String? {
+        session.isPaused ? "Paused" : nil
+    }
+
+    /// One spoken string for the whole readout, so VoiceOver hears the STATE and not just a clock
+    /// that has mysteriously stopped counting.
+    static func accessibilityLabel(for session: FocusSession) -> String {
+        let clock = FocusTimeFormatting.digital(session.remainingSeconds)
+        return session.isPaused ? "Paused, \(clock) remaining" : "\(clock) remaining"
+    }
+}
+
 /// Copy for the sprint-stop confirmation. Stop is destructive and sits a thumb-width from `+5m`, so
 /// it asks first — and the question names what is actually at stake: the focus already banked.
 enum FocusStopConfirmation {
