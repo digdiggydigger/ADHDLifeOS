@@ -40,7 +40,9 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
             type: input.type,
             body: input.body,
             entryDate: now,
-            createdAt: now
+            createdAt: now,
+            energyLevel: input.energyLevel,
+            moodEmoji: input.moodEmoji
         )
         do {
             try await manager.appendLog(log)

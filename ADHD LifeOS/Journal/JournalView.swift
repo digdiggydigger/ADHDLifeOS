@@ -123,10 +123,15 @@ private struct LogRowView: View {
             }
             Text(log.body)
                 .font(.body)
-            if let lifeAreaName {
-                Text(lifeAreaName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                if let lifeAreaName {
+                    Text(lifeAreaName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                // Shows nothing at all for an entry written before these fields existed — the
+                // absence is the truth, and inventing a "medium" for it would not be.
+                JournalEnergyMoodBadge(energyLevel: log.energyLevel, moodEmoji: log.moodEmoji)
             }
         }
         .padding(.vertical, 4)

@@ -301,51 +301,6 @@ struct CapturePhotoLightbox: View {
     }
 }
 
-/// The triage exits that are not "make this a task". Before these, promote-to-task was the only way
-/// out of the inbox, so anything that wasn't a task simply accumulated.
-///
-/// Discard only REQUESTS the confirmation — the dialog itself lives on the row, because it is the
-/// row that knows which capture is about to go.
-struct CaptureSecondaryTriageActions: View {
-    @Binding var isLoggingToJournal: Bool
-    let onLogToJournal: () async -> Bool
-    let onRequestDiscard: () -> Void
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Button {
-                Task {
-                    isLoggingToJournal = true
-                    _ = await onLogToJournal()
-                    isLoggingToJournal = false
-                }
-            } label: {
-                Label("Log to journal", systemImage: "book")
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(ChoiceChipButtonStyle(isSelected: false))
-            .disabled(isLoggingToJournal)
-            .accessibilityIdentifier("captureLogToJournalButton")
-
-            Button(action: onRequestDiscard) {
-                Label("Discard", systemImage: "trash")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.red)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(ChoiceChipButtonStyle(isSelected: false))
-            .accessibilityIdentifier("captureDiscardButton")
-        }
-    }
-}
-
 extension View {
     /// The row's photo lightbox and its discard confirmation, bundled so `CaptureRowView` stays
     /// inside its body-length budget. Behaviour is unchanged: the dialog names the consequence,

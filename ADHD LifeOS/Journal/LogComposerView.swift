@@ -33,6 +33,18 @@ struct LogComposerView: View {
                         .accessibilityIdentifier("logComposerBodyField")
                 }
 
+                // Journal entries only — the web keeps energy and mood on `JournalEntry` and a
+                // quick log has neither, so offering the controls for a Log would be offering to
+                // record something that is then dropped on save.
+                if journalService.composerType == .journal {
+                    Section {
+                        JournalEnergyMoodPicker(
+                            energyLevel: $journalService.composerEnergyLevel,
+                            moodEmoji: $journalService.composerMoodEmoji
+                        )
+                    }
+                }
+
                 if let errorMessage = journalService.createErrorMessage {
                     Text(errorMessage)
                         .foregroundStyle(.red)

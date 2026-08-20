@@ -24,6 +24,12 @@ final class JournalService: ObservableObject {
     @Published var composerBody = ""
     @Published var composerType: LogType = .log
     @Published var composerLifeAreaId: UUID?
+    /// Journal-only, and seeded to the web composer's own starting selection so a one-tap save
+    /// still records something honest. `composerType` gates whether they are sent at all
+    /// (`LogValidation` drops them for a quick log), so switching back to Log never smuggles a
+    /// mood reading onto a note.
+    @Published var composerEnergyLevel: EnergyLevel = .medium
+    @Published var composerMoodEmoji: String = JournalMood.defaultEmoji
     @Published private(set) var isCreating = false
     @Published var createErrorMessage: String?
 
@@ -38,7 +44,8 @@ final class JournalService: ObservableObject {
 
     var isComposerBodyValid: Bool {
         if case .success = LogValidation.normalizeCreateLogInput(
-            body: composerBody, type: composerType, lifeAreaId: composerLifeAreaId
+            body: composerBody, type: composerType, lifeAreaId: composerLifeAreaId,
+            energyLevel: composerEnergyLevel, moodEmoji: composerMoodEmoji
         ) {
             return true
         }
@@ -66,7 +73,8 @@ final class JournalService: ObservableObject {
 
         let normalized: NormalizedCreateLogInput
         switch LogValidation.normalizeCreateLogInput(
-            body: composerBody, type: composerType, lifeAreaId: composerLifeAreaId
+            body: composerBody, type: composerType, lifeAreaId: composerLifeAreaId,
+            energyLevel: composerEnergyLevel, moodEmoji: composerMoodEmoji
         ) {
         case .failure(let error):
             createErrorMessage = error.errorDescription
@@ -85,6 +93,8 @@ final class JournalService: ObservableObject {
             composerBody = ""
             composerType = .log
             composerLifeAreaId = nil
+            composerEnergyLevel = .medium
+            composerMoodEmoji = JournalMood.defaultEmoji
             return true
         } catch {
             createErrorMessage = Self.message(for: error)

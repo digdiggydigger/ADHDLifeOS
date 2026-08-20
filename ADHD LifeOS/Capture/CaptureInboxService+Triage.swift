@@ -42,7 +42,11 @@ extension CaptureInboxService {
     /// collects energy and mood. The native `Log` model has neither field (see `LogModels.swift`),
     /// so porting them would be a schema change, not a UI port.
     @discardableResult
-    func logToJournal(capture: Capture) async -> Bool {
+    func logToJournal(
+        capture: Capture,
+        energyLevel: EnergyLevel? = nil,
+        moodEmoji: String? = nil
+    ) async -> Bool {
         triageErrorMessage = nil
         guard let journalClient else {
             triageErrorMessage = "Journal is unavailable."
@@ -51,7 +55,8 @@ extension CaptureInboxService {
 
         let normalized: NormalizedCreateLogInput
         switch LogValidation.normalizeCreateLogInput(
-            body: Self.journalBody(for: capture), type: .journal, lifeAreaId: capture.lifeAreaId
+            body: Self.journalBody(for: capture), type: .journal, lifeAreaId: capture.lifeAreaId,
+            energyLevel: energyLevel, moodEmoji: moodEmoji
         ) {
         case .success(let value):
             normalized = value

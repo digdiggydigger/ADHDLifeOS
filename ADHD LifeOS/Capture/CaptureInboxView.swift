@@ -226,8 +226,10 @@ struct CaptureInboxView: View {
             onRemoveTag: { tagId in
                 await service.removeTag(capture: capture, tagId: tagId)
             },
-            onLogToJournal: {
-                let succeeded = await service.logToJournal(capture: capture)
+            onLogToJournal: { energyLevel, moodEmoji in
+                let succeeded = await service.logToJournal(
+                    capture: capture, energyLevel: energyLevel, moodEmoji: moodEmoji
+                )
                 if succeeded { expandedCaptureId = nil }
                 return succeeded
             },

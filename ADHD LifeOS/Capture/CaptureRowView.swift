@@ -29,7 +29,7 @@ struct CaptureRowView: View {
     let onRemoveTag: (UUID) async -> Void
     /// Writes the capture into the journal and retires it — the triage exit for a thought that
     /// is worth keeping but isn't a task.
-    let onLogToJournal: () async -> Bool
+    let onLogToJournal: (EnergyLevel, String) async -> Bool
     /// Deletes the capture outright. Confirmed before it fires: this is the one irreversible
     /// action on the screen.
     let onDiscard: () async -> Bool
@@ -69,7 +69,7 @@ struct CaptureRowView: View {
         onAddExistingTag: @escaping (UUID) async -> Void,
         onCreateTag: @escaping (String) async -> Void,
         onRemoveTag: @escaping (UUID) async -> Void,
-        onLogToJournal: @escaping () async -> Bool,
+        onLogToJournal: @escaping (EnergyLevel, String) async -> Bool,
         onDiscard: @escaping () async -> Bool
     ) {
         self.capture = capture
