@@ -148,7 +148,7 @@ final class FocusWidgetSnapshotBuilderTests: XCTestCase {
         let sprint = FocusWidgetSnapshot.ActiveSprint(
             taskTitle: "Draft the review", emoji: "💼", durationSeconds: 900,
             deadline: now.addingTimeInterval(600), pausedRemainingSeconds: nil,
-            checkpointsReached: 1, checkpointCount: 2
+            checkpointSeconds: [300, 600]
         )
 
         let snapshot = FocusWidgetSnapshotBuilder.snapshot(

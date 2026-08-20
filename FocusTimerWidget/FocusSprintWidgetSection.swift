@@ -5,6 +5,16 @@
 
 import SwiftUI
 
+/// A running sprint together with the moment to render it against.
+///
+/// Bundled rather than passed as two parameters precisely so they cannot drift: every readout the
+/// live section shows is derived against this date, and taking it from `Date()` instead of the
+/// timeline entry would defeat the entries that keep the checkpoint count moving.
+struct FocusWidgetLiveSprint {
+    let sprint: FocusWidgetSnapshot.ActiveSprint
+    let now: Date
+}
+
 /// The Home Screen widget's live-sprint block: what you are focusing on, how long is left, and how
 /// many checkpoints have gone by.
 ///
@@ -17,6 +27,10 @@ import SwiftUI
 /// itself would be wrong within a second.
 struct FocusSprintWidgetSection: View {
     let sprint: FocusWidgetSnapshot.ActiveSprint
+    /// The timeline ENTRY's date, not `Date()`. The checkpoint count is derived against it, and the
+    /// timeline carries an entry at every checkpoint — which is how the count keeps moving while the
+    /// app is suspended and unable to publish.
+    let now: Date
     /// Sized down for the small family, where the block shares 158pt with the week's total.
     var isCompact = false
 
@@ -41,7 +55,7 @@ struct FocusSprintWidgetSection: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 countdown
 
-                if let summary = sprint.checkpointSummary {
+                if let summary = sprint.checkpointSummary(asOf: now) {
                     Text(summary)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -83,20 +97,20 @@ struct FocusSprintWidgetSection: View {
 private let runningSprint = FocusWidgetSnapshot.ActiveSprint(
     taskTitle: "Draft the quarterly review", emoji: "💼", durationSeconds: 900,
     deadline: Date().addingTimeInterval(420), pausedRemainingSeconds: nil,
-    checkpointsReached: 1, checkpointCount: 3
+    checkpointSeconds: [225, 450, 675]
 )
 
 private let pausedSprint = FocusWidgetSnapshot.ActiveSprint(
     taskTitle: "Draft the quarterly review", emoji: "💼", durationSeconds: 900,
-    deadline: nil, pausedRemainingSeconds: 420, checkpointsReached: 1, checkpointCount: 3
+    deadline: nil, pausedRemainingSeconds: 420, checkpointSeconds: [225, 450, 675]
 )
 
 private struct FocusSprintSectionGallery: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            FocusSprintWidgetSection(sprint: runningSprint)
-            FocusSprintWidgetSection(sprint: pausedSprint)
-            FocusSprintWidgetSection(sprint: runningSprint, isCompact: true)
+            FocusSprintWidgetSection(sprint: runningSprint, now: Date())
+            FocusSprintWidgetSection(sprint: pausedSprint, now: Date())
+            FocusSprintWidgetSection(sprint: runningSprint, now: Date(), isCompact: true)
                 .frame(width: 126)
         }
         .padding(16)

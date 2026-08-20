@@ -20,8 +20,11 @@ nonisolated struct FocusWidgetSnapshot: Codable, Equatable, Sendable {
     /// Bump whenever the shape changes. An older app writing v1 while a newer widget expects v2
     /// (or the reverse, mid-upgrade) then shows the empty state instead of wrong numbers.
     ///
-    /// v2 (2026-08-20) added `activeSprint`.
-    static let currentVersion = 2
+    /// v2 (2026-08-20) added `activeSprint`. v3 replaced its stored checkpoint counts with the mark
+    /// POSITIONS, so the reached count is derived at render time rather than going stale the moment
+    /// the app is suspended — a v2 payload decoded as v3 would read as zero checkpoints, which is
+    /// exactly what the version guard exists to prevent.
+    static let currentVersion = 3
 
     /// Home's Active Goal hero, projected. `nil` when nothing is open — the hero hides itself in
     /// that state, and the widget does the same rather than inventing a task.
@@ -78,10 +81,15 @@ nonisolated struct FocusWidgetSnapshot: Codable, Equatable, Sendable {
         let deadline: Date?
         /// The frozen remainder while paused; `nil` while running.
         let pausedRemainingSeconds: Int?
-        let checkpointsReached: Int
-        let checkpointCount: Int
+        /// Elapsed-second offsets of every checkpoint in the plan — the POSITIONS, from which the
+        /// reached count is derived below. Storing the count instead was the bug: the app publishes
+        /// once and is then suspended, with no way to update a widget on a schedule, so the number
+        /// froze at whatever it was when the app last drew breath.
+        let checkpointSeconds: [Int]
 
         var isPaused: Bool { deadline == nil }
+
+        var checkpointCount: Int { checkpointSeconds.count }
 
         /// Whether the countdown has run out as of `now` — the widget's equivalent of the Live
         /// Activity's `hasElapsed`. A timeline entry scheduled AT the deadline uses this to retire
@@ -107,8 +115,68 @@ nonisolated struct FocusWidgetSnapshot: Codable, Equatable, Sendable {
             return "\(remaining / 60):" + String(format: "%02d", remaining % 60)
         }
 
-        var checkpointSummary: String? {
-            FocusCheckpointCopy.summary(reached: checkpointsReached, total: checkpointCount)
+        /// Where the playhead sits as of `now`, derived rather than stored — the same rule the
+        /// countdown already followed, applied to the one number that was still being told.
+        ///
+        /// Mirrors the engine's own bookkeeping exactly: remaining is rounded UP off the deadline
+        /// and clamped into `0...durationSeconds`, so a sprint that ended hours ago reads as its
+        /// full duration and not as a day. A paused sprint is frozen where it stopped — it has no
+        /// live deadline, and it must not quietly advance while the phone is in a pocket.
+        func elapsedSeconds(asOf now: Date) -> Int {
+            let duration = max(0, durationSeconds)
+            guard let deadline else {
+                return min(duration, max(0, duration - max(0, pausedRemainingSeconds ?? 0)))
+            }
+            let remaining = min(duration, max(0, Int(deadline.timeIntervalSince(now).rounded(.up))))
+            return duration - remaining
+        }
+
+        /// How many checkpoints the sprint has passed as of `now`.
+        ///
+        /// `<=` matches the engine's `FocusSession.advance`, which fires a checkpoint the moment the
+        /// playhead reaches its mark. The two can't disagree: after a mid-sprint re-plan every kept
+        /// mark is behind the playhead and every new one ahead of it, so counting by position gives
+        /// the same answer as counting what actually fired.
+        func checkpointsReached(asOf now: Date) -> Int {
+            let elapsed = elapsedSeconds(asOf: now)
+            return checkpointSeconds.filter { $0 <= elapsed }.count
+        }
+
+        func checkpointSummary(asOf now: Date) -> String? {
+            FocusCheckpointCopy.summary(reached: checkpointsReached(asOf: now), total: checkpointCount)
+        }
+
+        /// The instants after `now` at which this section's readout changes: every checkpoint still
+        /// ahead, then the finish.
+        ///
+        /// A widget is drawn once and then sits there, so these become extra entries in the same
+        /// timeline — which costs nothing, because WidgetKit's refresh budget counts *reloads*, not
+        /// entries in a timeline it already has. That is what lets the count keep moving while the
+        /// app is suspended and unable to publish anything.
+        ///
+        /// A paused sprint returns nothing: its readout changes only when the user resumes it, and
+        /// resuming happens in the app, which republishes.
+        ///
+        /// `limit` bounds the checkpoints, not the result — the deadline entry is always kept, since
+        /// retiring the section on time is the one refresh that must not be dropped. Over the limit
+        /// the entries are THINNED (every nth) rather than truncated, so the count stays roughly
+        /// right across the whole sprint instead of being exact for the first few minutes and then
+        /// frozen. Only a very fine cadence gets near this: a 30s cadence over 90 minutes plans 180.
+        func refreshDates(after now: Date, limit: Int = 48) -> [Date] {
+            guard let deadline, deadline > now else { return [] }
+            let start = deadline.addingTimeInterval(-TimeInterval(max(0, durationSeconds)))
+            var dates = checkpointSeconds.sorted()
+                .map { start.addingTimeInterval(TimeInterval($0)) }
+                .filter { $0 > now && $0 < deadline }
+
+            let cap = max(1, limit)
+            if dates.count > cap {
+                let step = Int((Double(dates.count) / Double(cap)).rounded(.up))
+                dates = dates.enumerated().filter { $0.offset % step == 0 }.map(\.element)
+            }
+
+            dates.append(deadline)
+            return dates
         }
     }
 

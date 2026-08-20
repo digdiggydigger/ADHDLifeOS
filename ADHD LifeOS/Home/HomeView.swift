@@ -156,9 +156,9 @@ struct HomeView: View {
                     Task { await refreshInboxCount() }
                 }
             }
-            // Start, pause, resume, extend, re-plan, checkpoint crossing, end — every event that
-            // moves the sprint the Home Screen is showing. Nothing else: the projection is
-            // deadline-derived, so a sprint merely counting down leaves this value untouched and
+            // Start, pause, resume, extend, re-plan, end — every event that changes the sprint's
+            // deadline or its checkpoint PLAN. Nothing else: the projection is deadline-derived, so
+            // neither a sprint counting down nor a checkpoint being crossed moves this value, and
             // WidgetKit is never asked to reload for the passage of time.
             // The NEW value is republished, never `self.widgetSprint`. `onChange`'s action closure
             // captures the view value it was installed with, so re-reading the stored `let` here

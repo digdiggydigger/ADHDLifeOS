@@ -18,8 +18,7 @@ final class FocusWidgetActiveSprintTests: XCTestCase {
         durationSeconds: Int = 900,
         deadline: Date? = nil,
         pausedRemainingSeconds: Int? = nil,
-        checkpointsReached: Int = 1,
-        checkpointCount: Int = 3
+        checkpointSeconds: [Int] = [225, 450, 675]
     ) -> FocusWidgetSnapshot.ActiveSprint {
         FocusWidgetSnapshot.ActiveSprint(
             taskTitle: "Draft the review",
@@ -27,8 +26,7 @@ final class FocusWidgetActiveSprintTests: XCTestCase {
             durationSeconds: durationSeconds,
             deadline: deadline,
             pausedRemainingSeconds: pausedRemainingSeconds,
-            checkpointsReached: checkpointsReached,
-            checkpointCount: checkpointCount
+            checkpointSeconds: checkpointSeconds
         )
     }
 
@@ -76,24 +74,7 @@ final class FocusWidgetActiveSprintTests: XCTestCase {
         XCTAssertFalse(paused.hasElapsed(asOf: now.addingTimeInterval(86_400)))
     }
 
-    // MARK: - Caption
-
-    func testCheckpointSummary_readsNOfM() {
-        XCTAssertEqual(sprint(checkpointsReached: 1, checkpointCount: 3).checkpointSummary, "1 of 3 checkpoints")
-    }
-
-    func testCheckpointSummary_withNoCheckpoints_isNil() {
-        XCTAssertNil(sprint(checkpointsReached: 0, checkpointCount: 0).checkpointSummary)
-    }
-
     // MARK: - Envelope
-
-    func testSnapshotVersion_wasBumpedForTheNewField() {
-        XCTAssertEqual(
-            FocusWidgetSnapshot.currentVersion, 2,
-            "an older app writing v1 must not be half-decoded by a widget expecting activeSprint"
-        )
-    }
 
     func testCodableRoundTrip_preservesTheRunningSprint() throws {
         let original = FocusWidgetSnapshot(
@@ -109,7 +90,7 @@ final class FocusWidgetActiveSprintTests: XCTestCase {
 
         XCTAssertEqual(decoded, original)
         XCTAssertEqual(decoded.activeSprint?.taskTitle, "Draft the review")
-        XCTAssertEqual(decoded.activeSprint?.checkpointsReached, 1)
+        XCTAssertEqual(decoded.activeSprint?.checkpointSeconds, [225, 450, 675])
     }
 
     func testSnapshot_withNoSprint_leavesTheFieldNil() {

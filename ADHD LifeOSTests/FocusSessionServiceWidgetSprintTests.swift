@@ -52,8 +52,10 @@ final class FocusSessionServiceWidgetSprintTests: XCTestCase {
         XCTAssertEqual(sprint?.durationSeconds, 900)
         XCTAssertEqual(sprint?.deadline, env.clock.now.addingTimeInterval(900))
         XCTAssertNil(sprint?.pausedRemainingSeconds)
+        // Positions, not a count: two evenly-spaced checkpoints across 900s land at 300s and 600s.
+        XCTAssertEqual(sprint?.checkpointSeconds, [300, 600])
         XCTAssertEqual(sprint?.checkpointCount, 2)
-        XCTAssertEqual(sprint?.checkpointsReached, 0)
+        XCTAssertEqual(sprint?.checkpointsReached(asOf: env.clock.now), 0)
     }
 
     /// The whole reason Home can republish on every change without churning WidgetKit: a sprint
@@ -66,18 +68,50 @@ final class FocusSessionServiceWidgetSprintTests: XCTestCase {
         env.clock.advance(120)
         await env.service.tick()
 
-        XCTAssertEqual(env.service.widgetSprint, atStart, "no checkpoint crossed, so nothing moved")
+        XCTAssertEqual(env.service.widgetSprint, atStart, "nothing about the plan moved")
     }
 
-    func testCrossingACheckpoint_movesTheReachedCount() async {
+    /// Crossing a checkpoint no longer moves the PUBLISHED value — which is the point. The count is
+    /// derived from the positions against the deadline, so the widget works it out for itself and
+    /// WidgetKit is never asked to reload for something it could compute.
+    func testCrossingACheckpoint_leavesThePublishedProjectionUntouched() async {
         let env = makeSUT()
-        // Two evenly-spaced checkpoints across 900s land at 300s and 600s elapsed.
         startSprint(env.service, duration: 900, nudges: 2)
+        let atStart = env.service.widgetSprint
 
         env.clock.advance(310)
         await env.service.tick()
 
-        XCTAssertEqual(env.service.widgetSprint?.checkpointsReached, 1)
+        XCTAssertEqual(env.service.widgetSprint, atStart, "no republish is owed for a crossing")
+    }
+
+    func testCrossingACheckpoint_isVisibleInTheDerivedCountWithoutARepublish() async {
+        let env = makeSUT()
+        startSprint(env.service, duration: 900, nudges: 2)
+        // The projection as published at the very start of the sprint — never republished.
+        let published = env.service.widgetSprint
+
+        env.clock.advance(310)
+        await env.service.tick()
+
+        XCTAssertEqual(published?.checkpointsReached(asOf: env.clock.now), 1)
+        XCTAssertEqual(
+            published?.checkpointsReached(asOf: env.clock.now), env.service.session?.triggeredCheckpointIndices.count,
+            "the derived count agrees with what the engine actually fired"
+        )
+    }
+
+    /// A cadence re-plan DOES move it: the plan itself changed, so the widget has to be told.
+    func testCadenceReplan_republishesTheNewPositions() {
+        let env = makeSUT()
+        startSprint(env.service, duration: 900, nudges: 2)
+
+        env.service.updateCadence(.count(4))
+
+        XCTAssertEqual(
+            env.service.widgetSprint?.checkpointSeconds,
+            FocusCheckpoints.evenlySpaced(durationSeconds: 900, count: 4)
+        )
     }
 
     func testPausedSprint_dropsTheDeadlineAndCarriesTheFrozenRemainder() {

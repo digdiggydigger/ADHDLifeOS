@@ -28,45 +28,6 @@ struct FocusStatsWidget: Widget {
     }
 }
 
-// MARK: - Timeline
-
-struct FocusStatsEntry: TimelineEntry {
-    let date: Date
-    /// `nil` means "the app has never published" — a fresh install, or an App Group the widget
-    /// can't reach. Distinct from a real week of zeros, which is a decoded snapshot.
-    let snapshot: FocusWidgetSnapshot?
-}
-
-struct FocusStatsProvider: TimelineProvider {
-    private let store = FocusWidgetSnapshotStore()
-
-    func placeholder(in context: Context) -> FocusStatsEntry {
-        FocusStatsEntry(date: Date(), snapshot: FocusWidgetSnapshot.placeholder)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (FocusStatsEntry) -> Void) {
-        completion(FocusStatsEntry(date: Date(), snapshot: store.read()))
-    }
-
-    /// One entry now, one at a running sprint's deadline, refreshed at midnight.
-    ///
-    /// Nothing else here changes minute to minute — the app reloads this timeline the moment its own
-    /// numbers move (`AppGroupFocusWidgetPublisher`), so the only *time*-driven changes are the week
-    /// rolling over and a sprint ending. That second entry matters: a sprint that runs out behind a
-    /// locked screen ends with the app suspended and unable to publish anything, and without it the
-    /// Home Screen would keep a dead countdown until the user next opened the app.
-    func getTimeline(in context: Context, completion: @escaping (Timeline<FocusStatsEntry>) -> Void) {
-        let now = Date()
-        let snapshot = store.read()
-        var entries = [FocusStatsEntry(date: now, snapshot: snapshot)]
-        if let deadline = snapshot?.activeSprint?.deadline, deadline > now {
-            entries.append(FocusStatsEntry(date: deadline, snapshot: snapshot))
-        }
-        let nextMidnight = Calendar.current.startOfDay(for: now.addingTimeInterval(24 * 60 * 60))
-        completion(Timeline(entries: entries, policy: .after(nextMidnight)))
-    }
-}
-
 // MARK: - Views
 
 struct FocusStatsWidgetView: View {
@@ -93,9 +54,9 @@ struct FocusStatsWidgetView: View {
     /// The published sprint, but only while it is genuinely still running. Once its deadline has
     /// passed the widget falls back to the Active Goal rather than parking a finished countdown on
     /// the Home Screen forever — the sprint's own acknowledgement is the notification, not this.
-    private var liveSprint: FocusWidgetSnapshot.ActiveSprint? {
+    private var liveSprint: FocusWidgetLiveSprint? {
         guard let sprint = snapshot?.activeSprint, !sprint.hasElapsed(asOf: now) else { return nil }
-        return sprint
+        return FocusWidgetLiveSprint(sprint: sprint, now: now)
     }
 }
 
@@ -103,12 +64,12 @@ struct FocusStatsWidgetView: View {
 /// headline number.
 struct FocusStatsSmallView: View {
     let snapshot: FocusWidgetSnapshot?
-    var liveSprint: FocusWidgetSnapshot.ActiveSprint?
+    var liveSprint: FocusWidgetLiveSprint?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let sprint = liveSprint {
-                FocusSprintWidgetSection(sprint: sprint, isCompact: true)
+                FocusSprintWidgetSection(sprint: sprint.sprint, now: sprint.now, isCompact: true)
             } else if let goal = snapshot?.activeGoal {
                 FocusWidgetLabel(text: goal.lifeAreaName ?? "Active goal")
                 HStack(alignment: .top, spacing: 4) {
@@ -142,13 +103,13 @@ struct FocusStatsSmallView: View {
 /// shape on the right.
 struct FocusStatsMediumView: View {
     let snapshot: FocusWidgetSnapshot?
-    var liveSprint: FocusWidgetSnapshot.ActiveSprint?
+    var liveSprint: FocusWidgetLiveSprint?
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
                 if let sprint = liveSprint {
-                    FocusSprintWidgetSection(sprint: sprint)
+                    FocusSprintWidgetSection(sprint: sprint.sprint, now: sprint.now)
                     Spacer(minLength: 0)
                 } else if let goal = snapshot?.activeGoal {
                     FocusWidgetLabel(text: goal.lifeAreaName ?? "Active goal")
@@ -344,19 +305,23 @@ private let previewSnapshot = FocusWidgetSnapshot(
 private let previewSprint = FocusWidgetSnapshot.ActiveSprint(
     taskTitle: "Draft the quarterly review", emoji: "💼", durationSeconds: 900,
     deadline: Date().addingTimeInterval(420), pausedRemainingSeconds: nil,
-    checkpointsReached: 1, checkpointCount: 3
+    checkpointSeconds: [225, 450, 675]
 )
+
+private var previewLive: FocusWidgetLiveSprint {
+    FocusWidgetLiveSprint(sprint: previewSprint, now: Date())
+}
 
 private struct FocusStatsWidgetGallery: View {
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 16) {
                 small(FocusStatsSmallView(snapshot: previewSnapshot))
-                small(FocusStatsSmallView(snapshot: previewSnapshot, liveSprint: previewSprint))
+                small(FocusStatsSmallView(snapshot: previewSnapshot, liveSprint: previewLive))
                 small(FocusStatsSmallView(snapshot: nil))
             }
             medium(FocusStatsMediumView(snapshot: previewSnapshot))
-            medium(FocusStatsMediumView(snapshot: previewSnapshot, liveSprint: previewSprint))
+            medium(FocusStatsMediumView(snapshot: previewSnapshot, liveSprint: previewLive))
             medium(FocusStatsMediumView(snapshot: nil))
         }
         .padding(16)

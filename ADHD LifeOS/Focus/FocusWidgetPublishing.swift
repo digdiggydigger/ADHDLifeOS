@@ -64,7 +64,9 @@ extension FocusSessionService {
     /// written, so a countdown value would arrive stale while a deadline stays correct. And it has
     /// to be STABLE while a sprint simply runs — Home republishes whenever this value changes, and a
     /// value that moved twice a second would hand WidgetKit a reload storm. What legitimately moves
-    /// it is pause, resume, extend, a cadence re-plan, and a checkpoint crossing.
+    /// it is pause, resume, extend, and a cadence re-plan: everything that changes the deadline or
+    /// the PLAN. A checkpoint merely being crossed does not, because the widget works that out for
+    /// itself from the positions.
     var widgetSprint: FocusWidgetSnapshot.ActiveSprint? {
         guard let session else { return nil }
         return FocusWidgetSnapshot.ActiveSprint(
@@ -73,8 +75,10 @@ extension FocusSessionService {
             durationSeconds: session.durationSeconds,
             deadline: session.isPaused ? nil : sprintDeadline,
             pausedRemainingSeconds: session.isPaused ? session.remainingSeconds : nil,
-            checkpointsReached: session.triggeredCheckpointIndices.count,
-            checkpointCount: session.nudgeCheckpoints.count
+            // Positions, not counts. The widget derives "how many have passed" from these against
+            // the deadline, so the readout keeps moving after the app is suspended and can no
+            // longer publish anything.
+            checkpointSeconds: session.nudgeCheckpoints
         )
     }
 }
