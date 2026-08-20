@@ -314,6 +314,29 @@ final class FocusSessionService: ObservableObject {
         }
     }
 
+    /// Settles the sprint against the wall clock right now — completing it if its countdown ran out
+    /// while the app was suspended.
+    ///
+    /// Called when the app returns to the foreground. Without it, a sprint that finished behind a
+    /// locked screen stayed "running" until the ticker's next beat, which is what left a finished
+    /// sprint's Live Activity on the Lock Screen showing 0:00, a stale checkpoint count and live
+    /// Pause/Stop buttons (E, 2026-08-20). The ticker would eventually do this; waiting for it is
+    /// the difference between the Activity vanishing as you unlock and lingering visibly.
+    func syncNow() {
+        let crossed = syncToWallClock()
+        guard let current = session, !current.isPaused else { return }
+        if let last = crossed.last {
+            checkpointBanner = FocusSession.checkpointPrompt(
+                index: last, total: current.nudgeCheckpoints.count
+            )
+        }
+        if current.isComplete {
+            Task { await stop(completedNaturally: true) }
+        } else if !crossed.isEmpty {
+            activityMirror?.sprintUpdated(activitySnapshot(for: current))
+        }
+    }
+
     /// One countdown step. Internal rather than private so tests can drive it directly with an
     /// injected clock instead of waiting on real time.
     func tick() async {

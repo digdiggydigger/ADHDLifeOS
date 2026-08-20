@@ -123,6 +123,39 @@ final class FocusActivityContentStateTests: XCTestCase {
         XCTAssertEqual(state.frozenRemainingText, "0:00")
     }
 
+    // MARK: - hasElapsed
+
+    /// E's bug, 2026-08-20: a sprint that ran out behind a locked screen still offered Pause/Stop
+    /// at 0:00, because the app was suspended and `isStale` had not flipped. The presentations now
+    /// also judge the deadline at render time.
+    func testHasElapsed_afterTheDeadline_isTrue() {
+        let state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(deadline: now.addingTimeInterval(600)), now: now
+        )
+
+        XCTAssertTrue(state.hasElapsed(asOf: now.addingTimeInterval(601)))
+        XCTAssertTrue(state.hasElapsed(asOf: now.addingTimeInterval(600)), "the deadline itself counts as elapsed")
+    }
+
+    func testHasElapsed_beforeTheDeadline_isFalse() {
+        let state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(deadline: now.addingTimeInterval(600)), now: now
+        )
+
+        XCTAssertFalse(state.hasElapsed(asOf: now.addingTimeInterval(599)))
+    }
+
+    func testHasElapsed_whilePaused_isAlwaysFalse() {
+        // A paused sprint's deadline is synthesized from `now` + the frozen remainder, so it slides
+        // into the past as real time passes. Reporting that as "finished" would end a sprint the
+        // user deliberately paused.
+        let state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(pausedRemainingSeconds: 300), now: now
+        )
+
+        XCTAssertFalse(state.hasElapsed(asOf: now.addingTimeInterval(86_400)))
+    }
+
     func testFrozenProgress_withZeroDuration_isZeroNotNaN() {
         let state = FocusActivityAttributes.ContentState(
             snapshot: snapshot(durationSeconds: 0, pausedRemainingSeconds: 0), now: now

@@ -33,6 +33,21 @@ nonisolated struct FocusActivityAttributes: ActivityAttributes {
 
         var isPaused: Bool { pausedAt != nil }
 
+        /// Whether the countdown has run out, judged against a caller-supplied `now`.
+        ///
+        /// Belt and braces for the one transition a locally-updated Activity can't be told about:
+        /// when the sprint ends behind a locked screen, the app is suspended and cannot push a
+        /// final frame. `isStale` covers this in principle, but it was observed NOT to have flipped
+        /// on a real device — the Lock Screen still offered Pause/Stop on a sprint sitting at 0:00
+        /// (E, 2026-08-20). Checking the deadline at render time closes that hole.
+        ///
+        /// Paused sprints are excluded deliberately: their `deadline` is synthesized from `pausedAt`
+        /// plus the frozen remainder, so it slides into the past as real time passes and would
+        /// otherwise report a paused sprint as finished.
+        func hasElapsed(asOf now: Date) -> Bool {
+            !isPaused && deadline <= now
+        }
+
         /// The OS-rendered countdown range. The visual start is derived back from the deadline so
         /// the elapsed fraction stays truthful across pauses and extensions.
         var timerInterval: ClosedRange<Date> {

@@ -34,6 +34,7 @@ struct FocusTimerWidgetLiveActivity: Widget {
                 .padding(16)
         } dynamicIsland: { context in
             let isComplete = context.state.isCompleted || isStale(context)
+                || context.state.hasElapsed(asOf: Date())
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Text(context.state.lifeAreaEmoji)
@@ -103,7 +104,10 @@ struct FocusLiveActivityLockScreenView: View {
     let state: FocusActivityAttributes.ContentState
     let isStale: Bool
 
-    private var isComplete: Bool { state.isCompleted || isStale }
+    /// `Date()` at render time, not a stored value: the Activity re-renders on every push and when
+    /// the system marks it stale, and on those renders this is what catches a sprint that ended
+    /// while the app was suspended.
+    private var isComplete: Bool { state.isCompleted || isStale || state.hasElapsed(asOf: Date()) }
 
     // Prominence pass (E, 2026-08-19): the countdown is the hero — a large coral numeral rather
     // than the earlier small pill — with 16pt group separation so the banner reads airy, not

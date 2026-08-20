@@ -108,4 +108,56 @@ final class FocusSessionServiceWallClockTests: XCTestCase {
         XCTAssertEqual(env.service.session?.remainingSeconds, 90, "+30s must not refund suspended time")
         XCTAssertEqual(env.service.session?.durationSeconds, 130)
     }
+
+    // MARK: - Foreground catch-up
+
+    /// E's bug, 2026-08-20: a sprint that runs out while the phone is locked leaves the Live
+    /// Activity on screen — countdown at 0:00, a stale checkpoint count, and live Pause/Stop
+    /// buttons — because NOTHING completes the sprint until the app is alive again. Returning to
+    /// the app must settle it at once rather than waiting on the next 500ms ticker beat.
+    func testSyncNow_pastDeadlineWhileSuspended_completesTheSprint() async {
+        let env = makeSUT()
+        startSprint(env.service, duration: 100)
+
+        env.clock.advance(180)  // locked phone: the ticker never ran
+        env.service.syncNow()
+        await drainDeferredTasks()
+
+        XCTAssertFalse(env.service.isActive)
+        XCTAssertEqual(env.logger.logged.first?.completedNaturally, true)
+        XCTAssertEqual(env.logger.logged.first?.focusedSeconds, 100, "credit stops at the deadline, not at wake-up")
+    }
+
+    func testSyncNow_midSprint_justCatchesTheCountdownUp() {
+        let env = makeSUT()
+        startSprint(env.service, duration: 100)
+
+        env.clock.advance(40)
+        env.service.syncNow()
+
+        XCTAssertTrue(env.service.isActive)
+        XCTAssertEqual(env.service.session?.remainingSeconds, 60)
+    }
+
+    func testSyncNow_whilePaused_changesNothing() {
+        let env = makeSUT()
+        startSprint(env.service, duration: 100)
+        env.clock.advance(30)
+        env.service.togglePause()
+
+        env.clock.advance(600)  // ten minutes paused
+        env.service.syncNow()
+
+        XCTAssertEqual(env.service.session?.isPaused, true)
+        XCTAssertEqual(env.service.session?.remainingSeconds, 70, "paused time is not spent")
+    }
+
+    func testSyncNow_withNoSprint_isANoOp() {
+        let env = makeSUT()
+
+        env.service.syncNow()
+
+        XCTAssertFalse(env.service.isActive)
+        XCTAssertTrue(env.logger.logged.isEmpty)
+    }
 }

@@ -21,6 +21,7 @@ struct RootView: View {
 
     @State private var isPresentingQuickCapture = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
     /// for exactly this reason. The factory adds Live Activity mirroring on iOS 16.1+ (§7 gate),
     /// so the countdown also lives on the Lock Screen / Dynamic Island.
@@ -131,6 +132,13 @@ struct RootView: View {
             if authService.state == .unknown {
                 await authService.restoreSession()
             }
+        }
+        // Returning to the app settles a sprint whose countdown ran out behind a locked screen: the
+        // ticker is suspended with the app, so without this the finished sprint stayed "running" —
+        // and its Live Activity stayed on the Lock Screen at 0:00, complete with live Pause/Stop
+        // buttons — until the next ticker beat (E's bug, 2026-08-20).
+        .onChange(of: scenePhase) { phase in
+            if phase == .active { focusService.syncNow() }
         }
     }
 }

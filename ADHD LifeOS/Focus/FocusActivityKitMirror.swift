@@ -19,8 +19,14 @@ import Foundation
 /// deadline, so pause/resume/extend/stop/checkpoint updates are all it ever needs.
 @available(iOS 16.1, *)
 final class FocusActivityKitMirror: FocusActivityMirroring {
-    /// How long the "sprint complete" frame lingers on the Lock Screen after a natural finish.
-    private static let completedFrameLingerSeconds: TimeInterval = 120
+    /// A finished sprint's Activity is dismissed IMMEDIATELY, on every ending.
+    ///
+    /// It used to linger for two minutes after a natural finish, on the theory that the frame was a
+    /// nice acknowledgement. In practice (E, 2026-08-20) that reads as the Activity being stuck:
+    /// the sprint is over, yet the Lock Screen still carries a card for it. The acknowledgement now
+    /// arrives as the "Sprint complete" NOTIFICATION instead, which is both louder and dismissible,
+    /// so the Activity has no reason to outlive the sprint.
+    private static let completedDismissalPolicy: ActivityUIDismissalPolicy = .immediate
 
     private var activity: Activity<FocusActivityAttributes>?
     private var lastState: FocusActivityAttributes.ContentState?
@@ -87,9 +93,7 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
             finalState?.isCompleted = true
             finalState?.pausedAt = nil
         }
-        let policy: ActivityUIDismissalPolicy = completedNaturally
-            ? .after(now().addingTimeInterval(Self.completedFrameLingerSeconds))
-            : .immediate
+        let policy = Self.completedDismissalPolicy
         self.activity = nil
         lastState = nil
         lastActivityTask = Task {
