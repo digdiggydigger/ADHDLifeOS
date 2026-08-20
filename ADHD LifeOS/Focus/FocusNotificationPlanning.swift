@@ -17,14 +17,19 @@ struct ScheduledFocusNotification: Equatable, Sendable {
     let title: String
     let body: String
 
+    /// Keeps these clear of the per-task (`taskCountdownNudge.`) and per-nudge
+    /// (`nudgeNotification.`) namespaces, so none of the three features can cancel another's — and
+    /// so a delegate handling a TAP can tell whose notification it is (`FocusNotificationResponse`).
+    /// Named here rather than spelled inline at each site, which is how the withdraw filter and the
+    /// tap router could otherwise drift apart from the identifiers they are meant to match.
+    static let identifierPrefix = "focusSprint."
+
     /// Stable per kind, so re-handing a plan replaces the previous requests rather than stacking
-    /// duplicates. Only one sprint runs at a time, so no per-sprint namespace is needed — but the
-    /// `focusSprint.` prefix keeps these clear of the per-task (`taskCountdownNudge.`) and per-nudge
-    /// (`nudgeNotification.`) namespaces, so none of the three features can cancel another's.
+    /// duplicates. Only one sprint runs at a time, so no per-sprint namespace is needed.
     var identifier: String {
         switch kind {
-        case .checkpoint(let index): return "focusSprint.checkpoint.\(index)"
-        case .sprintComplete: return "focusSprint.complete"
+        case .checkpoint(let index): return "\(Self.identifierPrefix)checkpoint.\(index)"
+        case .sprintComplete: return "\(Self.identifierPrefix)complete"
         }
     }
 }
@@ -65,8 +70,12 @@ enum FocusNotificationPlanning {
                 kind: .sprintComplete,
                 fireDate: deadline,
                 title: "\(session.lifeAreaEmoji) Sprint complete",
+                // The copy names the tap deliberately. This notification is not decoration — it is
+                // the only route that clears a Live Activity iOS won't let a suspended app dismiss
+                // on time, so the user has to know the tap does something (see
+                // `FocusNotificationResponse`).
                 body: "\(FocusTimeFormatting.human(seconds: session.durationSeconds)) on "
-                    + "\(session.taskTitle). Log it and take the win."
+                    + "\(session.taskTitle). Tap to log it and clear the Lock Screen."
             )
         )
         return notifications

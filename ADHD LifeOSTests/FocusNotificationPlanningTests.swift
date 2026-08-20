@@ -89,6 +89,22 @@ final class FocusNotificationPlanningTests: XCTestCase {
         XCTAssertEqual(completion?.fireDate, now.addingTimeInterval(900))
     }
 
+    /// The completion notification is not just an acknowledgement — it is the deliberate route out
+    /// of a Live Activity iOS won't let the app dismiss on time while suspended. The copy has to say
+    /// so, or the tap that clears the Lock Screen is a secret.
+    func testPlan_theCompletionCopy_tellsTheUserThatTappingClearsTheLockScreen() {
+        let completion = plan(session(), deadline: now.addingTimeInterval(900)).last
+
+        XCTAssertEqual(
+            completion?.body.contains("Tap"), true,
+            "the body must name the action: \(completion?.body ?? "")"
+        )
+        XCTAssertEqual(
+            completion?.body.contains("Lock Screen"), true,
+            "and what the action clears: \(completion?.body ?? "")"
+        )
+    }
+
     func testPlan_sprintWithNoCheckpoints_stillAnnouncesCompletion() {
         let notifications = plan(session(checkpoints: []), deadline: now.addingTimeInterval(900))
 

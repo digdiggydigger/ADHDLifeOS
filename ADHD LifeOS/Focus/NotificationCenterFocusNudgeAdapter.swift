@@ -60,7 +60,8 @@ struct NotificationCenterFocusNudgeAdapter: FocusNotificationScheduling, @unchec
     /// reminders live under different prefixes and must survive a sprint ending.
     private func withdrawAll() async {
         let pending = await center.pendingNotificationRequests()
-        let identifiers = pending.map(\.identifier).filter { $0.hasPrefix("focusSprint.") }
+        let identifiers = pending.map(\.identifier)
+            .filter { $0.hasPrefix(ScheduledFocusNotification.identifierPrefix) }
         guard !identifiers.isEmpty else { return }
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
     }

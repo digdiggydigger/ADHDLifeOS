@@ -33,7 +33,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 }
 
-/// Presents notifications that come due while the app is in the foreground.
+/// Presents notifications that come due while the app is in the foreground, and routes taps on
+/// delivered ones.
 ///
 /// A focus checkpoint is worth interrupting for even when the user is staring at the app — that is
 /// the entire point of a nudge — so these are shown as a banner with sound rather than swallowed.
@@ -50,6 +51,23 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         } else {
             completionHandler([.alert, .sound])
         }
+    }
+
+    /// A tap on a delivered notification. For a focus sprint this is the deliberate way out of a
+    /// Live Activity that iOS won't let a suspended app dismiss on time: the tap settles the sprint,
+    /// and settling ends the Activity. `FocusNotificationResponse` holds the rule, including why
+    /// `scenePhase` alone was never enough — a cold launch from a notification starts `.active`, so
+    /// there is no transition for `onChange` to see.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        FocusNotificationRouter.shared.handle(
+            notificationIdentifier: response.notification.request.identifier,
+            actionIdentifier: response.actionIdentifier
+        )
+        completionHandler()
     }
 }
 

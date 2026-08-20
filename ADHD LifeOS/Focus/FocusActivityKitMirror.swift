@@ -149,12 +149,15 @@ extension FocusSessionService {
     static func withLiveActivityMirroring(logger: FocusSessionLogging) -> FocusSessionService {
         let notifications = NotificationCenterFocusNudgeAdapter()
         guard #available(iOS 16.1, *) else {
-            return FocusSessionService(logger: logger, notificationScheduler: notifications)
+            let service = FocusSessionService(logger: logger, notificationScheduler: notifications)
+            connectNotificationTaps(to: service)
+            return service
         }
         let mirror = FocusActivityKitMirror()
         let service = FocusSessionService(
             logger: logger, activityMirror: mirror, notificationScheduler: notifications
         )
+        connectNotificationTaps(to: service)
         if #available(iOS 17.0, *) {
             FocusSprintIntentActions.pauseResume = { [weak service, weak mirror] in
                 service?.togglePause()
@@ -170,5 +173,15 @@ extension FocusSessionService {
             }
         }
         return service
+    }
+
+    /// Arms the "Sprint complete" notification as the route out of a lingering Live Activity: a tap
+    /// settles the sprint against the wall clock, which ends the Activity.
+    ///
+    /// Wired on BOTH branches above — notifications are not gated on 16.1, so a device without
+    /// ActivityKit still gets a tap that finishes a sprint whose countdown expired while suspended.
+    /// `weak` because the router outlives nothing in particular but the engine is RootView's.
+    private static func connectNotificationTaps(to service: FocusSessionService) {
+        FocusNotificationRouter.shared.connect { [weak service] in service?.syncNow() }
     }
 }
