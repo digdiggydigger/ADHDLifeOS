@@ -29,3 +29,8 @@ aws-backend/**/*.zip
 # Local agent tooling (not app code)
 .agents/
 skills-lock.json
+
+# Firebase Functions
+functions/node_modules/
+functions/.env
+.firebase/
