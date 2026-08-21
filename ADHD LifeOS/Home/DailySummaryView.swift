@@ -142,10 +142,20 @@ struct DailySummaryView: View {
 
     // MARK: - Generate
 
-    /// Deliberately *secondary* emphasis: a tinted capsule sized to its content, not a full-width
-    /// coral slab. Home already has one primary action — START SESSION on the Active Goal hero —
-    /// and a second solid coral button competed with it and dominated the screen. Tinted-subtle
-    /// keeps the action obvious without claiming to be the thing you came to Home to do.
+    /// Secondary emphasis, matching MANAGE on the Active Goal hero — the same `.bordered` style
+    /// that screen already uses for "the other action". Home has exactly one primary action
+    /// (START SESSION, `.borderedProminent`), and Generate is not it.
+    ///
+    /// `.bordered` rather than a hand-rolled capsule for three reasons: the neutral fill with an
+    /// accent-tinted label stays legible without competing (the earlier coral-on-coral pill still
+    /// read as an accent action); the fill is a system material, so light/dark, increased
+    /// contrast, and reduce-transparency are all correct for free rather than hand-mapped (§4);
+    /// and it makes this button visibly a sibling of MANAGE, which is what it is.
+    ///
+    /// §3 deviation, reported: this drops the custom `PressScaleButtonStyle` — a view takes one
+    /// `buttonStyle`, and `.bordered` brings its own press state. Matching the established
+    /// house pattern for a secondary action beats a bespoke scale here, on the §7 precedent
+    /// that native controls win where they are already the house pattern.
     private var generateButton: some View {
         Button {
             Task { await service.generate() }
@@ -163,16 +173,12 @@ struct DailySummaryView: View {
                     .font(.caption.weight(.bold))
                     .lineLimit(1)
             }
-            .foregroundStyle(.tint)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            // 44pt minimum is a hit-target floor (§3), not a visual size — the capsule itself
-            // stays caption-height while the tappable area meets the guideline.
+            // 44pt is the §3 hit-target floor, not a visual size — the control keeps its compact
+            // caption height while the tappable area meets the guideline. (MANAGE uses 32 here;
+            // that is a pre-existing miss and deliberately not copied.)
             .frame(minHeight: 44)
-            .contentShape(Rectangle())
-            .background(Color.accentColor.opacity(0.12), in: Capsule())
         }
-        .buttonStyle(PressScaleButtonStyle())
+        .buttonStyle(.bordered)
         .disabled(service.isGenerating)
         .accessibilityIdentifier("generateDailySummaryButton")
     }
