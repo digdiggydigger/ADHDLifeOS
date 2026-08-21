@@ -6,52 +6,56 @@
 import SwiftUI
 
 /// SwiftUI port of the web prototype's `src/components/DailySummaryView.tsx` — its banner card
-/// (badge pill, heavy tight-tracked title, mono caption line), four-stat metric strip with tinted
-/// icon chips, and accent-bordered highlight card.
+/// (badge pill, heavy tight-tracked title, mono caption line), tone toolbar, generate action,
+/// four-stat metric strip with tinted icon chips, and the generated-summary sections
+/// (`DailySummaryResultCard`).
 ///
 /// Deliberate deviations from the React source, per CLAUDE.md:
 /// - §4 zero-hex: the web palette (`#FF5B5B` coral, `#1C1C1A` ink, `#F2EFE9` cream) becomes
-///   adaptive semantic color — `.tint` accent, `Color(.secondarySystemBackground)` cards,
-///   `.primary`/`.secondary` text — so dark mode is free and correct.
-/// - The Gemini generate/tone/copy controls are not ported: the `/api/gemini/daily-summary`
-///   backend doesn't exist on iOS, and a dead button is worse than no button. The highlight text
-///   is the React file's own offline fallback idea ("Neuro-Synthesis"): synthesized locally from
-///   real counts by `DailySummaryHeadline`, so the card is honest and always populated.
-/// - The web metrics (completed-today, focus minutes, journal count) rely on model fields the
-///   iOS models don't have (`completedAt`, `focusMinutesLogged`, mood) — the strip shows the
-///   same visual with the four numbers Home actually knows: open tasks, life areas, inbox
-///   ideas, due nudges.
+///   adaptive semantic color — `.tint` accent, `Color.cardSurface` cards, `.primary`/`.secondary`
+///   text — so dark mode is free and correct.
+/// - The metric strip still shows the four numbers Home already knows; the richer picture
+///   (completions, focus minutes, journal energy) now lives in the generated summary below.
+/// - The idle state keeps the local `DailySummaryHeadline` synthesis rather than an empty card:
+///   honest, always populated, and free. Generating replaces it.
 struct DailySummaryView: View {
     let openTaskCount: Int
     let lifeAreaCount: Int
     let inboxCount: Int
     let dueNudgeCount: Int
+    @StateObject private var service: DailySummaryService
 
-    private let metricColumns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+    private let metricColumns = [
+        GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)
+    ]
+
+    /// `service` is injectable for previews and tests; production passes nothing and gets the
+    /// live configuration. Owned here rather than by `HomeView` because the summary is this
+    /// card's concern alone.
+    init(
+        openTaskCount: Int,
+        lifeAreaCount: Int,
+        inboxCount: Int,
+        dueNudgeCount: Int,
+        service: DailySummaryService? = nil
+    ) {
+        self.openTaskCount = openTaskCount
+        self.lifeAreaCount = lifeAreaCount
+        self.inboxCount = inboxCount
+        self.dueNudgeCount = dueNudgeCount
+        _service = StateObject(wrappedValue: service ?? .live())
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             bannerCard
-            LazyVGrid(columns: metricColumns, spacing: 16) {
-                DailyMetricCard(
-                    value: "\(openTaskCount)", label: "Open Tasks",
-                    systemImage: "checkmark.circle.fill", tint: .green
-                )
-                DailyMetricCard(
-                    value: "\(dueNudgeCount)", label: "Nudges Due",
-                    systemImage: "flame.fill", tint: .red
-                )
-                DailyMetricCard(
-                    value: "\(lifeAreaCount)", label: "Life Areas",
-                    systemImage: "square.grid.2x2.fill", tint: .indigo
-                )
-                DailyMetricCard(
-                    value: "\(inboxCount)", label: "Ideas Offloaded",
-                    systemImage: "tray.fill", tint: .orange
-                )
-            }
-            highlightCard
+            toneToolbar
+            metricStrip
+            summaryContent
         }
+        .animation(
+            .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: service.state
+        )
         .accessibilityIdentifier("homeDailySummary")
     }
 
@@ -93,8 +97,131 @@ struct DailySummaryView: View {
         .bentoCard()
     }
 
-    // MARK: - Highlight (web: accent-bordered AI highlight box; here: local synthesis)
+    // MARK: - Tone toolbar (web: four pill buttons above the generate action)
 
+    private var toneToolbar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("Tone")
+                    .sectionLabel()
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 8)
+                generateButton
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(DailySummaryTone.allCases) { tone in
+                        toneChip(tone)
+                    }
+                }
+                // Inset so a chip's press-scale isn't clipped by the ScrollView bounds.
+                .padding(.horizontal, 4)
+            }
+            .padding(.horizontal, -4)
+        }
+        .animation(
+            .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: service.tone
+        )
+    }
+
+    private func toneChip(_ tone: DailySummaryTone) -> some View {
+        Button {
+            service.tone = tone
+        } label: {
+            // Label, not a glyph+text HStack: VoiceOver reads it as one element, and the tone is
+            // never conveyed by the glyph alone (§4/§7).
+            Label(tone.label, systemImage: tone.systemImage)
+                .font(.footnote.weight(.semibold))
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
+        }
+        .buttonStyle(ChoiceChipButtonStyle(isSelected: service.tone == tone))
+        .accessibilityAddTraits(service.tone == tone ? [.isSelected] : [])
+    }
+
+    // MARK: - Generate
+
+    /// Deliberately *secondary* emphasis: a tinted capsule sized to its content, not a full-width
+    /// coral slab. Home already has one primary action — START SESSION on the Active Goal hero —
+    /// and a second solid coral button competed with it and dominated the screen. Tinted-subtle
+    /// keeps the action obvious without claiming to be the thing you came to Home to do.
+    private var generateButton: some View {
+        Button {
+            Task { await service.generate() }
+        } label: {
+            HStack(spacing: 4) {
+                if service.isGenerating {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: service.hasSummary ? "arrow.clockwise" : "sparkles")
+                        .font(.caption.weight(.bold))
+                }
+                Text(generateButtonTitle)
+                    .font(.caption.weight(.bold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(.tint)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            // 44pt minimum is a hit-target floor (§3), not a visual size — the capsule itself
+            // stays caption-height while the tappable area meets the guideline.
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+            .background(Color.accentColor.opacity(0.12), in: Capsule())
+        }
+        .buttonStyle(PressScaleButtonStyle())
+        .disabled(service.isGenerating)
+        .accessibilityIdentifier("generateDailySummaryButton")
+    }
+
+    private var generateButtonTitle: String {
+        if service.isGenerating { return "Generating…" }
+        return service.hasSummary ? "Regenerate" : "Generate"
+    }
+
+    // MARK: - Metrics
+
+    private var metricStrip: some View {
+        LazyVGrid(columns: metricColumns, spacing: 16) {
+            DailyMetricCard(
+                value: "\(openTaskCount)", label: "Open Tasks",
+                systemImage: "checkmark.circle.fill", tint: .green
+            )
+            DailyMetricCard(
+                value: "\(dueNudgeCount)", label: "Nudges Due",
+                systemImage: "flame.fill", tint: .red
+            )
+            DailyMetricCard(
+                value: "\(lifeAreaCount)", label: "Life Areas",
+                systemImage: "square.grid.2x2.fill", tint: .indigo
+            )
+            DailyMetricCard(
+                value: "\(inboxCount)", label: "Ideas Offloaded",
+                systemImage: "tray.fill", tint: .orange
+            )
+        }
+    }
+
+    // MARK: - Content
+
+    @ViewBuilder
+    private var summaryContent: some View {
+        switch service.state {
+        case .idle, .loading:
+            // The offline synthesis stays put while generating, so the card never goes blank —
+            // trading the honest fallback for a spinner would be a downgrade.
+            highlightCard
+        case .failed(let message):
+            DailySummaryFailureCard(message: message)
+        case .loaded(let generated):
+            DailySummaryResultCard(generated: generated, copyText: service.copyText)
+        }
+    }
+
+    /// Idle state: the offline synthesis from real counts. Not a placeholder — a true statement.
     private var highlightCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
@@ -142,7 +269,10 @@ private struct DailyMetricCard: View {
                 .font(.body.weight(.semibold))
                 .foregroundStyle(tint)
                 .frame(width: 40, height: 40)
-                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(
+                    tint.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
             VStack(alignment: .leading, spacing: 0) {
                 Text(value)
                     .font(.title3.bold())
@@ -161,9 +291,9 @@ private struct DailyMetricCard: View {
     }
 }
 
-/// Pure headline synthesis — the local stand-in for the web's Gemini summary, split out so the
-/// priority ladder (due nudges → inbox → clean slate → open tasks) is unit-testable without
-/// rendering. Deterministic on its inputs; no dates, no randomness.
+/// Pure headline synthesis — the offline stand-in shown before the user generates anything, split
+/// out so the priority ladder (due nudges → inbox → clean slate → open tasks) is unit-testable
+/// without rendering. Deterministic on its inputs; no dates, no randomness.
 enum DailySummaryHeadline {
     static func text(openTasks: Int, lifeAreas: Int, inbox: Int, dueNudges: Int) -> String {
         if dueNudges > 0 {
@@ -171,7 +301,9 @@ enum DailySummaryHeadline {
             return "\(noun) due — a tiny step right now counts."
         }
         if inbox > 0 {
-            let phrase = inbox == 1 ? "1 idea captured — triage it" : "\(inbox) ideas captured — triage one"
+            let phrase = inbox == 1
+                ? "1 idea captured — triage it"
+                : "\(inbox) ideas captured — triage one"
             return "\(phrase) to clear your head."
         }
         if openTasks == 0 {
@@ -183,18 +315,55 @@ enum DailySummaryHeadline {
     }
 }
 
+#if DEBUG
+/// Preview-only provider: no Firestore, one fixed day's worth of material.
+private struct PreviewDailySummaryDataProvider: DailySummaryDataProviding {
+    func loadRequest(tone: DailySummaryTone, date: Date) async throws -> DailySummaryRequest {
+        DailySummaryRequest(
+            date: date, tone: tone,
+            tasks: [
+                TaskItem(
+                    id: UUID(), lifeAreaId: nil, title: "Ship the capture fix",
+                    status: .done, priority: .p1, dueDate: nil, completedAt: date
+                ),
+                TaskItem(
+                    id: UUID(), lifeAreaId: nil, title: "Draft the summary prompt",
+                    status: .open, priority: .p2, dueDate: nil
+                )
+            ],
+            focusSessions: [], journalEntries: [], capturesCount: 2,
+            lifeAreaNames: [:]
+        )
+    }
+}
+
+@MainActor
+private func previewSummaryService() -> DailySummaryService {
+    DailySummaryService(
+        provider: PreviewDailySummaryDataProvider(),
+        generator: StubDailySummaryGenerator()
+    )
+}
+#endif
+
 #Preview("Light") {
     ScrollView {
-        DailySummaryView(openTaskCount: 7, lifeAreaCount: 4, inboxCount: 3, dueNudgeCount: 0)
-            .padding(16)
+        DailySummaryView(
+            openTaskCount: 7, lifeAreaCount: 4, inboxCount: 3, dueNudgeCount: 0,
+            service: previewSummaryService()
+        )
+        .padding(16)
     }
     .preferredColorScheme(.light)
 }
 
 #Preview("Dark") {
     ScrollView {
-        DailySummaryView(openTaskCount: 0, lifeAreaCount: 6, inboxCount: 0, dueNudgeCount: 2)
-            .padding(16)
+        DailySummaryView(
+            openTaskCount: 0, lifeAreaCount: 6, inboxCount: 2, dueNudgeCount: 2,
+            service: previewSummaryService()
+        )
+        .padding(16)
     }
     .preferredColorScheme(.dark)
 }

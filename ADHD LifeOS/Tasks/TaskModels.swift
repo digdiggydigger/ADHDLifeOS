@@ -24,6 +24,12 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
     /// `FocusSprintConfiguration`'s standard defaults wherever they're displayed or started.
     var focusDurationSeconds: Int?
     var nudgesCount: Int?
+    /// When this task was last marked done — the only record of *when* a task was finished, and
+    /// therefore the only way the Daily Executive Summary can answer "what did I complete today?".
+    /// `nil` on an open task, and on any task completed before this field existed: `status: done`
+    /// with no stamp means "done, at an unknown time", which deliberately counts as no day's win.
+    /// Cleared on re-open — see `TaskCompletionStamp`.
+    var completedAt: Date?
 
     init(
         id: UUID,
@@ -33,7 +39,8 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         priority: TaskPriority,
         dueDate: Date?,
         focusDurationSeconds: Int? = nil,
-        nudgesCount: Int? = nil
+        nudgesCount: Int? = nil,
+        completedAt: Date? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -43,6 +50,7 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         self.dueDate = dueDate
         self.focusDurationSeconds = focusDurationSeconds
         self.nudgesCount = nudgesCount
+        self.completedAt = completedAt
     }
 
     enum CodingKeys: String, CodingKey {
@@ -51,6 +59,46 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         case dueDate = "due_date"
         case focusDurationSeconds = "focus_duration_seconds"
         case nudgesCount = "nudges_count"
+        case completedAt = "completed_at"
+    }
+}
+
+/// The completion-stamp rule, split out pure so the transition and the same-day filter are
+/// testable without Firestore or a live clock.
+///
+/// Two rules, both load-bearing for the summary:
+/// - Completing stamps the moment; **re-opening clears it**. A task finished yesterday and
+///   re-opened today is not a win, and a stale stamp would go on claiming it was.
+/// - "Completed today" is day-granular, not a rolling 24 hours — a task finished at 09:00 is
+///   still today's win at 23:00.
+enum TaskCompletionStamp {
+    /// The stamp a status transition implies: the moment for `done`, nothing for `open`.
+    static func completedAt(for status: TaskStatus, now: Date = .now) -> Date? {
+        status == .done ? now : nil
+    }
+
+    /// `task` with the new status and the stamp that status implies, applied together so the two
+    /// can never drift apart.
+    static func applying(status: TaskStatus, to task: TaskItem, now: Date = .now) -> TaskItem {
+        var updated = task
+        updated.status = status
+        updated.completedAt = completedAt(for: status, now: now)
+        return updated
+    }
+
+    /// Tasks completed on the same calendar day as `date`, newest first. Tasks with no stamp are
+    /// excluded whatever their status — an untimed completion belongs to no particular day.
+    static func completedTasks(
+        in tasks: [TaskItem],
+        on date: Date = .now,
+        calendar: Calendar = .current
+    ) -> [TaskItem] {
+        tasks
+            .filter { task in
+                guard task.status == .done, let completedAt = task.completedAt else { return false }
+                return calendar.isDate(completedAt, inSameDayAs: date)
+            }
+            .sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
     }
 }
 

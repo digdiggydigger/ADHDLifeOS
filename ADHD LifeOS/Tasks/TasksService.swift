@@ -88,7 +88,10 @@ final class TasksService: ObservableObject {
     func toggleStatus(_ task: TaskItem) async {
         guard hasLoadedOnce, let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         let newStatus: TaskStatus = task.status == .done ? .open : .done
-        tasks[index].status = newStatus
+        // Status and `completed_at` move together — the optimistic local row and the write below
+        // both go through the same rule, so the summary's "completed today" can never disagree
+        // with what the list shows.
+        tasks[index] = TaskCompletionStamp.applying(status: newStatus, to: tasks[index])
         recomputeGroups()
         do {
             try await client.setStatus(taskId: task.id, status: newStatus)

@@ -268,8 +268,18 @@ extension FirebaseManager {
         try await update(id: id, fields: fields, in: .tasks)
     }
 
-    func setTaskStatus(id: UUID, status: TaskStatus) async throws {
-        try await update(id: id, fields: ["status": status.rawValue], in: .tasks)
+    /// Writes the status and its completion stamp in one update, so a task can never be `done`
+    /// with a stale stamp or `open` with a live one.
+    ///
+    /// The stamp is the **client's** clock, not `serverTimestamp()`, on purpose: "completed today"
+    /// is day-granular and the day that matters is the user's local one. A server UTC stamp would
+    /// file an 11pm completion under tomorrow for anyone east of UTC, and would also disagree with
+    /// the optimistic value `TasksService` already put on screen.
+    func setTaskStatus(id: UUID, status: TaskStatus, now: Date = .now) async throws {
+        var fields: [String: Any] = ["status": status.rawValue]
+        fields["completed_at"] = TaskCompletionStamp.completedAt(for: status, now: now)
+            .map { Timestamp(date: $0) as Any } ?? FieldValue.delete() as Any
+        try await update(id: id, fields: fields, in: .tasks)
     }
 
     func deleteTask(id: UUID) async throws {
