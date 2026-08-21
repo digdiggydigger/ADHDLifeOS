@@ -39,12 +39,19 @@ final class DailySummaryService: ObservableObject {
         self.generator = generator
     }
 
-    /// The shipping configuration: real Firestore data, local synthesis for the wording. Swapping
-    /// in the Claude-backed Cloud Function adapter is a one-line change here and nowhere else.
+    /// The shipping configuration: real Firestore data, and the Claude-backed Cloud Function for
+    /// the wording **once it has a deployed URL**.
+    ///
+    /// Falls back to on-device synthesis while `defaultEndpoint` is `nil` rather than shipping a
+    /// button that always errors. The card names which one produced a summary, so the fallback is
+    /// visible rather than a silent downgrade.
     static func live() -> DailySummaryService {
-        DailySummaryService(
+        let generator: any DailySummaryGenerating = FirebaseDailySummaryGenerator.defaultEndpoint == nil
+            ? StubDailySummaryGenerator()
+            : FirebaseDailySummaryGenerator()
+        return DailySummaryService(
             provider: FirebaseDailySummaryDataAdapter(),
-            generator: StubDailySummaryGenerator()
+            generator: generator
         )
     }
 
