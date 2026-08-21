@@ -441,6 +441,8 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 				</dict>
 				<key>WFEncodeMode</key>
 				<string>Encode</string>
+				<key>WFBase64LineBreakMode</key>
+				<string>None</string>
 			</dict>
 		</dict>
 		<dict>
@@ -580,6 +582,8 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 				</dict>
 				<key>WFEncodeMode</key>
 				<string>Encode</string>
+				<key>WFBase64LineBreakMode</key>
+				<string>None</string>
 			</dict>
 		</dict>
 		<dict>

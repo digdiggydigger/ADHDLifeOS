@@ -148,6 +148,12 @@ actions.append(action("is.workflow.actions.base64encode", {
     "UUID": U["photob64"],
     "WFInput": attachment(out(U["photo"], "Photos")),
     "WFEncodeMode": "Encode",
+    # MUST be None. Base64 Encode defaults to a line break every 76 characters, and those newlines
+    # land inside the JSON string literal below — the body then fails JSON.parse in the function
+    # before any handler code runs, so it surfaces as an opaque 400 rather than one of our own
+    # validation errors. Cost a device round trip on 2026-08-21; text captures were unaffected,
+    # which is what made it look like a media bug rather than an encoding one.
+    "WFBase64LineBreakMode": "None",
 }))
 actions.append(text_action(U["photomedia"], token_string(
     '{"data":"' + PH + '","contentType":"image/jpeg"}',
@@ -168,6 +174,7 @@ actions.append(action("is.workflow.actions.base64encode", {
     "UUID": U["voiceb64"],
     "WFInput": attachment(out(U["voice"], "Recording")),
     "WFEncodeMode": "Encode",
+    "WFBase64LineBreakMode": "None",  # see the photo branch — newlines break JSON.parse
 }))
 actions.append(text_action(U["voicemedia"], token_string(
     '{"data":"' + PH + '","contentType":"audio/m4a"}',
@@ -252,4 +259,41 @@ path = "shortcuts/LifeOS Capture.xml"
 
 with open(path, "wb") as f:
     plistlib.dump(workflow, f, fmt=plistlib.FMT_XML, sort_keys=False)
+
+
+def check_base64_line_breaks(written_path):
+    """Refuse to ship a build whose base64 output would carry newlines.
+
+    Base64 Encode defaults to a line break every 76 characters. Those newlines end up inside the
+    JSON string literal the next Text action builds, so the request body fails `JSON.parse` in the
+    Cloud Function before a single line of handler code runs — the Shortcut just reports a 400 with
+    nothing useful in it. Text captures are unaffected, so the failure looks like a media bug rather
+    than an encoding one, which is exactly what made it expensive to find (2026-08-21).
+
+    Cheap to assert here, so it can never silently regress.
+    """
+    with open(written_path, "rb") as handle:
+        parsed = plistlib.load(handle)
+
+    offenders = [
+        item.get("WFWorkflowActionParameters", {}).get("UUID", "<no uuid>")
+        for item in parsed["WFWorkflowActions"]
+        if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.base64encode"
+        and item.get("WFWorkflowActionParameters", {}).get("WFBase64LineBreakMode") != "None"
+    ]
+    if offenders:
+        raise SystemExit(
+            "base64encode actions missing WFBase64LineBreakMode=None: "
+            + ", ".join(offenders)
+        )
+
+    encoders = sum(
+        1 for item in parsed["WFWorkflowActions"]
+        if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.base64encode"
+    )
+    return encoders
+
+
+encoder_count = check_base64_line_breaks(path)
 print("wrote", path, "with", len(actions), "actions")
+print(f"checked {encoder_count} base64 encoders — all set to no line breaks")
