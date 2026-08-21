@@ -27,13 +27,73 @@ firebase deploy --only functions
 CAPTURE_UID=xcKeMrUiFoZRGQOEUMNW8y6aXmc2
 ```
 
-Deploy prints the function URL. It is normally:
+Deploy prints the function URL. A 2nd-gen function runs on Cloud Run, so in this project it is the
+Cloud Run form rather than the `cloudfunctions.net` one:
 
 ```
-https://us-central1-adhdlifeos-acb49.cloudfunctions.net/capture
+https://capture-dg5rypfbaq-uc.a.run.app
 ```
 
 If it prints something different, use what it printed — the Shortcut has that URL in one Text action.
+
+## Deploying is not enough: three IAM grants the function cannot make for itself
+
+A successful `firebase deploy` does **not** mean the endpoint works. All three of these were needed
+before the first capture ever landed (2026-08-21), and each fails in a way that looks like a
+different bug. On a fresh project, or after the runtime service account is changed, re-check them.
+
+**1. Allow unauthenticated invocation.** 2nd-gen functions run on Cloud Run, and new projects do not
+allow unauthenticated invocations by default. Without this the request never reaches this code at
+all — Google Frontend returns `403` before the handler runs, so the shared-secret check is never
+even consulted and the logs stay empty.
+
+```bash
+gcloud run services add-iam-policy-binding capture \
+  --region=us-central1 --project=adhdlifeos-acb49 \
+  --member="allUsers" --role="roles/run.invoker"
+```
+
+`allUsers` is safe here only because the handler's own `X-LifeOS-Key` check is the actual auth.
+
+**2 and 3. Give the runtime service account data access.** The function runs as the *compute default*
+service account (`PROJECT_NUMBER-compute@developer.gserviceaccount.com`), and Google no longer grants
+that account `Editor` on new projects — here it started with nothing but
+`roles/cloudbuild.builds.builder`, which is build permission, not data permission.
+
+```bash
+gcloud projects add-iam-policy-binding adhdlifeos-acb49 \
+  --member="serviceAccount:651724103525-compute@developer.gserviceaccount.com" \
+  --role="roles/datastore.user"
+
+gcloud storage buckets add-iam-policy-binding gs://adhdlifeos-acb49.firebasestorage.app \
+  --member="serviceAccount:651724103525-compute@developer.gserviceaccount.com" \
+  --role="roles/storage.objectAdmin"
+```
+
+Without the first, every capture returns `502 could not save the capture` and the logs show
+`7 PERMISSION_DENIED: Missing or insufficient permissions` from Firestore. **That message is
+misleading:** the Admin SDK bypasses security rules entirely, so it is never a `firestore.rules`
+problem — do not go editing rules chasing it. Without the second, text captures succeed and only
+`photo`/`voice` fail, with the same `502`, because media uploads to Storage before the document is
+written.
+
+IAM changes need no redeploy, but take up to a couple of minutes to propagate — two `502`s straight
+after granting, then a `201`, is normal and not a sign of a further problem.
+
+## Rotating the secret
+
+```bash
+firebase functions:secrets:set CAPTURE_SECRET   # creates a new version
+firebase deploy --only functions:capture        # REQUIRED — see below
+gcloud secrets versions destroy <old> --secret=CAPTURE_SECRET --project=adhdlifeos-acb49
+```
+
+The redeploy is not optional. `defineSecret` pins the service to the secret *version* that existed at
+deploy time (visible as `secretKeyRef.key` in `gcloud run services describe capture`), so a new
+version is inert until the function is redeployed onto it. The CLI offers to do the redeploy and the
+destroy for you; it has been observed to do the redeploy but silently skip the destroy, printing an
+empty `Removing secret versions:` line — check `gcloud secrets versions list CAPTURE_SECRET` after,
+and destroy the old version by hand if it is still `enabled`.
 
 ## Contract
 
