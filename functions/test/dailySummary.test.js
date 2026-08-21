@@ -153,3 +153,56 @@ test('a malformed model result is rejected rather than half-rendered', () => {
     assert.throws(() => normalizeSummaryContent(raw), /summary/i, `accepted ${JSON.stringify(raw)}`);
   }
 });
+
+// --- Model-error reporting -------------------------------------------------
+
+const { describeModelError } = require('../dailySummary');
+
+/**
+ * The generic "could not generate the summary" is right for an unknown fault and wrong for an
+ * actionable one. A credit-balance error hidden behind it sends the reader debugging the app
+ * instead of topping up an account — which is exactly what happened on first deploy.
+ */
+test('an actionable Anthropic 4xx is surfaced with its own wording', () => {
+  const error = Object.assign(new Error('bad request'), {
+    status: 400,
+    error: {
+      type: 'error',
+      error: {
+        type: 'invalid_request_error',
+        message: 'Your credit balance is too low to access the Anthropic API.',
+      },
+    },
+  });
+  assert.match(describeModelError(error), /credit balance is too low/);
+});
+
+test('a rate limit says so rather than reading as a bug', () => {
+  const error = Object.assign(new Error('rate limited'), {
+    status: 429,
+    error: { error: { type: 'rate_limit_error', message: 'Rate limit exceeded.' } },
+  });
+  assert.match(describeModelError(error), /rate limit/i);
+});
+
+/**
+ * A 5xx is Anthropic's problem and transient — the reader can only retry, so the message says
+ * that rather than exposing internals they cannot act on.
+ */
+test('a server-side fault stays generic and suggests retrying', () => {
+  for (const status of [500, 503, 529]) {
+    const message = describeModelError(Object.assign(new Error('boom'), { status }));
+    assert.match(message, /again/i, `status ${status}: ${message}`);
+  }
+});
+
+test('a non-API error never leaks a stack or internals', () => {
+  const message = describeModelError(new TypeError('client.beta.messages is not a function'));
+  assert.doesNotMatch(message, /beta\.messages|TypeError|at /);
+  assert.ok(message.length > 0);
+});
+
+test('an API error with no usable message still produces something readable', () => {
+  const message = describeModelError(Object.assign(new Error(''), { status: 400, error: {} }));
+  assert.ok(message.length > 0);
+});

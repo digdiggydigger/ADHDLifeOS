@@ -267,12 +267,41 @@ function normalizeSummaryContent(raw) {
   };
 }
 
+/**
+ * Turns a failed model call into something the card can show.
+ *
+ * The split is by who can act on it. A 4xx is a configuration or account problem the reader can
+ * actually fix — no credits, a revoked key, a rate limit — so it carries the API's own wording. A
+ * 5xx is Anthropic's and transient, so it says "try again" rather than exposing internals. Anything
+ * else is a bug here, and the reader is told plainly rather than shown a stack.
+ *
+ * This exists because the first live call failed with "your credit balance is too low" and the
+ * card said "could not generate the summary" — sending the reader to debug an app that was working
+ * perfectly.
+ */
+function describeModelError(error) {
+  const status = typeof error?.status === 'number' ? error.status : null;
+  // The SDK nests the API's own envelope: { error: { error: { type, message } } }.
+  const apiMessage = error?.error?.error?.message;
+
+  if (status !== null && status >= 400 && status < 500) {
+    if (isNonEmpty(apiMessage)) return apiMessage.trim();
+    if (status === 429) return 'Rate limit reached — wait a moment and try again.';
+    return `The summary service rejected the request (${status}).`;
+  }
+  if (status !== null && status >= 500) {
+    return 'The model was unavailable. Please try again.';
+  }
+  return 'Could not generate the summary.';
+}
+
 module.exports = {
   MAX_COMPLETED,
   MAX_IN_PROGRESS,
   SUMMARY_SCHEMA,
   TONES,
   buildPrompt,
+  describeModelError,
   normalizeSummaryContent,
   normalizeSummaryRequest,
   toneGuidance,

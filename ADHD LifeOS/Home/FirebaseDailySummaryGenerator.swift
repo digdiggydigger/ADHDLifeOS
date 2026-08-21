@@ -67,10 +67,10 @@ struct FirebaseDailySummaryGenerator: DailySummaryGenerating {
     }
 
     /// The deployed function's URL. 2nd-gen functions run on Cloud Run, so this is the Cloud Run
-    /// form with a generated hostname — it cannot be derived from the project id and is filled in
-    /// from what `firebase deploy` prints. `nil` until then, which surfaces as a clear
-    /// "not configured" message rather than a crash or a silent no-op.
-    static let defaultEndpoint: URL? = nil
+    /// form with a generated hostname — it cannot be derived from the project id, and is read off
+    /// `gcloud run services list` after a deploy. Not a secret: the endpoint authenticates every
+    /// caller with a Firebase ID token, so knowing the URL grants nothing.
+    static let defaultEndpoint: URL? = URL(string: "https://dailysummary-dg5rypfbaq-uc.a.run.app")
 
     func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
         guard let endpoint else { throw DailySummaryEndpointError.notConfigured }

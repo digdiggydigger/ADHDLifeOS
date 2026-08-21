@@ -31,6 +31,7 @@ const {
 const {
   SUMMARY_SCHEMA,
   buildPrompt,
+  describeModelError,
   normalizeSummaryContent,
   normalizeSummaryRequest,
 } = require('./dailySummary');
@@ -248,8 +249,10 @@ exports.dailySummary = onRequest(
 
       return response.status(200).json({ success: true, source: message.model, summary });
     } catch (error) {
+      // The reader can act on a 4xx (no credits, revoked key, rate limit) but not on a 5xx, so
+      // the message differs by who owns the fault — see describeModelError.
       logger.error('daily summary failed', error);
-      return response.status(502).json({ error: 'could not generate the summary' });
+      return response.status(502).json({ error: describeModelError(error) });
     }
   },
 );
