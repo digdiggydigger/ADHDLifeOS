@@ -32,6 +32,13 @@ struct DailySummaryView: View {
     /// `service` is injectable for previews and tests; production passes nothing and gets the
     /// live configuration. Owned here rather than by `HomeView` because the summary is this
     /// card's concern alone.
+    ///
+    /// This `@StateObject` is deliberately **not** what makes a summary survive a tab switch — it
+    /// can't: `HomeService.load()` re-runs on every appearance and flips Home's load state back
+    /// through `.loading`, which destroys this whole subtree and the state object with it. What
+    /// survives is the record itself, which `live()` reads back out of `DailySummarySnapshot` (see
+    /// `DailySummaryStore.swift`). That also covers a cold launch, which hoisting ownership up to
+    /// `RootView` would not have.
     init(
         openTaskCount: Int,
         lifeAreaCount: Int,

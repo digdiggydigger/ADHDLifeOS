@@ -90,15 +90,99 @@ final class DailySummaryServiceTests: XCTestCase {
         }
     }
 
+    // MARK: - Remembering across appearances
+
+    /// The card's `@StateObject` does not survive Home re-identifying itself on a tab switch, so a
+    /// generated summary has to be recoverable from the store rather than from view state.
+    func testARestoredServiceReloadsTodaysSummaryAndItsTone() async {
+        let store = FakeDailySummaryStore()
+        let first = makeService(tone: .bulleted, store: store, userId: "uid-1")
+        await first.generate(now: now)
+
+        let second = makeService(store: store, userId: "uid-1", restoringAsOf: now.addingTimeInterval(600))
+
+        XCTAssertEqual(second.tone, .bulleted)
+        guard case .loaded(let generated) = second.state else {
+            return XCTFail("expected the stored summary back, got \(second.state)")
+        }
+        XCTAssertEqual(generated.content.headline, "stub headline")
+        XCTAssertEqual(generated.generatedAt, now)
+        XCTAssertTrue(second.hasSummary)
+    }
+
+    func testASummaryFromAnEarlierDayIsNotRestored() async {
+        let store = FakeDailySummaryStore()
+        let first = makeService(tone: .gentle, store: store, userId: "uid-1")
+        await first.generate(now: now)
+
+        let tomorrow = now.addingTimeInterval(60 * 60 * 24)
+        let second = makeService(store: store, userId: "uid-1", restoringAsOf: tomorrow)
+
+        XCTAssertEqual(second.state, .idle)
+        // The tone is a preference, not a record of a day — it survives the date it was chosen on.
+        XCTAssertEqual(second.tone, .gentle)
+    }
+
+    func testAnotherAccountsSummaryIsNotRestored() async {
+        let store = FakeDailySummaryStore()
+        let first = makeService(tone: .coaching, store: store, userId: "uid-1")
+        await first.generate(now: now)
+
+        let second = makeService(store: store, userId: "uid-2", restoringAsOf: now)
+
+        XCTAssertEqual(second.state, .idle)
+        XCTAssertEqual(second.tone, .energizing)
+    }
+
+    func testChangingToneIsRemembered() {
+        let store = FakeDailySummaryStore()
+        let service = makeService(store: store, userId: "uid-1")
+
+        service.tone = .bulleted
+
+        XCTAssertEqual(store.snapshot?.tone, .bulleted)
+    }
+
+    /// A failed generation is a transient state; the summary already stored is still a true record
+    /// of the day and must not be erased by it — including when the tone is changed afterwards.
+    func testAFailedGenerationDoesNotEraseTheStoredSummary() async {
+        let store = FakeDailySummaryStore()
+        let generator = ToggleableDailySummaryGenerator()
+        let service = makeService(generator: generator, store: store, userId: "uid-1")
+        await service.generate(now: now)
+
+        generator.shouldFail = true
+        await service.generate(now: now)
+        service.tone = .gentle
+
+        XCTAssertEqual(service.state, .failed("generator unavailable"))
+        XCTAssertEqual(store.snapshot?.summary?.content.headline, "stub headline")
+    }
+
+    /// The default configuration remembers nothing, so previews and tests never touch defaults.
+    func testAServiceWithNoStoreStartsIdle() {
+        XCTAssertEqual(makeService().state, .idle)
+    }
+
     // MARK: - Helpers
 
     private func makeService(
         tone: DailySummaryTone = .energizing,
         provider: FakeDailySummaryDataProvider = FakeDailySummaryDataProvider(),
-        generator: any DailySummaryGenerating = StubbedDailySummaryGenerator()
+        generator: any DailySummaryGenerating = StubbedDailySummaryGenerator(),
+        store: (any DailySummaryStoring)? = nil,
+        userId: String? = nil,
+        restoringAsOf restoreDate: Date? = nil
     ) -> DailySummaryService {
-        let service = DailySummaryService(provider: provider, generator: generator)
-        service.tone = tone
+        let service = DailySummaryService(
+            provider: provider,
+            generator: generator,
+            store: store,
+            userId: userId,
+            now: restoreDate ?? now
+        )
+        // A restored service keeps the tone it was given back; only a fresh one takes the default.
+        if restoreDate == nil { service.tone = tone }
         return service
     }
 }
@@ -109,6 +193,15 @@ private struct SimpleError: LocalizedError {
     let message: String
     init(_ message: String) { self.message = message }
     var errorDescription: String? { message }
+}
+
+/// In-memory stand-in for `UserDefaultsDailySummaryStore` — the round trip through defaults is
+/// covered in `DailySummarySnapshotTests`; these tests only care what the service hands it.
+private final class FakeDailySummaryStore: DailySummaryStoring, @unchecked Sendable {
+    private(set) var snapshot: DailySummarySnapshot?
+
+    func read() -> DailySummarySnapshot? { snapshot }
+    func write(_ snapshot: DailySummarySnapshot) { self.snapshot = snapshot }
 }
 
 private final class FakeDailySummaryDataProvider: DailySummaryDataProviding, @unchecked Sendable {

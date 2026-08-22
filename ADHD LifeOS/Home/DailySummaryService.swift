@@ -29,18 +29,39 @@ final class DailySummaryService: ObservableObject {
     @Published private(set) var state: ViewState = .idle
     /// Selected voice. Changing it deliberately does **not** clear an existing summary — that
     /// summary is still a true record of the day; only regenerating replaces it.
-    @Published var tone: DailySummaryTone = .energizing
+    @Published var tone: DailySummaryTone = .energizing {
+        didSet { persist() }
+    }
 
     private let provider: any DailySummaryDataProviding
     private let generator: any DailySummaryGenerating
+    private let store: (any DailySummaryStoring)?
+    private let userId: String?
+    /// The last summary that generated successfully — what gets written back, tracked separately
+    /// from `state` on purpose. A failed regeneration puts the card into `.failed`, but the summary
+    /// already recorded for today is still true and must survive it.
+    private var storedSummary: GeneratedDailySummary?
 
-    init(provider: any DailySummaryDataProviding, generator: any DailySummaryGenerating) {
+    /// `store` is optional and defaults to nothing, so previews and tests remember nothing and never
+    /// touch real defaults; only `live()` wires up persistence. `now` is the moment the restore is
+    /// judged against — a stored summary is only reloaded if it belongs to that day.
+    init(
+        provider: any DailySummaryDataProviding,
+        generator: any DailySummaryGenerating,
+        store: (any DailySummaryStoring)? = nil,
+        userId: String? = nil,
+        now: Date = .now
+    ) {
         self.provider = provider
         self.generator = generator
+        self.store = store
+        self.userId = userId
+        restore(asOf: now)
     }
 
-    /// The shipping configuration: real Firestore data, and the Claude-backed Cloud Function for
-    /// the wording **once it has a deployed URL**.
+    /// The shipping configuration: real Firestore data, the Claude-backed Cloud Function for the
+    /// wording **once it has a deployed URL**, and defaults-backed memory so the card outlives the
+    /// view.
     ///
     /// Falls back to on-device synthesis while `defaultEndpoint` is `nil` rather than shipping a
     /// button that always errors. The card names which one produced a summary, so the fallback is
@@ -51,8 +72,25 @@ final class DailySummaryService: ObservableObject {
             : FirebaseDailySummaryGenerator()
         return DailySummaryService(
             provider: FirebaseDailySummaryDataAdapter(),
-            generator: generator
+            generator: generator,
+            store: UserDefaultsDailySummaryStore(),
+            userId: FirebaseManager.shared.currentUser?.uid
         )
+    }
+
+    /// Reloads what this account recorded for today, if anything.
+    ///
+    /// Runs in `init` rather than from the view's `.task` so a restored summary is there on the
+    /// first frame — arriving one frame late would animate in as if it had just been generated.
+    private func restore(asOf now: Date) {
+        guard let snapshot = store?.read(), snapshot.belongs(to: userId) else { return }
+        storedSummary = snapshot.summary(on: now)
+        if let storedSummary { state = .loaded(storedSummary) }
+        tone = snapshot.tone
+    }
+
+    private func persist() {
+        store?.write(DailySummarySnapshot(userId: userId, tone: tone, summary: storedSummary))
     }
 
     /// The clipboard payload, or `nil` when there is nothing to copy.
@@ -75,14 +113,15 @@ final class DailySummaryService: ObservableObject {
         do {
             let request = try await provider.loadRequest(tone: requestedTone, date: now)
             let content = try await generator.generate(request)
-            state = .loaded(
-                GeneratedDailySummary(
-                    content: content,
-                    tone: requestedTone,
-                    generatedAt: now,
-                    source: generator.source
-                )
+            let generated = GeneratedDailySummary(
+                content: content,
+                tone: requestedTone,
+                generatedAt: now,
+                source: generator.source
             )
+            state = .loaded(generated)
+            storedSummary = generated
+            persist()
         } catch {
             state = .failed(
                 (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

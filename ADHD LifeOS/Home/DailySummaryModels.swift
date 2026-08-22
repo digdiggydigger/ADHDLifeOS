@@ -49,14 +49,17 @@ struct DailySummaryContent: Codable, Equatable, Sendable {
 
 /// A summary plus the circumstances that produced it, so the card can say where it came from and
 /// when — a stale summary presented as fresh is worse than none.
-struct GeneratedDailySummary: Equatable, Sendable {
+///
+/// `Codable` because it is also what gets remembered between appearances of the card
+/// (`DailySummarySnapshot`); `generatedAt` is what the same-day guard there reads.
+struct GeneratedDailySummary: Codable, Equatable, Sendable {
     let content: DailySummaryContent
     let tone: DailySummaryTone
     let generatedAt: Date
     let source: DailySummarySource
 }
 
-enum DailySummarySource: String, Equatable, Sendable {
+enum DailySummarySource: String, Codable, Equatable, Sendable {
     /// Produced by the Claude-backed Cloud Function.
     case model
     /// Synthesized on-device from real counts — honest, offline, and never claimed to be more.
