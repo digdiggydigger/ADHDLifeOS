@@ -34,3 +34,7 @@ skills-lock.json
 functions/node_modules/
 functions/.env
 .firebase/
+
+# Signed Shortcut build artifact — not reproducible byte-for-byte (signing embeds a
+# certificate chain), and regenerable from the committed XML beside it.
+shortcuts/*.shortcut

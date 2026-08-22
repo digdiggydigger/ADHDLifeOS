@@ -5,6 +5,10 @@ Far simpler than the direct-REST version: the function owns the document id, the
 Storage upload and the download URL, so the Shortcut is one menu and one POST.
 """
 import plistlib
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
 
 PH = "￼"
 ENDPOINT = "https://capture-dg5rypfbaq-uc.a.run.app"
@@ -294,6 +298,44 @@ def check_base64_line_breaks(written_path):
     return encoders
 
 
+def sign_shortcut(xml_path, output_path):
+    """Sign the built plist, working around `shortcuts sign`'s extension check.
+
+    `shortcuts sign` dispatches on the input file's EXTENSION, not on its contents. Handed a path
+    ending `.xml` — or `.plist`, or no extension at all — it refuses with:
+
+        Error: The file couldn't be opened because it isn't in the correct format.
+
+    which reads like a corrupt plist and sent the 2026-08-21 session looking for one. It is not:
+    byte-identical content signs fine the moment the path ends `.shortcut` (or `.wflow`), and both
+    XML and binary plists are accepted. So the build signs through a temporary `.shortcut` copy.
+
+    The signed output is NOT committed — signing embeds a certificate chain and is not
+    reproducible byte-for-byte, so it is a build artifact (see .gitignore), regenerable from the
+    XML beside it.
+    """
+    with tempfile.TemporaryDirectory() as work:
+        staged = Path(work) / "LifeOS Capture.shortcut"
+        shutil.copyfile(xml_path, staged)
+        result = subprocess.run(
+            ["shortcuts", "sign", "--mode", "anyone",
+             "--input", str(staged), "--output", str(output_path)],
+            capture_output=True, text=True, check=False,
+        )
+
+    # `shortcuts sign` reports failure on stdout and still exits 0, so the exit code proves
+    # nothing — verify the artifact itself. A signed shortcut is an AEA1 archive.
+    produced = Path(output_path)
+    if not produced.is_file() or produced.open("rb").read(4) != b"AEA1":
+        raise SystemExit(
+            "signing failed: " + (result.stdout.strip() or result.stderr.strip() or "no output")
+        )
+    return produced.stat().st_size
+
+
 encoder_count = check_base64_line_breaks(path)
 print("wrote", path, "with", len(actions), "actions")
 print(f"checked {encoder_count} base64 encoders — all set to no line breaks")
+
+signed_path = "shortcuts/LifeOS Capture.shortcut"
+print(f"signed {signed_path} ({sign_shortcut(path, signed_path)} bytes)")
