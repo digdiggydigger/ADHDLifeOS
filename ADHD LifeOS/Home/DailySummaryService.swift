@@ -35,6 +35,9 @@ final class DailySummaryService: ObservableObject {
 
     private let provider: any DailySummaryDataProviding
     private let generator: any DailySummaryGenerating
+    /// Stands in when `generator` can't be reached. `nil` disables degrading entirely, which is
+    /// what previews, tests, and a build with no endpoint configured all want.
+    private let fallbackGenerator: (any DailySummaryGenerating)?
     private let store: (any DailySummaryStoring)?
     private let userId: String?
     /// The last summary that generated successfully — what gets written back, tracked separately
@@ -48,31 +51,34 @@ final class DailySummaryService: ObservableObject {
     init(
         provider: any DailySummaryDataProviding,
         generator: any DailySummaryGenerating,
+        fallbackGenerator: (any DailySummaryGenerating)? = nil,
         store: (any DailySummaryStoring)? = nil,
         userId: String? = nil,
         now: Date = .now
     ) {
         self.provider = provider
         self.generator = generator
+        self.fallbackGenerator = fallbackGenerator
         self.store = store
         self.userId = userId
         restore(asOf: now)
     }
 
     /// The shipping configuration: real Firestore data, the Claude-backed Cloud Function for the
-    /// wording **once it has a deployed URL**, and defaults-backed memory so the card outlives the
-    /// view.
+    /// wording, on-device synthesis standing behind it, and defaults-backed memory so the card
+    /// outlives the view.
     ///
-    /// Falls back to on-device synthesis while `defaultEndpoint` is `nil` rather than shipping a
-    /// button that always errors. The card names which one produced a summary, so the fallback is
-    /// visible rather than a silent downgrade.
+    /// With no deployed URL the on-device synthesis is the generator outright, rather than shipping
+    /// a button that always errors; there is nothing for it to stand behind, so no fallback is
+    /// wired. **In the shipping build the two are therefore unambiguous:** a card that says
+    /// "On-device synthesis" can only mean the function was unreachable, because the endpoint is
+    /// configured. That is what keeps the degrade visible rather than silent (E's call, 2026-08-22).
     static func live() -> DailySummaryService {
-        let generator: any DailySummaryGenerating = FirebaseDailySummaryGenerator.defaultEndpoint == nil
-            ? StubDailySummaryGenerator()
-            : FirebaseDailySummaryGenerator()
+        let hasEndpoint = FirebaseDailySummaryGenerator.defaultEndpoint != nil
         return DailySummaryService(
             provider: FirebaseDailySummaryDataAdapter(),
-            generator: generator,
+            generator: hasEndpoint ? FirebaseDailySummaryGenerator() : StubDailySummaryGenerator(),
+            fallbackGenerator: hasEndpoint ? StubDailySummaryGenerator() : nil,
             store: UserDefaultsDailySummaryStore(),
             userId: FirebaseManager.shared.currentUser?.uid
         )
@@ -87,6 +93,27 @@ final class DailySummaryService: ObservableObject {
         storedSummary = snapshot.summary(on: now)
         if let storedSummary { state = .loaded(storedSummary) }
         tone = snapshot.tone
+    }
+
+    /// Words the day, degrading to the on-device synthesis when the model can't be reached.
+    ///
+    /// A model outage must not cost the user their day: the stand-in is honest — it only ever
+    /// restates what actually happened — and the card names the source that produced it, so the
+    /// downgrade is labelled rather than hidden.
+    ///
+    /// If the stand-in fails too, the **model's** error is what surfaces. It is the one that says
+    /// what actually broke, and it is the one `describeModelError` already wrote for a reader who
+    /// may be able to act on it.
+    private func word(
+        _ request: DailySummaryRequest
+    ) async throws -> (content: DailySummaryContent, source: DailySummarySource) {
+        do {
+            return (try await generator.generate(request), generator.source)
+        } catch {
+            guard let fallbackGenerator else { throw error }
+            guard let content = try? await fallbackGenerator.generate(request) else { throw error }
+            return (content, fallbackGenerator.source)
+        }
     }
 
     private func persist() {
@@ -111,13 +138,16 @@ final class DailySummaryService: ObservableObject {
         let requestedTone = tone
         state = .loading
         do {
+            // A Firestore failure is NOT caught below: the fallback rewords the day, it cannot
+            // invent one. With nothing honest to synthesize from, an error is the only truthful
+            // answer.
             let request = try await provider.loadRequest(tone: requestedTone, date: now)
-            let content = try await generator.generate(request)
+            let worded = try await word(request)
             let generated = GeneratedDailySummary(
-                content: content,
+                content: worded.content,
                 tone: requestedTone,
                 generatedAt: now,
-                source: generator.source
+                source: worded.source
             )
             state = .loaded(generated)
             storedSummary = generated

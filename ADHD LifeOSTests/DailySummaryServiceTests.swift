@@ -90,6 +90,63 @@ final class DailySummaryServiceTests: XCTestCase {
         }
     }
 
+    // MARK: - Degrading when the model is unreachable
+
+    /// A model outage must not cost the user their day. The on-device synthesis is honest — it only
+    /// restates what actually happened — so it stands in, and the provenance line says so.
+    func testAModelFailureDegradesToTheOnDeviceSynthesis() async {
+        let service = makeService(
+            generator: FailingDailySummaryGenerator(),
+            fallbackGenerator: StubbedDailySummaryGenerator()
+        )
+        await service.generate(now: now)
+
+        guard case .loaded(let generated) = service.state else {
+            return XCTFail("expected the fallback summary, got \(service.state)")
+        }
+        XCTAssertEqual(generated.content.headline, "stub headline")
+        XCTAssertEqual(generated.source, .localSynthesis)
+    }
+
+    /// A fallback summary is as much a record of the day as any other, so it is remembered too.
+    func testAFallbackSummaryIsRemembered() async {
+        let store = FakeDailySummaryStore()
+        let service = makeService(
+            generator: FailingDailySummaryGenerator(),
+            fallbackGenerator: StubbedDailySummaryGenerator(),
+            store: store,
+            userId: "uid-1"
+        )
+        await service.generate(now: now)
+
+        XCTAssertEqual(store.snapshot?.summary?.source, .localSynthesis)
+    }
+
+    /// The fallback rewords the day; it cannot invent one. If the day itself couldn't be read there
+    /// is nothing honest to synthesize from, so a Firestore failure stays an error.
+    func testAFailedDataLoadIsNotPaperedOverByTheFallback() async {
+        let provider = FakeDailySummaryDataProvider()
+        provider.error = SimpleError("could not read today's tasks")
+        let service = makeService(
+            provider: provider, fallbackGenerator: StubbedDailySummaryGenerator()
+        )
+        await service.generate(now: now)
+
+        XCTAssertEqual(service.state, .failed("could not read today's tasks"))
+    }
+
+    /// If both generators fail, the reader is shown the model's error rather than the stand-in's —
+    /// that is the one that says what actually broke.
+    func testIfTheFallbackAlsoFailsTheModelsErrorIsReported() async {
+        let service = makeService(
+            generator: FailingDailySummaryGenerator(),
+            fallbackGenerator: SecondaryFailingDailySummaryGenerator()
+        )
+        await service.generate(now: now)
+
+        XCTAssertEqual(service.state, .failed("generator unavailable"))
+    }
+
     // MARK: - Remembering across appearances
 
     /// The card's `@StateObject` does not survive Home re-identifying itself on a tab switch, so a
@@ -170,6 +227,7 @@ final class DailySummaryServiceTests: XCTestCase {
         tone: DailySummaryTone = .energizing,
         provider: FakeDailySummaryDataProvider = FakeDailySummaryDataProvider(),
         generator: any DailySummaryGenerating = StubbedDailySummaryGenerator(),
+        fallbackGenerator: (any DailySummaryGenerating)? = nil,
         store: (any DailySummaryStoring)? = nil,
         userId: String? = nil,
         restoringAsOf restoreDate: Date? = nil
@@ -177,6 +235,7 @@ final class DailySummaryServiceTests: XCTestCase {
         let service = DailySummaryService(
             provider: provider,
             generator: generator,
+            fallbackGenerator: fallbackGenerator,
             store: store,
             userId: userId,
             now: restoreDate ?? now
@@ -232,6 +291,14 @@ private struct FailingDailySummaryGenerator: DailySummaryGenerating {
     var source: DailySummarySource { .model }
     func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
         throw SimpleError("generator unavailable")
+    }
+}
+
+/// A stand-in that is itself broken, so the "both failed" path has two distinguishable errors.
+private struct SecondaryFailingDailySummaryGenerator: DailySummaryGenerating {
+    var source: DailySummarySource { .localSynthesis }
+    func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
+        throw SimpleError("fallback unavailable")
     }
 }
 
