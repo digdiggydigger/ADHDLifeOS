@@ -18,7 +18,15 @@ const { randomUUID } = require('node:crypto');
 const { onRequest } = require('firebase-functions/v2/https');
 const { defineSecret, defineString } = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
-const admin = require('firebase-admin');
+// Modular imports, not the `admin.firestore()` / `admin.auth()` / `admin.storage()` namespace:
+// firebase-admin v14 DELETED the legacy namespace outright (it has been deprecated since v10), so
+// those properties are now `undefined` on the root export and every call through them throws a
+// TypeError at request time. Nothing in the test suite catches that — the handler tests stop at the
+// auth gate on purpose — so the namespace style must not come back.
+const { initializeApp } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+const { getFirestore, Timestamp } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
 
 const {
   buildCaptureDocument,
@@ -40,7 +48,7 @@ const CAPTURE_SECRET = defineSecret('CAPTURE_SECRET');
 const CAPTURE_UID = defineString('CAPTURE_UID');
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 
-admin.initializeApp();
+initializeApp();
 
 /** Base64 inflates by ~33%, so cap the decoded size well inside the 32MB request limit. */
 const MAX_MEDIA_BYTES = 20 * 1024 * 1024;
@@ -116,7 +124,7 @@ exports.capture = onRequest(
           return response.status(413).json({ error: 'media too large' });
         }
 
-        const bucket = admin.storage().bucket();
+        const bucket = getStorage().bucket();
         const objectPath = mediaObjectPath(uid, id, media.contentType);
         // The token is what makes the download URL permanent — see `downloadURL`.
         const token = randomUUID();
@@ -131,14 +139,14 @@ exports.capture = onRequest(
         id,
         content,
         kind,
-        createdAt: admin.firestore.Timestamp.now(),
+        createdAt: Timestamp.now(),
         title,
         lifeAreaId,
         mediaURL,
         mediaContentType: media && media.contentType,
       });
 
-      await admin.firestore()
+      await getFirestore()
         .collection('users').doc(uid)
         .collection('captures').doc(id)
         .set(doc);
@@ -181,7 +189,7 @@ exports.dailySummary = onRequest(
       return response.status(401).json({ error: 'unauthorized' });
     }
     try {
-      await admin.auth().verifyIdToken(bearer);
+      await getAuth().verifyIdToken(bearer);
     } catch (error) {
       logger.warn('daily summary rejected: bad ID token', { message: error.message });
       return response.status(401).json({ error: 'unauthorized' });
