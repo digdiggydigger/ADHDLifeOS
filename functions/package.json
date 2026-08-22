@@ -16,5 +16,9 @@
     "@anthropic-ai/sdk": "^0.120.0",
     "firebase-admin": "^14.3.0",
     "firebase-functions": "^7.3.2"
+  },
+  "//overrides": "uuid <11.1.1 carries GHSA-w5hq-g745-h8pq and reaches us only through gaxios, which is pulled in by @google-cloud/storage and gcp-metadata. Nothing in this tree can trigger it — the flaw is in v3/v5/v6 when a `buf` is passed, and gaxios' only call is `v4()` with no arguments, for a multipart boundary. The pin is hygiene, not a fix: it keeps `npm audit` at zero so a REAL finding is never lost in seven rows of noise. Safe because v4()'s signature is identical in v9 and v11, and uuid v11 still ships a CJS build.",
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }
