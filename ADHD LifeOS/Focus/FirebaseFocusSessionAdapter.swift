@@ -5,21 +5,22 @@
 
 import Foundation
 
-/// Production `FocusSessionLogging` + history reader backed by Firestore via `FirebaseManager`.
+/// Production `FocusSessionLogging` + history reader backed by Firestore through
+/// `FocusSessionBackingStore` (`FirebaseManager` in the app, a recording fake in tests).
 /// Writes land in `users/{uid}/focus_sessions`.
 struct FirebaseFocusSessionAdapter: FocusSessionLogging, FocusHistoryReading {
-    private let manager: FirebaseManager
+    private let store: FocusSessionBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: FocusSessionBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func logCompletedSession(_ session: CompletedFocusSession) async throws {
-        try await manager.saveFocusSession(session)
+        try await store.saveFocusSession(session)
     }
 
     func fetchHistory() async throws -> [CompletedFocusSession] {
-        try await manager.fetchFocusSessions()
+        try await store.fetchFocusSessions()
     }
 }
 

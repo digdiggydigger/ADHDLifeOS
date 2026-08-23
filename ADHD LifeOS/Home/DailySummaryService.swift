@@ -210,18 +210,20 @@ final class DailySummaryService: ObservableObject {
 /// Five reads, run concurrently — they are independent, and doing them in sequence would make the
 /// button feel broken on a slow connection.
 struct FirebaseDailySummaryDataAdapter: DailySummaryDataProviding {
-    private let manager: FirebaseManager
+    private let store: DailySummaryDataBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: DailySummaryDataBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func loadRequest(tone: DailySummaryTone, date: Date) async throws -> DailySummaryRequest {
-        async let tasks = manager.fetchTasks()
-        async let logs = manager.fetchLogs()
-        async let sessions = manager.fetchFocusSessions()
-        async let captures = manager.fetchCaptures()
-        async let lifeAreas = manager.fetchLifeAreas()
+        async let tasks = store.fetchTasks()
+        async let logs = store.fetchLogs()
+        async let sessions = store.fetchFocusSessions()
+        async let captures = store.fetchCaptures()
+        // Active areas only, preserving the behaviour this had before the seam: a task filed under
+        // an area archived later resolves no name in the summary.
+        async let lifeAreas = store.fetchLifeAreas(includeArchived: false)
 
         let (loadedTasks, loadedLogs, loadedSessions, loadedCaptures, loadedAreas) =
             try await (tasks, logs, sessions, captures, lifeAreas)
