@@ -10,8 +10,15 @@ life-area grid + reorder, daily summary, focus analytics), Tasks (swipeable card
 detail with focus-sprint planner), Capture inbox triage, Journal, Nudges, Settings (incl. account
 deletion), auth (email/password live; Sign in with Apple built but dormant — free dev account),
 and the app-wide focus timer with per-task sprint config, plus a design-token layer mirroring the
-prototype palette. **The unchecked items in `TODO-CLAUDE-CODE.md` predate the Firebase cutover and
-are stale** — treat direct instructions from E as the work queue until Cowork writes new blocks.
+prototype palette. Treat direct instructions from E as the work queue until Cowork writes new blocks.
+
+**`TODO-CLAUDE-CODE.md` was split on 2026-08-23 (E's direction).** It is now ~140 lines holding only
+what is genuinely open; the other 8,000+ lines — every shipped block, plus everything written
+against the deleted Supabase / Cognito-AWS / Poke backends — moved verbatim to `TODO-ARCHIVE.md`.
+**Nothing in the archive is a work item**, but it is the record of *why* much of this app is shaped
+the way it is, so read it before assuming a decision was arbitrary. Note this crosses the usual
+ownership line (Cowork writes that file, Claude Code only ticks checkboxes) — E authorised it
+explicitly.
 
 ## Workflow: Cowork ↔ Claude Code
 
