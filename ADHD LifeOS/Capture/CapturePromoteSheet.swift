@@ -46,7 +46,7 @@ struct CapturePromoteSheet: View {
                     CreateTaskButton(
                         lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate, onCreateTask: promote
                     )
-                    Text("The new task inherits this capture's life area and tags.")
+                    Text("The new task inherits this capture's life area, tags and notes.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)

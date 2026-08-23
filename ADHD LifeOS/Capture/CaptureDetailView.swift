@@ -69,6 +69,13 @@ struct CaptureDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 CaptureDetailContentCard(capture: capture, onOpenPhoto: { isPresentingPhoto = true })
+                CaptureDetailNotesEditor(capture: capture) { text in
+                    guard let updated = await service.saveNotes(capture: capture, notes: text) else {
+                        return nil
+                    }
+                    state = .loaded(updated)
+                    return updated
+                }
                 filedInSection(capture)
                 CaptureDetailActions(
                     capture: capture,

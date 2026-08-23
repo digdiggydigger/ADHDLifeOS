@@ -30,8 +30,8 @@ struct CaptureDetailContentCard: View {
                 if let domain = CaptureDetailPresentation.sourceDomain(for: capture) {
                     sourceLine(domain)
                 }
-                if let notes = CaptureRowPresentation.secondaryText(for: capture) {
-                    CaptureDetailNotesPanel(text: notes)
+                if let quote = CaptureRowPresentation.secondaryText(for: capture) {
+                    CaptureQuotedNote(text: quote)
                 }
                 if let assessment = capture.aiAssessment, !assessment.isEmpty {
                     assessmentLine(assessment)
@@ -142,28 +142,69 @@ struct CaptureDetailMediaBanner: View {
     }
 }
 
-/// B6's inset "Notes" panel — the capture's own words, set apart from the metadata around them.
-struct CaptureDetailNotesPanel: View {
-    let text: String
+/// B6's "Notes" panel, now the user's own annotation — editable free text on any capture kind,
+/// because a photo, voice memo or link has its main text slot already taken by the caption,
+/// transcript or URL. The capture's own words render separately as an unlabeled quote in the
+/// content card above.
+struct CaptureDetailNotesEditor: View {
+    /// Returns the server's updated capture, or `nil` on failure (the error surfaces through the
+    /// service's `triageErrorMessage`, rendered in the Filed-in card below).
+    let onSave: (String) async -> Capture?
+
+    @State private var text: String
+    /// What the server last accepted — the Save button only appears while the field differs.
+    @State private var savedText: String
+    @State private var isSaving = false
+
+    init(capture: Capture, onSave: @escaping (String) async -> Capture?) {
+        self.onSave = onSave
+        _text = State(initialValue: capture.notes ?? "")
+        _savedText = State(initialValue: capture.notes ?? "")
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Notes")
                 .sectionLabel()
                 .foregroundStyle(.secondary)
-            Text(text)
-                .font(.body)
-                .fixedSize(horizontal: false, vertical: true)
+            TextField("Add a note to this capture", text: $text, axis: .vertical)
+                .lineLimit(2...6)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("captureDetailNotesField")
+            if isDirty {
+                Button {
+                    Task { await save() }
+                } label: {
+                    if isSaving {
+                        ProgressView()
+                            .tint(.secondary)
+                    } else {
+                        Text(trimmed.isEmpty ? "Clear note" : "Save note")
+                    }
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .disabled(isSaving)
+                .accessibilityIdentifier("captureDetailNotesSaveButton")
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(8)
-        .background(Color.pageBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.cardBorder, lineWidth: 0.5)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("captureDetailNotes")
+        .bentoCard()
+    }
+
+    private var trimmed: String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isDirty: Bool {
+        trimmed != savedText
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        if let updated = await onSave(text) {
+            savedText = updated.notes ?? ""
+            text = savedText
+        }
     }
 }
 
@@ -196,7 +237,7 @@ struct CaptureDetailActions: View {
             }
             if !capture.processed {
                 // The one fact worth promising at the moment of promotion, straight from B6.
-                Text("The new task inherits this capture's life area and tags.")
+                Text("The new task inherits this capture's life area, tags and notes.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
@@ -253,6 +294,13 @@ private struct CaptureDetailComponentsGallery: View {
                         aiAssessment: "Reference material, no action implied."
                     ),
                     onOpenPhoto: {}
+                )
+                CaptureDetailNotesEditor(
+                    capture: Capture(
+                        id: UUID(), content: "Note", kind: .note, processed: false, createdAt: Date(),
+                        notes: "Read before the Thursday architecture review."
+                    ),
+                    onSave: { _ in nil }
                 )
                 CaptureDetailActions(
                     capture: Capture(id: UUID(), content: "Note", kind: .note, processed: false, createdAt: Date()),
