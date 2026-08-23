@@ -62,12 +62,27 @@ runnable. If `xcodebuild` reports the destination is unavailable, run
 `xcrun simctl list devices available` and use an installed device rather than guessing.
 
 A feature isn't done until `swiftlint lint`, the full test suite, and the build all pass — and the
-real terminal output has been pasted for review, not just a "done" summary. **Coverage reality
-(2026-08-19):** overall coverage sits near 19%, not the original 70% bar — a known, accepted
-consequence of the Firebase cutover deleting the heavily-tested AWS adapters; the thin
-`Firebase*ClientAdapter` wrappers have no emulator harness yet. The operative rule until that
-exists: every piece of NEW pure logic ships with tests written first (TDD below), and no block may
-claim the 70% bar is met.
+real terminal output has been pasted for review, not just a "done" summary.
+
+**Coverage reality (2026-08-23):** overall coverage is **33.55%** over 1,099 tests, not the original
+70% bar. The shortfall is no longer the Firebase layer: every Firebase-backed type now sits behind a
+per-feature `*BackingStore` protocol with a recording fake, and all twelve `Firebase*ClientAdapter`
+structs plus `FirebaseAccountDeletionAdapter`, `FirebaseFocusSessionAdapter` and
+`FirebaseDailySummaryDataAdapter` are covered (92–100% each). `grep "private let manager:
+FirebaseManager"` returning nothing is the check that the seam is still complete — the last three
+types above do NOT carry the `*ClientAdapter` suffix, so a name-based sweep misses them.
+
+What is still uncovered, and why the 70% bar stays out of reach for now:
+- **SwiftUI view bodies (~7,000 lines at ~0%)** — `TaskDetailView`, `FocusTimerBar`,
+  `TaskListView`, `CaptureInboxView` and peers. Unit tests are the wrong tool; this is UI-test
+  territory, and the UI tests are deliberately skipped in the standard run.
+- **`FirebaseManager`'s own extensions** — `+Tags` (0/74), `+AccountDeletion` (0/51), `+Storage`
+  (0/24), `+Seed` (3/117). These are real Firestore/Storage/Auth calls and need the **Firebase
+  emulator suite**, which is blocked on Java 11+ (this machine has 1.8; `firebase` CLI is already
+  installed). That install is E's, per the manual-step convention above.
+
+The operative rule is unchanged: every piece of NEW pure logic ships with tests written first (TDD
+below), and no block may claim the 70% bar is met.
 
 ## Version Control
 
@@ -116,6 +131,23 @@ unpushed) and push it as your first action if so.
   ("cut all services over to Firebase"). No local persistence layer — Firestore is the source of
   truth. Everything goes through per-feature `Firebase*ClientAdapter` structs over the shared
   `FirebaseManager` (`ADHD LifeOS/Firebase/`).
+- **Adapters depend on a per-feature `*BackingStore` protocol, never on `FirebaseManager` directly**
+  (E's 2026-08-23 call). `FirebaseManager` is a `final class` with a `private init` and a `shared`
+  singleton, so an adapter holding it concretely cannot be tested at any price. Each adapter gets
+  its own narrow protocol — never one protocol over the manager's ~40 methods — which `FirebaseManager`
+  satisfies via a one-line extension, with a recording fake in tests. When a store needs a partial
+  write, add a *named* wrapper on the manager (`updateLifeArea(id:fields:)`) rather than exposing the
+  generic `update(id:fields:in:)`, so a store cannot address another collection.
+- **Hand-written Firestore field dictionaries live in `FirestoreFieldPayloads`, never inline.** They
+  are not derived from `Codable`, so no round-trip test reaches them, and a wrong key raises nothing
+  — it writes a field nothing reads. Two conventions coexist and disagree on purpose: **tasks are
+  fully snake_cased (`life_area_id`), captures are camelCase apart from `created_at` (`lifeAreaId`)**.
+  Tests assert the wrong spelling is *absent* as well as the right one being present.
+- Firebase SDK error mapping goes through `FirestoreErrorMapping` / `AuthErrorMapping`, which expose
+  the SDK's domain and code so tests can build a genuine error. **The unit-test target deliberately
+  does not link the Firebase SDK** — these are static products, and linking one into both the app and
+  its hosted test bundle realises every Objective-C class twice. `FirestoreDocumentCoder` is the
+  codec seam for the same reason.
 - Schema: per-user subcollections under `users/{uid}` (tasks, life_areas, tags, logs, captures,
   nudges, reminders, focus_sessions); document IDs are UPPERCASE `uuidString`.
 - Security rules live in-repo (`firestore.rules`, `storage.rules`) but are published manually by
