@@ -5,16 +5,17 @@
 
 import Foundation
 
-/// Production `CaptureClientAdapting` backed by Firestore + Firebase Storage via
-/// `FirebaseManager`. The old backend's server-side jobs don't exist on the blank slate, so:
+/// Production `CaptureClientAdapting` backed by Firestore + Firebase Storage through
+/// `CaptureBackingStore` (`FirebaseManager` in the app, a recording fake in tests). The old
+/// backend's server-side jobs don't exist on the blank slate, so:
 /// captures are created with `status: .inbox` client-side; `linkPreview`/`aiAssessment` stay
 /// `nil` (no enrichment Lambda); and there are no thumbnails (`photoDisplayURL` already falls
 /// back to the full-size image).
 struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
-    private let manager: FirebaseManager
+    private let store: CaptureBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: CaptureBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func createCapture(_ input: NormalizedCreateCaptureInput) async throws -> Capture {
@@ -22,7 +23,7 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
         // the object exists and its stable download URL can be resolved here.
         var mediaURL: URL?
         if let mediaKey = input.mediaKey {
-            mediaURL = try await manager.downloadURL(forMediaKey: mediaKey)
+            mediaURL = try await store.downloadURL(forMediaKey: mediaKey)
         }
         let capture = Capture(
             id: UUID(),
@@ -39,26 +40,26 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
             linkPreview: nil,
             aiAssessment: nil
         )
-        try await manager.saveCapture(capture)
+        try await store.saveCapture(capture)
         return capture
     }
 
     func fetchUnprocessedCaptures() async throws -> [Capture] {
-        try await manager.fetchUnprocessedCaptures()
+        try await store.fetchUnprocessedCaptures()
             .sorted { $0.createdAt > $1.createdAt }
     }
 
     func fetchProcessedCaptures() async throws -> [Capture] {
-        try await manager.fetchProcessedCaptures()
+        try await store.fetchProcessedCaptures()
             .sorted { $0.createdAt > $1.createdAt }
     }
 
     func deleteCapture(id: UUID) async throws {
-        try await manager.deleteCapture(id: id)
+        try await store.deleteCapture(id: id)
     }
 
     func fetchCapture(id: UUID) async throws -> Capture {
-        try await manager.fetchCapture(id: id)
+        try await store.fetchCapture(id: id)
     }
 
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
@@ -72,7 +73,7 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
             dueDate: input.dueDate,
             createdAt: Date()
         )
-        try await manager.createTask(task)
+        try await store.createTask(task)
         return TaskItem(
             id: task.id,
             lifeAreaId: task.lifeAreaId,
@@ -84,39 +85,39 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
     }
 
     func markProcessed(captureId: UUID) async throws {
-        try await manager.markCaptureProcessed(id: captureId)
+        try await store.markCaptureProcessed(id: captureId)
     }
 
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
-        try await manager.updateCapture(id: id, changes: changes)
-        return try await manager.fetchCapture(id: id)
+        try await store.updateCapture(id: id, changes: changes)
+        return try await store.fetchCapture(id: id)
     }
 
     func fetchAllTags() async throws -> [Tag] {
-        try await manager.fetchTags()
+        try await store.fetchTags()
     }
 
     func createTag(name: String) async throws -> Tag {
-        try await manager.createTagDeduplicating(name: name)
+        try await store.createTagDeduplicating(name: name)
     }
 
     func fetchTags(captureId: UUID) async throws -> [Tag] {
-        try await manager.fetchTags(for: .capture, parentId: captureId)
+        try await store.fetchTags(for: .capture, parentId: captureId)
     }
 
     func addTag(captureId: UUID, tagId: UUID) async throws {
-        try await manager.addTagId(tagId, to: .capture, parentId: captureId)
+        try await store.addTagId(tagId, to: .capture, parentId: captureId)
     }
 
     func removeTag(captureId: UUID, tagId: UUID) async throws {
-        try await manager.removeTagId(tagId, from: .capture, parentId: captureId)
+        try await store.removeTagId(tagId, from: .capture, parentId: captureId)
     }
 
     func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
-        try manager.makeUploadTarget(kind: kind, contentType: contentType)
+        try store.makeUploadTarget(kind: kind, contentType: contentType)
     }
 
     func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {
-        try await manager.uploadMedia(to: uploadURL, data: data, contentType: contentType)
+        try await store.uploadMedia(to: uploadURL, data: data, contentType: contentType)
     }
 }

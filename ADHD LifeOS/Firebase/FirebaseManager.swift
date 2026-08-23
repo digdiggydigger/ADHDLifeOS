@@ -218,19 +218,6 @@ final class FirebaseManager {
         guard !fields.isEmpty else { return }
         try await collection(name).document(id.uuidString).updateData(fields)
     }
-
-    /// Encodes the delta convention shared by `TaskUpdatePayload`/`NudgeUpdatePayload`: outer
-    /// `nil` = field untouched (no write), `.some(nil)` = explicitly cleared, which Firestore
-    /// expresses as `FieldValue.delete()`.
-    static func setNullable<Wrapped>(
-        _ change: Wrapped??,
-        forKey key: String,
-        in fields: inout [String: Any],
-        map transform: (Wrapped) -> Any = { $0 as Any }
-    ) {
-        guard let change else { return }
-        fields[key] = change.map(transform) ?? FieldValue.delete() as Any
-    }
 }
 
 // MARK: - Tasks
@@ -249,37 +236,13 @@ extension FirebaseManager {
     }
 
     func updateTask(id: UUID, payload: TaskUpdatePayload) async throws {
-        var fields: [String: Any] = [:]
-        if let title = payload.title {
-            fields["title"] = title
-        }
-        if let priority = payload.priority {
-            fields["priority"] = priority.rawValue
-        }
-        Self.setNullable(payload.notes, forKey: "notes", in: &fields)
-        Self.setNullable(payload.lifeAreaId, forKey: "life_area_id", in: &fields) { $0.uuidString }
-        Self.setNullable(payload.dueDate, forKey: "due_date", in: &fields) { Timestamp(date: $0) }
-        if let focusDurationSeconds = payload.focusDurationSeconds {
-            fields["focus_duration_seconds"] = focusDurationSeconds
-        }
-        if let nudgesCount = payload.nudgesCount {
-            fields["nudges_count"] = nudgesCount
-        }
-        try await update(id: id, fields: fields, in: .tasks)
+        try await update(id: id, fields: FirestoreFieldPayloads.taskUpdate(payload), in: .tasks)
     }
 
-    /// Writes the status and its completion stamp in one update, so a task can never be `done`
-    /// with a stale stamp or `open` with a live one.
-    ///
-    /// The stamp is the **client's** clock, not `serverTimestamp()`, on purpose: "completed today"
-    /// is day-granular and the day that matters is the user's local one. A server UTC stamp would
-    /// file an 11pm completion under tomorrow for anyone east of UTC, and would also disagree with
-    /// the optimistic value `TasksService` already put on screen.
+    /// Writes the status and its completion stamp in one update — see
+    /// `FirestoreFieldPayloads.taskStatus` for why the stamp is the client's clock.
     func setTaskStatus(id: UUID, status: TaskStatus, now: Date = .now) async throws {
-        var fields: [String: Any] = ["status": status.rawValue]
-        fields["completed_at"] = TaskCompletionStamp.completedAt(for: status, now: now)
-            .map { Timestamp(date: $0) as Any } ?? FieldValue.delete() as Any
-        try await update(id: id, fields: fields, in: .tasks)
+        try await update(id: id, fields: FirestoreFieldPayloads.taskStatus(status, now: now), in: .tasks)
     }
 
     func deleteTask(id: UUID) async throws {
@@ -375,16 +338,7 @@ extension FirebaseManager {
     /// Triage's partial update — never a whole-document overwrite, so the `tag_ids` membership
     /// array (managed in `FirebaseManager+Tags.swift`, not part of `Capture`'s `Codable`) survives.
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws {
-        var fields: [String: Any] = [:]
-        if let status = changes.status {
-            fields["status"] = status.rawValue
-            fields["processed"] = status == .processed
-        }
-        if let title = changes.title {
-            fields["title"] = title
-        }
-        Self.setNullable(changes.lifeAreaId, forKey: "lifeAreaId", in: &fields) { $0.uuidString }
-        try await update(id: id, fields: fields, in: .captures)
+        try await update(id: id, fields: FirestoreFieldPayloads.captureUpdate(changes), in: .captures)
     }
 
     func markCaptureProcessed(id: UUID) async throws {

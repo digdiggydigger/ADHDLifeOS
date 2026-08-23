@@ -5,27 +5,28 @@
 
 import Foundation
 
-/// Production `TasksClientAdapting` backed by Firestore via `FirebaseManager`.
+/// Production `TasksClientAdapting` backed by Firestore through `TasksBackingStore`
+/// (`FirebaseManager` in the app, a recording fake in tests).
 struct FirebaseTasksClientAdapter: TasksClientAdapting {
-    private let manager: FirebaseManager
+    private let store: TasksBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: TasksBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func fetchLifeAreas() async throws -> [LifeArea] {
-        try await manager.fetchLifeAreas(includeArchived: true)
+        try await store.fetchLifeAreas(includeArchived: true)
     }
 
     func fetchAllTasks() async throws -> [TaskItem] {
-        try await manager.fetchTasks()
+        try await store.fetchTasks()
     }
 
     func setStatus(taskId: UUID, status: TaskStatus) async throws {
-        try await manager.setTaskStatus(id: taskId, status: status)
+        try await store.setTaskStatus(id: taskId, status: status, now: .now)
     }
 
     func deleteTask(taskId: UUID) async throws {
-        try await manager.deleteTask(id: taskId)
+        try await store.deleteTask(id: taskId)
     }
 }

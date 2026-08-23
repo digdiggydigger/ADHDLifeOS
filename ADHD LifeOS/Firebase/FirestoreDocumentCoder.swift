@@ -37,4 +37,18 @@ enum FirestoreDocumentCoder {
     static func date(from value: Any?) -> Date? {
         (value as? Timestamp)?.dateValue()
     }
+
+    /// Whether a field value is the "erase this field" sentinel (`FieldValue.delete()`).
+    ///
+    /// Worth distinguishing rather than checking for `is FieldValue`: `delete()` and
+    /// `serverTimestamp()` are the same type, and writing the wrong one stamps a field instead of
+    /// erasing it.
+    static func isFieldDelete(_ value: Any?) -> Bool {
+        (value as? FieldValue)?.isEqual(FieldValue.delete()) ?? false
+    }
+
+    /// Whether a field value is the server-clock sentinel (`FieldValue.serverTimestamp()`).
+    static func isServerTimestamp(_ value: Any?) -> Bool {
+        (value as? FieldValue)?.isEqual(FieldValue.serverTimestamp()) ?? false
+    }
 }
