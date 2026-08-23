@@ -8149,3 +8149,40 @@ Three small things were noted in review and are **E's call, not yours**. Do not 
   verification** rather than guessing — but if it cannot be driven, `[~]` with a reason is correct
   and expected. A `[~]` is never a failure; a wrong `[x]` is.
 - Stop after this and wait for E's review.
+
+---
+
+## KNOWN ISSUE: Home's due-nudge dismiss buttons share one accessibility identifier — and the obvious fixes crash the app
+
+**Found 2026-08-23 by `SignedInJourneyUITests.testDueNudge_appearsOnHomeAndCanBeDismissed`, which is
+skipped until this is resolved.** Not a test problem — a real defect in `HomeAccessoryStrips.swift`.
+
+`dueNudgesStrip` puts `.accessibilityIdentifier("homeDueNudgesStrip")` on the enclosing `VStack`.
+SwiftUI propagates that identifier DOWN over the subtree, so every per-nudge
+`homeDueNudgeDismissButton-<id>` is overwritten by it. Straight from the accessibility tree:
+
+```
+Button, 0x113186bc0, {{310.7, 997.0}, {59.3, 20.3}}, identifier: 'homeDueNudgesStrip', label: 'Dismiss'
+```
+
+Consequences: with two or more due nudges every Dismiss button answers to the same identifier, so
+nothing can address a specific one, and the per-nudge identifiers are dead code that has never
+reached the accessibility tree.
+
+**Both obvious fixes CRASH the app** when Home renders the strip. Established by bisecting against
+HEAD — original code: app stays alive; either change: silent death, no console output, no crash
+report:
+
+- `.accessibilityElement(children: .contain)` on the stack (the usual way to keep a container
+  identifier without clobbering children)
+- removing the stack's identifier outright
+
+That a modifier change can kill the app is the more alarming half of this and should be understood
+before anything ships. Do NOT fold a fix into an unrelated block.
+
+**Suggested next step, untried:** leave identifiers alone and give each Dismiss button a distinct
+accessibility LABEL instead (`"Dismiss Stretch your back"` rather than bare `"Dismiss"`). That is a
+genuine VoiceOver improvement in its own right — "Dismiss" alone is ambiguous when several are
+listed — and would make the button addressable by label without touching the modifier that
+detonates. Un-skip the test and rename `disabled_testDueNudge_appearsOnHomeAndCanBeDismissed` back
+when it lands.
