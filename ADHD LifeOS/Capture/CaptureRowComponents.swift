@@ -267,6 +267,21 @@ struct CapturePhotoLightbox: View {
     }
 }
 
+/// The Seen slice's status chip — this capture was archived, not actioned. Secondary styling on
+/// purpose: "seen" is quieter news than "promoted". Icon + text, never colour alone (§4).
+struct CaptureSeenChip: View {
+    var body: some View {
+        Label("Seen", systemImage: "archivebox")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, 16)
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("captureSeenChip")
+    }
+}
+
 /// The Promoted tab's status chip, standing in for the Promote button on a capture that has already
 /// been triaged. Icon + text, never colour alone (§4).
 struct CapturePromotedChip: View {

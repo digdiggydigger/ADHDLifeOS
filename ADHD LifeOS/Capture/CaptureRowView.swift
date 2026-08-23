@@ -46,6 +46,8 @@ struct CaptureRowView: View {
                 summary
                 if capture.processed {
                     CapturePromotedChip()
+                } else if capture.seen == true {
+                    CaptureSeenChip()
                 }
             }
         } else {
@@ -71,6 +73,8 @@ struct CaptureRowView: View {
     private var trailing: some View {
         if capture.processed {
             CapturePromotedChip()
+        } else if capture.seen == true {
+            CaptureSeenChip()
         } else {
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.bold))

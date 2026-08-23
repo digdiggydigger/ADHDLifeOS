@@ -72,6 +72,23 @@ final class CaptureSeenServiceTests: XCTestCase {
         XCTAssertEqual(env.service.captures.map(\.content), ["Still seen"])
     }
 
+    /// The real undo site: the Captures tab's Seen list. The row leaves THAT list — it belongs to
+    /// the Inbox again.
+    func testUndoSeen_onTheSeenFilter_removesTheRowFromTheSeenList() async {
+        let regretted = capture("Archived too soon")
+        let client = FakeCaptureClientAdapting()
+        client.fetchSeenCapturesResult = .success([regretted, capture("Still seen")])
+        let service = CaptureInboxService(
+            client: client, transcriber: FakeVoiceTranscribing(), availableFilters: [.seen, .promoted]
+        )
+        await service.load()
+
+        let succeeded = await service.undoSeen(capture: regretted)
+
+        XCTAssertTrue(succeeded)
+        XCTAssertEqual(service.captures.map(\.content), ["Still seen"])
+    }
+
     func testUndoSeen_failure_keepsTheRowAndSurfacesTheError() async {
         let regretted = capture("Archived too soon")
         let env = await makeSUT(loaded: [regretted])

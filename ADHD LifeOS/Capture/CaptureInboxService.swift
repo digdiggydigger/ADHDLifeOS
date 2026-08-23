@@ -14,9 +14,13 @@ final class CaptureInboxService: ObservableObject {
         case failed(String)
     }
 
-    /// Which slice of the inbox is on screen — the web's `activeTabFilter`.
+    /// Which slice of the captures collection is on screen. Grew out of the web's
+    /// `activeTabFilter`; since the Captures tab (2026-08-23) the slices are split across two
+    /// screens — the Inbox offers only `.unprocessed`, the Captures tab `.seen` + `.promoted` —
+    /// so which filters a given screen offers is an init parameter, not this enum's business.
     enum Filter: String, CaseIterable, Identifiable, Equatable, Sendable {
         case unprocessed
+        case seen
         case promoted
 
         var id: String { rawValue }
@@ -24,6 +28,7 @@ final class CaptureInboxService: ObservableObject {
         var title: String {
             switch self {
             case .unprocessed: return "To triage"
+            case .seen: return "Seen"
             case .promoted: return "Promoted"
             }
         }
@@ -64,14 +69,22 @@ final class CaptureInboxService: ObservableObject {
     /// argument is evaluated in the caller's context, which is synchronous nonisolated — calling
     /// the main-actor-isolated `SFSpeechVoiceTranscriber.init` there was a concurrency warning.
     /// Resolving the default inside this `@MainActor` init is isolation-correct.
+    /// The slices this screen offers, in picker order. The default is the Inbox's pure to-triage
+    /// queue; the Captures tab passes `[.seen, .promoted]`. Filters not in this list are never
+    /// fetched — not even for the decoration counts.
+    let availableFilters: [Filter]
+
     init(
         client: CaptureClientAdapting,
         journalClient: JournalClientAdapting? = nil,
-        transcriber: VoiceTranscribing? = nil
+        transcriber: VoiceTranscribing? = nil,
+        availableFilters: [Filter] = [.unprocessed]
     ) {
         self.client = client
         self.journalClient = journalClient
         self.transcriber = transcriber ?? SFSpeechVoiceTranscriber()
+        self.availableFilters = availableFilters
+        self.filter = availableFilters.first ?? .unprocessed
     }
 
     var captures: [Capture] {
@@ -105,21 +118,24 @@ final class CaptureInboxService: ObservableObject {
         await refreshInactiveCount()
     }
 
-    /// Learns the OTHER tab's count so the picker isn't half-labelled on a cold start.
+    /// Learns the count for every OTHER offered tab so the picker isn't half-labelled on a cold
+    /// start. A single-filter screen (the Inbox) has no other tabs and fetches nothing here.
     ///
     /// Deliberately after the main load and deliberately failure-tolerant: this is decoration on
-    /// the tab the user is not looking at, and it must never delay the list they are, nor turn a
+    /// tabs the user is not looking at, and it must never delay the list they are, nor turn a
     /// perfectly good load into an error. A failure just leaves that count unknown.
     private func refreshInactiveCount() async {
-        let inactive: Filter = filter == .unprocessed ? .promoted : .unprocessed
-        guard let captures = try? await fetch(inactive) else { return }
-        counts[inactive] = captures.count
+        for inactive in availableFilters where inactive != filter {
+            guard let captures = try? await fetch(inactive) else { continue }
+            counts[inactive] = captures.count
+        }
     }
 
     /// Switches tabs and loads that slice. Re-selecting the tab already showing is a no-op — the
-    /// user tapping where they already are shouldn't cost a fetch or blank the list mid-read.
+    /// user tapping where they already are shouldn't cost a fetch or blank the list mid-read. A
+    /// filter this screen doesn't offer is refused outright.
     func select(filter newFilter: Filter) async {
-        guard newFilter != filter else { return }
+        guard availableFilters.contains(newFilter), newFilter != filter else { return }
         filter = newFilter
         await load()
     }
@@ -131,6 +147,7 @@ final class CaptureInboxService: ObservableObject {
     private func fetch(_ filter: Filter) async throws -> [Capture] {
         switch filter {
         case .unprocessed: return try await client.fetchUnprocessedCaptures()
+        case .seen: return try await client.fetchSeenCaptures()
         case .promoted: return try await client.fetchProcessedCaptures()
         }
     }
@@ -230,57 +247,6 @@ final class CaptureInboxService: ObservableObject {
     /// local state, not to the list behind it.
     func fetchCaptureDetail(id: UUID) async throws -> Capture {
         try await client.fetchCapture(id: id)
-    }
-
-    /// Failures here are swallowed to an empty list rather than surfaced — a failed tag-search
-    /// fetch shouldn't block the rest of the triage UI, same "non-blocking" spirit as
-    /// `refresh()`.
-    func fetchAllTags() async -> [Tag] {
-        (try? await client.fetchAllTags()) ?? []
-    }
-
-    func fetchTags(for capture: Capture) async -> [Tag] {
-        (try? await client.fetchTags(captureId: capture.id)) ?? []
-    }
-
-    @discardableResult
-    func addExistingTag(capture: Capture, tagId: UUID) async -> Bool {
-        triageErrorMessage = nil
-        do {
-            try await client.addTag(captureId: capture.id, tagId: tagId)
-            return true
-        } catch {
-            triageErrorMessage = Self.message(for: error)
-            return false
-        }
-    }
-
-    /// Creates a new tag (server dedups by name) then attaches it to the capture. Returns the
-    /// created/deduped tag on success so the caller can update its local tag list without a
-    /// second fetch.
-    @discardableResult
-    func createAndAddTag(capture: Capture, name: String) async -> Tag? {
-        triageErrorMessage = nil
-        do {
-            let tag = try await client.createTag(name: name)
-            try await client.addTag(captureId: capture.id, tagId: tag.id)
-            return tag
-        } catch {
-            triageErrorMessage = Self.message(for: error)
-            return nil
-        }
-    }
-
-    @discardableResult
-    func removeTag(capture: Capture, tagId: UUID) async -> Bool {
-        triageErrorMessage = nil
-        do {
-            try await client.removeTag(captureId: capture.id, tagId: tagId)
-            return true
-        } catch {
-            triageErrorMessage = Self.message(for: error)
-            return false
-        }
     }
 
     /// Drops a retired capture from the loaded list without a refetch. Lives here rather than in

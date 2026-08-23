@@ -74,6 +74,18 @@ struct RootView: View {
                         onStartFocus: startFocus
                     )
                         .tabItem { Label("Tasks", systemImage: "checklist") }
+                    // Captures joined the bar 2026-08-23 (E's Captures-tab direction): the
+                    // archive of handled captures — Seen and Promoted — while the Inbox (reached
+                    // from Home) became purely the to-triage queue. Stack wrapped at the call
+                    // site, the Nudges precedent below.
+                    NavigationStack {
+                        CapturesTabView(
+                            client: captureClient,
+                            journalClient: journalClient,
+                            homeClient: homeClient
+                        )
+                    }
+                        .tabItem { Label("Captures", systemImage: "tray.full") }
                     JournalView(client: journalClient)
                         .tabItem { Label("Journal", systemImage: "book") }
                     // Tab swap reverted (E, 2026-08-19): Nudges is back, Reminders removed — its

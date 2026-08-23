@@ -5,7 +5,9 @@
 
 import SwiftUI
 
-/// The capture triage screen.
+/// The capture triage screen — since 2026-08-23 purely the to-triage queue: the Seen and
+/// Promoted slices moved to the Captures tab (`CapturesTabView`), so the filter picker this
+/// screen carried is gone with them.
 ///
 /// Design pass, 2026-08-20 — this was the last screen still carrying its pre-token layout. The
 /// 2026-08-19 bento pass had explicitly deferred it ("deliberately still a `List`… rebuilding this
@@ -47,7 +49,6 @@ struct CaptureInboxView: View {
     var body: some View {
         VStack(spacing: 0) {
             purposeHeader
-            filterPicker
             Group {
                 switch service.state {
                 case .loading:
@@ -119,35 +120,6 @@ struct CaptureInboxView: View {
         .accessibilityIdentifier("captureInboxPurposeHeader")
     }
 
-    /// The web inbox's Unprocessed / Promoted tabs. Sits above every state — including the empty
-    /// one — so a user who lands on an empty Promoted tab can still get back.
-    ///
-    /// Each tab carries its own count, as the web's do. A tab whose count is not yet known renders
-    /// its bare title rather than "(0)" — never having looked is not the same as nothing being there.
-    private var filterPicker: some View {
-        Picker("Show", selection: filterBinding) {
-            ForEach(CaptureInboxService.Filter.allCases) { option in
-                Text(tabTitle(for: option)).tag(option)
-            }
-        }
-        .pickerStyle(.segmented)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
-        .accessibilityIdentifier("captureInboxFilterPicker")
-    }
-
-    private func tabTitle(for option: CaptureInboxService.Filter) -> String {
-        guard let count = service.counts[option] else { return option.title }
-        return "\(option.title) (\(count))"
-    }
-
-    private var filterBinding: Binding<CaptureInboxService.Filter> {
-        Binding(
-            get: { service.filter },
-            set: { newValue in Task { await service.select(filter: newValue) } }
-        )
-    }
-
     // MARK: - States
 
     private func loadedState(_ captures: [Capture]) -> some View {
@@ -190,29 +162,25 @@ struct CaptureInboxView: View {
     /// achievement and points at the one thing worth doing next.
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: service.filter == .promoted ? "checkmark.circle" : "tray")
+            Image(systemName: "tray")
                 .font(.largeTitle)
                 .foregroundStyle(Color.accentColor)
-            Text(service.filter == .promoted ? "Nothing promoted yet" : "Inbox clear")
+            Text("Inbox clear")
                 .font(.title2.bold())
                 .tracking(-0.5)
             Text(
-                service.filter == .promoted
-                    ? "Captures you turn into tasks or journal entries show up here."
-                    : "Nothing waiting to be triaged. Anything you capture lands here first, "
-                        + "so your head doesn't have to hold it."
+                "Nothing waiting to be triaged. Anything you capture lands here first, "
+                    + "so your head doesn't have to hold it."
             )
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            if service.filter == .unprocessed {
-                Button("Capture something") {
-                    isPresentingQuickCapture = true
-                }
-                .buttonStyle(PrimaryActionButtonStyle())
-                .accessibilityIdentifier("captureInboxEmptyCaptureButton")
+            Button("Capture something") {
+                isPresentingQuickCapture = true
             }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .accessibilityIdentifier("captureInboxEmptyCaptureButton")
         }
         .padding(24)
         .frame(maxWidth: 420)

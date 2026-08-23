@@ -21,6 +21,8 @@ enum CaptureInboxSummary {
         switch filter {
         case .unprocessed:
             return count <= 0 ? "Inbox clear" : "\(count) to triage"
+        case .seen:
+            return count <= 0 ? "Nothing seen yet" : "\(count) seen"
         case .promoted:
             return count <= 0 ? "Nothing promoted yet" : "\(count) promoted"
         }

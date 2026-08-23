@@ -21,18 +21,81 @@ final class CaptureInboxFilterTests: XCTestCase {
         let client: FakeCaptureClientAdapting
     }
 
-    private func makeSUT(unprocessed: [Capture] = [], processed: [Capture] = []) -> SUT {
+    /// Most of this file exercises the two-filter tab mechanics, so the SUT default keeps a
+    /// two-filter service. The app's real screens pass their own lists: the Inbox constructs with
+    /// the init default (`[.unprocessed]`, tested below) and the Captures tab with
+    /// `[.seen, .promoted]`.
+    private func makeSUT(
+        unprocessed: [Capture] = [],
+        processed: [Capture] = [],
+        seen: [Capture] = [],
+        availableFilters: [CaptureInboxService.Filter] = [.unprocessed, .promoted]
+    ) -> SUT {
         let client = FakeCaptureClientAdapting()
         client.fetchUnprocessedCapturesResult = .success(unprocessed)
         client.fetchProcessedCapturesResult = .success(processed)
+        client.fetchSeenCapturesResult = .success(seen)
         return SUT(
-            service: CaptureInboxService(client: client, transcriber: FakeVoiceTranscribing()),
+            service: CaptureInboxService(
+                client: client, transcriber: FakeVoiceTranscribing(), availableFilters: availableFilters
+            ),
             client: client
         )
     }
 
     func testDefaultFilter_isUnprocessed() {
         XCTAssertEqual(makeSUT().service.filter, .unprocessed, "triage is the job; the backlog opens first")
+    }
+
+    // MARK: - Which filters a screen offers
+
+    /// The Inbox's default: purely to-triage. Since the Captures tab took over Seen and Promoted,
+    /// the Inbox must not fetch either — a count for a tab the screen no longer offers is a
+    /// wasted call.
+    func testDefaultInit_isTriageOnly_andNeverFetchesTheOtherSlices() async {
+        let client = FakeCaptureClientAdapting()
+        let service = CaptureInboxService(client: client, transcriber: FakeVoiceTranscribing())
+
+        await service.load()
+
+        XCTAssertEqual(service.filter, .unprocessed)
+        XCTAssertEqual(client.fetchProcessedCapturesCallCount, 0)
+        XCTAssertEqual(client.fetchSeenCapturesCallCount, 0)
+    }
+
+    /// The Captures tab's configuration opens on its first offered filter, not on a hardcoded
+    /// `.unprocessed` it doesn't even offer.
+    func testInit_startsOnTheFirstOfferedFilter() {
+        let env = makeSUT(availableFilters: [.seen, .promoted])
+
+        XCTAssertEqual(env.service.filter, .seen)
+    }
+
+    func testLoad_onTheSeenFilter_showsTheSeenArchive() async {
+        let env = makeSUT(
+            seen: [capture("Noted, nothing to do", processed: false)],
+            availableFilters: [.seen, .promoted]
+        )
+
+        await env.service.load()
+
+        XCTAssertEqual(env.service.captures.map(\.content), ["Noted, nothing to do"])
+        XCTAssertEqual(env.service.counts[.seen], 1)
+    }
+
+    /// A filter the screen doesn't offer can't be selected — the picker never shows it, and a
+    /// programmatic select must not smuggle it in.
+    func testSelect_filterTheScreenDoesNotOffer_isANoOp() async {
+        let env = makeSUT(
+            unprocessed: [capture("Buy milk", processed: false)],
+            availableFilters: [.unprocessed]
+        )
+        await env.service.load()
+
+        await env.service.select(filter: .promoted)
+
+        XCTAssertEqual(env.service.filter, .unprocessed)
+        XCTAssertEqual(env.client.fetchProcessedCapturesCallCount, 0)
     }
 
     func testLoad_withUnprocessedFilter_showsOnlyWhatStillNeedsTriage() async {

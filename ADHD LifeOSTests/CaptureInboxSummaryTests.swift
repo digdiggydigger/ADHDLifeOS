@@ -39,6 +39,12 @@ final class CaptureInboxSummaryTests: XCTestCase {
         XCTAssertEqual(CaptureInboxSummary.headline(count: 0, filter: .promoted), "Nothing promoted yet")
     }
 
+    func testHeadline_onTheSeenFilter_describesTheArchive() {
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 3, filter: .seen), "3 seen")
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 1, filter: .seen), "1 seen")
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 0, filter: .seen), "Nothing seen yet")
+    }
+
     // MARK: - Breakdown
 
     func testBreakdown_namesEachKindPresent() {
