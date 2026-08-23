@@ -187,9 +187,14 @@ unpushed) and push it as your first action if so.
   codec seam for the same reason.
 - Schema: per-user subcollections under `users/{uid}` (tasks, life_areas, tags, logs, captures,
   nudges, reminders, focus_sessions); document IDs are UPPERCASE `uuidString`.
-- Security rules live in-repo (`firestore.rules`, `storage.rules`) but are published manually by
-  E in the Firebase console — Claude Code has no Firebase CLI auth. A rules change is not live
-  until E republishes; say so in the block report.
+- Security rules live in-repo (`firestore.rules`, `storage.rules`). **Publishing stays E's call**
+  — a rules change is not live until E republishes, so say so in the block report. But
+  **verifying is no longer manual: the Firebase CLI IS authenticated** (`firebase login:list` →
+  `reckedgelato@gmail.com`, project `adhdlifeos-acb49`), and the Firebase MCP's
+  `firebase_get_security_rules` returns the LIVE ruleset for `firestore` / `storage`. The old
+  claim here that "Claude Code has no Firebase CLI auth" was wrong and left `storage.rules`
+  recorded as unconfirmed for months. **Diff live against the repo rather than asking E to paste
+  the console tab.** Both were verified identical on 2026-08-23.
 - Manual-step convention (same as web project): anything requiring the Xcode GUI beyond CLI builds — code signing, provisioning profiles, App Store Connect/TestFlight — is E's job, never attempted by Claude Code directly.
 - Lint: SwiftLint, config at `.swiftlint.yml` (default ruleset unless a rule is explicitly flagged as too noisy and adjusted).
 - Tests live in `ADHD LifeOSTests/` (XCTest), UI tests in `ADHD LifeOSUITests/`.

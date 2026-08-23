@@ -137,13 +137,33 @@ final class FirebaseDailySummaryDataAdapterTests: XCTestCase {
         XCTAssertEqual(request.completedTasks.first?.lifeAreaName, "First")
     }
 
-    /// Pins current behaviour, which is that the name map is built from ACTIVE areas only: a task
-    /// filed under an area archived later resolves no name in the summary. Reported to E rather
-    /// than changed here — it is a product call, not a refactor.
-    func testLifeAreaNames_areReadFromActiveAreasOnly() async throws {
+    /// Archived areas still resolve their names. Archiving hides an area from Home and from the
+    /// pickers; it does not erase the history filed under it — and "General" does not mean
+    /// "archived", it means *unfiled*, so rendering it that way makes a different and false
+    /// statement about the work.
+    ///
+    /// This also settles an inconsistency rather than expressing a preference: Journal, Tasks,
+    /// Home and the Life Area editor all already pass `includeArchived: true`, and the Journal
+    /// adapter's own test spells out why ("an entry filed under an archived area must still
+    /// label"). The summary was the lone adapter reading active-only.
+    func testLifeAreaNames_areReadFromArchivedAreasToo() async throws {
         _ = try await adapter.loadRequest(tone: .energizing, date: now)
 
-        XCTAssertEqual(store.includeArchivedArguments, [false])
+        XCTAssertEqual(store.includeArchivedArguments, [true])
+    }
+
+    /// The behaviour the argument exists to produce, asserted separately so a future refactor
+    /// that changes how the areas are fetched still has to keep the outcome.
+    func testATaskUnderAnArchivedAreaKeepsThatAreasName() async throws {
+        let retired = LifeArea(id: UUID(), name: "Old Job", colour: "💼", sortOrder: 0, archived: true)
+        store.lifeAreas = [retired]
+        store.tasks = [
+            Self.task(title: "Hand over the wiki", status: .done, completedAt: now, lifeAreaId: retired.id)
+        ]
+
+        let request = try await adapter.loadRequest(tone: .energizing, date: now)
+
+        XCTAssertEqual(request.completedTasks.first?.lifeAreaName, "Old Job")
     }
 
     // MARK: - Failures

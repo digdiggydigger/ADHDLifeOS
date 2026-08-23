@@ -72,9 +72,13 @@ final class FakeDailySummaryDataBackingStore: DailySummaryDataBackingStore {
         return captures
     }
 
+    /// Honours `includeArchived` rather than always returning everything, mirroring
+    /// `FirebaseManager.fetchLifeAreas(includeArchived:)`, which filters `!archived`. A fake that
+    /// ignored the flag would make any test about archived areas pass whichever way the argument
+    /// went — proving nothing about the behaviour it claims to cover.
     func fetchLifeAreas(includeArchived: Bool) async throws -> [LifeArea] {
         includeArchivedArguments.append(includeArchived)
         if let lifeAreasError { throw lifeAreasError }
-        return lifeAreas
+        return includeArchived ? lifeAreas : lifeAreas.filter { !$0.archived }
     }
 }

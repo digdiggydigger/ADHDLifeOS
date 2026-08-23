@@ -221,9 +221,11 @@ struct FirebaseDailySummaryDataAdapter: DailySummaryDataProviding {
         async let logs = store.fetchLogs()
         async let sessions = store.fetchFocusSessions()
         async let captures = store.fetchCaptures()
-        // Active areas only, preserving the behaviour this had before the seam: a task filed under
-        // an area archived later resolves no name in the summary.
-        async let lifeAreas = store.fetchLifeAreas(includeArchived: false)
+        // Archived areas included, so a task filed under an area archived later still resolves its
+        // name. Archiving hides an area from Home and the pickers; it does not erase the history
+        // filed under it, and the fallback name ("General") means *unfiled* — a different claim.
+        // This matches Journal, Tasks, Home and the Life Area editor, which all pass `true`.
+        async let lifeAreas = store.fetchLifeAreas(includeArchived: true)
 
         let (loadedTasks, loadedLogs, loadedSessions, loadedCaptures, loadedAreas) =
             try await (tasks, logs, sessions, captures, lifeAreas)
