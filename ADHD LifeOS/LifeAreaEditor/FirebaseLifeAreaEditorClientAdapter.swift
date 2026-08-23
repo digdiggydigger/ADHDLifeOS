@@ -5,22 +5,23 @@
 
 import Foundation
 
-/// Production `LifeAreaEditorClientAdapting` backed by Firestore via `FirebaseManager`. The old
+/// Production `LifeAreaEditorClientAdapting` backed by Firestore through
+/// `LifeAreaEditorBackingStore` (`FirebaseManager` in the app, a recording fake in tests). The old
 /// backend's `409` name-conflict semantics are reproduced client-side: a create/rename first
 /// checks the (case-insensitively) colliding area and returns the same typed `.nameConflict`
 /// outcomes, so the editor's "Unarchive it instead?" and merge-alert flows are unchanged. The
 /// check-then-write pair isn't transactional — acceptable for a single-user collection where the
 /// only concurrent writer is this same app.
 struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
-    private let manager: FirebaseManager
+    private let store: LifeAreaEditorBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: LifeAreaEditorBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func fetchLifeAreas() async throws -> [EditableLifeArea] {
         do {
-            return try await manager.fetchLifeAreas(includeArchived: true).map(Self.editable)
+            return try await store.fetchLifeAreas(includeArchived: true).map(Self.editable)
         } catch {
             throw LifeAreaEditorServiceError.failed(Self.message(for: error))
         }
@@ -38,7 +39,7 @@ struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
             if let colour {
                 fields["colour"] = colour
             }
-            try await manager.update(id: id, fields: fields, in: .lifeAreas)
+            try await store.updateLifeArea(id: id, fields: fields)
             return .updated
         } catch {
             throw LifeAreaEditorServiceError.failed(Self.message(for: error))
@@ -47,7 +48,7 @@ struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
 
     func setArchived(id: UUID, archived: Bool) async throws {
         do {
-            try await manager.update(id: id, fields: ["archived": archived], in: .lifeAreas)
+            try await store.updateLifeArea(id: id, fields: ["archived": archived])
         } catch {
             throw LifeAreaEditorServiceError.failed(Self.message(for: error))
         }
@@ -55,7 +56,7 @@ struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
 
     func create(name: String, colour: String) async throws -> LifeAreaCreateOutcome {
         do {
-            let existing = try await manager.fetchLifeAreas(includeArchived: true)
+            let existing = try await store.fetchLifeAreas(includeArchived: true)
             if let clash = existing.first(where: { Self.sameName($0.name, name) }) {
                 return .nameConflict(
                     LifeAreaNameConflict(id: clash.id, name: clash.name, archived: clash.archived)
@@ -67,7 +68,7 @@ struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
                 colour: colour,
                 sortOrder: (existing.map(\.sortOrder).max() ?? -1) + 1
             )
-            try await manager.saveLifeArea(area)
+            try await store.saveLifeArea(area)
             return .created(Self.editable(area))
         } catch {
             throw LifeAreaEditorServiceError.failed(Self.message(for: error))
@@ -75,7 +76,7 @@ struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
     }
 
     private func conflictingArea(named name: String, excludingId id: UUID) async throws -> LifeAreaNameConflict? {
-        let clash = try await manager.fetchLifeAreas(includeArchived: true)
+        let clash = try await store.fetchLifeAreas(includeArchived: true)
             .first { $0.id != id && Self.sameName($0.name, name) }
         return clash.map { LifeAreaNameConflict(id: $0.id, name: $0.name, archived: $0.archived) }
     }

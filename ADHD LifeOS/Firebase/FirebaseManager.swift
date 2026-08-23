@@ -206,7 +206,7 @@ final class FirebaseManager {
     }
 
     func save<Model: Encodable>(_ value: Model, id: UUID, in name: Collection) async throws {
-        let data = try Firestore.Encoder().encode(value)
+        let data = try FirestoreDocumentCoder.encode(value)
         try await collection(name).document(id.uuidString).setData(data)
     }
 
@@ -309,6 +309,12 @@ extension FirebaseManager {
     /// Creates or fully overwrites one area — covers rename, recolour, and archive/unarchive.
     func saveLifeArea(_ area: LifeArea) async throws {
         try await save(area, id: area.id, in: .lifeAreas)
+    }
+
+    /// Partial update of one area. Named rather than letting callers reach the generic
+    /// `update(id:fields:in:)` so `LifeAreaEditorBackingStore` cannot address another collection.
+    func updateLifeArea(id: UUID, fields: [String: Any]) async throws {
+        try await update(id: id, fields: fields, in: .lifeAreas)
     }
 
     /// Persists a Home-screen reorder as one atomic batch: each area's `sort_order` becomes its
