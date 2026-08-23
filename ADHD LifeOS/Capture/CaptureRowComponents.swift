@@ -120,18 +120,6 @@ struct CaptureRowLeadingSlot: View {
 }
 
 extension View {
-    /// Tactile confirmation when a row expands/collapses (`CLAUDE.md` §3). `sensoryFeedback` is
-    /// iOS 17+, while the app's deployment target is iOS 16, so it is applied only where available;
-    /// on iOS 16 the row simply renders without the haptic rather than failing to build.
-    @ViewBuilder
-    func expandCollapseHaptic(trigger: Bool) -> some View {
-        if #available(iOS 17.0, *) {
-            self.sensoryFeedback(.impact(flexibility: .solid), trigger: trigger)
-        } else {
-            self
-        }
-    }
-
     /// Success confirmation when a capture is promoted to a task (`CLAUDE.md` §3). `sensoryFeedback`
     /// is iOS 17+, so on iOS 16 the same `trigger` drives a `UIImpactFeedbackGenerator` via
     /// `.onChange` instead — the deployment target stays iOS 16.0 (§7). Fired only on success by the
@@ -276,37 +264,6 @@ struct CapturePhotoLightbox: View {
             .padding(.vertical, 16)
         }
         .accessibilityIdentifier("capturePhotoLightbox")
-    }
-}
-
-extension View {
-    /// The row's photo lightbox and its discard confirmation, bundled so `CaptureRowView` stays
-    /// inside its body-length budget. Behaviour is unchanged: the dialog names the consequence,
-    /// because discard is the one irreversible action on the screen.
-    func captureRowPresentations(
-        capture: Capture,
-        isPresentingPhoto: Binding<Bool>,
-        isConfirmingDiscard: Binding<Bool>,
-        onDiscard: @escaping () async -> Bool
-    ) -> some View {
-        fullScreenCover(isPresented: isPresentingPhoto) {
-            CapturePhotoLightbox(
-                url: capture.photoDisplayURL,
-                title: CaptureRowPresentation.primaryText(for: capture)
-            )
-        }
-        .confirmationDialog(
-            "Discard this capture?",
-            isPresented: isConfirmingDiscard,
-            titleVisibility: .visible
-        ) {
-            Button("Discard", role: .destructive) {
-                Task { await onDiscard() }
-            }
-            Button("Keep it", role: .cancel) {}
-        } message: {
-            Text("It won't become a task or a journal entry. This can't be undone.")
-        }
     }
 }
 

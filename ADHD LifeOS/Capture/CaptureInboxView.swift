@@ -17,16 +17,19 @@ import SwiftUI
 ///   for an ADHD user, so it now says so and offers the next action instead of describing a void.
 /// - A header summarises what is waiting (`CaptureInboxSummary`) before the user reads a row.
 ///
-/// `CaptureRowView` moved to its own file untouched: its life-area revert race, superseded-PATCH
-/// cancellation and accessibility-size reflow are hard-won and covered by tests. This block
-/// restyled the container around the row, not the row's behaviour.
+/// 2026-08-23: the row's inline triage accordion is retired — rows are tappable summaries pushing
+/// `CaptureDetailView` (design frame B6), where the triage affordances now live. The life-area
+/// race machinery survived the move verbatim, in `CaptureFiledInCard`.
 struct CaptureInboxView: View {
     @StateObject private var service: CaptureInboxService
     let lifeAreas: [LifeArea]
     /// Retained so the empty state can offer a capture action of its own — reaching the inbox and
     /// finding it empty is exactly when a user is most likely to want to put something in it.
     private let captureClient: CaptureClientAdapting
-    @State private var expandedCaptureId: UUID?
+    /// The row whose full-screen detail is pushed. Optional-state + `navigationDestination`
+    /// (the `TaskListView` precedent) rather than `NavigationLink` rows, because the rows live in
+    /// a `LazyVStack` inside Home's existing stack.
+    @State private var inspectingCapture: Capture?
     @State private var isPresentingQuickCapture = false
 
     init(
@@ -72,6 +75,14 @@ struct CaptureInboxView: View {
         .sheet(isPresented: $isPresentingQuickCapture) {
             QuickCaptureView(client: captureClient) {
                 Task { await service.refresh() }
+            }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { inspectingCapture != nil },
+            set: { if !$0 { inspectingCapture = nil } }
+        )) {
+            if let capture = inspectingCapture {
+                CaptureDetailView(captureId: capture.id, lifeAreas: lifeAreas, service: service)
             }
         }
         .task {
@@ -231,53 +242,9 @@ struct CaptureInboxView: View {
     // MARK: - Row
 
     private func row(for capture: Capture) -> some View {
-        CaptureRowView(
-            capture: capture,
-            lifeAreas: lifeAreas,
-            isExpanded: expandedCaptureId == capture.id,
-            warningMessage: service.warningMessage,
-            errorMessage: service.errorMessage,
-            triageErrorMessage: service.triageErrorMessage,
-            onToggleExpanded: {
-                expandedCaptureId = expandedCaptureId == capture.id ? nil : capture.id
-            },
-            onCreateTask: { lifeAreaId, priority, dueDate in
-                let succeeded = await service.promoteToTask(
-                    capture: capture, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate
-                )
-                if succeeded {
-                    expandedCaptureId = nil
-                }
-                return succeeded
-            },
-            onSetLifeArea: { lifeAreaId in
-                await service.updateLifeArea(capture: capture, lifeAreaId: lifeAreaId)
-            },
-            onLoadTags: {
-                await service.fetchTags(for: capture)
-            },
-            onLoadAllTags: {
-                await service.fetchAllTags()
-            },
-            onAddExistingTag: { tagId in
-                await service.addExistingTag(capture: capture, tagId: tagId)
-            },
-            onCreateTag: { name in
-                await service.createAndAddTag(capture: capture, name: name)
-            },
-            onRemoveTag: { tagId in
-                await service.removeTag(capture: capture, tagId: tagId)
-            },
-            onLogToJournal: { energyLevel, moodEmoji in
-                let succeeded = await service.logToJournal(
-                    capture: capture, energyLevel: energyLevel, moodEmoji: moodEmoji
-                )
-                if succeeded { expandedCaptureId = nil }
-                return succeeded
-            },
-            onDiscard: {
-                await service.discard(capture: capture)
-            }
-        )
+        CaptureRowView(capture: capture, lifeAreas: lifeAreas) {
+            inspectingCapture = capture
+        }
     }
+
 }

@@ -224,6 +224,14 @@ final class CaptureInboxService: ObservableObject {
         }
     }
 
+    /// The detail screen's re-fetch (the `TaskDetailView` precedent: the push carries an id, the
+    /// screen re-reads the server's document rather than trusting a possibly stale list row).
+    /// Throws rather than publishing a message — the failure belongs to the detail screen's own
+    /// local state, not to the list behind it.
+    func fetchCaptureDetail(id: UUID) async throws -> Capture {
+        try await client.fetchCapture(id: id)
+    }
+
     /// Failures here are swallowed to an empty list rather than surfaced — a failed tag-search
     /// fetch shouldn't block the rest of the triage UI, same "non-blocking" spirit as
     /// `refresh()`.
