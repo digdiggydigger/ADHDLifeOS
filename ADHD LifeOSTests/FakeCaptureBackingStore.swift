@@ -13,6 +13,7 @@ import Foundation
 final class FakeCaptureBackingStore: CaptureBackingStore {
     var unprocessedCaptures: [Capture] = []
     var processedCaptures: [Capture] = []
+    var seenCaptures: [Capture] = []
     /// What `fetchCapture(id:)` returns — set this to prove a read-after-write returns the *server's*
     /// document rather than a locally assembled one.
     var capturesById: [UUID: Capture] = [:]
@@ -74,6 +75,10 @@ final class FakeCaptureBackingStore: CaptureBackingStore {
 
     func fetchProcessedCaptures() async throws -> [Capture] {
         processedCaptures
+    }
+
+    func fetchSeenCaptures() async throws -> [Capture] {
+        seenCaptures
     }
 
     func fetchCapture(id: UUID) async throws -> Capture {

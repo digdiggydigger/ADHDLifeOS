@@ -26,6 +26,9 @@ struct CaptureUpdate: Equatable, Sendable {
     var status: CaptureStatus?
     var lifeAreaId: UUID??
     var title: String?
+    /// Set-or-omit like `status` — a plain `Bool?`, never a delete: undo writes an explicit
+    /// `false` back onto the document.
+    var seen: Bool?
 }
 
 enum CaptureServiceError: LocalizedError, Equatable {
@@ -51,6 +54,8 @@ protocol CaptureClientAdapting: Sendable {
     /// Captures already triaged — the Promoted tab. Separate call rather than a filter argument so
     /// the tab the user isn't looking at is never fetched.
     func fetchProcessedCaptures() async throws -> [Capture]
+    /// Captures archived as "seen" (and not since promoted) — the Captures tab's Seen slice.
+    func fetchSeenCaptures() async throws -> [Capture]
     func fetchCapture(id: UUID) async throws -> Capture
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem
     func markProcessed(captureId: UUID) async throws

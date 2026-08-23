@@ -44,13 +44,25 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
         return capture
     }
 
+    /// `processed == false` minus the seen archive. The query can't express the conjunction
+    /// (single-field equality, no composite index), so seen captures are subtracted here — which
+    /// also keeps Home's inbox badge honest, since it counts through this method.
     func fetchUnprocessedCaptures() async throws -> [Capture] {
         try await store.fetchUnprocessedCaptures()
+            .filter { $0.seen != true }
             .sorted { $0.createdAt > $1.createdAt }
     }
 
     func fetchProcessedCaptures() async throws -> [Capture] {
         try await store.fetchProcessedCaptures()
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Seen-and-not-promoted: a capture archived first and promoted later belongs to the Promoted
+    /// slice, so it is dropped here rather than shown in two places.
+    func fetchSeenCaptures() async throws -> [Capture] {
+        try await store.fetchSeenCaptures()
+            .filter { !$0.processed }
             .sorted { $0.createdAt > $1.createdAt }
     }
 

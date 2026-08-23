@@ -32,6 +32,34 @@ extension CaptureInboxService {
         }
     }
 
+    /// Archives a capture as "seen" — the exit for "noted, nothing to do". Unlike discard the
+    /// capture survives, in the Captures tab, still unprocessed and still promotable. Same
+    /// non-optimistic discipline as discard: the row leaves only once the write has landed.
+    @discardableResult
+    func markSeen(capture: Capture) async -> Bool {
+        await setSeen(capture: capture, to: true)
+    }
+
+    /// Sends a seen capture back to the inbox — the undo for an archive that was premature. An
+    /// explicit `false` lands on the document (see `FirestoreFieldPayloads`); the row leaves the
+    /// Seen list it was tapped on.
+    @discardableResult
+    func undoSeen(capture: Capture) async -> Bool {
+        await setSeen(capture: capture, to: false)
+    }
+
+    private func setSeen(capture: Capture, to seen: Bool) async -> Bool {
+        triageErrorMessage = nil
+        do {
+            _ = try await client.updateCapture(id: capture.id, changes: CaptureUpdate(seen: seen))
+            removeCapture(id: capture.id)
+            return true
+        } catch {
+            triageErrorMessage = Self.message(for: error)
+            return false
+        }
+    }
+
     /// Writes the capture into the journal and retires it — the web inbox's "Log to Journal" path.
     ///
     /// Order is load-bearing: the entry is written FIRST and the capture is only marked processed

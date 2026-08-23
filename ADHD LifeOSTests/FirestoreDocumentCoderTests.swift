@@ -84,6 +84,29 @@ final class FirestoreDocumentCoderTests: XCTestCase {
         XCTAssertThrowsError(try FirestoreDocumentCoder.decode(Capture.self, from: document))
     }
 
+    /// Documents written before the Captures tab existed have no `seen` field at all. They must
+    /// decode as `nil` — "never archived" — not fail, and not conjure a value.
+    func testCaptureDecoding_documentWithoutSeen_decodesNilSeen() throws {
+        var document = try FirestoreDocumentCoder.encode(Self.capture(createdAt: referenceDate))
+        document.removeValue(forKey: "seen")
+
+        let decoded = try FirestoreDocumentCoder.decode(Capture.self, from: document)
+
+        XCTAssertNil(decoded.seen)
+    }
+
+    /// `seen` follows the capture convention (camelCase — trivially, one word) and crosses as a
+    /// real `Bool`, so `fetchWhere(field: "seen", equals: true)` matches it.
+    func testCaptureRoundTrip_seenSurvivesTheRealCodec() throws {
+        var capture = Self.capture(createdAt: referenceDate)
+        capture.seen = true
+
+        let document = try FirestoreDocumentCoder.encode(capture)
+
+        XCTAssertEqual(document["seen"] as? Bool, true)
+        XCTAssertEqual(try FirestoreDocumentCoder.decode(Capture.self, from: document).seen, true)
+    }
+
     // MARK: - Tasks: fully snake_cased, the opposite convention
 
     func testTaskItemEncoding_isFullySnakeCased() throws {

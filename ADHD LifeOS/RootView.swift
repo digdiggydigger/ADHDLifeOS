@@ -210,6 +210,7 @@ struct RootView: View {
         }
 
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
+    func fetchSeenCaptures() async throws -> [Capture] { [] }
     func deleteCapture(id: UUID) async throws {}
         func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
         func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {

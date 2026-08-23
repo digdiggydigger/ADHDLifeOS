@@ -212,6 +212,30 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
         XCTAssertNil(fields["status"])
     }
 
+    // MARK: - Captures: the `seen` archive flag
+
+    /// Archiving writes `seen` and ONLY `seen` — deliberately not `status`/`processed`. A seen
+    /// capture is filed away, not triaged: it stays `processed == false` so it can still be
+    /// promoted to a task later from the Captures tab. "Seen implies processed" is the tempting
+    /// wrong version of this, and it would strand archived captures un-promotable.
+    func testCaptureUpdate_markingSeenWritesOnlyTheSeenField() {
+        let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(seen: true))
+
+        XCTAssertEqual(fields.keys.sorted(), ["seen"])
+        XCTAssertEqual(fields["seen"] as? Bool, true)
+    }
+
+    /// Undo writes an explicit `false`, not a field delete. Either would leave the equality
+    /// query's results correct, but a plain `Bool?` has no `.some(nil)` to express a delete with —
+    /// and an explicit `false` on the document reads as "was archived, then sent back".
+    func testCaptureUpdate_undoingSeenWritesFalseNotADelete() {
+        let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(seen: false))
+
+        XCTAssertEqual(fields.keys.sorted(), ["seen"])
+        XCTAssertEqual(fields["seen"] as? Bool, false)
+        XCTAssertFalse(FirestoreDocumentCoder.isFieldDelete(fields["seen"]))
+    }
+
     // MARK: - Nudges
 
     func testNudgeUpdate_emptyPayload_writesNothing() {

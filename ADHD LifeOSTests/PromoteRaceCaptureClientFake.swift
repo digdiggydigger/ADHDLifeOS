@@ -108,6 +108,7 @@ final class PromoteRaceCaptureClientFake: CaptureClientAdapting, @unchecked Send
     }
 
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
+    func fetchSeenCaptures() async throws -> [Capture] { [] }
     func deleteCapture(id: UUID) async throws {}
 
     func createCapture(_ input: NormalizedCreateCaptureInput) async throws -> Capture { capture }

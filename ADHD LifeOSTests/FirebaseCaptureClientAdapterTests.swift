@@ -111,6 +111,59 @@ final class FirebaseCaptureClientAdapterTests: XCTestCase {
         XCTAssertEqual(captures.map(\.content), ["Newer", "Older"])
     }
 
+    /// A capture archived as "seen" leaves the inbox but is NOT processed — and the query cannot
+    /// say `processed == false AND seen != true` (`fetchWhere` is single-field equality, no
+    /// composite indexes), so the adapter subtracts seen captures client-side. This same filter is
+    /// what keeps Home's inbox badge honest — it counts through this method.
+    func testFetchUnprocessedCaptures_excludesSeenCaptures() async throws {
+        var archived = Self.capture(content: "Archived")
+        archived.seen = true
+        store.unprocessedCaptures = [archived, Self.capture(content: "Waiting")]
+
+        let captures = try await adapter.fetchUnprocessedCaptures()
+
+        XCTAssertEqual(captures.map(\.content), ["Waiting"])
+    }
+
+    /// Only an explicit `true` means archived: pre-`seen` documents decode `nil`, and an
+    /// un-archived capture carries an explicit `false` — both belong in the inbox.
+    func testFetchUnprocessedCaptures_keepsSeenNilAndSeenFalse() async throws {
+        var unarchived = Self.capture(content: "Sent back")
+        unarchived.seen = false
+        store.unprocessedCaptures = [Self.capture(content: "Legacy"), unarchived]
+
+        let captures = try await adapter.fetchUnprocessedCaptures()
+
+        XCTAssertEqual(captures.count, 2)
+    }
+
+    func testFetchSeenCaptures_sortsNewestFirst() async throws {
+        var old = Self.capture(content: "Older", createdAt: Date(timeIntervalSince1970: 1_000))
+        old.seen = true
+        var new = Self.capture(content: "Newer", createdAt: Date(timeIntervalSince1970: 2_000))
+        new.seen = true
+        store.seenCaptures = [old, new]
+
+        let captures = try await adapter.fetchSeenCaptures()
+
+        XCTAssertEqual(captures.map(\.content), ["Newer", "Older"])
+    }
+
+    /// A capture archived first and promoted later shows under Promoted, not Seen — every capture
+    /// has exactly one home in the Captures tab.
+    func testFetchSeenCaptures_excludesAlreadyPromoted() async throws {
+        var promotedLater = Self.capture(content: "Promoted later")
+        promotedLater.seen = true
+        promotedLater.processed = true
+        var justSeen = Self.capture(content: "Just seen")
+        justSeen.seen = true
+        store.seenCaptures = [promotedLater, justSeen]
+
+        let captures = try await adapter.fetchSeenCaptures()
+
+        XCTAssertEqual(captures.map(\.content), ["Just seen"])
+    }
+
     // MARK: - Triage
 
     /// A partial update followed by a re-read. The returned capture must be the **server's**
