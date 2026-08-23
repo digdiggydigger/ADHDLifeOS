@@ -388,6 +388,16 @@ extension FirebaseManager {
     }
 }
 
+// MARK: - Reminders
+
+extension FirebaseManager {
+    /// `users/{uid}/reminders` starts empty and stays empty until something writes to it — an
+    /// empty collection is the expected state, not an error.
+    func fetchReminders() async throws -> [Reminder] {
+        try await fetchAll(Reminder.self, from: .reminders)
+    }
+}
+
 // MARK: - Focus sessions
 
 extension FirebaseManager {

@@ -5,47 +5,48 @@
 
 import Foundation
 
-/// Production `TaskDetailClientAdapting` backed by Firestore via `FirebaseManager`. Update calls
+/// Production `TaskDetailClientAdapting` backed by Firestore through `TaskDetailBackingStore`
+/// (`FirebaseManager` in the app, a recording fake in tests). Update calls
 /// write the delta then re-read the document, so the returned `TaskDetail` is the stored truth
 /// (matching the old adapters, which returned the server's row from the PATCH response).
 struct FirebaseTaskDetailClientAdapter: TaskDetailClientAdapting {
-    private let manager: FirebaseManager
+    private let store: TaskDetailBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: TaskDetailBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func fetchTask(id: UUID) async throws -> TaskDetail {
-        try await manager.fetchTaskDetail(id: id)
+        try await store.fetchTaskDetail(id: id)
     }
 
     func fetchTagsForTask(taskId: UUID) async throws -> [Tag] {
-        try await manager.fetchTags(for: .task, parentId: taskId)
+        try await store.fetchTags(for: .task, parentId: taskId)
     }
 
     func fetchAllTags() async throws -> [Tag] {
-        try await manager.fetchTags()
+        try await store.fetchTags()
     }
 
     func updateTask(id: UUID, payload: TaskUpdatePayload) async throws -> TaskDetail {
-        try await manager.updateTask(id: id, payload: payload)
-        return try await manager.fetchTaskDetail(id: id)
+        try await store.updateTask(id: id, payload: payload)
+        return try await store.fetchTaskDetail(id: id)
     }
 
     func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail {
-        try await manager.setTaskStatus(id: id, status: status)
-        return try await manager.fetchTaskDetail(id: id)
+        try await store.setTaskStatus(id: id, status: status, now: .now)
+        return try await store.fetchTaskDetail(id: id)
     }
 
     func createTag(name: String) async throws -> Tag {
-        try await manager.createTagDeduplicating(name: name)
+        try await store.createTagDeduplicating(name: name)
     }
 
     func addTagToTask(taskId: UUID, tagId: UUID) async throws {
-        try await manager.addTagId(tagId, to: .task, parentId: taskId)
+        try await store.addTagId(tagId, to: .task, parentId: taskId)
     }
 
     func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {
-        try await manager.removeTagId(tagId, from: .task, parentId: taskId)
+        try await store.removeTagId(tagId, from: .task, parentId: taskId)
     }
 }

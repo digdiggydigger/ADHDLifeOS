@@ -5,20 +5,21 @@
 
 import Foundation
 
-/// Production `JournalClientAdapting` backed by Firestore via `FirebaseManager`. `createLog`
+/// Production `JournalClientAdapting` backed by Firestore through `JournalBackingStore`
+/// (`FirebaseManager` in the app, a recording fake in tests). `createLog`
 /// stamps `entryDate` client-side as "now", matching the old server-side default and the
 /// composer's lack of a date picker. Append-only stays structural: this adapter simply has no
 /// update or delete path, same as the protocol.
 struct FirebaseJournalClientAdapter: JournalClientAdapting {
-    private let manager: FirebaseManager
+    private let store: JournalBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: JournalBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func fetchLifeAreas() async throws -> [LifeArea] {
         do {
-            return try await manager.fetchLifeAreas(includeArchived: true)
+            return try await store.fetchLifeAreas(includeArchived: true)
         } catch {
             throw JournalServiceError.fetchFailed(Self.message(for: error))
         }
@@ -26,7 +27,7 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
 
     func fetchLogs() async throws -> [Log] {
         do {
-            return try await manager.fetchLogs()
+            return try await store.fetchLogs()
         } catch {
             throw JournalServiceError.fetchFailed(Self.message(for: error))
         }
@@ -45,7 +46,7 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
             moodEmoji: input.moodEmoji
         )
         do {
-            try await manager.appendLog(log)
+            try await store.appendLog(log)
         } catch {
             throw JournalServiceError.fetchFailed(Self.message(for: error))
         }
