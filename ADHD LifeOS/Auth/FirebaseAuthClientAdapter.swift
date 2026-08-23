@@ -4,7 +4,6 @@
 //
 
 import CryptoKit
-import FirebaseAuth
 import Foundation
 
 /// Production `AuthClientAdapting` backed by Firebase Auth, replacing both the Cognito adapter
@@ -18,25 +17,25 @@ import Foundation
 /// - **Magic links throw `magicLinkUnavailable`,** exactly as `AWSAuthClientAdapter` did
 ///   (Stage C.1 stub-and-hide precedent): email/password is the only sign-in path.
 struct FirebaseAuthClientAdapter: AuthClientAdapting {
-    private let manager: FirebaseManager
+    private let store: AuthBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: AuthBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func restoredUser() async -> AuthUser? {
-        guard let user = manager.currentUser else { return nil }
+        guard let user = store.currentUser else { return nil }
         // Same best-effort seeding hook as signIn/signUp: an account whose first entry into the
         // app is a restored session (console-created account, reinstalled device) — or whose
         // data was cleared server-side — still gets the starter content. The `seeded_at` marker
         // makes this a single cheap read on every normal launch.
-        try? await manager.seedDefaultContentIfNeeded()
+        try? await store.seedDefaultContentIfNeeded()
         return Self.authUser(from: user)
     }
 
     func signIn(email: String, password: String) async throws -> AuthUser {
         do {
-            return Self.authUser(from: try await manager.signIn(email: email, password: password))
+            return Self.authUser(from: try await store.signIn(email: email, password: password))
         } catch {
             throw AuthServiceError.invalidCredentials(Self.message(for: error))
         }
@@ -44,7 +43,7 @@ struct FirebaseAuthClientAdapter: AuthClientAdapting {
 
     func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> AuthUser {
         do {
-            return Self.authUser(from: try await manager.signInWithApple(
+            return Self.authUser(from: try await store.signInWithApple(
                 idToken: idToken, rawNonce: rawNonce, displayName: displayName
             ))
         } catch {
@@ -66,7 +65,7 @@ struct FirebaseAuthClientAdapter: AuthClientAdapting {
 
     func signOut() async throws {
         do {
-            try manager.signOut()
+            try store.signOut()
         } catch {
             throw AuthServiceError.signOutFailed(Self.message(for: error))
         }
@@ -75,11 +74,13 @@ struct FirebaseAuthClientAdapter: AuthClientAdapting {
     /// Kept for protocol completeness: the Firebase SDK attaches auth to Firestore/Storage calls
     /// itself, so unlike the AWS adapters nothing in the app consumes this token anymore.
     func validIDToken() async throws -> String {
-        guard let user = Auth.auth().currentUser else {
-            throw AuthServiceError.sessionExpired("You've been signed out — please sign in again.")
-        }
         do {
-            return try await user.getIDTokenResult(forcingRefresh: false).token
+            guard let token = try await store.idToken(forcingRefresh: false) else {
+                throw AuthServiceError.sessionExpired("You've been signed out — please sign in again.")
+            }
+            return token
+        } catch let error as AuthServiceError {
+            throw error
         } catch {
             throw AuthServiceError.sessionExpired(Self.message(for: error))
         }

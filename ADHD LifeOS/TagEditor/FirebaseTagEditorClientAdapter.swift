@@ -5,22 +5,23 @@
 
 import Foundation
 
-/// Production `TagEditorClientAdapting` backed by Firestore via `FirebaseManager`. The old
+/// Production `TagEditorClientAdapting` backed by Firestore through `TagEditorBackingStore`
+/// (`FirebaseManager` in the app, a recording fake in tests). The old
 /// `GET /tags` computed `usageCount` server-side; here it comes from `tagUsageCounts()` (one
 /// read over tasks + captures). Rename `409` → `.needsMerge`, merge, and delete-with-cascade are
 /// reproduced client-side with the same typed outcomes, so `TagEditorService`'s alert flows are
 /// unchanged.
 struct FirebaseTagEditorClientAdapter: TagEditorClientAdapting {
-    private let manager: FirebaseManager
+    private let store: TagEditorBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: TagEditorBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func fetchTags() async throws -> [EditableTag] {
         do {
-            let tags = try await manager.fetchTags()
-            let counts = try await manager.tagUsageCounts()
+            let tags = try await store.fetchTags()
+            let counts = try await store.tagUsageCounts()
             return tags.map { EditableTag(id: $0.id, name: $0.name, usageCount: counts[$0.id] ?? 0) }
         } catch {
             throw TagEditorServiceError.failed(Self.message(for: error))
@@ -29,13 +30,13 @@ struct FirebaseTagEditorClientAdapter: TagEditorClientAdapting {
 
     func renameTag(id: UUID, to name: String) async throws -> TagRenameOutcome {
         do {
-            if let other = try await manager.fetchTag(named: name), other.id != id {
-                let counts = try await manager.tagUsageCounts()
+            if let other = try await store.fetchTag(named: name), other.id != id {
+                let counts = try await store.tagUsageCounts()
                 return .needsMerge(
                     TagRenameConflict(id: other.id, name: other.name, usageCount: counts[other.id] ?? 0)
                 )
             }
-            try await manager.renameTag(id: id, to: name)
+            try await store.renameTag(id: id, to: name)
             return .renamed
         } catch {
             throw TagEditorServiceError.failed(Self.message(for: error))
@@ -44,10 +45,10 @@ struct FirebaseTagEditorClientAdapter: TagEditorClientAdapting {
 
     func mergeTag(id: UUID, into name: String) async throws {
         do {
-            guard let target = try await manager.fetchTag(named: name), target.id != id else {
+            guard let target = try await store.fetchTag(named: name), target.id != id else {
                 throw TagEditorServiceError.failed("There's no other tag named \"\(name)\" to merge into.")
             }
-            try await manager.removeTagEverywhere(id, replacingWith: target.id)
+            try await store.removeTagEverywhere(id, replacingWith: target.id)
         } catch let error as TagEditorServiceError {
             throw error
         } catch {
@@ -57,7 +58,7 @@ struct FirebaseTagEditorClientAdapter: TagEditorClientAdapting {
 
     func deleteTag(id: UUID) async throws {
         do {
-            try await manager.removeTagEverywhere(id, replacingWith: nil)
+            try await store.removeTagEverywhere(id, replacingWith: nil)
         } catch {
             throw TagEditorServiceError.failed(Self.message(for: error))
         }
@@ -65,14 +66,14 @@ struct FirebaseTagEditorClientAdapter: TagEditorClientAdapting {
 
     func createTag(name: String) async throws -> TagCreateOutcome {
         do {
-            if let existing = try await manager.fetchTag(named: name) {
-                let counts = try await manager.tagUsageCounts()
+            if let existing = try await store.fetchTag(named: name) {
+                let counts = try await store.tagUsageCounts()
                 return .alreadyExisted(
                     EditableTag(id: existing.id, name: existing.name, usageCount: counts[existing.id] ?? 0)
                 )
             }
             let tag = Tag(id: UUID(), name: name)
-            try await manager.saveTag(tag)
+            try await store.saveTag(tag)
             return .created(EditableTag(id: tag.id, name: tag.name, usageCount: 0))
         } catch {
             throw TagEditorServiceError.failed(Self.message(for: error))

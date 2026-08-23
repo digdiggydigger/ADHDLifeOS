@@ -77,6 +77,35 @@ enum FirestoreFieldPayloads {
         return fields
     }
 
+    /// A nudge's partial update. Any real change stamps `updated_at` — from the **server** clock,
+    /// unlike `nudgeFired` below. An empty payload writes nothing at all, so a no-op edit does not
+    /// bump the timestamp.
+    static func nudgeUpdate(_ payload: NudgeUpdatePayload) -> [String: Any] {
+        var fields: [String: Any] = [:]
+        if let label = payload.label {
+            fields["label"] = label
+        }
+        if let schedule = payload.schedule {
+            fields["schedule"] = schedule.encode()
+        }
+        if let active = payload.active {
+            fields["active"] = active
+        }
+        if !fields.isEmpty {
+            fields["updated_at"] = FieldValue.serverTimestamp()
+        }
+        return fields
+    }
+
+    /// A nudge firing. Both stamps are the same **client** instant so "last fired" and "last
+    /// updated" cannot disagree by a network round trip — deliberately different from
+    /// `nudgeUpdate`, which defers to the server clock because it is describing an edit rather
+    /// than pinning the moment something happened.
+    static func nudgeFired(now: Date) -> [String: Any] {
+        let stamp = Timestamp(date: now)
+        return ["last_fired_at": stamp, "updated_at": stamp]
+    }
+
     /// The delta convention shared by `TaskUpdatePayload`/`CaptureUpdate`: outer `nil` = field
     /// untouched (no write), `.some(nil)` = explicitly cleared, which Firestore expresses as
     /// `FieldValue.delete()`.

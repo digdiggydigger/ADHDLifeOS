@@ -211,4 +211,102 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
         XCTAssertNil(fields["processed"], "a rename must not re-file the capture")
         XCTAssertNil(fields["status"])
     }
+
+    // MARK: - Nudges
+
+    func testNudgeUpdate_emptyPayload_writesNothing() {
+        XCTAssertTrue(FirestoreFieldPayloads.nudgeUpdate(NudgeUpdatePayload()).isEmpty)
+    }
+
+    /// The schedule is encoded to its cron string at this boundary — the document stores
+    /// `MINUTE HOUR * * DOW-LIST`, never a structured object.
+    func testNudgeUpdate_encodesTheScheduleAsACronString() {
+        var payload = NudgeUpdatePayload()
+        payload.schedule = NudgeSchedule(hour: 9, minute: 30, weekdays: [1, 2, 3, 4, 5])
+
+        let fields = FirestoreFieldPayloads.nudgeUpdate(payload)
+
+        XCTAssertEqual(fields["schedule"] as? String, "30 9 * * 1,2,3,4,5")
+    }
+
+    func testNudgeUpdate_setsOnlyTheFieldsPresent() {
+        var payload = NudgeUpdatePayload()
+        payload.label = "Stretch"
+
+        let fields = FirestoreFieldPayloads.nudgeUpdate(payload)
+
+        XCTAssertEqual(fields["label"] as? String, "Stretch")
+        XCTAssertNil(fields["schedule"])
+        XCTAssertNil(fields["active"])
+    }
+
+    func testNudgeUpdate_activeIsWrittenAsABool() {
+        var payload = NudgeUpdatePayload()
+        payload.active = false
+
+        XCTAssertEqual(FirestoreFieldPayloads.nudgeUpdate(payload)["active"] as? Bool, false)
+    }
+
+    /// Any real change stamps `updated_at` — but only a real change: an empty payload writes
+    /// nothing at all, so a no-op edit must not bump the timestamp.
+    func testNudgeUpdate_anyChangeStampsUpdatedAtFromTheServerClock() {
+        var payload = NudgeUpdatePayload()
+        payload.label = "Stretch"
+
+        let fields = FirestoreFieldPayloads.nudgeUpdate(payload)
+
+        XCTAssertTrue(FirestoreDocumentCoder.isServerTimestamp(fields["updated_at"]))
+        XCTAssertNil(fields["updatedAt"])
+    }
+
+    func testNudgeUpdate_emptyPayloadDoesNotStampUpdatedAt() {
+        XCTAssertNil(FirestoreFieldPayloads.nudgeUpdate(NudgeUpdatePayload())["updated_at"])
+    }
+
+    /// `markFired` is the one nudge write that uses the CLIENT clock, and it writes both stamps as
+    /// the same instant so "last fired" and "last updated" cannot disagree by a round trip. That is
+    /// deliberately different from `nudgeUpdate`, which defers to the server clock.
+    func testNudgeFired_writesBothStampsAsTheSameClientInstant() {
+        let fields = FirestoreFieldPayloads.nudgeFired(now: referenceDate)
+
+        XCTAssertEqual(fields.keys.sorted(), ["last_fired_at", "updated_at"])
+        XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["last_fired_at"]), referenceDate)
+        XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["updated_at"]), referenceDate)
+        XCTAssertFalse(
+            FirestoreDocumentCoder.isServerTimestamp(fields["updated_at"]),
+            "markFired pins the instant client-side, unlike nudgeUpdate"
+        )
+    }
+}
+
+/// The Firestore error facts the Nudges adapter maps on. Kept honest by deriving the domain and
+/// code from the SDK rather than hardcoding "FIRFirestoreErrorDomain"/5 in a test, which would
+/// drift silently if either ever changed.
+final class FirestoreErrorMappingTests: XCTestCase {
+    func testIsNotFound_recognisesFirestoresMissingDocumentError() {
+        let error = NSError(
+            domain: FirestoreErrorMapping.errorDomain,
+            code: FirestoreErrorMapping.notFoundCode
+        )
+
+        XCTAssertTrue(FirestoreErrorMapping.isNotFound(error))
+    }
+
+    func testIsNotFound_rejectsAnotherFirestoreCode() {
+        let error = NSError(domain: FirestoreErrorMapping.errorDomain, code: FirestoreErrorMapping.notFoundCode + 1)
+
+        XCTAssertFalse(FirestoreErrorMapping.isNotFound(error))
+    }
+
+    /// A "not found" from somewhere else is not Firestore's — the domain has to match, or an
+    /// unrelated failure would surface as "this no longer exists".
+    func testIsNotFound_rejectsTheSameCodeFromAnotherDomain() {
+        let error = NSError(domain: "SomeOtherDomain", code: FirestoreErrorMapping.notFoundCode)
+
+        XCTAssertFalse(FirestoreErrorMapping.isNotFound(error))
+    }
+
+    func testIsNotFound_rejectsAPlainSwiftError() {
+        XCTAssertFalse(FirestoreErrorMapping.isNotFound(FirebaseManagerError.notSignedIn))
+    }
 }

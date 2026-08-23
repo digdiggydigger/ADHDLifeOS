@@ -142,6 +142,17 @@ final class FirebaseManager {
         try auth.signOut()
     }
 
+    /// The signed-in user's Firebase ID token, transparently refreshed when the cached one has
+    /// expired. `nil` when there is no stored session at all — which callers must treat as a
+    /// forced sign-out, distinct from a *throw*, which means the refresh itself was rejected.
+    ///
+    /// Exists so `FirebaseAuthClientAdapter` reaches Auth through the manager like every other
+    /// call rather than touching `Auth.auth()` directly, which nothing could stub.
+    func idToken(forcingRefresh: Bool = false) async throws -> String? {
+        guard let user = auth.currentUser else { return nil }
+        return try await user.getIDTokenResult(forcingRefresh: forcingRefresh).token
+    }
+
     // MARK: - Firestore plumbing (internal so the per-feature `Firebase*ClientAdapter`s and the
     // manager's own extension files can build on it without re-implementing auth scoping)
 
@@ -419,19 +430,12 @@ extension FirebaseManager {
     }
 
     func updateNudge(id: UUID, payload: NudgeUpdatePayload) async throws {
-        var fields: [String: Any] = [:]
-        if let label = payload.label {
-            fields["label"] = label
-        }
-        if let schedule = payload.schedule {
-            fields["schedule"] = schedule.encode()
-        }
-        if let active = payload.active {
-            fields["active"] = active
-        }
-        if !fields.isEmpty {
-            fields["updated_at"] = FieldValue.serverTimestamp()
-        }
+        try await update(id: id, fields: FirestoreFieldPayloads.nudgeUpdate(payload), in: .nudges)
+    }
+
+    /// Partial update of one nudge. Named rather than exposing the generic `update(id:fields:in:)`
+    /// so `NudgesBackingStore` cannot address another collection.
+    func updateNudge(id: UUID, fields: [String: Any]) async throws {
         try await update(id: id, fields: fields, in: .nudges)
     }
 
