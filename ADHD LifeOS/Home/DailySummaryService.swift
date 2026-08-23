@@ -40,6 +40,10 @@ final class DailySummaryService: ObservableObject {
     private let fallbackGenerator: (any DailySummaryGenerating)?
     private let store: (any DailySummaryStoring)?
     private let userId: String?
+    /// Holds the generation currently running, so it outlives this card being destroyed and rebuilt
+    /// (see `DailySummaryGenerationCoordinator`). Defaults to a private one for the same reason
+    /// `store` defaults to nothing: previews and tests must not share process-wide state.
+    private let coordinator: DailySummaryGenerationCoordinator
     /// The last summary that generated successfully — what gets written back, tracked separately
     /// from `state` on purpose. A failed regeneration puts the card into `.failed`, but the summary
     /// already recorded for today is still true and must survive it.
@@ -54,6 +58,7 @@ final class DailySummaryService: ObservableObject {
         fallbackGenerator: (any DailySummaryGenerating)? = nil,
         store: (any DailySummaryStoring)? = nil,
         userId: String? = nil,
+        coordinator: DailySummaryGenerationCoordinator = DailySummaryGenerationCoordinator(),
         now: Date = .now
     ) {
         self.provider = provider
@@ -61,6 +66,7 @@ final class DailySummaryService: ObservableObject {
         self.fallbackGenerator = fallbackGenerator
         self.store = store
         self.userId = userId
+        self.coordinator = coordinator
         restore(asOf: now)
     }
 
@@ -80,7 +86,8 @@ final class DailySummaryService: ObservableObject {
             generator: hasEndpoint ? FirebaseDailySummaryGenerator() : StubDailySummaryGenerator(),
             fallbackGenerator: hasEndpoint ? StubDailySummaryGenerator() : nil,
             store: UserDefaultsDailySummaryStore(),
-            userId: FirebaseManager.shared.currentUser?.uid
+            userId: FirebaseManager.shared.currentUser?.uid,
+            coordinator: .shared
         )
     }
 
@@ -89,10 +96,26 @@ final class DailySummaryService: ObservableObject {
     /// Runs in `init` rather than from the view's `.task` so a restored summary is there on the
     /// first frame — arriving one frame late would animate in as if it had just been generated.
     private func restore(asOf now: Date) {
+        // A generation started before this card was rebuilt is still running; showing its spinner
+        // here rather than from the view's `.task` is the same first-frame argument as above.
+        // `reattachIfGenerating()` is what actually delivers its result.
+        if coordinator.isGenerating(for: userId) { state = .loading }
         guard let snapshot = store?.read(), snapshot.belongs(to: userId) else { return }
         storedSummary = snapshot.summary(on: now)
-        if let storedSummary { state = .loaded(storedSummary) }
+        if let storedSummary, state != .loading { state = .loaded(storedSummary) }
         tone = snapshot.tone
+    }
+
+    /// Rejoins a generation that was already running when this card was built, and applies its
+    /// result. Called from the view on every appearance; a no-op when nothing is in flight.
+    ///
+    /// Without this the rebuilt card would show a spinner and keep showing it until the user
+    /// navigated away and back — the result would be in storage, but nothing on screen would go
+    /// looking for it.
+    func reattachIfGenerating() async {
+        guard let generation = coordinator.inFlight(for: userId) else { return }
+        state = .loading
+        await apply(generation)
     }
 
     /// Words the day, degrading to the on-device synthesis when the model can't be reached.
@@ -134,13 +157,17 @@ final class DailySummaryService: ObservableObject {
         return false
     }
 
+    /// Generates, or joins the generation already running for this account.
+    ///
+    /// The work goes through the coordinator so it outlives this card: leaving Home mid-flight and
+    /// coming back rebuilds the service, and the rebuilt one rejoins rather than paying for a
+    /// second model call.
     func generate(now: Date = .now) async {
         let requestedTone = tone
         state = .loading
-        do {
-            // A Firestore failure is NOT caught below: the fallback rewords the day, it cannot
-            // invent one. With nothing honest to synthesize from, an error is the only truthful
-            // answer.
+        let generation = coordinator.generation(for: userId) { [self] in
+            // A Firestore failure is NOT caught: the fallback rewords the day, it cannot invent
+            // one. With nothing honest to synthesize from, an error is the only truthful answer.
             let request = try await provider.loadRequest(tone: requestedTone, date: now)
             let worded = try await word(request)
             let generated = GeneratedDailySummary(
@@ -149,14 +176,32 @@ final class DailySummaryService: ObservableObject {
                 generatedAt: now,
                 source: worded.source
             )
-            state = .loaded(generated)
+            // Recorded here, inside the generation, rather than after awaiting it: the coordinator
+            // clears its in-flight slot as this returns, so a card rebuilt any later would find
+            // neither a running generation nor a stored summary.
+            remember(generated)
+            return generated
+        }
+        await apply(generation)
+    }
+
+    /// Puts the outcome of a generation on screen — whether this service started it or joined one
+    /// already running.
+    private func apply(_ generation: Task<GeneratedDailySummary, Error>) async {
+        do {
+            let generated = try await generation.value
             storedSummary = generated
-            persist()
+            state = .loaded(generated)
         } catch {
             state = .failed(
                 (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             )
         }
+    }
+
+    private func remember(_ generated: GeneratedDailySummary) {
+        storedSummary = generated
+        persist()
     }
 }
 

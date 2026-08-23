@@ -230,6 +230,7 @@ final class DailySummaryServiceTests: XCTestCase {
         fallbackGenerator: (any DailySummaryGenerating)? = nil,
         store: (any DailySummaryStoring)? = nil,
         userId: String? = nil,
+        coordinator: DailySummaryGenerationCoordinator = DailySummaryGenerationCoordinator(),
         restoringAsOf restoreDate: Date? = nil
     ) -> DailySummaryService {
         let service = DailySummaryService(
@@ -238,78 +239,11 @@ final class DailySummaryServiceTests: XCTestCase {
             fallbackGenerator: fallbackGenerator,
             store: store,
             userId: userId,
+            coordinator: coordinator,
             now: restoreDate ?? now
         )
         // A restored service keeps the tone it was given back; only a fresh one takes the default.
         if restoreDate == nil { service.tone = tone }
         return service
-    }
-}
-
-// MARK: - Fakes
-
-private struct SimpleError: LocalizedError {
-    let message: String
-    init(_ message: String) { self.message = message }
-    var errorDescription: String? { message }
-}
-
-/// In-memory stand-in for `UserDefaultsDailySummaryStore` — the round trip through defaults is
-/// covered in `DailySummarySnapshotTests`; these tests only care what the service hands it.
-private final class FakeDailySummaryStore: DailySummaryStoring, @unchecked Sendable {
-    private(set) var snapshot: DailySummarySnapshot?
-
-    func read() -> DailySummarySnapshot? { snapshot }
-    func write(_ snapshot: DailySummarySnapshot) { self.snapshot = snapshot }
-}
-
-private final class FakeDailySummaryDataProvider: DailySummaryDataProviding, @unchecked Sendable {
-    var error: Error?
-    private(set) var requestedTones: [DailySummaryTone] = []
-
-    func loadRequest(tone: DailySummaryTone, date: Date) async throws -> DailySummaryRequest {
-        requestedTones.append(tone)
-        if let error { throw error }
-        return DailySummaryRequest(
-            date: date, tone: tone, tasks: [], focusSessions: [], journalEntries: [],
-            capturesCount: 0, lifeAreaNames: [:], calendar: Calendar(identifier: .gregorian)
-        )
-    }
-}
-
-private struct StubbedDailySummaryGenerator: DailySummaryGenerating {
-    var source: DailySummarySource { .localSynthesis }
-    func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
-        DailySummaryContent(
-            headline: "stub headline", dopamineWins: [], journalReflections: "r",
-            focusStaminaInsight: "f", gentleTomorrowKickstart: ["k"]
-        )
-    }
-}
-
-private struct FailingDailySummaryGenerator: DailySummaryGenerating {
-    var source: DailySummarySource { .model }
-    func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
-        throw SimpleError("generator unavailable")
-    }
-}
-
-/// A stand-in that is itself broken, so the "both failed" path has two distinguishable errors.
-private struct SecondaryFailingDailySummaryGenerator: DailySummaryGenerating {
-    var source: DailySummarySource { .localSynthesis }
-    func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
-        throw SimpleError("fallback unavailable")
-    }
-}
-
-private final class ToggleableDailySummaryGenerator: DailySummaryGenerating, @unchecked Sendable {
-    var shouldFail = false
-    var source: DailySummarySource { .localSynthesis }
-    func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
-        if shouldFail { throw SimpleError("generator unavailable") }
-        return DailySummaryContent(
-            headline: "stub headline", dopamineWins: [], journalReflections: "r",
-            focusStaminaInsight: "f", gentleTomorrowKickstart: ["k"]
-        )
     }
 }

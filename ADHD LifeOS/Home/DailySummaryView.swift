@@ -63,6 +63,12 @@ struct DailySummaryView: View {
         .animation(
             .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: service.state
         )
+        .task {
+            // Rejoins a generation that was already running when this card was rebuilt, so its
+            // result lands here rather than only in storage. A no-op when nothing is in flight,
+            // which is the common case — this runs on every appearance.
+            await service.reattachIfGenerating()
+        }
         .accessibilityIdentifier("homeDailySummary")
     }
 
