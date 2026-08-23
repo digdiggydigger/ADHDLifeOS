@@ -120,47 +120,22 @@ final class SignedInJourneyUITests: XCTestCase {
     /// schedule, which is overdue regardless of when the test runs.
     @MainActor
     func testDueNudge_appearsOnHomeAndCanBeDismissed() throws {
-        // BLOCKED on a real app bug. Kept rather than deleted, because this test is what found it.
-        //
-        // Home's due-nudges VStack carries `.accessibilityIdentifier("homeDueNudgesStrip")`, and
-        // SwiftUI propagates that identifier DOWN over the whole subtree. Straight from the
-        // accessibility tree:
-        //
-        //     Button, ... identifier: 'homeDueNudgesStrip', label: 'Dismiss'
-        //
-        // So every per-nudge "homeDueNudgeDismissButton-<id>" is overwritten. With more than one
-        // due nudge the dismiss buttons are indistinguishable from each other, and the per-nudge
-        // identifiers never reach the tree at all. This test cannot address a specific nudge
-        // until that changes.
-        //
-        // Two fixes were tried and BOTH crash the app when Home renders this strip — established
-        // by bisecting against HEAD (original code: app stays alive; either change: silent death):
-        //   - `.accessibilityElement(children: .contain)` on the stack
-        //   - removing the stack's identifier outright
-        // A modifier change should not be able to kill the app, so that crash deserves
-        // understanding on its own terms rather than a drive-by fix folded into a test block.
-        //
-        // Un-skip once the dismiss buttons are individually addressable. Everything below is
-        // known-good: it seeds an overdue nudge and drives Home, and reached the assertion before
-        // the identifier problem was understood.
-        throw XCTSkip("Blocked: Home's due-nudge dismiss buttons share one accessibility identifier — see comment.")
-    }
-
-    @MainActor
-    private func disabled_testDueNudge_appearsOnHomeAndCanBeDismissed() throws {
         let account = try UITestSession.createAccount(label: "nudge")
         let nudgeID = UUID()
-        try seedOverdueNudge(id: nudgeID, label: "Stretch your back", uid: account.uid)
+        let nudgeLabel = "Stretch your back"
+        try seedOverdueNudge(id: nudgeID, label: nudgeLabel, uid: account.uid)
 
         let app = try UITestSession.launchSignedIn(as: account)
 
-        // Addressed by the nudge's OWN identifier, which is the point: until the enclosing
-        // stack stopped overwriting it, every dismiss button answered to the same name.
-        let dismiss = app.buttons["homeDueNudgeDismissButton-\(nudgeID.uuidString)"]
+        // Addressed by LABEL, not identifier. The enclosing stack's own identifier is pushed
+        // down over the subtree, so every dismiss button answers to "homeDueNudgesStrip" and
+        // none can be told apart by id — confirmed from the accessibility tree. The label is
+        // per-nudge and survives, so it is what identifies this one.
+        let dismiss = app.buttons["Dismiss \(nudgeLabel)"]
         XCTAssertTrue(
             dismiss.waitForExistence(timeout: UITestSession.timeout),
             "An overdue nudge did not appear in Home's due strip"
-                + (app.staticTexts["Stretch your back"].exists
+                + (app.staticTexts[nudgeLabel].exists
                     ? " (its label rendered, so the identifier is the problem)"
                     : " (nothing from the nudge rendered at all)")
         )

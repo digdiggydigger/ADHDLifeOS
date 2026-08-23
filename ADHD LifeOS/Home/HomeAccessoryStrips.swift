@@ -66,6 +66,18 @@ extension HomeView {
                         Button("Dismiss") {
                             Task { await nudgesService.dismiss(nudge) }
                         }
+                        // Names the nudge it dismisses. With several due at once, a row of
+                        // buttons all reading "Dismiss" tells a VoiceOver user nothing about
+                        // which one they are about to act on — the visible label sits in a
+                        // separate element, so the association is lost the moment you navigate
+                        // by control rather than by reading order.
+                        //
+                        // It is also the only handle a UI test has here: the identifier below is
+                        // overwritten by the enclosing stack's own identifier (SwiftUI pushes
+                        // that down over the subtree), so every dismiss button answers to
+                        // "homeDueNudgesStrip" and none can be told apart by id. The label
+                        // survives that, which is why the test targets it.
+                        .accessibilityLabel("Dismiss \(nudge.label)")
                         .accessibilityIdentifier("homeDueNudgeDismissButton-\(nudge.id)")
                     }
                     .bentoCard()

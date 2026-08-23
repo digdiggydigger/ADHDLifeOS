@@ -8152,37 +8152,32 @@ Three small things were noted in review and are **E's call, not yours**. Do not 
 
 ---
 
-## KNOWN ISSUE: Home's due-nudge dismiss buttons share one accessibility identifier — and the obvious fixes crash the app
+## RESOLVED: Home's due-nudge dismiss buttons share one accessibility identifier  [x] FIXED 2026-08-23
 
-**Found 2026-08-23 by `SignedInJourneyUITests.testDueNudge_appearsOnHomeAndCanBeDismissed`, which is
-skipped until this is resolved.** Not a test problem — a real defect in `HomeAccessoryStrips.swift`.
+**Fixed by giving each Dismiss button a per-nudge accessibility LABEL** (`"Dismiss Stretch your
+back"`), leaving the identifiers untouched. `testDueNudge_appearsOnHomeAndCanBeDismissed` passes and
+is no longer skipped; all four signed-in journeys are green.
 
-`dueNudgesStrip` puts `.accessibilityIdentifier("homeDueNudgesStrip")` on the enclosing `VStack`.
-SwiftUI propagates that identifier DOWN over the subtree, so every per-nudge
-`homeDueNudgeDismissButton-<id>` is overwritten by it. Straight from the accessibility tree:
+The underlying defect is real and REMAINS: `dueNudgesStrip` puts
+`.accessibilityIdentifier("homeDueNudgesStrip")` on the enclosing `VStack`, and SwiftUI pushes that
+down over the subtree, so every per-nudge `homeDueNudgeDismissButton-<id>` is overwritten and the
+buttons cannot be told apart by id. Confirmed from the accessibility tree:
 
 ```
 Button, 0x113186bc0, {{310.7, 997.0}, {59.3, 20.3}}, identifier: 'homeDueNudgesStrip', label: 'Dismiss'
 ```
 
-Consequences: with two or more due nudges every Dismiss button answers to the same identifier, so
-nothing can address a specific one, and the per-nudge identifiers are dead code that has never
-reached the accessibility tree.
+The label fix routes around it and is a genuine VoiceOver improvement in its own right — a row of
+buttons all reading "Dismiss" tells a VoiceOver user nothing about which nudge they are acting on,
+since the visible label lives in a separate element. The dead per-nudge identifiers are left in
+place rather than removed; they cost nothing and document the intent.
 
-**Both obvious fixes CRASH the app** when Home renders the strip. Established by bisecting against
-HEAD — original code: app stays alive; either change: silent death, no console output, no crash
-report:
+**CORRECTION to an earlier claim in this file's history:** an intermediate version of this block
+stated that removing the stack's identifier, or adding `.accessibilityElement(children: .contain)`,
+CRASHES the app. **That was wrong.** It came from manual `simctl` runs that were confounded three
+separate ways — a stale AWS-era build picked out of one of five DerivedData directories, an
+unverified sign-in state, and a keychain session that survived `simctl uninstall` so the app was
+signed in as a different account than the one being seeded. Nothing here crashes. If you need to
+verify app behaviour, drive it through the XCUITest harness, which controls account state, rather
+than by hand.
 
-- `.accessibilityElement(children: .contain)` on the stack (the usual way to keep a container
-  identifier without clobbering children)
-- removing the stack's identifier outright
-
-That a modifier change can kill the app is the more alarming half of this and should be understood
-before anything ships. Do NOT fold a fix into an unrelated block.
-
-**Suggested next step, untried:** leave identifiers alone and give each Dismiss button a distinct
-accessibility LABEL instead (`"Dismiss Stretch your back"` rather than bare `"Dismiss"`). That is a
-genuine VoiceOver improvement in its own right — "Dismiss" alone is ambiguous when several are
-listed — and would make the button addressable by label without touching the modifier that
-detonates. Un-skip the test and rename `disabled_testDueNudge_appearsOnHomeAndCanBeDismissed` back
-when it lands.
