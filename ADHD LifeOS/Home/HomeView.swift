@@ -224,7 +224,6 @@ struct HomeView: View {
                         inboxCount: inboxCount,
                         dueNudgeCount: nudgesService.dueNudges().count
                     )
-                    supabaseBridgeWarningBanner
                     dueNudgesStrip
                     // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
                     lifeAreasHeader(activeAreas: activeAreas, showArrangeControl: activeAreas.count >= 2)

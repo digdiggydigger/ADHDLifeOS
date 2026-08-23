@@ -2,7 +2,7 @@
 //  HomeAccessoryStrips.swift
 //  ADHD LifeOS
 //
-//  Home's two secondary strips — the Supabase-bridge warning and the due-nudges row — moved out of
+//  Home's secondary strip — the due-nudges row — moved out of
 //  `HomeView.swift` on 2026-08-20 so that file fits its length budget again after the Active Goal
 //  hero gained sprint state. Same code, different file.
 //
@@ -33,25 +33,6 @@ extension HomeView {
     func moveArrangeAreas(from source: IndexSet, to destination: Int) {
         arrangeAreas.move(fromOffsets: source, toOffset: destination)
         Task { await homeService.submitReorder(activeInNewOrder: arrangeAreas) }
-    }
-
-    @ViewBuilder
-    var supabaseBridgeWarningBanner: some View {
-        if let warning = authService.supabaseBridgeWarning {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                Text(warning)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .accessibilityIdentifier("homeSupabaseBridgeWarningBanner")
-        }
     }
 
     @ViewBuilder

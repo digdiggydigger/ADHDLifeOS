@@ -88,9 +88,10 @@ struct ADHD_LifeOSApp: App {
 
     init() {
         // Single backend: everything below is Firestore/Firebase Auth via `FirebaseManager` —
-        // the Cognito adapter, Supabase clients, and the Supabase auth bridge are gone with it.
-        // No `redirectURL`/`supabaseBridge`: Firebase has no magic-link flow here (the adapter
-        // throws `magicLinkUnavailable`, same stub-and-hide precedent as the AWS era).
+        // the Cognito adapter and the Supabase clients went with it, and the Supabase auth bridge
+        // that outlived them was deleted on 2026-08-23 once every screen it propped up had been
+        // cut over. No `redirectURL`: Firebase has no magic-link flow here (the adapter throws
+        // `magicLinkUnavailable`, same stub-and-hide precedent as the AWS era).
         _authService = StateObject(wrappedValue: AuthService(client: FirebaseAuthClientAdapter()))
         homeClient = FirebaseHomeClientAdapter()
         tasksClient = FirebaseTasksClientAdapter()
