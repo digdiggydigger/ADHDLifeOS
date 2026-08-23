@@ -24,8 +24,11 @@ See `WORKFLOW.md` for the full cycle and FEATURE block template. Quick version:
 
 ## Current Sprint
 
-**Nothing queued.** Claude Code is taking direction from E directly (E's call, 2026-08-23). Cowork
-adds FEATURE blocks here when it has designed one.
+**Nothing queued, and nothing outstanding on E.** Claude Code is taking direction from E directly
+(E's call, 2026-08-23). Cowork adds FEATURE blocks here when it has designed one.
+
+The last item awaiting E — on-device confirmation of the notification-banner app icon — was verified
+on 2026-08-23 and is closed below.
 
 **The history moved.** Every shipped block and every block belonging to a deleted backend now lives
 in `TODO-ARCHIVE.md` — 8,183 lines of it, covering the Supabase, Cognito/AWS and Poke eras, all of
@@ -35,7 +38,34 @@ verification trails worth keeping. Nothing in the archive is a work item.
 
 ---
 
-## FIX: Task Due-Time Nudge notifications show no app icon in the banner (on-device only)
+## FIX: Task Due-Time Nudge notifications show no app icon in the banner  [x] VERIFIED 2026-08-23
+
+**CLOSED — E confirmed on a physical iPhone 15 Pro, 2026-08-23.** The banner now renders the app
+icon (purple gradient, white arc-and-dot), matching `AppIcon-1024.png`, so it is the real icon and
+not a system fallback.
+
+Verified against a build of `main` installed that day via `devicectl`, specifically so a stale
+device build could not produce a false negative — the git history for `AppIcon.appiconset` does not
+show the July `sips` commit this block describes, so which build first carried the small renditions
+could not be established from history alone. `assetutil --info` on that build's compiled
+`Assets.car` reports discrete 60×60, 87×87, 120×120 and 180×180 AppIcon renditions alongside the
+1024×1024 marketing icon.
+
+The test went wider than the criterion required. A task due in 6 minutes with 2 countdown nudges
+produced three notifications, all showing the icon:
+
+  +2 min     "This task is due soon."   countdown nudge
+  +4 min     "This task is due soon."   countdown nudge
+  due time   "This task is due now."    due-moment notification
+
+So both notification features are covered, on the lock screen and in Notification Centre. The
+original diagnosis holds: the notification-banner icon path needs the classic small renditions,
+which the Xcode-14+ single-size format alone does not provide.
+
+---
+
+**Original block follows, unedited apart from the ticked criterion:**
+
 
 **Context:** Reported 2026-07-21 by E on a physical iPhone — a Task Due-Time Nudge (local
 notification) banner displayed with no app icon, while the Home Screen and App Switcher icons
@@ -59,7 +89,8 @@ entries. Confirmed via `assetutil --info` that the rebuilt `Assets.car` now cont
 - [x] `xcodebuild build` for the physical device succeeds and signs cleanly (no asset-catalog
       compiler errors from mixing `universal` and `iphone` idiom entries in one appiconset).
 - [x] Rebuilt app installed and launched on E's physical iPhone via `devicectl` for retest.
-- [ ] **E to confirm**: next Task Due-Time Nudge notification shows the app icon in the banner.
+- [x] **E confirmed on device 2026-08-23**: icon renders in the banner. See the verification note
+      at the top of this block.
 
 **Implementation Checklist:**
 - [x] Generate `AppIcon-20@2x.png`, `AppIcon-20@3x.png`, `AppIcon-29@2x.png`,
