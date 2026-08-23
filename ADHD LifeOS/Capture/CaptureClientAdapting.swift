@@ -7,6 +7,8 @@ import Foundation
 
 struct NormalizedPromoteToTaskInput: Equatable, Sendable {
     let title: String
+    /// The capture's annotation, becoming the new task's starting notes.
+    let notes: String?
     let lifeAreaId: UUID?
     let priority: TaskPriority
     let dueDate: Date?
@@ -26,6 +28,9 @@ struct CaptureUpdate: Equatable, Sendable {
     var status: CaptureStatus?
     var lifeAreaId: UUID??
     var title: String?
+    /// Nested optional like `lifeAreaId`: outer `nil` = untouched, `.some(nil)` = the user erased
+    /// their annotation, which deletes the field rather than storing an empty string.
+    var notes: String??
     /// Set-or-omit like `status` — a plain `Bool?`, never a delete: undo writes an explicit
     /// `false` back onto the document.
     var seen: Bool?

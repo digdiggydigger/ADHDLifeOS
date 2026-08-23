@@ -74,6 +74,7 @@ enum FirestoreFieldPayloads {
             fields["title"] = title
         }
         setNullable(changes.lifeAreaId, forKey: "lifeAreaId", in: &fields) { $0.uuidString }
+        setNullable(changes.notes, forKey: "notes", in: &fields)
         if let seen = changes.seen {
             fields["seen"] = seen
         }

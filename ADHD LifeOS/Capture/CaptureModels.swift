@@ -40,6 +40,10 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
     var thumbnailURL: URL?
     var linkPreview: CaptureLinkPreview?
     var aiAssessment: String?
+    /// The user's own annotation, editable from the detail screen — the words that accompany a
+    /// capture whose `content` slot is already spoken for (a link's URL, a voice memo's
+    /// transcript, a photo's caption). Carried into the task on promotion.
+    var notes: String?
     /// The Captures-tab archive flag — "noted, nothing to do". Orthogonal to `processed` on
     /// purpose: a seen capture stays unprocessed so it can still be promoted later. `nil` on every
     /// document written before the flag existed, and it means the same as `false`.
@@ -47,7 +51,7 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case id, content, kind, processed, title, status, lifeAreaId
-        case mediaURL, mediaContentType, thumbnailURL, linkPreview, aiAssessment, seen
+        case mediaURL, mediaContentType, thumbnailURL, linkPreview, aiAssessment, seen, notes
         case createdAt = "created_at"
     }
 

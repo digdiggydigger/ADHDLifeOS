@@ -249,6 +249,27 @@ final class CaptureInboxService: ObservableObject {
         try await client.fetchCapture(id: id)
     }
 
+    /// Saves (or, for whitespace-only input, clears) the user's annotation. Returns the server's
+    /// re-read document so the detail screen can adopt it; the loaded list gets the same copy so
+    /// the row behind the detail agrees without a reload. `nil` means the write failed and
+    /// `triageErrorMessage` says why.
+    @discardableResult
+    func saveNotes(capture: Capture, notes: String) async -> Capture? {
+        triageErrorMessage = nil
+        let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            let updated = try await client.updateCapture(
+                id: capture.id,
+                changes: CaptureUpdate(notes: trimmed.isEmpty ? .some(nil) : .some(trimmed))
+            )
+            replaceCapture(updated)
+            return updated
+        } catch {
+            triageErrorMessage = Self.message(for: error)
+            return nil
+        }
+    }
+
     /// Drops a retired capture from the loaded list without a refetch. Lives here rather than in
     /// `CaptureInboxService+Triage` because `state` has a `private(set)` setter — the only writers
     /// must be in this file.
@@ -265,9 +286,13 @@ final class CaptureInboxService: ObservableObject {
     private func createTaskIfNotAlreadyProcessed(
         capture: Capture, lifeAreaId: UUID?, priority: TaskPriority, dueDate: Date?
     ) async -> UUID? {
+        // The task's notes come off this same server re-read, not the caller's capture — a note
+        // saved moments ago on the detail screen is what the task must start with, and the list
+        // row behind it may be stale.
+        let serverCopy: Capture
         do {
-            let current = try await client.fetchCapture(id: capture.id)
-            guard !current.processed else {
+            serverCopy = try await client.fetchCapture(id: capture.id)
+            guard !serverCopy.processed else {
                 errorMessage = CaptureServiceError.alreadyProcessed.errorDescription
                 return nil
             }
@@ -277,7 +302,8 @@ final class CaptureInboxService: ObservableObject {
         }
 
         let input = NormalizedPromoteToTaskInput(
-            title: Self.taskTitle(for: capture), lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate
+            title: Self.taskTitle(for: capture), notes: serverCopy.notes,
+            lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate
         )
         do {
             let task = try await client.createTask(input)

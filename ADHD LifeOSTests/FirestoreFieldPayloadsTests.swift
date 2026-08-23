@@ -236,6 +236,28 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
         XCTAssertFalse(FirestoreDocumentCoder.isFieldDelete(fields["seen"]))
     }
 
+    // MARK: - Captures: the notes annotation
+
+    func testCaptureUpdate_notesWritesTheAnnotation() {
+        let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(notes: .some("Read this later")))
+
+        XCTAssertEqual(fields.keys.sorted(), ["notes"])
+        XCTAssertEqual(fields["notes"] as? String, "Read this later")
+    }
+
+    /// Deleting your annotation removes the field, mirroring `TaskUpdatePayload.notes` — an empty
+    /// string left behind would still render an empty Notes panel.
+    func testCaptureUpdate_clearingNotesBecomesADelete() {
+        let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(notes: .some(nil)))
+
+        XCTAssertEqual(fields.keys.sorted(), ["notes"])
+        XCTAssertTrue(FirestoreDocumentCoder.isFieldDelete(fields["notes"]))
+    }
+
+    func testCaptureUpdate_untouchedNotesIsNotWritten() {
+        XCTAssertNil(FirestoreFieldPayloads.captureUpdate(CaptureUpdate(seen: true))["notes"])
+    }
+
     // MARK: - Nudges
 
     func testNudgeUpdate_emptyPayload_writesNothing() {

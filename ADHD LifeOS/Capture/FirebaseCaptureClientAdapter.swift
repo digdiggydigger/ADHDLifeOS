@@ -79,7 +79,7 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
             id: UUID(),
             lifeAreaId: input.lifeAreaId,
             title: input.title,
-            notes: nil,
+            notes: input.notes,
             status: .open,
             priority: input.priority,
             dueDate: input.dueDate,

@@ -207,6 +207,7 @@ final class FirebaseCaptureClientAdapterTests: XCTestCase {
         let dueDate = Date(timeIntervalSince1970: 1_755_000_000)
         let input = NormalizedPromoteToTaskInput(
             title: "Ring the dentist",
+            notes: nil,
             lifeAreaId: lifeAreaId,
             priority: .p1,
             dueDate: dueDate
@@ -325,8 +326,18 @@ final class FirebaseCaptureClientAdapterTests: XCTestCase {
         )
     }
 
-    private static func promoteInput() -> NormalizedPromoteToTaskInput {
-        NormalizedPromoteToTaskInput(title: "Ring the dentist", lifeAreaId: nil, priority: .p2, dueDate: nil)
+    private static func promoteInput(notes: String? = nil) -> NormalizedPromoteToTaskInput {
+        NormalizedPromoteToTaskInput(
+            title: "Ring the dentist", notes: notes, lifeAreaId: nil, priority: .p2, dueDate: nil
+        )
+    }
+
+    /// The promotion promise now includes the annotation: "the new task inherits this capture's
+    /// life area, tags and notes".
+    func testCreateTask_carriesTheNotesIntoTheTaskDocument() async throws {
+        _ = try await adapter.createTask(Self.promoteInput(notes: "Ask about the referral"))
+
+        XCTAssertEqual(store.createdTasks.first?.notes, "Ask about the referral")
     }
 
     private static func capture(

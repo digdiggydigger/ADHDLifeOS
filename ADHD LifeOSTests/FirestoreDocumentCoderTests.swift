@@ -107,6 +107,21 @@ final class FirestoreDocumentCoderTests: XCTestCase {
         XCTAssertEqual(try FirestoreDocumentCoder.decode(Capture.self, from: document).seen, true)
     }
 
+    /// The user's annotation, single-word key so both conventions agree on it — but pinned here
+    /// anyway, because the capture Cloud Function writes the same key and the two must not drift.
+    func testCaptureRoundTrip_notesSurvivesTheRealCodec() throws {
+        var capture = Self.capture(createdAt: referenceDate)
+        capture.notes = "Read before the Thursday architecture review."
+
+        let document = try FirestoreDocumentCoder.encode(capture)
+
+        XCTAssertEqual(document["notes"] as? String, "Read before the Thursday architecture review.")
+        XCTAssertEqual(
+            try FirestoreDocumentCoder.decode(Capture.self, from: document).notes,
+            "Read before the Thursday architecture review."
+        )
+    }
+
     // MARK: - Tasks: fully snake_cased, the opposite convention
 
     func testTaskItemEncoding_isFullySnakeCased() throws {
