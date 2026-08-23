@@ -35,6 +35,12 @@ U = {
     "body": "F8BE231D-A2E2-44D0-87DA-9B095F447A0E",
     "post": "5193293C-C64F-4993-9B24-C3716B01AD9F",
     "emptycontent": "D05211B4-71DB-4584-A2F6-96CDE8F40D63",
+    "noteinit": "0A3E31F4-6C2E-4BB2-9A4C-8E1E19D2A311",
+    "asknotelink": "5B7C6A02-93D4-4B5E-8F2A-B60C5A9B1E22",
+    "asknotephoto": "9D14E7C8-4A14-4F0B-B1D3-7C33A02D4E55",
+    "asknotevoice": "E2F0AD36-0B7D-4B2C-9C61-4D9A8F17C088",
+    "escnotequote": "1C58B9E4-2D07-46AF-8834-FA6D02B7C433",
+    "escnotenl": "7F91D2A6-5E38-4C70-A1B9-0E64C3D8F599",
 }
 G_MENU = "3283A715-204A-44DD-8943-10960956F33A"
 
@@ -113,6 +119,14 @@ actions.append(text_action(U["emptymedia"], "null"))
 actions.append(set_var("Media", out(U["emptymedia"], "Text")))
 
 actions.append(comment(
+    "Note starts empty. Link, Photo and Voice ask for an optional accompanying note — the kinds "
+    "whose main text slot is already the URL, the picture or the recording. Leaving it blank "
+    "sends an empty string, which the function drops rather than storing."
+))
+actions.append(text_action(U["noteinit"], ""))
+actions.append(set_var("Note", out(U["noteinit"], "Text")))
+
+actions.append(comment(
     "WHAT ARE YOU CAPTURING?\n"
     "- Each branch sets Kind, and either Content or Media\n"
     "- Photo and Voice base64-encode the file into Media\n"
@@ -126,10 +140,10 @@ actions.append(action("is.workflow.actions.choosefrommenu", {
 }))
 
 # ---- text branches -------------------------------------------------------
-for label, prompt, kind, ask_uuid, kind_uuid, input_type in [
-    ("Quick Note", "What's on your mind?", "note", U["asknote"], U["kindnote"], "Text"),
-    ("Task", "What needs doing?", "task", U["asktask"], U["kindtask"], "Text"),
-    ("Link", "Paste the link", "link", U["asklink"], U["kindlink"], "URL"),
+for label, prompt, kind, ask_uuid, kind_uuid, input_type, note_uuid in [
+    ("Quick Note", "What's on your mind?", "note", U["asknote"], U["kindnote"], "Text", None),
+    ("Task", "What needs doing?", "task", U["asktask"], U["kindtask"], "Text", None),
+    ("Link", "Paste the link", "link", U["asklink"], U["kindlink"], "URL", U["asknotelink"]),
 ]:
     actions.append(action("is.workflow.actions.choosefrommenu", {
         "GroupingIdentifier": G_MENU, "WFControlFlowMode": 1, "WFMenuItemTitle": label,
@@ -138,6 +152,14 @@ for label, prompt, kind, ask_uuid, kind_uuid, input_type in [
         "UUID": ask_uuid, "WFAskActionPrompt": prompt, "WFInputType": input_type,
     }))
     actions.append(set_var("Content", out(ask_uuid, "Provided Input")))
+    if note_uuid:
+        actions.append(action("is.workflow.actions.ask", {
+            "UUID": note_uuid,
+            "WFAskActionPrompt": "Add a note? (leave blank to skip)",
+            "WFInputType": "Text",
+            "WFAskActionDefaultAnswer": "",
+        }))
+        actions.append(set_var("Note", out(note_uuid, "Provided Input")))
     actions.append(text_action(kind_uuid, kind))
     actions.append(set_var("Kind", out(kind_uuid, "Text")))
 
@@ -164,6 +186,13 @@ actions.append(text_action(U["photomedia"], token_string(
     [out(U["photob64"], "Base64 Encoded")],
 )))
 actions.append(set_var("Media", out(U["photomedia"], "Text")))
+actions.append(action("is.workflow.actions.ask", {
+    "UUID": U["asknotephoto"],
+    "WFAskActionPrompt": "Add a note? (leave blank to skip)",
+    "WFInputType": "Text",
+    "WFAskActionDefaultAnswer": "",
+}))
+actions.append(set_var("Note", out(U["asknotephoto"], "Provided Input")))
 actions.append(text_action(U["kindphoto"], "photo"))
 actions.append(set_var("Kind", out(U["kindphoto"], "Text")))
 
@@ -185,6 +214,13 @@ actions.append(text_action(U["voicemedia"], token_string(
     [out(U["voiceb64"], "Base64 Encoded")],
 )))
 actions.append(set_var("Media", out(U["voicemedia"], "Text")))
+actions.append(action("is.workflow.actions.ask", {
+    "UUID": U["asknotevoice"],
+    "WFAskActionPrompt": "Add a note? (leave blank to skip)",
+    "WFInputType": "Text",
+    "WFAskActionDefaultAnswer": "",
+}))
+actions.append(set_var("Note", out(U["asknotevoice"], "Provided Input")))
 actions.append(text_action(U["kindvoice"], "voice"))
 actions.append(set_var("Kind", out(U["kindvoice"], "Text")))
 
@@ -195,7 +231,8 @@ actions.append(action("is.workflow.actions.choosefrommenu", {
 # ---- send ----------------------------------------------------------------
 actions.append(comment(
     "SEND IT.\n"
-    "• The two Replace Text actions make the captured text safe inside JSON — do not remove them.\n"
+    "• The four Replace Text actions make the captured text and note safe inside JSON — do not "
+    "remove them.\n"
     "• Media is empty for note, task and link; the function rejects media on those kinds.\n"
     "• The key travels in the X-LifeOS-Key header, never in the body."
 ))
@@ -212,9 +249,22 @@ actions.append(action("is.workflow.actions.text.replace", {
     "WFReplaceTextReplace": " ",
     "WFReplaceTextRegularExpression": True,
 }))
+actions.append(action("is.workflow.actions.text.replace", {
+    "UUID": U["escnotequote"],
+    "WFInput": token_string(PH, [var("Note")]),
+    "WFReplaceTextFind": "\"",
+    "WFReplaceTextReplace": "\\\"",
+}))
+actions.append(action("is.workflow.actions.text.replace", {
+    "UUID": U["escnotenl"],
+    "WFInput": token_string(PH, [out(U["escnotequote"], "Updated Text")]),
+    "WFReplaceTextFind": "[\\r\\n]+",
+    "WFReplaceTextReplace": " ",
+    "WFReplaceTextRegularExpression": True,
+}))
 actions.append(text_action(U["body"], token_string(
-    '{"kind":"' + PH + '","content":"' + PH + '","media":' + PH + '}',
-    [var("Kind"), out(U["escnl"], "Updated Text"), var("Media")],
+    '{"kind":"' + PH + '","content":"' + PH + '","notes":"' + PH + '","media":' + PH + '}',
+    [var("Kind"), out(U["escnl"], "Updated Text"), out(U["escnotenl"], "Updated Text"), var("Media")],
 )))
 actions.append(action("is.workflow.actions.downloadurl", {
     "UUID": U["post"],

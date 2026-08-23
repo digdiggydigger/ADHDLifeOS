@@ -118,6 +118,49 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
+				<string>Note starts empty. Link, Photo and Voice ask for an optional accompanying note — the kinds whose main text slot is already the URL, the picture or the recording. Leaving it blank sends an empty string, which the function drops rather than storing.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>0A3E31F4-6C2E-4BB2-9A4C-8E1E19D2A311</string>
+				<key>WFTextActionText</key>
+				<string></string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFVariableName</key>
+				<string>Note</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>0A3E31F4-6C2E-4BB2-9A4C-8E1E19D2A311</string>
+						<key>OutputName</key>
+						<string>Text</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
 				<string>WHAT ARE YOU CAPTURING?
 - Each branch sets Kind, and either Content or Media
 - Photo and Voice base64-encode the file into Media
@@ -362,6 +405,44 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.ask</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>5B7C6A02-93D4-4B5E-8F2A-B60C5A9B1E22</string>
+				<key>WFAskActionPrompt</key>
+				<string>Add a note? (leave blank to skip)</string>
+				<key>WFInputType</key>
+				<string>Text</string>
+				<key>WFAskActionDefaultAnswer</key>
+				<string></string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFVariableName</key>
+				<string>Note</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>5B7C6A02-93D4-4B5E-8F2A-B60C5A9B1E22</string>
+						<key>OutputName</key>
+						<string>Provided Input</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.gettext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -493,6 +574,44 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 						<string>3CE9DCC6-68B2-4104-9663-CE345D877313</string>
 						<key>OutputName</key>
 						<string>Text</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.ask</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>9D14E7C8-4A14-4F0B-B1D3-7C33A02D4E55</string>
+				<key>WFAskActionPrompt</key>
+				<string>Add a note? (leave blank to skip)</string>
+				<key>WFInputType</key>
+				<string>Text</string>
+				<key>WFAskActionDefaultAnswer</key>
+				<string></string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFVariableName</key>
+				<string>Note</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>9D14E7C8-4A14-4F0B-B1D3-7C33A02D4E55</string>
+						<key>OutputName</key>
+						<string>Provided Input</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -642,6 +761,44 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.ask</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>E2F0AD36-0B7D-4B2C-9C61-4D9A8F17C088</string>
+				<key>WFAskActionPrompt</key>
+				<string>Add a note? (leave blank to skip)</string>
+				<key>WFInputType</key>
+				<string>Text</string>
+				<key>WFAskActionDefaultAnswer</key>
+				<string></string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFVariableName</key>
+				<string>Note</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>ActionOutput</string>
+						<key>OutputUUID</key>
+						<string>E2F0AD36-0B7D-4B2C-9C61-4D9A8F17C088</string>
+						<key>OutputName</key>
+						<string>Provided Input</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.gettext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -692,7 +849,7 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 			<dict>
 				<key>WFCommentActionText</key>
 				<string>SEND IT.
-• The two Replace Text actions make the captured text safe inside JSON — do not remove them.
+• The four Replace Text actions make the captured text and note safe inside JSON — do not remove them.
 • Media is empty for note, task and link; the function rejects media on those kinds.
 • The key travels in the X-LifeOS-Key header, never in the body.</string>
 			</dict>
@@ -769,6 +926,76 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.replace</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>1C58B9E4-2D07-46AF-8834-FA6D02B7C433</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Note</string>
+							</dict>
+						</dict>
+						<key>string</key>
+						<string>￼</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>WFReplaceTextFind</key>
+				<string>"</string>
+				<key>WFReplaceTextReplace</key>
+				<string>\"</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.replace</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>7F91D2A6-5E38-4C70-A1B9-0E64C3D8F599</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ActionOutput</string>
+								<key>OutputUUID</key>
+								<string>1C58B9E4-2D07-46AF-8834-FA6D02B7C433</string>
+								<key>OutputName</key>
+								<string>Updated Text</string>
+							</dict>
+						</dict>
+						<key>string</key>
+						<string>￼</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>WFReplaceTextFind</key>
+				<string>[\r\n]+</string>
+				<key>WFReplaceTextReplace</key>
+				<string> </string>
+				<key>WFReplaceTextRegularExpression</key>
+				<true/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.gettext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -796,7 +1023,16 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 								<key>OutputName</key>
 								<string>Updated Text</string>
 							</dict>
-							<key>{34, 1}</key>
+							<key>{35, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ActionOutput</string>
+								<key>OutputUUID</key>
+								<string>7F91D2A6-5E38-4C70-A1B9-0E64C3D8F599</string>
+								<key>OutputName</key>
+								<string>Updated Text</string>
+							</dict>
+							<key>{46, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
@@ -805,7 +1041,7 @@ Prompt: rebuild the LifeOS capture shortcut against the Firebase Cloud Function 
 							</dict>
 						</dict>
 						<key>string</key>
-						<string>{"kind":"￼","content":"￼","media":￼}</string>
+						<string>{"kind":"￼","content":"￼","notes":"￼","media":￼}</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenString</string>

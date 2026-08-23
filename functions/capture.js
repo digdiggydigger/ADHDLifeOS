@@ -107,6 +107,9 @@ function normalizeCapturePayload(body) {
       kind,
       content,
       title: isNonEmpty(payload.title) ? payload.title.trim() : undefined,
+      // The user's optional annotation — the Shortcut's "add a note?" prompt. Same key the app's
+      // own detail-screen editor writes; trimmed here, omitted entirely when empty.
+      notes: isNonEmpty(payload.notes) ? payload.notes.trim() : undefined,
       lifeAreaId,
       media: isMedia
         ? {
@@ -131,7 +134,7 @@ function normalizeCapturePayload(body) {
  * `id` is stored as well as being the document name, and the two must stay identical: the app
  * addresses a capture for `markProcessed` by the id it decoded out of the document body.
  */
-function buildCaptureDocument({ id, content, kind, createdAt, title, lifeAreaId, mediaURL, mediaContentType }) {
+function buildCaptureDocument({ id, content, kind, createdAt, title, notes, lifeAreaId, mediaURL, mediaContentType }) {
   const doc = {
     id,
     content,
@@ -141,6 +144,7 @@ function buildCaptureDocument({ id, content, kind, createdAt, title, lifeAreaId,
     created_at: createdAt,
   };
   if (isNonEmpty(title)) doc.title = title.trim();
+  if (isNonEmpty(notes)) doc.notes = notes.trim();
   if (isNonEmpty(lifeAreaId)) doc.lifeAreaId = lifeAreaId;
   if (isNonEmpty(mediaURL)) doc.mediaURL = mediaURL;
   if (isNonEmpty(mediaContentType)) doc.mediaContentType = mediaContentType;

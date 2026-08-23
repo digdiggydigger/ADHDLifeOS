@@ -21,6 +21,29 @@ const STAMP = new Date('2026-08-20T21:00:00Z');
 // This is the contract with the iOS app. `Capture` is decoded straight off the document, so a wrong
 // key doesn't throw — it silently drops the field and the app shows a capture with a hole in it.
 
+test('notes are trimmed and carried through', () => {
+  const result = normalizeCapturePayload({ kind: 'link', content: 'https://example.com', notes: '  Read later  ' });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.value.notes, 'Read later');
+});
+
+test('empty or missing notes are omitted from the payload and the document', () => {
+  assert.equal(normalizeCapturePayload({ kind: 'note', content: 'x', notes: '   ' }).value.notes, undefined);
+  assert.equal(normalizeCapturePayload({ kind: 'note', content: 'x' }).value.notes, undefined);
+
+  const doc = buildCaptureDocument({ id: ID, content: 'x', kind: 'note', createdAt: STAMP, notes: '' });
+  assert.equal('notes' in doc, false, 'an empty note must not become an empty-string field');
+});
+
+test('notes land on the document under the key the app decodes', () => {
+  const doc = buildCaptureDocument({
+    id: ID, content: 'https://example.com', kind: 'link', createdAt: STAMP, notes: 'Read later',
+  });
+
+  assert.equal(doc.notes, 'Read later');
+});
+
 test('document carries exactly the keys the app decodes', () => {
   const doc = buildCaptureDocument({
     id: ID, content: 'Ring the dentist', kind: 'note', createdAt: STAMP,

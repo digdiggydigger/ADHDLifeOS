@@ -106,7 +106,7 @@ exports.capture = onRequest(
     if (!normalized.ok) {
       return response.status(400).json({ error: normalized.error });
     }
-    const { kind, content, title, lifeAreaId, media } = normalized.value;
+    const { kind, content, title, notes, lifeAreaId, media } = normalized.value;
 
     // Uppercase, and used BOTH as the document name and as the `id` field. The app addresses a
     // capture by the id it decoded out of the body (`markProcessed`), so if those two ever diverge,
@@ -141,6 +141,7 @@ exports.capture = onRequest(
         kind,
         createdAt: Timestamp.now(),
         title,
+        notes,
         lifeAreaId,
         mediaURL,
         mediaContentType: media && media.contentType,
