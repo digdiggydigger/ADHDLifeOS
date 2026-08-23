@@ -3,26 +3,26 @@
 //  ADHD LifeOS
 //
 
-import FirebaseAuth
 import Foundation
 
-/// Production `AccountDeletionClientAdapting` over `FirebaseManager`: the domain-mapping half of
-/// the manager/adapter split. Its one non-trivial job is telling `requiresRecentLogin` (a pause
-/// for reauthentication) apart from every other failure (terminal, surfaced to the user).
+/// Production `AccountDeletionClientAdapting` over `AccountDeletionBackingStore`
+/// (`FirebaseManager` in the app, a recording fake in tests): the domain-mapping half of the
+/// manager/adapter split. Its one non-trivial job is telling `requiresRecentLogin` (a pause for
+/// reauthentication) apart from every other failure (terminal, surfaced to the user).
 struct FirebaseAccountDeletionAdapter: AccountDeletionClientAdapting {
-    private let manager: FirebaseManager
+    private let store: AccountDeletionBackingStore
 
-    init(manager: FirebaseManager = .shared) {
-        self.manager = manager
+    init(store: AccountDeletionBackingStore = FirebaseManager.shared) {
+        self.store = store
     }
 
     func reauthMethod() async -> AccountReauthMethod? {
-        manager.accountReauthMethod()
+        store.accountReauthMethod()
     }
 
     func deleteAllUserData() async throws {
         do {
-            try await manager.deleteAllUserData()
+            try await store.deleteAllUserData()
         } catch {
             throw AccountDeletionError.dataDeletionFailed(Self.message(for: error))
         }
@@ -30,17 +30,19 @@ struct FirebaseAccountDeletionAdapter: AccountDeletionClientAdapting {
 
     func deleteAuthAccount() async throws {
         do {
-            try await manager.deleteAuthUser()
-        } catch where Self.isRecentLoginRequired(error) {
+            try await store.deleteAuthUser()
+        } catch where AuthErrorMapping.isRecentLoginRequired(error) {
             throw AccountDeletionError.recentLoginRequired
         } catch {
             throw AccountDeletionError.accountDeletionFailed(Self.message(for: error))
         }
     }
 
+    /// Deliberately does **not** remap `requiresRecentLogin`: this call *is* the recent login, so
+    /// re-prompting for one would loop the flow back to the prompt the user just answered.
     func reauthenticate(password: String) async throws {
         do {
-            try await manager.reauthenticateWithPassword(password)
+            try await store.reauthenticateWithPassword(password)
         } catch {
             throw AccountDeletionError.reauthenticationFailed(Self.message(for: error))
         }
@@ -48,16 +50,10 @@ struct FirebaseAccountDeletionAdapter: AccountDeletionClientAdapting {
 
     func reauthenticateWithApple(idToken: String, rawNonce: String) async throws {
         do {
-            try await manager.reauthenticateWithApple(idToken: idToken, rawNonce: rawNonce)
+            try await store.reauthenticateWithApple(idToken: idToken, rawNonce: rawNonce)
         } catch {
             throw AccountDeletionError.reauthenticationFailed(Self.message(for: error))
         }
-    }
-
-    private static func isRecentLoginRequired(_ error: Error) -> Bool {
-        let nsError = error as NSError
-        return nsError.domain == AuthErrorDomain
-            && nsError.code == AuthErrorCode.requiresRecentLogin.rawValue
     }
 
     private static func message(for error: Error) -> String {
