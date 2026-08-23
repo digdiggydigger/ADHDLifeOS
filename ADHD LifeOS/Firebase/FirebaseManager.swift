@@ -58,11 +58,29 @@ final class FirebaseManager {
     private let auth: Auth
     private let firestore: Firestore
 
+    /// Non-nil only when `LIFEOS_FIREBASE_EMULATOR_HOST` named a reachable-looking host at
+    /// launch — see `FirebaseEmulatorSettings`. Production is always `nil`.
+    let emulatorSettings: FirebaseEmulatorSettings?
+
+    /// Positive proof, for tests that are about to destroy data, that this manager is talking to
+    /// an emulator and not to the live project. `FirebaseEmulatorHarness` refuses to run without
+    /// it — reading `false` here is the difference between wiping a scratch database and wiping
+    /// the signed-in user's real one.
+    var isUsingEmulator: Bool {
+        emulatorSettings != nil
+    }
+
     private init() {
         // Firestore/Auth trap at first touch if the app never configured Firebase; guarding here
         // keeps the manager usable regardless of launch order once GoogleService-Info.plist exists.
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
+        }
+        // Before `auth`/`firestore` are captured below, and so before any operation can run:
+        // Firestore latches its settings at first use.
+        emulatorSettings = FirebaseEmulatorSettings.resolve()
+        if let emulatorSettings {
+            Self.pointSDKsAtEmulator(emulatorSettings)
         }
         auth = Auth.auth()
         firestore = Firestore.firestore()

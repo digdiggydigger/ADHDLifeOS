@@ -64,22 +64,59 @@ runnable. If `xcodebuild` reports the destination is unavailable, run
 A feature isn't done until `swiftlint lint`, the full test suite, and the build all pass — and the
 real terminal output has been pasted for review, not just a "done" summary.
 
-**Coverage reality (2026-08-23):** overall coverage is **33.55%** over 1,099 tests, not the original
-70% bar. The shortfall is no longer the Firebase layer: every Firebase-backed type now sits behind a
-per-feature `*BackingStore` protocol with a recording fake, and all twelve `Firebase*ClientAdapter`
-structs plus `FirebaseAccountDeletionAdapter`, `FirebaseFocusSessionAdapter` and
-`FirebaseDailySummaryDataAdapter` are covered (92–100% each). `grep "private let manager:
+**Coverage reality (2026-08-23, re-measured):** overall coverage is **25.35% (5,272/20,794)**
+over 1,168 tests. **The previously recorded "33.55%" was wrong** — a baseline run of the untouched
+tree at `4c8b282` (1,099 tests, the exact suite that figure described) measures **23.40%
+(4,853/20,735)** with the documented command. Both runs share a denominator, so they measured the
+same thing and the older number simply cannot be reproduced. Don't restore it; re-measure instead.
+
+The Firebase layer is now the best-covered part of the app, not the worst. Every Firebase-backed
+type sits behind a per-feature `*BackingStore` protocol with a recording fake, and all twelve
+`Firebase*ClientAdapter` structs plus `FirebaseAccountDeletionAdapter`, `FirebaseFocusSessionAdapter`
+and `FirebaseDailySummaryDataAdapter` are covered (92–100% each). `grep "private let manager:
 FirebaseManager"` returning nothing is the check that the seam is still complete — the last three
 types above do NOT carry the `*ClientAdapter` suffix, so a name-based sweep misses them.
+
+`FirebaseManager`'s own four extensions are covered too, as of the emulator harness below:
+`+Tags` 97.30%, `+Seed` 98.29%, `+Storage` 95.83%, `+AccountDeletion` 90.20% — each previously ~0%.
 
 What is still uncovered, and why the 70% bar stays out of reach for now:
 - **SwiftUI view bodies (~7,000 lines at ~0%)** — `TaskDetailView`, `FocusTimerBar`,
   `TaskListView`, `CaptureInboxView` and peers. Unit tests are the wrong tool; this is UI-test
   territory, and the UI tests are deliberately skipped in the standard run.
-- **`FirebaseManager`'s own extensions** — `+Tags` (0/74), `+AccountDeletion` (0/51), `+Storage`
-  (0/24), `+Seed` (3/117). These are real Firestore/Storage/Auth calls and need the **Firebase
-  emulator suite**, which is blocked on Java 11+ (this machine has 1.8; `firebase` CLI is already
-  installed). That install is E's, per the manual-step convention above.
+
+## Firebase emulator (integration tests for `FirebaseManager`'s own extensions)
+
+`FirebaseManager+Seed`, `+Tags`, `+AccountDeletion` and `+Storage` make real Firestore/Auth/Storage
+calls, so they are tested against the **Emulator Suite** rather than a fake:
+
+```bash
+./scripts/emulators.sh    # leave running in a second terminal
+```
+
+Then run the suite as normal. **With the emulator down these tests SKIP, never fail** — the standard
+run stays green on a machine that has never started it.
+
+- **firebase-tools 15.x needs Java 21+**, not the "Java 11+" earlier notes claimed. Homebrew keeps
+  JDKs keg-only, so `java -version` reporting 1.8 tells you nothing about what is installed;
+  `scripts/emulators.sh` sets `JAVA_HOME` to `/opt/homebrew/opt/openjdk@21` itself. Do **not**
+  `brew link openjdk@21` — that changes the machine's default Java for everything else.
+- The emulator loads `firestore.rules` and `storage.rules`, so these tests exercise the **real
+  security rules**. A rules regression fails them — which is the cheapest rules check available,
+  given publishing is manual and E-only.
+- **Safety, and it is the reason the harness is shaped the way it is.** `deleteAllUserData()`
+  erases every document its signed-in user owns; aimed at the live project by accident it would do
+  that to E's real account. So: `FirebaseEmulatorSettings` turns emulator mode on ONLY for an
+  explicit, well-formed `LIFEOS_FIREBASE_EMULATOR_HOST` and resolves anything malformed to *off*
+  rather than falling back to a default; the shared scheme sets that variable on the **Test action
+  only** (`shouldUseLaunchSchemeArgsEnv = "NO"`, so running the app is unaffected); and
+  `FirebaseEmulatorHarness.requireEmulator()` **fails loudly** if the emulator is reachable but the
+  app is not pointed at it — the one state where tests could otherwise touch production.
+- **Trap:** Firestore's `useEmulator(withHost:port:)` sets only the *host* — read `FIRFirestore.mm`,
+  it does not disable TLS. The client then speaks TLS to a plaintext emulator and retries forever
+  with `WRONG_VERSION_NUMBER`, which reads like a broken install rather than a client bug. So
+  `FirebaseManager+Emulator` sets `host`, `isSSLEnabled = false` and `MemoryCacheSettings()`
+  explicitly. Auth and Storage's same-named methods DO handle their own transport.
 
 The operative rule is unchanged: every piece of NEW pure logic ships with tests written first (TDD
 below), and no block may claim the 70% bar is met.

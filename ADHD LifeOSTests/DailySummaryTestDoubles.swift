@@ -87,6 +87,27 @@ actor GatedDailySummaryGenerator: DailySummaryGenerating {
     }
 }
 
+/// The failing counterpart to `GatedDailySummaryGenerator`, and it exists for the same reason.
+/// A generator that throws *immediately* can start and finish inside a single scheduling slice,
+/// so a test waiting to observe "generating" may be waiting for a state that was never visible.
+/// That race is lost only under load — which is exactly when it is hardest to read as a race
+/// rather than a real failure. Holding the failure behind the gate makes mid-flight a state the
+/// test stands in, rather than one it has to catch.
+actor GatedFailingDailySummaryGenerator: DailySummaryGenerating {
+    private let gate: Gate
+
+    init(gate: Gate) {
+        self.gate = gate
+    }
+
+    nonisolated var source: DailySummarySource { .model }
+
+    func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
+        await gate.wait()
+        throw SimpleError("generator unavailable")
+    }
+}
+
 final class ToggleableDailySummaryGenerator: DailySummaryGenerating, @unchecked Sendable {
     var shouldFail = false
     var source: DailySummarySource { .localSynthesis }

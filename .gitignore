@@ -38,3 +38,12 @@ functions/.env
 # Signed Shortcut build artifact — not reproducible byte-for-byte (signing embeds a
 # certificate chain), and regenerable from the committed XML beside it.
 shortcuts/*.shortcut
+
+# Firebase Emulator Suite artifacts — written into the repo root by `firebase emulators:start`
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+storage-debug.log
+database-debug.log
+pubsub-debug.log
+.firebase/

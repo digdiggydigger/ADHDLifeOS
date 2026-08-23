@@ -88,12 +88,21 @@ final class DailySummaryRebuildTests: XCTestCase {
     /// A failure has to reach the rebuilt card too, or it spins forever on a dead generation.
     func testARebuiltServiceSeesTheFailureOfTheGenerationItJoined() async throws {
         let coordinator = DailySummaryGenerationCoordinator()
-        let service = makeService(generator: FailingDailySummaryGenerator(), userId: "uid-e", coordinator: coordinator)
-        let rebuilt = makeService(generator: FailingDailySummaryGenerator(), userId: "uid-e", coordinator: coordinator)
+        // Gated rather than instantly-failing: an immediate throw can complete before
+        // `waitUntilGenerating` ever observes the in-flight state, which made this test fail
+        // under load while passing in isolation.
+        let gate = Gate()
+        let service = makeService(
+            generator: GatedFailingDailySummaryGenerator(gate: gate), userId: "uid-e", coordinator: coordinator
+        )
+        let rebuilt = makeService(
+            generator: GatedFailingDailySummaryGenerator(gate: gate), userId: "uid-e", coordinator: coordinator
+        )
 
         let generating = Task { await service.generate(now: now) }
         await waitUntilGenerating(coordinator, for: "uid-e")
         let reattaching = Task { await rebuilt.reattachIfGenerating() }
+        await gate.open()
         await generating.value
         await reattaching.value
 
