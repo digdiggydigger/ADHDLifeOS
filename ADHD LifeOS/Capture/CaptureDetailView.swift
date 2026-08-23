@@ -195,7 +195,7 @@ struct CaptureDetailView: View {
             } label: {
                 Label("Log to journal", systemImage: "book")
             }
-            if capture.seen == true {
+            if CaptureDetailPresentation.canReturnToInbox(capture) {
                 Button {
                     Task {
                         if await service.undoSeen(capture: capture) { dismiss() }

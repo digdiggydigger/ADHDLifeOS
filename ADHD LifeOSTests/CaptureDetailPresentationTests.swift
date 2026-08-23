@@ -51,6 +51,26 @@ final class CaptureDetailPresentationTests: XCTestCase {
         XCTAssertTrue(rendered.contains("7:33"), "got: \(rendered)")
     }
 
+    // MARK: - Return to inbox
+
+    /// Found on-device (E's screenshots, 2026-08-24): a capture that was archived and LATER
+    /// promoted still offered "Move back to Inbox" — but a processed capture can never reappear
+    /// in the Inbox (its query is `processed == false`), so the action wrote `seen = false`,
+    /// changed nothing the user could see, and wrongly dropped the row from the Promoted list.
+    func testCanReturnToInbox_onlyForSeenAndUnpromotedCaptures() {
+        func capture(seen: Bool?, processed: Bool) -> Capture {
+            Capture(id: UUID(), content: "x", kind: .note, processed: processed, createdAt: Date(), seen: seen)
+        }
+
+        XCTAssertTrue(CaptureDetailPresentation.canReturnToInbox(capture(seen: true, processed: false)))
+        XCTAssertFalse(
+            CaptureDetailPresentation.canReturnToInbox(capture(seen: true, processed: true)),
+            "promoted captures never re-enter the inbox; offering the action is a lie"
+        )
+        XCTAssertFalse(CaptureDetailPresentation.canReturnToInbox(capture(seen: false, processed: false)))
+        XCTAssertFalse(CaptureDetailPresentation.canReturnToInbox(capture(seen: nil, processed: false)))
+    }
+
     // MARK: - Source domain
 
     private func linkCapture(content: String, previewURL: String? = nil) -> Capture {

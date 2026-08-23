@@ -35,6 +35,15 @@ enum CaptureDetailPresentation {
         date.formatted(Date.FormatStyle(date: .long, time: .shortened, locale: locale, timeZone: timeZone))
     }
 
+    /// Whether the overflow menu offers "Move back to Inbox". Seen alone is not enough: a
+    /// capture archived and LATER promoted is `processed`, and the Inbox query (`processed ==
+    /// false`) can never show it again — offering the action there wrote `seen = false`, changed
+    /// nothing the user could see, and wrongly removed the row from the Promoted list (found
+    /// on-device, 2026-08-24).
+    static func canReturnToInbox(_ capture: Capture) -> Bool {
+        capture.seen == true && !capture.processed
+    }
+
     /// The link the capture points at, preferring the unfurl's canonical URL over the raw captured
     /// string — the preview is what the server resolved the link TO, redirects followed.
     static func sourceURL(for capture: Capture) -> URL? {
