@@ -106,3 +106,20 @@ extension FirebaseManager {
         try await update(id: id, fields: ["name": name], in: .tags)
     }
 }
+
+// MARK: - Tag documents
+
+/// Moved here from `FirebaseManager.swift` so all tag storage lives in one file.
+extension FirebaseManager {
+    func fetchTags() async throws -> [Tag] {
+        try await fetchAll(Tag.self, from: .tags, orderedBy: "name")
+    }
+
+    func saveTag(_ tag: Tag) async throws {
+        try await save(tag, id: tag.id, in: .tags)
+    }
+
+    func deleteTag(id: UUID) async throws {
+        try await delete(id: id, from: .tags)
+    }
+}

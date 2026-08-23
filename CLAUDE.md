@@ -174,7 +174,10 @@ unpushed) and push it as your first action if so.
   and AWS layers this doc previously described were deleted at E's direction in commit `5244650`
   ("cut all services over to Firebase"). No local persistence layer — Firestore is the source of
   truth. Everything goes through per-feature `Firebase*ClientAdapter` structs over the shared
-  `FirebaseManager` (`ADHD LifeOS/Firebase/`).
+  `FirebaseManager` (`ADHD LifeOS/Firebase/`). `FirebaseManager.swift` itself holds only the
+  class, auth, and the Firestore plumbing every extension builds on; per-collection storage
+  lives in `FirebaseManager+<Domain>.swift` alongside `+Seed`/`+Storage`/`+AccountDeletion`/
+  `+Emulator`. Add a new collection's methods to its own such file, not to the core one.
 - **Adapters depend on a per-feature `*BackingStore` protocol, never on `FirebaseManager` directly**
   (E's 2026-08-23 call). `FirebaseManager` is a `final class` with a `private init` and a `shared`
   singleton, so an adapter holding it concretely cannot be tested at any price. Each adapter gets
