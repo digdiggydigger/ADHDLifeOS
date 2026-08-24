@@ -6,11 +6,10 @@
 import XCTest
 @testable import ADHD_LifeOS
 
-/// "What counts as momentum" — the scoreboard's two live preferences: the daily goal behind the
-/// closure ring and the streak toggle. Stored in app-local UserDefaults behind a protocol seam,
-/// the `DailySummaryStoring` arrangement. (The concept's capture/nudge counting toggles are
-/// deliberately NOT here — nothing stamps when a capture clears or a nudge fires "done", so the
-/// ring could not honestly count them yet.)
+/// "What counts as momentum" — the scoreboard's preferences: the daily goal behind the closure
+/// ring, the streak toggle, and the two counting toggles their event stamps eventually earned
+/// (captures' `clearedAt` in M7, nudges' `last_fired_at` in M9). Stored in app-local UserDefaults
+/// behind a protocol seam, the `DailySummaryStoring` arrangement.
 final class MomentumPreferencesTests: XCTestCase {
 
     func testDefaults_matchTheConceptsSeed() {
@@ -41,6 +40,24 @@ final class MomentumPreferencesTests: XCTestCase {
         XCTAssertEqual(decoded.dailyGoal, 8)
         XCTAssertFalse(decoded.showStreaks)
         XCTAssertFalse(decoded.countClearedCaptures)
+        XCTAssertFalse(decoded.countNudges)
+    }
+
+    func testDefaults_nudgeCountingStartsOff() {
+        XCTAssertFalse(MomentumPreferences.default.countNudges)
+    }
+
+    /// Preferences stored by the M7 build predate `countNudges`. Same contract as the M2
+    /// migration above: adding a toggle must never reset what the user already chose.
+    func testDecode_m7EraPreferencesWithoutTheNudgeKey_keepTheirValues() throws {
+        let m7Era = Data(#"{"dailyGoal":8,"showStreaks":false,"countClearedCaptures":true}"#.utf8)
+
+        let decoded = try JSONDecoder().decode(MomentumPreferences.self, from: m7Era)
+
+        XCTAssertEqual(decoded.dailyGoal, 8)
+        XCTAssertFalse(decoded.showStreaks)
+        XCTAssertTrue(decoded.countClearedCaptures)
+        XCTAssertFalse(decoded.countNudges)
     }
 
     // MARK: - Store

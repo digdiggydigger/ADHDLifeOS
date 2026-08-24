@@ -29,9 +29,17 @@ extension HomeView {
         TaskCompletionStamp.completedTasks(in: homeService.allTasks)
     }
 
+    /// The ring's nudge contribution (M9): derived straight from the nudge list Home already
+    /// observes — no extra fetch, and a failed load reads as 0 extra, like every scoreboard
+    /// input. Recomputes live when a dismissal lands because `NudgesService` republishes.
+    var nudgesDismissedToday: Int {
+        guard momentumPreferences.countNudges else { return 0 }
+        return MomentumScoreboard.dismissedToday(nudges: nudgesService.nudges)
+    }
+
     var scoreboardSection: some View {
         MomentumRingCard(
-            closedToday: closedToday.count + capturesClearedToday,
+            closedToday: closedToday.count + capturesClearedToday + nudgesDismissedToday,
             goal: momentumPreferences.dailyGoal,
             // Streaks off keeps every number but stops counting consecutive days — rendering the
             // "still open" counterweight is exactly what a zero streak already does.

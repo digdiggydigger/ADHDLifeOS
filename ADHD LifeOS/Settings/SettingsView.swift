@@ -115,13 +115,23 @@ struct SettingsView: View {
                 }
             ))
             .accessibilityIdentifier("settingsMomentumCapturesToggle")
+
+            Toggle("Count nudges", isOn: Binding(
+                get: { momentumPreferences.countNudges },
+                set: { newValue in
+                    momentumPreferences.countNudges = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                }
+            ))
+            .accessibilityIdentifier("settingsMomentumNudgesToggle")
         } header: {
             Text("What counts as momentum")
         } footer: {
             Text(
                 "Turn streaks off and the app keeps every number but stops counting consecutive "
                     + "days. Counting cleared captures lets anything you archive, promote or "
-                    + "journal from the inbox advance the ring too."
+                    + "journal from the inbox advance the ring too. Counting nudges does the same "
+                    + "for every nudge you dismiss today."
             )
         }
     }

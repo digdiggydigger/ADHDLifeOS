@@ -22,6 +22,15 @@ final class MomentumScoreboardTests: XCTestCase {
         calendar.date(from: DateComponents(year: 2026, month: 8, day: 14, hour: 9, minute: 41))!
     }
 
+    private func nudge(dismissedDaysAgo: Int?, active: Bool = true) -> Nudge {
+        Nudge(
+            id: UUID(), label: "Water the plants", schedule: "0 9 * * *", active: active,
+            lastFiredAt: dismissedDaysAgo.map { calendar.date(byAdding: .day, value: -$0, to: now)! },
+            createdAt: calendar.date(byAdding: .day, value: -30, to: now)!,
+            updatedAt: now
+        )
+    }
+
     private func doneTask(daysAgo: Int, hour: Int = 8) -> TaskItem {
         let day = calendar.date(byAdding: .day, value: -daysAgo, to: now)!
         let stamp = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day)!
@@ -227,6 +236,33 @@ final class MomentumScoreboardTests: XCTestCase {
         )
 
         XCTAssertEqual(count, 2)
+    }
+
+    /// The ring's nudge contribution (M9, E's call 2026-08-24): `last_fired_at` IS the
+    /// done-event stamp — only the Dismiss tap writes it, with the client clock, and a schedule
+    /// fires at most once per day, so today's stamp means exactly one dismissal today. No new
+    /// backend field.
+    func testDismissedToday_countsTodaysDismissalStampsOnly() {
+        let count = MomentumScoreboard.dismissedToday(
+            nudges: [
+                nudge(dismissedDaysAgo: 0), nudge(dismissedDaysAgo: 0),
+                nudge(dismissedDaysAgo: 1), nudge(dismissedDaysAgo: nil)
+            ],
+            asOf: now, calendar: calendar
+        )
+
+        XCTAssertEqual(count, 2)
+    }
+
+    /// Deactivating a nudge after dismissing it must not un-count the day's win — the tap
+    /// happened today regardless of what the schedule does tomorrow.
+    func testDismissedToday_deactivatedNudgeStillCounts() {
+        let count = MomentumScoreboard.dismissedToday(
+            nudges: [nudge(dismissedDaysAgo: 0, active: false)],
+            asOf: now, calendar: calendar
+        )
+
+        XCTAssertEqual(count, 1)
     }
 
     // MARK: - Effort label

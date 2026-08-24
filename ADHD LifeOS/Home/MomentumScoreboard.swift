@@ -159,6 +159,22 @@ enum MomentumScoreboard {
         }.count
     }
 
+    /// Nudges whose dismissal stamp is today — the ring's nudge contribution when the Settings
+    /// toggle counts them (M9). `last_fired_at` doubles as the done-event stamp: only the
+    /// Dismiss tap writes it, with the client clock, and a schedule fires at most once per day,
+    /// so today's stamp means exactly one dismissal today. Deliberately ignores `active` — a
+    /// nudge deactivated after its dismissal was still dismissed today.
+    static func dismissedToday(
+        nudges: [Nudge],
+        asOf now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Int {
+        nudges.filter { nudge in
+            guard let lastFiredAt = nudge.lastFiredAt else { return false }
+            return calendar.isDate(lastFiredAt, inSameDayAs: now)
+        }.count
+    }
+
     /// "15 min" — the effort chip, straight off `focus_duration_seconds`. Sub-minute targets
     /// round UP: "0 min" would promise less than tapping the button costs. `nil` effort renders
     /// no chip rather than inventing a number.
