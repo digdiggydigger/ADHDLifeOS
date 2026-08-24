@@ -145,11 +145,12 @@ struct FocusTimerBar: View {
         }
     }
 
-    private static let ringSize: CGFloat = 56
+    private static let ringSize: CGFloat = 64
     private static let ringLineWidth: CGFloat = 6
 
-    /// S4's sprint ring: the scoreboard's `ClosureRing` at 56pt with the countdown in its
-    /// centre — the emoji chip and the MM:SS pill merged into the app's one ring instrument.
+    /// S4's sprint ring: the scoreboard's `ClosureRing` at 64pt (56pt read cramped on E's
+    /// device, 2026-08-24) with the countdown in its centre — the emoji chip and the MM:SS
+    /// pill merged into the app's one ring instrument.
     /// The arc FILLS with elapsed time (the scoreboard's fill-toward-done direction, E's call
     /// on the plan); the centre text does the counting down. Paused, the arc mutes exactly as
     /// the old pill background did — a held state, not the live one.

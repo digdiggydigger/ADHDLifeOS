@@ -12,7 +12,7 @@
 import SwiftUI
 
 /// Track + progress arc + whatever belongs in the middle. The same ring draws at 112pt for the
-/// day, 52pt per area and 56pt for the focus sprint (S4), so all three read as one instrument.
+/// day, 52pt per area and 64pt for the focus sprint (S4), so all three read as one instrument.
 struct ClosureRing<Center: View>: View {
     let progress: Double
     let size: CGFloat
