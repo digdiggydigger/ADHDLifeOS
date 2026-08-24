@@ -40,7 +40,8 @@ struct HomeView: View {
     /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
     private let widgetPublisher: FocusWidgetPublishing
     /// The most recent history read, kept so a life-areas reload can republish without refetching.
-    @State private var publishedHistory: [CompletedFocusSession] = []
+    /// Internal, not private: the week review reads it from `HomeMomentumSections`.
+    @State var publishedHistory: [CompletedFocusSession] = []
     @State private var pullRefreshCount = 0
     @State private var showSettings = false
     /// Re-read each time Settings closes — the sheet is the only writer. Internal for
@@ -64,6 +65,7 @@ struct HomeView: View {
     /// A Due-now row's pushed task detail — optional-state + `navigationDestination`, the
     /// TaskListView pattern, since the rows live in a LazyVStack inside this stack.
     @State var inspectingTask: TaskSummary?
+    @State var isPresentingWeekReview = false
 
     init(
         authService: AuthService,
@@ -183,6 +185,9 @@ struct HomeView: View {
             } message: {
                 Text(closeTaskErrorMessage ?? "")
             }
+            .navigationDestination(isPresented: $isPresentingWeekReview) {
+                weekReviewDestination
+            }
             .navigationDestination(for: LifeArea.self) { lifeArea in
                 LifeAreaDetailView(
                     lifeArea: lifeArea,
@@ -279,6 +284,7 @@ struct HomeView: View {
                         inboxCount: inboxCount,
                         dueNudgeCount: nudgesService.dueNudges().count
                     )
+                    weekReviewRow
                     FocusAnalyticsSection(reloadToken: focusReloadToken + pullRefreshCount) { sessions in
                         // Fires on first load, on pull-to-refresh, and on every finished sprint
                         // (`focusReloadToken` is RootView's completedSprintCount) — so the Home
