@@ -109,7 +109,13 @@ struct TaskListView: View {
                         lifeAreas: tasksService.lifeAreas,
                         client: taskDetailClient,
                         schedulingClient: schedulingClient,
-                        onStartFocus: onStartFocus
+                        onStartFocus: onStartFocus,
+                        momentumContext: MomentumTaskContext.build(
+                            lifeAreaId: task.lifeAreaId,
+                            tasks: tasksService.tasks,
+                            lifeAreas: tasksService.lifeAreas,
+                            showStreaks: UserDefaultsMomentumPreferencesStore().read().showStreaks
+                        )
                     ) {
                         Task { await tasksService.load() }
                     }

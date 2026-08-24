@@ -17,7 +17,8 @@ struct HomeView: View {
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
     /// Internal, not private: `HomeMomentumSections` drives the close-from-Home flow.
     let taskDetailClient: TaskDetailClientAdapting
-    private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
+    /// Internal, not private: `HomeMomentumSections` builds the pushed task detail.
+    let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     /// Threaded Home → LifeAreaDetail → TaskDetail so the detail screen reached from a life-area
     /// card can launch a sprint on `RootView`'s app-level `FocusSessionService`. Internal for
     /// `HomeMomentumSections`.
@@ -168,15 +169,7 @@ struct HomeView: View {
                 set: { if !$0 { inspectingTask = nil } }
             )) {
                 if let task = inspectingTask {
-                    TaskDetailView(
-                        taskId: task.id,
-                        lifeAreas: homeService.lifeAreas,
-                        client: taskDetailClient,
-                        schedulingClient: schedulingClient,
-                        onStartFocus: onStartFocus
-                    ) {
-                        Task { await homeService.load() }
-                    }
+                    inspectedTaskDetail(task)
                 }
             }
             .alert(

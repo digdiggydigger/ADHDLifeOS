@@ -12,6 +12,9 @@ struct TaskDetailView: View {
     /// Starts an app-level focus sprint (owned by `RootView`'s `FocusSessionService`). `nil` in
     /// hosts with no focus wiring, which hides the launch row but keeps the config editable.
     let onStartFocus: ((FocusSprintPlan) -> Void)?
+    /// S3's context (streak + "Momentum here" line), computed by the pushing screen — see
+    /// `TaskDetailMomentumSection`. `.empty` degrades both to their pre-Momentum reading.
+    let momentumContext: MomentumTaskContext.Context
     let onUpdated: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -40,6 +43,7 @@ struct TaskDetailView: View {
         client: TaskDetailClientAdapting,
         schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
+        momentumContext: MomentumTaskContext.Context = .empty,
         onUpdated: @escaping () -> Void
     ) {
         _service = StateObject(
@@ -47,6 +51,7 @@ struct TaskDetailView: View {
         )
         self.lifeAreas = lifeAreas
         self.onStartFocus = onStartFocus
+        self.momentumContext = momentumContext
         self.onUpdated = onUpdated
     }
 
@@ -164,6 +169,7 @@ private extension TaskDetailView {
         let dirty = dirtyState(for: task)
         return Form {
             titleAndStatusSection(for: task)
+            momentumHereSection
             TaskFocusPlanSection(
                 durationSeconds: $focusDurationSeconds,
                 nudgeCount: $focusNudgeCount,
@@ -220,7 +226,7 @@ private extension TaskDetailView {
             Button {
                 Task { await service.toggleStatus() }
             } label: {
-                Text(task.status == .open ? "Mark Done" : "Reopen")
+                Text(MomentumTaskContext.closeButtonLabel(status: task.status, streak: momentumContext.streak))
             }
             .accessibilityIdentifier("taskDetailStatusToggle")
         } footer: {

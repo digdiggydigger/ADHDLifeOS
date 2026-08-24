@@ -180,4 +180,24 @@ extension HomeView {
     func refreshInboxCount() async {
         inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
     }
+
+    /// The Due-now push's destination, with the S3 Momentum context built from the history Home
+    /// already holds.
+    func inspectedTaskDetail(_ task: TaskSummary) -> some View {
+        TaskDetailView(
+            taskId: task.id,
+            lifeAreas: homeService.lifeAreas,
+            client: taskDetailClient,
+            schedulingClient: schedulingClient,
+            onStartFocus: onStartFocus,
+            momentumContext: MomentumTaskContext.build(
+                lifeAreaId: task.lifeAreaId,
+                tasks: homeService.allTasks,
+                lifeAreas: homeService.lifeAreas,
+                showStreaks: momentumPreferences.showStreaks
+            )
+        ) {
+            Task { await homeService.load() }
+        }
+    }
 }

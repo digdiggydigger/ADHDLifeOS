@@ -59,7 +59,8 @@ final class TasksService: ObservableObject {
 
     private let client: TasksClientAdapting
     private(set) var lifeAreas: [LifeArea] = []
-    private var tasks: [TaskItem] = []
+    /// Read by `TaskListView` to build the detail's Momentum context; only this service writes it.
+    private(set) var tasks: [TaskItem] = []
     private var hasLoadedOnce = false
 
     init(client: TasksClientAdapting) {
