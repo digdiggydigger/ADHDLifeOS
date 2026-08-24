@@ -37,6 +37,31 @@ extension HomeView {
         return MomentumScoreboard.dismissedToday(nudges: nudgesService.nudges)
     }
 
+    /// The concept's `chartsOn` Today chart: closures per trailing day with the focus-minute
+    /// counterweight underneath. Hidden while the week is empty — a flat rail is noise, not
+    /// evidence — and gated on the Settings toggle.
+    @ViewBuilder
+    var closedWeekChartSection: some View {
+        let counts = MomentumWeekCharts.closedPerDay(tasks: homeService.allTasks)
+        if momentumPreferences.showCharts, counts.contains(where: { $0 > 0 }) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Closed this week · \(counts.reduce(0, +))")
+                    .font(.headline)
+                VStack(alignment: .leading, spacing: 8) {
+                    WeekBarStrip(fractions: MomentumWeekCharts.barFractions(counts))
+                    Text(MomentumWeekCharts.closedCaption(sessions: publishedHistory))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .bentoCard()
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("homeClosedWeekChart")
+        }
+    }
+
     var scoreboardSection: some View {
         MomentumRingCard(
             closedToday: closedToday.count + capturesClearedToday + nudgesDismissedToday,

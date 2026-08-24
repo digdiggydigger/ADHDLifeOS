@@ -281,6 +281,7 @@ struct HomeView: View {
                             .font(.headline)
                         MomentumClosedTodayCard(tasks: closedToday)
                     }
+                    closedWeekChartSection
                     DailySummaryView(
                         openTaskCount: counts.reduce(0) { $0 + $1.openTaskCount },
                         lifeAreaCount: counts.count,

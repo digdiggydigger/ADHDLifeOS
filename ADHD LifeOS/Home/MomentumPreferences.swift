@@ -17,7 +17,8 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     static let goalRange = 1...12
 
     static let `default` = MomentumPreferences(
-        dailyGoal: 5, showStreaks: true, countClearedCaptures: false, countNudges: false
+        dailyGoal: 5, showStreaks: true, countClearedCaptures: false, countNudges: false,
+        showCharts: true
     )
 
     var dailyGoal: Int
@@ -31,6 +32,10 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// the done-event stamp — only the Dismiss tap writes it, and a schedule fires at most once
     /// a day — so no new backend field was needed (E's call, 2026-08-24).
     var countNudges: Bool
+    /// Charts (`chartsOn` in the concept): the weekly bars on Today and Tasks. Display-only, so
+    /// it ships at the concept's own default (on) — unlike the counting toggles, an enabled
+    /// chart cannot misstate anything.
+    var showCharts: Bool
 
     /// Every read path passes through this, so no writer — Stepper, old build, bad migration —
     /// can hand the ring a goal it would divide by zero on.
@@ -39,18 +44,26 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
             dailyGoal: min(max(dailyGoal, Self.goalRange.lowerBound), Self.goalRange.upperBound),
             showStreaks: showStreaks,
             countClearedCaptures: countClearedCaptures,
-            countNudges: countNudges
+            countNudges: countNudges,
+            showCharts: showCharts
         )
     }
 
     /// Hand-written so preferences stored by earlier builds (M2 predates `countClearedCaptures`,
     /// M7 predates `countNudges`) decode with the user's choices INTACT rather than resetting
     /// to defaults.
-    init(dailyGoal: Int, showStreaks: Bool, countClearedCaptures: Bool = false, countNudges: Bool = false) {
+    init(
+        dailyGoal: Int,
+        showStreaks: Bool,
+        countClearedCaptures: Bool = false,
+        countNudges: Bool = false,
+        showCharts: Bool = true
+    ) {
         self.dailyGoal = dailyGoal
         self.showStreaks = showStreaks
         self.countClearedCaptures = countClearedCaptures
         self.countNudges = countNudges
+        self.showCharts = showCharts
     }
 
     init(from decoder: Decoder) throws {
@@ -59,6 +72,7 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         showStreaks = try container.decode(Bool.self, forKey: .showStreaks)
         countClearedCaptures = try container.decodeIfPresent(Bool.self, forKey: .countClearedCaptures) ?? false
         countNudges = try container.decodeIfPresent(Bool.self, forKey: .countNudges) ?? false
+        showCharts = try container.decodeIfPresent(Bool.self, forKey: .showCharts) ?? true
     }
 }
 

@@ -166,6 +166,10 @@ struct TaskListView: View {
                             .background(.bar)
                     }
                 }
+
+                if UserDefaultsMomentumPreferencesStore().read().showCharts {
+                    TasksFocusWeekSection()
+                }
             }
             .padding(16)
         }

@@ -60,6 +60,27 @@ final class MomentumPreferencesTests: XCTestCase {
         XCTAssertFalse(decoded.countNudges)
     }
 
+    /// Display-only, so it ships at the concept's own default (on) — unlike the counting
+    /// toggles, an enabled chart cannot misstate anything.
+    func testDefaults_chartsStartOn() {
+        XCTAssertTrue(MomentumPreferences.default.showCharts)
+    }
+
+    /// Preferences stored by the M9 build predate `showCharts`; the migration contract again.
+    func testDecode_m9EraPreferencesWithoutTheChartsKey_keepTheirValues() throws {
+        let m9Era = Data(
+            #"{"dailyGoal":8,"showStreaks":false,"countClearedCaptures":true,"countNudges":true}"#.utf8
+        )
+
+        let decoded = try JSONDecoder().decode(MomentumPreferences.self, from: m9Era)
+
+        XCTAssertEqual(decoded.dailyGoal, 8)
+        XCTAssertFalse(decoded.showStreaks)
+        XCTAssertTrue(decoded.countClearedCaptures)
+        XCTAssertTrue(decoded.countNudges)
+        XCTAssertTrue(decoded.showCharts)
+    }
+
     // MARK: - Store
 
     private func makeStore() -> (store: UserDefaultsMomentumPreferencesStore, defaults: UserDefaults) {

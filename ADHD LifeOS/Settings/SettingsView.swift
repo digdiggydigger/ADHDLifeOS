@@ -124,6 +124,15 @@ struct SettingsView: View {
                 }
             ))
             .accessibilityIdentifier("settingsMomentumNudgesToggle")
+
+            Toggle("Show weekly charts", isOn: Binding(
+                get: { momentumPreferences.showCharts },
+                set: { newValue in
+                    momentumPreferences.showCharts = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                }
+            ))
+            .accessibilityIdentifier("settingsMomentumChartsToggle")
         } header: {
             Text("What counts as momentum")
         } footer: {
@@ -131,7 +140,8 @@ struct SettingsView: View {
                 "Turn streaks off and the app keeps every number but stops counting consecutive "
                     + "days. Counting cleared captures lets anything you archive, promote or "
                     + "journal from the inbox advance the ring too. Counting nudges does the same "
-                    + "for every nudge you dismiss today."
+                    + "for every nudge you dismiss today. Weekly charts can be hidden without "
+                    + "losing any numbers."
             )
         }
     }
