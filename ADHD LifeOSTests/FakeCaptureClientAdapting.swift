@@ -13,6 +13,7 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
     var fetchUnprocessedCapturesResult: Result<[Capture], Error> = .success([])
     var fetchProcessedCapturesResult: Result<[Capture], Error> = .success([])
     var fetchSeenCapturesResult: Result<[Capture], Error> = .success([])
+    var fetchCapturesResult: Result<[Capture], Error> = .success([])
     var deleteCaptureResult: Result<Void, Error> = .success(())
     var fetchCaptureResult: Result<Capture, Error> = .success(
         Capture(id: UUID(), content: "note", kind: .note, processed: false, createdAt: Date())
@@ -38,6 +39,7 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
     private(set) var fetchUnprocessedCapturesCallCount = 0
     private(set) var fetchProcessedCapturesCallCount = 0
     private(set) var fetchSeenCapturesCallCount = 0
+    private(set) var fetchCapturesCallCount = 0
     private(set) var deleteCaptureCallCount = 0
     private(set) var lastDeleteCaptureId: UUID?
     private(set) var fetchCaptureCallCount = 0
@@ -83,6 +85,12 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
         callLog.append("fetchUnprocessedCaptures")
         fetchUnprocessedCapturesCallCount += 1
         return try fetchUnprocessedCapturesResult.get()
+    }
+
+    func fetchCaptures() async throws -> [Capture] {
+        callLog.append("fetchCaptures")
+        fetchCapturesCallCount += 1
+        return try fetchCapturesResult.get()
     }
 
     func fetchProcessedCaptures() async throws -> [Capture] {

@@ -37,6 +37,7 @@ private struct DetailPreviewCaptureClient: CaptureClientAdapting {
     func fetchUnprocessedCaptures() async throws -> [Capture] { [Self.sample] }
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
     func fetchSeenCaptures() async throws -> [Capture] { [] }
+    func fetchCaptures() async throws -> [Capture] { [] }
     func fetchCapture(id: UUID) async throws -> Capture { Self.sample }
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
         fatalError("unused in preview")

@@ -67,6 +67,9 @@ protocol CaptureClientAdapting: Sendable {
     func fetchProcessedCaptures() async throws -> [Capture]
     /// Captures archived as "seen" (and not since promoted) — the Captures tab's Seen slice.
     func fetchSeenCaptures() async throws -> [Capture]
+    /// Every capture regardless of state — the input to S1's weekly capture-vs-clear
+    /// counterweight (M10). Newest first, straight off the server ordering.
+    func fetchCaptures() async throws -> [Capture]
     func fetchCapture(id: UUID) async throws -> Capture
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem
     func markProcessed(captureId: UUID) async throws

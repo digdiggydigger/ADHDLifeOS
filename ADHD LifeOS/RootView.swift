@@ -213,6 +213,7 @@ struct RootView: View {
             fatalError("unused in preview")
         }
         func fetchUnprocessedCaptures() async throws -> [Capture] { [] }
+        func fetchCaptures() async throws -> [Capture] { [] }
         func fetchCapture(id: UUID) async throws -> Capture { fatalError("unused in preview") }
         func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
             fatalError("unused in preview")

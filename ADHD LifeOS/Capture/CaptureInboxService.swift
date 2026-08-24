@@ -115,6 +115,13 @@ final class CaptureInboxService: ObservableObject {
     /// without a count rather than claiming zero, which is a different and much worse statement.
     @Published private(set) var counts: [Filter: Int] = [:]
 
+    /// S1's weekly counterweight ("11 captured · 7 cleared this week"), M10 — shown on the
+    /// Inbox header and quick capture's footer. `nil` until a fetch lands or when nothing moved
+    /// this week; either way the screens drop the line rather than render a blank. Settable
+    /// (not `private(set)`) for the same reason `client` is internal: its one writer lives in
+    /// the `+Counterweight` extension file.
+    @Published var weekCounterweightLine: String?
+
     func load() async {
         state = .loading
         do {
@@ -125,6 +132,7 @@ final class CaptureInboxService: ObservableObject {
             state = .failed(Self.message(for: error))
         }
         await refreshInactiveCount()
+        await refreshWeekCounterweight()
     }
 
     /// Learns the count for every OTHER offered tab so the picker isn't half-labelled on a cold
@@ -168,9 +176,11 @@ final class CaptureInboxService: ObservableObject {
     /// captures on screen rather than surfacing an error — a transient refresh hiccup shouldn't
     /// blank a list the user can already see.
     func refresh() async {
-        guard let captures = try? await fetchCurrentFilter() else { return }
-        counts[filter] = captures.count
-        state = .loaded(captures)
+        if let captures = try? await fetchCurrentFilter() {
+            counts[filter] = captures.count
+            state = .loaded(captures)
+        }
+        await refreshWeekCounterweight()
     }
 
     @discardableResult

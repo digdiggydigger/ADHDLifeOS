@@ -164,6 +164,14 @@ struct CaptureInboxView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("captureInboxOldestLine")
             }
+            // S1's weekly ledger (M10): captured vs cleared over the trailing seven days — the
+            // second honest counterweight beside the ageing line.
+            if let weekLine = service.weekCounterweightLine {
+                Text(weekLine)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("captureInboxWeekCounterweight")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

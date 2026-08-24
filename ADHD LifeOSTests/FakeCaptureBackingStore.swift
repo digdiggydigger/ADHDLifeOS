@@ -11,6 +11,7 @@ import Foundation
 /// membership and promotion. Same conventions as the other backing-store fakes: calls are recorded
 /// before any configured error is thrown.
 final class FakeCaptureBackingStore: CaptureBackingStore {
+    var allCaptures: [Capture] = []
     var unprocessedCaptures: [Capture] = []
     var processedCaptures: [Capture] = []
     var seenCaptures: [Capture] = []
@@ -67,6 +68,10 @@ final class FakeCaptureBackingStore: CaptureBackingStore {
     func saveCapture(_ capture: Capture) async throws {
         savedCaptures.append(capture)
         if let saveCaptureError { throw saveCaptureError }
+    }
+
+    func fetchCaptures() async throws -> [Capture] {
+        allCaptures
     }
 
     func fetchUnprocessedCaptures() async throws -> [Capture] {

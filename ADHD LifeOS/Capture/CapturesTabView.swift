@@ -237,6 +237,7 @@ private struct TabPreviewCaptureClient: CaptureClientAdapting {
         fatalError("unused in preview")
     }
     func fetchUnprocessedCaptures() async throws -> [Capture] { [] }
+    func fetchCaptures() async throws -> [Capture] { [] }
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
     func fetchSeenCaptures() async throws -> [Capture] {
         [

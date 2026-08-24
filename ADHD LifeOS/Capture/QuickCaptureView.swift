@@ -71,14 +71,22 @@ struct QuickCaptureView: View {
                         .accessibilityIdentifier("quickCaptureErrorMessage")
                 }
 
-                // S1's counterweight to the frictionless button (Concept C, M5): nothing needs
-                // filing NOW — the inbox exists so triage can wait for bandwidth.
+                // S1's counterweight to the frictionless button (Concept C, M5 + M10): nothing
+                // needs filing NOW — and the week's honest ledger backs that up with numbers
+                // when there are any.
                 Section {
                 } footer: {
-                    Text("Nothing is filed yet. Clearing it later is what counts.")
-                        .accessibilityIdentifier("quickCaptureReassurance")
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let weekLine = service.weekCounterweightLine {
+                            Text(weekLine)
+                                .accessibilityIdentifier("quickCaptureWeekCounterweight")
+                        }
+                        Text("Nothing is filed yet. Clearing it later is what counts.")
+                            .accessibilityIdentifier("quickCaptureReassurance")
+                    }
                 }
             }
+            .task { await service.refreshWeekCounterweight() }
             .navigationTitle("Quick Capture")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -193,6 +201,7 @@ private struct PreviewCaptureClientAdapting: CaptureClientAdapting {
         fatalError("unused in preview")
     }
     func fetchUnprocessedCaptures() async throws -> [Capture] { [] }
+    func fetchCaptures() async throws -> [Capture] { [] }
     func fetchCapture(id: UUID) async throws -> Capture { fatalError("unused in preview") }
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
         fatalError("unused in preview")

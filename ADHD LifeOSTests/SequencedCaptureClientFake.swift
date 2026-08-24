@@ -113,6 +113,7 @@ final class SequencedCaptureClientFake: CaptureClientAdapting, @unchecked Sendab
     }
 
     func fetchUnprocessedCaptures() async throws -> [Capture] { [] }
+    func fetchCaptures() async throws -> [Capture] { [] }
     func fetchCapture(id: UUID) async throws -> Capture { defaultCapture }
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
         TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: nil)

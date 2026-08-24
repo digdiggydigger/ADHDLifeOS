@@ -53,6 +53,12 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    /// The whole collection, every state included — M10's weekly counterweight input. The
+    /// manager's query already orders newest-first server-side, so no client-side sort.
+    func fetchCaptures() async throws -> [Capture] {
+        try await store.fetchCaptures()
+    }
+
     func fetchProcessedCaptures() async throws -> [Capture] {
         try await store.fetchProcessedCaptures()
             .sorted { $0.createdAt > $1.createdAt }

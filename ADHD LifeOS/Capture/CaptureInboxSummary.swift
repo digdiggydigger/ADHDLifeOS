@@ -42,6 +42,29 @@ enum CaptureInboxSummary {
         }
     }
 
+    /// "11 captured · 7 cleared this week" — S1's capture-vs-clear counterweight (Concept C,
+    /// M10): the frictionless button's honest weekly ledger. The window is the trailing seven
+    /// days including today, the same rolling week as `MomentumScoreboard.closedThisWeek`, so
+    /// Monday morning doesn't wipe the board. "Cleared" counts only stamped exits — a processed
+    /// capture with no `clearedAt` predates M7 and belongs to no particular week (the honest-data
+    /// rule). `nil` when nothing moved either way: "0 captured · 0 cleared" is a shrug, and the
+    /// screens drop the line instead.
+    static func weeklyCounterweight(
+        for captures: [Capture],
+        asOf now: Date = .now,
+        calendar: Calendar = .current
+    ) -> String? {
+        let today = calendar.startOfDay(for: now)
+        guard let windowStart = calendar.date(byAdding: .day, value: -6, to: today) else { return nil }
+        let captured = captures.filter { $0.createdAt >= windowStart }.count
+        let cleared = captures.filter { capture in
+            guard let clearedAt = capture.clearedAt else { return false }
+            return clearedAt >= windowStart
+        }.count
+        guard captured > 0 || cleared > 0 else { return nil }
+        return "\(captured) captured · \(cleared) cleared this week"
+    }
+
     /// "2 notes · 1 voice memo" — every kind with something waiting, in a fixed order so the same
     /// inbox always reads the same way regardless of capture order. Empty when nothing is waiting,
     /// so the header can drop the line entirely rather than render a stray separator.

@@ -14,6 +14,80 @@ final class CaptureInboxSummaryTests: XCTestCase {
         Capture(id: UUID(), content: "Something", kind: kind, processed: false, createdAt: Date())
     }
 
+    // MARK: - Weekly counterweight (Concept C S1, block M10)
+
+    /// Deterministic clock for the window tests — the shared-fixture arrangement from
+    /// `MomentumScoreboardTests`.
+    private var utcCalendar: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        return cal
+    }
+
+    private var fixedNow: Date {
+        utcCalendar.date(from: DateComponents(year: 2026, month: 8, day: 14, hour: 9, minute: 41))!
+    }
+
+    private func weekCapture(createdDaysAgo: Int, clearedDaysAgo: Int? = nil) -> Capture {
+        Capture(
+            id: UUID(), content: "x", kind: .note, processed: clearedDaysAgo != nil,
+            createdAt: utcCalendar.date(byAdding: .day, value: -createdDaysAgo, to: fixedNow)!,
+            clearedAt: clearedDaysAgo.map { utcCalendar.date(byAdding: .day, value: -$0, to: fixedNow)! }
+        )
+    }
+
+    /// "2 captured · 1 cleared this week" — the same trailing-seven-day rolling window as
+    /// `MomentumScoreboard.closedThisWeek`, so Monday morning doesn't wipe the board.
+    func testWeeklyCounterweight_countsTheTrailingSevenDaysIncludingToday() {
+        let line = CaptureInboxSummary.weeklyCounterweight(
+            for: [
+                weekCapture(createdDaysAgo: 0),
+                weekCapture(createdDaysAgo: 6),
+                weekCapture(createdDaysAgo: 7),
+                weekCapture(createdDaysAgo: 10, clearedDaysAgo: 6),
+                weekCapture(createdDaysAgo: 10, clearedDaysAgo: 7)
+            ],
+            asOf: fixedNow, calendar: utcCalendar
+        )
+
+        XCTAssertEqual(line, "2 captured · 1 cleared this week")
+    }
+
+    /// The honest-data rule (M7's): a processed capture with no `clearedAt` predates the stamp
+    /// and belongs to no particular week — it must never inflate "cleared".
+    func testWeeklyCounterweight_unstampedProcessedCapturesBelongToNoWeek() {
+        var unstamped = weekCapture(createdDaysAgo: 10)
+        unstamped.processed = true
+
+        let line = CaptureInboxSummary.weeklyCounterweight(
+            for: [unstamped, weekCapture(createdDaysAgo: 0)],
+            asOf: fixedNow, calendar: utcCalendar
+        )
+
+        XCTAssertEqual(line, "1 captured · 0 cleared this week")
+    }
+
+    /// Clearing old backlog is a win the line must be able to state: cleared can exceed captured.
+    func testWeeklyCounterweight_clearingOldBacklogCanExceedCaptures() {
+        let line = CaptureInboxSummary.weeklyCounterweight(
+            for: [weekCapture(createdDaysAgo: 10, clearedDaysAgo: 0)],
+            asOf: fixedNow, calendar: utcCalendar
+        )
+
+        XCTAssertEqual(line, "0 captured · 1 cleared this week")
+    }
+
+    /// A week with no movement drops the line entirely — "0 captured · 0 cleared" is a shrug,
+    /// not information.
+    func testWeeklyCounterweight_nilWhenNothingMovedThisWeek() {
+        let line = CaptureInboxSummary.weeklyCounterweight(
+            for: [weekCapture(createdDaysAgo: 10)],
+            asOf: fixedNow, calendar: utcCalendar
+        )
+
+        XCTAssertNil(line)
+    }
+
     // MARK: - Headline
 
     func testHeadline_countsWhatIsWaiting() {

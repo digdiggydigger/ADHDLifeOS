@@ -113,6 +113,7 @@ final class PromoteRaceCaptureClientFake: CaptureClientAdapting, @unchecked Send
 
     func createCapture(_ input: NormalizedCreateCaptureInput) async throws -> Capture { capture }
     func fetchUnprocessedCaptures() async throws -> [Capture] { [capture] }
+    func fetchCaptures() async throws -> [Capture] { [capture] }
     func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
         CaptureUploadTarget(uploadURL: URL(string: "https://example.com/upload")!, mediaKey: "key", thumbnailKey: nil)
     }
