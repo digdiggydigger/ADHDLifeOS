@@ -268,6 +268,12 @@ struct AreaMomentumStrip: View {
                                 Text(item.area.colour)
                                     .font(.title3)
                             }
+                            // Named, not just emoji'd (E's 2026-08-24 review): the ring must say
+                            // which life it measures without a tap.
+                            Text(item.area.name)
+                                .font(.caption2.weight(.semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                             Text(rateLabel(for: item))
                                 .font(.caption2.weight(.semibold))
                                 .monospacedDigit()

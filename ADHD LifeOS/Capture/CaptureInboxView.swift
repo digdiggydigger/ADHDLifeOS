@@ -103,11 +103,15 @@ struct CaptureInboxView: View {
             Text("Frictionless ingestion")
                 .sectionLabel()
                 .foregroundStyle(Color.accentColor)
-            Text("Capture Inbox")
-                .font(.largeTitle.bold())
-                .tracking(-0.5)
-                .minimumScaleFactor(0.8)
-                .lineLimit(1)
+            HStack(alignment: .center, spacing: 8) {
+                Text("Capture Inbox")
+                    .font(.largeTitle.bold())
+                    .tracking(-0.5)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
+                Spacer()
+                CaptureRefinementMenu(service: service)
+            }
             Text("Dump thoughts and photos instantly, triage when executive bandwidth allows.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -127,7 +131,7 @@ struct CaptureInboxView: View {
             LazyVStack(alignment: .leading, spacing: 16) {
                 summaryHeader(captures)
 
-                ForEach(captures) { capture in
+                ForEach(service.displayedCaptures) { capture in
                     row(for: capture)
                         .bentoCard()
                 }

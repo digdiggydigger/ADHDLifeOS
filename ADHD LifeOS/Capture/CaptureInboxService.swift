@@ -46,6 +46,10 @@ final class CaptureInboxService: ObservableObject {
     @Published var warningMessage: String?
     @Published var errorMessage: String?
     @Published var triageErrorMessage: String?
+    /// The refinement menu's state (E's 2026-08-24 direction), applied at display time only —
+    /// `state` stays the untouched truth behind counts and summaries.
+    @Published var sortNewestFirst = true
+    @Published var kindFilter: CaptureKind?
 
     let client: CaptureClientAdapting
     /// Used only by `logToJournal` — the triage exit that writes a journal entry instead of a task.
@@ -92,6 +96,11 @@ final class CaptureInboxService: ObservableObject {
             return captures
         }
         return []
+    }
+
+    /// What the rows render: the loaded slice through the refinement menu.
+    var displayedCaptures: [Capture] {
+        CaptureListRefinement.apply(captures: captures, newestFirst: sortNewestFirst, kind: kindFilter)
     }
 
     var isContentValid: Bool {

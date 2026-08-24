@@ -16,8 +16,14 @@ struct CapturesTabView: View {
     /// Life areas feed the detail's Filed-in card. This tab has no Home parent to hand them down
     /// the way the Inbox does, so it fetches its own through the client that owns them.
     private let homeClient: HomeClientAdapting
+    /// Kept for the pushed Capture Inbox, which builds its own service over the same clients.
+    private let client: CaptureClientAdapting
+    private let journalClient: JournalClientAdapting?
     @State private var lifeAreas: [LifeArea] = []
     @State private var inspectingCapture: Capture?
+    /// The inbox entry point E asked for on this tab (2026-08-24) — captures live here, so the
+    /// place they arrive should be one tap away, same reachability Home's toolbar gives it.
+    @State private var isPresentingInbox = false
 
     init(
         client: CaptureClientAdapting,
@@ -30,6 +36,8 @@ struct CapturesTabView: View {
             )
         )
         self.homeClient = homeClient
+        self.client = client
+        self.journalClient = journalClient
     }
 
     var body: some View {
@@ -58,6 +66,9 @@ struct CapturesTabView: View {
         // Same arrangement as the Inbox: the purpose header IS the title.
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $isPresentingInbox) {
+            CaptureInboxView(client: client, journalClient: journalClient, lifeAreas: lifeAreas)
+        }
         .navigationDestination(isPresented: Binding(
             get: { inspectingCapture != nil },
             set: { if !$0 { inspectingCapture = nil } }
@@ -77,11 +88,25 @@ struct CapturesTabView: View {
             Text("Nothing is lost")
                 .sectionLabel()
                 .foregroundStyle(Color.accentColor)
-            Text("Captures")
-                .font(.largeTitle.bold())
-                .tracking(-0.5)
-                .minimumScaleFactor(0.8)
-                .lineLimit(1)
+            HStack(alignment: .center, spacing: 8) {
+                Text("Captures")
+                    .font(.largeTitle.bold())
+                    .tracking(-0.5)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
+                Spacer()
+                Button {
+                    isPresentingInbox = true
+                } label: {
+                    Image(systemName: "tray")
+                        .font(.title3)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Capture Inbox")
+                .accessibilityIdentifier("capturesTabInboxButton")
+                CaptureRefinementMenu(service: service)
+            }
             Text("Everything you've seen or promoted — kept, still actionable, out of your inbox.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -127,7 +152,7 @@ struct CapturesTabView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
                 summaryHeader(captures)
-                ForEach(captures) { capture in
+                ForEach(service.displayedCaptures) { capture in
                     CaptureRowView(capture: capture, lifeAreas: lifeAreas) {
                         inspectingCapture = capture
                     }

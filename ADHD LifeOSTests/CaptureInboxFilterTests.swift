@@ -47,6 +47,28 @@ final class CaptureInboxFilterTests: XCTestCase {
         XCTAssertEqual(makeSUT().service.filter, .unprocessed, "triage is the job; the backlog opens first")
     }
 
+    // MARK: - Display refinement (sort + kind filter)
+
+    func testDisplayedCaptures_honourSortAndKindRefinement() async {
+        let older = Capture(
+            id: UUID(), content: "older note", kind: .note, processed: false,
+            createdAt: Date().addingTimeInterval(-3600)
+        )
+        let newerLink = Capture(
+            id: UUID(), content: "newer link", kind: .link, processed: false, createdAt: Date()
+        )
+        let env = makeSUT(unprocessed: [newerLink, older])
+        await env.service.load()
+
+        XCTAssertEqual(env.service.displayedCaptures.map(\.content), ["newer link", "older note"])
+
+        env.service.sortNewestFirst = false
+        XCTAssertEqual(env.service.displayedCaptures.map(\.content), ["older note", "newer link"])
+
+        env.service.kindFilter = .link
+        XCTAssertEqual(env.service.displayedCaptures.map(\.content), ["newer link"])
+    }
+
     // MARK: - Which filters a screen offers
 
     /// The Inbox's default: purely to-triage. Since the Captures tab took over Seen and Promoted,
