@@ -34,8 +34,12 @@ final class TasksServiceTests: XCTestCase {
 
         await sut.load()
 
+        // The default filter is the Momentum board (M3), so an undated open task loads into its
+        // Someday bucket; the life-area grouping is exercised through the Open/Done/All filters.
         XCTAssertEqual(sut.state, .loaded([
-            LifeAreaTaskGroup(lifeAreaId: work.id, lifeAreaName: "Work", tasks: [task])
+            LifeAreaTaskGroup(
+                lifeAreaId: nil, lifeAreaName: "Someday · 1", tasks: [task], customId: "momentum-someday"
+            )
         ]))
         XCTAssertEqual(fake.fetchLifeAreasCallCount, 1)
         XCTAssertEqual(fake.fetchAllTasksCallCount, 1)
@@ -70,11 +74,11 @@ final class TasksServiceTests: XCTestCase {
         XCTAssertEqual(sut.state, .failed("Network error"))
     }
 
-    func testDefaultStatusFilter_isOpen() {
+    func testDefaultStatusFilter_isMomentum() {
         let fake = FakeTasksClientAdapting()
         let sut = TasksService(client: fake)
 
-        XCTAssertEqual(sut.statusFilter, .open)
+        XCTAssertEqual(sut.statusFilter, .momentum, "the Momentum board opens first (Concept C, M3)")
     }
 
     func testChangingStatusFilter_afterLoad_refiltersWithoutRefetching() async {

@@ -106,6 +106,9 @@ struct LifeAreaTaskGroup: Identifiable, Equatable, Sendable {
     let lifeAreaId: UUID?
     let lifeAreaName: String
     let tasks: [TaskItem]
+    /// Momentum's due-time buckets all carry a nil life-area id, so they name their own identity;
+    /// life-area groups leave this nil and keep the original derivation.
+    var customId: String?
 
-    var id: String { lifeAreaId?.uuidString ?? "unassigned" }
+    var id: String { customId ?? lifeAreaId?.uuidString ?? "unassigned" }
 }

@@ -60,7 +60,7 @@ struct LifeAreaDetailView: View {
     private var loadedContent: some View {
         VStack(spacing: 0) {
             Picker("Status", selection: $service.statusFilter) {
-                ForEach(TaskStatusFilterOption.allCases) { option in
+                ForEach(TaskStatusFilterOption.standardOptions) { option in
                     Text(option.label).tag(option)
                 }
             }

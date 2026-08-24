@@ -34,6 +34,22 @@ final class TaskStatusFilterTests: XCTestCase {
         XCTAssertEqual(result.map(\.title), ["Done task"])
     }
 
+    /// Momentum is "what's moving today": everything open, plus today's closures as evidence.
+    /// Yesterday's wins belong to Done, not to today's board.
+    func testFilter_momentum_returnsOpenPlusTodaysClosures() {
+        var closedToday = makeTask(title: "Closed today", status: .done)
+        closedToday.completedAt = Date()
+        var closedYesterday = makeTask(title: "Closed yesterday", status: .done)
+        closedYesterday.completedAt = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+
+        let result = TaskStatusFilter.filter(
+            tasks: [makeTask(title: "Open task", status: .open), closedToday, closedYesterday],
+            by: .momentum
+        )
+
+        XCTAssertEqual(result.map(\.title), ["Open task", "Closed today"])
+    }
+
     func testFilter_all_returnsEveryTask() {
         let tasks = [
             makeTask(title: "Open task", status: .open),

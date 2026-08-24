@@ -26,7 +26,7 @@ enum TasksServiceError: LocalizedError, Equatable {
 @MainActor
 final class TasksService: ObservableObject {
     @Published private(set) var state: TasksLoadState = .loading
-    @Published var statusFilter: TaskStatusFilterOption = .open {
+    @Published var statusFilter: TaskStatusFilterOption = .momentum {
         didSet {
             guard hasLoadedOnce else { return }
             recomputeGroups()
@@ -121,6 +121,11 @@ final class TasksService: ObservableObject {
         let refined = TaskListRefinement.apply(
             tasks: statusFiltered, searchText: searchText, priorityFilter: priorityFilter, sort: sortOption
         )
-        state = .loaded(TaskGrouping.groupTasksByLifeArea(tasks: refined, lifeAreas: lifeAreas))
+        // Momentum re-groups by dueness; every other filter keeps the life-area grouping.
+        state = .loaded(
+            statusFilter == .momentum
+                ? MomentumTaskBuckets.group(tasks: refined)
+                : TaskGrouping.groupTasksByLifeArea(tasks: refined, lifeAreas: lifeAreas)
+        )
     }
 }
