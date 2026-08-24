@@ -32,8 +32,12 @@ extension HomeView {
     var scoreboardSection: some View {
         MomentumRingCard(
             closedToday: closedToday.count,
-            goal: MomentumScoreboard.defaultDailyGoal,
-            streak: MomentumScoreboard.streak(tasks: homeService.allTasks),
+            goal: momentumPreferences.dailyGoal,
+            // Streaks off keeps every number but stops counting consecutive days — rendering the
+            // "still open" counterweight is exactly what a zero streak already does.
+            streak: momentumPreferences.showStreaks
+                ? MomentumScoreboard.streak(tasks: homeService.allTasks)
+                : 0,
             openCount: homeService.openTasks.count,
             weekFlags: MomentumScoreboard.trailingWeekClosureFlags(tasks: homeService.allTasks),
             nextEffortLabel: MomentumScoreboard.effortLabel(
@@ -171,5 +175,9 @@ extension HomeView {
                 .accessibilityIdentifier("homeArrangeButton")
             }
         }
+    }
+
+    func refreshInboxCount() async {
+        inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
     }
 }

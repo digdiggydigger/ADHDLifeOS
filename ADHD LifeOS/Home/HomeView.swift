@@ -11,7 +11,8 @@ struct HomeView: View {
     @StateObject var homeService: HomeService
     /// Internal, not private: `HomeAccessoryStrips` reads it from its own file.
     @StateObject var nudgesService: NudgesService
-    private let captureClient: CaptureClientAdapting
+    /// Internal, not private: `HomeMomentumSections` refreshes the inbox count.
+    let captureClient: CaptureClientAdapting
     private let journalClient: JournalClientAdapting?
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
     /// Internal, not private: `HomeMomentumSections` drives the close-from-Home flow.
@@ -41,8 +42,12 @@ struct HomeView: View {
     @State private var publishedHistory: [CompletedFocusSession] = []
     @State private var pullRefreshCount = 0
     @State private var showSettings = false
+    /// Re-read each time Settings closes — the sheet is the only writer. Internal for
+    /// `HomeMomentumSections`.
+    let momentumPreferencesStore: MomentumPreferencesStoring
+    @State var momentumPreferences: MomentumPreferences = .default
     @State private var isPresentingInbox = false
-    @State private var inboxCount = 0
+    @State var inboxCount = 0
     /// Home's mode-scoped reorder state. `isArranging` swaps the grid for an `.onMove` `List` (E's
     /// settled mechanism); `arrangeAreas` is the live, optimistic ordering the drag mutates. This is
     /// NOT the parked `List`→`LazyVStack` container item — it is a new, separate container.
@@ -74,8 +79,10 @@ struct HomeView: View {
         activeSprint: ActiveSprintStatus? = nil,
         widgetSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
         onToggleSprintPause: @escaping () -> Void = {},
-        widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher()
+        widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher(),
+        momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
+        self.momentumPreferencesStore = momentumPreferencesStore
         self.authService = authService
         self.captureClient = captureClient
         self.journalClient = journalClient
@@ -148,6 +155,10 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(authService: authService)
+            }
+            .onAppear { momentumPreferences = momentumPreferencesStore.read() }
+            .onChange(of: showSettings) { isPresented in
+                if !isPresented { momentumPreferences = momentumPreferencesStore.read() }
             }
             .navigationDestination(isPresented: $isPresentingInbox) {
                 CaptureInboxView(client: captureClient, journalClient: journalClient, lifeAreas: lifeAreasForPicker)
@@ -318,7 +329,4 @@ struct HomeView: View {
     /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
     /// Chosen over a hand-rolled grid drag because `.onMove` supplies native drag, auto-scroll,
     /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
-    private func refreshInboxCount() async {
-        inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
-    }
 }

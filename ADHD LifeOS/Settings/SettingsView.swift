@@ -21,16 +21,21 @@ struct SettingsView: View {
     @StateObject private var accountDeletionService: AccountDeletionService
     @Environment(\.dismiss) private var dismiss
     @State private var permissionState: NotificationPermissionState = .unknown
+    private let momentumPreferencesStore: MomentumPreferencesStoring
+    @State private var momentumPreferences: MomentumPreferences
 
     init(
         authService: AuthService,
         authorizationReader: NotificationAuthorizationReading = NotificationCenterAuthorizationReader(),
         tagEditorClient: TagEditorClientAdapting? = nil,
         lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
-        accountDeletionClient: AccountDeletionClientAdapting? = nil
+        accountDeletionClient: AccountDeletionClientAdapting? = nil,
+        momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
         self.authService = authService
         self.authorizationReader = authorizationReader
+        self.momentumPreferencesStore = momentumPreferencesStore
+        _momentumPreferences = State(initialValue: momentumPreferencesStore.read())
         // Default param keeps HomeView's `SettingsView(authService:)` call site unchanged (block-1
         // precedent); tests/previews inject a fake. The Firebase adapters carry their own auth
         // scoping via `FirebaseManager`, so no auth client gets threaded through anymore.
@@ -44,6 +49,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                momentumSection
                 notificationsSection
                 lifeAreasSection
                 accountSection
@@ -68,6 +74,42 @@ struct SettingsView: View {
             .task {
                 permissionState = await authorizationReader.authorizationStatus()
             }
+        }
+    }
+
+    // MARK: - Section 0 — What counts as momentum (Concept C, block M2)
+
+    private var momentumSection: some View {
+        Section {
+            Stepper(
+                value: Binding(
+                    get: { momentumPreferences.dailyGoal },
+                    set: { newValue in
+                        momentumPreferences.dailyGoal = newValue
+                        momentumPreferencesStore.write(momentumPreferences)
+                    }
+                ),
+                in: MomentumPreferences.goalRange
+            ) {
+                LabeledContent(
+                    "Daily goal",
+                    value: "\(momentumPreferences.dailyGoal) \(momentumPreferences.dailyGoal == 1 ? "item" : "items")"
+                )
+            }
+            .accessibilityIdentifier("settingsMomentumGoalStepper")
+
+            Toggle("Show streaks", isOn: Binding(
+                get: { momentumPreferences.showStreaks },
+                set: { newValue in
+                    momentumPreferences.showStreaks = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                }
+            ))
+            .accessibilityIdentifier("settingsMomentumStreaksToggle")
+        } header: {
+            Text("What counts as momentum")
+        } footer: {
+            Text("Turn streaks off and the app keeps every number but stops counting consecutive days.")
         }
     }
 
