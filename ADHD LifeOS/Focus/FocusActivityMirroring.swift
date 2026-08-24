@@ -37,6 +37,11 @@ struct FocusActivitySnapshot: Equatable, Sendable {
 @MainActor
 protocol FocusActivityMirroring: AnyObject {
     func sprintStarted(_ snapshot: FocusActivitySnapshot)
+    /// A sprint reinstated from persistence after the process died mid-flight
+    /// (F-SprintPersistence). Distinct from `sprintStarted` because the live implementation must
+    /// sequence AFTER its orphan sweep — the Activity surviving on the Lock Screen belongs to
+    /// this very sprint.
+    func sprintRestored(_ snapshot: FocusActivitySnapshot)
     /// Pause, resume, extend, and checkpoint crossings.
     func sprintUpdated(_ snapshot: FocusActivitySnapshot)
     /// Manual stop, natural completion, and the retirement of a sprint a replacement displaces.

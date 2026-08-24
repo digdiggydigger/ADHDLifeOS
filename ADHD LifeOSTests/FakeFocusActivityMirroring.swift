@@ -13,6 +13,7 @@ import Foundation
 final class FakeFocusActivityMirroring: FocusActivityMirroring {
     enum Event: Equatable {
         case started(FocusActivitySnapshot)
+        case restored(FocusActivitySnapshot)
         case updated(FocusActivitySnapshot)
         case ended(completedNaturally: Bool)
     }
@@ -35,6 +36,10 @@ final class FakeFocusActivityMirroring: FocusActivityMirroring {
 
     func sprintStarted(_ snapshot: FocusActivitySnapshot) {
         events.append(.started(snapshot))
+    }
+
+    func sprintRestored(_ snapshot: FocusActivitySnapshot) {
+        events.append(.restored(snapshot))
     }
 
     func sprintUpdated(_ snapshot: FocusActivitySnapshot) {

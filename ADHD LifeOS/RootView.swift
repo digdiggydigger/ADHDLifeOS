@@ -141,6 +141,11 @@ struct RootView: View {
                 .sheet(isPresented: $isPresentingQuickCapture) {
                     QuickCaptureView(client: captureClient) {}
                 }
+                // Reinstate a sprint the process died holding (F-SprintPersistence). Idempotent —
+                // a no-op with nothing stored or a sprint already live.
+                .task {
+                    await focusService.restorePersistedSprint()
+                }
                 // A finished sprint's history write is best-effort, but its failure must not be
                 // SILENT (found 2026-08-19: `logErrorMessage` was set and displayed nowhere) —
                 // same alert pattern as the task list's mutation errors. The sprint itself ended
