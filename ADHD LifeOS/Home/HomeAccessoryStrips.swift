@@ -68,35 +68,3 @@ extension HomeView {
         }
     }
 }
-
-/// Pure sizing logic for `LifeAreaCardView`'s emoji glyph, split out so it's unit-testable
-/// without a `GeometryReader` host.
-enum LifeAreaCardMetrics {
-    static let emojiWidthFraction: CGFloat = 0.7
-
-    static func emojiFontSize(forCardWidth width: CGFloat) -> CGFloat {
-        width * emojiWidthFraction
-    }
-}
-
-struct LifeAreaCardView: View {
-    let count: LifeAreaTaskCount
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            GeometryReader { geometry in
-                Text(count.lifeArea.colour)
-                    .font(.system(size: LifeAreaCardMetrics.emojiFontSize(forCardWidth: geometry.size.width)))
-                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
-                    .minimumScaleFactor(0.5)
-                    .lineLimit(1)
-            }
-            .aspectRatio(1, contentMode: .fit)
-            Text(count.lifeArea.name)
-                .font(.headline)
-            Text("\(count.openTaskCount)")
-                .font(.title.bold())
-        }
-        .bentoCard()
-    }
-}
