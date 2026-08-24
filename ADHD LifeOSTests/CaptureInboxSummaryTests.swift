@@ -45,6 +45,38 @@ final class CaptureInboxSummaryTests: XCTestCase {
         XCTAssertEqual(CaptureInboxSummary.headline(count: 0, filter: .seen), "Nothing seen yet")
     }
 
+    // MARK: - Oldest-age line (Concept C, block M5)
+
+    /// "oldest is 18 hours old" — the inbox's honest ageing line. Hours under two days, then
+    /// days; under an hour rounds to the friendliest true statement.
+    func testOldestLine_readsHoursThenDays() {
+        let now = Date()
+        func aged(_ hours: Double) -> Capture {
+            Capture(
+                id: UUID(), content: "x", kind: .note, processed: false,
+                createdAt: now.addingTimeInterval(-hours * 3600)
+            )
+        }
+
+        XCTAssertEqual(
+            CaptureInboxSummary.oldestLine(for: [aged(18), aged(3)], asOf: now),
+            "oldest is 18 hours old"
+        )
+        XCTAssertEqual(
+            CaptureInboxSummary.oldestLine(for: [aged(50)], asOf: now),
+            "oldest is 2 days old"
+        )
+        XCTAssertEqual(
+            CaptureInboxSummary.oldestLine(for: [aged(0.5)], asOf: now),
+            "oldest is under an hour old"
+        )
+        XCTAssertEqual(CaptureInboxSummary.oldestLine(for: [aged(1)], asOf: now), "oldest is 1 hour old")
+    }
+
+    func testOldestLine_nilWhenNothingIsWaiting() {
+        XCTAssertNil(CaptureInboxSummary.oldestLine(for: [], asOf: Date()))
+    }
+
     // MARK: - Breakdown
 
     func testBreakdown_namesEachKindPresent() {

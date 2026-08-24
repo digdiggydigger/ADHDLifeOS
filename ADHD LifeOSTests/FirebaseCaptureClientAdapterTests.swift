@@ -326,10 +326,22 @@ final class FirebaseCaptureClientAdapterTests: XCTestCase {
         )
     }
 
-    private static func promoteInput(notes: String? = nil) -> NormalizedPromoteToTaskInput {
+    private static func promoteInput(
+        notes: String? = nil,
+        focusDurationSeconds: Int? = nil
+    ) -> NormalizedPromoteToTaskInput {
         NormalizedPromoteToTaskInput(
-            title: "Ring the dentist", notes: notes, lifeAreaId: nil, priority: .p2, dueDate: nil
+            title: "Ring the dentist", notes: notes, lifeAreaId: nil, priority: .p2, dueDate: nil,
+            focusDurationSeconds: focusDurationSeconds
         )
+    }
+
+    /// S2's effort chips land on the task's own sprint config — the field every seeded task
+    /// already carries, no new schema.
+    func testCreateTask_carriesTheChosenEffortIntoTheTaskDocument() async throws {
+        _ = try await adapter.createTask(Self.promoteInput(focusDurationSeconds: 900))
+
+        XCTAssertEqual(store.createdTasks.first?.focusDurationSeconds, 900)
     }
 
     /// The promotion promise now includes the annotation: "the new task inherits this capture's

@@ -71,6 +71,19 @@ final class CaptureNotesServiceTests: XCTestCase {
 
     // MARK: - Promotion carries the note
 
+    /// S2's effort chip travels into the created task's sprint config.
+    func testPromoteToTask_carriesTheChosenEffort() async {
+        let annotated = capture("https://example.com")
+        let env = await makeSUT(loaded: [annotated])
+        env.client.fetchCaptureResult = .success(annotated)
+
+        _ = await env.service.promoteToTask(
+            capture: annotated, lifeAreaId: nil, priority: .p3, dueDate: nil, focusDurationSeconds: 900
+        )
+
+        XCTAssertEqual(env.client.lastCreateTaskInput?.focusDurationSeconds, 900)
+    }
+
     /// The note travels from the SERVER's copy of the capture (the same re-fetch that guards
     /// against promoting an already-processed capture), so a note edited moments ago is what the
     /// task starts with — not whatever a stale list row remembered.

@@ -152,6 +152,14 @@ struct CaptureInboxView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            // The ageing counterweight (Concept C, M5): a frictionless capture button needs the
+            // screen to admit how long things have sat.
+            if let oldestLine = CaptureInboxSummary.oldestLine(for: captures) {
+                Text(oldestLine)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("captureInboxOldestLine")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

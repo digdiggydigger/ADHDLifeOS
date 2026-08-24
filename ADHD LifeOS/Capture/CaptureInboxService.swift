@@ -192,7 +192,13 @@ final class CaptureInboxService: ObservableObject {
     }
 
     @discardableResult
-    func promoteToTask(capture: Capture, lifeAreaId: UUID?, priority: TaskPriority, dueDate: Date?) async -> Bool {
+    func promoteToTask(
+        capture: Capture,
+        lifeAreaId: UUID?,
+        priority: TaskPriority,
+        dueDate: Date?,
+        focusDurationSeconds: Int? = nil
+    ) async -> Bool {
         guard !capturesBeingPromoted.contains(capture.id) else { return false }
         capturesBeingPromoted.insert(capture.id)
         defer { capturesBeingPromoted.remove(capture.id) }
@@ -205,7 +211,8 @@ final class CaptureInboxService: ObservableObject {
             taskId = pendingTaskId
         } else {
             guard let createdTaskId = await createTaskIfNotAlreadyProcessed(
-                capture: capture, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate
+                capture: capture, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate,
+                focusDurationSeconds: focusDurationSeconds
             ) else {
                 return false
             }
@@ -284,7 +291,8 @@ final class CaptureInboxService: ObservableObject {
     }
 
     private func createTaskIfNotAlreadyProcessed(
-        capture: Capture, lifeAreaId: UUID?, priority: TaskPriority, dueDate: Date?
+        capture: Capture, lifeAreaId: UUID?, priority: TaskPriority, dueDate: Date?,
+        focusDurationSeconds: Int?
     ) async -> UUID? {
         // The task's notes come off this same server re-read, not the caller's capture — a note
         // saved moments ago on the detail screen is what the task must start with, and the list
@@ -303,7 +311,8 @@ final class CaptureInboxService: ObservableObject {
 
         let input = NormalizedPromoteToTaskInput(
             title: Self.taskTitle(for: capture), notes: serverCopy.notes,
-            lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate
+            lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate,
+            focusDurationSeconds: focusDurationSeconds
         )
         do {
             let task = try await client.createTask(input)

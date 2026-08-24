@@ -28,6 +28,20 @@ enum CaptureInboxSummary {
         }
     }
 
+    /// "oldest is 18 hours old" — the inbox's ageing counterweight (Concept C, M5): a frictionless
+    /// capture button needs the screen to admit how long things have sat. Hours under two days,
+    /// then days; `nil` with nothing waiting so the header drops the clause.
+    static func oldestLine(for captures: [Capture], asOf now: Date = .now) -> String? {
+        guard let oldest = captures.map(\.createdAt).min() else { return nil }
+        let hours = Int(now.timeIntervalSince(oldest) / 3600)
+        switch hours {
+        case ..<1: return "oldest is under an hour old"
+        case 1: return "oldest is 1 hour old"
+        case ..<48: return "oldest is \(hours) hours old"
+        default: return "oldest is \(hours / 24) days old"
+        }
+    }
+
     /// "2 notes · 1 voice memo" — every kind with something waiting, in a fixed order so the same
     /// inbox always reads the same way regardless of capture order. Empty when nothing is waiting,
     /// so the header can drop the line entirely rather than render a stray separator.

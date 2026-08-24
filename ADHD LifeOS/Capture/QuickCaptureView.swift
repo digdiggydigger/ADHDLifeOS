@@ -70,6 +70,14 @@ struct QuickCaptureView: View {
                         .foregroundStyle(.red)
                         .accessibilityIdentifier("quickCaptureErrorMessage")
                 }
+
+                // S1's counterweight to the frictionless button (Concept C, M5): nothing needs
+                // filing NOW — the inbox exists so triage can wait for bandwidth.
+                Section {
+                } footer: {
+                    Text("Nothing is filed yet. Clearing it later is what counts.")
+                        .accessibilityIdentifier("quickCaptureReassurance")
+                }
             }
             .navigationTitle("Quick Capture")
             .toolbar {

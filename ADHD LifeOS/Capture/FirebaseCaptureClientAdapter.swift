@@ -83,7 +83,8 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
             status: .open,
             priority: input.priority,
             dueDate: input.dueDate,
-            createdAt: Date()
+            createdAt: Date(),
+            focusDurationSeconds: input.focusDurationSeconds
         )
         try await store.createTask(task)
         return TaskItem(

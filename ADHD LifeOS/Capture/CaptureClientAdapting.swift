@@ -12,6 +12,9 @@ struct NormalizedPromoteToTaskInput: Equatable, Sendable {
     let lifeAreaId: UUID?
     let priority: TaskPriority
     let dueDate: Date?
+    /// S2's effort chip, landing on the task's own sprint config (`focus_duration_seconds`) —
+    /// the field every task already carries. `nil` = the user skipped the chip.
+    var focusDurationSeconds: Int?
 }
 
 struct CaptureUploadTarget: Equatable, Sendable {

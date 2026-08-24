@@ -22,6 +22,8 @@ struct CapturePromoteSheet: View {
     @State private var priority: TaskPriority = .p4
     @State private var hasDueDate = false
     @State private var dueDate: Date?
+    /// S2's effort chip — lands on the task's `focus_duration_seconds`. `nil` = skipped.
+    @State private var effortSeconds: Int?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -82,6 +84,8 @@ struct CapturePromoteSheet: View {
 
     private var form: some View {
         VStack(alignment: .leading, spacing: 8) {
+            effortRow
+            whenRow
             Picker("Priority", selection: $priority) {
                 ForEach(TaskPriority.allCases, id: \.self) { option in
                     Text(option.rawValue.uppercased()).tag(option)
@@ -104,9 +108,69 @@ struct CapturePromoteSheet: View {
         .bentoCard()
     }
 
+    /// S2's chips: an effort estimate the new task keeps as its sprint target, and coarse
+    /// due-date presets (the picker below still takes any date).
+    private var effortRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Effort")
+                .sectionLabel()
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                ForEach([600, 900, 1800], id: \.self) { seconds in
+                    Button(MomentumScoreboard.effortLabel(seconds: seconds) ?? "") {
+                        effortSeconds = effortSeconds == seconds ? nil : seconds
+                    }
+                    .buttonStyle(ChoiceChipButtonStyle(isSelected: effortSeconds == seconds))
+                    .frame(minHeight: 44)
+                }
+                Button("unknown") {
+                    effortSeconds = nil
+                }
+                .buttonStyle(ChoiceChipButtonStyle(isSelected: effortSeconds == nil))
+                .frame(minHeight: 44)
+            }
+            .accessibilityIdentifier("capturePromoteEffortChips")
+        }
+    }
+
+    private var whenRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("When")
+                .sectionLabel()
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                Button("Today") { setDue(daysFromNow: 0) }
+                    .buttonStyle(ChoiceChipButtonStyle(isSelected: isDueSet(daysFromNow: 0)))
+                    .frame(minHeight: 44)
+                Button("Tomorrow") { setDue(daysFromNow: 1) }
+                    .buttonStyle(ChoiceChipButtonStyle(isSelected: isDueSet(daysFromNow: 1)))
+                    .frame(minHeight: 44)
+                Button("Someday") {
+                    hasDueDate = false
+                    dueDate = nil
+                }
+                .buttonStyle(ChoiceChipButtonStyle(isSelected: !hasDueDate))
+                .frame(minHeight: 44)
+            }
+            .accessibilityIdentifier("capturePromoteWhenChips")
+        }
+    }
+
+    private func setDue(daysFromNow: Int) {
+        hasDueDate = true
+        dueDate = Calendar.current.date(byAdding: .day, value: daysFromNow, to: Date())
+    }
+
+    private func isDueSet(daysFromNow: Int) -> Bool {
+        guard hasDueDate, let dueDate else { return false }
+        let target = Calendar.current.date(byAdding: .day, value: daysFromNow, to: Date())!
+        return Calendar.current.isDate(dueDate, inSameDayAs: target)
+    }
+
     private func promote(lifeAreaId: UUID?, priority: TaskPriority, dueDate: Date?) async -> Bool {
         let succeeded = await service.promoteToTask(
-            capture: capture, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate
+            capture: capture, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate,
+            focusDurationSeconds: effortSeconds
         )
         if succeeded {
             dismiss()
