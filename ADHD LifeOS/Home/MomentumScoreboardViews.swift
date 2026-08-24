@@ -12,11 +12,14 @@
 import SwiftUI
 
 /// Track + progress arc + whatever belongs in the middle. The same ring draws at 112pt for the
-/// day and 52pt per area, so the two read as one instrument.
+/// day, 52pt per area and 56pt for the focus sprint (S4), so all three read as one instrument.
 struct ClosureRing<Center: View>: View {
     let progress: Double
     let size: CGFloat
     let lineWidth: CGFloat
+    /// What the arc strokes in — accent by default. The sprint ring hands in a muted style while
+    /// paused, the same held-state language its old countdown pill used.
+    var arcStyle = AnyShapeStyle(Color.accentColor)
     @ViewBuilder var center: () -> Center
 
     var body: some View {
@@ -26,7 +29,7 @@ struct ClosureRing<Center: View>: View {
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(
-                    Color.accentColor,
+                    arcStyle,
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))

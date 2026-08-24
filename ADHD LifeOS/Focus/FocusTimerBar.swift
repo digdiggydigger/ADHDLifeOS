@@ -5,10 +5,13 @@
 
 import SwiftUI
 
-/// SwiftUI port of the web prototype's `src/components/FocusTimerBar.tsx` — specifically its
-/// persistent "Bottom Floating Bar": life-area emoji chip, task title, live `MM:SS` pill, the
-/// mini timeline with checkpoint dots (fired / next / pending), the next-checkpoint caption, and
-/// the pause-resume + stop controls, plus the modal's `+30s` / `+5m` extend actions.
+/// SwiftUI port of the web prototype's `src/components/FocusTimerBar.tsx` — the persistent
+/// "Bottom Floating Bar" — rebuilt in the scoreboard's ring language (Concept C S4, 2026-08-24):
+/// the countdown ring with the live `MM:SS` in its centre and the checkpoint dots
+/// (fired / next / pending) on its dial, the task title, the next-checkpoint caption, and the
+/// pause-resume + stop controls, plus the modal's `+30s` / `+5m` extend actions. The web's emoji
+/// chip + pill + linear mini-timeline became that one instrument — `ClosureRing`, the same view
+/// the Home scoreboard draws — with the dot placement maths in `SprintRingGeometry`.
 ///
 /// Deviations from the React source, per CLAUDE.md precedence:
 /// - §4 zero-hex: the web's fixed dark card (`dark-card`, white text, `#FF5B5B` accent) becomes
@@ -43,16 +46,12 @@ struct FocusTimerBar: View {
                     isPresentingDetail = true
                 } label: {
                     HStack(spacing: 8) {
-                        Text(session.lifeAreaEmoji)
-                            .font(.title3)
-                            .frame(width: 40, height: 40)
-                            .background(
-                                Color(.tertiarySystemFill),
-                                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            )
+                        sprintRing(session: session)
 
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 8) {
+                                Text(session.lifeAreaEmoji)
+                                    .font(.footnote)
                                 Text(session.taskTitle)
                                     .font(.footnote.weight(.bold))
                                     .lineLimit(1)
@@ -68,22 +67,7 @@ struct FocusTimerBar: View {
                                         .accessibilityHidden(true)
                                         .accessibilityIdentifier("focusBarPausedBadge")
                                 }
-                                Text(FocusTimeFormatting.digital(session.remainingSeconds))
-                                    .font(.caption.monospaced().weight(.bold))
-                                    .foregroundStyle(Color(.systemBackground))
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 8)
-                                    // A paused countdown is a held state, not the live one — the
-                                    // pill stops shouting in coral until it is resumed.
-                                    .background(
-                                        session.isPaused ? AnyShapeStyle(Color(.secondaryLabel)) : AnyShapeStyle(.tint),
-                                        in: Capsule()
-                                    )
-                                    .accessibilityLabel(FocusBarStatus.accessibilityLabel(for: session))
-                                    .accessibilityIdentifier("focusRemainingTime")
                             }
-
-                            timelineTrack(session: session)
 
                             Group {
                                 if let untilNext = session.secondsUntilNextCheckpoint {
@@ -161,47 +145,61 @@ struct FocusTimerBar: View {
         }
     }
 
-    /// The mini timeline: progress fill plus a dot per checkpoint — green once fired, orange for
-    /// the one coming up, muted for the rest (the web's emerald / amber-ping / white-60 states).
-    private func timelineTrack(session: FocusSession) -> some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color(.tertiarySystemFill))
-                    .frame(height: 8)
-                Capsule()
-                    .fill(.tint)
-                    .frame(width: width * session.progress, height: 8)
-                ForEach(Array(session.nudgeCheckpoints.enumerated()), id: \.offset) { index, checkpoint in
-                    let state = FocusCheckpointDotState.resolve(index: index, session: session)
-                    Circle()
-                        .fill(state.color)
-                        .frame(width: state.diameter, height: state.diameter)
-                        // A ring in the page colour separates the marker from the coral fill it
-                        // sits on, so the next checkpoint reads as a distinct object, not a tint.
-                        .overlay(
-                            Circle().strokeBorder(Color(.systemBackground), lineWidth: state == .next ? 2 : 0)
-                        )
-                        .offset(
-                            x: dotOffset(
-                                checkpoint: checkpoint, session: session,
-                                width: width, diameter: state.diameter
-                            )
-                        )
-                }
-            }
+    private static let ringSize: CGFloat = 56
+    private static let ringLineWidth: CGFloat = 6
+
+    /// S4's sprint ring: the scoreboard's `ClosureRing` at 56pt with the countdown in its
+    /// centre — the emoji chip and the MM:SS pill merged into the app's one ring instrument.
+    /// The arc FILLS with elapsed time (the scoreboard's fill-toward-done direction, E's call
+    /// on the plan); the centre text does the counting down. Paused, the arc mutes exactly as
+    /// the old pill background did — a held state, not the live one.
+    private func sprintRing(session: FocusSession) -> some View {
+        ClosureRing(
+            progress: session.progress,
+            size: Self.ringSize,
+            lineWidth: Self.ringLineWidth,
+            arcStyle: session.isPaused ? AnyShapeStyle(Color(.secondaryLabel)) : AnyShapeStyle(.tint)
+        ) {
+            Text(FocusTimeFormatting.digital(session.remainingSeconds))
+                .font(.caption2.monospaced().weight(.bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 4)
+                .accessibilityLabel(FocusBarStatus.accessibilityLabel(for: session))
+                .accessibilityIdentifier("focusRemainingTime")
         }
-        .frame(height: 16)
-        .accessibilityHidden(true)
+        .overlay(checkpointDots(session: session))
+        // The per-second tick sweeps through ClosureRing's own spring; Reduce Motion stills it
+        // the same way the bar's own transitions are stilled.
+        .transaction { transaction in
+            if reduceMotion { transaction.animation = nil }
+        }
     }
 
-    private func dotOffset(
-        checkpoint: Int, session: FocusSession, width: CGFloat, diameter: CGFloat
-    ) -> CGFloat {
-        guard session.durationSeconds > 0 else { return 0 }
-        let fraction = min(1, max(0, Double(checkpoint) / Double(session.durationSeconds)))
-        return (width * fraction) - (diameter / 2)  // centre the marker on its position
+    /// The checkpoint dots, moved from the deleted linear track onto the dial: the same
+    /// `FocusCheckpointDotState` states, colours and sizes — only the placement changed, and
+    /// that arithmetic lives in `SprintRingGeometry`, where it is unit-tested.
+    private func checkpointDots(session: FocusSession) -> some View {
+        ZStack {
+            ForEach(Array(session.nudgeCheckpoints.enumerated()), id: \.offset) { index, checkpoint in
+                let state = FocusCheckpointDotState.resolve(index: index, session: session)
+                Circle()
+                    .fill(state.color)
+                    .frame(width: state.diameter, height: state.diameter)
+                    // The page-colour ring that separated the next marker from the coral fill on
+                    // the old track does the same job on the dial (§4: shape, never colour alone).
+                    .overlay(
+                        Circle().strokeBorder(Color(.systemBackground), lineWidth: state == .next ? 2 : 0)
+                    )
+                    .position(
+                        SprintRingGeometry.dotCenter(
+                            checkpoint: checkpoint, durationSeconds: session.durationSeconds,
+                            size: Self.ringSize
+                        )
+                    )
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     private func controlButton(
