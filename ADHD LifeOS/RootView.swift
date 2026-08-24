@@ -65,7 +65,9 @@ struct RootView: View {
                         widgetSprint: focusService.widgetSprint,
                         onToggleSprintPause: { focusService.togglePause() }
                     )
-                        .tabItem { Label("Home", systemImage: "house") }
+                        // "Today" with v3's trending-up glyph — the Momentum v3 tab identity. The Captures
+                        // slot becomes Areas in the V3-Areas block; the rest keep their glyphs.
+                        .tabItem { Label("Today", systemImage: "chart.line.uptrend.xyaxis") }
                     TaskListView(
                         tasksClient: tasksClient,
                         taskCreateClient: taskCreateClient,
