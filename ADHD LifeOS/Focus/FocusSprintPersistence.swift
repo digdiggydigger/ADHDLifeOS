@@ -84,6 +84,12 @@ protocol FocusSprintPersisting: AnyObject {
     func read() -> PersistedFocusSprint?
     func write(_ state: PersistedFocusSprint)
     func clear()
+    /// A sprint that finished while the process was dead, held until the user has SEEN it —
+    /// the confirmation card survives further relaunches until acknowledged (E's review note,
+    /// 2026-08-25: progress must never complete invisibly).
+    func readUnacknowledgedCompletion() -> CompletedFocusSession?
+    func writeUnacknowledgedCompletion(_ record: CompletedFocusSession)
+    func clearUnacknowledgedCompletion()
 }
 
 /// The live store: one JSON blob in UserDefaults. Local-only device state — a sprint is not
@@ -91,6 +97,7 @@ protocol FocusSprintPersisting: AnyObject {
 /// involved (the redesign's "views and local state only" line holds).
 final class UserDefaultsFocusSprintStore: FocusSprintPersisting {
     static let key = "focus.sprint.running"
+    static let completionKey = "focus.sprint.unacknowledgedCompletion"
 
     private let defaults: UserDefaults?
 
@@ -113,5 +120,22 @@ final class UserDefaultsFocusSprintStore: FocusSprintPersisting {
 
     func clear() {
         defaults?.removeObject(forKey: Self.key)
+    }
+
+    func readUnacknowledgedCompletion() -> CompletedFocusSession? {
+        guard
+            let data = defaults?.data(forKey: Self.completionKey),
+            let record = try? JSONDecoder().decode(CompletedFocusSession.self, from: data)
+        else { return nil }
+        return record
+    }
+
+    func writeUnacknowledgedCompletion(_ record: CompletedFocusSession) {
+        guard let data = try? JSONEncoder().encode(record) else { return }
+        defaults?.set(data, forKey: Self.completionKey)
+    }
+
+    func clearUnacknowledgedCompletion() {
+        defaults?.removeObject(forKey: Self.completionKey)
     }
 }

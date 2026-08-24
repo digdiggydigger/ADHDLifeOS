@@ -24,15 +24,16 @@ final class FocusSessionService: ObservableObject {
     /// the history write landed). Home threads it into `FocusAnalyticsSection` as a reload
     /// token, so the analytics refresh right after a sprint instead of on the next cold launch.
     @Published private(set) var completedSprintCount = 0
+    /// A sprint that ran out while dead — feeds the confirmation card, persisted until acknowledged.
+    @Published private(set) var offlineCompletionSummary: CompletedFocusSession?
     /// The cadence the running sprint was last planned with — `start`'s argument until the modal's
     /// live editor replaces it. Published so the editor seeds from what is actually scheduled
     /// rather than from a guess reverse-engineered out of the checkpoint marks.
     @Published private(set) var cadence: FocusNudgeCadence = .count(1)
 
     private let logger: FocusSessionLogging?
-    /// Local persistence for the RUNNING sprint (F-SprintPersistence) — written on every
-    /// plan/clock mutation and on checkpoint crossings, cleared when the sprint ends, read back
-    /// once by `restorePersistedSprint()` after a process death.
+    /// Local persistence for the RUNNING sprint (F-SprintPersistence): written on plan/clock
+    /// mutations and checkpoint crossings, cleared on end, read back after a process death.
     private let sprintStore: FocusSprintPersisting?
     /// Mirrors sprint lifecycle events into the Lock Screen / Dynamic Island Live Activity.
     /// Optional because ActivityKit is iOS 16.1+ against the 16.0 floor (§7) — and so tests can
@@ -109,7 +110,7 @@ final class FocusSessionService: ObservableObject {
         deadline = now().addingTimeInterval(TimeInterval(duration))
         checkpointBanner = nil
         startTicking()
-        activityMirror?.sprintStarted(activitySnapshot(for: started))
+        activityMirror?.sprintStarted(FocusActivitySnapshot(session: started, deadline: deadline))
         rescheduleNotifications(requestingAuthorization: true)
         persistCurrentSprint()
     }
@@ -135,7 +136,7 @@ final class FocusSessionService: ObservableObject {
             ticker?.cancel()
             ticker = nil
         }
-        activityMirror?.sprintUpdated(activitySnapshot(for: current))
+        activityMirror?.sprintUpdated(FocusActivitySnapshot(session: current, deadline: deadline))
         rescheduleNotifications()
         persistCurrentSprint()
     }
@@ -151,7 +152,7 @@ final class FocusSessionService: ObservableObject {
         if !current.isPaused {
             deadline = now().addingTimeInterval(TimeInterval(current.remainingSeconds))
         }
-        activityMirror?.sprintUpdated(activitySnapshot(for: current))
+        activityMirror?.sprintUpdated(FocusActivitySnapshot(session: current, deadline: deadline))
         rescheduleNotifications()
         persistCurrentSprint()
     }
@@ -173,7 +174,7 @@ final class FocusSessionService: ObservableObject {
         self.cadence = cadence
         current.replanCheckpoints(to: cadence)
         session = current
-        activityMirror?.sprintUpdated(activitySnapshot(for: current))
+        activityMirror?.sprintUpdated(FocusActivitySnapshot(session: current, deadline: deadline))
         rescheduleNotifications()
         persistCurrentSprint()
     }
@@ -250,19 +251,6 @@ final class FocusSessionService: ObservableObject {
         }
     }
 
-    private func activitySnapshot(for session: FocusSession) -> FocusActivitySnapshot {
-        FocusActivitySnapshot(
-            taskTitle: session.taskTitle,
-            lifeAreaEmoji: session.lifeAreaEmoji,
-            durationSeconds: session.durationSeconds,
-            deadline: session.isPaused ? nil : deadline,
-            pausedRemainingSeconds: session.isPaused ? session.remainingSeconds : nil,
-            checkpointCount: session.nudgeCheckpoints.count,
-            checkpointsReached: session.triggeredCheckpointIndices.count,
-            checkpointSeconds: session.nudgeCheckpoints
-        )
-    }
-
     /// The running sprint's countdown deadline; `nil` while paused or idle.
     ///
     /// Exposed read-only so the Home Screen widget's projection (`widgetSprint`) can be built
@@ -304,7 +292,7 @@ final class FocusSessionService: ObservableObject {
         if current.isComplete {
             Task { await stop(completedNaturally: true) }
         } else if !crossed.isEmpty {
-            activityMirror?.sprintUpdated(activitySnapshot(for: current))
+            activityMirror?.sprintUpdated(FocusActivitySnapshot(session: current, deadline: deadline))
             persistCurrentSprint()
         }
     }
@@ -324,7 +312,7 @@ final class FocusSessionService: ObservableObject {
         } else if !crossed.isEmpty {
             // A checkpoint crossing is the one mid-sprint event the Activity shows (the reached
             // count); plain ticks never touch it — the OS renders the countdown itself.
-            activityMirror?.sprintUpdated(activitySnapshot(for: current))
+            activityMirror?.sprintUpdated(FocusActivitySnapshot(session: current, deadline: deadline))
             persistCurrentSprint()
         }
     }
@@ -346,13 +334,16 @@ final class FocusSessionService: ObservableObject {
 // MARK: - Sprint persistence (F-SprintPersistence)
 
 extension FocusSessionService {
-    /// Reinstates a sprint the process died holding, if the store has one. Running sprints
-    /// recompute their countdown from the saved deadline — checkpoints crossed while dead are
-    /// marked fired WITHOUT nudging — a paused sprint comes back frozen, and one whose deadline
-    /// passed completes properly: logged whole, Activity ended, store cleared. Called once by
-    /// `RootView` when the signed-in UI appears.
+    /// Reinstates a sprint the process died holding: running sprints recompute from the saved
+    /// deadline (checkpoints crossed while dead are marked fired WITHOUT nudging), paused ones
+    /// come back frozen, and an expired one settles — logged whole, Activity ended, store
+    /// cleared. Called once by `RootView`.
     func restorePersistedSprint() async {
-        guard let sprintStore, session == nil, let saved = sprintStore.read() else { return }
+        guard let sprintStore else { return }
+        if offlineCompletionSummary == nil {
+            offlineCompletionSummary = sprintStore.readUnacknowledgedCompletion()
+        }
+        guard session == nil, let saved = sprintStore.read() else { return }
         cadence = saved.cadence
         startedAt = saved.startedAt
         var restored = FocusSession(
@@ -371,16 +362,28 @@ extension FocusSessionService {
             session = restored
             deadline = savedDeadline
             if restored.isComplete {
-                await stop(completedNaturally: true)
+                // Finished while dead: settle it AND make the finish visible — the record feeds
+                // the confirmation card and is held until the user acknowledges it.
+                if let record = finishCurrentSprint(completedNaturally: true) {
+                    offlineCompletionSummary = record
+                    sprintStore.writeUnacknowledgedCompletion(record)
+                    await log(record)
+                }
                 return
             }
             startTicking()
         } else {
             session = restored
         }
-        activityMirror?.sprintRestored(activitySnapshot(for: restored))
+        activityMirror?.sprintRestored(FocusActivitySnapshot(session: restored, deadline: deadline))
         rescheduleNotifications()
         persistCurrentSprint()
+    }
+
+    /// The confirmation card's dismissal: clears the published summary and its persisted copy.
+    func acknowledgeOfflineCompletion() {
+        offlineCompletionSummary = nil
+        sprintStore?.clearUnacknowledgedCompletion()
     }
 
     /// Snapshots the running sprint into the store — or clears it if none is running.

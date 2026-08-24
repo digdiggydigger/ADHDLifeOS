@@ -26,6 +26,7 @@ final class FocusSprintPersistenceTests: XCTestCase {
 
     private final class FakeFocusSprintStore: FocusSprintPersisting {
         var stored: PersistedFocusSprint?
+        var unacknowledged: CompletedFocusSession?
         private(set) var writeCount = 0
         private(set) var clearCount = 0
 
@@ -38,6 +39,10 @@ final class FocusSprintPersistenceTests: XCTestCase {
             stored = nil
             clearCount += 1
         }
+
+        func readUnacknowledgedCompletion() -> CompletedFocusSession? { unacknowledged }
+        func writeUnacknowledgedCompletion(_ record: CompletedFocusSession) { unacknowledged = record }
+        func clearUnacknowledgedCompletion() { unacknowledged = nil }
     }
 
     private struct SUT {
@@ -185,6 +190,90 @@ final class FocusSprintPersistenceTests: XCTestCase {
         XCTAssertEqual(sut.logger.logged.first?.completedNaturally, true)
         XCTAssertEqual(sut.logger.logged.first?.focusedSeconds, 600)
         XCTAssertNil(sut.store.stored)
+    }
+
+    // MARK: - Offline completion confirmation (E's review note, 2026-08-25)
+
+    func testRestore_expiredSprint_surfacesTheSummaryCardAndPersistsIt() async {
+        let sut = makeSUT()
+        sut.store.stored = persisted(clock: sut.clock, deadlineIn: -30)
+        await sut.service.restorePersistedSprint()
+
+        XCTAssertEqual(sut.service.offlineCompletionSummary?.taskTitle, "Draft the review")
+        XCTAssertEqual(sut.service.offlineCompletionSummary?.focusedSeconds, 600)
+        // Persisted separately, so an undismissed card survives ANOTHER launch.
+        XCTAssertEqual(sut.store.unacknowledged, sut.service.offlineCompletionSummary)
+    }
+
+    func testRestore_surfacesAnUnacknowledgedCompletionFromAPriorLaunch() async {
+        let sut = makeSUT()
+        sut.store.stored = persisted(clock: sut.clock, deadlineIn: -30)
+        await sut.service.restorePersistedSprint()
+        let record = sut.store.unacknowledged
+
+        // Next launch: no sprint stored, but the completion is still unacknowledged.
+        let relaunch = makeSUT()
+        relaunch.store.unacknowledged = record
+        await relaunch.service.restorePersistedSprint()
+        XCTAssertEqual(relaunch.service.offlineCompletionSummary, record)
+    }
+
+    func testAcknowledge_clearsTheSummaryEverywhere() async {
+        let sut = makeSUT()
+        sut.store.stored = persisted(clock: sut.clock, deadlineIn: -30)
+        await sut.service.restorePersistedSprint()
+
+        sut.service.acknowledgeOfflineCompletion()
+        XCTAssertNil(sut.service.offlineCompletionSummary)
+        XCTAssertNil(sut.store.unacknowledged)
+    }
+
+    func testRestore_runningSprint_showsNoSummaryCard() async {
+        let sut = makeSUT()
+        sut.store.stored = persisted(clock: sut.clock)
+        await sut.service.restorePersistedSprint()
+        XCTAssertNil(sut.service.offlineCompletionSummary)
+    }
+
+    func testUserDefaultsStore_roundTripsTheUnacknowledgedCompletion() {
+        let suite = "focus-sprint-completion-tests"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let store = UserDefaultsFocusSprintStore(defaults: defaults)
+        let record = CompletedFocusSession(
+            id: UUID(), taskId: nil, taskTitle: "Draft", lifeAreaEmoji: "💼",
+            plannedSeconds: 600, focusedSeconds: 600, checkpointsReached: 2,
+            completedNaturally: true,
+            startedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            endedAt: Date(timeIntervalSince1970: 1_800_000_600)
+        )
+        XCTAssertNil(store.readUnacknowledgedCompletion())
+        store.writeUnacknowledgedCompletion(record)
+        XCTAssertEqual(store.readUnacknowledgedCompletion(), record)
+        store.clearUnacknowledgedCompletion()
+        XCTAssertNil(store.readUnacknowledgedCompletion())
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    func testOfflineSummaryLine_statesMinutesAndCheckpoints() {
+        let record = CompletedFocusSession(
+            id: UUID(), taskId: nil, taskTitle: "Draft", lifeAreaEmoji: "💼",
+            plannedSeconds: 1500, focusedSeconds: 1500, checkpointsReached: 2,
+            completedNaturally: true, startedAt: .now, endedAt: .now
+        )
+        XCTAssertEqual(
+            OfflineSprintSummaryCard.summaryLine(for: record),
+            "25 of 25 minutes logged · 2 checkpoints"
+        )
+        let noCheckpoints = CompletedFocusSession(
+            id: UUID(), taskId: nil, taskTitle: "Draft", lifeAreaEmoji: "💼",
+            plannedSeconds: 900, focusedSeconds: 900, checkpointsReached: 0,
+            completedNaturally: true, startedAt: .now, endedAt: .now
+        )
+        XCTAssertEqual(
+            OfflineSprintSummaryCard.summaryLine(for: noCheckpoints),
+            "15 of 15 minutes logged"
+        )
     }
 
     func testRestore_withNothingStored_doesNothing() async {

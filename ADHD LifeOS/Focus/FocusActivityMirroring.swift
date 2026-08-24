@@ -29,6 +29,23 @@ struct FocusActivitySnapshot: Equatable, Sendable {
     let checkpointSeconds: [Int]
 }
 
+extension FocusActivitySnapshot {
+    /// Maps the engine's session onto the mirror's wire value — here rather than in the service
+    /// so the mapping lives beside the type it builds.
+    init(session: FocusSession, deadline: Date?) {
+        self.init(
+            taskTitle: session.taskTitle,
+            lifeAreaEmoji: session.lifeAreaEmoji,
+            durationSeconds: session.durationSeconds,
+            deadline: session.isPaused ? nil : deadline,
+            pausedRemainingSeconds: session.isPaused ? session.remainingSeconds : nil,
+            checkpointCount: session.nudgeCheckpoints.count,
+            checkpointsReached: session.triggeredCheckpointIndices.count,
+            checkpointSeconds: session.nudgeCheckpoints
+        )
+    }
+}
+
 /// Seam over ActivityKit: the service reports sprint lifecycle events, the live implementation
 /// (`FocusActivityKitMirror`) projects them onto the Lock Screen / Dynamic Island Activity, and
 /// tests assert the call sequences with a fake. The OS renders the countdown itself from the

@@ -130,6 +130,15 @@ struct RootView: View {
                         .padding(.trailing, 20)
                         .accessibilityIdentifier("quickCaptureButton")
 
+                        // A sprint that finished while the app was dead announces itself here —
+                        // above the tab bar on every tab, gone only when acknowledged.
+                        if let summary = focusService.offlineCompletionSummary {
+                            OfflineSprintSummaryCard(record: summary) {
+                                focusService.acknowledgeOfflineCompletion()
+                            }
+                            .padding(.horizontal, 16)
+                        }
+
                         FocusTimerBar(service: focusService)
                     }
                     .padding(.bottom, 60)
