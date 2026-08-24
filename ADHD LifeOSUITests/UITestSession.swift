@@ -84,7 +84,18 @@ enum UITestSession {
 
         app.buttons["settingsButton"].tap()
         let signOut = app.buttons["signOutButton"]
-        XCTAssertTrue(signOut.waitForExistence(timeout: timeout), "Settings did not present a sign-out control")
+        // SwiftUI materialises Form rows lazily, so a row below the fold does not EXIST to
+        // XCUITest until it scrolls into view — and the Momentum blocks keep adding rows above
+        // this one (M2, M7, M9 each moved the fold; M9 was the one that finally pushed sign-out
+        // under it and failed three journeys). Hunt for the row the way a user would instead of
+        // asserting on where the fold happens to fall this release.
+        _ = signOut.waitForExistence(timeout: 2)
+        var scrollsRemaining = 8
+        while !(signOut.exists && signOut.isHittable), scrollsRemaining > 0 {
+            app.swipeUp()
+            scrollsRemaining -= 1
+        }
+        XCTAssertTrue(signOut.exists, "Settings did not present a sign-out control")
         signOut.tap()
         XCTAssertTrue(
             loginField.waitForExistence(timeout: timeout),
