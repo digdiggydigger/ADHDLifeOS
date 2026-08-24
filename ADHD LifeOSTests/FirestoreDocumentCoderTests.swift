@@ -122,6 +122,21 @@ final class FirestoreDocumentCoderTests: XCTestCase {
         )
     }
 
+    /// The M7 event stamp: when a capture left the inbox. camelCase like every capture key but
+    /// `created_at`, and a real `Timestamp` so clients can compare it as a date.
+    func testCaptureRoundTrip_clearedAtSurvivesTheRealCodec() throws {
+        var capture = Self.capture(createdAt: referenceDate)
+        capture.clearedAt = referenceDate
+
+        let document = try FirestoreDocumentCoder.encode(capture)
+
+        XCTAssertEqual(FirestoreDocumentCoder.date(from: document["clearedAt"]), referenceDate)
+        XCTAssertNil(document["cleared_at"], "that spelling belongs to tasks, not captures")
+        XCTAssertEqual(
+            try FirestoreDocumentCoder.decode(Capture.self, from: document).clearedAt, referenceDate
+        )
+    }
+
     // MARK: - Tasks: fully snake_cased, the opposite convention
 
     func testTaskItemEncoding_isFullySnakeCased() throws {

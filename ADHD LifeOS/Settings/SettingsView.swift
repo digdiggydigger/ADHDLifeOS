@@ -106,10 +106,23 @@ struct SettingsView: View {
                 }
             ))
             .accessibilityIdentifier("settingsMomentumStreaksToggle")
+
+            Toggle("Count cleared captures", isOn: Binding(
+                get: { momentumPreferences.countClearedCaptures },
+                set: { newValue in
+                    momentumPreferences.countClearedCaptures = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                }
+            ))
+            .accessibilityIdentifier("settingsMomentumCapturesToggle")
         } header: {
             Text("What counts as momentum")
         } footer: {
-            Text("Turn streaks off and the app keeps every number but stops counting consecutive days.")
+            Text(
+                "Turn streaks off and the app keeps every number but stops counting consecutive "
+                    + "days. Counting cleared captures lets anything you archive, promote or "
+                    + "journal from the inbox advance the ring too."
+            )
         }
     }
 

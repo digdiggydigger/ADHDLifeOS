@@ -51,7 +51,12 @@ extension CaptureInboxService {
     private func setSeen(capture: Capture, to seen: Bool) async -> Bool {
         triageErrorMessage = nil
         do {
-            _ = try await client.updateCapture(id: capture.id, changes: CaptureUpdate(seen: seen))
+            // Archiving IS the inbox exit, so it carries the stamp; undo re-enters the inbox and
+            // deletes it (M7).
+            _ = try await client.updateCapture(
+                id: capture.id,
+                changes: CaptureUpdate(seen: seen, clearedAt: seen ? .some(Date()) : .some(nil))
+            )
             removeCapture(id: capture.id)
             return true
         } catch {

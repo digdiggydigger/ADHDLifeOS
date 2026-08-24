@@ -31,7 +31,7 @@ extension HomeView {
 
     var scoreboardSection: some View {
         MomentumRingCard(
-            closedToday: closedToday.count,
+            closedToday: closedToday.count + capturesClearedToday,
             goal: momentumPreferences.dailyGoal,
             // Streaks off keeps every number but stops counting consecutive days — rendering the
             // "still open" counterweight is exactly what a zero streak already does.
@@ -179,6 +179,20 @@ extension HomeView {
 
     func refreshInboxCount() async {
         inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
+        await refreshClearedCaptureCount()
+    }
+
+    /// Two extra fetches, gated on the toggle and failure-tolerant like every scoreboard input —
+    /// the ring reads 0 extra rather than the screen failing.
+    func refreshClearedCaptureCount() async {
+        guard momentumPreferences.countClearedCaptures else {
+            capturesClearedToday = 0
+            return
+        }
+        async let seen = captureClient.fetchSeenCaptures()
+        async let processed = captureClient.fetchProcessedCaptures()
+        let cleared = ((try? await seen) ?? []) + ((try? await processed) ?? [])
+        capturesClearedToday = MomentumScoreboard.clearedToday(captures: cleared)
     }
 
     /// The Due-now push's destination, with the S3 Momentum context built from the history Home

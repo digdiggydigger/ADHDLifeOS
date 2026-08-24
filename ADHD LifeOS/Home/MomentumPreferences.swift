@@ -16,20 +16,39 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// an ADHD daily goal that needs thirteen slots has stopped being a goal.
     static let goalRange = 1...12
 
-    static let `default` = MomentumPreferences(dailyGoal: 5, showStreaks: true)
+    static let `default` = MomentumPreferences(dailyGoal: 5, showStreaks: true, countClearedCaptures: false)
 
     var dailyGoal: Int
     /// Off keeps every number but stops counting consecutive days — the scoreboard shows the
     /// "still open" counterweight instead of a streak.
     var showStreaks: Bool
+    /// M7: whether captures cleared today (seen, promoted or journaled — anything that stamps
+    /// `clearedAt`) count toward the closure ring alongside closed tasks.
+    var countClearedCaptures: Bool
 
     /// Every read path passes through this, so no writer — Stepper, old build, bad migration —
     /// can hand the ring a goal it would divide by zero on.
     func normalized() -> MomentumPreferences {
         MomentumPreferences(
             dailyGoal: min(max(dailyGoal, Self.goalRange.lowerBound), Self.goalRange.upperBound),
-            showStreaks: showStreaks
+            showStreaks: showStreaks,
+            countClearedCaptures: countClearedCaptures
         )
+    }
+
+    /// Hand-written so preferences stored by the M2 build (which predate `countClearedCaptures`)
+    /// decode with the user's goal and streak choice INTACT rather than resetting to defaults.
+    init(dailyGoal: Int, showStreaks: Bool, countClearedCaptures: Bool = false) {
+        self.dailyGoal = dailyGoal
+        self.showStreaks = showStreaks
+        self.countClearedCaptures = countClearedCaptures
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        dailyGoal = try container.decode(Int.self, forKey: .dailyGoal)
+        showStreaks = try container.decode(Bool.self, forKey: .showStreaks)
+        countClearedCaptures = try container.decodeIfPresent(Bool.self, forKey: .countClearedCaptures) ?? false
     }
 }
 

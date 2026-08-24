@@ -258,6 +258,38 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
         XCTAssertNil(FirestoreFieldPayloads.captureUpdate(CaptureUpdate(seen: true))["notes"])
     }
 
+    // MARK: - Captures: the clearedAt event stamp (M7)
+
+    func testCaptureUpdate_clearedAtWritesATimestamp() {
+        let stamp = Date(timeIntervalSince1970: 1_755_000_000)
+
+        let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(clearedAt: .some(stamp)))
+
+        XCTAssertEqual(fields.keys.sorted(), ["clearedAt"])
+        XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["clearedAt"]), stamp)
+    }
+
+    /// Un-archiving sends the capture back to the inbox, so the exit stamp must go with it.
+    func testCaptureUpdate_clearingClearedAtBecomesADelete() {
+        let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(clearedAt: .some(nil)))
+
+        XCTAssertTrue(FirestoreDocumentCoder.isFieldDelete(fields["clearedAt"]))
+    }
+
+    /// The processed flip, its status twin and the exit stamp travel in ONE write — previously
+    /// `markCaptureProcessed` hand-built this dictionary inline, the exact bypass the file header
+    /// warns about.
+    func testCaptureProcessed_writesStatusProcessedAndClearedAtTogether() {
+        let stamp = Date(timeIntervalSince1970: 1_755_000_000)
+
+        let fields = FirestoreFieldPayloads.captureProcessed(now: stamp)
+
+        XCTAssertEqual(fields.keys.sorted(), ["clearedAt", "processed", "status"])
+        XCTAssertEqual(fields["processed"] as? Bool, true)
+        XCTAssertEqual(fields["status"] as? String, "processed")
+        XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["clearedAt"]), stamp)
+    }
+
     // MARK: - Nudges
 
     func testNudgeUpdate_emptyPayload_writesNothing() {

@@ -26,6 +26,23 @@ final class MomentumPreferencesTests: XCTestCase {
         XCTAssertEqual(MomentumPreferences(dailyGoal: 7, showStreaks: false).normalized().dailyGoal, 7)
     }
 
+    func testDefaults_captureCountingStartsOff() {
+        XCTAssertFalse(MomentumPreferences.default.countClearedCaptures)
+    }
+
+    /// Preferences stored by the M2 build predate this key. They must decode with the user's
+    /// goal and streak choice INTACT — resetting someone's goal because we added a toggle would
+    /// be a silent data loss.
+    func testDecode_legacyPreferencesWithoutTheNewKey_keepTheirValues() throws {
+        let legacy = Data(#"{"dailyGoal":8,"showStreaks":false}"#.utf8)
+
+        let decoded = try JSONDecoder().decode(MomentumPreferences.self, from: legacy)
+
+        XCTAssertEqual(decoded.dailyGoal, 8)
+        XCTAssertFalse(decoded.showStreaks)
+        XCTAssertFalse(decoded.countClearedCaptures)
+    }
+
     // MARK: - Store
 
     private func makeStore() -> (store: UserDefaultsMomentumPreferencesStore, defaults: UserDefaults) {

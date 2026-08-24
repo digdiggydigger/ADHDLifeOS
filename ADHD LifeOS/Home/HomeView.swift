@@ -50,6 +50,9 @@ struct HomeView: View {
     @State var momentumPreferences: MomentumPreferences = .default
     @State private var isPresentingInbox = false
     @State var inboxCount = 0
+    /// M7: captures whose exit stamp is today, feeding the ring when the Settings toggle counts
+    /// them. Refreshed with the inbox count; 0 whenever the toggle is off.
+    @State var capturesClearedToday = 0
     /// Home's mode-scoped reorder state. `isArranging` swaps the grid for an `.onMove` `List` (E's
     /// settled mechanism); `arrangeAreas` is the live, optimistic ordering the drag mutates. This is
     /// NOT the parked `List`→`LazyVStack` container item — it is a new, separate container.

@@ -37,6 +37,9 @@ struct CaptureUpdate: Equatable, Sendable {
     /// Set-or-omit like `status` — a plain `Bool?`, never a delete: undo writes an explicit
     /// `false` back onto the document.
     var seen: Bool?
+    /// The inbox-exit stamp. Nested optional: `.some(nil)` deletes it when an archive is undone
+    /// and the capture re-enters the inbox.
+    var clearedAt: Date??
 }
 
 enum CaptureServiceError: LocalizedError, Equatable {

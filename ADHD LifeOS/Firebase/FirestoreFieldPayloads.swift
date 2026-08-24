@@ -78,7 +78,19 @@ enum FirestoreFieldPayloads {
         if let seen = changes.seen {
             fields["seen"] = seen
         }
+        setNullable(changes.clearedAt, forKey: "clearedAt", in: &fields) { Timestamp(date: $0) }
         return fields
+    }
+
+    /// The processed flip, its `status` twin, and the M7 inbox-exit stamp — one write, always
+    /// together. Replaces the inline dictionary `markCaptureProcessed` used to hand-build, which
+    /// was the exact payload-layer bypass this file's header warns about.
+    static func captureProcessed(now: Date) -> [String: Any] {
+        [
+            "processed": true,
+            "status": CaptureStatus.processed.rawValue,
+            "clearedAt": Timestamp(date: now)
+        ]
     }
 
     /// A nudge's partial update. Any real change stamps `updated_at` — from the **server** clock,

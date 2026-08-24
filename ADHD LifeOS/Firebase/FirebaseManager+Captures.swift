@@ -41,11 +41,7 @@ extension FirebaseManager {
     }
 
     func markCaptureProcessed(id: UUID) async throws {
-        try await update(
-            id: id,
-            fields: ["processed": true, "status": CaptureStatus.processed.rawValue],
-            in: .captures
-        )
+        try await update(id: id, fields: FirestoreFieldPayloads.captureProcessed(now: Date()), in: .captures)
     }
 
     /// Creates or fully overwrites one capture — covers content edits, triage (`status`/

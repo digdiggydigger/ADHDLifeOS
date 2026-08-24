@@ -44,6 +44,10 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
     /// capture whose `content` slot is already spoken for (a link's URL, a voice memo's
     /// transcript, a photo's caption). Carried into the task on promotion.
     var notes: String?
+    /// When the capture left the inbox — stamped by archive-as-seen, promotion and
+    /// log-to-journal, deleted again when an archive is undone (M7). `nil` on documents cleared
+    /// before the stamp existed; those belong to no particular day.
+    var clearedAt: Date?
     /// The Captures-tab archive flag — "noted, nothing to do". Orthogonal to `processed` on
     /// purpose: a seen capture stays unprocessed so it can still be promoted later. `nil` on every
     /// document written before the flag existed, and it means the same as `false`.
@@ -51,7 +55,7 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case id, content, kind, processed, title, status, lifeAreaId
-        case mediaURL, mediaContentType, thumbnailURL, linkPreview, aiAssessment, seen, notes
+        case mediaURL, mediaContentType, thumbnailURL, linkPreview, aiAssessment, seen, notes, clearedAt
         case createdAt = "created_at"
     }
 

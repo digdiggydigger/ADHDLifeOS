@@ -39,7 +39,11 @@ final class CaptureSeenServiceTests: XCTestCase {
 
         XCTAssertTrue(succeeded)
         XCTAssertEqual(env.client.lastUpdateCaptureId, noted.id)
-        XCTAssertEqual(env.client.lastUpdateCaptureChanges, CaptureUpdate(seen: true))
+        XCTAssertEqual(env.client.lastUpdateCaptureChanges?.seen, true)
+        XCTAssertNotNil(
+            env.client.lastUpdateCaptureChanges?.clearedAt.flatMap { $0 },
+            "archiving is an inbox exit and must stamp clearedAt (M7)"
+        )
         XCTAssertEqual(env.service.captures.map(\.content), ["Keep me"])
     }
 
@@ -68,7 +72,11 @@ final class CaptureSeenServiceTests: XCTestCase {
 
         XCTAssertTrue(succeeded)
         XCTAssertEqual(env.client.lastUpdateCaptureId, regretted.id)
-        XCTAssertEqual(env.client.lastUpdateCaptureChanges, CaptureUpdate(seen: false))
+        XCTAssertEqual(env.client.lastUpdateCaptureChanges?.seen, false)
+        XCTAssertEqual(
+            env.client.lastUpdateCaptureChanges?.clearedAt, .some(.some(nil)),
+            "back in the inbox means the exit stamp is deleted, not left stale"
+        )
         XCTAssertEqual(env.service.captures.map(\.content), ["Still seen"])
     }
 

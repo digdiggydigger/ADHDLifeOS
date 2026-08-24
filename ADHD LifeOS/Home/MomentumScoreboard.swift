@@ -145,6 +145,20 @@ enum MomentumScoreboard {
         }
     }
 
+    /// Captures whose inbox-exit stamp is today — the ring's capture contribution when the
+    /// Settings toggle counts them. Only the stamp counts: a processed capture with no
+    /// `clearedAt` predates the stamp and belongs to no particular day.
+    static func clearedToday(
+        captures: [Capture],
+        asOf now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Int {
+        captures.filter { capture in
+            guard let clearedAt = capture.clearedAt else { return false }
+            return calendar.isDate(clearedAt, inSameDayAs: now)
+        }.count
+    }
+
     /// "15 min" — the effort chip, straight off `focus_duration_seconds`. Sub-minute targets
     /// round UP: "0 min" would promise less than tapping the button costs. `nil` effort renders
     /// no chip rather than inventing a number.

@@ -211,6 +211,24 @@ final class MomentumScoreboardTests: XCTestCase {
         XCTAssertEqual(flags, [true, false, false, false, true, false, true])
     }
 
+    /// The ring's capture contribution: captures whose exit stamp is today. Only the stamp
+    /// counts — a processed capture with no clearedAt predates M7 and belongs to no day.
+    func testClearedToday_countsTodaysExitStampsOnly() {
+        func cleared(daysAgo: Int?) -> Capture {
+            Capture(
+                id: UUID(), content: "x", kind: .note, processed: true, createdAt: now,
+                clearedAt: daysAgo.map { calendar.date(byAdding: .day, value: -$0, to: now)! }
+            )
+        }
+
+        let count = MomentumScoreboard.clearedToday(
+            captures: [cleared(daysAgo: 0), cleared(daysAgo: 0), cleared(daysAgo: 1), cleared(daysAgo: nil)],
+            asOf: now, calendar: calendar
+        )
+
+        XCTAssertEqual(count, 2)
+    }
+
     // MARK: - Effort label
 
     func testEffortLabel_rendersWholeMinutes() {
