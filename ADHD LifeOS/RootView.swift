@@ -9,7 +9,7 @@ import UIKit
 /// The tab bar's stations under the hybrid v3 IA (E's call, 2026-08-24): five tabs stay, and
 /// selection is state so screens can cross tabs (Today's "Nudges waiting" row → Nudges).
 enum AppTab: Hashable {
-    case today, tasks, captures, journal, nudges
+    case today, tasks, areas, journal, nudges
 }
 
 struct RootView: View {
@@ -86,19 +86,21 @@ struct RootView: View {
                     )
                         .tabItem { Label("Tasks", systemImage: "checklist") }
                         .tag(AppTab.tasks)
-                    // Captures joined the bar 2026-08-23 (E's Captures-tab direction): the
-                    // archive of handled captures — Seen and Promoted — while the Inbox (reached
-                    // from Home) became purely the to-triage queue. Stack wrapped at the call
-                    // site, the Nudges precedent below.
-                    NavigationStack {
-                        CapturesTabView(
-                            client: captureClient,
-                            journalClient: journalClient,
-                            homeClient: homeClient
-                        )
-                    }
-                        .tabItem { Label("Captures", systemImage: "tray.full") }
-                        .tag(AppTab.captures)
+                    // The Captures slot became Areas in F-V3-Areas (hybrid IA, E's call):
+                    // the archive of handled captures stays reachable through Areas' interim
+                    // "Handled captures" door until V3-Inbox houses it properly.
+                    AreasView(
+                        authService: authService,
+                        homeClient: homeClient,
+                        journalClient: journalClient,
+                        captureClient: captureClient,
+                        lifeAreaDetailClient: lifeAreaDetailClient,
+                        taskDetailClient: taskDetailClient,
+                        schedulingClient: taskCountdownNudgeSchedulingClient,
+                        onStartFocus: startFocus
+                    )
+                        .tabItem { Label("Areas", systemImage: "square.grid.2x2") }
+                        .tag(AppTab.areas)
                     JournalView(client: journalClient)
                         .tabItem { Label("Journal", systemImage: "book") }
                         .tag(AppTab.journal)
