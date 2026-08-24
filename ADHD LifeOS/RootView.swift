@@ -71,7 +71,8 @@ struct RootView: View {
                         },
                         widgetSprint: focusService.widgetSprint,
                         onToggleSprintPause: { focusService.togglePause() },
-                        onOpenNudges: { selectedTab = .nudges }
+                        onOpenNudges: { selectedTab = .nudges },
+                        taskCreateClient: taskCreateClient
                     )
                         // "Today" with v3's trending-up glyph — the Momentum v3 tab identity. The Captures
                         // slot becomes Areas in the V3-Areas block; the rest keep their glyphs.
@@ -97,7 +98,8 @@ struct RootView: View {
                         lifeAreaDetailClient: lifeAreaDetailClient,
                         taskDetailClient: taskDetailClient,
                         schedulingClient: taskCountdownNudgeSchedulingClient,
-                        onStartFocus: startFocus
+                        onStartFocus: startFocus,
+                        taskCreateClient: taskCreateClient
                     )
                         .tabItem { Label("Areas", systemImage: "square.grid.2x2") }
                         .tag(AppTab.areas)

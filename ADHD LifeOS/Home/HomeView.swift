@@ -39,6 +39,8 @@ struct HomeView: View {
     /// Crosses to the Nudges tab — v3's "Nudges waiting" row navigates there instead of
     /// dismissing inline. Wired by `RootView` through its tab selection.
     let onOpenNudges: (() -> Void)?
+    /// For the area screen's "Add to <area>" CTA; `nil` hides it (F-V3-AreaDetail).
+    private let taskCreateClient: TaskCreateClientAdapting?
     /// Publishes the Home Screen widget's snapshot. Home is the right owner: it is the one screen
     /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
     private let widgetPublisher: FocusWidgetPublishing
@@ -91,6 +93,7 @@ struct HomeView: View {
         widgetSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
         onToggleSprintPause: @escaping () -> Void = {},
         onOpenNudges: (() -> Void)? = nil,
+        taskCreateClient: TaskCreateClientAdapting? = nil,
         widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher(),
         momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
@@ -107,6 +110,7 @@ struct HomeView: View {
         self.widgetSprint = widgetSprint
         self.onToggleSprintPause = onToggleSprintPause
         self.onOpenNudges = onOpenNudges
+        self.taskCreateClient = taskCreateClient
         self.widgetPublisher = widgetPublisher
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
         _nudgesService = StateObject(
@@ -186,7 +190,10 @@ struct HomeView: View {
                     client: lifeAreaDetailClient,
                     taskDetailClient: taskDetailClient,
                     schedulingClient: schedulingClient,
-                    onStartFocus: onStartFocus
+                    onStartFocus: onStartFocus,
+                    allAreas: homeService.activeAreas,
+                    captureClient: captureClient,
+                    taskCreateClient: taskCreateClient
                 )
             }
             .onChange(of: isPresentingInbox) { isPresented in

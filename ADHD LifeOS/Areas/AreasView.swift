@@ -21,6 +21,7 @@ struct AreasView: View {
     private let taskDetailClient: TaskDetailClientAdapting
     private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     private let lifeAreaEditorClient: LifeAreaEditorClientAdapting
+    private let taskCreateClient: TaskCreateClientAdapting?
     private let onStartFocus: ((FocusSprintPlan) -> Void)?
     private let momentumPreferencesStore: MomentumPreferencesStoring
 
@@ -40,6 +41,7 @@ struct AreasView: View {
         taskDetailClient: TaskDetailClientAdapting,
         schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
+        taskCreateClient: TaskCreateClientAdapting? = nil,
         lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
         momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
@@ -51,6 +53,7 @@ struct AreasView: View {
         self.taskDetailClient = taskDetailClient
         self.schedulingClient = schedulingClient
         self.onStartFocus = onStartFocus
+        self.taskCreateClient = taskCreateClient
         // Same defaulting pattern as SettingsView: the live adapter unless a test injects one.
         self.lifeAreaEditorClient = lifeAreaEditorClient ?? FirebaseLifeAreaEditorClientAdapter()
         self.momentumPreferencesStore = momentumPreferencesStore
@@ -106,7 +109,12 @@ struct AreasView: View {
                     client: lifeAreaDetailClient,
                     taskDetailClient: taskDetailClient,
                     schedulingClient: schedulingClient,
-                    onStartFocus: onStartFocus
+                    onStartFocus: onStartFocus,
+                    allAreas: service.lifeAreas
+                        .filter { !$0.archived }
+                        .sorted { $0.sortOrder < $1.sortOrder },
+                    captureClient: captureClient,
+                    taskCreateClient: taskCreateClient
                 )
             }
             .task { await service.load() }

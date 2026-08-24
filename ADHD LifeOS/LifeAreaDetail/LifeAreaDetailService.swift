@@ -23,15 +23,29 @@ final class LifeAreaDetailService: ObservableObject {
     }
     @Published private(set) var filteredTasks: [TaskItem] = []
     @Published private(set) var logs: [Log] = []
+    /// Every waiting capture — the v3 screen splits them into filed-here and unfiled
+    /// (F-V3-AreaDetail). Degrades to empty like the other optional inputs.
+    @Published private(set) var captures: [Capture] = []
+    /// Surfaced when a File-here write fails; the view alerts on it.
+    @Published var captureFilingErrorMessage: String?
 
-    private let lifeAreaId: UUID
+    let lifeAreaId: UUID
     private let client: LifeAreaDetailClientAdapting
+    private let captureClient: CaptureClientAdapting?
     private var tasks: [TaskItem] = []
     private var hasLoadedOnce = false
 
-    init(lifeAreaId: UUID, client: LifeAreaDetailClientAdapting) {
+    /// All of the area's tasks regardless of the filter — the momentum card's input.
+    var allTasks: [TaskItem] { tasks }
+
+    init(
+        lifeAreaId: UUID,
+        client: LifeAreaDetailClientAdapting,
+        captureClient: CaptureClientAdapting? = nil
+    ) {
         self.lifeAreaId = lifeAreaId
         self.client = client
+        self.captureClient = captureClient
     }
 
     func load() async {
@@ -41,6 +55,9 @@ final class LifeAreaDetailService: ObservableObject {
             async let logsResult = client.fetchLogs(lifeAreaId: lifeAreaId)
             tasks = try await tasksResult
             logs = LogSorting.sortByEntryDateDescending(try await logsResult)
+            if let captureClient {
+                captures = (try? await captureClient.fetchUnprocessedCaptures()) ?? []
+            }
             hasLoadedOnce = true
             recomputeFilteredTasks()
             state = .loaded
@@ -52,5 +69,20 @@ final class LifeAreaDetailService: ObservableObject {
 
     private func recomputeFilteredTasks() {
         filteredTasks = TaskStatusFilter.filter(tasks: tasks, by: statusFilter)
+    }
+
+    /// The real "File here": writes `life_area_id` through the existing update seam, then
+    /// reloads so the capture moves from the unfiled list into filed-here.
+    func fileCaptureHere(_ capture: Capture) async {
+        guard let captureClient else { return }
+        do {
+            _ = try await captureClient.updateCapture(
+                id: capture.id, changes: CaptureUpdate(lifeAreaId: .some(lifeAreaId))
+            )
+            await load()
+        } catch {
+            captureFilingErrorMessage =
+                (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
     }
 }

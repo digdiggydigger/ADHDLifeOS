@@ -17,9 +17,15 @@ struct TaskCreateView: View {
         client: TaskCreateClientAdapting,
         schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         lifeAreas: [LifeArea],
+        preselectedLifeAreaId: UUID? = nil,
         onCreated: @escaping () -> Void
     ) {
-        _service = StateObject(wrappedValue: TaskCreateService(client: client, schedulingClient: schedulingClient))
+        _service = StateObject(wrappedValue: {
+            let service = TaskCreateService(client: client, schedulingClient: schedulingClient)
+            // The v3 area screen's "Add to <area>" opens the form already filed there.
+            service.lifeAreaId = preselectedLifeAreaId
+            return service
+        }())
         self.lifeAreas = lifeAreas
         self.onCreated = onCreated
     }
