@@ -264,7 +264,7 @@ extension HomeView {
                 .foregroundStyle(.secondary)
             Spacer()
             if showArrangeControl {
-                Button(isArranging ? "Done" : "Arrange") {
+                Button {
                     if isArranging {
                         isArranging = false
                         Task { await homeService.load() }
@@ -272,10 +272,22 @@ extension HomeView {
                         arrangeAreas = activeAreas
                         isArranging = true
                     }
+                } label: {
+                    Label(
+                        isArranging ? "Done" : "Arrange",
+                        systemImage: isArranging ? "checkmark" : "arrow.up.arrow.down"
+                    )
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(isArranging ? AreaPalette.work.onColor : Color.accentColor)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 44)
+                    .background(
+                        isArranging ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.cardSurface),
+                        in: Capsule()
+                    )
+                    .overlay(Capsule().strokeBorder(Color.cardBorder, lineWidth: isArranging ? 0 : 1))
+                    .contentShape(Capsule())
                 }
-                .font(.body.weight(.semibold))
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
                 .accessibilityIdentifier("homeArrangeButton")
             }
         }

@@ -26,7 +26,7 @@ struct AreaMomentumList: View {
                 .accessibilityIdentifier("homeAreaRow-\(item.area.id)")
                 if index != items.indices.last {
                     Divider()
-                        .padding(.leading, 62)
+                        .padding(.leading, 68)
                 }
             }
         }
@@ -48,12 +48,12 @@ struct AreaMomentumList: View {
         )
         return HStack(spacing: 8) {
             Text(item.area.colour)
-                .font(.body)
-                .frame(width: 34, height: 34)
-                .background(family.tint, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
+                .font(.title3)
+                .frame(width: 44, height: 44)
+                .background(family.tint, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.area.name)
-                    .font(.callout)
+                    .font(.body.weight(.medium))
                     .foregroundStyle(Color("LabelPrimary"))
                 Text(status.text)
                     .font(.footnote)
@@ -62,16 +62,19 @@ struct AreaMomentumList: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             Capsule()
                 .fill(Color("TrackNeutral"))
-                .frame(width: 52, height: 8)
+                .frame(width: 64, height: 8)
                 .overlay(alignment: .leading) {
                     Capsule()
                         .fill(family.vivid)
-                        .frame(width: 52 * (item.rate ?? 0))
+                        .frame(width: 64 * (item.rate ?? 0))
                 }
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .frame(minHeight: 60)
+        .frame(minHeight: 72)
         .contentShape(Rectangle())
     }
 
