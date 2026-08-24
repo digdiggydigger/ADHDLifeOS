@@ -2,9 +2,9 @@
 //  HomeAccessoryStrips.swift
 //  ADHD LifeOS
 //
-//  Home's secondary strip — the due-nudges row — moved out of
-//  `HomeView.swift` on 2026-08-20 so that file fits its length budget again after the Active Goal
-//  hero gained sprint state. Same code, different file.
+//  Home's reorder list and the v3 Today header, both here for `HomeView.swift`'s length
+//  budget. The due-nudges dismiss strip that used to live here was replaced by the v3
+//  "Nudges waiting" row (F-V3-Today) — dismissal now happens on the Nudges tab.
 //
 
 import SwiftUI
@@ -35,36 +35,56 @@ extension HomeView {
         Task { await homeService.submitReorder(activeInNewOrder: arrangeAreas) }
     }
 
-    @ViewBuilder
-    var dueNudgesStrip: some View {
-        let due = nudgesService.dueNudges()
-        if !due.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(due) { nudge in
-                    HStack {
-                        Text(nudge.label)
-                        Spacer()
-                        Button("Dismiss") {
-                            Task { await nudgesService.dismiss(nudge) }
-                        }
-                        // Names the nudge it dismisses. With several due at once, a row of
-                        // buttons all reading "Dismiss" tells a VoiceOver user nothing about
-                        // which one they are about to act on — the visible label sits in a
-                        // separate element, so the association is lost the moment you navigate
-                        // by control rather than by reading order.
-                        //
-                        // It is also the only handle a UI test has here: the identifier below is
-                        // overwritten by the enclosing stack's own identifier (SwiftUI pushes
-                        // that down over the subtree), so every dismiss button answers to
-                        // "homeDueNudgesStrip" and none can be told apart by id. The label
-                        // survives that, which is why the test targets it.
-                        .accessibilityLabel("Dismiss \(nudge.label)")
-                        .accessibilityIdentifier("homeDueNudgeDismissButton-\(nudge.id)")
-                    }
-                    .bentoCard()
-                }
+    /// v3's Today header: the date eyebrow over the big title, with the inbox (badged) and
+    /// settings controls as 40pt wells — the navigation bar's replacements, so their
+    /// accessibility identifiers carry over from the old toolbar items.
+    var todayHeader: some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                    .sectionLabel()
+                    .foregroundStyle(.secondary)
+                Text("Today")
+                    .font(.largeTitle.bold())
+                    .tracking(-0.5)
             }
-            .accessibilityIdentifier("homeDueNudgesStrip")
+            Spacer()
+            Button {
+                isPresentingInbox = true
+            } label: {
+                headerIconWell(systemImage: "tray")
+                    .overlay(alignment: .topTrailing) {
+                        if inboxCount > 0 {
+                            Text("\(inboxCount)")
+                                .font(.caption2.bold())
+                                .monospacedDigit()
+                                .foregroundStyle(Color("OnStateWarn"))
+                                .padding(.horizontal, 4)
+                                .frame(minWidth: 18, minHeight: 18)
+                                .background(Color("StateWarn"), in: Capsule())
+                                .offset(x: 4, y: -4)
+                        }
+                    }
+            }
+            .accessibilityLabel("Inbox (\(inboxCount))")
+            .accessibilityIdentifier("inboxButton")
+            Button {
+                showSettings = true
+            } label: {
+                headerIconWell(systemImage: "gearshape")
+            }
+            .accessibilityLabel("Settings")
+            .accessibilityIdentifier("settingsButton")
         }
+    }
+
+    func headerIconWell(systemImage: String) -> some View {
+        Image(systemName: systemImage)
+            .font(.body)
+            .foregroundStyle(Color("LabelSecondary"))
+            .frame(width: 40, height: 40)
+            .background(Color.cardSurface, in: Circle())
+            .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 1))
+            .contentShape(Circle())
     }
 }

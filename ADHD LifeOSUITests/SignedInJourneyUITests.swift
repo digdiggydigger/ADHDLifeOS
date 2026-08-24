@@ -111,7 +111,8 @@ final class SignedInJourneyUITests: XCTestCase {
 
     // MARK: - Due nudge dismissal
 
-    /// Home surfaces overdue nudges in a strip, and dismissing one removes it.
+    /// Today surfaces overdue nudges as v3's "Nudges waiting" row; tapping it crosses to the
+    /// Nudges tab, where dismissal now happens (F-V3-Today replaced the inline dismiss strip).
     ///
     /// The nudge is backdated rather than created through the UI because dueness is computed, not
     /// stored: `NudgeDueness` asks whether the next fire time after `last_fired_at` has elapsed.
@@ -127,19 +128,23 @@ final class SignedInJourneyUITests: XCTestCase {
 
         let app = try UITestSession.launchSignedIn(as: account)
 
-        // Addressed by LABEL, not identifier. The enclosing stack's own identifier is pushed
-        // down over the subtree, so every dismiss button answers to "homeDueNudgesStrip" and
-        // none can be told apart by id — confirmed from the accessibility tree. The label is
-        // per-nudge and survives, so it is what identifies this one.
-        let dismiss = app.buttons["Dismiss \(nudgeLabel)"]
+        // The row is a single combined element (isButton trait), addressed by identifier.
+        let row = app.buttons["homeNudgesWaitingRow"]
         XCTAssertTrue(
-            dismiss.waitForExistence(timeout: UITestSession.timeout),
-            "An overdue nudge did not appear in Home's due strip"
+            row.waitForExistence(timeout: UITestSession.timeout),
+            "An overdue nudge did not surface Today's Nudges-waiting row"
                 + (app.staticTexts[nudgeLabel].exists
                     ? " (its label rendered, so the identifier is the problem)"
                     : " (nothing from the nudge rendered at all)")
         )
+        row.tap()
 
+        // Dismissal lives on the Nudges tab now, one control per nudge by id.
+        let dismiss = app.buttons["nudgeDismissButton-\(nudgeID.uuidString)"]
+        XCTAssertTrue(
+            dismiss.waitForExistence(timeout: UITestSession.timeout),
+            "The Nudges tab did not show the overdue nudge's dismiss control"
+        )
         dismiss.tap()
 
         let gone = XCTNSPredicateExpectation(predicate: .init(format: "exists == false"), object: dismiss)

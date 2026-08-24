@@ -16,6 +16,8 @@ import SwiftUI
 struct WeekBarStrip: View {
     let fractions: [Double]
     var dimLast = false
+    /// v3 hue per chart: closure green on Today, motion blue on Tasks. Accent by default.
+    var barColor: Color = .accentColor
 
     private static let railHeight: CGFloat = 32
 
@@ -25,8 +27,8 @@ struct WeekBarStrip: View {
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(
                         fraction > 0
-                            ? AnyShapeStyle(Color.accentColor)
-                            : AnyShapeStyle(Color(.tertiarySystemFill))
+                            ? AnyShapeStyle(barColor)
+                            : AnyShapeStyle(Color("TrackNeutral"))
                     )
                     .frame(width: 8, height: fraction > 0 ? max(Self.railHeight * fraction, 4) : 4)
                     .opacity(dimLast && index == fractions.indices.last ? 0.4 : 0.85)

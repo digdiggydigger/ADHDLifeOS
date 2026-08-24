@@ -36,6 +36,9 @@ struct HomeView: View {
     /// while a sprint merely counts down, so `onChange` fires on real events, not on every tick.
     private let widgetSprint: FocusWidgetSnapshot.ActiveSprint?
     private let onToggleSprintPause: () -> Void
+    /// Crosses to the Nudges tab — v3's "Nudges waiting" row navigates there instead of
+    /// dismissing inline. Wired by `RootView` through its tab selection.
+    let onOpenNudges: (() -> Void)?
     /// Publishes the Home Screen widget's snapshot. Home is the right owner: it is the one screen
     /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
     private let widgetPublisher: FocusWidgetPublishing
@@ -43,12 +46,14 @@ struct HomeView: View {
     /// Internal, not private: the week review reads it from `HomeMomentumSections`.
     @State var publishedHistory: [CompletedFocusSession] = []
     @State private var pullRefreshCount = 0
-    @State private var showSettings = false
+    /// Internal, not private: the v3 header lives in `HomeMomentumSections.swift`.
+    @State var showSettings = false
     /// Re-read each time Settings closes — the sheet is the only writer. Internal for
     /// `HomeMomentumSections`.
     let momentumPreferencesStore: MomentumPreferencesStoring
     @State var momentumPreferences: MomentumPreferences = .default
-    @State private var isPresentingInbox = false
+    /// Internal, not private: the v3 header lives in `HomeMomentumSections.swift`.
+    @State var isPresentingInbox = false
     @State var inboxCount = 0
     /// M7: captures whose exit stamp is today, feeding the ring when the Settings toggle counts
     /// them. Refreshed with the inbox count; 0 whenever the toggle is off.
@@ -85,6 +90,7 @@ struct HomeView: View {
         activeSprint: ActiveSprintStatus? = nil,
         widgetSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
         onToggleSprintPause: @escaping () -> Void = {},
+        onOpenNudges: (() -> Void)? = nil,
         widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher(),
         momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
@@ -100,6 +106,7 @@ struct HomeView: View {
         self.activeSprint = activeSprint
         self.widgetSprint = widgetSprint
         self.onToggleSprintPause = onToggleSprintPause
+        self.onOpenNudges = onOpenNudges
         self.widgetPublisher = widgetPublisher
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
         _nudgesService = StateObject(
@@ -140,25 +147,7 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
-            .navigationTitle("Today")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        isPresentingInbox = true
-                    } label: {
-                        Label("Inbox (\(inboxCount))", systemImage: "tray")
-                    }
-                    .accessibilityIdentifier("inboxButton")
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityIdentifier("settingsButton")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showSettings) {
                 SettingsView(authService: authService)
             }
@@ -264,21 +253,19 @@ struct HomeView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    todayHeader
                     // Concept C's scoreboard leads (2026-08-24, Momentum block M1): the closure
                     // ring and streak, then the one task worth doing next. The Active Goal hero's
                     // slot and start-session funnel live on in BestNextMoveCard.
                     scoreboardSection
                     momentumLeadSection
                     // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
-                    lifeAreasHeader(activeAreas: activeAreas, showArrangeControl: activeAreas.count >= 2)
-                    AreaMomentumStrip(items: MomentumScoreboard.areaMomentum(
-                        areas: activeAreas, openTasks: homeService.openTasks, allTasks: homeService.allTasks
-                    ))
+                    lifeAreasSection(activeAreas: activeAreas)
                     dueNowSection
-                    dueNudgesStrip
                     if !closedToday.isEmpty {
                         Text("Closed today")
-                            .font(.headline)
+                            .sectionLabel()
+                            .foregroundStyle(.secondary)
                         MomentumClosedTodayCard(tasks: closedToday)
                     }
                     closedWeekChartSection

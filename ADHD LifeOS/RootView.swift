@@ -6,6 +6,12 @@
 import SwiftUI
 import UIKit
 
+/// The tab bar's stations under the hybrid v3 IA (E's call, 2026-08-24): five tabs stay, and
+/// selection is state so screens can cross tabs (Today's "Nudges waiting" row → Nudges).
+enum AppTab: Hashable {
+    case today, tasks, captures, journal, nudges
+}
+
 struct RootView: View {
     @ObservedObject var authService: AuthService
     let homeClient: HomeClientAdapting
@@ -20,6 +26,7 @@ struct RootView: View {
     let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
     @State private var isPresentingQuickCapture = false
+    @State private var selectedTab: AppTab = .today
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
@@ -46,7 +53,7 @@ struct RootView: View {
             case .signedOut, .linkSent:
                 LoginView(authService: authService)
             case .signedIn:
-                TabView {
+                TabView(selection: $selectedTab) {
                     HomeView(
                         authService: authService,
                         homeClient: homeClient,
@@ -63,11 +70,13 @@ struct RootView: View {
                             ActiveSprintStatus(taskId: $0.taskId, isPaused: $0.isPaused)
                         },
                         widgetSprint: focusService.widgetSprint,
-                        onToggleSprintPause: { focusService.togglePause() }
+                        onToggleSprintPause: { focusService.togglePause() },
+                        onOpenNudges: { selectedTab = .nudges }
                     )
                         // "Today" with v3's trending-up glyph — the Momentum v3 tab identity. The Captures
                         // slot becomes Areas in the V3-Areas block; the rest keep their glyphs.
                         .tabItem { Label("Today", systemImage: "chart.line.uptrend.xyaxis") }
+                        .tag(AppTab.today)
                     TaskListView(
                         tasksClient: tasksClient,
                         taskCreateClient: taskCreateClient,
@@ -76,6 +85,7 @@ struct RootView: View {
                         onStartFocus: startFocus
                     )
                         .tabItem { Label("Tasks", systemImage: "checklist") }
+                        .tag(AppTab.tasks)
                     // Captures joined the bar 2026-08-23 (E's Captures-tab direction): the
                     // archive of handled captures — Seen and Promoted — while the Inbox (reached
                     // from Home) became purely the to-triage queue. Stack wrapped at the call
@@ -88,8 +98,10 @@ struct RootView: View {
                         )
                     }
                         .tabItem { Label("Captures", systemImage: "tray.full") }
+                        .tag(AppTab.captures)
                     JournalView(client: journalClient)
                         .tabItem { Label("Journal", systemImage: "book") }
+                        .tag(AppTab.journal)
                     // Tab swap reverted (E, 2026-08-19): Nudges is back, Reminders removed — its
                     // Poke/DynamoDB source didn't survive the Firebase cutover, so the tab only
                     // ever showed an empty list. The Reminders feature files stay compiled but
@@ -101,6 +113,7 @@ struct RootView: View {
                         )
                     }
                         .tabItem { Label("Nudges", systemImage: "bell") }
+                        .tag(AppTab.nudges)
                 }
                 .overlay(alignment: .bottom) {
                     // Sits above the tab bar, mirroring the web's `fixed bottom-24` placement.
