@@ -25,6 +25,10 @@ struct FirebaseHomeClientAdapter: HomeClientAdapting {
         try await store.fetchOpenTaskSummaries()
     }
 
+    func fetchAllTasks() async throws -> [TaskItem] {
+        try await store.fetchTasks()
+    }
+
     func reorder(order: [UUID]) async throws {
         try await store.reorderLifeAreas(orderedIds: order)
     }

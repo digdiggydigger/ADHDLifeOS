@@ -28,6 +28,40 @@ final class HomeServiceTests: XCTestCase {
         XCTAssertEqual(sut.state, .loaded([LifeAreaTaskCount(lifeArea: work, openTaskCount: 1)]))
     }
 
+    // MARK: - Momentum scoreboard data
+
+    func testLoad_fetchesAllTasksForTheScoreboard() async {
+        let fake = FakeHomeClientAdapting()
+        fake.lifeAreasResult = .success([])
+        fake.openTasksResult = .success([])
+        let done = TaskItem(
+            id: UUID(), lifeAreaId: nil, title: "Closed", status: .done,
+            priority: .p3, dueDate: nil, completedAt: Date()
+        )
+        fake.allTasksResult = .success([done])
+        let sut = HomeService(client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.allTasks, [done])
+    }
+
+    /// The scoreboard is derived decoration over history — its fetch failing must not take the
+    /// whole screen down. The ring just reads zero until the next successful load.
+    func testLoad_scoreboardFetchFailure_stillLoadsTheScreen() async {
+        let fake = FakeHomeClientAdapting()
+        let work = LifeArea(id: UUID(), name: "Work", colour: "#123456", sortOrder: 0)
+        fake.lifeAreasResult = .success([work])
+        fake.openTasksResult = .success([])
+        fake.allTasksResult = .failure(HomeServiceError.fetchFailed("offline"))
+        let sut = HomeService(client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.state, .loaded([LifeAreaTaskCount(lifeArea: work, openTaskCount: 0)]))
+        XCTAssertEqual(sut.allTasks, [])
+    }
+
     func testLoad_emptyData_setsLoadedStateWithZeroCounts() async {
         let fake = FakeHomeClientAdapting()
         let work = LifeArea(id: UUID(), name: "Work", colour: "#123456", sortOrder: 0)

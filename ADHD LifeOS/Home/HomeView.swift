@@ -14,18 +14,20 @@ struct HomeView: View {
     private let captureClient: CaptureClientAdapting
     private let journalClient: JournalClientAdapting?
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
-    private let taskDetailClient: TaskDetailClientAdapting
+    /// Internal, not private: `HomeMomentumSections` drives the close-from-Home flow.
+    let taskDetailClient: TaskDetailClientAdapting
     private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     /// Threaded Home → LifeAreaDetail → TaskDetail so the detail screen reached from a life-area
-    /// card can launch a sprint on `RootView`'s app-level `FocusSessionService`.
-    private let onStartFocus: ((FocusSprintPlan) -> Void)?
+    /// card can launch a sprint on `RootView`'s app-level `FocusSessionService`. Internal for
+    /// `HomeMomentumSections`.
+    let onStartFocus: ((FocusSprintPlan) -> Void)?
     /// `RootView` passes `focusService.completedSprintCount` here; combined with the local
     /// pull-to-refresh count it forms the analytics reload token, so finished sprints AND pulls
     /// both refetch focus history without waiting for a cold launch.
     private let focusReloadToken: Int
-    /// The app-wide sprint, so the Active Goal hero can show it is running rather than offering
-    /// to start a second one over the top.
-    private let activeSprint: ActiveSprintStatus?
+    /// The app-wide sprint, so the Best-next-move card hides Start Session rather than offering
+    /// a second sprint over the top. Internal for `HomeMomentumSections`.
+    let activeSprint: ActiveSprintStatus?
     /// The same sprint, projected for the Home Screen widget. Separate from `activeSprint` because
     /// the two answer different questions: the hero only needs "is THIS task's sprint running", the
     /// widget needs the whole deadline-derived payload. Kept deadline-derived and therefore stable
@@ -44,10 +46,18 @@ struct HomeView: View {
     /// Home's mode-scoped reorder state. `isArranging` swaps the grid for an `.onMove` `List` (E's
     /// settled mechanism); `arrangeAreas` is the live, optimistic ordering the drag mutates. This is
     /// NOT the parked `List`→`LazyVStack` container item — it is a new, separate container.
-    @State private var isArranging = false
+    /// Internal, not private: the arrange header lives in `HomeMomentumSections.swift`.
+    @State var isArranging = false
     @State var arrangeAreas: [LifeArea] = []
-
-    private let columns = [GridItem(.adaptive(minimum: 150), spacing: 16)]
+    /// The Momentum close-from-Home flow: the just-closed task (drives the celebration card and
+    /// its Undo), the in-flight guard, and the surfaced failure. Internal, not private — the
+    /// sections live in `HomeMomentumSections.swift` to keep this type inside its body budget.
+    @State var celebratedTask: TaskSummary?
+    @State var isClosingTask = false
+    @State var closeTaskErrorMessage: String?
+    /// A Due-now row's pushed task detail — optional-state + `navigationDestination`, the
+    /// TaskListView pattern, since the rows live in a LazyVStack inside this stack.
+    @State var inspectingTask: TaskSummary?
 
     init(
         authService: AuthService,
@@ -117,7 +127,7 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
-            .navigationTitle("Home")
+            .navigationTitle("Today")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -141,6 +151,33 @@ struct HomeView: View {
             }
             .navigationDestination(isPresented: $isPresentingInbox) {
                 CaptureInboxView(client: captureClient, journalClient: journalClient, lifeAreas: lifeAreasForPicker)
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { inspectingTask != nil },
+                set: { if !$0 { inspectingTask = nil } }
+            )) {
+                if let task = inspectingTask {
+                    TaskDetailView(
+                        taskId: task.id,
+                        lifeAreas: homeService.lifeAreas,
+                        client: taskDetailClient,
+                        schedulingClient: schedulingClient,
+                        onStartFocus: onStartFocus
+                    ) {
+                        Task { await homeService.load() }
+                    }
+                }
+            }
+            .alert(
+                "Couldn't update the task",
+                isPresented: Binding(
+                    get: { closeTaskErrorMessage != nil },
+                    set: { if !$0 { closeTaskErrorMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(closeTaskErrorMessage ?? "")
             }
             .navigationDestination(for: LifeArea.self) { lifeArea in
                 LifeAreaDetailView(
@@ -215,26 +252,29 @@ struct HomeView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    // Web bento Card 1: the Active Goal hero leads the screen. Hidden when no
-                    // task is open — never a fabricated placeholder (see ActiveGoalHeroCard).
-                    activeGoalHero
+                    // Concept C's scoreboard leads (2026-08-24, Momentum block M1): the closure
+                    // ring and streak, then the one task worth doing next. The Active Goal hero's
+                    // slot and start-session funnel live on in BestNextMoveCard.
+                    scoreboardSection
+                    momentumLeadSection
+                    // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
+                    lifeAreasHeader(activeAreas: activeAreas, showArrangeControl: activeAreas.count >= 2)
+                    AreaMomentumStrip(items: MomentumScoreboard.areaMomentum(
+                        areas: activeAreas, openTasks: homeService.openTasks, allTasks: homeService.allTasks
+                    ))
+                    dueNowSection
+                    dueNudgesStrip
+                    if !closedToday.isEmpty {
+                        Text("Closed today")
+                            .font(.headline)
+                        MomentumClosedTodayCard(tasks: closedToday)
+                    }
                     DailySummaryView(
                         openTaskCount: counts.reduce(0) { $0 + $1.openTaskCount },
                         lifeAreaCount: counts.count,
                         inboxCount: inboxCount,
                         dueNudgeCount: nudgesService.dueNudges().count
                     )
-                    dueNudgesStrip
-                    // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
-                    lifeAreasHeader(activeAreas: activeAreas, showArrangeControl: activeAreas.count >= 2)
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(counts) { count in
-                            NavigationLink(value: count.lifeArea) {
-                                LifeAreaCardView(count: count)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
                     FocusAnalyticsSection(reloadToken: focusReloadToken + pullRefreshCount) { sessions in
                         // Fires on first load, on pull-to-refresh, and on every finished sprint
                         // (`focusReloadToken` is RootView's completedSprintCount) — so the Home
@@ -273,53 +313,6 @@ struct HomeView: View {
                 activeSprint: sprint
             )
         )
-    }
-
-    /// The Active Goal hero for the current top open task (see `ActiveGoalSelection` for the
-    /// rule). Start Session resolves the task's own focus config into a `FocusSprintPlan` and
-    /// hands it to `RootView`'s app-level `FocusSessionService` — the same funnel (and success
-    /// haptic) as every other start path. Manage pushes the task's ACTIVE life area; archived or
-    /// unassigned resolve to `nil`, which hides that button.
-    @ViewBuilder
-    private var activeGoalHero: some View {
-        if let goal = homeService.activeGoal {
-            let area = homeService.activeAreas.first { $0.id == goal.lifeAreaId }
-            ActiveGoalHeroCard(
-                task: goal,
-                lifeArea: area,
-                onStartSession: { onStartFocus?(FocusSprintPlan(summary: goal, lifeArea: area)) },
-                activeSprint: activeSprint,
-                onToggleSprintPause: onToggleSprintPause
-            )
-        }
-    }
-
-    /// Inline section-header row directly above the grid: a "Life Areas" title and a trailing text
-    /// button reading "Arrange" / "Done". Deliberately NOT a toolbar item — the toolbar carries
-    /// screen-level navigation (`inboxButton`, `settingsButton`), and a content-mutating mode control
-    /// belongs beside the content it mutates. A real text label, never a third competing glyph (§4).
-    @ViewBuilder
-    private func lifeAreasHeader(activeAreas: [LifeArea], showArrangeControl: Bool) -> some View {
-        HStack {
-            Text("Life Areas")
-                .font(.headline)
-            Spacer()
-            if showArrangeControl {
-                Button(isArranging ? "Done" : "Arrange") {
-                    if isArranging {
-                        isArranging = false
-                        Task { await homeService.load() }
-                    } else {
-                        arrangeAreas = activeAreas
-                        isArranging = true
-                    }
-                }
-                .font(.body.weight(.semibold))
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-                .accessibilityIdentifier("homeArrangeButton")
-            }
-        }
     }
 
     /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.

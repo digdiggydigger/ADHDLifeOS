@@ -41,6 +41,11 @@ final class HomeService: ObservableObject {
     /// hero re-renders when a reload changes the headline task.
     @Published private(set) var openTasks: [TaskSummary] = []
 
+    /// Every task, closed ones included — the Momentum scoreboard's raw material. Failure-
+    /// tolerant on load: the scoreboard is derived decoration over history, and its fetch failing
+    /// must never take the screen down with it.
+    @Published private(set) var allTasks: [TaskItem] = []
+
     /// Serialisation state for TRAP 6 — exactly one reorder in flight at a time.
     private var isReordering = false
     /// The latest ordering produced while a reorder is in flight, coalesced to just the last one
@@ -71,8 +76,10 @@ final class HomeService: ObservableObject {
         do {
             async let lifeAreasResult = client.fetchLifeAreas()
             async let openTasksResult = client.fetchOpenTasks()
+            async let allTasksResult = client.fetchAllTasks()
             lifeAreas = try await lifeAreasResult
             openTasks = try await openTasksResult
+            allTasks = (try? await allTasksResult) ?? []
             // The grid excludes archived areas — the filter is applied HERE, at the view/service
             // layer, not in the adapter.
             let counts = LifeAreaTaskCounts.countOpenTasksByLifeArea(

@@ -22,6 +22,7 @@ private struct PreviewAuthClientAdapting: AuthClientAdapting {
 }
 
 private struct PreviewHomeClientAdapting: HomeClientAdapting {
+    func fetchAllTasks() async throws -> [TaskItem] { [] }
     let lifeAreas = [
         LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0),
         LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 1)

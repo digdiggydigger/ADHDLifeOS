@@ -246,6 +246,7 @@ private struct TabPreviewCaptureClient: CaptureClientAdapting {
 }
 
 private struct TabPreviewHomeClient: HomeClientAdapting {
+    func fetchAllTasks() async throws -> [TaskItem] { [] }
     func fetchLifeAreas() async throws -> [LifeArea] {
         [LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 0)]
     }

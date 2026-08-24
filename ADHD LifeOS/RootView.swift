@@ -175,6 +175,7 @@ struct RootView: View {
     }
 
     struct PreviewHomeClient: HomeClientAdapting {
+    func fetchAllTasks() async throws -> [TaskItem] { [] }
         func fetchLifeAreas() async throws -> [LifeArea] { [] }
         func fetchOpenTasks() async throws -> [TaskSummary] { [] }
         func reorder(order: [UUID]) async throws {}

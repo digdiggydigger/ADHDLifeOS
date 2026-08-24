@@ -10,6 +10,7 @@ import Foundation
 final class FakeHomeBackingStore: HomeBackingStore {
     var lifeAreas: [LifeArea] = []
     var openTasks: [TaskSummary] = []
+    var allTasks: [TaskItem] = []
 
     var fetchLifeAreasError: Error?
     var fetchOpenTasksError: Error?
@@ -27,6 +28,10 @@ final class FakeHomeBackingStore: HomeBackingStore {
     func fetchOpenTaskSummaries() async throws -> [TaskSummary] {
         if let fetchOpenTasksError { throw fetchOpenTasksError }
         return openTasks
+    }
+
+    func fetchTasks() async throws -> [TaskItem] {
+        allTasks
     }
 
     func reorderLifeAreas(orderedIds: [UUID]) async throws {

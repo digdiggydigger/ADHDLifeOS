@@ -9,6 +9,7 @@ import Foundation
 final class FakeHomeClientAdapting: HomeClientAdapting, @unchecked Sendable {
     var lifeAreasResult: Result<[LifeArea], Error> = .success([])
     var openTasksResult: Result<[TaskSummary], Error> = .success([])
+    var allTasksResult: Result<[TaskItem], Error> = .success([])
     var reorderResult: Result<Void, Error> = .success(())
 
     private(set) var fetchLifeAreasCallCount = 0
@@ -30,6 +31,10 @@ final class FakeHomeClientAdapting: HomeClientAdapting, @unchecked Sendable {
     func fetchOpenTasks() async throws -> [TaskSummary] {
         fetchOpenTasksCallCount += 1
         return try openTasksResult.get()
+    }
+
+    func fetchAllTasks() async throws -> [TaskItem] {
+        try allTasksResult.get()
     }
 
     func reorder(order: [UUID]) async throws {
