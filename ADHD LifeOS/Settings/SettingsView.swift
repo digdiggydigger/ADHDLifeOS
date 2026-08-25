@@ -50,6 +50,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 momentumSection
+                appearanceSection
                 notificationsSection
                 lifeAreasSection
                 accountSection
@@ -143,6 +144,29 @@ struct SettingsView: View {
                     + "for every nudge you dismiss today. Weekly charts can be hidden without "
                     + "losing any numbers."
             )
+        }
+    }
+
+    // MARK: - Appearance (F-V3-Settings)
+
+    @AppStorage(AppearancePreference.storageKey) private var appearanceRaw =
+        AppearancePreference.system.rawValue
+
+    private var appearanceSection: some View {
+        let current = AppearancePreference(rawValue: appearanceRaw) ?? .system
+        return Section {
+            Picker("Appearance", selection: $appearanceRaw) {
+                ForEach(AppearancePreference.allCases) { option in
+                    Label(option.title, systemImage: option.systemImage)
+                        .tag(option.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("settingsAppearancePicker")
+        } header: {
+            Text("Appearance")
+        } footer: {
+            Text(current.explanation)
         }
     }
 

@@ -30,6 +30,8 @@ struct RootView: View {
     @State private var isFabOpen = false
     @State private var composerKind: CaptureKind?
     @State private var selectedTab: AppTab = .today
+    /// The Settings appearance override — same key both ends, so the picker applies live.
+    @AppStorage(AppearancePreference.storageKey) private var appearanceRaw = AppearancePreference.system.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
@@ -186,6 +188,9 @@ struct RootView: View {
                 .task {
                     await focusService.restorePersistedSprint()
                 }
+                .preferredColorScheme(
+                    (AppearancePreference(rawValue: appearanceRaw) ?? .system).colorScheme
+                )
                 // A finished sprint's history write is best-effort, but its failure must not be
                 // SILENT (found 2026-08-19: `logErrorMessage` was set and displayed nowhere) —
                 // same alert pattern as the task list's mutation errors. The sprint itself ended
