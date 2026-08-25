@@ -2,6 +2,10 @@
 //  LogComposerView.swift
 //  ADHD LifeOS
 //
+//  The v3 entry composer (E's 2026-08-25 note): the stock Form became a dedicated S1-style
+//  screen — one question at a time, chips over pickers, the append-only rule said before the
+//  save. Copy lives in `LogComposerCopy` (pure, tested); the service machinery is unchanged.
+//
 
 import SwiftUI
 
@@ -13,63 +17,119 @@ struct LogComposerView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    Picker("Type", selection: $journalService.composerType) {
-                        Text("Log").tag(LogType.log)
-                        Text("Journal").tag(LogType.journal)
-                    }
-                    .accessibilityIdentifier("logComposerTypePicker")
-
-                    LifeAreaPicker(
-                        title: "Life Area",
-                        noSelectionLabel: "No life area",
-                        lifeAreas: lifeAreas,
-                        selection: $journalService.composerLifeAreaId,
-                        accessibilityID: "logComposerLifeAreaPicker"
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(LogComposerCopy.guidance)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    ComposerTextBox(
+                        placeholder: "What's on your mind?",
+                        text: $journalService.composerBody,
+                        accessibilityID: "logComposerBodyField"
                     )
-
-                    TextField("What's on your mind?", text: $journalService.composerBody, axis: .vertical)
-                        .accessibilityIdentifier("logComposerBodyField")
-                }
-
-                // Journal entries only — the web keeps energy and mood on `JournalEntry` and a
-                // quick log has neither, so offering the controls for a Log would be offering to
-                // record something that is then dropped on save.
-                if journalService.composerType == .journal {
-                    Section {
+                    typeSection
+                    if journalService.composerType == .journal {
                         JournalEnergyMoodPicker(
                             energyLevel: $journalService.composerEnergyLevel,
                             moodEmoji: $journalService.composerMoodEmoji
                         )
                     }
+                    areaSection
+                    if let errorMessage = journalService.createErrorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundStyle(Color("StateRisk"))
+                            .accessibilityIdentifier("logComposerErrorMessage")
+                    }
                 }
-
-                if let errorMessage = journalService.createErrorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("logComposerErrorMessage")
-                }
+                .padding(16)
             }
-            .navigationTitle("New Entry")
+            .background(Color.pageBackground.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom) { footerBar }
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        Task {
-                            if await journalService.createLog() {
-                                onCreated()
-                                dismiss()
-                            }
-                        }
-                    }
-                    .disabled(!journalService.isComposerBodyValid || journalService.isCreating)
-                    .accessibilityIdentifier("logComposerSubmitButton")
+                ToolbarItem(placement: .principal) {
+                    Text("New entry")
+                        .font(.headline)
                 }
             }
         }
+    }
+
+    /// Log or Journal as chips, each explained in plain words underneath — the split is E's own
+    /// data model, but "which one do I want" shouldn't need remembering the schema.
+    private var typeSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ComposerSectionHeader(title: "What kind of entry?")
+            HStack(spacing: 8) {
+                typeChip(.log, label: "Log")
+                typeChip(.journal, label: "Journal")
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("logComposerTypePicker")
+            Text(LogComposerCopy.explainer(for: journalService.composerType))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func typeChip(_ type: LogType, label: String) -> some View {
+        let selected = journalService.composerType == type
+        return Button {
+            journalService.composerType = type
+        } label: {
+            Text(label)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(ChoiceChipButtonStyle(isSelected: selected))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("logComposerType-\(type.rawValue)")
+    }
+
+    @ViewBuilder
+    private var areaSection: some View {
+        if !lifeAreas.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                ComposerSectionHeader(title: "Life area", detail: "optional")
+                ComposerAreaChips(
+                    lifeAreas: lifeAreas.filter { !$0.archived },
+                    noSelectionLabel: "No life area",
+                    selection: $journalService.composerLifeAreaId
+                )
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("logComposerLifeAreaPicker")
+            }
+        }
+    }
+
+    private var footerBar: some View {
+        VStack(spacing: 8) {
+            Text(LogComposerCopy.footer)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button(journalService.isCreating ? "Saving…" : "Save entry") {
+                Task {
+                    if await journalService.createLog() {
+                        onCreated()
+                        dismiss()
+                    }
+                }
+            }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .disabled(!journalService.isComposerBodyValid || journalService.isCreating)
+            .accessibilityIdentifier("logComposerSubmitButton")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+        .background(.bar)
     }
 }
 
@@ -82,10 +142,19 @@ private struct PreviewJournalClientAdapting: JournalClientAdapting {
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
 }
 
-#Preview {
+#Preview("Light") {
     LogComposerView(
         journalService: JournalService(client: PreviewJournalClientAdapting()),
-        lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "#4A90D9", sortOrder: 0)]
+        lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
     ) {}
+    .preferredColorScheme(.light)
+}
+
+#Preview("Dark") {
+    LogComposerView(
+        journalService: JournalService(client: PreviewJournalClientAdapting()),
+        lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
+    ) {}
+    .preferredColorScheme(.dark)
 }
 #endif

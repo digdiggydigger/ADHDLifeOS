@@ -155,7 +155,16 @@ struct AreaGridCard: View {
                 .foregroundStyle(.secondary)
             }
             .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // Equal tiles (E's 2026-08-25 note): in a two-up row the paired HStack proposes the
+            // taller card's height, and `maxHeight: .infinity` makes BOTH cards accept it — so a
+            // one-line status never leaves its neighbour taller. The shared `minHeight` keeps
+            // rows uniform with each other; the wide odd-one-out card only needs the floor.
+            .frame(
+                maxWidth: .infinity,
+                minHeight: 160,
+                maxHeight: isWide ? nil : .infinity,
+                alignment: .topLeading
+            )
             .background(family.tint, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
