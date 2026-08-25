@@ -60,4 +60,31 @@ final class AppDeepLinkTests: XCTestCase {
         XCTAssertEqual(route("adhdlifeos://widget/capture"), .focusWidget)
         XCTAssertEqual(route("adhdlifeos://widget/unknown-surface"), .focusWidget)
     }
+
+    // MARK: - Cold launch (E's on-device note, 2026-08-25)
+
+    /// The widget doors target the signed-in tab hierarchy, which does not exist yet while auth
+    /// is still restoring on a dead launch — the handler that knows these routes was mounted on
+    /// the TabView, so the launch URL arrived before anyone listening for it. RootView now holds
+    /// these routes as pending until the tabs exist; this is the list of what must be held.
+    func testWidgetDoors_mustBeHeldForTheSignedInUI() {
+        XCTAssertTrue(AppDeepLink.areasTab.requiresSignedInUI)
+        for kind in CaptureKind.allCases {
+            XCTAssertTrue(
+                AppDeepLink.captureComposer(kind).requiresSignedInUI,
+                "\(kind.rawValue)'s composer only exists inside the signed-in tabs"
+            )
+        }
+    }
+
+    func testNonDoorRoutes_areNeverHeld() {
+        XCTAssertFalse(
+            AppDeepLink.authCallback.requiresSignedInUI,
+            "auth callbacks have their own always-mounted App-level handler"
+        )
+        XCTAssertFalse(
+            AppDeepLink.focusWidget.requiresSignedInUI,
+            "a plain launch is already the whole action"
+        )
+    }
 }

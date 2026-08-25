@@ -23,6 +23,19 @@ enum AppDeepLink: Equatable {
     /// route test locks the contract from this side.
     case captureComposer(CaptureKind)
 
+    /// Whether this route opens something inside the signed-in tab hierarchy. On a dead launch
+    /// the URL arrives while auth is still restoring — before the tabs (and any handler mounted
+    /// on them) exist — so RootView holds these routes as pending instead of dropping them
+    /// (E's on-device note, 2026-08-25: widget capture taps landed on plain Today).
+    var requiresSignedInUI: Bool {
+        switch self {
+        case .areasTab, .captureComposer:
+            return true
+        case .authCallback, .focusWidget:
+            return false
+        }
+    }
+
     /// The host the widget stamps on its `widgetURL`.
     static let widgetHost = "widget"
 
