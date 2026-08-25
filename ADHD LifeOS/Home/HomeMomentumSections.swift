@@ -307,7 +307,12 @@ extension HomeView {
     }
 
     func refreshInboxCount() async {
-        inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
+        // One fetch feeds both the header badge and Today's inbox card; failure keeps the last
+        // known state rather than blanking a card the user was just looking at.
+        if let waiting = try? await captureClient.fetchUnprocessedCaptures() {
+            inboxCount = waiting.count
+            inboxPeek = HomeInboxPeek.peek(waiting)
+        }
         await refreshClearedCaptureCount()
     }
 

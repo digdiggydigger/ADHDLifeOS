@@ -57,6 +57,9 @@ struct HomeView: View {
     /// Internal, not private: the v3 header lives in `HomeMomentumSections.swift`.
     @State var isPresentingInbox = false
     @State var inboxCount = 0
+    /// The newest waiting captures for Today's inbox card (E's 2026-08-25 note) — refreshed with
+    /// the count, from the same fetch.
+    @State var inboxPeek: [Capture] = []
     /// M7: captures whose exit stamp is today, feeding the ring when the Settings toggle counts
     /// them. Refreshed with the inbox count; 0 whenever the toggle is off.
     @State var capturesClearedToday = 0
@@ -269,6 +272,10 @@ struct HomeView: View {
                     // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
                     lifeAreasSection(activeAreas: activeAreas)
                     dueNowSection
+                    // The inbox as a Today card, not just a badge on the tray icon (E's
+                    // 2026-08-25 note): the count and the newest waiting thoughts, one tap
+                    // from triage.
+                    inboxPeekCard
                     if !closedToday.isEmpty {
                         Text("Closed today")
                             .sectionLabel()
