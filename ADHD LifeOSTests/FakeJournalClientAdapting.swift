@@ -11,6 +11,8 @@ final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendabl
     var logsResult: Result<[Log], Error> = .success([])
     var focusSessionsResult: Result<[CompletedFocusSession], Error> = .success([])
     var capturesResult: Result<[Capture], Error> = .success([])
+    var allTagsResult: Result<[Tag], Error> = .success([])
+    var createTagResult: Result<Tag, Error> = .success(Tag(id: UUID(), name: "made-up"))
     var createLogResult: Result<Log, Error>?
 
     private(set) var fetchLifeAreasCallCount = 0
@@ -38,6 +40,14 @@ final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendabl
     func fetchCaptures() async throws -> [Capture] {
         fetchCapturesCallCount += 1
         return try capturesResult.get()
+    }
+
+    func fetchAllTags() async throws -> [Tag] {
+        try allTagsResult.get()
+    }
+
+    func createTag(name: String) async throws -> Tag {
+        try createTagResult.get()
     }
 
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log {

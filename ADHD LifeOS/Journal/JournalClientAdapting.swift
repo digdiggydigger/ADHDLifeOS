@@ -28,5 +28,10 @@ protocol JournalClientAdapting: Sendable {
     func fetchFocusSessions() async throws -> [CompletedFocusSession]
     /// The capture log — every thought dumped, stamped at `createdAt`. Read-only.
     func fetchCaptures() async throws -> [Capture]
+    /// The shared tag registry, for the composer's chips and the rows' resolution — the same
+    /// list tasks and captures use.
+    func fetchAllTags() async throws -> [Tag]
+    /// Creates (or dedups by name, server-side semantics) a tag for the composer.
+    func createTag(name: String) async throws -> Tag
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log
 }

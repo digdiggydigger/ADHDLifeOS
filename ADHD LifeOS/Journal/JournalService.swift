@@ -37,6 +37,12 @@ final class JournalService: ObservableObject {
     /// journal — the same non-blocking posture as the view's closed-task fetch.
     @Published private(set) var focusSessions: [CompletedFocusSession] = []
     @Published private(set) var captures: [Capture] = []
+    /// The composer's tag selection (E's 2026-08-25 note) — sent with the create, because logs
+    /// are append-only and can never be tagged after the fact.
+    @Published var composerTagIds: [UUID] = []
+    /// The shared tag registry, for the composer chips and the timeline rows' resolution.
+    /// Non-blocking like the other side streams.
+    @Published private(set) var availableTags: [Tag] = []
 
     private let client: JournalClientAdapting
     private(set) var lifeAreas: [LifeArea] = []
@@ -64,10 +70,12 @@ final class JournalService: ObservableObject {
             async let logsResult = client.fetchLogs()
             async let sprintsResult = client.fetchFocusSessions()
             async let capturesResult = client.fetchCaptures()
+            async let tagsResult = client.fetchAllTags()
             lifeAreas = try await lifeAreasResult
             logs = try await logsResult
             focusSessions = (try? await sprintsResult) ?? []
             captures = (try? await capturesResult) ?? []
+            availableTags = (try? await tagsResult) ?? []
             hasLoadedOnce = true
             recomputeFeed()
         } catch {
@@ -83,7 +91,8 @@ final class JournalService: ObservableObject {
         let normalized: NormalizedCreateLogInput
         switch LogValidation.normalizeCreateLogInput(
             body: composerBody, type: composerType, lifeAreaId: composerLifeAreaId,
-            energyLevel: composerEnergyLevel, moodEmoji: composerMoodEmoji
+            energyLevel: composerEnergyLevel, moodEmoji: composerMoodEmoji,
+            tagIds: composerTagIds
         ) {
         case .failure(let error):
             createErrorMessage = error.errorDescription
@@ -104,10 +113,31 @@ final class JournalService: ObservableObject {
             composerLifeAreaId = nil
             composerEnergyLevel = .medium
             composerMoodEmoji = JournalMood.defaultEmoji
+            composerTagIds = []
             return true
         } catch {
             createErrorMessage = Self.message(for: error)
             return false
+        }
+    }
+
+    /// Creates a tag from the composer (server dedups by name), selects it for the entry being
+    /// written, and adds it to the visible list — the same gesture the capture composer has.
+    @discardableResult
+    func createTagForComposer(name: String) async -> Tag? {
+        createErrorMessage = nil
+        do {
+            let tag = try await client.createTag(name: name)
+            if !composerTagIds.contains(tag.id) {
+                composerTagIds.append(tag.id)
+            }
+            if !availableTags.contains(tag) {
+                availableTags.append(tag)
+            }
+            return tag
+        } catch {
+            createErrorMessage = Self.message(for: error)
+            return nil
         }
     }
 

@@ -178,6 +178,58 @@ final class JournalServiceTests: XCTestCase {
         XCTAssertEqual(sut.captures, [capture])
     }
 
+    // MARK: - Composer tags (E's 2026-08-25 note: journal and logs take tags too)
+
+    func testLoad_populatesAvailableTags() async {
+        let fake = FakeJournalClientAdapting()
+        let tag = Tag(id: UUID(), name: "errands")
+        fake.allTagsResult = .success([tag])
+        let sut = JournalService(client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.availableTags, [tag])
+    }
+
+    func testCreateLog_sendsTheSelectedTagsAndResetsThem() async {
+        let fake = FakeJournalClientAdapting()
+        let sut = JournalService(client: fake)
+        let tagIds = [UUID(), UUID()]
+        sut.composerBody = "Tagged entry"
+        sut.composerTagIds = tagIds
+
+        let created = await sut.createLog()
+
+        XCTAssertTrue(created)
+        XCTAssertEqual(fake.lastCreateLogInput?.tagIds, tagIds)
+        XCTAssertEqual(sut.composerTagIds, [], "selection must reset with the rest of the composer")
+    }
+
+    func testCreateTagForComposer_createsSelectsAndListsTheTag() async {
+        let fake = FakeJournalClientAdapting()
+        let tag = Tag(id: UUID(), name: "deep-work")
+        fake.createTagResult = .success(tag)
+        let sut = JournalService(client: fake)
+
+        let returned = await sut.createTagForComposer(name: "deep-work")
+
+        XCTAssertEqual(returned, tag)
+        XCTAssertEqual(sut.composerTagIds, [tag.id], "a freshly made tag is what you meant to use")
+        XCTAssertTrue(sut.availableTags.contains(tag))
+    }
+
+    func testCreateTagForComposer_failureSurfacesTheErrorWithoutSelecting() async {
+        let fake = FakeJournalClientAdapting()
+        fake.createTagResult = .failure(JournalServiceError.fetchFailed("down"))
+        let sut = JournalService(client: fake)
+
+        let returned = await sut.createTagForComposer(name: "deep-work")
+
+        XCTAssertNil(returned)
+        XCTAssertEqual(sut.createErrorMessage, "down")
+        XCTAssertEqual(sut.composerTagIds, [])
+    }
+
     /// The side streams are garnish, never load-bearing: their failure must not take the written
     /// journal down — same non-blocking posture as the view's task fetch.
     func testLoad_sprintOrCaptureFailureLeavesThemEmptyWithoutFailingTheJournal() async {

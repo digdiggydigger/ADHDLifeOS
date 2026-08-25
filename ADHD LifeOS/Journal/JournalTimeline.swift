@@ -155,6 +155,14 @@ enum JournalTimeline {
         return line + " this week"
     }
 
+    /// A log row's tags, resolved against the one already-fetched tag list — attach order,
+    /// dangling ids dropped: the same semantics the capture rows use
+    /// (`CaptureRowPresentation.tags(for:from:)`), applied to the journal's own documents.
+    static func tags(for log: Log, from allTags: [Tag]) -> [Tag] {
+        guard let tagIds = log.tagIds else { return [] }
+        return tagIds.compactMap { id in allTags.first { $0.id == id } }
+    }
+
     /// The sprint row's fact line: "25 min sprint" when it ran its course, "12 of 25 min sprint"
     /// when stopped early — never a silent rounding-up of an abandoned sprint into a full one.
     /// Floor division with a 1-minute floor, same arithmetic as `FocusAnalytics.focusedMinutes`,

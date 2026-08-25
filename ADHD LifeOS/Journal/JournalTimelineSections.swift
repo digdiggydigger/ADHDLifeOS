@@ -85,6 +85,10 @@ extension JournalView {
                 Text(log.body)
                     .font(.subheadline)
                     .fixedSize(horizontal: false, vertical: true)
+                let tags = JournalTimeline.tags(for: log, from: journalService.availableTags)
+                if !tags.isEmpty {
+                    TagChipsRow(tags: tags)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .bentoCard()

@@ -49,6 +49,22 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
         }
     }
 
+    func fetchAllTags() async throws -> [Tag] {
+        do {
+            return try await store.fetchTags()
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
+    func createTag(name: String) async throws -> Tag {
+        do {
+            return try await store.createTagDeduplicating(name: name)
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log {
         let now = Date()
         let log = Log(
@@ -59,7 +75,10 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
             entryDate: now,
             createdAt: now,
             energyLevel: input.energyLevel,
-            moodEmoji: input.moodEmoji
+            moodEmoji: input.moodEmoji,
+            // Tags ride the create — logs cannot be updated, so nil (key absent) beats an empty
+            // array nothing could ever remove.
+            tagIds: input.tagIds.isEmpty ? nil : input.tagIds
         )
         do {
             try await store.appendLog(log)

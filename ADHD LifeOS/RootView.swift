@@ -338,6 +338,8 @@ struct RootView: View {
         func fetchLogs() async throws -> [Log] { [] }
         func fetchFocusSessions() async throws -> [CompletedFocusSession] { [] }
         func fetchCaptures() async throws -> [Capture] { [] }
+        func fetchAllTags() async throws -> [Tag] { [] }
+        func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
         func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
     }
 

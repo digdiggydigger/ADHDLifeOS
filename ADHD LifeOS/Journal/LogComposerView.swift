@@ -14,6 +14,7 @@ struct LogComposerView: View {
     let lifeAreas: [LifeArea]
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var draftTagName = ""
 
     var body: some View {
         NavigationStack {
@@ -35,6 +36,7 @@ struct LogComposerView: View {
                         )
                     }
                     areaSection
+                    tagsSection
                     if let errorMessage = journalService.createErrorMessage {
                         Text(errorMessage)
                             .font(.footnote)
@@ -108,6 +110,70 @@ struct LogComposerView: View {
         }
     }
 
+    /// Tags at the point of writing (E's 2026-08-25 note) — and ONLY there: logs are append-only,
+    /// so an entry can never be tagged after the fact. Same chips + inline create as the other
+    /// composers, riding `JournalService.composerTagIds` into the create payload.
+    private var tagsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ComposerSectionHeader(title: "Tags", detail: "optional")
+            if !journalService.availableTags.isEmpty {
+                FlowingChips(spacing: 8) {
+                    ForEach(journalService.availableTags) { tag in
+                        tagChip(tag)
+                    }
+                }
+            }
+            HStack(spacing: 8) {
+                TextField("New tag", text: $draftTagName)
+                    .textInputAutocapitalization(.never)
+                    .padding(.horizontal, 8)
+                    .frame(minHeight: 36)
+                    .background(
+                        Color("CardSurfaceSecondary"),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
+                    .accessibilityIdentifier("logComposerNewTagField")
+                Button("Add") {
+                    Task {
+                        if await journalService.createTagForComposer(name: draftTagName) != nil {
+                            draftTagName = ""
+                        }
+                    }
+                }
+                .font(.caption.weight(.semibold))
+                .disabled(draftTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("logComposerAddTagButton")
+            }
+        }
+    }
+
+    private func tagChip(_ tag: Tag) -> some View {
+        let selected = journalService.composerTagIds.contains(tag.id)
+        return Button {
+            if selected {
+                journalService.composerTagIds.removeAll { $0 == tag.id }
+            } else {
+                journalService.composerTagIds.append(tag.id)
+            }
+        } label: {
+            Text(tag.name)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(selected ? AreaPalette.work.onColor : Color("LabelSecondary"))
+                .padding(.horizontal, 8)
+                .frame(minHeight: 36)
+                .background(
+                    selected
+                        ? AnyShapeStyle(Color.accentColor)
+                        : AnyShapeStyle(Color("CardSurfaceSecondary")),
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("logComposerTagChip-\(tag.id)")
+    }
+
     private var footerBar: some View {
         VStack(spacing: 8) {
             Text(LogComposerCopy.footer)
@@ -139,6 +205,8 @@ private struct PreviewJournalClientAdapting: JournalClientAdapting {
     func fetchLogs() async throws -> [Log] { [] }
     func fetchFocusSessions() async throws -> [CompletedFocusSession] { [] }
     func fetchCaptures() async throws -> [Capture] { [] }
+    func fetchAllTags() async throws -> [Tag] { [Tag(id: UUID(), name: "errands")] }
+    func createTag(name: String) async throws -> Tag { Tag(id: UUID(), name: name) }
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
 }
 

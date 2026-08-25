@@ -141,11 +141,12 @@ struct CapturePhotoPreview: View {
     }
 }
 
-/// The capture's tag membership as quiet metadata chips under the meta line — surface-secondary,
-/// never a tint, because tags are context rather than identity (the life-area chip owns identity).
+/// Tag membership as quiet metadata chips under a meta line — surface-secondary, never a tint,
+/// because tags are context rather than identity (the life-area chip owns identity). Value-fed
+/// and shared: the inbox's triage cards and the journal's log rows both use it.
 /// Overflow scrolls sideways like `TaskDetailChipsRow`; the chips themselves are inert, so
 /// VoiceOver reads the strip as one "Tags:" element instead of n bare words.
-struct CaptureTagChipsRow: View {
+struct TagChipsRow: View {
     let tags: [Tag]
 
     var body: some View {
@@ -194,7 +195,7 @@ struct CaptureRowSummary<ExpandedLinkContent: View>: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 if !tags.isEmpty {
-                    CaptureTagChipsRow(tags: tags)
+                    TagChipsRow(tags: tags)
                 }
             }
             .layoutPriority(1)
@@ -260,7 +261,7 @@ private struct CaptureRowDetailGallery: View {
             )
             CaptureQuotedNote(text: "The retro idea about standups — the one where nobody talks first.")
             CaptureVoicePill()
-            CaptureTagChipsRow(tags: [
+            TagChipsRow(tags: [
                 Tag(id: UUID(), name: "errands"),
                 Tag(id: UUID(), name: "deep-work"),
                 Tag(id: UUID(), name: "waiting-on")

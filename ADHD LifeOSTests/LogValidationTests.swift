@@ -43,4 +43,28 @@ final class LogValidationTests: XCTestCase {
         }
         XCTAssertNil(normalized.lifeAreaId)
     }
+
+    /// Tags ride BOTH types (E's 2026-08-25 note: "journal and logs") — unlike energy/mood,
+    /// which stay journal-only.
+    func testCreate_passesTagsThroughForBothTypes() {
+        let tagIds = [UUID(), UUID()]
+        for type in LogType.allCases {
+            let result = LogValidation.normalizeCreateLogInput(
+                body: "Tagged", type: type, lifeAreaId: nil, tagIds: tagIds
+            )
+            guard case .success(let normalized) = result else {
+                return XCTFail("Expected success for \(type)")
+            }
+            XCTAssertEqual(normalized.tagIds, tagIds, "tags must survive a \(type) entry")
+        }
+    }
+
+    func testCreate_defaultsToNoTags() {
+        let result = LogValidation.normalizeCreateLogInput(body: "Plain", type: .log, lifeAreaId: nil)
+
+        guard case .success(let normalized) = result else {
+            return XCTFail("Expected success")
+        }
+        XCTAssertEqual(normalized.tagIds, [])
+    }
 }

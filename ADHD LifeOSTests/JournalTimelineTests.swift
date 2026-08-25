@@ -259,6 +259,27 @@ final class JournalTimelineTests: XCTestCase {
         )
     }
 
+    // The chips on a log row resolve against the one already-fetched tag list, exactly like the
+    // capture rows — attach order, dangling ids dropped, nothing fetched per row.
+    func testTags_resolveALogsMembershipInAttachOrder() {
+        let errands = Tag(id: UUID(), name: "errands")
+        let deep = Tag(id: UUID(), name: "deep-work")
+        let entry = Log(
+            id: UUID(), lifeAreaId: nil, type: .log, body: "x",
+            entryDate: now, createdAt: now,
+            tagIds: [deep.id, UUID(), errands.id]
+        )
+
+        XCTAssertEqual(JournalTimeline.tags(for: entry, from: [errands, deep]), [deep, errands])
+        XCTAssertEqual(
+            JournalTimeline.tags(
+                for: Log(id: UUID(), lifeAreaId: nil, type: .log, body: "x", entryDate: now, createdAt: now),
+                from: [errands]
+            ),
+            []
+        )
+    }
+
     func testSprintLine_subMinuteSprintFloorsToOneMinute() {
         XCTAssertEqual(
             JournalTimeline.sprintLine(

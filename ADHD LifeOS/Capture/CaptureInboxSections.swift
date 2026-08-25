@@ -38,7 +38,7 @@ extension CaptureInboxView {
                     .foregroundStyle(.secondary)
             }
             if !tags.isEmpty {
-                CaptureTagChipsRow(tags: tags)
+                TagChipsRow(tags: tags)
             }
             topCardActions(capture)
         }
