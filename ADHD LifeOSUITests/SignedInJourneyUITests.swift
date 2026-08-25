@@ -140,12 +140,26 @@ final class SignedInJourneyUITests: XCTestCase {
         )
         row.tap()
 
+        // `exists` matches elements on NON-VISIBLE tabs too (TabView keeps every tab's
+        // hierarchy alive), so the cross-tab hop is asserted through the tab bar's own
+        // selection — the check that actually catches a broken "Nudges waiting" row.
+        let nudgesTab = app.tabBars.buttons["Nudges"]
+        let selected = XCTNSPredicateExpectation(
+            predicate: .init(format: "isSelected == true"), object: nudgesTab
+        )
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [selected], timeout: UITestSession.timeout),
+            .completed,
+            "Tapping the Nudges-waiting row did not cross to the Nudges tab"
+        )
+
         // Dismissal lives on the Nudges tab now, one control per nudge by id.
         let dismiss = app.buttons["nudgeDismissButton-\(nudgeID.uuidString)"]
         XCTAssertTrue(
             dismiss.waitForExistence(timeout: UITestSession.timeout),
             "The Nudges tab did not show the overdue nudge's dismiss control"
         )
+        XCTAssertTrue(dismiss.isHittable, "The dismiss control exists but cannot be tapped")
         dismiss.tap()
 
         let gone = XCTNSPredicateExpectation(predicate: .init(format: "exists == false"), object: dismiss)
@@ -153,6 +167,9 @@ final class SignedInJourneyUITests: XCTestCase {
             XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout),
             .completed,
             "The nudge was still listed as due after being dismissed"
+                + (app.staticTexts["nudgesErrorLine"].exists
+                    ? " (service error: \(app.staticTexts["nudgesErrorLine"].label))"
+                    : " (no service error shown)")
         )
     }
 

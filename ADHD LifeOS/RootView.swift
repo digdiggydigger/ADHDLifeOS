@@ -305,7 +305,9 @@ struct RootView: View {
         func updateNudge(id: UUID, payload: NudgeUpdatePayload) async throws -> Nudge {
             fatalError("unused in preview")
         }
-        func markFired(id: UUID) async throws -> Nudge { fatalError("unused in preview") }
+        func markFired(id: UUID, existingCompletionDates: [Date]) async throws -> Nudge {
+        fatalError("unused in preview")
+    }
     }
 
     struct PreviewJournalClient: JournalClientAdapting {

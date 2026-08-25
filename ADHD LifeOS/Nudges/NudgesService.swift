@@ -94,7 +94,9 @@ final class NudgesService: ObservableObject {
     func dismiss(_ nudge: Nudge) async -> Bool {
         errorMessage = nil
         do {
-            let updated = try await client.markFired(id: nudge.id)
+            let updated = try await client.markFired(
+                id: nudge.id, existingCompletionDates: nudge.completionDates ?? []
+            )
             replace(updated)
             return true
         } catch {

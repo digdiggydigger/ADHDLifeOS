@@ -49,9 +49,15 @@ struct FirebaseNudgesClientAdapter: NudgesClientAdapting {
         }
     }
 
-    func markFired(id: UUID) async throws -> Nudge {
+    func markFired(id: UUID, existingCompletionDates: [Date]) async throws -> Nudge {
         do {
-            try await store.updateNudge(id: id, fields: FirestoreFieldPayloads.nudgeFired(now: .now))
+            let now = Date()
+            try await store.updateNudge(
+                id: id,
+                fields: FirestoreFieldPayloads.nudgeFired(
+                    now: now, completionDates: existingCompletionDates + [now]
+                )
+            )
             return try await store.fetchNudge(id: id)
         } catch {
             throw Self.mapped(error)

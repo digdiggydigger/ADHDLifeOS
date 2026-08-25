@@ -117,9 +117,16 @@ enum FirestoreFieldPayloads {
     /// updated" cannot disagree by a network round trip — deliberately different from
     /// `nudgeUpdate`, which defers to the server clock because it is describing an edit rather
     /// than pinning the moment something happened.
-    static func nudgeFired(now: Date) -> [String: Any] {
+    /// `completionDates` is the FULL array including this firing (read-modify-write from the
+    /// nudge the caller already holds), so the codec seam stays free of arrayUnion sentinels
+    /// the SDK-free tests could not inspect.
+    static func nudgeFired(now: Date, completionDates: [Date]) -> [String: Any] {
         let stamp = Timestamp(date: now)
-        return ["last_fired_at": stamp, "updated_at": stamp]
+        return [
+            "last_fired_at": stamp,
+            "updated_at": stamp,
+            "completion_dates": completionDates.map { Timestamp(date: $0) }
+        ]
     }
 
     /// The delta convention shared by `TaskUpdatePayload`/`CaptureUpdate`: outer `nil` = field

@@ -345,9 +345,17 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
     /// the same instant so "last fired" and "last updated" cannot disagree by a round trip. That is
     /// deliberately different from `nudgeUpdate`, which defers to the server clock.
     func testNudgeFired_writesBothStampsAsTheSameClientInstant() {
-        let fields = FirestoreFieldPayloads.nudgeFired(now: referenceDate)
+        let earlier = referenceDate.addingTimeInterval(-86_400)
+        let fields = FirestoreFieldPayloads.nudgeFired(
+            now: referenceDate, completionDates: [earlier, referenceDate]
+        )
 
-        XCTAssertEqual(fields.keys.sorted(), ["last_fired_at", "updated_at"])
+        XCTAssertEqual(fields.keys.sorted(), ["completion_dates", "last_fired_at", "updated_at"])
+        XCTAssertNil(fields["completionDates"], "capture-style camelCase must be ABSENT on nudges")
+        XCTAssertEqual(
+            (fields["completion_dates"] as? [Any])?.compactMap { FirestoreDocumentCoder.date(from: $0) },
+            [earlier, referenceDate]
+        )
         XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["last_fired_at"]), referenceDate)
         XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["updated_at"]), referenceDate)
         XCTAssertFalse(

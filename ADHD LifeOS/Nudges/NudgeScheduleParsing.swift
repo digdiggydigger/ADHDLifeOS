@@ -21,6 +21,19 @@ struct NudgeSchedule: Equatable, Sendable {
     /// `0`), and dash ranges (e.g. `1-5`). Anything else — wrong field count, a non-`*`
     /// day-of-month/month, an out-of-range or non-integer minute/hour, step values, or an empty
     /// day list — returns `nil`, i.e. never-computably-due.
+    /// "Daily at 21:00" / "Mon, Wed at 09:30" — the v3 card's schedule line. `nil` for a cron
+    /// string the app cannot parse (shown raw instead, never invented).
+    static func summary(cronString: String) -> String? {
+        guard let schedule = NudgeSchedule.parse(cronString: cronString) else { return nil }
+        let time = String(format: "%02d:%02d", schedule.hour, schedule.minute)
+        let symbols = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        if schedule.weekdays.count == 7 {
+            return "Daily at " + time
+        }
+        let days = schedule.weekdays.sorted().map { symbols[$0] }.joined(separator: ", ")
+        return days + " at " + time
+    }
+
     static func parse(cronString: String) -> NudgeSchedule? {
         let fields = cronString.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
         guard fields.count == 5 else { return nil }
