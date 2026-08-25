@@ -160,7 +160,7 @@ struct RootView: View {
                                 .rotationEffect(.degrees(isFabOpen ? 135 : 0))
                                 .contentShape(Circle())
                         }
-                        .padding(.trailing, 20)
+                        .padding(.trailing, 16)
                         .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
                         .accessibilityIdentifier("quickCaptureButton")
 
@@ -175,7 +175,11 @@ struct RootView: View {
 
                         FocusTimerBar(service: focusService)
                     }
-                    .padding(.bottom, 60)
+                    // Full width with trailing alignment: with no timer bar the stack used to
+                    // shrink to the disc and the .bottom overlay CENTRED it mid-screen (E's
+                    // position review, 2026-08-25). Trailing-pinned, ~12pt above the tab bar.
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.bottom, 52)
                     .animation(
                         reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
                         value: focusService.isActive
