@@ -149,9 +149,16 @@ struct RootView: View {
                                 isFabOpen.toggle()
                             }
                         } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 48))
+                            // v3's capture disc: a 60pt solid circle with the motion-blue glow,
+                            // not a bare SF glyph — the fan leans out of THIS.
+                            Image(systemName: "plus")
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(AreaPalette.work.onColor)
+                                .frame(width: 60, height: 60)
+                                .background(Color.accentColor, in: Circle())
+                                .shadow(color: Color.accentColor.opacity(0.5), radius: 12, x: 0, y: 8)
                                 .rotationEffect(.degrees(isFabOpen ? 135 : 0))
+                                .contentShape(Circle())
                         }
                         .padding(.trailing, 20)
                         .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
