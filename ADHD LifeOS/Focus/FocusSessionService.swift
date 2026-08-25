@@ -258,6 +258,8 @@ final class FocusSessionService: ObservableObject {
     /// deliberately what leaves this type rather than `remainingSeconds`: it is stable while a
     /// sprint merely counts down, which is what lets Home republish on change without churn.
     var sprintDeadline: Date? { deadline }
+    /// When the running sprint began — S4's "started 09:26" line.
+    var sprintStartedAt: Date? { startedAt }
 
     // MARK: - Ticking
 
@@ -332,12 +334,10 @@ final class FocusSessionService: ObservableObject {
 }
 
 // MARK: - Sprint persistence (F-SprintPersistence)
-
 extension FocusSessionService {
     /// Reinstates a sprint the process died holding: running sprints recompute from the saved
     /// deadline (checkpoints crossed while dead are marked fired WITHOUT nudging), paused ones
-    /// come back frozen, and an expired one settles — logged whole, Activity ended, store
-    /// cleared. Called once by `RootView`.
+    /// come back frozen, an expired one settles: logged whole, Activity ended, store cleared.
     func restorePersistedSprint() async {
         guard let sprintStore else { return }
         if offlineCompletionSummary == nil {

@@ -63,12 +63,11 @@ struct FocusSprintDetailView: View {
     private func sprintContent(_ session: FocusSession) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24) {
-                statusRow(session)
-                identity(session)
                 if let banner = service.checkpointBanner {
                     checkpointBanner(banner)
                 }
                 countdown(session)
+                identity(session)
                 FocusSprintTimelineCard(session: session)
                 FocusCadenceEditorCard(service: service, session: session)
                 controls(session)
@@ -108,25 +107,32 @@ struct FocusSprintDetailView: View {
         .foregroundStyle(.secondary)
     }
 
+    /// v3's centred identity under the ring: the title, then the emoji with the start time.
     private func identity(_ session: FocusSession) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(session.lifeAreaEmoji)
-                .font(.title)
-                .frame(width: 56, height: 56)
-                .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .accessibilityHidden(true)
-
-            Text("ADHD focus & checkpoint system")
-                .sectionLabel()
-                .foregroundStyle(Color.accentColor)
-
+        VStack(spacing: 8) {
             Text(session.taskTitle)
-                .font(.title2.bold())
-                .tracking(-0.5)
+                .font(.title3.bold())
+                .tracking(-0.4)
+                .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.8)
                 .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(1)
+            Text(identityLine(session))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func identityLine(_ session: FocusSession) -> String {
+        var line = session.lifeAreaEmoji
+        if session.isPaused {
+            line += " · paused"
+        }
+        if let started = service.sprintStartedAt {
+            line += " · started " + started.formatted(date: .omitted, time: .shortened)
+        }
+        return line
     }
 
     private func checkpointBanner(_ message: String) -> some View {
@@ -138,18 +144,35 @@ struct FocusSprintDetailView: View {
             .accessibilityIdentifier("focusModalBanner")
     }
 
+    /// v3's S4 hero: the 236pt countdown ring — elapsed progress in motion-blue (muted while
+    /// paused), the remaining time large inside, the logged-of-planned line under it.
     private func countdown(_ session: FocusSession) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(FocusTimeFormatting.digital(session.remainingSeconds))
-                .font(.system(.largeTitle, design: .monospaced).weight(.bold))
-                .tracking(-0.5)
-                .minimumScaleFactor(0.8)
-                .lineLimit(1)
-                .accessibilityLabel(Self.remainingAccessibilityLabel(session.remainingSeconds))
-                .accessibilityIdentifier("focusModalRemaining")
-
+        VStack(spacing: 16) {
+            ClosureRing(
+                progress: session.progress,
+                size: 236,
+                lineWidth: 12,
+                arcStyle: session.isPaused
+                    ? AnyShapeStyle(Color("LabelTertiary"))
+                    : AnyShapeStyle(Color.accentColor)
+            ) {
+                VStack(spacing: 4) {
+                    Text(FocusTimeFormatting.digital(session.remainingSeconds))
+                        .font(.system(.largeTitle, design: .monospaced).weight(.bold))
+                        .tracking(-1)
+                        .minimumScaleFactor(0.8)
+                        .lineLimit(1)
+                        .accessibilityLabel(Self.remainingAccessibilityLabel(session.remainingSeconds))
+                        .accessibilityIdentifier("focusModalRemaining")
+                    Text("\(session.elapsedSeconds / 60) of \(session.durationSeconds / 60) min logged")
+                        .sectionLabel()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .shadow(color: Color.accentColor.opacity(session.isPaused ? 0 : 0.12), radius: 10, x: 0, y: 4)
             nextNudgeStatus(session)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private static func remainingAccessibilityLabel(_ seconds: Int) -> String {
@@ -179,33 +202,57 @@ struct FocusSprintDetailView: View {
 
     // MARK: - Controls
 
+    private var extendChips: some View {
+        HStack(spacing: 8) {
+            secondaryControl("+1 min", systemImage: "goforward", identifier: "focusModalAdd1m") {
+                service.addSeconds(60)
+            }
+            secondaryControl("+5 min", systemImage: "goforward.plus", identifier: "focusModalAdd5m") {
+                service.addSeconds(300)
+            }
+            secondaryControl("+10 min", systemImage: "goforward.10", identifier: "focusModalAdd10m") {
+                service.addSeconds(600)
+            }
+        }
+    }
+
     private func controls(_ session: FocusSession) -> some View {
         VStack(spacing: 8) {
+            extendChips
+
             HStack(spacing: 8) {
-                secondaryControl(
-                    session.isPaused ? "Resume" : "Pause",
-                    systemImage: session.isPaused ? "play.fill" : "pause.fill",
-                    identifier: "focusModalPause"
-                ) {
+                Button {
+                    controlHapticTrigger.toggle()
                     service.togglePause()
+                } label: {
+                    Label(
+                        session.isPaused ? "Resume" : "Pause",
+                        systemImage: session.isPaused ? "play.fill" : "pause.fill"
+                    )
                 }
-                secondaryControl("+30s", systemImage: "goforward.30", identifier: "focusModalAdd30") {
-                    service.addSeconds(30)
+                .buttonStyle(MomentumBorderedButtonStyle(minHeight: 54))
+                .accessibilityIdentifier("focusModalPause")
+
+                Button {
+                    controlHapticTrigger.toggle()
+                    isConfirmingStop = true
+                } label: {
+                    Label("Close it", systemImage: "checkmark.circle.fill")
                 }
-                secondaryControl("+5m", systemImage: "goforward.plus", identifier: "focusModalAdd5m") {
-                    service.addSeconds(300)
-                }
+                .buttonStyle(MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo")))
+                .accessibilityIdentifier("focusModalStop")
             }
 
-            Button("Complete & stop") {
-                controlHapticTrigger.toggle()
-                isConfirmingStop = true
-            }
-            .buttonStyle(PrimaryActionButtonStyle())
-            .accessibilityIdentifier("focusModalStop")
-            // Stop ends the sprint and writes history; it sits a thumb-width from +5m, and a
-            // mis-tap used to be unrecoverable (E, 2026-08-20).
-            .confirmationDialog(
+            Text("Stopping early still logs the minutes you did.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+
+        }
+        // Stop ends the sprint and writes history, and a mis-tap used to be unrecoverable
+        // (E, 2026-08-20) — the dialog survives the v3 restyle, attached to the stack.
+        .confirmationDialog(
                 FocusStopConfirmation.title,
                 isPresented: $isConfirmingStop,
                 titleVisibility: .visible
@@ -217,9 +264,8 @@ struct FocusSprintDetailView: View {
                     }
                 }
                 Button(FocusStopConfirmation.cancelTitle, role: .cancel) {}
-            } message: {
-                Text(FocusStopConfirmation.message(for: session))
-            }
+        } message: {
+            Text(FocusStopConfirmation.message(for: session))
         }
     }
 

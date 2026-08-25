@@ -223,15 +223,34 @@ private extension TaskDetailView {
             TextField("Title", text: $title)
                 .accessibilityIdentifier("taskDetailTitleField")
 
+            // v3's S3 chips: the task's identity at a glance — area tint, priority, due, effort.
+            // They mirror the STAGED edits, so a changed area shows before Save commits it.
+            TaskDetailChipsRow(
+                area: lifeAreas.first { $0.id == lifeAreaId },
+                priority: priority,
+                dueDate: hasDueDate ? dueDate : nil,
+                effortMinutes: focusDurationSeconds / 60
+            )
+            .listRowSeparator(.hidden)
+
             Button {
                 Task { await service.toggleStatus() }
             } label: {
-                Text(MomentumTaskContext.closeButtonLabel(status: task.status, streak: momentumContext.streak))
+                Label(
+                    MomentumTaskContext.closeButtonLabel(status: task.status, streak: momentumContext.streak),
+                    systemImage: task.status == .done ? "arrow.uturn.backward" : "checkmark.circle.fill"
+                )
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             }
+            .buttonStyle(MomentumSolidButtonStyle(
+                fill: task.status == .done ? Color("CardSurfaceSecondary") : Color("StateGo"),
+                foreground: task.status == .done ? Color("LabelSecondary") : Color("OnStateGo")
+            ))
             .accessibilityIdentifier("taskDetailStatusToggle")
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         } footer: {
-            // Scoped to the status action specifically — the Title field above it is staged behind
-            // Save, so the footer names the immediate control rather than the whole section (Part 6).
+            // Scoped to the status action — the Title field above is staged behind Save (Part 6).
             Text("Marking this done or reopening it applies immediately — no Save needed.")
         }
     }
@@ -271,34 +290,12 @@ private extension TaskDetailView {
     }
 
     var tagsSection: some View {
-        Section {
-            ForEach(service.tags) { tag in
-                HStack {
-                    Text(tag.name)
-                    Spacer()
-                    Button("Remove") {
-                        Task { await service.removeTag(tag) }
-                    }
-                }
-            }
-
-            HStack {
-                TextField("New tag", text: $newTagName)
-                    .accessibilityIdentifier("taskDetailNewTagField")
-                Button("Add") {
-                    Task {
-                        await service.addTag(name: newTagName)
-                        newTagName = ""
-                    }
-                }
-                .disabled(newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityIdentifier("taskDetailAddTagButton")
-            }
-        } header: {
-            Text("Tags")
-        } footer: {
-            Text("Adding or removing a tag applies immediately — no Save needed.")
-        }
+        TaskDetailTagsSection(
+            tags: service.tags,
+            newTagName: $newTagName,
+            onAdd: { name in await service.addTag(name: name) },
+            onRemove: { tag in await service.removeTag(tag) }
+        )
     }
 
     /// Scheduled → summary + "Turn Off" (the exact prior selection isn't reconstructable from the
