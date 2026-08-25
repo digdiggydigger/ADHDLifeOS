@@ -29,7 +29,6 @@ enum CaptureDetailPresentation {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-
     /// The nav bar's principal label — the capture's kind, worn as identity ("🌐 Link"), matching
     /// the B6 frame. Exhaustive so a sixth kind fails the build here rather than shipping a blank
     /// bar. `.task` has no mockup frame; it follows the same emoji-plus-name pattern.
