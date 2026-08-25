@@ -46,7 +46,9 @@ struct RootView: View {
     /// per launch. `.sensoryFeedback` is iOS 17+, hence the UIKit generator (same §7 precedent
     /// as `saveSuccessHaptic`).
     private func startFocus(_ plan: FocusSprintPlan) {
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        if AppFeedback.hapticsEnabled() {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
         focusService.start(plan: plan)
     }
 

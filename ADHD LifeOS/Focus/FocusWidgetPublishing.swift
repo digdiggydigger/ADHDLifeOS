@@ -22,6 +22,8 @@ enum FocusWidgetSnapshotBuilder {
         lifeAreas: [LifeArea],
         sessions: [CompletedFocusSession],
         activeSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
+        dailyGoalMinutes: Int = FocusWidgetSnapshotBuilder.dailyGoalMinutes,
+        defaultSprintSeconds: Int = FocusSprintConfiguration.defaultDurationSeconds,
         now: Date = Date(),
         calendar: Calendar = .current
     ) -> FocusWidgetSnapshot {
@@ -30,7 +32,9 @@ enum FocusWidgetSnapshotBuilder {
             generatedAt: now,
             activeGoal: activeGoal.map { goal in
                 let area = lifeAreas.first { $0.id == goal.lifeAreaId }
-                let duration = FocusSprintConfiguration.resolvedDuration(explicit: goal.focusDurationSeconds)
+                let duration = FocusSprintConfiguration.resolvedDuration(
+                    explicit: goal.focusDurationSeconds, defaultSeconds: defaultSprintSeconds
+                )
                 return FocusWidgetSnapshot.ActiveGoal(
                     title: goal.title,
                     lifeAreaName: area?.name,

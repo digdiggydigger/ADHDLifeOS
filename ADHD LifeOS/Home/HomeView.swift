@@ -331,7 +331,9 @@ struct HomeView: View {
                 activeGoal: homeService.activeGoal,
                 lifeAreas: homeService.lifeAreas,
                 sessions: publishedHistory,
-                activeSprint: sprint
+                activeSprint: sprint,
+                dailyGoalMinutes: momentumPreferences.focusDailyGoalMinutes,
+                defaultSprintSeconds: momentumPreferences.defaultSprintMinutes * 60
             )
         )
         widgetPublisher.publishLifeAreas(

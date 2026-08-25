@@ -15,10 +15,14 @@ extension View {
     @ViewBuilder
     func saveSuccessHaptic(trigger: Bool) -> some View {
         if #available(iOS 17.0, *) {
-            self.sensoryFeedback(.impact(flexibility: .solid), trigger: trigger)
+            self.sensoryFeedback(.impact(flexibility: .solid), trigger: trigger) { _, _ in
+                AppFeedback.hapticsEnabled()
+            }
         } else {
             self.onChange(of: trigger) { _ in
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                if AppFeedback.hapticsEnabled() {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                }
             }
         }
     }

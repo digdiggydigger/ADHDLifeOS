@@ -16,6 +16,12 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// an ADHD daily goal that needs thirteen slots has stopped being a goal.
     static let goalRange = 1...12
 
+    /// The focus-goal stepper's bounds (minutes per day the analytics and widget ring divide by).
+    static let focusGoalRange = 10...120
+    /// The default-sprint stepper's bounds, in minutes. The floor mirrors the shortest sprint the
+    /// planner treats as real; the ceiling is the config's own two-hour cap.
+    static let sprintMinutesRange = 5...120
+
     static let `default` = MomentumPreferences(
         dailyGoal: 5, showStreaks: true, countClearedCaptures: false, countNudges: false,
         showCharts: true
@@ -36,6 +42,19 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// it ships at the concept's own default (on) — unlike the counting toggles, an enabled
     /// chart cannot misstate anything.
     var showCharts: Bool
+    /// Minutes-per-day the focus analytics and the Home Screen widget's ring measure against
+    /// (E's 2026-08-25 Settings audit) — ships at the old hardcoded 30.
+    var focusDailyGoalMinutes: Int
+    /// The sprint length the one-tap start uses for a task with no stored config — ships at the
+    /// old `FocusNudgeCadence.standardDurationSeconds` (15 minutes). A task's own config always
+    /// wins; this is only the starting point.
+    var defaultSprintMinutes: Int
+    /// The app's tactile confirmations, globally. Off silences every generator; nothing else
+    /// changes.
+    var hapticsEnabled: Bool
+    /// Whether the notifications THIS APP schedules carry sound. System notification settings
+    /// are untouched — this only decides what the app asks for.
+    var soundEnabled: Bool
 
     /// Every read path passes through this, so no writer — Stepper, old build, bad migration —
     /// can hand the ring a goal it would divide by zero on.
@@ -45,7 +64,15 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
             showStreaks: showStreaks,
             countClearedCaptures: countClearedCaptures,
             countNudges: countNudges,
-            showCharts: showCharts
+            showCharts: showCharts,
+            focusDailyGoalMinutes: min(
+                max(focusDailyGoalMinutes, Self.focusGoalRange.lowerBound), Self.focusGoalRange.upperBound
+            ),
+            defaultSprintMinutes: min(
+                max(defaultSprintMinutes, Self.sprintMinutesRange.lowerBound), Self.sprintMinutesRange.upperBound
+            ),
+            hapticsEnabled: hapticsEnabled,
+            soundEnabled: soundEnabled
         )
     }
 
@@ -57,13 +84,21 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         showStreaks: Bool,
         countClearedCaptures: Bool = false,
         countNudges: Bool = false,
-        showCharts: Bool = true
+        showCharts: Bool = true,
+        focusDailyGoalMinutes: Int = 30,
+        defaultSprintMinutes: Int = 15,
+        hapticsEnabled: Bool = true,
+        soundEnabled: Bool = true
     ) {
         self.dailyGoal = dailyGoal
         self.showStreaks = showStreaks
         self.countClearedCaptures = countClearedCaptures
         self.countNudges = countNudges
         self.showCharts = showCharts
+        self.focusDailyGoalMinutes = focusDailyGoalMinutes
+        self.defaultSprintMinutes = defaultSprintMinutes
+        self.hapticsEnabled = hapticsEnabled
+        self.soundEnabled = soundEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -73,6 +108,10 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         countClearedCaptures = try container.decodeIfPresent(Bool.self, forKey: .countClearedCaptures) ?? false
         countNudges = try container.decodeIfPresent(Bool.self, forKey: .countNudges) ?? false
         showCharts = try container.decodeIfPresent(Bool.self, forKey: .showCharts) ?? true
+        focusDailyGoalMinutes = try container.decodeIfPresent(Int.self, forKey: .focusDailyGoalMinutes) ?? 30
+        defaultSprintMinutes = try container.decodeIfPresent(Int.self, forKey: .defaultSprintMinutes) ?? 15
+        hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled) ?? true
+        soundEnabled = try container.decodeIfPresent(Bool.self, forKey: .soundEnabled) ?? true
     }
 }
 

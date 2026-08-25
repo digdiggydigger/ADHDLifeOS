@@ -39,7 +39,7 @@ struct NotificationCenterCountdownNudgeAdapter: TaskCountdownNudgeSchedulingAdap
             let content = UNMutableNotificationContent()
             content.title = taskTitle
             content.body = nudge.body
-            content.sound = .default
+            content.sound = AppFeedback.notificationSound()
 
             let interval = max(nudge.date.timeIntervalSinceNow, 1)
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
@@ -79,7 +79,7 @@ struct NotificationCenterCountdownNudgeAdapter: TaskCountdownNudgeSchedulingAdap
         let content = UNMutableNotificationContent()
         content.title = taskTitle
         content.body = "This task is due now."
-        content.sound = .default
+        content.sound = AppFeedback.notificationSound()
 
         let interval = max(dueDate.timeIntervalSinceNow, 1)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)

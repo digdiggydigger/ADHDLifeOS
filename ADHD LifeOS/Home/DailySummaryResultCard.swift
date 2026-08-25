@@ -192,7 +192,9 @@ extension View {
     @ViewBuilder
     func copyConfirmationHaptic(trigger: Bool) -> some View {
         if #available(iOS 17.0, *) {
-            self.sensoryFeedback(.success, trigger: trigger)
+            self.sensoryFeedback(.success, trigger: trigger) { _, _ in
+                AppFeedback.hapticsEnabled()
+            }
         } else {
             self
         }

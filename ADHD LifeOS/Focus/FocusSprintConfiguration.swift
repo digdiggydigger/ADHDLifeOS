@@ -24,8 +24,10 @@ enum FocusSprintConfiguration {
         min(max(seconds, minimumDurationSeconds), maximumDurationSeconds)
     }
 
-    static func resolvedDuration(explicit: Int?) -> Int {
-        guard let explicit else { return defaultDurationSeconds }
+    /// `defaultSeconds` is the Settings-chosen fallback (E's 2026-08-25 audit) — a task's own
+    /// stored config always wins, and the fallback is clamped like any other duration.
+    static func resolvedDuration(explicit: Int?, defaultSeconds: Int = defaultDurationSeconds) -> Int {
+        guard let explicit else { return clampDuration(defaultSeconds) }
         return clampDuration(explicit)
     }
 
@@ -59,8 +61,13 @@ struct FocusSprintPlan: Equatable, Sendable {
 
     /// The card's one-tap start: the task's stored config resolved through the standard defaults,
     /// with the life area's emoji (stored in `colour`) or the unassigned target glyph.
-    init(task: TaskItem, lifeArea: LifeArea?) {
-        let duration = FocusSprintConfiguration.resolvedDuration(explicit: task.focusDurationSeconds)
+    init(
+        task: TaskItem, lifeArea: LifeArea?,
+        defaultDurationSeconds: Int = FocusSprintConfiguration.defaultDurationSeconds
+    ) {
+        let duration = FocusSprintConfiguration.resolvedDuration(
+            explicit: task.focusDurationSeconds, defaultSeconds: defaultDurationSeconds
+        )
         self.init(
             taskId: task.id,
             taskTitle: task.title,
@@ -73,8 +80,13 @@ struct FocusSprintPlan: Equatable, Sendable {
     }
 
     /// Home's Active Goal hero start — same resolution, from the Home task projection.
-    init(summary: TaskSummary, lifeArea: LifeArea?) {
-        let duration = FocusSprintConfiguration.resolvedDuration(explicit: summary.focusDurationSeconds)
+    init(
+        summary: TaskSummary, lifeArea: LifeArea?,
+        defaultDurationSeconds: Int = FocusSprintConfiguration.defaultDurationSeconds
+    ) {
+        let duration = FocusSprintConfiguration.resolvedDuration(
+            explicit: summary.focusDurationSeconds, defaultSeconds: defaultDurationSeconds
+        )
         self.init(
             taskId: summary.id,
             taskTitle: summary.title,

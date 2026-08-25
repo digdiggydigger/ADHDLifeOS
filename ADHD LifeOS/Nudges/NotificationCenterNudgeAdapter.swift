@@ -45,7 +45,7 @@ struct NotificationCenterNudgeAdapter: NudgeNotificationSchedulingAdapting, @unc
             let content = UNMutableNotificationContent()
             content.title = label
             content.body = "This nudge is due now."
-            content.sound = .default
+            content.sound = AppFeedback.notificationSound()
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
             let request = UNNotificationRequest(

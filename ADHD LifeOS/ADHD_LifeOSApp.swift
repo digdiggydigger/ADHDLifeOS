@@ -46,11 +46,16 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        // Foreground presentations follow the same Settings sound gate as scheduled content.
+        let sound: UNNotificationPresentationOptions =
+            AppFeedback.notificationSound() == nil ? [] : .sound
+        let base: UNNotificationPresentationOptions
         if #available(iOS 14.0, *) {
-            completionHandler([.banner, .list, .sound])
+            base = [.banner, .list]
         } else {
-            completionHandler([.alert, .sound])
+            base = .alert
         }
+        completionHandler(base.union(sound))
     }
 
     /// A tap on a delivered notification. For a focus sprint this is the deliberate way out of a

@@ -117,7 +117,12 @@ extension HomeView {
                 isClosing: isClosingTask,
                 showsStartSession: activeSprint == nil,
                 onClose: { Task { await closeTask(task) } },
-                onStartSession: { onStartFocus?(FocusSprintPlan(summary: task, lifeArea: area)) }
+                onStartSession: {
+                    onStartFocus?(FocusSprintPlan(
+                        summary: task, lifeArea: area,
+                        defaultDurationSeconds: momentumPreferences.defaultSprintMinutes * 60
+                    ))
+                }
             )
         }
     }

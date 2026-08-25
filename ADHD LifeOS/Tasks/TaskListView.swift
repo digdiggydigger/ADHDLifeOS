@@ -161,7 +161,13 @@ struct TaskListView: View {
                                     onToggle: { Task { await tasksService.toggleStatus(task) } },
                                     onDelete: { Task { await tasksService.delete(task) } },
                                     onInspect: { inspectingTask = task },
-                                    onStartFocus: { onStartFocus(FocusSprintPlan(task: task, lifeArea: area)) }
+                                    onStartFocus: {
+                                        onStartFocus(FocusSprintPlan(
+                                            task: task, lifeArea: area,
+                                            defaultDurationSeconds:
+                                                UserDefaultsMomentumPreferencesStore().read().defaultSprintMinutes * 60
+                                        ))
+                                    }
                                 )
                             }
                         }
