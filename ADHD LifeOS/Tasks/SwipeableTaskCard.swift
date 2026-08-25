@@ -45,11 +45,6 @@ struct SwipeableTaskCard: View {
         ))
     }
 
-    private var sprintSummary: String {
-        let sprint = resolvedSprint
-        return "\(FocusTimeFormatting.human(seconds: sprint.durationSeconds)) · \(sprint.nudgeCount)🔔"
-    }
-
     private var sprintAccessibilitySummary: String {
         let sprint = resolvedSprint
         let nudges = sprint.nudgeCount == 1 ? "1 nudge" : "\(sprint.nudgeCount) nudges"
@@ -90,19 +85,19 @@ struct SwipeableTaskCard: View {
         .background(revealColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    /// Web parity: complete reveals emerald (`bg-emerald-600`), delete reveals the coral accent
-    /// (the prototype's `#FF5B5B` doubles as its destructive colour).
+    /// v3's state palette: complete reveals closure-green, delete reveals risk-red — accent is
+    /// motion-blue now and must never colour a destructive surface.
     private var revealColor: Color {
         switch action {
-        case .complete: return UrgencyPalette.color(for: .p4)
-        case .delete: return .accentColor
-        case .none: return Color(.tertiarySystemFill)
+        case .complete: return Color("StateGo")
+        case .delete: return Color("StateRisk")
+        case .none: return Color("TrackNeutral")
         }
     }
 
     private func revealBadge(systemImage: String, text: String, visible: Bool) -> some View {
         Label(text, systemImage: systemImage)
-            .font(.caption.monospaced().weight(.bold))
+            .font(.caption.weight(.bold))
             .textCase(.uppercase)
             .foregroundStyle(.white)
             .opacity(visible ? 1 : 0)
@@ -112,75 +107,91 @@ struct SwipeableTaskCard: View {
 
     private var foregroundCard: some View {
         HStack(alignment: .top, spacing: 8) {
-            Button(action: onToggle) {
-                Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(isCompleted ? UrgencyPalette.color(for: .p4) : Color.secondary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+            if let effort = MomentumScoreboard.effortLabel(seconds: task.focusDurationSeconds) {
+                MomentumChip(
+                    text: effort,
+                    background: Color("CardSurfaceSecondary"),
+                    foreground: Color("LabelSecondary")
+                )
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("taskCheckbox-\(task.id.uuidString)")
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
-                    .font(.body.weight(.semibold))
+                    .font(.callout)
                     .strikethrough(isCompleted)
-                    .foregroundStyle(isCompleted ? .secondary : .primary)
+                    .foregroundStyle(isCompleted ? Color("LabelSecondary") : Color("LabelPrimary"))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 8) {
-                    if let lifeArea {
-                        Label(lifeArea.name, systemImage: "circle.fill")
-                            .labelStyle(LifeAreaBadgeStyle(emoji: lifeArea.colour))
-                    }
-                    PriorityChip(priority: task.priority)
-                }
-
-                HStack(spacing: 8) {
-                    if let dueDate = task.dueDate {
-                        Label(dueDate.formatted(date: .abbreviated, time: .omitted), systemImage: "clock")
-                    }
-                    // The web card's ⏱️/🔔 chip: the sprint this task is tuned to run, resolved
-                    // through the same defaults the start actions use.
-                    Label(sprintSummary, systemImage: "timer")
-                        .accessibilityLabel(sprintAccessibilitySummary)
-                }
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
+                Text(metaLine)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .accessibilityLabel(metaAccessibilityLabel)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(alignment: .trailing, spacing: 4) {
+                Button(action: onToggle) {
+                    Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(isCompleted ? Color("StateGo") : Color("LabelTertiary"))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("taskCheckbox-\(task.id.uuidString)")
+
                 if !isCompleted {
                     Button(action: onStartFocus) {
                         Label("Focus", systemImage: "play.fill")
-                            .font(.caption2.monospaced().weight(.bold))
+                            .font(.caption2.weight(.bold))
                             .textCase(.uppercase)
-                            .foregroundStyle(Color(.systemBackground))
+                            .foregroundStyle(AreaPalette.work.onColor)
                             .padding(.vertical, 4)
                             .padding(.horizontal, 8)
-                            .background(.tint, in: Capsule())
+                            .background(Color.accentColor, in: Capsule())
                             .frame(minHeight: 44)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("taskStartFocus-\(task.id.uuidString)")
                 }
-
-                Button("Details", action: onInspect)
-                    .font(.caption.monospaced().weight(.bold))
-                    .textCase(.uppercase)
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.tint)
-                    .frame(minHeight: 44)
-                    .accessibilityIdentifier("taskDetails-\(task.id.uuidString)")
             }
         }
         .bentoCard()
-        .opacity(isCompleted ? 0.7 : 1)
+        .opacity(isCompleted ? 0.6 : 1)
         .contentShape(Rectangle())
+        .onTapGesture(perform: onInspect)
+    }
+
+    /// "💼 Work · P2 · Due today · 2🔔" — one quiet line where the old card stacked pills.
+    private var metaLine: String {
+        var parts: [String] = []
+        if let lifeArea {
+            parts.append("\(lifeArea.colour) \(lifeArea.name)")
+        }
+        parts.append(task.priority.rawValue.uppercased())
+        if let dueDate = task.dueDate {
+            let today = Calendar.current.startOfDay(for: .now)
+            let dueDay = Calendar.current.startOfDay(for: dueDate)
+            if dueDay < today {
+                parts.append("Overdue")
+            } else if dueDay == today {
+                parts.append("Due today")
+            } else {
+                parts.append(dueDate.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))
+            }
+        }
+        parts.append("\(resolvedSprint.nudgeCount)🔔")
+        return parts.joined(separator: " · ")
+    }
+
+    private var metaAccessibilityLabel: String {
+        var parts: [String] = []
+        if let lifeArea { parts.append(lifeArea.name) }
+        parts.append("Priority \(task.priority.rawValue)")
+        parts.append(sprintAccessibilitySummary)
+        return parts.joined(separator: ", ")
     }
 
     // MARK: - Drag
@@ -230,47 +241,6 @@ enum SwipeAction: Equatable {
         let overshoot = abs(translation) - threshold
         let damped = threshold + overshoot * 0.4
         return sign * min(damped, elasticLimit)
-    }
-}
-
-/// Colour-coded priority chip (display-only). Maps the app's `p1`–`p4` to a warm→cool ramp:
-/// p1 highest urgency (red) through p4 lowest (green).
-private struct PriorityChip: View {
-    let priority: TaskPriority
-
-    var body: some View {
-        Text(priority.rawValue.uppercased())
-            .font(.caption2.monospaced().weight(.bold))
-            .foregroundStyle(tint)
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
-            .background(tint.opacity(0.15), in: Capsule())
-            .accessibilityLabel("Priority \(priority.rawValue)")
-    }
-
-    /// Prototype urgency bands via the shared palette (p2/p3 fold into medium — see
-    /// `UrgencyPaletteTests`).
-    private var tint: Color {
-        UrgencyPalette.color(for: priority)
-    }
-}
-
-/// Life-area badge: the area's emoji (stored in `colour`) plus its name in a pill, matching the
-/// web's dot+emoji+name badge.
-private struct LifeAreaBadgeStyle: LabelStyle {
-    let emoji: String
-
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 4) {
-            Text(emoji)
-            configuration.title
-                .lineLimit(1)
-        }
-        .font(.caption2.monospaced())
-        .foregroundStyle(.secondary)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(Color(.tertiarySystemFill), in: Capsule())
     }
 }
 

@@ -30,7 +30,8 @@ struct TasksFocusWeekSection: View {
                 // there is nothing to compare — which is not the same claim as a week of zeros.
                 if let caption = MomentumWeekCharts.focusCaption(sessions: sessions) {
                     Text("Focus minutes · 7 days")
-                        .font(.headline)
+                        .sectionLabel()
+                        .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 8) {
                         WeekBarStrip(
                             fractions: MomentumWeekCharts.barFractions(

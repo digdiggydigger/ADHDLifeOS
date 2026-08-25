@@ -53,6 +53,33 @@ enum MomentumTaskBuckets {
         }
     }
 
+    /// "4 open · 1 overdue" — the v3 header's eyebrow. Overdue means an open task whose due
+    /// day has passed; due-today is not yet a miss.
+    static func headerLine(
+        tasks: [TaskItem],
+        asOf now: Date = .now,
+        calendar: Calendar = .current
+    ) -> String {
+        let today = calendar.startOfDay(for: now)
+        let open = tasks.filter { $0.status != .done }
+        let overdue = open.filter { task in
+            guard let due = task.dueDate else { return false }
+            return calendar.startOfDay(for: due) < today
+        }
+        return "\(open.count) open · \(overdue.count) overdue"
+    }
+
+    /// The v3 hue for a bucket's section header — warn for due-today, motion-blue for tomorrow,
+    /// closure-green for closed-today. `nil` keeps the plain secondary voice.
+    static func headerToneAssetName(customId: String?) -> String? {
+        switch customId {
+        case "momentum-dueToday": return "StateWarn"
+        case "momentum-tomorrow": return "AccentColor"
+        case "momentum-closedToday": return "StateGo"
+        default: return nil
+        }
+    }
+
     private static func bucket(
         for task: TaskItem,
         today: Date,

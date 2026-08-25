@@ -36,13 +36,22 @@ struct TaskListView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Status", selection: $tasksService.statusFilter) {
-                    ForEach(TaskStatusFilterOption.allCases) { option in
-                        Text(option.label).tag(option)
+                // v3's eyebrow + filter chips replace the segmented picker (F-V3-Tasks).
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(MomentumTaskBuckets.headerLine(tasks: tasksService.tasks))
+                        .sectionLabel()
+                        .foregroundStyle(.secondary)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(TaskStatusFilterOption.allCases) { option in
+                                filterChip(option)
+                            }
+                        }
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
                 .accessibilityIdentifier("taskStatusFilter")
 
                 Group {
@@ -157,10 +166,11 @@ struct TaskListView: View {
                             }
                         }
                     } header: {
-                        // The prototype's mono uppercase card-label voice for section headers.
+                        // v3's coloured bucket voice: warn for due-today, motion-blue for
+                        // tomorrow, closure-green for closed-today; everything else secondary.
                         Text(group.lifeAreaName)
                             .sectionLabel()
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(headerTone(for: group))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 8)
                             .background(.bar)
@@ -210,6 +220,31 @@ struct TaskListView: View {
 
     private var isRefinementActive: Bool {
         tasksService.sortOption != .standard || tasksService.priorityFilter != nil
+    }
+
+    private func filterChip(_ option: TaskStatusFilterOption) -> some View {
+        let selected = tasksService.statusFilter == option
+        return Button {
+            tasksService.statusFilter = option
+        } label: {
+            Text(option.label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(selected ? AreaPalette.work.onColor : Color("LabelSecondary"))
+                .padding(.horizontal, 16)
+                .frame(minHeight: 36)
+                .background(
+                    selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color("CardSurfaceSecondary")),
+                    in: Capsule()
+                )
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func headerTone(for group: LifeAreaTaskGroup) -> Color {
+        MomentumTaskBuckets.headerToneAssetName(customId: group.customId)
+            .map { Color($0) } ?? Color("LabelSecondary")
     }
 }
 

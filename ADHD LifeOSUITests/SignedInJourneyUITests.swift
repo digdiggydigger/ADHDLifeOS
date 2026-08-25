@@ -82,7 +82,8 @@ final class SignedInJourneyUITests: XCTestCase {
     /// the code it was written to verify.
     ///
     /// The task is written straight into Firestore with a known id, so the test can address
-    /// `taskDetails-<uuid>` exactly rather than guessing which row it is opening.
+    /// `swipeableTaskCard-<uuid>` exactly rather than guessing which row it is opening
+    /// (F-V3-Tasks removed the Details button — the whole card opens the detail now).
     @MainActor
     func testTaskDetail_opensWithTitleFieldPopulated_notBlank() throws {
         let account = try UITestSession.createAccount(label: "detail")
@@ -93,7 +94,7 @@ final class SignedInJourneyUITests: XCTestCase {
         let app = try UITestSession.launchSignedIn(as: account)
         openTasksTab(app)
 
-        let detailsButton = app.buttons["taskDetails-\(taskID.uuidString)"]
+        let detailsButton = app.descendants(matching: .any)["swipeableTaskCard-\(taskID.uuidString)"]
         XCTAssertTrue(
             detailsButton.waitForExistence(timeout: UITestSession.timeout),
             "The seeded task never appeared in the list"
