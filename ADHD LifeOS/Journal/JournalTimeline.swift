@@ -7,9 +7,10 @@ import Foundation
 
 /// The v3 Journal's day-grouped timeline (F-V3-Journal): written entries, closed tasks, finished
 /// focus sprints and the capture log share one stream (the last two per E's 2026-08-25 note),
-/// grouped by day, newest day first, each day reading in the order it happened.
-/// Closed NUDGES are deliberately absent — only `last_fired_at` exists, which is not a
-/// completion history (the honest-data rule; V3-Nudges adds real stamps going forward).
+/// newest day first AND newest entry first within each day — E's ordering call from the same
+/// review: the whole scroll reads as one monotonic newest→oldest flow, no direction change at a
+/// day boundary. Closed NUDGES are deliberately absent — only `last_fired_at` exists, which is
+/// not a completion history (the honest-data rule; V3-Nudges adds real stamps going forward).
 enum JournalTimeline {
     enum Entry: Equatable, Identifiable {
         case log(Log)
@@ -61,8 +62,21 @@ enum JournalTimeline {
         let date: Date
         let title: String
         let entries: [Entry]
+        /// Whole minutes focused across the day's visible sprints — 0 both when nothing was
+        /// focused and when the active filter excludes sprints, so the header never claims
+        /// minutes the list below it doesn't show.
+        let focusedMinutes: Int
         var id: Date { date }
+
+        /// The section header: bare title, or "Today · 25 min focused" when the day has sprints.
+        var headerLine: String {
+            focusedMinutes > 0 ? "\(title) · \(focusedMinutes) min focused" : title
+        }
     }
+
+    /// A sprint shorter than this is a false start — a mis-tap, an instant abandon — and stays
+    /// out of the timeline, the day totals and the week count alike (E's 2026-08-25 call).
+    static let minimumVisibleSprintSeconds = 60
 
     /// `lifeAreaId` narrows logs, closed tasks and captures — each document carries the id. It
     /// deliberately does NOT touch sprints: a focus session stores only the area's stamped emoji,
@@ -90,7 +104,9 @@ enum JournalTimeline {
                 .map(Entry.closedTask)
         }
         if filter == .everything || filter == .sprints {
-            entries += sprints.map(Entry.focusSprint)
+            entries += sprints
+                .filter { $0.focusedSeconds >= minimumVisibleSprintSeconds }
+                .map(Entry.focusSprint)
         }
         if filter == .everything || filter == .captured {
             entries += captures
@@ -101,19 +117,27 @@ enum JournalTimeline {
         return grouped
             .sorted { $0.key > $1.key }
             .map { day, members in
-                Day(
+                let focusedSeconds = members.reduce(into: 0) { total, entry in
+                    if case .focusSprint(let sprint) = entry {
+                        total += max(0, sprint.focusedSeconds)
+                    }
+                }
+                return Day(
                     date: day,
                     title: title(for: day, asOf: now, calendar: calendar),
-                    entries: members.sorted { $0.timestamp < $1.timestamp }
+                    entries: members.sorted { $0.timestamp > $1.timestamp },
+                    focusedMinutes: focusedSeconds / 60
                 )
             }
     }
 
-    /// "8 closed · 2 written this week" — the header's eyebrow, over the same rolling week as
-    /// the scoreboard.
+    /// "8 closed · 2 written · 4 sprints this week" — the header's eyebrow, over the same rolling
+    /// week as the scoreboard. The sprint segment only appears once there is one to name, so a
+    /// sprint-free week keeps the original two-part line rather than announcing a zero.
     static func headerLine(
         logs: [Log],
         tasks: [TaskItem],
+        sprints: [CompletedFocusSession] = [],
         asOf now: Date = .now,
         calendar: Calendar = .current
     ) -> String {
@@ -121,7 +145,14 @@ enum JournalTimeline {
         let today = calendar.startOfDay(for: now)
         let windowStart = calendar.date(byAdding: .day, value: -6, to: today) ?? today
         let written = logs.filter { $0.entryDate >= windowStart }.count
-        return "\(closed) closed · \(written) written this week"
+        let sprintCount = sprints
+            .filter { $0.focusedSeconds >= minimumVisibleSprintSeconds && $0.endedAt >= windowStart }
+            .count
+        var line = "\(closed) closed · \(written) written"
+        if sprintCount > 0 {
+            line += " · \(sprintCount) sprint\(sprintCount == 1 ? "" : "s")"
+        }
+        return line + " this week"
     }
 
     /// The sprint row's fact line: "25 min sprint" when it ran its course, "12 of 25 min sprint"

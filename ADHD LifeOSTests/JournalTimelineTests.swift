@@ -47,9 +47,10 @@ final class JournalTimelineTests: XCTestCase {
         XCTAssertEqual(days.count, 2)
         XCTAssertEqual(days[0].title, "Today")
         XCTAssertEqual(days[1].title, "Yesterday")
-        // Chronological within the day: the 04:00 entry precedes the 05:00 closure.
-        if case .log = days[0].entries[0] {} else { XCTFail("Expected the log first") }
-        if case .closedTask = days[0].entries[1] {} else { XCTFail("Expected the closure second") }
+        // Newest first WITHIN the day too (E's 2026-08-25 ordering call): the whole scroll is one
+        // monotonic newest→oldest flow, so the 05:00 closure precedes the 04:00 entry.
+        if case .closedTask = days[0].entries[0] {} else { XCTFail("Expected the closure first") }
+        if case .log = days[0].entries[1] {} else { XCTFail("Expected the log second") }
     }
 
     func testFilters_splitWrittenFromClosed() {
@@ -115,7 +116,7 @@ final class JournalTimelineTests: XCTestCase {
         )
     }
 
-    func testDays_interleaveAllFourKindsChronologically() {
+    func testDays_interleaveAllFourKindsNewestFirst() {
         let days = JournalTimeline.days(
             logs: [log(daysAgo: 0, hour: 4)],
             tasks: [doneTask(daysAgo: 0, hour: 7)],
@@ -126,10 +127,76 @@ final class JournalTimelineTests: XCTestCase {
         XCTAssertEqual(days.count, 1)
         let entries = days[0].entries
         XCTAssertEqual(entries.count, 4)
-        if case .log = entries[0] {} else { XCTFail("04:00 log first") }
-        if case .capture = entries[1] {} else { XCTFail("05:00 capture second") }
-        if case .focusSprint = entries[2] {} else { XCTFail("06:00 sprint third") }
-        if case .closedTask = entries[3] {} else { XCTFail("07:00 closure last") }
+        if case .closedTask = entries[0] {} else { XCTFail("07:00 closure first") }
+        if case .focusSprint = entries[1] {} else { XCTFail("06:00 sprint second") }
+        if case .capture = entries[2] {} else { XCTFail("05:00 capture third") }
+        if case .log = entries[3] {} else { XCTFail("04:00 log last") }
+    }
+
+    /// Sub-minute sprints are false starts — a mis-tap or an instant abandon — and E's call
+    /// (2026-08-25) is that they stay out of the timeline entirely, whatever the filter.
+    func testDays_hideSubMinuteSprints() {
+        for filter in [JournalTimeline.Filter.everything, .sprints] {
+            let entries = JournalTimeline.days(
+                logs: [], tasks: [],
+                sprints: [
+                    sprint(daysAgo: 0, hour: 6, focusedSeconds: 45, completedNaturally: false),
+                    sprint(daysAgo: 0, hour: 7, focusedSeconds: 60, completedNaturally: false)
+                ],
+                filter: filter, asOf: now, calendar: calendar
+            ).flatMap(\.entries)
+            XCTAssertEqual(entries.count, 1, "only the 60-second sprint survives under \(filter)")
+        }
+    }
+
+    func testDayHeader_namesTheFocusTotalWhenSprintsExist() {
+        let days = JournalTimeline.days(
+            logs: [log(daysAgo: 0, hour: 4)], tasks: [],
+            sprints: [
+                sprint(daysAgo: 0, hour: 6, focusedSeconds: 900),
+                sprint(daysAgo: 0, hour: 7, focusedSeconds: 600)
+            ],
+            asOf: now, calendar: calendar
+        )
+        XCTAssertEqual(days[0].focusedMinutes, 25)
+        XCTAssertEqual(days[0].headerLine, "Today · 25 min focused")
+    }
+
+    func testDayHeader_staysBareWithoutSprints() {
+        let days = JournalTimeline.days(
+            logs: [log(daysAgo: 0, hour: 4)], tasks: [],
+            asOf: now, calendar: calendar
+        )
+        XCTAssertEqual(days[0].focusedMinutes, 0)
+        XCTAssertEqual(days[0].headerLine, "Today")
+    }
+
+    func testHeaderLine_countsTheWeeksSprints() {
+        XCTAssertEqual(
+            JournalTimeline.headerLine(
+                logs: [log(daysAgo: 2, hour: 9)],
+                tasks: [doneTask(daysAgo: 0, hour: 5)],
+                sprints: [
+                    sprint(daysAgo: 1, hour: 6),
+                    sprint(daysAgo: 3, hour: 6),
+                    sprint(daysAgo: 20, hour: 6),
+                    sprint(daysAgo: 0, hour: 7, focusedSeconds: 30, completedNaturally: false)
+                ],
+                asOf: now, calendar: calendar
+            ),
+            "1 closed · 1 written · 2 sprints this week",
+            "outside the window and sub-minute false starts both stay uncounted"
+        )
+    }
+
+    func testHeaderLine_singularSprint() {
+        XCTAssertEqual(
+            JournalTimeline.headerLine(
+                logs: [], tasks: [], sprints: [sprint(daysAgo: 0, hour: 6)],
+                asOf: now, calendar: calendar
+            ),
+            "0 closed · 0 written · 1 sprint this week"
+        )
     }
 
     func testFilters_sprintsAndCapturedIsolateTheirKinds() {

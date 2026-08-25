@@ -108,7 +108,14 @@ struct RootView: View {
                     )
                         .tabItem { Label("Areas", systemImage: "square.grid.2x2") }
                         .tag(AppTab.areas)
-                    JournalView(client: journalClient, homeClient: homeClient)
+                    JournalView(
+                        client: journalClient,
+                        homeClient: homeClient,
+                        captureClient: captureClient,
+                        taskDetailClient: taskDetailClient,
+                        schedulingClient: taskCountdownNudgeSchedulingClient,
+                        onStartFocus: startFocus
+                    )
                         .tabItem { Label("Journal", systemImage: "book") }
                         .tag(AppTab.journal)
                     // Tab swap reverted (E, 2026-08-19): Nudges is back, Reminders removed — its

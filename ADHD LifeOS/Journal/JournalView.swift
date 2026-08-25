@@ -10,21 +10,53 @@
 
 import SwiftUI
 
+/// Internal, not private, wherever the timeline sections need it: the day stream and its rows
+/// live in `JournalTimelineSections.swift` for this file's length budget (the
+/// `CaptureInboxSections` arrangement).
 struct JournalView: View {
-    @StateObject private var journalService: JournalService
+    @StateObject var journalService: JournalService
+    /// Retained for the capture rows' door — `CaptureInboxService` wants it so "Journal it"
+    /// keeps working from a capture opened out of the journal itself.
+    let journalClient: JournalClientAdapting
     /// Closed tasks for the interleaved stream — optional so old call sites and previews keep
     /// working without one (the timeline then simply shows written entries only).
-    private let homeClient: HomeClientAdapting?
+    let homeClient: HomeClientAdapting?
+    /// The row doors (E's 2026-08-25 review: "the journal becomes a door, not just a record").
+    /// All optional: a missing client simply leaves that row kind un-tappable, which is exactly
+    /// what previews and the composer's service want.
+    let captureClient: CaptureClientAdapting?
+    let taskDetailClient: TaskDetailClientAdapting?
+    let schedulingClient: TaskCountdownNudgeSchedulingAdapting?
+    let onStartFocus: ((FocusSprintPlan) -> Void)?
     @State private var isPresentingComposer = false
-    @State private var filter: JournalTimeline.Filter = .everything
-    @State private var tasks: [TaskItem] = []
+    @State var filter: JournalTimeline.Filter = .everything
+    @State var tasks: [TaskItem] = []
+    /// The pushed doors — optional-state + `navigationDestination`, the `CaptureInboxView`
+    /// pattern, because the rows live in a `LazyVStack`.
+    @State var inspectingTaskId: UUID?
+    @State var inspectingCapture: Capture?
 
-    init(client: JournalClientAdapting, homeClient: HomeClientAdapting? = nil) {
+    init(
+        client: JournalClientAdapting,
+        homeClient: HomeClientAdapting? = nil,
+        captureClient: CaptureClientAdapting? = nil,
+        taskDetailClient: TaskDetailClientAdapting? = nil,
+        schedulingClient: TaskCountdownNudgeSchedulingAdapting? = nil,
+        onStartFocus: ((FocusSprintPlan) -> Void)? = nil
+    ) {
         _journalService = StateObject(wrappedValue: JournalService(client: client))
+        self.journalClient = client
         self.homeClient = homeClient
+        self.captureClient = captureClient
+        self.taskDetailClient = taskDetailClient
+        self.schedulingClient = schedulingClient
+        self.onStartFocus = onStartFocus
     }
 
-    private var filteredTasks: [TaskItem] {
+    var canOpenTasks: Bool { taskDetailClient != nil && schedulingClient != nil }
+    var canOpenCaptures: Bool { captureClient != nil }
+
+    var filteredTasks: [TaskItem] {
         guard let areaId = journalService.selectedLifeAreaId else { return tasks }
         return tasks.filter { $0.lifeAreaId == areaId }
     }
@@ -32,16 +64,23 @@ struct JournalView: View {
     /// Area-filtered by the EMOJI the sprint stamped at run time — a focus session document
     /// carries no life-area id, only `life_area_emoji`, so this is the honest match available.
     /// A sprint run before an area's emoji changed simply stops matching; history is not rewritten.
-    private var filteredSprints: [CompletedFocusSession] {
+    var filteredSprints: [CompletedFocusSession] {
         guard let areaId = journalService.selectedLifeAreaId,
               let emoji = journalService.lifeAreas.first(where: { $0.id == areaId })?.colour
         else { return journalService.focusSessions }
         return journalService.focusSessions.filter { $0.lifeAreaEmoji == emoji }
     }
 
-    private var filteredCaptures: [Capture] {
+    var filteredCaptures: [Capture] {
         guard let areaId = journalService.selectedLifeAreaId else { return journalService.captures }
         return journalService.captures.filter { $0.lifeAreaId == areaId }
+    }
+
+    func reload() async {
+        await journalService.load()
+        if let homeClient {
+            tasks = (try? await homeClient.fetchAllTasks()) ?? []
+        }
     }
 
     var body: some View {
@@ -76,9 +115,41 @@ struct JournalView: View {
                 }
             }
             .task {
-                await journalService.load()
-                if let homeClient {
-                    tasks = (try? await homeClient.fetchAllTasks()) ?? []
+                await reload()
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { inspectingTaskId != nil },
+                set: { if !$0 { inspectingTaskId = nil } }
+            )) {
+                if let taskId = inspectingTaskId, let taskDetailClient, let schedulingClient {
+                    TaskDetailView(
+                        taskId: taskId,
+                        lifeAreas: journalService.lifeAreas,
+                        client: taskDetailClient,
+                        schedulingClient: schedulingClient,
+                        onStartFocus: onStartFocus,
+                        momentumContext: MomentumTaskContext.build(
+                            lifeAreaId: tasks.first { $0.id == taskId }?.lifeAreaId,
+                            tasks: tasks,
+                            lifeAreas: journalService.lifeAreas,
+                            showStreaks: UserDefaultsMomentumPreferencesStore().read().showStreaks
+                        )
+                    ) {
+                        Task { await reload() }
+                    }
+                }
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { inspectingCapture != nil },
+                set: { if !$0 { inspectingCapture = nil } }
+            )) {
+                if let capture = inspectingCapture, let captureClient {
+                    JournalCaptureDoor(
+                        captureId: capture.id,
+                        lifeAreas: journalService.lifeAreas,
+                        client: captureClient,
+                        journalClient: journalClient
+                    )
                 }
             }
         }
@@ -86,10 +157,12 @@ struct JournalView: View {
 
     // MARK: - Header + chips
 
-    private var header: some View {
+    var header: some View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(JournalTimeline.headerLine(logs: allLogs, tasks: tasks))
+                Text(JournalTimeline.headerLine(
+                    logs: allLogs, tasks: tasks, sprints: journalService.focusSessions
+                ))
                     .sectionLabel()
                     .foregroundStyle(.secondary)
                 Text("Journal")
@@ -118,7 +191,7 @@ struct JournalView: View {
         return []
     }
 
-    private var chips: some View {
+    var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(JournalTimeline.Filter.allCases, id: \.title) { option in
@@ -176,6 +249,11 @@ struct JournalView: View {
 
     // MARK: - Composer bar
 
+    /// Trailing room for the capture disc: its 60pt circle plus its 16pt margin plus an 8pt gap.
+    /// Without it the global FAB floats over this bar's corner and the caption under it
+    /// (E's screenshot, 2026-08-25).
+    private static let captureDiscClearance: CGFloat = 60 + 16 + 8
+
     private var composerBar: some View {
         VStack(spacing: 4) {
             Button {
@@ -201,174 +279,11 @@ struct JournalView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 16)
+        .padding(.leading, 16)
+        .padding(.trailing, Self.captureDiscClearance)
         .padding(.top, 8)
         .padding(.bottom, 4)
+        .frame(maxWidth: .infinity)
         .background(.bar)
-    }
-}
-
-// MARK: - Timeline
-
-extension JournalView {
-
-    func timeline(logs: [Log]) -> some View {
-        let days = JournalTimeline.days(
-            logs: logs, tasks: filteredTasks,
-            sprints: filteredSprints, captures: filteredCaptures,
-            filter: filter
-        )
-        return ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
-                header
-                chips
-                if days.isEmpty {
-                    Text("Nothing here yet — one line about today is enough to start.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 24)
-                        .accessibilityIdentifier("journalEmptyState")
-                }
-                ForEach(days) { day in
-                    daySection(day)
-                }
-            }
-            .padding(16)
-        }
-        .refreshable {
-            await journalService.load()
-            if let homeClient {
-                tasks = (try? await homeClient.fetchAllTasks()) ?? []
-            }
-        }
-    }
-
-    private func daySection(_ day: JournalTimeline.Day) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(day.title)
-                .sectionLabel()
-                .foregroundStyle(.secondary)
-            ForEach(day.entries) { entry in
-                switch entry {
-                case .log(let log):
-                    logRow(log)
-                case .closedTask(let task):
-                    closedTaskRow(task)
-                case .focusSprint(let sprint):
-                    sprintRow(sprint)
-                case .capture(let capture):
-                    captureRow(capture)
-                }
-            }
-        }
-    }
-
-    private func logRow(_ log: Log) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            timeGutter(log.entryDate)
-                .padding(.top, 16)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
-                    Text(logKindLine(log))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    if let mood = log.moodEmoji {
-                        Text(mood)
-                            .font(.footnote)
-                    }
-                    if let energy = log.energyLevel {
-                        MomentumChip(
-                            text: energy.rawValue,
-                            background: Color("CardSurfaceSecondary"),
-                            foreground: Color("LabelSecondary")
-                        )
-                    }
-                }
-                Text(log.body)
-                    .font(.subheadline)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .bentoCard()
-        }
-    }
-
-    private func closedTaskRow(_ task: TaskItem) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            timeGutter(task.completedAt ?? .now)
-            Image(systemName: "checkmark")
-                .font(.footnote.bold())
-                .foregroundStyle(Color("StateGoVivid"))
-            Text(task.title)
-                .font(.footnote)
-                .lineLimit(2)
-            Text("task\(areaEmoji(for: task.lifeAreaId).map { " · \($0)" } ?? "")")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 0)
-        }
-        .frame(minHeight: 32)
-    }
-
-    /// A finished sprint as a compact fact row, the closed task's sibling: the timer glyph in the
-    /// motion accent, the honest minutes (`JournalTimeline.sprintLine`), and the area emoji the
-    /// sprint stamped when it ran.
-    private func sprintRow(_ sprint: CompletedFocusSession) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            timeGutter(sprint.endedAt)
-            Image(systemName: "timer")
-                .font(.footnote.bold())
-                .foregroundStyle(Color.accentColor)
-            Text(sprint.taskTitle)
-                .font(.footnote)
-                .lineLimit(2)
-            Text("\(JournalTimeline.sprintLine(for: sprint)) · \(sprint.lifeAreaEmoji)")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 0)
-        }
-        .frame(minHeight: 32)
-    }
-
-    /// The capture log's row: the kind's own glyph and tint (the inbox's visual language), the
-    /// same primary-text resolution as the inbox row, and a plain "captured" for the meta slot.
-    private func captureRow(_ capture: Capture) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            timeGutter(capture.createdAt)
-            Image(systemName: CaptureRowPresentation.glyphSystemImageName(for: capture.kind))
-                .font(.footnote.bold())
-                .foregroundStyle(CaptureKindAccent.color(for: capture.kind))
-            Text(CaptureRowPresentation.primaryText(for: capture))
-                .font(.footnote)
-                .lineLimit(2)
-            Text("captured\(areaEmoji(for: capture.lifeAreaId).map { " · \($0)" } ?? "")")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 0)
-        }
-        .frame(minHeight: 32)
-    }
-
-    private func timeGutter(_ date: Date) -> some View {
-        Text(date.formatted(date: .omitted, time: .shortened))
-            .font(.footnote)
-            .monospacedDigit()
-            .foregroundStyle(.secondary)
-            .frame(width: 52, alignment: .leading)
-    }
-
-    private func logKindLine(_ log: Log) -> String {
-        let kind = log.type == .journal ? "Journal" : "Log"
-        guard
-            let areaId = log.lifeAreaId,
-            let area = journalService.lifeAreas.first(where: { $0.id == areaId }), !area.archived
-        else { return kind }
-        return "\(kind) · \(area.colour) \(area.name)"
-    }
-
-    private func areaEmoji(for areaId: UUID?) -> String? {
-        guard let areaId else { return nil }
-        return journalService.lifeAreas.first { $0.id == areaId }?.colour
     }
 }
