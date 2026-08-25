@@ -38,6 +38,9 @@ final class CaptureInboxService: ObservableObject {
     @Published private(set) var filter: Filter = .unprocessed
     @Published var content = ""
     @Published var kind: CaptureKind = CaptureValidation.defaultKind
+    /// The composer's optional life-area chip (F-V3-Capture) — rides the existing create input
+    /// and resets with the draft.
+    @Published var newCaptureLifeAreaId: UUID?
     /// `private(set)` relaxed to internal so `CaptureInboxService+Media` can drive it — the
     /// media capture flows moved there to keep this type inside its length budget.
     @Published var isSubmittingCapture = false
@@ -101,13 +104,6 @@ final class CaptureInboxService: ObservableObject {
     /// What the rows render: the loaded slice through the refinement menu.
     var displayedCaptures: [Capture] {
         CaptureListRefinement.apply(captures: captures, newestFirst: sortNewestFirst, kind: kindFilter)
-    }
-
-    var isContentValid: Bool {
-        if case .success = CaptureValidation.normalizeCreateCaptureInput(content: content, kind: kind) {
-            return true
-        }
-        return false
     }
 
     /// Per-tab counts for the filter picker, so both tabs carry a number the way the web original's
@@ -188,7 +184,9 @@ final class CaptureInboxService: ObservableObject {
         createCaptureErrorMessage = nil
 
         let normalized: NormalizedCreateCaptureInput
-        switch CaptureValidation.normalizeCreateCaptureInput(content: content, kind: kind) {
+        switch CaptureValidation.normalizeCreateCaptureInput(
+            content: content, kind: kind, lifeAreaId: newCaptureLifeAreaId
+        ) {
         case .success(let value):
             normalized = value
         case .failure(let error):
@@ -203,6 +201,7 @@ final class CaptureInboxService: ObservableObject {
             _ = try await client.createCapture(normalized)
             content = ""
             kind = CaptureValidation.defaultKind
+            newCaptureLifeAreaId = nil
             return true
         } catch {
             createCaptureErrorMessage = Self.message(for: error)
@@ -364,4 +363,13 @@ final class CaptureInboxService: ObservableObject {
 
     static let photoContentType = "image/jpeg"
     static let voiceContentType = "audio/m4a"
+}
+
+extension CaptureInboxService {
+    var isContentValid: Bool {
+        if case .success = CaptureValidation.normalizeCreateCaptureInput(content: content, kind: kind) {
+            return true
+        }
+        return false
+    }
 }

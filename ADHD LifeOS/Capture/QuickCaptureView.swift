@@ -2,107 +2,119 @@
 //  QuickCaptureView.swift
 //  ADHD LifeOS
 //
+//  The v3 composer (F-V3-Capture): opened by the capture fan with its kind already chosen, so it
+//  reads as a recorder, a camera, a link card or an effort picker — never an empty form. The
+//  copy, CTA and destination per kind live in `CaptureComposerCopy` (pure, tested). The optional
+//  life-area chips ride the existing create input; the Task kind skips the inbox and lands in
+//  Today through the existing task seams (create, then the focus target via the update payload).
+//
 
 import PhotosUI
 import SwiftUI
 
 struct QuickCaptureView: View {
-    @StateObject private var service: CaptureInboxService
+    /// Internal, not private: the section builders live in `QuickCaptureComponents.swift`.
+    @StateObject var service: CaptureInboxService
     @Environment(\.dismiss) private var dismiss
     let onCreated: () -> Void
 
-    @State private var photoPickerItem: PhotosPickerItem?
-    @State private var selectedImageData: Data?
-    @State private var isShowingCamera = false
+    private let homeClient: HomeClientAdapting?
+    private let taskCreateClient: TaskCreateClientAdapting?
+    private let taskDetailClient: TaskDetailClientAdapting?
 
-    @StateObject private var recorder = VoiceCaptureRecorder()
-    @State private var recordedAudioURL: URL?
+    @State var photoPickerItem: PhotosPickerItem?
+    @State var selectedImageData: Data?
+    @State var isShowingCamera = false
+    @State var lifeAreas: [LifeArea] = []
+    @State var taskEffortSeconds = 900
+    @State private var isSubmittingTask = false
+    @State var taskErrorMessage: String?
 
-    init(client: CaptureClientAdapting, onCreated: @escaping () -> Void) {
-        _service = StateObject(wrappedValue: CaptureInboxService(client: client))
+    @StateObject var recorder = VoiceCaptureRecorder()
+    @State var recordedAudioURL: URL?
+
+    init(
+        client: CaptureClientAdapting,
+        kind: CaptureKind = .note,
+        homeClient: HomeClientAdapting? = nil,
+        taskCreateClient: TaskCreateClientAdapting? = nil,
+        taskDetailClient: TaskDetailClientAdapting? = nil,
+        onCreated: @escaping () -> Void
+    ) {
+        _service = StateObject(wrappedValue: {
+            let service = CaptureInboxService(client: client)
+            service.kind = kind
+            return service
+        }())
+        self.homeClient = homeClient
+        self.taskCreateClient = taskCreateClient
+        self.taskDetailClient = taskDetailClient
         self.onCreated = onCreated
     }
 
-    private var isPhotoKind: Bool { service.kind == .photo }
-    private var isVoiceKind: Bool { service.kind == .voice }
-    private var isLinkKind: Bool { service.kind == .link }
+    var kind: CaptureKind { service.kind }
+    var fanSlot: CaptureFan.Slot { CaptureFan.slot(for: kind) }
+    var isTaskKind: Bool { kind == .task && taskCreateClient != nil }
 
-    private var isSaveDisabled: Bool {
-        guard !service.isSubmittingCapture else { return true }
-        if isPhotoKind { return selectedImageData == nil }
-        if isVoiceKind { return recordedAudioURL == nil }
+    var isSaveDisabled: Bool {
+        guard !service.isSubmittingCapture, !isSubmittingTask else { return true }
+        if kind == .photo { return selectedImageData == nil }
+        if kind == .voice { return recordedAudioURL == nil }
         return !service.isContentValid
     }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    if !isVoiceKind {
-                        TextField(
-                            contentFieldPlaceholder,
-                            text: $service.content, axis: .vertical
-                        )
-                        .keyboardType(isLinkKind ? .URL : .default)
-                        .textInputAutocapitalization(isLinkKind ? .never : .sentences)
-                        .autocorrectionDisabled(isLinkKind)
-                        .accessibilityIdentifier("quickCaptureContentField")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(CaptureComposerCopy.hint(for: kind))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    contentSection
+                    if isTaskKind {
+                        effortSection
                     }
-
-                    Picker("Kind", selection: $service.kind) {
-                        ForEach(CaptureKind.allCases, id: \.self) { kind in
-                            Text(kind.rawValue.capitalized).tag(kind)
-                        }
+                    if let errorMessage = service.createCaptureErrorMessage ?? taskErrorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundStyle(Color("StateRisk"))
+                            .accessibilityIdentifier("quickCaptureErrorMessage")
                     }
-                    .accessibilityIdentifier("quickCaptureKindPicker")
+                    Label(CaptureComposerCopy.footer(for: kind), systemImage: "lock")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    areaSection
                 }
-
-                if isPhotoKind {
-                    photoSection
-                }
-
-                if isVoiceKind {
-                    voiceSection
-                }
-
-                if let errorMessage = service.createCaptureErrorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("quickCaptureErrorMessage")
-                }
-
-                // S1's counterweight to the frictionless button (Concept C, M5 + M10): nothing
-                // needs filing NOW — and the week's honest ledger backs that up with numbers
-                // when there are any.
-                Section {
-                } footer: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        if let weekLine = service.weekCounterweightLine {
-                            Text(weekLine)
-                                .accessibilityIdentifier("quickCaptureWeekCounterweight")
-                        }
-                        Text("Nothing is filed yet. Clearing it later is what counts.")
-                            .accessibilityIdentifier("quickCaptureReassurance")
-                    }
-                }
+                .padding(16)
             }
-            .task { await service.refreshWeekCounterweight() }
-            .navigationTitle("Quick Capture")
+            .background(Color.pageBackground.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom) { footerBar }
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        Task {
-                            if await save() {
-                                onCreated()
-                                dismiss()
-                            }
-                        }
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color(fanSlot.fillAssetName))
+                            .frame(width: 10, height: 10)
+                        Text(CaptureComposerCopy.title(for: kind))
+                            .font(.headline)
                     }
-                    .disabled(isSaveDisabled)
-                    .accessibilityIdentifier("quickCaptureSubmitButton")
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { submit() }
+                        .disabled(isSaveDisabled)
+                        .accessibilityIdentifier("quickCaptureSubmitButton")
+                }
+            }
+            .task {
+                await service.refreshWeekCounterweight()
+                if let homeClient {
+                    lifeAreas = ((try? await homeClient.fetchLifeAreas()) ?? [])
+                        .filter { !$0.archived }
+                        .sorted { $0.sortOrder < $1.sortOrder }
                 }
             }
             .fullScreenCover(isPresented: $isShowingCamera) {
@@ -114,68 +126,23 @@ struct QuickCaptureView: View {
         }
     }
 
-    private var photoSection: some View {
-        Section {
-            if let selectedImageData, let uiImage = UIImage(data: selectedImageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .accessibilityIdentifier("quickCapturePhotoPreview")
-            }
+    // MARK: - Behaviour
 
-            PhotosPicker("Choose Photo", selection: $photoPickerItem, matching: .images)
-                .accessibilityIdentifier("quickCapturePhotoPickerButton")
-                .onChange(of: photoPickerItem) { newItem in
-                    Task { await loadPickedPhoto(newItem) }
-                }
-
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button("Take Photo") { isShowingCamera = true }
-                    .accessibilityIdentifier("quickCameraButton")
-            }
+    var contentFieldPlaceholder: String {
+        switch kind {
+        case .photo: return "Caption (optional)"
+        case .link: return "Paste a link"
+        case .task: return "What needs doing?"
+        default: return "What's on your mind?"
         }
     }
 
-    private func loadPickedPhoto(_ item: PhotosPickerItem?) async {
-        guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
-        selectedImageData = PhotoCaptureImageProcessing.downscaledJPEGData(from: data) ?? data
-    }
-
-    private var voiceSection: some View {
-        Section {
-            if let message = recorder.permissionDeniedMessage {
-                Text(message)
-                    .foregroundStyle(.red)
-                    .accessibilityIdentifier("quickCaptureVoicePermissionMessage")
-            }
-
-            Button(voiceRecordButtonTitle) {
-                Task { await toggleRecording() }
-            }
-            .accessibilityIdentifier("quickCaptureRecordButton")
-
-            if recordedAudioURL != nil, !recorder.isRecording {
-                Text("Voice note recorded")
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("quickCaptureVoiceRecordedLabel")
-            }
-        }
-    }
-
-    private var voiceRecordButtonTitle: String {
+    var voiceRecordButtonTitle: String {
         if recorder.isRecording { return "Stop Recording" }
         return recordedAudioURL == nil ? "Record Voice Note" : "Re-record"
     }
 
-    private var contentFieldPlaceholder: String {
-        if isPhotoKind { return "Caption (optional)" }
-        if isLinkKind { return "Paste a link" }
-        return "What's on your mind?"
-    }
-
-    private func toggleRecording() async {
+    func toggleRecording() async {
         if recorder.isRecording {
             recordedAudioURL = recorder.stopRecording()
         } else {
@@ -184,48 +151,79 @@ struct QuickCaptureView: View {
         }
     }
 
+    func loadPickedPhoto(_ item: PhotosPickerItem?) async {
+        guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
+        selectedImageData = PhotoCaptureImageProcessing.downscaledJPEGData(from: data) ?? data
+    }
+
+    /// The per-kind escape hatch, v3's alt button: kinds that switch destination switch kind in
+    /// place; media kinds reset their media.
+    func performAlt() {
+        switch kind {
+        case .note: service.kind = .task
+        case .task: service.kind = .note
+        case .voice:
+            recordedAudioURL = nil
+            Task { await recorder.startRecording() }
+        case .photo:
+            selectedImageData = nil
+            if UIImagePickerController.isSourceTypeAvailable(.camera) { isShowingCamera = true }
+        case .link: service.content = ""
+        }
+    }
+
+    func submit() {
+        Task {
+            if await save() {
+                onCreated()
+                dismiss()
+            }
+        }
+    }
+
     private func save() async -> Bool {
-        if isPhotoKind, let selectedImageData {
+        if isTaskKind { return await saveTask() }
+        if kind == .photo, let selectedImageData {
             return await service.createPhotoCapture(imageData: selectedImageData)
         }
-        if isVoiceKind, let recordedAudioURL {
+        if kind == .voice, let recordedAudioURL {
             return await service.createVoiceCapture(audioFileURL: recordedAudioURL)
         }
         return await service.createCapture()
     }
-}
 
-#if DEBUG
-private struct PreviewCaptureClientAdapting: CaptureClientAdapting {
-    func createCapture(_ input: NormalizedCreateCaptureInput) async throws -> Capture {
-        fatalError("unused in preview")
+    /// The fast-task path: create through the existing seams, then the effort chip lands as
+    /// `focusDurationSeconds` via the update payload (the create input has no focus fields).
+    private func saveTask() async -> Bool {
+        guard let taskCreateClient else { return false }
+        taskErrorMessage = nil
+        let title = service.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else {
+            taskErrorMessage = "Give the task a name first."
+            return false
+        }
+        isSubmittingTask = true
+        defer { isSubmittingTask = false }
+        do {
+            let input = NormalizedCreateTaskInput(
+                title: title, notes: nil,
+                lifeAreaId: service.newCaptureLifeAreaId,
+                dueDate: Calendar.current.startOfDay(for: .now),
+                priority: .p3
+            )
+            let created = try await taskCreateClient.createTask(input)
+            if let taskDetailClient {
+                var payload = TaskUpdatePayload()
+                payload.focusDurationSeconds = taskEffortSeconds
+                _ = try await taskDetailClient.updateTask(id: created.id, payload: payload)
+            }
+            service.content = ""
+            service.newCaptureLifeAreaId = nil
+            return true
+        } catch {
+            taskErrorMessage =
+                (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
     }
-    func fetchUnprocessedCaptures() async throws -> [Capture] { [] }
-    func fetchCaptures() async throws -> [Capture] { [] }
-    func fetchCapture(id: UUID) async throws -> Capture { fatalError("unused in preview") }
-    func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
-        fatalError("unused in preview")
-    }
-    func markProcessed(captureId: UUID) async throws {}
-    func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
-        fatalError("unused in preview")
-    }
-
-    func fetchProcessedCaptures() async throws -> [Capture] { [] }
-    func fetchSeenCaptures() async throws -> [Capture] { [] }
-    func deleteCapture(id: UUID) async throws {}
-    func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
-    func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
-        fatalError("unused in preview")
-    }
-    func fetchAllTags() async throws -> [Tag] { [] }
-    func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
-    func fetchTags(captureId: UUID) async throws -> [Tag] { [] }
-    func addTag(captureId: UUID, tagId: UUID) async throws {}
-    func removeTag(captureId: UUID, tagId: UUID) async throws {}
 }
-
-#Preview {
-    QuickCaptureView(client: PreviewCaptureClientAdapting()) {}
-}
-#endif

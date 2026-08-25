@@ -25,7 +25,10 @@ struct RootView: View {
     let nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting
     let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
-    @State private var isPresentingQuickCapture = false
+    /// The capture fan (F-V3-Capture): open = five discs over a scrim; picking one opens the
+    /// composer with that kind already chosen.
+    @State private var isFabOpen = false
+    @State private var composerKind: CaptureKind?
     @State private var selectedTab: AppTab = .today
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -119,19 +122,37 @@ struct RootView: View {
                         .tabItem { Label("Nudges", systemImage: "bell") }
                         .tag(AppTab.nudges)
                 }
+                .blur(radius: isFabOpen ? 4 : 0)
+                .overlay {
+                    if isFabOpen {
+                        CaptureFanOverlay(
+                            onPick: { kind in
+                                isFabOpen = false
+                                composerKind = kind
+                            },
+                            onDismiss: { isFabOpen = false }
+                        )
+                        .transition(.opacity)
+                    }
+                }
                 .overlay(alignment: .bottom) {
                     // Sits above the tab bar, mirroring the web's `fixed bottom-24` placement.
-                    // The quick-capture button shares this stack so an active sprint pushes it
-                    // ABOVE the timer bar instead of letting it occlude the bar's controls
-                    // (E's bug report, 2026-08-19).
+                    // The FAB shares this stack so an active sprint pushes it ABOVE the timer
+                    // bar instead of letting it occlude the bar's controls (E, 2026-08-19).
                     VStack(alignment: .trailing, spacing: 8) {
                         Button {
-                            isPresentingQuickCapture = true
+                            withAnimation(
+                                reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)
+                            ) {
+                                isFabOpen.toggle()
+                            }
                         } label: {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 48))
+                                .rotationEffect(.degrees(isFabOpen ? 135 : 0))
                         }
                         .padding(.trailing, 20)
+                        .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
                         .accessibilityIdentifier("quickCaptureButton")
 
                         // A sprint that finished while the app was dead announces itself here —
@@ -151,8 +172,14 @@ struct RootView: View {
                         value: focusService.isActive
                     )
                 }
-                .sheet(isPresented: $isPresentingQuickCapture) {
-                    QuickCaptureView(client: captureClient) {}
+                .fullScreenCover(item: $composerKind) { kind in
+                    QuickCaptureView(
+                        client: captureClient,
+                        kind: kind,
+                        homeClient: homeClient,
+                        taskCreateClient: taskCreateClient,
+                        taskDetailClient: taskDetailClient
+                    ) {}
                 }
                 // Reinstate a sprint the process died holding (F-SprintPersistence). Idempotent —
                 // a no-op with nothing stored or a sprint already live.
