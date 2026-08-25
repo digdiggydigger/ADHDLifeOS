@@ -26,6 +26,7 @@ final class FakeLifeAreaEditorClientAdapting: LifeAreaEditorClientAdapting, @unc
     private(set) var lastUpdateId: UUID?
     private(set) var lastUpdateName: String??
     private(set) var lastUpdateColour: String??
+    private(set) var lastUpdatePalette: LifeAreaPaletteEdit?
     private(set) var lastSetArchivedId: UUID?
     private(set) var lastSetArchivedValue: Bool?
     private(set) var lastCreateName: String?
@@ -41,11 +42,14 @@ final class FakeLifeAreaEditorClientAdapting: LifeAreaEditorClientAdapting, @unc
         return try fetchResults[index].get()
     }
 
-    func update(id: UUID, name: String?, colour: String?) async throws -> LifeAreaUpdateOutcome {
+    func update(
+        id: UUID, name: String?, colour: String?, palette: LifeAreaPaletteEdit
+    ) async throws -> LifeAreaUpdateOutcome {
         updateCallCount += 1
         lastUpdateId = id
         lastUpdateName = name
         lastUpdateColour = colour
+        lastUpdatePalette = palette
         return try updateResult.get()
     }
 

@@ -16,6 +16,24 @@ struct EditableLifeArea: Identifiable, Equatable, Hashable, Sendable {
     var colour: String   // stores the emoji, not a colour — §8 says leave the name as-is.
     var sortOrder: Int
     var archived: Bool
+    /// The stored colour override (`AreaPalette` wire key), `nil` = automatic (emoji-derived).
+    var paletteKey: String?
+}
+
+/// The staged colour edit a save carries — tri-state on purpose: "leave it alone", "assign this
+/// family" and "back to automatic" are three different writes (`automatic` ERASES the field, so
+/// absence stays the one representation of automatic).
+enum LifeAreaPaletteEdit: Equatable, Sendable {
+    case unchanged
+    case set(String)
+    case automatic
+
+    /// Derives the edit from what the document holds and what the editor now shows.
+    static func edit(from current: String?, to proposed: String?) -> LifeAreaPaletteEdit {
+        guard current != proposed else { return .unchanged }
+        guard let proposed else { return .automatic }
+        return .set(proposed)
+    }
 }
 
 /// The conflicting area surfaced when a create or rename collides with an existing name. Built from
@@ -62,9 +80,11 @@ enum LifeAreaEditorServiceError: LocalizedError, Equatable {
 protocol LifeAreaEditorClientAdapting: Sendable {
     /// `GET /life-areas` — every area, active and archived, with its `archived` flag.
     func fetchLifeAreas() async throws -> [EditableLifeArea]
-    /// `PATCH /life-areas/{id}` with any subset of `name`/`colour` — `.updated` on `200`,
-    /// `.nameConflict` on `409`. Send only the fields that actually changed.
-    func update(id: UUID, name: String?, colour: String?) async throws -> LifeAreaUpdateOutcome
+    /// `PATCH /life-areas/{id}` with any subset of `name`/`colour`/`palette` — `.updated` on
+    /// `200`, `.nameConflict` on `409`. Send only the fields that actually changed.
+    func update(
+        id: UUID, name: String?, colour: String?, palette: LifeAreaPaletteEdit
+    ) async throws -> LifeAreaUpdateOutcome
     /// `PATCH /life-areas/{id}` `{"archived": ...}` — archive or unarchive. Cannot name-conflict,
     /// so it throws on failure or succeeds.
     func setArchived(id: UUID, archived: Bool) async throws

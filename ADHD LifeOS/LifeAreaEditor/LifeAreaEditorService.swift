@@ -55,20 +55,27 @@ final class LifeAreaEditorService: ObservableObject {
     /// Returns `true` when the detail screen should pop. A `409` sets `pendingRenameConflict` (drives
     /// the Cancel-only alert) and returns `false`, leaving the typed name intact.
     @discardableResult
-    func saveEdits(to area: EditableLifeArea, name proposedName: String, colour proposedColour: String) async -> Bool {
+    func saveEdits(
+        to area: EditableLifeArea,
+        name proposedName: String,
+        colour proposedColour: String,
+        palette: LifeAreaPaletteEdit = .unchanged
+    ) async -> Bool {
         errorMessage = nil
         let trimmedName = proposedName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return false }   // Save is disabled here; write nothing.
 
         let nameToSend = trimmedName == area.name ? nil : trimmedName
         let colourToSend = proposedColour == area.colour ? nil : proposedColour
-        guard nameToSend != nil || colourToSend != nil else { return true }  // nothing changed → pop.
+        guard nameToSend != nil || colourToSend != nil || palette != .unchanged else {
+            return true  // nothing changed → pop.
+        }
 
         guard !isMutating else { return false }
         isMutating = true
         defer { isMutating = false }
         do {
-            switch try await client.update(id: area.id, name: nameToSend, colour: colourToSend) {
+            switch try await client.update(id: area.id, name: nameToSend, colour: colourToSend, palette: palette) {
             case .updated:
                 await reload()
                 return true

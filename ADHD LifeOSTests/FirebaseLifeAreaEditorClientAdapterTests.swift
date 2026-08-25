@@ -60,11 +60,47 @@ final class FirebaseLifeAreaEditorClientAdapterTests: XCTestCase {
 
     // MARK: - Update: the field dictionary
 
+    // MARK: - Palette override (E's 2026-08-25 note)
+
+    func testUpdate_setPaletteWritesTheWireKey() async throws {
+        let id = UUID()
+
+        _ = try await adapter.update(id: id, name: nil, colour: nil, palette: .set("growth"))
+
+        XCTAssertEqual(store.updates.count, 1)
+        XCTAssertEqual(store.updates.first?.fields["palette"] as? String, "growth")
+    }
+
+    /// Back to Automatic ERASES the field — absence, never "", is what the resolver reads as
+    /// automatic, so an old build's resolver never sees a value it must special-case.
+    func testUpdate_automaticWritesTheEraseSentinel() async throws {
+        _ = try await adapter.update(id: UUID(), name: nil, colour: nil, palette: .automatic)
+
+        let value = store.updates.first?.fields["palette"]
+        XCTAssertTrue(FirestoreDocumentCoder.isFieldDelete(value), "expected FieldValue.delete()")
+    }
+
+    func testUpdate_unchangedPaletteStaysOutOfTheFieldSet() async throws {
+        _ = try await adapter.update(id: UUID(), name: "Renamed", colour: nil, palette: .unchanged)
+
+        XCTAssertNil(store.updates.first?.fields["palette"])
+    }
+
+    func testFetch_carriesTheStoredPaletteKeyThrough() async throws {
+        store.areas = [
+            LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 0, palette: "hobby")
+        ]
+
+        let fetched = try await adapter.fetchLifeAreas()
+
+        XCTAssertEqual(fetched.first?.paletteKey, "hobby")
+    }
+
     func testUpdate_withNameOnly_writesOnlyTheNameKey() async throws {
         let id = UUID()
         store.areas = [LifeArea(id: id, name: "Health", colour: "🏃", sortOrder: 0)]
 
-        let outcome = try await adapter.update(id: id, name: "Wellbeing", colour: nil)
+        let outcome = try await adapter.update(id: id, name: "Wellbeing", colour: nil, palette: .unchanged)
 
         XCTAssertEqual(outcome, .updated)
         XCTAssertEqual(store.updates.count, 1)
@@ -76,7 +112,7 @@ final class FirebaseLifeAreaEditorClientAdapterTests: XCTestCase {
     func testUpdate_withColourOnly_writesOnlyTheColourKey() async throws {
         let id = UUID()
 
-        _ = try await adapter.update(id: id, name: nil, colour: "🧘")
+        _ = try await adapter.update(id: id, name: nil, colour: "🧘", palette: .unchanged)
 
         XCTAssertEqual(store.updates.first?.fields.keys.sorted(), ["colour"])
         XCTAssertEqual(store.updates.first?.fields["colour"] as? String, "🧘")
@@ -85,7 +121,7 @@ final class FirebaseLifeAreaEditorClientAdapterTests: XCTestCase {
     func testUpdate_withBoth_writesBothKeys() async throws {
         let id = UUID()
 
-        _ = try await adapter.update(id: id, name: "Wellbeing", colour: "🧘")
+        _ = try await adapter.update(id: id, name: "Wellbeing", colour: "🧘", palette: .unchanged)
 
         XCTAssertEqual(store.updates.first?.fields.keys.sorted(), ["colour", "name"])
     }
@@ -93,7 +129,7 @@ final class FirebaseLifeAreaEditorClientAdapterTests: XCTestCase {
     /// The editor sends only what changed, so "nothing changed" reaches the adapter as a pair of
     /// `nil`s. It must stay a no-op write rather than clearing anything.
     func testUpdate_withNoChanges_writesAnEmptyFieldSet() async throws {
-        let outcome = try await adapter.update(id: UUID(), name: nil, colour: nil)
+        let outcome = try await adapter.update(id: UUID(), name: nil, colour: nil, palette: .unchanged)
 
         XCTAssertEqual(outcome, .updated)
         XCTAssertEqual(store.updates.first?.fields.isEmpty, true)
@@ -109,7 +145,7 @@ final class FirebaseLifeAreaEditorClientAdapterTests: XCTestCase {
             LifeArea(id: clash, name: "Admin", colour: "🗂", sortOrder: 1, archived: true)
         ]
 
-        let outcome = try await adapter.update(id: target, name: "Admin", colour: nil)
+        let outcome = try await adapter.update(id: target, name: "Admin", colour: nil, palette: .unchanged)
 
         XCTAssertEqual(outcome, .nameConflict(LifeAreaNameConflict(id: clash, name: "Admin", archived: true)))
         XCTAssertTrue(store.updates.isEmpty, "a conflict must not write")
@@ -124,7 +160,7 @@ final class FirebaseLifeAreaEditorClientAdapterTests: XCTestCase {
             LifeArea(id: clash, name: "Admin", colour: "🗂", sortOrder: 1)
         ]
 
-        let outcome = try await adapter.update(id: target, name: "aDmIn", colour: nil)
+        let outcome = try await adapter.update(id: target, name: "aDmIn", colour: nil, palette: .unchanged)
 
         XCTAssertEqual(outcome, .nameConflict(LifeAreaNameConflict(id: clash, name: "Admin", archived: false)))
     }
@@ -135,7 +171,7 @@ final class FirebaseLifeAreaEditorClientAdapterTests: XCTestCase {
         let id = UUID()
         store.areas = [LifeArea(id: id, name: "Health", colour: "🏃", sortOrder: 0)]
 
-        let outcome = try await adapter.update(id: id, name: "Health", colour: "🧘")
+        let outcome = try await adapter.update(id: id, name: "Health", colour: "🧘", palette: .unchanged)
 
         XCTAssertEqual(outcome, .updated)
         XCTAssertEqual(store.updates.count, 1)
@@ -144,7 +180,9 @@ final class FirebaseLifeAreaEditorClientAdapterTests: XCTestCase {
     func testUpdate_wrapsWriteFailureAsServiceError() async {
         store.updateError = FirebaseManagerError.notSignedIn
 
-        await XCTAssertThrowsErrorAsync(try await adapter.update(id: UUID(), name: "Wellbeing", colour: nil)) { error in
+        await XCTAssertThrowsErrorAsync(
+            try await adapter.update(id: UUID(), name: "Wellbeing", colour: nil, palette: .unchanged)
+        ) { error in
             XCTAssertEqual(
                 error as? LifeAreaEditorServiceError,
                 .failed(FirebaseManagerError.notSignedIn.errorDescription ?? "")

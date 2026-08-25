@@ -18,6 +18,7 @@ struct LifeAreaEditorDetailView: View {
 
     @State private var name: String
     @State private var colour: String
+    @State private var paletteKey: String?
     @State private var showRenameConflictAlert = false
 
     init(area: EditableLifeArea, service: LifeAreaEditorService) {
@@ -25,13 +26,43 @@ struct LifeAreaEditorDetailView: View {
         self.service = service
         _name = State(initialValue: area.name)
         _colour = State(initialValue: area.colour)
+        _paletteKey = State(initialValue: area.paletteKey)
     }
 
     private var canSave: Bool {
         guard !service.isMutating else { return false }
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
-        return trimmed != area.name || colour != area.colour
+        return trimmed != area.name || colour != area.colour || paletteKey != area.paletteKey
+    }
+
+    /// One colour choice as a Form row: the family's vivid swatch (or a neutral ring for
+    /// Automatic), the colour's name, and a checkmark on the staged selection. A Button row, not a
+    /// Picker — five swatches deserve to be seen side by side, not folded behind a menu.
+    private func paletteRow(key: String?, label: String, swatch: AreaPalette?) -> some View {
+        Button {
+            paletteKey = key
+        } label: {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(swatch.map { AnyShapeStyle($0.vivid) } ?? AnyShapeStyle(Color(.tertiarySystemFill)))
+                    .frame(width: 24, height: 24)
+                    .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 1))
+                Text(label)
+                    .foregroundStyle(Color.primary)
+                Spacer()
+                if paletteKey == key {
+                    Image(systemName: "checkmark")
+                        .font(.footnote.bold())
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(paletteKey == key ? .isSelected : [])
+        .accessibilityIdentifier("lifeAreaPalette-\(key ?? "automatic")")
     }
 
     var body: some View {
@@ -49,6 +80,20 @@ struct LifeAreaEditorDetailView: View {
                 LifeAreaEmojiPicker(selection: $colour)
             } header: {
                 Text("Emoji")
+            }
+
+            Section {
+                paletteRow(key: nil, label: "Automatic", swatch: nil)
+                ForEach(AreaPalette.allCases, id: \.key) { family in
+                    paletteRow(key: family.key, label: family.displayName, swatch: family)
+                }
+            } header: {
+                Text("Colour")
+            } footer: {
+                Text(
+                    "Automatic follows the emoji. Choosing a colour repaints this area everywhere "
+                        + "— its cards, chips, bars and journal rows."
+                )
             }
 
             if let error = service.errorMessage {
@@ -88,7 +133,10 @@ struct LifeAreaEditorDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Save") {
                     Task {
-                        if await service.saveEdits(to: area, name: name, colour: colour) { dismiss() }
+                        let edit = LifeAreaPaletteEdit.edit(from: area.paletteKey, to: paletteKey)
+                        if await service.saveEdits(to: area, name: name, colour: colour, palette: edit) {
+                            dismiss()
+                        }
                     }
                 }
                 .disabled(!canSave)
@@ -132,7 +180,9 @@ final class PreviewLifeAreaEditorClient: LifeAreaEditorClientAdapting, @unchecke
     }
 
     func fetchLifeAreas() async throws -> [EditableLifeArea] { areas }
-    func update(id: UUID, name: String?, colour: String?) async throws -> LifeAreaUpdateOutcome { updateOutcome }
+    func update(
+        id: UUID, name: String?, colour: String?, palette: LifeAreaPaletteEdit
+    ) async throws -> LifeAreaUpdateOutcome { updateOutcome }
     func setArchived(id: UUID, archived: Bool) async throws {}
     func create(name: String, colour: String) async throws -> LifeAreaCreateOutcome { createOutcome }
 }

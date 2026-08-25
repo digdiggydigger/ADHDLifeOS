@@ -69,4 +69,38 @@ final class AreaPaletteTests: XCTestCase {
             }
         }
     }
+
+    // MARK: - Stored override (E's 2026-08-25 note: assignable area colours)
+
+    func testStoredPaletteKeyBeatsTheEmojiMapping() {
+        let overridden = LifeArea(
+            id: UUID(), name: "Work", colour: "💼", sortOrder: 0, palette: "growth"
+        )
+        XCTAssertEqual(AreaPalette.family(for: overridden), .growth)
+    }
+
+    /// A key this build doesn't recognise resolves to AUTOMATIC, not to a crash or an arbitrary
+    /// pin — the same resolve-to-safe posture as `FirebaseEmulatorSettings`.
+    func testMalformedStoredKeyFallsBackToAutomatic() {
+        let broken = LifeArea(
+            id: UUID(), name: "Work", colour: "💼", sortOrder: 0, palette: "sparkle"
+        )
+        XCTAssertEqual(AreaPalette.family(for: broken), .work)
+    }
+
+    func testWireKeysRoundTripAndAreNotAssetNames() {
+        for family in AreaPalette.allCases {
+            XCTAssertEqual(AreaPalette(key: family.key), family, "\(family) must round-trip")
+        }
+        XCTAssertEqual(AreaPalette.work.key, "work")
+        XCTAssertNil(AreaPalette(key: "AreaWork"), "asset catalog names are not wire keys")
+    }
+
+    func testEveryFamilyHasAColourDisplayName() {
+        XCTAssertEqual(AreaPalette.work.displayName, "Blue")
+        XCTAssertEqual(AreaPalette.health.displayName, "Teal")
+        XCTAssertEqual(AreaPalette.admin.displayName, "Gold")
+        XCTAssertEqual(AreaPalette.growth.displayName, "Purple")
+        XCTAssertEqual(AreaPalette.hobby.displayName, "Pink")
+    }
 }

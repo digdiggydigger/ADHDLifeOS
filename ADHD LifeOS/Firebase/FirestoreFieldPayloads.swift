@@ -93,6 +93,18 @@ enum FirestoreFieldPayloads {
         ]
     }
 
+    /// The life-area colour override's PATCH fragment (E's 2026-08-25 note). `automatic` ERASES
+    /// the field — absence, never "", is the one representation of automatic, so a resolver never
+    /// meets a value it must special-case. Lives here rather than in the adapter because the
+    /// erase sentinel is `FieldValue`, which the adapter (and the test target) cannot import.
+    static func lifeAreaPalette(_ edit: LifeAreaPaletteEdit) -> [String: Any] {
+        switch edit {
+        case .unchanged: return [:]
+        case .set(let key): return ["palette": key]
+        case .automatic: return ["palette": FieldValue.delete()]
+        }
+    }
+
     /// A nudge's partial update. Any real change stamps `updated_at` — from the **server** clock,
     /// unlike `nudgeFired` below. An empty payload writes nothing at all, so a no-op edit does not
     /// bump the timestamp.

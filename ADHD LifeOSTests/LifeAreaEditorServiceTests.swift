@@ -39,6 +39,31 @@ final class LifeAreaEditorServiceTests: XCTestCase {
         XCTAssertEqual(service.state, .failed("boom"))
     }
 
+    // MARK: Palette override (E's 2026-08-25 note)
+
+    func test_saveEdits_paletteOnly_sendsTheEditAndPops() async {
+        let fake = FakeLifeAreaEditorClientAdapting()
+        let target = area("Work", colour: "💼")
+        fake.fetchResults = [.success([target])]
+        let service = LifeAreaEditorService(client: fake)
+        await service.load()
+
+        let pop = await service.saveEdits(to: target, name: "Work", colour: "💼", palette: .set("growth"))
+
+        XCTAssertTrue(pop)
+        XCTAssertEqual(fake.updateCallCount, 1)
+        XCTAssertEqual(fake.lastUpdatePalette, .set("growth"))
+        XCTAssertEqual(fake.lastUpdateName, .some(nil), "name did not change, so it must not be sent")
+    }
+
+    func test_paletteEdit_derivesFromCurrentAndProposed() {
+        XCTAssertEqual(LifeAreaPaletteEdit.edit(from: nil, to: nil), .unchanged)
+        XCTAssertEqual(LifeAreaPaletteEdit.edit(from: "work", to: "work"), .unchanged)
+        XCTAssertEqual(LifeAreaPaletteEdit.edit(from: nil, to: "growth"), .set("growth"))
+        XCTAssertEqual(LifeAreaPaletteEdit.edit(from: "work", to: "growth"), .set("growth"))
+        XCTAssertEqual(LifeAreaPaletteEdit.edit(from: "work", to: nil), .automatic)
+    }
+
     // MARK: saveEdits
 
     func test_saveEdits_renameOnly_sendsNameNotColour_reloads_returnsTrue() async {

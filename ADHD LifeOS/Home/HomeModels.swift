@@ -15,17 +15,22 @@ struct LifeArea: Codable, Identifiable, Equatable, Hashable, Sendable {
     /// sites plus Home now need it. Defaulted to `false` in the memberwise init so the many manual
     /// construction sites (adapters, previews, fakes) that predate it keep compiling.
     var archived: Bool
+    /// The user-assigned colour override (E's 2026-08-25 note): an `AreaPalette` wire key
+    /// ("work"/"health"/…) that `AreaPalette.family(for:)` honours before the emoji mapping.
+    /// `nil` — including on every document written before the field existed — means automatic.
+    var palette: String?
 
-    init(id: UUID, name: String, colour: String, sortOrder: Int, archived: Bool = false) {
+    init(id: UUID, name: String, colour: String, sortOrder: Int, archived: Bool = false, palette: String? = nil) {
         self.id = id
         self.name = name
         self.colour = colour
         self.sortOrder = sortOrder
         self.archived = archived
+        self.palette = palette
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, colour, archived
+        case id, name, colour, archived, palette
         case sortOrder = "sort_order"
     }
 
@@ -42,6 +47,7 @@ struct LifeArea: Codable, Identifiable, Equatable, Hashable, Sendable {
         colour = try container.decode(String.self, forKey: .colour)
         sortOrder = try container.decode(Int.self, forKey: .sortOrder)
         archived = try container.decodeIfPresent(Bool.self, forKey: .archived) ?? false
+        palette = try container.decodeIfPresent(String.self, forKey: .palette)
     }
 }
 
