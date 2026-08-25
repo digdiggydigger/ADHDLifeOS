@@ -117,6 +117,8 @@ final class CaptureInboxService: ObservableObject {
     /// (not `private(set)`) for the same reason `client` is internal: its one writer lives in
     /// the `+Counterweight` extension file.
     @Published var weekCounterweightLine: String?
+    /// The week's movement numerically — the v3 inbox health chart's input (F-V3-Inbox).
+    @Published var weekHealth: CaptureInboxSummary.WeekHealth?
 
     func load() async {
         state = .loading
