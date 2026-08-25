@@ -77,6 +77,27 @@ struct ComposerAreaChips: View {
     }
 }
 
+/// The pinned bottom bar's surface: bar material with a hairline top edge, so the boundary
+/// between scrolling content and the fixed bar is VISIBLE instead of implied — E's 2026-08-25
+/// review marked exactly this line on a screenshot. Every pinned composer/footer bar wears it,
+/// so the rule holds app-wide rather than screen by screen.
+struct ComposerFooterSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(.bar)
+            .overlay(alignment: .top) {
+                Color.cardBorder
+                    .frame(height: 1)
+            }
+    }
+}
+
+extension View {
+    func composerFooterSurface() -> some View {
+        modifier(ComposerFooterSurface())
+    }
+}
+
 /// The composer text input — S1's "one big honest box" instead of a Form row.
 struct ComposerTextBox: View {
     let placeholder: String

@@ -284,6 +284,6 @@ struct JournalView: View {
         .padding(.top, 8)
         .padding(.bottom, 4)
         .frame(maxWidth: .infinity)
-        .background(.bar)
+        .composerFooterSurface()
     }
 }

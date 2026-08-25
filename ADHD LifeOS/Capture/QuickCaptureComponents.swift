@@ -9,19 +9,16 @@
 import PhotosUI
 import SwiftUI
 
-/// A minimal wrapping HStack for the area chips — rows of chips that flow onto new lines.
+/// A wrapping row of chips that hug their words. Was an adaptive `LazyVGrid` until E's 2026-08-25
+/// review: its two rigid columns left a field of empty space around short chips, so it is now a
+/// true flow (`ChipFlowLayout` — the `Layout` protocol is iOS 16.0, inside the floor; the old
+/// comment here claiming otherwise was wrong).
 struct FlowingChips<Content: View>: View {
     let spacing: CGFloat
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        // iOS 16 floor: no Layout-protocol flow here — a wrapping LazyVGrid keeps it simple and
-        // predictable (chips share a two-per-row rhythm at accessibility sizes too).
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 132), spacing: spacing)],
-            alignment: .leading,
-            spacing: spacing
-        ) {
+        ChipFlowLayout(spacing: spacing) {
             content()
         }
     }
@@ -346,6 +343,6 @@ extension QuickCaptureView {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 4)
-        .background(.bar)
+        .composerFooterSurface()
     }
 }

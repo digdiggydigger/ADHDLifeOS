@@ -121,7 +121,8 @@ struct TaskCreateView: View {
         } label: {
             Text(choice.title)
                 .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity, minHeight: 44)
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
                 .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(ChoiceChipButtonStyle(isSelected: selected))
@@ -257,7 +258,7 @@ struct TaskCreateView: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 4)
-        .background(.bar)
+        .composerFooterSurface()
     }
 }
 

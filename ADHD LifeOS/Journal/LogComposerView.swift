@@ -195,7 +195,7 @@ struct LogComposerView: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 4)
-        .background(.bar)
+        .composerFooterSurface()
     }
 }
 
