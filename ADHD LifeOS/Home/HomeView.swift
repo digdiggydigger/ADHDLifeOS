@@ -276,12 +276,8 @@ struct HomeView: View {
                         MomentumClosedTodayCard(tasks: closedToday)
                     }
                     closedWeekChartSection
-                    DailySummaryView(
-                        openTaskCount: counts.reduce(0) { $0 + $1.openTaskCount },
-                        lifeAreaCount: counts.count,
-                        inboxCount: inboxCount,
-                        dueNudgeCount: nudgesService.dueNudges().count
-                    )
+                    // The AI summary lives in the week review now (F-V3-WeekReview) — Today
+                    // stays the scoreboard, the review carries the recap.
                     weekReviewRow
                     FocusAnalyticsSection(reloadToken: focusReloadToken + pullRefreshCount) { sessions in
                         // Fires on first load, on pull-to-refresh, and on every finished sprint

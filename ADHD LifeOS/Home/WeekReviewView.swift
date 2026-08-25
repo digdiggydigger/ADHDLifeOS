@@ -2,15 +2,26 @@
 //  WeekReviewView.swift
 //  ADHD LifeOS
 //
-//  S5 as shipped (block M6): the week's evidence — closures, focus stamina, the honest quiet —
-//  derived locally and pushed from Home. The AI-written daily summary card stays where it was;
-//  this is the numbers, with counterweights.
+//  S5 in the v3 voice (F-V3-WeekReview): the week's evidence — closures in closure-green,
+//  focus stamina, the honest quiet — derived locally, with the AI-written summary card living
+//  HERE now rather than on Today (v3: the recap is weekly evidence, not a daily verdict).
 //
 
 import SwiftUI
 
+/// The AI-written summary's inputs, carried into the review by Home.
+struct WeekReviewSummaryCounts: Equatable {
+    let open: Int
+    let areas: Int
+    let inbox: Int
+    let dueNudges: Int
+}
+
 struct WeekReviewView: View {
     let review: MomentumWeekReview
+    /// When present, the AI summary card moves here from Today (v3's S5: the recap is weekly
+    /// evidence, not a daily verdict). `nil` hides it (previews).
+    var summaryCounts: WeekReviewSummaryCounts?
 
     var body: some View {
         ScrollView {
@@ -29,6 +40,14 @@ struct WeekReviewView: View {
                 if !review.kickstart.isEmpty {
                     kickstartSection
                 }
+                if let counts = summaryCounts {
+                    DailySummaryView(
+                        openTaskCount: counts.open,
+                        lifeAreaCount: counts.areas,
+                        inboxCount: counts.inbox,
+                        dueNudgeCount: counts.dueNudges
+                    )
+                }
             }
             .padding(16)
         }
@@ -39,9 +58,17 @@ struct WeekReviewView: View {
         .accessibilityIdentifier("weekReviewView")
     }
 
+    /// "Sunday · 8–14 Aug" — v3's eyebrow: today's weekday and the rolling window it closes.
+    private var windowLine: String {
+        let today = Date()
+        let start = Calendar.current.date(byAdding: .day, value: -6, to: today) ?? today
+        let range = "\(start.formatted(.dateTime.day()))–\(today.formatted(.dateTime.day().month(.abbreviated)))"
+        return "\(today.formatted(.dateTime.weekday(.wide))) · \(range)"
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("The last seven days")
+            Text(windowLine)
                 .sectionLabel()
                 .foregroundStyle(Color.accentColor)
             Text("Week review")
@@ -66,7 +93,7 @@ struct WeekReviewView: View {
             ForEach(Array(zip(review.dayLabels, review.dayCounts).enumerated()), id: \.offset) { _, day in
                 VStack(spacing: 4) {
                     Capsule()
-                        .fill(day.1 > 0 ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.tertiarySystemFill)))
+                        .fill(day.1 > 0 ? AnyShapeStyle(Color("StateGoVivid")) : AnyShapeStyle(Color("TrackNeutral")))
                         .frame(height: max(8, CGFloat(day.1) / CGFloat(peak) * 64))
                         .frame(maxHeight: 64, alignment: .bottom)
                     Text(day.0)
@@ -95,7 +122,7 @@ struct WeekReviewView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     } icon: {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color("StateGo"))
                     }
                 }
             }

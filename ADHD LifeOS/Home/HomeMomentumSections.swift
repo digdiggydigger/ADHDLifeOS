@@ -370,11 +370,19 @@ extension HomeView {
     }
 
     var weekReviewDestination: some View {
-        WeekReviewView(review: MomentumWeekReview.build(
-            tasks: homeService.allTasks,
-            lifeAreas: homeService.lifeAreas,
-            sessions: publishedHistory,
-            inboxCount: inboxCount
-        ))
+        WeekReviewView(
+            review: MomentumWeekReview.build(
+                tasks: homeService.allTasks,
+                lifeAreas: homeService.lifeAreas,
+                sessions: publishedHistory,
+                inboxCount: inboxCount
+            ),
+            summaryCounts: WeekReviewSummaryCounts(
+                open: homeService.openTasks.count,
+                areas: homeService.activeAreas.count,
+                inbox: inboxCount,
+                dueNudges: nudgesService.dueNudges().count
+            )
+        )
     }
 }
