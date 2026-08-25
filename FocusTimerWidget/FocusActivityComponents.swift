@@ -167,7 +167,7 @@ struct FocusCheckpointCaption: View {
     var body: some View {
         if let summary = state.checkpointSummary(isComplete: isComplete) {
             Text(summary)
-                .font(.caption.monospaced())
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
