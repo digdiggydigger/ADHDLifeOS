@@ -44,6 +44,50 @@ final class FirebaseJournalClientAdapterTests: XCTestCase {
         }
     }
 
+    // MARK: - The timeline's side streams (E's 2026-08-25 note)
+
+    func testFetchFocusSessions_passesTheStoreListThrough() async throws {
+        let sprint = CompletedFocusSession(
+            id: UUID(), taskId: nil, taskTitle: "Draft", lifeAreaEmoji: "💼",
+            plannedSeconds: 1_500, focusedSeconds: 1_500, checkpointsReached: 0,
+            completedNaturally: true, startedAt: Date(timeIntervalSince1970: 0),
+            endedAt: Date(timeIntervalSince1970: 1_500)
+        )
+        store.focusSessions = [sprint]
+
+        let fetched = try await adapter.fetchFocusSessions()
+
+        XCTAssertEqual(fetched, [sprint])
+    }
+
+    func testFetchFocusSessions_wrapsFailureAsAJournalError() async {
+        store.fetchFocusSessionsError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchFocusSessions()) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
+    func testFetchCaptures_passesTheStoreListThrough() async throws {
+        let capture = Capture(
+            id: UUID(), content: "stray thought", kind: .note, processed: false,
+            createdAt: Date(timeIntervalSince1970: 100)
+        )
+        store.captures = [capture]
+
+        let fetched = try await adapter.fetchCaptures()
+
+        XCTAssertEqual(fetched, [capture])
+    }
+
+    func testFetchCaptures_wrapsFailureAsAJournalError() async {
+        store.fetchCapturesError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchCaptures()) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
     // MARK: - Creating an entry
 
     /// The composer has no date picker, so `entryDate` is stamped client-side as "now" — and the

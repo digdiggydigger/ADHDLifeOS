@@ -10,9 +10,13 @@ import Foundation
 final class FakeJournalBackingStore: JournalBackingStore {
     var lifeAreas: [LifeArea] = []
     var logs: [Log] = []
+    var focusSessions: [CompletedFocusSession] = []
+    var captures: [Capture] = []
 
     var fetchLifeAreasError: Error?
     var fetchLogsError: Error?
+    var fetchFocusSessionsError: Error?
+    var fetchCapturesError: Error?
     var appendError: Error?
 
     private(set) var includeArchivedArguments: [Bool] = []
@@ -27,6 +31,16 @@ final class FakeJournalBackingStore: JournalBackingStore {
     func fetchLogs() async throws -> [Log] {
         if let fetchLogsError { throw fetchLogsError }
         return logs
+    }
+
+    func fetchFocusSessions() async throws -> [CompletedFocusSession] {
+        if let fetchFocusSessionsError { throw fetchFocusSessionsError }
+        return focusSessions
+    }
+
+    func fetchCaptures() async throws -> [Capture] {
+        if let fetchCapturesError { throw fetchCapturesError }
+        return captures
     }
 
     func appendLog(_ log: Log) async throws {

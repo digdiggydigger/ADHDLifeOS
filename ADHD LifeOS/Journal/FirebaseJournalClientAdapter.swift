@@ -33,6 +33,22 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
         }
     }
 
+    func fetchFocusSessions() async throws -> [CompletedFocusSession] {
+        do {
+            return try await store.fetchFocusSessions()
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
+    func fetchCaptures() async throws -> [Capture] {
+        do {
+            return try await store.fetchCaptures()
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log {
         let now = Date()
         let log = Log(

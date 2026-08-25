@@ -9,10 +9,14 @@ import Foundation
 final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendable {
     var lifeAreasResult: Result<[LifeArea], Error> = .success([])
     var logsResult: Result<[Log], Error> = .success([])
+    var focusSessionsResult: Result<[CompletedFocusSession], Error> = .success([])
+    var capturesResult: Result<[Capture], Error> = .success([])
     var createLogResult: Result<Log, Error>?
 
     private(set) var fetchLifeAreasCallCount = 0
     private(set) var fetchLogsCallCount = 0
+    private(set) var fetchFocusSessionsCallCount = 0
+    private(set) var fetchCapturesCallCount = 0
     private(set) var createLogCallCount = 0
     private(set) var lastCreateLogInput: NormalizedCreateLogInput?
 
@@ -24,6 +28,16 @@ final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendabl
     func fetchLogs() async throws -> [Log] {
         fetchLogsCallCount += 1
         return try logsResult.get()
+    }
+
+    func fetchFocusSessions() async throws -> [CompletedFocusSession] {
+        fetchFocusSessionsCallCount += 1
+        return try focusSessionsResult.get()
+    }
+
+    func fetchCaptures() async throws -> [Capture] {
+        fetchCapturesCallCount += 1
+        return try capturesResult.get()
     }
 
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log {

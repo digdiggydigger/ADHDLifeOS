@@ -32,6 +32,11 @@ final class JournalService: ObservableObject {
     @Published var composerMoodEmoji: String = JournalMood.defaultEmoji
     @Published private(set) var isCreating = false
     @Published var createErrorMessage: String?
+    /// The two side streams the timeline interleaves beside the logs (E's 2026-08-25 note).
+    /// Garnish, never load-bearing: a failed fetch leaves them empty rather than failing the
+    /// journal — the same non-blocking posture as the view's closed-task fetch.
+    @Published private(set) var focusSessions: [CompletedFocusSession] = []
+    @Published private(set) var captures: [Capture] = []
 
     private let client: JournalClientAdapting
     private(set) var lifeAreas: [LifeArea] = []
@@ -57,8 +62,12 @@ final class JournalService: ObservableObject {
         do {
             async let lifeAreasResult = client.fetchLifeAreas()
             async let logsResult = client.fetchLogs()
+            async let sprintsResult = client.fetchFocusSessions()
+            async let capturesResult = client.fetchCaptures()
             lifeAreas = try await lifeAreasResult
             logs = try await logsResult
+            focusSessions = (try? await sprintsResult) ?? []
+            captures = (try? await capturesResult) ?? []
             hasLoadedOnce = true
             recomputeFeed()
         } catch {

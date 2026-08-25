@@ -13,6 +13,8 @@ import Foundation
 protocol JournalBackingStore {
     func fetchLifeAreas(includeArchived: Bool) async throws -> [LifeArea]
     func fetchLogs() async throws -> [Log]
+    func fetchFocusSessions() async throws -> [CompletedFocusSession]
+    func fetchCaptures() async throws -> [Capture]
     func appendLog(_ log: Log) async throws
 }
 

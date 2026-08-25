@@ -153,4 +153,45 @@ final class JournalServiceTests: XCTestCase {
         XCTAssertEqual(sut.createErrorMessage, "Network error")
         XCTAssertEqual(sut.composerBody, "Had a good day")
     }
+
+    // MARK: - Sprints and captures alongside the logs (E's note, 2026-08-25)
+
+    func testLoad_populatesFocusSessionsAndCaptures() async {
+        let fake = FakeJournalClientAdapting()
+        let sprint = CompletedFocusSession(
+            id: UUID(), taskId: nil, taskTitle: "Draft", lifeAreaEmoji: "💼",
+            plannedSeconds: 1_500, focusedSeconds: 1_500, checkpointsReached: 2,
+            completedNaturally: true, startedAt: Date(timeIntervalSince1970: 0),
+            endedAt: Date(timeIntervalSince1970: 1_500)
+        )
+        let capture = Capture(
+            id: UUID(), content: "stray thought", kind: .note, processed: false,
+            createdAt: Date(timeIntervalSince1970: 100)
+        )
+        fake.focusSessionsResult = .success([sprint])
+        fake.capturesResult = .success([capture])
+        let sut = JournalService(client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.focusSessions, [sprint])
+        XCTAssertEqual(sut.captures, [capture])
+    }
+
+    /// The side streams are garnish, never load-bearing: their failure must not take the written
+    /// journal down — same non-blocking posture as the view's task fetch.
+    func testLoad_sprintOrCaptureFailureLeavesThemEmptyWithoutFailingTheJournal() async {
+        let fake = FakeJournalClientAdapting()
+        let log = makeLog()
+        fake.logsResult = .success([log])
+        fake.focusSessionsResult = .failure(JournalServiceError.fetchFailed("down"))
+        fake.capturesResult = .failure(JournalServiceError.fetchFailed("down"))
+        let sut = JournalService(client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.state, .loaded([log]))
+        XCTAssertEqual(sut.focusSessions, [])
+        XCTAssertEqual(sut.captures, [])
+    }
 }

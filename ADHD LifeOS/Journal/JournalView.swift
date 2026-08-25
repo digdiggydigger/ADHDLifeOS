@@ -29,6 +29,21 @@ struct JournalView: View {
         return tasks.filter { $0.lifeAreaId == areaId }
     }
 
+    /// Area-filtered by the EMOJI the sprint stamped at run time — a focus session document
+    /// carries no life-area id, only `life_area_emoji`, so this is the honest match available.
+    /// A sprint run before an area's emoji changed simply stops matching; history is not rewritten.
+    private var filteredSprints: [CompletedFocusSession] {
+        guard let areaId = journalService.selectedLifeAreaId,
+              let emoji = journalService.lifeAreas.first(where: { $0.id == areaId })?.colour
+        else { return journalService.focusSessions }
+        return journalService.focusSessions.filter { $0.lifeAreaEmoji == emoji }
+    }
+
+    private var filteredCaptures: [Capture] {
+        guard let areaId = journalService.selectedLifeAreaId else { return journalService.captures }
+        return journalService.captures.filter { $0.lifeAreaId == areaId }
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -198,7 +213,11 @@ struct JournalView: View {
 extension JournalView {
 
     func timeline(logs: [Log]) -> some View {
-        let days = JournalTimeline.days(logs: logs, tasks: filteredTasks, filter: filter)
+        let days = JournalTimeline.days(
+            logs: logs, tasks: filteredTasks,
+            sprints: filteredSprints, captures: filteredCaptures,
+            filter: filter
+        )
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
                 header
@@ -236,6 +255,10 @@ extension JournalView {
                     logRow(log)
                 case .closedTask(let task):
                     closedTaskRow(task)
+                case .focusSprint(let sprint):
+                    sprintRow(sprint)
+                case .capture(let capture):
+                    captureRow(capture)
                 }
             }
         }
@@ -288,6 +311,45 @@ extension JournalView {
         .frame(minHeight: 32)
     }
 
+    /// A finished sprint as a compact fact row, the closed task's sibling: the timer glyph in the
+    /// motion accent, the honest minutes (`JournalTimeline.sprintLine`), and the area emoji the
+    /// sprint stamped when it ran.
+    private func sprintRow(_ sprint: CompletedFocusSession) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            timeGutter(sprint.endedAt)
+            Image(systemName: "timer")
+                .font(.footnote.bold())
+                .foregroundStyle(Color.accentColor)
+            Text(sprint.taskTitle)
+                .font(.footnote)
+                .lineLimit(2)
+            Text("\(JournalTimeline.sprintLine(for: sprint)) · \(sprint.lifeAreaEmoji)")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+        }
+        .frame(minHeight: 32)
+    }
+
+    /// The capture log's row: the kind's own glyph and tint (the inbox's visual language), the
+    /// same primary-text resolution as the inbox row, and a plain "captured" for the meta slot.
+    private func captureRow(_ capture: Capture) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            timeGutter(capture.createdAt)
+            Image(systemName: CaptureRowPresentation.glyphSystemImageName(for: capture.kind))
+                .font(.footnote.bold())
+                .foregroundStyle(CaptureKindAccent.color(for: capture.kind))
+            Text(CaptureRowPresentation.primaryText(for: capture))
+                .font(.footnote)
+                .lineLimit(2)
+            Text("captured\(areaEmoji(for: capture.lifeAreaId).map { " · \($0)" } ?? "")")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+        }
+        .frame(minHeight: 32)
+    }
+
     private func timeGutter(_ date: Date) -> some View {
         Text(date.formatted(date: .omitted, time: .shortened))
             .font(.footnote)
@@ -310,34 +372,3 @@ extension JournalView {
         return journalService.lifeAreas.first { $0.id == areaId }?.colour
     }
 }
-
-#if DEBUG
-private struct PreviewJournalClientAdapting: JournalClientAdapting {
-    let lifeArea = LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)
-
-    func fetchLifeAreas() async throws -> [LifeArea] { [lifeArea] }
-
-    func fetchLogs() async throws -> [Log] {
-        [
-            Log(
-                id: UUID(), lifeAreaId: lifeArea.id, type: .journal,
-                body: "Feeling a bit foggy today. Drank tea, set 15-minute timers.",
-                entryDate: .now, createdAt: .now,
-                energyLevel: .medium, moodEmoji: "⚡"
-            )
-        ]
-    }
-
-    func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
-}
-
-#Preview("Light") {
-    JournalView(client: PreviewJournalClientAdapting())
-        .preferredColorScheme(.light)
-}
-
-#Preview("Dark") {
-    JournalView(client: PreviewJournalClientAdapting())
-        .preferredColorScheme(.dark)
-}
-#endif

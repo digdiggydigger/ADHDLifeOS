@@ -329,6 +329,8 @@ struct RootView: View {
     struct PreviewJournalClient: JournalClientAdapting {
         func fetchLifeAreas() async throws -> [LifeArea] { [] }
         func fetchLogs() async throws -> [Log] { [] }
+        func fetchFocusSessions() async throws -> [CompletedFocusSession] { [] }
+        func fetchCaptures() async throws -> [Capture] { [] }
         func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
     }
 
