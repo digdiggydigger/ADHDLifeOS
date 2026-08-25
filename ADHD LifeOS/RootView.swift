@@ -132,6 +132,19 @@ struct RootView: View {
                         .tag(AppTab.nudges)
                 }
                 .blur(radius: isFabOpen ? 4 : 0)
+                // The two new medium widgets' doors (E's 2026-08-25 note). This handler fires for
+                // EVERY URL alongside the App-level auth handler — each ignores what isn't theirs.
+                .onOpenURL { url in
+                    switch AppDeepLink.route(url) {
+                    case .areasTab:
+                        selectedTab = .areas
+                    case .captureComposer(let kind):
+                        isFabOpen = false
+                        composerKind = kind
+                    case .authCallback, .focusWidget:
+                        break
+                    }
+                }
                 .overlay {
                     if isFabOpen {
                         CaptureFanOverlay(

@@ -34,4 +34,30 @@ final class AppDeepLinkTests: XCTestCase {
             "only the widget host itself may bypass the auth handler"
         )
     }
+
+    // MARK: - The two new medium widgets (E's 2026-08-25 note)
+
+    func testLifeAreasWidgetTap_routesToTheAreasTab() {
+        XCTAssertEqual(route("adhdlifeos://widget/areas"), .areasTab)
+    }
+
+    /// The Quick Capture widget's five buttons — the URL path spells the kind's raw value, which
+    /// is the contract the widget target writes by hand (it cannot see `CaptureKind`).
+    func testCaptureButtons_routeToTheComposerWithTheirKind() {
+        for kind in CaptureKind.allCases {
+            XCTAssertEqual(
+                route("adhdlifeos://widget/capture/\(kind.rawValue)"),
+                .captureComposer(kind),
+                "\(kind.rawValue) must open its own composer"
+            )
+        }
+    }
+
+    /// A kind this build doesn't know (older app, newer widget) still launches the app rather
+    /// than reaching the auth layer or crashing — the same resolve-to-safe rule as everywhere.
+    func testUnknownCapturePath_fallsBackToThePlainWidgetLaunch() {
+        XCTAssertEqual(route("adhdlifeos://widget/capture/hologram"), .focusWidget)
+        XCTAssertEqual(route("adhdlifeos://widget/capture"), .focusWidget)
+        XCTAssertEqual(route("adhdlifeos://widget/unknown-surface"), .focusWidget)
+    }
 }

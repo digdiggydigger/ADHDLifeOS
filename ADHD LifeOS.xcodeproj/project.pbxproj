@@ -76,6 +76,7 @@
 				FocusActivityAttributes.swift,
 				FocusSprintIntents.swift,
 				FocusWidgetSnapshot.swift,
+				LifeAreasWidgetSnapshot.swift,
 			);
 			target = AAF46F433009F8BE008ECC13 /* ADHD LifeOS */;
 		};

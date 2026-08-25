@@ -317,6 +317,12 @@ struct HomeView: View {
                 activeSprint: sprint
             )
         )
+        widgetPublisher.publishLifeAreas(
+            LifeAreasWidgetSnapshotBuilder.snapshot(
+                lifeAreas: homeService.lifeAreas,
+                openTasks: homeService.openTasks
+            )
+        )
     }
 
     /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
