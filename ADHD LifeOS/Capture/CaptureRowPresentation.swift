@@ -92,6 +92,15 @@ enum CaptureRowPresentation {
         }
     }
 
+    /// The capture's tags, resolved against the one already-fetched tag list — no per-row fetch.
+    /// Chip order is the `tag_ids` array order (attach order, since `arrayUnion` appends), and
+    /// dangling ids (tag deleted elsewhere) drop silently — the same semantics
+    /// `FirebaseManager.fetchTags(for:parentId:)` gives the detail screen.
+    static func tags(for capture: Capture, from allTags: [Tag]) -> [Tag] {
+        guard let tagIds = capture.tagIds else { return [] }
+        return tagIds.compactMap { id in allTags.first { $0.id == id } }
+    }
+
     private static func isNonEmpty(_ value: String) -> Bool {
         !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }

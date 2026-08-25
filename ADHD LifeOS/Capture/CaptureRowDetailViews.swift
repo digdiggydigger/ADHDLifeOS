@@ -141,12 +141,39 @@ struct CapturePhotoPreview: View {
     }
 }
 
+/// The capture's tag membership as quiet metadata chips under the meta line — surface-secondary,
+/// never a tint, because tags are context rather than identity (the life-area chip owns identity).
+/// Overflow scrolls sideways like `TaskDetailChipsRow`; the chips themselves are inert, so
+/// VoiceOver reads the strip as one "Tags:" element instead of n bare words.
+struct CaptureTagChipsRow: View {
+    let tags: [Tag]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(tags) { tag in
+                    MomentumChip(
+                        text: tag.name,
+                        background: Color("CardSurfaceSecondary"),
+                        foreground: Color("LabelSecondary")
+                    )
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Tags: \(tags.map(\.name).joined(separator: ", "))")
+    }
+}
+
 /// Everything a row says about its capture before you touch it: kind slot, title, life-area chip,
 /// the quoted note, the voice pill, the photo. Extracted from `CaptureRowView` — the row was over
 /// its type-body budget once this grew from two lines to the web original's full card.
 struct CaptureRowSummary<ExpandedLinkContent: View>: View {
     let capture: Capture
     let lifeAreas: [LifeArea]
+    /// Already resolved by the caller (`CaptureRowPresentation.tags(for:from:)`) — the summary
+    /// never fetches. Empty means no chip strip at all, not an empty strip.
+    var tags: [Tag] = []
     let isExpanded: Bool
     let onOpenPhoto: () -> Void
     /// The rich link card, which only the owning row can build — passed in rather than duplicated.
@@ -166,6 +193,9 @@ struct CaptureRowSummary<ExpandedLinkContent: View>: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
+                if !tags.isEmpty {
+                    CaptureTagChipsRow(tags: tags)
+                }
             }
             .layoutPriority(1)
         }
@@ -230,6 +260,11 @@ private struct CaptureRowDetailGallery: View {
             )
             CaptureQuotedNote(text: "The retro idea about standups — the one where nobody talks first.")
             CaptureVoicePill()
+            CaptureTagChipsRow(tags: [
+                Tag(id: UUID(), name: "errands"),
+                Tag(id: UUID(), name: "deep-work"),
+                Tag(id: UUID(), name: "waiting-on")
+            ])
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

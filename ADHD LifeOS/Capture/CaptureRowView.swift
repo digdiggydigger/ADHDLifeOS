@@ -13,6 +13,9 @@ import SwiftUI
 struct CaptureRowView: View {
     let capture: Capture
     let lifeAreas: [LifeArea]
+    /// Resolved tags for the chip strip under the meta line. Defaulted empty so surfaces that
+    /// don't chip (the Captures-tab archive) construct the row unchanged.
+    var tags: [Tag] = []
     /// Pushes the full-screen detail — the row's single action. Leaf controls inside the summary
     /// (voice playback, the photo preview) are Buttons and win their own taps.
     let onOpen: () -> Void
@@ -63,6 +66,7 @@ struct CaptureRowView: View {
         CaptureRowSummary(
             capture: capture,
             lifeAreas: lifeAreas,
+            tags: tags,
             isExpanded: false,
             onOpenPhoto: { isPresentingPhoto = true },
             expandedLinkContent: { EmptyView() }

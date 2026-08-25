@@ -38,6 +38,9 @@ struct CaptureInboxView: View {
     @State var promotingCapture: Capture?
     @State var binningCapture: Capture?
     @State var momentumPreferences: MomentumPreferences = .default
+    /// The one tag fetch every chip strip resolves against (`CaptureRowPresentation.tags(for:from:)`)
+    /// — zero per-row fetches. Internal like `inspectingCapture`: the sections file reads it.
+    @State var allTags: [Tag] = []
 
     init(
         client: CaptureClientAdapting,
@@ -94,6 +97,7 @@ struct CaptureInboxView: View {
         .task {
             await service.load()
             momentumPreferences = UserDefaultsMomentumPreferencesStore().read()
+            allTags = await service.fetchAllTags()
         }
         .sheet(item: $promotingCapture) { capture in
             CapturePromoteSheet(
@@ -180,6 +184,7 @@ struct CaptureInboxView: View {
         }
         .refreshable {
             await service.refresh()
+            allTags = await service.fetchAllTags()
         }
     }
 
@@ -235,7 +240,11 @@ struct CaptureInboxView: View {
     // MARK: - Row
 
     private func row(for capture: Capture) -> some View {
-        CaptureRowView(capture: capture, lifeAreas: lifeAreas) {
+        CaptureRowView(
+            capture: capture,
+            lifeAreas: lifeAreas,
+            tags: CaptureRowPresentation.tags(for: capture, from: allTags)
+        ) {
             inspectingCapture = capture
         }
     }

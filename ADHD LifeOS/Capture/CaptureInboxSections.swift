@@ -12,6 +12,7 @@ extension CaptureInboxView {
     func topCaptureCard(_ capture: Capture) -> some View {
         let slot = CaptureFan.slot(for: capture.kind)
         let area = lifeAreas.first { $0.id == capture.lifeAreaId }
+        let tags = CaptureRowPresentation.tags(for: capture, from: allTags)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 MomentumChip(
@@ -35,6 +36,9 @@ extension CaptureInboxView {
                 Text("Filed to \(area.colour) \(area.name)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+            }
+            if !tags.isEmpty {
+                CaptureTagChipsRow(tags: tags)
             }
             topCardActions(capture)
         }
