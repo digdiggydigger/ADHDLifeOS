@@ -316,17 +316,16 @@ extension HomeView {
         await refreshClearedCaptureCount()
     }
 
-    /// Two extra fetches, gated on the toggle and failure-tolerant like every scoreboard input —
-    /// the ring reads 0 extra rather than the screen failing.
+    /// Two extra fetches, failure-tolerant like every scoreboard input. No longer gated on the
+    /// toggle — Today's inbox card names the day's throughput regardless (E's 2026-08-25
+    /// follow-up); the toggle still governs what COUNTS toward the ring, exactly as before.
     func refreshClearedCaptureCount() async {
-        guard momentumPreferences.countClearedCaptures else {
-            capturesClearedToday = 0
-            return
-        }
         async let seen = captureClient.fetchSeenCaptures()
         async let processed = captureClient.fetchProcessedCaptures()
         let cleared = ((try? await seen) ?? []) + ((try? await processed) ?? [])
-        capturesClearedToday = MomentumScoreboard.clearedToday(captures: cleared)
+        let handledToday = MomentumScoreboard.clearedToday(captures: cleared)
+        inboxHandledToday = handledToday
+        capturesClearedToday = momentumPreferences.countClearedCaptures ? handledToday : 0
     }
 
     /// The Due-now push's destination, with the S3 Momentum context built from the history Home

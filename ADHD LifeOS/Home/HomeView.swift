@@ -60,6 +60,12 @@ struct HomeView: View {
     /// The newest waiting captures for Today's inbox card (E's 2026-08-25 note) — refreshed with
     /// the count, from the same fetch.
     @State var inboxPeek: [Capture] = []
+    /// Captures promoted, journaled or archived TODAY — the card's throughput line. Ungated,
+    /// unlike `capturesClearedToday`: the scoreboard toggle governs what counts toward the ring,
+    /// not what the card may say.
+    @State var inboxHandledToday = 0
+    /// A peek row's pushed capture — the card's rows are doors straight into their capture.
+    @State var inspectingHomeCapture: Capture?
     /// M7: captures whose exit stamp is today, feeding the ring when the Settings toggle counts
     /// them. Refreshed with the inbox count; 0 whenever the toggle is off.
     @State var capturesClearedToday = 0
@@ -123,13 +129,6 @@ struct HomeView: View {
         )
     }
 
-    /// The FULL set including archived areas — so the Capture triage picker can grey archived areas
-    /// rather than being starved of them (they used to be absent entirely here). The grid itself
-    /// still shows active areas only, filtered in `HomeService`.
-    private var lifeAreasForPicker: [LifeArea] {
-        homeService.lifeAreas
-    }
-
     var body: some View {
         NavigationStack {
             Group {
@@ -164,6 +163,17 @@ struct HomeView: View {
             }
             .navigationDestination(isPresented: $isPresentingInbox) {
                 CaptureInboxView(client: captureClient, journalClient: journalClient, lifeAreas: lifeAreasForPicker)
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { inspectingHomeCapture != nil },
+                set: { if !$0 { inspectingHomeCapture = nil } }
+            )) {
+                inspectedCaptureDoor
+            }
+            .onChange(of: inspectingHomeCapture) { capture in
+                // Coming back from a capture the user may have promoted, journaled or binned —
+                // the card must not keep showing it as waiting.
+                if capture == nil { Task { await refreshInboxCount() } }
             }
             .navigationDestination(isPresented: Binding(
                 get: { inspectingTask != nil },
@@ -335,4 +345,29 @@ struct HomeView: View {
     /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
     /// Chosen over a hand-rolled grid drag because `.onMove` supplies native drag, auto-scroll,
     /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
+}
+
+extension HomeView {
+    /// The FULL set including archived areas — so the Capture triage picker can grey archived areas
+    /// rather than being starved of them (they used to be absent entirely here). The grid itself
+    /// still shows active areas only, filtered in `HomeService`. In this extension (with the door
+    /// below) so `HomeView`'s type body stays inside its 250-line budget.
+    var lifeAreasForPicker: [LifeArea] {
+        homeService.lifeAreas
+    }
+
+    /// The peek rows' pushed capture door — in an extension so `HomeView`'s type body stays
+    /// inside its 250-line budget (extensions are exempt; same file so `journalClient` stays
+    /// private).
+    @ViewBuilder
+    var inspectedCaptureDoor: some View {
+        if let capture = inspectingHomeCapture {
+            JournalCaptureDoor(
+                captureId: capture.id,
+                lifeAreas: homeService.lifeAreas,
+                client: captureClient,
+                journalClient: journalClient
+            )
+        }
+    }
 }

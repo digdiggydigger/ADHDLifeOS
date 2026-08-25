@@ -27,70 +27,115 @@ extension HomeView {
         .environment(\.editMode, .constant(.active))
     }
 
-    /// Today's inbox card (E's 2026-08-25 note: "no intuitive way to see my captures") — the
-    /// count in warn beside a peek of the newest waiting thoughts, in the inbox rows' own visual
-    /// language. The whole card is the same door the header's tray icon opens; the icon keeps
-    /// its badge for the glance, this carries the content.
+    /// Today's inbox module, per the Claude Design Today frame — the 📥 avatar row,
+    /// "Unprocessed inbox items"-style header with the count, and the "Clear the deck" CTA —
+    /// widened after E's follow-up: the first cut was too small to interact with and said too
+    /// little. Each peek row is now its own 44pt door straight into that capture, the CTA opens
+    /// triage, and the handled line names the day's throughput.
     var inboxPeekCard: some View {
-        Button {
-            isPresentingInbox = true
-        } label: {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                isPresentingInbox = true
+            } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "tray")
-                        .foregroundStyle(Color.accentColor)
-                    Text("Capture inbox")
-                        .font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Text(HomeInboxPeek.countLine(inboxCount))
-                        .font(.footnote.weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(inboxCount > 0 ? Color("StateWarn") : Color("LabelSecondary"))
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.tertiary)
-                }
-                ForEach(inboxPeek) { capture in
-                    inboxPeekRow(capture)
-                }
-                if let overflow = HomeInboxPeek.overflowLine(total: inboxCount) {
-                    Text(overflow)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                if inboxCount == 0 {
-                    Text("Anything you capture lands here first, so your head doesn't have to hold it.")
+                    Text("📥")
+                        .font(.title3)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Color.accentColor.opacity(0.12),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        )
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Capture inbox")
+                            .font(.headline)
+                        Text(
+                            inboxCount > 0
+                                ? "Waiting for a decision — one at a time."
+                                : "Anything you capture lands here first."
+                        )
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 8)
+                    MomentumChip(
+                        text: HomeInboxPeek.countLine(inboxCount),
+                        background: inboxCount > 0
+                            ? Color("StateWarn").opacity(0.16)
+                            : Color("CardSurfaceSecondary"),
+                        foreground: inboxCount > 0 ? Color("StateWarn") : Color("LabelSecondary")
+                    )
                 }
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .accessibilityLabel("Capture inbox, \(HomeInboxPeek.countLine(inboxCount))")
+            .accessibilityHint("Opens the inbox for triage")
+
+            ForEach(inboxPeek) { capture in
+                inboxPeekRow(capture)
+            }
+            if let overflow = HomeInboxPeek.overflowLine(total: inboxCount) {
+                Text(overflow)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let handled = HomeInboxPeek.handledLine(inboxHandledToday) {
+                Label(handled, systemImage: "checkmark.circle")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color("StateGoVivid"))
+                    .accessibilityIdentifier("homeInboxHandledLine")
+            }
+            if inboxCount > 0 {
+                Button("Clear the deck") {
+                    isPresentingInbox = true
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .accessibilityIdentifier("homeInboxClearDeckButton")
+            }
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .bentoCard()
-        .accessibilityLabel("Capture inbox, \(HomeInboxPeek.countLine(inboxCount))")
-        .accessibilityHint("Opens the inbox for triage")
         .accessibilityIdentifier("homeInboxPeekCard")
     }
 
+    /// One waiting capture as a full 44pt door into its detail — the inbox row's visual language
+    /// at card scale: the kind's glyph in its tinted tile, the title with room to breathe, and
+    /// the caption that says when and how it arrived.
     private func inboxPeekRow(_ capture: Capture) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: CaptureRowPresentation.glyphSystemImageName(for: capture.kind))
-                .font(.footnote.bold())
-                .foregroundStyle(CaptureKindAccent.color(for: capture.kind))
-                .frame(width: 20)
-            Text(CaptureRowPresentation.primaryText(for: capture))
-                .font(.footnote)
-                .lineLimit(1)
-            Spacer(minLength: 8)
-            Text(HomeInboxPeek.timeLabel(for: capture))
-                .font(.caption)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
+        Button {
+            inspectingHomeCapture = capture
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: CaptureRowPresentation.glyphSystemImageName(for: capture.kind))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(CaptureKindAccent.color(for: capture.kind))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        CaptureKindAccent.color(for: capture.kind).opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(CaptureRowPresentation.primaryText(for: capture))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.primary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    Text(CaptureRowPresentation.caption(for: capture))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
-        .frame(minHeight: 24)
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens this capture")
+        .accessibilityIdentifier("homeInboxPeekRow-\(capture.id)")
     }
 
     /// Each completed drag persists immediately (E's per-move decision): reorder `arrangeAreas`

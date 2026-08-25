@@ -50,6 +50,14 @@ final class HomeInboxPeekTests: XCTestCase {
         XCTAssertEqual(HomeInboxPeek.overflowLine(total: 6), "and 3 more")
     }
 
+    /// The day's throughput line (E's 2026-08-25 follow-up): silent at zero — the card celebrates
+    /// what moved, it never announces that nothing did.
+    func testHandledLine_namesTodaysThroughputOrStaysSilent() {
+        XCTAssertNil(HomeInboxPeek.handledLine(0))
+        XCTAssertEqual(HomeInboxPeek.handledLine(1), "1 handled today")
+        XCTAssertEqual(HomeInboxPeek.handledLine(3), "3 handled today")
+    }
+
     /// Same day → the clock time; older → the date. The bare time was useless on anything older
     /// than today — the same lesson `CaptureRowPresentation.caption` already learned.
     func testTimeLabel_clockTodayDateOtherwise() {

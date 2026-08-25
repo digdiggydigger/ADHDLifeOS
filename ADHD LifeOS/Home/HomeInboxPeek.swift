@@ -30,6 +30,13 @@ enum HomeInboxPeek {
         return "and \(hidden) more"
     }
 
+    /// The day's throughput — captures promoted, journaled or archived today. Silent at zero:
+    /// the card celebrates what moved, it never announces that nothing did.
+    static func handledLine(_ count: Int) -> String? {
+        guard count > 0 else { return nil }
+        return "\(count) handled today"
+    }
+
     /// Same day → the clock time; older → the date. A bare time is useless on anything older
     /// than today — the same lesson `CaptureRowPresentation.caption` already learned.
     static func timeLabel(for capture: Capture, asOf now: Date = .now, calendar: Calendar = .current) -> String {
