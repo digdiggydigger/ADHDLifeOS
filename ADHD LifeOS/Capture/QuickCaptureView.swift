@@ -26,6 +26,8 @@ struct QuickCaptureView: View {
     @State var selectedImageData: Data?
     @State var isShowingCamera = false
     @State var lifeAreas: [LifeArea] = []
+    @State var availableTags: [Tag] = []
+    @State var draftTagName = ""
     @State var taskEffortSeconds = 900
     @State private var isSubmittingTask = false
     @State var taskErrorMessage: String?
@@ -84,6 +86,7 @@ struct QuickCaptureView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     areaSection
+                    tagsSection
                 }
                 .padding(16)
             }
@@ -111,6 +114,7 @@ struct QuickCaptureView: View {
             }
             .task {
                 await service.refreshWeekCounterweight()
+                availableTags = await service.fetchAllTags()
                 if let homeClient {
                     lifeAreas = ((try? await homeClient.fetchLifeAreas()) ?? [])
                         .filter { !$0.archived }
@@ -216,9 +220,14 @@ struct QuickCaptureView: View {
                 var payload = TaskUpdatePayload()
                 payload.focusDurationSeconds = taskEffortSeconds
                 _ = try await taskDetailClient.updateTask(id: created.id, payload: payload)
+                // The same tag selection, through the task tag seam (same registry).
+                for tagId in service.newCaptureTagIds {
+                    try? await taskDetailClient.addTagToTask(taskId: created.id, tagId: tagId)
+                }
             }
             service.content = ""
             service.newCaptureLifeAreaId = nil
+            service.newCaptureTagIds = []
             return true
         } catch {
             taskErrorMessage =

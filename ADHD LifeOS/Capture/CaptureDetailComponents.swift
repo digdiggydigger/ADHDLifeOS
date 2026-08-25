@@ -30,7 +30,19 @@ struct CaptureDetailContentCard: View {
                 if let domain = CaptureDetailPresentation.sourceDomain(for: capture) {
                     sourceLine(domain)
                 }
-                if let quote = CaptureRowPresentation.secondaryText(for: capture) {
+                if let transcript = CaptureDetailPresentation.transcript(for: capture) {
+                    // The transcript at reading size, labelled — never squeezed into a headline.
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Transcript")
+                            .sectionLabel()
+                            .foregroundStyle(.secondary)
+                        Text(transcript)
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+                    .accessibilityIdentifier("captureDetailTranscript")
+                } else if let quote = CaptureRowPresentation.secondaryText(for: capture) {
                     CaptureQuotedNote(text: quote)
                 }
                 if let assessment = capture.aiAssessment, !assessment.isEmpty {
@@ -66,7 +78,7 @@ struct CaptureDetailContentCard: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("captureDetailTimestamp")
-                Text(CaptureRowPresentation.primaryText(for: capture))
+                Text(CaptureDetailPresentation.headline(for: capture))
                     .font(.title2.bold())
                     .tracking(-0.5)
                     .minimumScaleFactor(0.8)

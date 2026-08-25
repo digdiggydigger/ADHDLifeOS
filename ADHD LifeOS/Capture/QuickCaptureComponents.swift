@@ -159,6 +159,81 @@ extension QuickCaptureView {
         }
     }
 
+    /// Tags at the point of capture (E's directive): every kind, existing tags as toggles plus
+    /// an inline create — attached right after the save through the existing seams.
+    @ViewBuilder
+    var tagsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("Tags")
+                    .sectionLabel()
+                    .foregroundStyle(.secondary)
+                Text("optional")
+                    .font(.footnote)
+                    .foregroundStyle(Color("LabelTertiary"))
+            }
+            if !availableTags.isEmpty {
+                FlowingChips(spacing: 8) {
+                    ForEach(availableTags) { tag in
+                        tagChip(tag)
+                    }
+                }
+            }
+            HStack(spacing: 8) {
+                TextField("New tag", text: $draftTagName)
+                    .textInputAutocapitalization(.never)
+                    .padding(.horizontal, 8)
+                    .frame(minHeight: 36)
+                    .background(
+                        Color("CardSurfaceSecondary"),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
+                    .accessibilityIdentifier("quickCaptureNewTagField")
+                Button("Add") {
+                    Task {
+                        let name = draftTagName
+                        if let tag = await service.createTagForDraft(name: name) {
+                            if !availableTags.contains(where: { $0.id == tag.id }) {
+                                availableTags.append(tag)
+                            }
+                            draftTagName = ""
+                        }
+                    }
+                }
+                .font(.caption.weight(.semibold))
+                .disabled(draftTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("quickCaptureAddTagButton")
+            }
+        }
+    }
+
+    private func tagChip(_ tag: Tag) -> some View {
+        let selected = service.newCaptureTagIds.contains(tag.id)
+        return Button {
+            if selected {
+                service.newCaptureTagIds.removeAll { $0 == tag.id }
+            } else {
+                service.newCaptureTagIds.append(tag.id)
+            }
+        } label: {
+            Text(tag.name)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(selected ? Color(fanSlot.onAssetName) : Color("LabelSecondary"))
+                .padding(.horizontal, 8)
+                .frame(minHeight: 36)
+                .background(
+                    selected
+                        ? AnyShapeStyle(Color(fanSlot.fillAssetName))
+                        : AnyShapeStyle(Color("CardSurfaceSecondary")),
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("quickCaptureTagChip-\(tag.id)")
+    }
+
     private func areaChip(id: UUID?, label: String, family: AreaPalette?) -> some View {
         let selected = service.newCaptureLifeAreaId == id
         let background: AnyShapeStyle

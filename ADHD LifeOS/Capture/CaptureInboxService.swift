@@ -41,6 +41,9 @@ final class CaptureInboxService: ObservableObject {
     /// The composer's optional life-area chip (F-V3-Capture) — rides the existing create input
     /// and resets with the draft.
     @Published var newCaptureLifeAreaId: UUID?
+    /// The composer's selected tags (E's directive: tags at the point of capture) — attached
+    /// through the existing addTag seam right after creation, reset with the draft.
+    @Published var newCaptureTagIds: [UUID] = []
     /// `private(set)` relaxed to internal so `CaptureInboxService+Media` can drive it — the
     /// media capture flows moved there to keep this type inside its length budget.
     @Published var isSubmittingCapture = false
@@ -200,7 +203,8 @@ final class CaptureInboxService: ObservableObject {
         defer { isSubmittingCapture = false }
 
         do {
-            _ = try await client.createCapture(normalized)
+            let created = try await client.createCapture(normalized)
+            await attachDraftTags(to: created)
             content = ""
             kind = CaptureValidation.defaultKind
             newCaptureLifeAreaId = nil

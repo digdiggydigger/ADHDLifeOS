@@ -34,7 +34,8 @@ extension CaptureInboxService {
                 return false
             }
 
-            _ = try await client.createCapture(normalized)
+            let created = try await client.createCapture(normalized)
+            await attachDraftTags(to: created)
             content = ""
             kind = CaptureValidation.defaultKind
             return true
@@ -82,7 +83,8 @@ extension CaptureInboxService {
                 return false
             }
 
-            _ = try await client.createCapture(normalized)
+            let created = try await client.createCapture(normalized)
+            await attachDraftTags(to: created)
             content = ""
             kind = CaptureValidation.defaultKind
             return true
