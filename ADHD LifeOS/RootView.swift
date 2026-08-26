@@ -258,6 +258,10 @@ struct RootView: View {
         // b5: one application covers the tabs and every screen pushed inside them; the modal
         // composers wrap their own roots at their presentation sites.
         .keyboardDismissal()
+        // b5 round two: tap anywhere that isn't a text field to dismiss — one window-level
+        // recognizer covers every screen INCLUDING sheets and covers (same UIWindow), so this
+        // is the only install site. Idempotent across auth-state swaps.
+        .onAppear { KeyboardTapAway.installOnKeyWindow() }
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
         // Apple (or password sign-in) lands on Home gracefully (§5).
         .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: authService.state)
