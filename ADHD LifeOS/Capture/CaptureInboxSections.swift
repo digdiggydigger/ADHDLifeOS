@@ -95,9 +95,15 @@ extension CaptureInboxView {
                 }
                 .buttonStyle(MomentumBorderedButtonStyle())
                 .accessibilityIdentifier("captureInboxJournalItButton")
-                // No Bin here (BUG-b8, E's call): triage is for deciding, and a destructive
-                // delete one thumb-slip from "Journal it" is the wrong neighbour. Binning lives
-                // on the full-screen capture view, behind its own confirmation.
+                // Skip took the Bin's slot (BUG-b8 → SUGG-b9, E's calls): triage is for
+                // deciding, and "not now" is a decision — the card goes to the back of the
+                // queue, nothing is written. Binning lives on the full-screen capture view,
+                // behind its own confirmation.
+                Button("Skip") {
+                    service.skip(capture)
+                }
+                .buttonStyle(MomentumBorderedButtonStyle())
+                .accessibilityIdentifier("captureInboxSkipButton")
             }
         }
     }
