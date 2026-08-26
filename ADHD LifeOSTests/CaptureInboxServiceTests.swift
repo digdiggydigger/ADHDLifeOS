@@ -299,25 +299,4 @@ final class CaptureInboxServiceTests: XCTestCase {
         XCTAssertEqual(fake.markProcessedCallCount, 0)
         XCTAssertEqual(sut.captures, [capture])
     }
-
-    /// SUGG-b9: Skip is a service-level rotation — the view hands the top capture back and the
-    /// next one surfaces. It must survive a refresh: the skip list keys on ids, and the refetch
-    /// replaces the array but not the list.
-    func testSkip_sendsTheTopToTheBack_andSurvivesRefresh() async {
-        let fake = FakeCaptureClientAdapting()
-        let first = Capture(id: UUID(), content: "first", kind: .note, processed: false, createdAt: Date())
-        let second = Capture(id: UUID(), content: "second", kind: .note, processed: false, createdAt: Date())
-        fake.fetchUnprocessedCapturesResult = .success([first, second])
-        let sut = CaptureInboxService(client: fake)
-        await sut.load()
-
-        sut.skip(first)
-        XCTAssertEqual(sut.displayedCaptures, [second, first])
-
-        await sut.refresh()
-        XCTAssertEqual(
-            sut.displayedCaptures, [second, first],
-            "a signal-driven refetch must not undo the skip"
-        )
-    }
 }

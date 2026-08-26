@@ -22,36 +22,36 @@ final class CaptureSkipOrderingTests: XCTestCase {
     }
 
     func testSkippingTheTop_sendsItToTheBack() {
-        let a = capture("a"), b = capture("b"), c = capture("c")
+        let first = capture("a"), second = capture("b"), third = capture("c")
         XCTAssertEqual(
-            CaptureSkipOrdering.apply(captures: [a, b, c], skippedIds: [a.id]),
-            [b, c, a]
+            CaptureSkipOrdering.apply(captures: [first, second, third], skippedIds: [first.id]),
+            [second, third, first]
         )
     }
 
     func testSkippedOrderIsTheSkipOrder_notTheFetchOrder() {
-        let a = capture("a"), b = capture("b"), c = capture("c")
+        let first = capture("a"), second = capture("b"), third = capture("c")
         XCTAssertEqual(
-            CaptureSkipOrdering.apply(captures: [a, b, c], skippedIds: [c.id, a.id]),
-            [b, c, a]
+            CaptureSkipOrdering.apply(captures: [first, second, third], skippedIds: [third.id, first.id]),
+            [second, third, first]
         )
     }
 
     /// A skipped capture that was since triaged away (or a stale id after a refetch) must not
     /// resurrect anything or crash — unknown ids simply contribute nothing to the order.
     func testStaleSkippedIds_areIgnored() {
-        let a = capture("a"), b = capture("b"), c = capture("c")
+        let first = capture("a"), second = capture("b"), third = capture("c")
         XCTAssertEqual(
-            CaptureSkipOrdering.apply(captures: [a, b, c], skippedIds: [UUID(), a.id]),
-            [b, c, a]
+            CaptureSkipOrdering.apply(captures: [first, second, third], skippedIds: [UUID(), first.id]),
+            [second, third, first]
         )
     }
 
     func testSkippingEverything_cyclesInSkipOrder() {
-        let a = capture("a"), b = capture("b")
+        let first = capture("a"), second = capture("b")
         XCTAssertEqual(
-            CaptureSkipOrdering.apply(captures: [a, b], skippedIds: [a.id, b.id]),
-            [a, b]
+            CaptureSkipOrdering.apply(captures: [first, second], skippedIds: [first.id, second.id]),
+            [first, second]
         )
     }
 }

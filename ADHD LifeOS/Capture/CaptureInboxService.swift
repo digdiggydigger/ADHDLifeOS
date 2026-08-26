@@ -105,25 +105,11 @@ final class CaptureInboxService: ObservableObject {
     }
 
     /// What the rows render: the loaded slice through the refinement menu.
-    var displayedCaptures: [Capture] {
-        CaptureSkipOrdering.apply(
-            captures: CaptureListRefinement.apply(
-                captures: captures, newestFirst: sortNewestFirst, kind: kindFilter
-            ),
-            skippedIds: skippedIds
-        )
-    }
-
     /// The ids Skip has sent to the back, in skip order (SUGG-b9). In-memory only and never
-    /// persisted — a skip is a way of looking at the queue, not a triage decision.
-    @Published private(set) var skippedIds: [UUID] = []
-
-    /// Sends a capture to the back of the displayed queue. Skipping one already at the back
-    /// re-stamps its position, which is what tapping Skip on it again should mean.
-    func skip(_ capture: Capture) {
-        skippedIds.removeAll { $0 == capture.id }
-        skippedIds.append(capture.id)
-    }
+    /// persisted — a skip is a way of looking at the queue, not a triage decision. Settable (not
+    /// `private(set)`) on the counterweight precedent: its one writer, `skip(_:)`, lives in the
+    /// `+Triage` extension file with `displayedCaptures`.
+    @Published var skippedIds: [UUID] = []
 
     /// Per-tab counts for the filter picker, so both tabs carry a number the way the web original's
     /// do ("Unprocessed (3)"). A filter with no entry has simply never loaded — the tab renders
