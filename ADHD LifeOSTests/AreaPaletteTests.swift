@@ -103,4 +103,27 @@ final class AreaPaletteTests: XCTestCase {
         XCTAssertEqual(AreaPalette.growth.displayName, "Purple")
         XCTAssertEqual(AreaPalette.hobby.displayName, "Pink")
     }
+
+    // MARK: - The four explicit-only colours (SUGG-b3, E's picks: Green, Orange, Red, Slate)
+
+    func testExplicitOnlyFamilies_roundTripTheirKeys() {
+        XCTAssertEqual(AreaPalette(key: "green"), .green)
+        XCTAssertEqual(AreaPalette(key: "orange"), .orange)
+        XCTAssertEqual(AreaPalette(key: "red"), .red)
+        XCTAssertEqual(AreaPalette(key: "slate"), .slate)
+    }
+
+    /// Adding colours must not repaint anyone's areas uninvited: the automatic fallback for an
+    /// unmapped emoji keeps choosing from the ORIGINAL five families, whatever `allCases` grows
+    /// to. The new colours are reachable only by explicit choice in the editor.
+    func testAutomaticFallback_staysWithinTheOriginalFive() {
+        let original: Set<AreaPalette> = [.work, .health, .admin, .growth, .hobby]
+        for _ in 0..<64 {
+            let area = LifeArea(id: UUID(), name: "Any", colour: "🦖", sortOrder: 0)
+            XCTAssertTrue(
+                original.contains(AreaPalette.family(for: area)),
+                "an automatic hue must never be one of the explicit-only colours"
+            )
+        }
+    }
 }

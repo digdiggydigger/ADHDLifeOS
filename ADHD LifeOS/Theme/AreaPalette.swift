@@ -24,6 +24,13 @@ enum AreaPalette: String, CaseIterable {
     case admin = "AreaAdmin"
     case growth = "AreaGrowth"
     case hobby = "AreaHobby"
+    // The explicit-only colours (SUGG-b3, E's picks): present in the editor's swatches, never
+    // dealt automatically — `family(for:)`'s fallback stays pinned to the original five so
+    // adding these repaints nobody's areas uninvited.
+    case green = "AreaGreen"
+    case orange = "AreaOrange"
+    case red = "AreaRed"
+    case slate = "AreaSlate"
 
     var assetName: String { rawValue }
     var vividAssetName: String { rawValue + "Vivid" }
@@ -44,6 +51,10 @@ enum AreaPalette: String, CaseIterable {
         case .admin: return "admin"
         case .growth: return "growth"
         case .hobby: return "hobby"
+        case .green: return "green"
+        case .orange: return "orange"
+        case .red: return "red"
+        case .slate: return "slate"
         }
     }
 
@@ -56,6 +67,10 @@ enum AreaPalette: String, CaseIterable {
         case .admin: return "Gold"
         case .growth: return "Purple"
         case .hobby: return "Pink"
+        case .green: return "Green"
+        case .orange: return "Orange"
+        case .red: return "Red"
+        case .slate: return "Slate"
         }
     }
 
@@ -82,7 +97,9 @@ enum AreaPalette: String, CaseIterable {
         if let stored = area.palette, let chosen = AreaPalette(key: stored) { return chosen }
         let key = area.colour.replacingOccurrences(of: "\u{FE0F}", with: "")
         if let mapped = emojiFamilies[key] { return mapped }
-        let families = allCases
+        // The original five ONLY — never `allCases`. The explicit-only colours joining the enum
+        // must not reshuffle the stable automatic hue an unmapped-emoji area has always worn.
+        let families: [AreaPalette] = [.work, .health, .admin, .growth, .hobby]
         return families[Int(area.id.uuid.0) % families.count]
     }
 }
