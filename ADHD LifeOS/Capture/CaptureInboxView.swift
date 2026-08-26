@@ -37,7 +37,6 @@ struct CaptureInboxView: View {
     @State private var isPresentingQuickCapture = false
     /// The top card's "Task it" — the existing promote sheet over the first waiting capture.
     @State var promotingCapture: Capture?
-    @State var binningCapture: Capture?
     @State var momentumPreferences: MomentumPreferences = .default
     /// The one tag fetch every chip strip resolves against (`CaptureRowPresentation.tags(for:from:)`)
     /// — zero per-row fetches. Internal like `inspectingCapture`: the sections file reads it.
@@ -118,22 +117,6 @@ struct CaptureInboxView: View {
                 Task { await service.refresh() }
             }
             .keyboardDismissal()
-        }
-        .confirmationDialog(
-            "Bin this capture?",
-            isPresented: Binding(
-                get: { binningCapture != nil },
-                set: { if !$0 { binningCapture = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Bin it", role: .destructive) {
-                if let capture = binningCapture {
-                    Task { await service.discard(capture: capture) }
-                }
-            }
-        } message: {
-            Text("Deleted for good — there is no archive for binned captures.")
         }
     }
 
