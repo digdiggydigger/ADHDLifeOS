@@ -8,6 +8,7 @@
 
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// A wrapping row of chips that hug their words. Was an adaptive `LazyVGrid` until E's 2026-08-25
 /// review: its two rigid columns left a field of empty space around short chips, so it is now a
@@ -77,7 +78,9 @@ extension QuickCaptureView {
             .keyboardType(kind == .link ? .URL : .default)
             .textInputAutocapitalization(kind == .link ? .never : .sentences)
             .autocorrectionDisabled(kind == .link)
-            .lineLimit(4...8)
+            // A URL is one line that grows only as far as it must (BUG-b6); prose kinds keep
+            // the roomier box.
+            .lineLimit(kind == .link ? 1...4 : 4...8)
             .padding(16)
             .background(Color("CardSurfaceSecondary"), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
@@ -86,11 +89,49 @@ extension QuickCaptureView {
             )
             .accessibilityIdentifier("quickCaptureContentField")
         }
+        if kind == .link {
+            linkPasteRow
+        }
         if kind == .photo {
             photoSection
         }
         if kind == .voice {
             voiceSection
+        }
+    }
+
+    /// The system paste button (E's b6 pick: no permission banner, ever). Accepts a genuine
+    /// URL payload or plain text, because a link copied out of a notes app is text as far as
+    /// the pasteboard is concerned.
+    private var linkPasteRow: some View {
+        HStack {
+            PasteButton(supportedContentTypes: [.url, .plainText]) { providers in
+                pasteLink(from: providers)
+            }
+            .labelStyle(.titleAndIcon)
+            .buttonBorderShape(.capsule)
+            .tint(Color.accentColor)
+            Spacer()
+        }
+        .accessibilityIdentifier("quickCaptureLinkPasteButton")
+    }
+
+    private func pasteLink(from providers: [NSItemProvider]) {
+        guard let provider = providers.first else { return }
+        if provider.canLoadObject(ofClass: URL.self) {
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url else { return }
+                Task { @MainActor in
+                    service.content = LinkPasteNormalization.normalize(url.absoluteString)
+                }
+            }
+        } else if provider.canLoadObject(ofClass: NSString.self) {
+            _ = provider.loadObject(ofClass: NSString.self) { string, _ in
+                guard let string = string as? String else { return }
+                Task { @MainActor in
+                    service.content = LinkPasteNormalization.normalize(string)
+                }
+            }
         }
     }
 
