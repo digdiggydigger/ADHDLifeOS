@@ -90,11 +90,16 @@ struct TaskDetailTagsSection: View {
 
     var body: some View {
         Section {
-            FlowingChips(spacing: 8) {
-                ForEach(tags) { tag in
-                    tagChip(tag)
+            // Same one-row scrolling chips pattern as `TaskDetailChipsRow` above — the composer's
+            // `FlowingChips` flow `Layout` missizes inside a Form row (one stretched chip with its
+            // text clipped away, seen on device), so the tags deliberately don't use it here.
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(tags) { tag in
+                        tagChip(tag)
+                    }
+                    addChip
                 }
-                addChip
             }
             .listRowSeparator(.hidden)
 
