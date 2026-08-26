@@ -116,6 +116,13 @@ extension HomeView {
                 } ?? false,
                 isClosing: isClosingTask,
                 showsStartSession: activeSprint == nil,
+                // Rides the same history the analytics charts read (`publishedHistory`), which
+                // refetches on every finished sprint — including one settled from a dead launch,
+                // because the offline path bumps `completedSprintCount` too (b10).
+                loggedTodayLabel: MomentumScoreboard.focusLoggedTodayLabel(
+                    sessions: publishedHistory,
+                    taskId: task.id
+                ),
                 onClose: { Task { await closeTask(task) } },
                 onStartSession: {
                     onStartFocus?(FocusSprintPlan(
@@ -356,42 +363,4 @@ extension HomeView {
     /// The S5 entry point: one quiet row under the daily card — the review derives on demand,
     /// so it is always available rather than gated to Sunday (the concept's Sunday cadence
     /// governed AI generation, which stayed with the daily card).
-    var weekReviewRow: some View {
-        Button {
-            isPresentingWeekReview = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "calendar")
-                    .foregroundStyle(Color.accentColor)
-                Text("Week review")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .bentoCard()
-        .accessibilityIdentifier("homeWeekReviewRow")
-    }
-
-    var weekReviewDestination: some View {
-        WeekReviewView(
-            review: MomentumWeekReview.build(
-                tasks: homeService.allTasks,
-                lifeAreas: homeService.lifeAreas,
-                sessions: publishedHistory,
-                inboxCount: inboxCount
-            ),
-            summaryCounts: WeekReviewSummaryCounts(
-                open: homeService.openTasks.count,
-                areas: homeService.activeAreas.count,
-                inbox: inboxCount,
-                dueNudges: nudgesService.dueNudges().count
-            )
-        )
-    }
 }

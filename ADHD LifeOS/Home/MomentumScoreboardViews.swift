@@ -201,6 +201,9 @@ struct BestNextMoveCard: View {
     let isDueNow: Bool
     let isClosing: Bool
     let showsStartSession: Bool
+    /// "2 sessions · 35 min today" once focus has been logged against this task today (b10);
+    /// nil renders no chip and keeps the plain "Start session" button.
+    let loggedTodayLabel: String?
     let onClose: () -> Void
     let onStartSession: () -> Void
 
@@ -243,6 +246,17 @@ struct BestNextMoveCard: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
+                if let loggedTodayLabel {
+                    // Its own row, not a fourth chip in the top HStack — that row already
+                    // carries effort + area + due and this label is the longest of the four.
+                    MomentumChip(
+                        text: "✓ \(loggedTodayLabel)",
+                        background: Color("CardSurfaceSecondary"),
+                        foreground: Color("StateGo")
+                    )
+                    .accessibilityLabel("Focus logged: \(loggedTodayLabel)")
+                    .accessibilityIdentifier("homeFocusLoggedChip")
+                }
                 Button(action: onClose) {
                     if isClosing {
                         ProgressView()
@@ -256,7 +270,12 @@ struct BestNextMoveCard: View {
                 .accessibilityIdentifier("homeCloseTaskButton")
                 if showsStartSession {
                     Button(action: onStartSession) {
-                        Label("Start session", systemImage: "play.fill")
+                        // "another" is the tracking half of b10: the button itself confirms a
+                        // completed session was recorded against this task.
+                        Label(
+                            loggedTodayLabel == nil ? "Start session" : "Start another session",
+                            systemImage: "play.fill"
+                        )
                     }
                     .buttonStyle(MomentumBorderedButtonStyle())
                     .accessibilityIdentifier("homeStartSessionButton")
@@ -328,55 +347,3 @@ struct ClosureCelebrationCard: View {
         .accessibilityIdentifier("homeClosureCelebration")
     }
 }
-
-#if DEBUG
-private struct MomentumScoreboardGallery: View {
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                MomentumRingCard(
-                    closedToday: 2, goal: 5, streak: 7, bestStreak: 9, openCount: 3,
-                    weekFlags: [true, true, true, true, true, true, false],
-                    nextEffortLabel: "15 min"
-                )
-                BestNextMoveCard(
-                    task: TaskSummary(
-                        lifeAreaId: nil,
-                        status: .open, title: "Sort through mail pile on kitchen counter",
-                        priority: .p2, notes: "Trash junk mail immediately. Only keep bills to scan.",
-                        dueDate: Date(), focusDurationSeconds: 900
-                    ),
-                    lifeArea: LifeArea(id: UUID(), name: "Admin", colour: "📝", sortOrder: 0),
-                    isDueNow: true, isClosing: false, showsStartSession: true,
-                    onClose: {}, onStartSession: {}
-                )
-                ClosureCelebrationCard(
-                    taskTitle: "Sort through mail pile",
-                    line: "Third today. Admin & Home is up to 75% this week.",
-                    nextLabel: "Next: 20 min",
-                    onUndo: {}, onNext: {}
-                )
-                AreaMomentumList(items: MomentumScoreboard.areaMomentum(
-                    areas: [
-                        LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 0),
-                        LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 1)
-                    ],
-                    openTasks: [], allTasks: []
-                ))
-            }
-            .padding(16)
-        }
-        .background(Color.pageBackground)
-    }
-}
-
-#Preview("Light") {
-    MomentumScoreboardGallery()
-        .preferredColorScheme(.light)
-}
-
-#Preview("Dark") {
-    MomentumScoreboardGallery()
-        .preferredColorScheme(.dark)
-}
-#endif

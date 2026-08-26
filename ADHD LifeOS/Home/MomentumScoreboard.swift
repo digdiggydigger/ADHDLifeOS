@@ -192,6 +192,29 @@ enum MomentumScoreboard {
         return "\(minutes) min"
     }
 
+    /// "2 sessions · 35 min today" — what the Best-next-move hero shows once focus has been
+    /// logged against its task today (BUG-b10: a sprint that finished while the app was dead was
+    /// recorded but INVISIBLE on Today). Sub-minute sessions still count — E's own repro was a
+    /// 30-second sprint, and hiding it would make the fix look broken in the exact test that
+    /// found the bug — but their minutes floor away rather than overstate ("1 session today").
+    /// `nil` means nothing logged today and the hero stays exactly as it was.
+    static func focusLoggedTodayLabel(
+        sessions: [CompletedFocusSession],
+        taskId: UUID,
+        asOf now: Date = .now,
+        calendar: Calendar = .current
+    ) -> String? {
+        let todays = sessions.filter { session in
+            session.taskId == taskId && calendar.isDate(session.endedAt, inSameDayAs: now)
+        }
+        guard !todays.isEmpty else { return nil }
+        let count = todays.count
+        let sessionsPart = count == 1 ? "1 session" : "\(count) sessions"
+        let minutes = todays.reduce(0) { $0 + $1.focusedSeconds } / 60
+        guard minutes >= 1 else { return "\(sessionsPart) today" }
+        return "\(sessionsPart) · \(minutes) min today"
+    }
+
     /// The longest run of consecutive closure days anywhere in history — derived, never stored,
     /// from the same `completed_at` stamps as the live streak (E's v3 call: ship it by deriving).
     static func bestStreak(tasks: [TaskItem], calendar: Calendar = .current) -> Int {
