@@ -27,27 +27,27 @@ struct TaskDetailView: View {
     @State private var dueDate: Date?
     @State private var hasDueDate = false
     @State private var newTagName = ""
-    @State private var pendingNudgeSelection: NudgeCountdownSelection = .none
     @State private var focusDurationSeconds = FocusSprintConfiguration.defaultDurationSeconds
     @State private var focusNudgeCount = 2
 
     // Staged-vs-immediate clarity state: discard-on-back gate (Part 4), the "Saved" affordance and
-    // its haptic trigger (Part 3).
+    // its haptic trigger (Part 3), and the delete confirmation (F-V3-Tasks-rebuild — delete moved
+    // here from the list's swipe).
     @State private var showDiscardAlert = false
     @State private var showSavedConfirmation = false
     @State private var saveHapticTrigger = false
+    @State private var showDeleteConfirmation = false
 
     init(
         taskId: UUID,
         lifeAreas: [LifeArea],
         client: TaskDetailClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
         momentumContext: MomentumTaskContext.Context = .empty,
         onUpdated: @escaping () -> Void
     ) {
         _service = StateObject(
-            wrappedValue: TaskDetailService(taskId: taskId, client: client, schedulingClient: schedulingClient)
+            wrappedValue: TaskDetailService(taskId: taskId, client: client)
         )
         self.lifeAreas = lifeAreas
         self.onStartFocus = onStartFocus
@@ -107,6 +107,18 @@ struct TaskDetailView: View {
                 .accessibilityIdentifier("taskDetailKeepEditingButton")
         } message: {
             Text("Your unsaved edits to this task will be lost.")
+        }
+        .confirmationDialog(
+            "Delete this task?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Task", role: .destructive) {
+                Task { await performDelete() }
+            }
+            .accessibilityIdentifier("taskDetailConfirmDeleteButton")
+        } message: {
+            Text("This can't be undone.")
         }
         .task {
             await service.load()
@@ -177,11 +189,10 @@ private extension TaskDetailView {
             )
             addMoreInfoSection
             tagsSection
-            nudgesSection(isDueDateDirty: dirty.isDueDateDirty)
-            dueMomentNotificationSection(isDueDateDirty: dirty.isDueDateDirty)
-            createdAtSection(for: task)
             messagesSection
             saveSection(dirty: dirty)
+            deleteSection
+            createdAtFootnote(for: task)
         }
         .onAppear {
             guard !hasInitializedFields else { return }
@@ -233,25 +244,35 @@ private extension TaskDetailView {
             )
             .listRowSeparator(.hidden)
 
-            Button {
-                Task { await service.toggleStatus() }
-            } label: {
-                Label(
-                    MomentumTaskContext.closeButtonLabel(status: task.status, streak: momentumContext.streak),
-                    systemImage: task.status == .done ? "arrow.uturn.backward" : "checkmark.circle.fill"
-                )
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            // Closing is one-way since F-V3-Tasks-rebuild (E's addendum): an open task gets the
+            // close button; a closed one gets a quiet, display-only confirmation. No Reopen.
+            if task.status == .open {
+                Button {
+                    Task { await service.close() }
+                } label: {
+                    Label(
+                        MomentumTaskContext.closeButtonLabel(streak: momentumContext.streak),
+                        systemImage: "checkmark.circle.fill"
+                    )
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                }
+                .buttonStyle(MomentumSolidButtonStyle(
+                    fill: Color("StateGo"),
+                    foreground: Color("OnStateGo")
+                ))
+                .accessibilityIdentifier("taskDetailStatusToggle")
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            } else {
+                Label("Closed", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(Color("StateGo"))
+                    .accessibilityIdentifier("taskDetailClosedBadge")
             }
-            .buttonStyle(MomentumSolidButtonStyle(
-                fill: task.status == .done ? Color("CardSurfaceSecondary") : Color("StateGo"),
-                foreground: task.status == .done ? Color("LabelSecondary") : Color("OnStateGo")
-            ))
-            .accessibilityIdentifier("taskDetailStatusToggle")
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         } footer: {
-            // Scoped to the status action — the Title field above is staged behind Save (Part 6).
-            Text("Marking this done or reopening it applies immediately — no Save needed.")
+            if task.status == .open {
+                // Scoped to the status action — the Title field above is staged behind Save (Part 6).
+                Text("Marking this done applies immediately — no Save needed.")
+            }
         }
     }
 
@@ -298,73 +319,35 @@ private extension TaskDetailView {
         )
     }
 
-    /// Scheduled → summary + "Turn Off" (the exact prior selection isn't reconstructable from the
-    /// pending-notifications list, so re-showing a pre-filled picker would misrepresent it). Part 5
-    /// gate: while the due date is unsaved the *arming* picker (else branch) is disabled, since it
-    /// schedules real OS notifications against a staged time the stored task doesn't have; "Turn Off"
-    /// never arms, so it stays enabled (a saved due-date change cancels nudges anyway).
-    @ViewBuilder
-    func nudgesSection(isDueDateDirty: Bool) -> some View {
-        if service.hasScheduledNudges {
-            Section {
-                Text("Nudges are scheduled for this task.")
-                    .foregroundStyle(.secondary)
-                Button("Turn Off Nudges") {
-                    Task { await service.disableNudges() }
-                }
-                .accessibilityIdentifier("taskDetailDisableNudgesButton")
-            } header: {
-                Text("Nudges")
-            } footer: {
-                immediateApplyFooter
+    /// Delete lives here since F-V3-Tasks-rebuild (the list's swipe-left is gone). Destructive
+    /// styling plus a confirmation dialog — deletion is the one action on this screen with no
+    /// undo, so it never fires on a single tap.
+    var deleteSection: some View {
+        Section {
+            Button("Delete Task", role: .destructive) {
+                showDeleteConfirmation = true
             }
-        } else {
-            TaskCountdownNudgeControl(dueDate: dueDate, selection: $pendingNudgeSelection)
-                .disabled(isDueDateDirty)
-                .onChange(of: pendingNudgeSelection) { newValue in
-                    guard let dueDate else { return }
-                    Task { await service.updateNudgeSelection(newValue, dueDate: dueDate) }
-                }
-            Section {
-                if isDueDateDirty {
-                    saveDueDateFirstNote
-                }
-            } footer: {
-                immediateApplyFooter
-            }
+            .accessibilityIdentifier("taskDetailDeleteButton")
         }
     }
 
-    /// Independent of `nudgesSection` above — a plain toggle rather than a menu, since this
-    /// feature has only two states (on/off). Gated identically to the nudge picker while the
-    /// due date is unsaved (Part 5).
-    func dueMomentNotificationSection(isDueDateDirty: Bool) -> some View {
+    /// The created date demoted to a quiet closing footnote (E's b11 addendum) — reference
+    /// information, not a control, so it no longer wears a card of its own.
+    func createdAtFootnote(for task: TaskDetail) -> some View {
         Section {
-            Toggle("Notify me when this is due", isOn: dueMomentNotificationBinding)
-                .disabled(dueDate == nil || isDueDateDirty)
-                .accessibilityIdentifier("taskDetailDueMomentNotificationToggle")
-            if isDueDateDirty {
-                saveDueDateFirstNote
-            }
         } footer: {
-            immediateApplyFooter
+            Text("Created \(task.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityIdentifier("taskDetailCreatedFootnote")
         }
     }
 
-    var dueMomentNotificationBinding: Binding<Bool> {
-        Binding(
-            get: { service.hasDueMomentNotification },
-            set: { newValue in
-                guard let dueDate else { return }
-                Task { await service.updateDueMomentNotification(enabled: newValue, dueDate: dueDate) }
-            }
-        )
-    }
-
-    func createdAtSection(for task: TaskDetail) -> some View {
-        Section {
-            LabeledContent("Created", value: task.createdAt.formatted(date: .abbreviated, time: .omitted))
-        }
+    /// Only on a landed delete: refresh the list and pop. A failed delete leaves
+    /// `taskDetailErrorMessage` on screen and stays put.
+    func performDelete() async {
+        guard await service.delete() else { return }
+        onUpdated()
+        dismiss()
     }
 
     /// Warning and error are conveyed as icon + text (§4) so meaning never rides on colour alone —

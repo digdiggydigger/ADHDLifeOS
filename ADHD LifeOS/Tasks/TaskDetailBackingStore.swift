@@ -14,6 +14,7 @@ protocol TaskDetailBackingStore {
     func fetchTaskDetail(id: UUID) async throws -> TaskDetail
     func updateTask(id: UUID, payload: TaskUpdatePayload) async throws
     func setTaskStatus(id: UUID, status: TaskStatus, now: Date) async throws
+    func deleteTask(id: UUID) async throws
     func fetchTags() async throws -> [Tag]
     func createTagDeduplicating(name: String) async throws -> Tag
     func fetchTags(for parent: FirebaseTagParent, parentId: UUID) async throws -> [Tag]

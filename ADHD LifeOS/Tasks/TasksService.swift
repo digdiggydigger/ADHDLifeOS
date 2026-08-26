@@ -32,29 +32,16 @@ final class TasksService: ObservableObject {
             recomputeGroups()
         }
     }
-    /// Web-parity client-side refinement (`TaskListView.tsx`): title search, urgency filter and
-    /// sort, recomputed like `statusFilter` so the list responds as the user types/picks.
+    /// Title search, recomputed like `statusFilter` so the list responds as the user types. The
+    /// sort/priority refinement that used to sit beside it was retired in F-V3-Tasks-rebuild.
     @Published var searchText = "" {
         didSet {
             guard hasLoadedOnce else { return }
             recomputeGroups()
         }
     }
-    @Published var priorityFilter: TaskPriority? {
-        didSet {
-            guard hasLoadedOnce else { return }
-            recomputeGroups()
-        }
-    }
-    @Published var sortOption: TaskSortOption = .standard {
-        didSet {
-            guard hasLoadedOnce else { return }
-            recomputeGroups()
-        }
-    }
-    /// Set when a swipe mutation (toggle/delete) fails after its optimistic local change has
-    /// already been reverted — so the list can surface it without the row silently snapping back
-    /// with no explanation.
+    /// Set when a close write fails after its optimistic local change has already been reverted —
+    /// so the list can surface it without the row silently snapping back with no explanation.
     @Published var mutationErrorMessage: String?
 
     private let client: TasksClientAdapting
@@ -85,46 +72,27 @@ final class TasksService: ObservableObject {
         }
     }
 
-    /// Swipe-right: flip a task between open and done. Optimistic — the local flip and regroup
-    /// happen immediately (so the row re-sorts under the active filter without waiting on the
-    /// network), then the write-through persists to Firestore. A failed write reloads from the
-    /// server so the UI never diverges from stored truth.
-    func toggleStatus(_ task: TaskItem) async {
-        guard hasLoadedOnce, let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
-        let newStatus: TaskStatus = task.status == .done ? .open : .done
-        // Status and `completed_at` move together — the optimistic local row and the write below
-        // both go through the same rule, so the summary's "completed today" can never disagree
-        // with what the list shows.
-        tasks[index] = TaskCompletionStamp.applying(status: newStatus, to: tasks[index])
+    /// Tap-circle or swipe-right: close an open task. One-way since F-V3-Tasks-rebuild (E's
+    /// addendum) — there is no reopen, so a done task is left untouched. Optimistic: the local
+    /// flip and regroup happen immediately (status and `completed_at` move together, so "Closed
+    /// today" can never disagree with the list), then the write-through persists to Firestore.
+    /// A failed write reloads from the server so the UI never diverges from stored truth.
+    func close(_ task: TaskItem) async {
+        guard hasLoadedOnce, task.status == .open,
+              let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
+        tasks[index] = TaskCompletionStamp.applying(status: .done, to: tasks[index])
         recomputeGroups()
         do {
-            try await client.setStatus(taskId: task.id, status: newStatus)
+            try await client.setStatus(taskId: task.id, status: .done)
         } catch {
             mutationErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             await load()
         }
     }
 
-    /// Swipe-left: delete a task. Optimistic removal, reverted on a failed delete.
-    func delete(_ task: TaskItem) async {
-        guard hasLoadedOnce, tasks.contains(where: { $0.id == task.id }) else { return }
-        let snapshot = tasks
-        tasks.removeAll { $0.id == task.id }
-        recomputeGroups()
-        do {
-            try await client.deleteTask(taskId: task.id)
-        } catch {
-            tasks = snapshot
-            recomputeGroups()
-            mutationErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-        }
-    }
-
     private func recomputeGroups() {
         let statusFiltered = TaskStatusFilter.filter(tasks: tasks, by: statusFilter)
-        let refined = TaskListRefinement.apply(
-            tasks: statusFiltered, searchText: searchText, priorityFilter: priorityFilter, sort: sortOption
-        )
+        let refined = TaskListRefinement.apply(tasks: statusFiltered, searchText: searchText)
         // Momentum re-groups by dueness; every other filter keeps the life-area grouping.
         state = .loaded(
             statusFilter == .momentum

@@ -44,9 +44,16 @@ final class SignedInJourneyUITests: XCTestCase {
         XCTAssertTrue(submit.isEnabled, "Create stayed disabled with a title entered")
         submit.tap()
 
+        // The composer creates the task undated, and the default Momentum board deliberately
+        // excludes undated tasks since F-V3-Tasks-rebuild — they live under the Open filter,
+        // so that is where a freshly created task must appear.
+        let openChip = app.buttons["Open"]
+        XCTAssertTrue(openChip.waitForExistence(timeout: UITestSession.timeout), "The Open filter chip is missing")
+        openChip.tap()
+
         XCTAssertTrue(
             app.staticTexts[title].waitForExistence(timeout: UITestSession.timeout),
-            "The created task never appeared in the list"
+            "The created task never appeared under the Open filter"
         )
     }
 
@@ -82,8 +89,11 @@ final class SignedInJourneyUITests: XCTestCase {
     /// the code it was written to verify.
     ///
     /// The task is written straight into Firestore with a known id, so the test can address
-    /// `swipeableTaskCard-<uuid>` exactly rather than guessing which row it is opening
-    /// (F-V3-Tasks removed the Details button — the whole card opens the detail now).
+    /// `taskRow-<uuid>` exactly rather than guessing which row it is opening (F-V3-Tasks-rebuild
+    /// replaced the swipe cards with dense rows — the row's text area opens the detail).
+    ///
+    /// The seeded task is due TODAY: the Momentum board (the default filter) now shows only
+    /// due-today/tomorrow/closed-today, so an undated task would never render on it.
     @MainActor
     func testTaskDetail_opensWithTitleFieldPopulated_notBlank() throws {
         let account = try UITestSession.createAccount(label: "detail")
@@ -94,7 +104,7 @@ final class SignedInJourneyUITests: XCTestCase {
         let app = try UITestSession.launchSignedIn(as: account)
         openTasksTab(app)
 
-        let detailsButton = app.descendants(matching: .any)["swipeableTaskCard-\(taskID.uuidString)"]
+        let detailsButton = app.descendants(matching: .any)["taskRow-\(taskID.uuidString)"]
         XCTAssertTrue(
             detailsButton.waitForExistence(timeout: UITestSession.timeout),
             "The seeded task never appeared in the list"
@@ -186,6 +196,8 @@ final class SignedInJourneyUITests: XCTestCase {
 
     /// Task documents are fully snake_cased (`life_area_id`, `created_at`) — see CLAUDE.md, where
     /// the tasks/captures casing split is spelled out. Document IDs are UPPERCASE `uuidString`.
+    /// Due now, so the row renders on the Momentum board (F-V3-Tasks-rebuild: undated tasks
+    /// appear only under the Open filter).
     private func seedTask(id: UUID, title: String, uid: String) throws {
         try UITestEmulator.writeDocument(
             path: "users/\(uid)/tasks/\(id.uuidString)",
@@ -194,6 +206,7 @@ final class SignedInJourneyUITests: XCTestCase {
                 "title": UITestEmulator.string(title),
                 "status": UITestEmulator.string("open"),
                 "priority": UITestEmulator.string("p3"),
+                "due_date": UITestEmulator.timestamp(Date()),
                 "created_at": UITestEmulator.timestamp(Date())
             ]
         )

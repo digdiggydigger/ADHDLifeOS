@@ -87,7 +87,6 @@ struct ADHD_LifeOSApp: App {
     private let captureClient: CaptureClientAdapting
     private let nudgesClient: NudgesClientAdapting
     private let journalClient: JournalClientAdapting
-    private let taskCountdownNudgeSchedulingClient: TaskCountdownNudgeSchedulingAdapting
     private let nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
@@ -105,7 +104,6 @@ struct ADHD_LifeOSApp: App {
         captureClient = FirebaseCaptureClientAdapter()
         nudgesClient = FirebaseNudgesClientAdapter()
         journalClient = FirebaseJournalClientAdapter()
-        taskCountdownNudgeSchedulingClient = NotificationCenterCountdownNudgeAdapter()
         nudgeNotificationSchedulingClient = NotificationCenterNudgeAdapter()
         lifeAreaDetailClient = FirebaseLifeAreaDetailClientAdapter()
     }
@@ -121,7 +119,6 @@ struct ADHD_LifeOSApp: App {
                 captureClient: captureClient,
                 nudgesClient: nudgesClient,
                 journalClient: journalClient,
-                taskCountdownNudgeSchedulingClient: taskCountdownNudgeSchedulingClient,
                 nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
                 lifeAreaDetailClient: lifeAreaDetailClient
             )

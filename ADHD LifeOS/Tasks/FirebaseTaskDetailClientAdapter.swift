@@ -38,6 +38,10 @@ struct FirebaseTaskDetailClientAdapter: TaskDetailClientAdapting {
         return try await store.fetchTaskDetail(id: id)
     }
 
+    func deleteTask(id: UUID) async throws {
+        try await store.deleteTask(id: id)
+    }
+
     func createTag(name: String) async throws -> Tag {
         try await store.createTagDeduplicating(name: name)
     }

@@ -23,17 +23,4 @@ extension TaskDetailView {
             .accessibilityIdentifier("taskDetailSavedConfirmation")
     }
 
-    /// Shared footer for the immediate-apply groups (Part 6). Rendered as a `Section` footer so it
-    /// inherits the native `.footnote`/`.secondary` treatment (§1) rather than a bespoke row.
-    var immediateApplyFooter: some View {
-        Text("Changes here apply immediately — no Save needed.")
-    }
-
-    /// Neutral, non-error explanatory line shown while the due date is unsaved and the notification
-    /// controls are gated (Part 5). A `Label` so icon+text read as one VoiceOver element (§7).
-    var saveDueDateFirstNote: some View {
-        Label("Save the due date first to change this.", systemImage: "info.circle")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-    }
 }

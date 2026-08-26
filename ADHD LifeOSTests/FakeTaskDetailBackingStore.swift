@@ -18,9 +18,11 @@ final class FakeTaskDetailBackingStore: TaskDetailBackingStore {
 
     var fetchError: Error?
     var updateError: Error?
+    var deleteError: Error?
 
     private(set) var fetchedIds: [UUID] = []
     private(set) var updates: [TaskUpdateWrite] = []
+    private(set) var deletedIds: [UUID] = []
     private(set) var statusWrites: [StatusWrite] = []
     private(set) var createdTagNames: [String] = []
     private(set) var tagLookups: [TagLookup] = []
@@ -67,6 +69,11 @@ final class FakeTaskDetailBackingStore: TaskDetailBackingStore {
     func setTaskStatus(id: UUID, status: TaskStatus, now: Date) async throws {
         statusWrites.append(StatusWrite(id: id, status: status, now: now))
         if let updateError { throw updateError }
+    }
+
+    func deleteTask(id: UUID) async throws {
+        deletedIds.append(id)
+        if let deleteError { throw deleteError }
     }
 
     func fetchTags() async throws -> [Tag] {

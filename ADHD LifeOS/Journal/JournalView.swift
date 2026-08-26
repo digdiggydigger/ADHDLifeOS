@@ -27,7 +27,6 @@ struct JournalView: View {
     /// what previews and the composer's service want.
     let captureClient: CaptureClientAdapting?
     let taskDetailClient: TaskDetailClientAdapting?
-    let schedulingClient: TaskCountdownNudgeSchedulingAdapting?
     let onStartFocus: ((FocusSprintPlan) -> Void)?
     @State private var isPresentingComposer = false
     @State var filter: JournalTimeline.Filter = .everything
@@ -42,7 +41,6 @@ struct JournalView: View {
         homeClient: HomeClientAdapting? = nil,
         captureClient: CaptureClientAdapting? = nil,
         taskDetailClient: TaskDetailClientAdapting? = nil,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting? = nil,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil
     ) {
         _journalService = StateObject(wrappedValue: JournalService(client: client))
@@ -50,11 +48,10 @@ struct JournalView: View {
         self.homeClient = homeClient
         self.captureClient = captureClient
         self.taskDetailClient = taskDetailClient
-        self.schedulingClient = schedulingClient
         self.onStartFocus = onStartFocus
     }
 
-    var canOpenTasks: Bool { taskDetailClient != nil && schedulingClient != nil }
+    var canOpenTasks: Bool { taskDetailClient != nil }
     var canOpenCaptures: Bool { captureClient != nil }
 
     var filteredTasks: [TaskItem] {
@@ -126,12 +123,11 @@ struct JournalView: View {
                 get: { inspectingTaskId != nil },
                 set: { if !$0 { inspectingTaskId = nil } }
             )) {
-                if let taskId = inspectingTaskId, let taskDetailClient, let schedulingClient {
+                if let taskId = inspectingTaskId, let taskDetailClient {
                     TaskDetailView(
                         taskId: taskId,
                         lifeAreas: journalService.lifeAreas,
                         client: taskDetailClient,
-                        schedulingClient: schedulingClient,
                         onStartFocus: onStartFocus,
                         momentumContext: MomentumTaskContext.build(
                             lifeAreaId: tasks.first { $0.id == taskId }?.lifeAreaId,

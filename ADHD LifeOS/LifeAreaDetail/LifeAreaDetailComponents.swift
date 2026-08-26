@@ -137,7 +137,7 @@ extension LifeAreaDetailView {
                     family: family,
                     isNextOpen: task.id == nextOpenId,
                     isToggling: togglingTaskId == task.id,
-                    onTick: { toggleTask(task) }
+                    onTick: { closeTask(task) }
                 )
                 if index != service.allTasks.indices.last {
                     Divider()

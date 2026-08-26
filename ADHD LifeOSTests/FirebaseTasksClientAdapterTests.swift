@@ -6,10 +6,10 @@
 import XCTest
 @testable import ADHD_LifeOS
 
-/// `FirebaseTasksClientAdapter` is genuinely thin — four methods, no branching. These tests pin the
+/// `FirebaseTasksClientAdapter` is genuinely thin — three methods, no branching. These tests pin the
 /// two things that can still be wrong in a pass-through: which underlying call it forwards to, and
 /// what it forwards. The field dictionary those writes produce is covered separately, in
-/// `FirestoreFieldPayloadsTests`.
+/// `FirestoreFieldPayloadsTests`. Delete moved to the detail adapter in F-V3-Tasks-rebuild.
 final class FirebaseTasksClientAdapterTests: XCTestCase {
     private var store: FakeTasksBackingStore!
     private var adapter: FirebaseTasksClientAdapter!
@@ -74,22 +74,6 @@ final class FirebaseTasksClientAdapterTests: XCTestCase {
         store.setStatusError = FirebaseManagerError.notSignedIn
 
         await XCTAssertThrowsErrorAsync(try await adapter.setStatus(taskId: UUID(), status: .done)) { error in
-            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
-        }
-    }
-
-    func testDeleteTask_forwardsTheId() async throws {
-        let id = UUID()
-
-        try await adapter.deleteTask(taskId: id)
-
-        XCTAssertEqual(store.deletedIds, [id])
-    }
-
-    func testDeleteTask_propagatesFailure() async {
-        store.deleteError = FirebaseManagerError.notSignedIn
-
-        await XCTAssertThrowsErrorAsync(try await adapter.deleteTask(taskId: UUID())) { error in
             XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
         }
     }

@@ -20,7 +20,6 @@ struct AreasView: View {
     private let homeClient: HomeClientAdapting
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
-    private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     private let lifeAreaEditorClient: LifeAreaEditorClientAdapting
     private let taskCreateClient: TaskCreateClientAdapting?
     private let onStartFocus: ((FocusSprintPlan) -> Void)?
@@ -40,7 +39,6 @@ struct AreasView: View {
         captureClient: CaptureClientAdapting,
         lifeAreaDetailClient: LifeAreaDetailClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
         taskCreateClient: TaskCreateClientAdapting? = nil,
         lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
@@ -52,7 +50,6 @@ struct AreasView: View {
         self.captureClient = captureClient
         self.lifeAreaDetailClient = lifeAreaDetailClient
         self.taskDetailClient = taskDetailClient
-        self.schedulingClient = schedulingClient
         self.onStartFocus = onStartFocus
         self.taskCreateClient = taskCreateClient
         // Same defaulting pattern as SettingsView: the live adapter unless a test injects one.
@@ -110,7 +107,6 @@ struct AreasView: View {
                     lifeArea: lifeArea,
                     client: lifeAreaDetailClient,
                     taskDetailClient: taskDetailClient,
-                    schedulingClient: schedulingClient,
                     onStartFocus: onStartFocus,
                     allAreas: service.lifeAreas
                         .filter { !$0.archived }

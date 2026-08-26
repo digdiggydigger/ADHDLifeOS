@@ -28,22 +28,45 @@ final class TasksServiceTests: XCTestCase {
     func testLoad_success_setsLoadedStateWithGroupedTasks() async {
         let fake = FakeTasksClientAdapting()
         let work = LifeArea(id: UUID(), name: "Work", colour: "#123456", sortOrder: 0)
-        let task = makeTask(lifeAreaId: work.id, title: "Finish report")
+        let dueToday = TaskItem(
+            id: UUID(), lifeAreaId: work.id, title: "Finish report",
+            status: .open, priority: .p4, dueDate: .now
+        )
         fake.lifeAreasResult = .success([work])
-        fake.tasksResult = .success([task])
+        fake.tasksResult = .success([dueToday])
         let sut = TasksService(client: fake)
 
         await sut.load()
 
-        // The default filter is the Momentum board (M3), so an undated open task loads into its
-        // Someday bucket; the life-area grouping is exercised through the Open/Done/All filters.
+        // The default filter is the Momentum board (M3), so a due-today task loads into that
+        // bucket; the life-area grouping is exercised through the Open/Done/All filters.
         XCTAssertEqual(sut.state, .loaded([
             LifeAreaTaskGroup(
-                lifeAreaId: nil, lifeAreaName: "Someday · 1", tasks: [task], customId: "momentum-someday"
+                lifeAreaId: nil, lifeAreaName: "Due today · 1", tasks: [dueToday],
+                customId: "momentum-dueToday"
             )
         ]))
         XCTAssertEqual(fake.fetchLifeAreasCallCount, 1)
         XCTAssertEqual(fake.fetchAllTasksCallCount, 1)
+    }
+
+    /// F-V3-Tasks-rebuild: the Momentum board shows only Due today / Tomorrow / Closed today —
+    /// an undated open task is NOT on it, and lives under the Open filter instead (E's b11 call).
+    func testLoad_momentumExcludesUndatedTasks_openFilterShowsThem() async {
+        let fake = FakeTasksClientAdapting()
+        let work = LifeArea(id: UUID(), name: "Work", colour: "#123456", sortOrder: 0)
+        let undated = makeTask(lifeAreaId: work.id, title: "No due date")
+        fake.lifeAreasResult = .success([work])
+        fake.tasksResult = .success([undated])
+        let sut = TasksService(client: fake)
+
+        await sut.load()
+        XCTAssertEqual(sut.state, .loaded([]), "Momentum has nothing to say about the long tail")
+
+        sut.statusFilter = .open
+        XCTAssertEqual(sut.state, .loaded([
+            LifeAreaTaskGroup(lifeAreaId: work.id, lifeAreaName: "Work", tasks: [undated])
+        ]))
     }
 
     func testLoad_emptyData_setsLoadedStateWithEmptyGroups() async {

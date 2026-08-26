@@ -51,6 +51,7 @@ import SwiftUI
             fatalError("unused in preview")
         }
         func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail { fatalError("unused in preview") }
+        func deleteTask(id: UUID) async throws {}
         func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
         func addTagToTask(taskId: UUID, tagId: UUID) async throws {}
         func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {}
@@ -108,16 +109,6 @@ import SwiftUI
         func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
     }
 
-    struct PreviewNudgeSchedulingClient: TaskCountdownNudgeSchedulingAdapting {
-        func requestAuthorizationIfNeeded() async -> Bool { false }
-        func scheduleNudges(taskId: UUID, taskTitle: String, fireDates: [ScheduledCountdownNudge]) async {}
-        func cancelNudges(taskId: UUID) async {}
-        func hasScheduledNudges(taskId: UUID) async -> Bool { false }
-        func scheduleDueMomentNotification(taskId: UUID, taskTitle: String, dueDate: Date) async {}
-        func cancelDueMomentNotification(taskId: UUID) async {}
-        func hasDueMomentNotificationScheduled(taskId: UUID) async -> Bool { false }
-    }
-
     struct PreviewNudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting {
         func requestAuthorizationIfNeeded() async -> Bool { false }
         func scheduleNotifications(nudgeId: UUID, label: String, schedule: NudgeSchedule) async {}
@@ -139,7 +130,6 @@ import SwiftUI
         captureClient: PreviewCaptureClient(),
         nudgesClient: PreviewNudgesClient(),
         journalClient: PreviewJournalClient(),
-        taskCountdownNudgeSchedulingClient: PreviewNudgeSchedulingClient(),
         nudgeNotificationSchedulingClient: PreviewNudgeNotificationSchedulingClient(),
         lifeAreaDetailClient: PreviewLifeAreaDetailClient()
     )

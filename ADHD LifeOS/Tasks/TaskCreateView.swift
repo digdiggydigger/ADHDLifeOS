@@ -19,13 +19,12 @@ struct TaskCreateView: View {
 
     init(
         client: TaskCreateClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         lifeAreas: [LifeArea],
         preselectedLifeAreaId: UUID? = nil,
         onCreated: @escaping () -> Void
     ) {
         _service = StateObject(wrappedValue: {
-            let service = TaskCreateService(client: client, schedulingClient: schedulingClient)
+            let service = TaskCreateService(client: client)
             // The v3 area screen's "Add to <area>" opens the form already filed there.
             service.lifeAreaId = preselectedLifeAreaId
             return service
@@ -47,9 +46,6 @@ struct TaskCreateView: View {
                         accessibilityID: "taskCreateTitleField"
                     )
                     dueSection
-                    if service.dueDate != nil {
-                        nudgeSection
-                    }
                     areaSection
                     notesSection
                     tagsSection
@@ -128,20 +124,6 @@ struct TaskCreateView: View {
         .buttonStyle(ChoiceChipButtonStyle(isSelected: selected))
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("taskCreateDue-\(choice.title)")
-    }
-
-    /// Only on screen once a due date exists — nudges without one are impossible anyway, and S1's
-    /// rule is one question at a time, never a disabled control explaining itself.
-    private var nudgeSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ComposerSectionHeader(title: "Stay on it", detail: "optional")
-            VStack(alignment: .leading, spacing: 8) {
-                TaskCountdownNudgeControl(dueDate: service.dueDate, selection: $service.nudgeSelection)
-                Toggle("Notify me when this is due", isOn: $service.dueMomentNotificationEnabled)
-                    .accessibilityIdentifier("taskCreateDueMomentNotificationToggle")
-            }
-            .bentoCard()
-        }
     }
 
     // MARK: - Area, notes, tags
@@ -239,7 +221,7 @@ struct TaskCreateView: View {
 
     private var footerBar: some View {
         VStack(spacing: 8) {
-            Text("Lands in your list — nothing is scheduled unless you asked for a nudge.")
+            Text("Lands in your list — nothing else happens until you decide it does.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -272,20 +254,9 @@ private struct PreviewTaskCreateClientAdapting: TaskCreateClientAdapting {
     func attachTags(taskId: UUID, tagIds: [UUID]) async throws {}
 }
 
-private struct PreviewNudgeSchedulingClientAdapting: TaskCountdownNudgeSchedulingAdapting {
-    func requestAuthorizationIfNeeded() async -> Bool { false }
-    func scheduleNudges(taskId: UUID, taskTitle: String, fireDates: [ScheduledCountdownNudge]) async {}
-    func cancelNudges(taskId: UUID) async {}
-    func hasScheduledNudges(taskId: UUID) async -> Bool { false }
-    func scheduleDueMomentNotification(taskId: UUID, taskTitle: String, dueDate: Date) async {}
-    func cancelDueMomentNotification(taskId: UUID) async {}
-    func hasDueMomentNotificationScheduled(taskId: UUID) async -> Bool { false }
-}
-
 #Preview("Light") {
     TaskCreateView(
         client: PreviewTaskCreateClientAdapting(),
-        schedulingClient: PreviewNudgeSchedulingClientAdapting(),
         lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
     ) {}
     .preferredColorScheme(.light)
@@ -294,7 +265,6 @@ private struct PreviewNudgeSchedulingClientAdapting: TaskCountdownNudgeSchedulin
 #Preview("Dark") {
     TaskCreateView(
         client: PreviewTaskCreateClientAdapting(),
-        schedulingClient: PreviewNudgeSchedulingClientAdapting(),
         lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
     ) {}
     .preferredColorScheme(.dark)

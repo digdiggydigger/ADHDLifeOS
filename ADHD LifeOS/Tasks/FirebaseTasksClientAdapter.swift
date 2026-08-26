@@ -25,8 +25,4 @@ struct FirebaseTasksClientAdapter: TasksClientAdapting {
     func setStatus(taskId: UUID, status: TaskStatus) async throws {
         try await store.setTaskStatus(id: taskId, status: status, now: .now)
     }
-
-    func deleteTask(taskId: UUID) async throws {
-        try await store.deleteTask(id: taskId)
-    }
 }

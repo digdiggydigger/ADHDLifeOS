@@ -75,41 +75,92 @@ struct TaskDetailChipsRow: View {
 #endif
 
 /// The tags editor as a standalone Form section — value/callback-fed, split from
-/// `TaskDetailView.swift` for its file budget. Behaviour unchanged: tag edits apply immediately.
+/// `TaskDetailView.swift` for its file budget. Redesigned in F-V3-Tasks-rebuild (E's b11
+/// addendum): the always-present text field + Add row + footer became removable chips with a
+/// tap-to-add affordance that only shows the field when asked for. Tag edits still apply
+/// immediately — the chips reacting in place says so without a footer spelling it out.
 struct TaskDetailTagsSection: View {
     let tags: [Tag]
     @Binding var newTagName: String
     let onAdd: (String) async -> Void
     let onRemove: (Tag) async -> Void
 
+    @State private var isAdding = false
+    @FocusState private var addFieldFocused: Bool
+
     var body: some View {
         Section {
-            ForEach(tags) { tag in
-                HStack {
-                    Text(tag.name)
-                    Spacer()
-                    Button("Remove") {
-                        Task { await onRemove(tag) }
-                    }
+            FlowingChips(spacing: 8) {
+                ForEach(tags) { tag in
+                    tagChip(tag)
                 }
+                addChip
             }
+            .listRowSeparator(.hidden)
 
-            HStack {
-                TextField("New tag", text: $newTagName)
-                    .accessibilityIdentifier("taskDetailNewTagField")
-                Button("Add") {
-                    Task {
-                        await onAdd(newTagName)
-                        newTagName = ""
-                    }
+            if isAdding {
+                HStack(spacing: 8) {
+                    TextField("New tag", text: $newTagName)
+                        .textInputAutocapitalization(.never)
+                        .focused($addFieldFocused)
+                        .onSubmit { submitNewTag() }
+                        .accessibilityIdentifier("taskDetailNewTagField")
+                    Button("Add") { submitNewTag() }
+                        .font(.subheadline.weight(.semibold))
+                        .disabled(newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .accessibilityIdentifier("taskDetailAddTagButton")
                 }
-                .disabled(newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityIdentifier("taskDetailAddTagButton")
             }
         } header: {
             Text("Tags")
-        } footer: {
-            Text("Adding or removing a tag applies immediately — no Save needed.")
+        }
+    }
+
+    /// One chip = the tag plus its removal, read by VoiceOver as a single "Remove tag …" element.
+    private func tagChip(_ tag: Tag) -> some View {
+        Button {
+            Task { await onRemove(tag) }
+        } label: {
+            HStack(spacing: 4) {
+                Text(tag.name)
+                Image(systemName: "xmark")
+                    .font(.caption2.weight(.bold))
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color("LabelSecondary"))
+            .padding(.horizontal, 8)
+            .frame(minHeight: 36)
+            .background(Color("CardSurfaceSecondary"), in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Remove tag \(tag.name)")
+        .accessibilityIdentifier("taskDetailRemoveTag-\(tag.id)")
+    }
+
+    private var addChip: some View {
+        Button {
+            isAdding = true
+            addFieldFocused = true
+        } label: {
+            Label("Add tag", systemImage: "plus")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .padding(.horizontal, 8)
+                .frame(minHeight: 36)
+                .background(Color("CardSurfaceSecondary"), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("taskDetailAddTagChip")
+    }
+
+    private func submitNewTag() {
+        let name = newTagName
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        Task {
+            await onAdd(name)
+            newTagName = ""
         }
     }
 }

@@ -347,7 +347,6 @@ extension HomeView {
             taskId: task.id,
             lifeAreas: homeService.lifeAreas,
             client: taskDetailClient,
-            schedulingClient: schedulingClient,
             onStartFocus: onStartFocus,
             momentumContext: MomentumTaskContext.build(
                 lifeAreaId: task.lifeAreaId,

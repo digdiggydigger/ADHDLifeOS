@@ -11,12 +11,10 @@ final class FakeTasksClientAdapting: TasksClientAdapting, @unchecked Sendable {
     var tasksResult: Result<[TaskItem], Error> = .success([])
 
     var setStatusError: Error?
-    var deleteTaskError: Error?
 
     private(set) var fetchLifeAreasCallCount = 0
     private(set) var fetchAllTasksCallCount = 0
     private(set) var setStatusCalls: [(taskId: UUID, status: TaskStatus)] = []
-    private(set) var deleteTaskCalls: [UUID] = []
 
     func fetchLifeAreas() async throws -> [LifeArea] {
         fetchLifeAreasCallCount += 1
@@ -31,10 +29,5 @@ final class FakeTasksClientAdapting: TasksClientAdapting, @unchecked Sendable {
     func setStatus(taskId: UUID, status: TaskStatus) async throws {
         setStatusCalls.append((taskId, status))
         if let setStatusError { throw setStatusError }
-    }
-
-    func deleteTask(taskId: UUID) async throws {
-        deleteTaskCalls.append(taskId)
-        if let deleteTaskError { throw deleteTaskError }
     }
 }

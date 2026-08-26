@@ -19,7 +19,6 @@ struct LifeAreaDetailView: View {
     /// Every active area, for the rail. Empty hides the rail (old call sites, previews).
     let allAreas: [LifeArea]
     private let taskDetailClient: TaskDetailClientAdapting
-    private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     private let taskCreateClient: TaskCreateClientAdapting?
     /// Threaded through to the pushed `TaskDetailView` so its launch row can start an app-level
     /// sprint; `nil` hides that row (previews and hosts with no `FocusSessionService`).
@@ -39,7 +38,6 @@ struct LifeAreaDetailView: View {
         lifeArea: LifeArea,
         client: LifeAreaDetailClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
         allAreas: [LifeArea] = [],
         captureClient: CaptureClientAdapting? = nil,
@@ -52,7 +50,6 @@ struct LifeAreaDetailView: View {
         self.lifeArea = lifeArea
         self.allAreas = allAreas
         self.taskDetailClient = taskDetailClient
-        self.schedulingClient = schedulingClient
         self.taskCreateClient = taskCreateClient
         self.onStartFocus = onStartFocus
         self.momentumPreferencesStore = momentumPreferencesStore
@@ -116,7 +113,6 @@ struct LifeAreaDetailView: View {
             if let taskCreateClient {
                 TaskCreateView(
                     client: taskCreateClient,
-                    schedulingClient: schedulingClient,
                     lifeAreas: allAreas.isEmpty ? [lifeArea] : allAreas,
                     preselectedLifeAreaId: lifeArea.id
                 ) {
@@ -155,7 +151,6 @@ struct LifeAreaDetailView: View {
                 taskId: task.id,
                 lifeAreas: allAreas.isEmpty ? [lifeArea] : allAreas,
                 client: taskDetailClient,
-                schedulingClient: schedulingClient,
                 onStartFocus: onStartFocus
             ) {
                 Task { await service.load() }
@@ -165,14 +160,15 @@ struct LifeAreaDetailView: View {
 
     // MARK: - Actions (the components call these)
 
-    func toggleTask(_ task: TaskItem) {
-        guard togglingTaskId == nil else { return }
+    /// One-way close (F-V3-Tasks-rebuild, E's addendum): a done row's tick is display-only, so
+    /// this only ever sends `.done` — and guards anyway, in case a stale row calls through.
+    func closeTask(_ task: TaskItem) {
+        guard togglingTaskId == nil, task.status == .open else { return }
         togglingTaskId = task.id
         Task {
             defer { togglingTaskId = nil }
             do {
-                let next: TaskStatus = task.status == .done ? .open : .done
-                _ = try await taskDetailClient.updateStatus(id: task.id, status: next)
+                _ = try await taskDetailClient.updateStatus(id: task.id, status: .done)
                 await service.load()
             } catch {
                 toggleErrorMessage =

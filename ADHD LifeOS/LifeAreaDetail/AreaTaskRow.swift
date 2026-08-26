@@ -6,7 +6,8 @@
 import SwiftUI
 
 /// One task row: effort chip (the next open task's chip carries the identity tint), title with
-/// the done strike, the meta line, and the 44pt tick that closes or reopens in place.
+/// the done strike, the meta line, and the 44pt tick that closes in place. Closing is one-way
+/// (F-V3-Tasks-rebuild, E's addendum) — a done row's tick is display-only.
 struct AreaTaskRow: View {
     let task: TaskItem
     let family: AreaPalette
@@ -42,19 +43,27 @@ struct AreaTaskRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            Button(action: onTick) {
-                if isToggling {
-                    ProgressView()
-                } else {
-                    Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(isDone ? Color("StateGo") : Color("LabelTertiary"))
+            if isDone {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(Color("StateGo"))
+                    .frame(width: 44, height: 44)
+                    .accessibilityHidden(true)
+            } else {
+                Button(action: onTick) {
+                    if isToggling {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "circle")
+                            .font(.title3)
+                            .foregroundStyle(Color("LabelTertiary"))
+                    }
                 }
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+                .accessibilityLabel("Close \(task.title)")
+                .accessibilityIdentifier("lifeAreaDetailTick-\(task.id)")
             }
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
-            .accessibilityLabel(isDone ? "Reopen \(task.title)" : "Close \(task.title)")
-            .accessibilityIdentifier("lifeAreaDetailTick-\(task.id)")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

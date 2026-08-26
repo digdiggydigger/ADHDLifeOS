@@ -29,9 +29,7 @@ final class TaskDetailServiceTests: XCTestCase {
         let tag = Tag(id: UUID(), name: "urgent")
         fake.fetchTaskResult = .success(task)
         fake.fetchTagsForTaskResult = .success([tag])
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
 
         await sut.load()
 
@@ -42,9 +40,7 @@ final class TaskDetailServiceTests: XCTestCase {
     func testLoad_fetchFails_setsFailedState() async {
         let fake = FakeTaskDetailClientAdapting()
         fake.fetchTaskResult = .failure(TasksServiceError.fetchFailed("Network error"))
-        let sut = TaskDetailService(
-            taskId: UUID(), client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: UUID(), client: fake)
 
         await sut.load()
 
@@ -55,9 +51,7 @@ final class TaskDetailServiceTests: XCTestCase {
         let fake = FakeTaskDetailClientAdapting()
         let task = makeTask(title: "Original")
         fake.fetchTaskResult = .success(task)
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
         let edited = TaskEditedFields(
@@ -79,9 +73,7 @@ final class TaskDetailServiceTests: XCTestCase {
         let fake = FakeTaskDetailClientAdapting()
         let task = makeTask()
         fake.fetchTaskResult = .success(task)
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
         let edited = TaskEditedFields(
@@ -98,9 +90,7 @@ final class TaskDetailServiceTests: XCTestCase {
         let fake = FakeTaskDetailClientAdapting()
         let task = makeTask(title: "Same")
         fake.fetchTaskResult = .success(task)
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
         let edited = TaskEditedFields(
@@ -112,16 +102,14 @@ final class TaskDetailServiceTests: XCTestCase {
         XCTAssertEqual(fake.updateTaskCallCount, 0)
     }
 
-    func testToggleStatus_openTask_becomesDone() async {
+    func testClose_openTask_becomesDone() async {
         let fake = FakeTaskDetailClientAdapting()
         let task = makeTask(status: .open)
         fake.fetchTaskResult = .success(task)
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
-        await sut.toggleStatus()
+        await sut.close()
 
         XCTAssertEqual(fake.updateStatusCallCount, 1)
         if case .loaded(let updated) = sut.state {
@@ -131,22 +119,48 @@ final class TaskDetailServiceTests: XCTestCase {
         }
     }
 
-    func testToggleStatus_doneTask_reopens() async {
+    /// One-way street (F-V3-Tasks-rebuild, E's addendum): closed tasks never reopen, so a stray
+    /// call on a done task must not write anything.
+    func testClose_doneTask_isANoOp() async {
         let fake = FakeTaskDetailClientAdapting()
         let task = makeTask(status: .done)
         fake.fetchTaskResult = .success(task)
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
-        await sut.toggleStatus()
+        await sut.close()
 
-        if case .loaded(let updated) = sut.state {
-            XCTAssertEqual(updated.status, .open)
-        } else {
-            XCTFail("Expected loaded state")
-        }
+        XCTAssertEqual(fake.updateStatusCallCount, 0)
+        XCTAssertEqual(sut.state, .loaded(task))
+    }
+
+    // MARK: - Delete (moved here from the list's swipe in F-V3-Tasks-rebuild)
+
+    func testDelete_success_callsTheClientAndReturnsTrue() async {
+        let fake = FakeTaskDetailClientAdapting()
+        let task = makeTask()
+        fake.fetchTaskResult = .success(task)
+        let sut = TaskDetailService(taskId: task.id, client: fake)
+        await sut.load()
+
+        let result = await sut.delete()
+
+        XCTAssertTrue(result)
+        XCTAssertEqual(fake.deleteTaskCalls, [task.id])
+    }
+
+    func testDelete_failure_surfacesTheErrorAndReturnsFalse() async {
+        let fake = FakeTaskDetailClientAdapting()
+        let task = makeTask()
+        fake.fetchTaskResult = .success(task)
+        fake.deleteTaskError = TasksServiceError.fetchFailed("delete refused")
+        let sut = TaskDetailService(taskId: task.id, client: fake)
+        await sut.load()
+
+        let result = await sut.delete()
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(sut.errorMessage, "delete refused")
     }
 
     func testAddTag_existingMatchFound_attachesExistingTagWithoutCreating() async {
@@ -155,9 +169,7 @@ final class TaskDetailServiceTests: XCTestCase {
         let existingTag = Tag(id: UUID(), name: "urgent")
         fake.fetchTaskResult = .success(task)
         fake.fetchAllTagsResult = .success([existingTag])
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
         await sut.addTag(name: "urgent")
@@ -175,9 +187,7 @@ final class TaskDetailServiceTests: XCTestCase {
         fake.fetchTaskResult = .success(task)
         fake.fetchAllTagsResult = .success([])
         fake.createTagResult = .success(newTag)
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
         await sut.addTag(name: "focus")
@@ -194,9 +204,7 @@ final class TaskDetailServiceTests: XCTestCase {
         let tag = Tag(id: UUID(), name: "urgent")
         fake.fetchTaskResult = .success(task)
         fake.fetchTagsForTaskResult = .success([tag])
-        let sut = TaskDetailService(
-            taskId: task.id, client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting()
-        )
+        let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
         await sut.removeTag(tag)

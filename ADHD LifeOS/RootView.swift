@@ -21,7 +21,6 @@ struct RootView: View {
     let captureClient: CaptureClientAdapting
     let nudgesClient: NudgesClientAdapting
     let journalClient: JournalClientAdapting
-    let taskCountdownNudgeSchedulingClient: TaskCountdownNudgeSchedulingAdapting
     let nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting
     let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
@@ -87,7 +86,6 @@ struct RootView: View {
                         nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
                         lifeAreaDetailClient: lifeAreaDetailClient,
                         taskDetailClient: taskDetailClient,
-                        schedulingClient: taskCountdownNudgeSchedulingClient,
                         onStartFocus: startFocus,
                         focusReloadToken: focusService.completedSprintCount,
                         activeSprint: focusService.session.map {
@@ -106,7 +104,6 @@ struct RootView: View {
                         tasksClient: tasksClient,
                         taskCreateClient: taskCreateClient,
                         taskDetailClient: taskDetailClient,
-                        schedulingClient: taskCountdownNudgeSchedulingClient,
                         onStartFocus: startFocus
                     )
                         .tabItem { Label("Tasks", systemImage: "checklist") }
@@ -121,7 +118,6 @@ struct RootView: View {
                         captureClient: captureClient,
                         lifeAreaDetailClient: lifeAreaDetailClient,
                         taskDetailClient: taskDetailClient,
-                        schedulingClient: taskCountdownNudgeSchedulingClient,
                         onStartFocus: startFocus,
                         taskCreateClient: taskCreateClient
                     )
@@ -132,7 +128,6 @@ struct RootView: View {
                         homeClient: homeClient,
                         captureClient: captureClient,
                         taskDetailClient: taskDetailClient,
-                        schedulingClient: taskCountdownNudgeSchedulingClient,
                         onStartFocus: startFocus
                     )
                         .tabItem { Label("Journal", systemImage: "book") }
@@ -282,6 +277,9 @@ struct RootView: View {
             if authService.state == .unknown {
                 await authService.restoreSession()
             }
+            // F-V3-Tasks-rebuild: the per-task nudge feature is gone, so sweep anything it
+            // scheduled before its removal — nothing left in the app could ever cancel it.
+            await LegacyTaskNotificationCleanup.run()
         }
         // Returning to the app settles a sprint whose countdown ran out behind a locked screen: the
         // ticker is suspended with the app, so without this the finished sprint stayed "running" —
