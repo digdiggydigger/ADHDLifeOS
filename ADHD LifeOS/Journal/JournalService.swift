@@ -64,7 +64,10 @@ final class JournalService: ObservableObject {
     }
 
     func load() async {
-        state = .loading
+        // Quiet reload (SUGG-b4): only the FIRST load may show the loading state — once content
+        // is on screen, a refetch (pull, or the app-wide DataChangeSignal) replaces it in place
+        // instead of flashing it away.
+        if case .loaded = state {} else { state = .loading }
         do {
             async let lifeAreasResult = client.fetchLifeAreas()
             async let logsResult = client.fetchLogs()

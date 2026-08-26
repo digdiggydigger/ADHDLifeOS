@@ -3,6 +3,7 @@
 //  ADHD LifeOSTests
 //
 
+import Combine
 import XCTest
 @testable import ADHD_LifeOS
 
@@ -196,5 +197,22 @@ final class HomeServiceTests: XCTestCase {
             await Task.yield()
         }
         XCTFail("condition was never met")
+    }
+
+    /// SUGG-b4's quiet-reload rule (E's checklist, 2026-08-26): once content is on screen, a
+    /// reload — pull-to-refresh or the app-wide DataChangeSignal — must not flash the loading
+    /// state over it; fresh data replaces stale data in place.
+    func testReloadAfterSuccess_neverFlashesLoading() async {
+        let sut = HomeService(client: FakeHomeClientAdapting())
+        await sut.load()
+
+        var sawLoading = false
+        let watcher = sut.$state.dropFirst().sink { state in
+            if case .loading = state { sawLoading = true }
+        }
+        await sut.load()
+        watcher.cancel()
+
+        XCTAssertFalse(sawLoading, "a reload over loaded content must not flash .loading")
     }
 }

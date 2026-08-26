@@ -29,11 +29,13 @@ extension FirebaseManager {
     func addTagId(_ tagId: UUID, to parent: FirebaseTagParent, parentId: UUID) async throws {
         try await collection(parent.collection).document(parentId.uuidString)
             .updateData([Self.tagIdsField: FieldValue.arrayUnion([tagId.uuidString])])
+        DataChangeSignal.post()
     }
 
     func removeTagId(_ tagId: UUID, from parent: FirebaseTagParent, parentId: UUID) async throws {
         try await collection(parent.collection).document(parentId.uuidString)
             .updateData([Self.tagIdsField: FieldValue.arrayRemove([tagId.uuidString])])
+        DataChangeSignal.post()
     }
 
     /// The parent's current `tag_ids`, resolved against the tags collection so renamed tags show
@@ -100,6 +102,7 @@ extension FirebaseManager {
         }
         try batch.deleteDocument(collection(.tags).document(tagId.uuidString))
         try await batch.commit()
+        DataChangeSignal.post()
     }
 
     func renameTag(id: UUID, to name: String) async throws {

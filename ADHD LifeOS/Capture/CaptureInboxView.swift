@@ -3,6 +3,7 @@
 //  ADHD LifeOS
 //
 
+import Combine
 import SwiftUI
 
 /// The capture triage screen — since 2026-08-23 purely the to-triage queue: the Seen and
@@ -99,6 +100,14 @@ struct CaptureInboxView: View {
             await service.load()
             momentumPreferences = UserDefaultsMomentumPreferencesStore().read()
             allTags = await service.fetchAllTags()
+        }
+        // `refresh()`, not `load()`: the quiet path that never blanks the list mid-read. Tags
+        // re-fetch too, so a tag renamed in Settings shows on the triage chips straight away.
+        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            Task {
+                await service.refresh()
+                allTags = await service.fetchAllTags()
+            }
         }
         .sheet(item: $promotingCapture) { capture in
             CapturePromoteSheet(

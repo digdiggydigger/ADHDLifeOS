@@ -3,6 +3,7 @@
 //  ADHD LifeOS
 //
 
+import Combine
 import SwiftUI
 
 /// The Areas tab (F-V3-Areas): the life area as the unit of navigation. Two-up identity-tinted
@@ -119,6 +120,9 @@ struct AreasView: View {
                 )
             }
             .task { await service.load() }
+            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+                Task { await service.load() }
+            }
             .onAppear { momentumPreferences = momentumPreferencesStore.read() }
             .onChange(of: isPresentingInbox) { presented in
                 if !presented { Task { await service.load() } }

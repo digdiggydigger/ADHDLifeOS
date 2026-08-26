@@ -3,6 +3,7 @@
 //  ADHD LifeOS
 //
 
+import Combine
 import SwiftUI
 
 struct HomeView: View {
@@ -310,13 +311,11 @@ struct HomeView: View {
             // Pull-to-refresh reloads every Home data source in parallel; the analytics section
             // refetches through its reload token rather than a service reference (it owns its
             // own service by design).
-            .refreshable {
-                pullRefreshCount += 1
-                async let home: Void = homeService.load()
-                async let nudges: Void = nudgesService.load()
-                async let inbox: Void = refreshInboxCount()
-                _ = await (home, nudges, inbox)
-                publishWidgetSnapshot(sprint: widgetSprint)
+            .refreshable { await refreshEverything() }
+            // The app-wide write signal (SUGG-b4/b1): any Firestore write — a capture from the
+            // global fan, an area recoloured in Settings — refetches Today without a pull.
+            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+                Task { await refreshEverything() }
             }
         }
     }
@@ -327,6 +326,18 @@ struct HomeView: View {
 }
 
 extension HomeView {
+    /// Every Home data source in parallel — the pull gesture and the app-wide `DataChangeSignal`
+    /// run the same reload, so the two paths can never drift. Bumping `pullRefreshCount` folds
+    /// the analytics section (and its widget republish) into both.
+    func refreshEverything() async {
+        pullRefreshCount += 1
+        async let home: Void = homeService.load()
+        async let nudges: Void = nudgesService.load()
+        async let inbox: Void = refreshInboxCount()
+        _ = await (home, nudges, inbox)
+        publishWidgetSnapshot(sprint: widgetSprint)
+    }
+
     /// Rebuilds and publishes the Home Screen widget's payload. Cheap, pure and idempotent, so
     /// calling it from every path that changes either half beats working out which half moved.
     /// The sprint is passed in rather than read off `self` — and required, not defaulted, because

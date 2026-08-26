@@ -8,6 +8,7 @@
 //  "One line about today…" is its door.
 //
 
+import Combine
 import SwiftUI
 
 /// Internal, not private, wherever the timeline sections need it: the day stream and its rows
@@ -117,6 +118,9 @@ struct JournalView: View {
             }
             .task {
                 await reload()
+            }
+            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+                Task { await reload() }
             }
             .navigationDestination(isPresented: Binding(
                 get: { inspectingTaskId != nil },

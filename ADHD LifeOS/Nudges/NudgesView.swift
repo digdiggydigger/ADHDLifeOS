@@ -3,6 +3,7 @@
 //  ADHD LifeOS
 //
 
+import Combine
 import SwiftUI
 
 struct NudgesView: View {
@@ -45,6 +46,9 @@ struct NudgesView: View {
         .task {
             await service.load()
             momentumPreferences = UserDefaultsMomentumPreferencesStore().read()
+        }
+        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            Task { await service.load() }
         }
     }
 

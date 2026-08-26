@@ -9,6 +9,7 @@
 //  custom back row, so the interactive pop gesture keeps working.
 //
 
+import Combine
 import SwiftUI
 
 struct LifeAreaDetailView: View {
@@ -83,6 +84,9 @@ struct LifeAreaDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .tint(family.color)
+        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            Task { await service.load() }
+        }
         .task {
             // The v3 screen shows open AND closed together (closed rows dim and strike).
             service.statusFilter = .all

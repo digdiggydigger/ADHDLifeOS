@@ -234,17 +234,25 @@ final class FirebaseManager {
         return try snapshot.documents.map { try $0.data(as: Model.self) }
     }
 
+    // Every method below posts `DataChangeSignal` AFTER its awaited write, so the signal only
+    // announces writes that actually landed. Together with the batch commits in `+LifeAreas`,
+    // `+Tags` and `+Seed`, these are ALL the user-data write paths in the app (grep-audited,
+    // 2026-08-26; `+AccountDeletion` is deliberately silent — there is no UI left to refresh).
+
     func save<Model: Encodable>(_ value: Model, id: UUID, in name: Collection) async throws {
         let data = try FirestoreDocumentCoder.encode(value)
         try await collection(name).document(id.uuidString).setData(data)
+        DataChangeSignal.post()
     }
 
     func delete(id: UUID, from name: Collection) async throws {
         try await collection(name).document(id.uuidString).delete()
+        DataChangeSignal.post()
     }
 
     func update(id: UUID, fields: [String: Any], in name: Collection) async throws {
         guard !fields.isEmpty else { return }
         try await collection(name).document(id.uuidString).updateData(fields)
+        DataChangeSignal.post()
     }
 }
