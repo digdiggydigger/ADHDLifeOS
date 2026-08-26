@@ -312,10 +312,11 @@ private extension TaskDetailView {
 
     var tagsSection: some View {
         TaskDetailTagsSection(
-            tags: service.tags,
+            allTags: service.allTags,
+            attachedTagIds: Set(service.tags.map(\.id)),
             newTagName: $newTagName,
-            onAdd: { name in await service.addTag(name: name) },
-            onRemove: { tag in await service.removeTag(tag) }
+            onToggle: { tag in await service.toggleTag(tag) },
+            onAdd: { name in await service.addTag(name: name) }
         )
     }
 

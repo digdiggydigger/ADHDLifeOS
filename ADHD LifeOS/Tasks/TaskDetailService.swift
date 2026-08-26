@@ -16,6 +16,9 @@ final class TaskDetailService: ObservableObject {
 
     @Published private(set) var state: LoadState = .loading
     @Published private(set) var tags: [Tag] = []
+    /// Every tag the user has, for the composer-parity chip row (E's follow-up): the detail
+    /// screen shows them all, with the attached ones highlighted, exactly like the create sheet.
+    @Published private(set) var allTags: [Tag] = []
     @Published private(set) var isSaving = false
     @Published var errorMessage: String?
     @Published var warningMessage: String?
@@ -23,7 +26,6 @@ final class TaskDetailService: ObservableObject {
     private let taskId: UUID
     private let client: TaskDetailClientAdapting
     private var task: TaskDetail?
-    private var allTags: [Tag] = []
 
     init(taskId: UUID, client: TaskDetailClientAdapting) {
         self.taskId = taskId
@@ -95,6 +97,16 @@ final class TaskDetailService: ObservableObject {
         } catch {
             errorMessage = Self.message(for: error)
             return false
+        }
+    }
+
+    /// Composer-parity chip tap: attached → detach, not attached → attach. Applies immediately,
+    /// same precedent as every other tag edit on this screen.
+    func toggleTag(_ tag: Tag) async {
+        if tags.contains(where: { $0.id == tag.id }) {
+            await removeTag(tag)
+        } else {
+            await attach(tag)
         }
     }
 

@@ -213,4 +213,68 @@ final class TaskDetailServiceTests: XCTestCase {
         XCTAssertEqual(fake.lastRemoveTagArguments?.tagId, tag.id)
         XCTAssertFalse(sut.tags.contains(tag))
     }
+
+    // MARK: - Composer parity (E's follow-up): every tag is on screen, tap toggles membership
+
+    func testLoad_exposesAllTagsForTheChipRow() async {
+        let fake = FakeTaskDetailClientAdapting()
+        let task = makeTask()
+        let tags = [Tag(id: UUID(), name: "urgent"), Tag(id: UUID(), name: "errand")]
+        fake.fetchTaskResult = .success(task)
+        fake.fetchAllTagsResult = .success(tags)
+        let sut = TaskDetailService(taskId: task.id, client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.allTags, tags)
+    }
+
+    func testToggleTag_unattached_attachesIt() async {
+        let fake = FakeTaskDetailClientAdapting()
+        let task = makeTask()
+        let tag = Tag(id: UUID(), name: "urgent")
+        fake.fetchTaskResult = .success(task)
+        fake.fetchAllTagsResult = .success([tag])
+        let sut = TaskDetailService(taskId: task.id, client: fake)
+        await sut.load()
+
+        await sut.toggleTag(tag)
+
+        XCTAssertEqual(fake.addTagToTaskCallCount, 1)
+        XCTAssertEqual(fake.lastAddTagArguments?.tagId, tag.id)
+        XCTAssertTrue(sut.tags.contains(tag))
+    }
+
+    func testToggleTag_attached_removesIt() async {
+        let fake = FakeTaskDetailClientAdapting()
+        let task = makeTask()
+        let tag = Tag(id: UUID(), name: "urgent")
+        fake.fetchTaskResult = .success(task)
+        fake.fetchAllTagsResult = .success([tag])
+        fake.fetchTagsForTaskResult = .success([tag])
+        let sut = TaskDetailService(taskId: task.id, client: fake)
+        await sut.load()
+
+        await sut.toggleTag(tag)
+
+        XCTAssertEqual(fake.removeTagFromTaskCallCount, 1)
+        XCTAssertEqual(fake.addTagToTaskCallCount, 0)
+        XCTAssertFalse(sut.tags.contains(tag))
+    }
+
+    /// Creating a brand-new tag must also surface it in the all-tags chip row, not just attach it.
+    func testAddTag_newTag_joinsTheAllTagsRow() async {
+        let fake = FakeTaskDetailClientAdapting()
+        let task = makeTask()
+        let newTag = Tag(id: UUID(), name: "focus")
+        fake.fetchTaskResult = .success(task)
+        fake.fetchAllTagsResult = .success([])
+        fake.createTagResult = .success(newTag)
+        let sut = TaskDetailService(taskId: task.id, client: fake)
+        await sut.load()
+
+        await sut.addTag(name: "focus")
+
+        XCTAssertTrue(sut.allTags.contains(newTag))
+    }
 }

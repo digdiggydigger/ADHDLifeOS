@@ -75,15 +75,17 @@ struct TaskDetailChipsRow: View {
 #endif
 
 /// The tags editor as a standalone Form section — value/callback-fed, split from
-/// `TaskDetailView.swift` for its file budget. Redesigned in F-V3-Tasks-rebuild (E's b11
-/// addendum): the always-present text field + Add row + footer became removable chips with a
-/// tap-to-add affordance that only shows the field when asked for. Tag edits still apply
-/// immediately — the chips reacting in place says so without a footer spelling it out.
+/// `TaskDetailView.swift` for its file budget. Composer parity (E's F-V3-Tasks-rebuild
+/// follow-up): EVERY tag the user has renders as a chip, exactly like the create sheet — the
+/// attached ones highlighted in accent, a tap toggling membership in place — plus a tap-to-add
+/// affordance for brand-new names. Tag edits still apply immediately; the chips reacting in
+/// place says so without a footer spelling it out.
 struct TaskDetailTagsSection: View {
-    let tags: [Tag]
+    let allTags: [Tag]
+    let attachedTagIds: Set<UUID>
     @Binding var newTagName: String
+    let onToggle: (Tag) async -> Void
     let onAdd: (String) async -> Void
-    let onRemove: (Tag) async -> Void
 
     @State private var isAdding = false
     @FocusState private var addFieldFocused: Bool
@@ -95,7 +97,7 @@ struct TaskDetailTagsSection: View {
             // text clipped away, seen on device), so the tags deliberately don't use it here.
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(tags) { tag in
+                    ForEach(allTags) { tag in
                         tagChip(tag)
                     }
                     addChip
@@ -121,26 +123,29 @@ struct TaskDetailTagsSection: View {
         }
     }
 
-    /// One chip = the tag plus its removal, read by VoiceOver as a single "Remove tag …" element.
+    /// The create sheet's chip voice: attached = accent, not attached = quiet. One tap toggles.
     private func tagChip(_ tag: Tag) -> some View {
-        Button {
-            Task { await onRemove(tag) }
+        let attached = attachedTagIds.contains(tag.id)
+        return Button {
+            Task { await onToggle(tag) }
         } label: {
-            HStack(spacing: 4) {
-                Text(tag.name)
-                Image(systemName: "xmark")
-                    .font(.caption2.weight(.bold))
-            }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(Color("LabelSecondary"))
-            .padding(.horizontal, 8)
-            .frame(minHeight: 36)
-            .background(Color("CardSurfaceSecondary"), in: Capsule())
-            .contentShape(Capsule())
+            Text(tag.name)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(attached ? AreaPalette.work.onColor : Color("LabelSecondary"))
+                .padding(.horizontal, 12)
+                .frame(minHeight: 36)
+                .background(
+                    attached
+                        ? AnyShapeStyle(Color.accentColor)
+                        : AnyShapeStyle(Color("CardSurfaceSecondary")),
+                    in: Capsule()
+                )
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Remove tag \(tag.name)")
-        .accessibilityIdentifier("taskDetailRemoveTag-\(tag.id)")
+        .accessibilityAddTraits(attached ? .isSelected : [])
+        .accessibilityLabel(attached ? "Remove tag \(tag.name)" : "Add tag \(tag.name)")
+        .accessibilityIdentifier("taskDetailTagChip-\(tag.id)")
     }
 
     private var addChip: some View {
