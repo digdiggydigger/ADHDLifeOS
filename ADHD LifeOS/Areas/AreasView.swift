@@ -89,6 +89,7 @@ struct AreasView: View {
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showSettings) {
                 SettingsView(authService: authService)
+                    .keyboardDismissal()
             }
             .navigationDestination(isPresented: $isPresentingInbox) {
                 CaptureInboxView(

@@ -104,6 +104,7 @@ struct TaskListView: View {
                 ) {
                     Task { await tasksService.load() }
                 }
+                .keyboardDismissal()
             }
             .task {
                 await tasksService.load()

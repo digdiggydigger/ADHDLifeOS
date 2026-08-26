@@ -44,6 +44,7 @@ struct LifeAreaEditorListView: View {
         }
         .sheet(isPresented: $isPresentingAdd) {
             AddLifeAreaSheet(service: service)
+                .keyboardDismissal()
         }
         .overlay(alignment: .bottom) {
             infoToast

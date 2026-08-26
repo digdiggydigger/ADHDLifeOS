@@ -41,7 +41,7 @@ struct NudgesView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.pageBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $isPresentingAdd) { addSheet }
+        .sheet(isPresented: $isPresentingAdd) { addSheet.keyboardDismissal() }
         .task {
             await service.load()
             momentumPreferences = UserDefaultsMomentumPreferencesStore().read()

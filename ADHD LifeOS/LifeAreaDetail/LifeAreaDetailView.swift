@@ -118,6 +118,7 @@ struct LifeAreaDetailView: View {
                 ) {
                     isPresentingAdd = false
                 }
+                .keyboardDismissal()
             }
             }
         )

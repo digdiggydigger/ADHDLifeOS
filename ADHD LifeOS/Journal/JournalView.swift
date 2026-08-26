@@ -113,6 +113,7 @@ struct JournalView: View {
                 LogComposerView(journalService: journalService, lifeAreas: journalService.lifeAreas) {
                     Task { await journalService.load() }
                 }
+                .keyboardDismissal()
             }
             .task {
                 await reload()

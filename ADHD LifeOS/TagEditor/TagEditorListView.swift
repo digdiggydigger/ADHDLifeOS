@@ -43,6 +43,7 @@ struct TagEditorListView: View {
         }
         .sheet(isPresented: $isPresentingAdd) {
             AddTagSheet(service: service)
+                .keyboardDismissal()
         }
         .overlay(alignment: .bottom) {
             infoToast

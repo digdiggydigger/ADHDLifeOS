@@ -219,6 +219,7 @@ struct RootView: View {
                         taskCreateClient: taskCreateClient,
                         taskDetailClient: taskDetailClient
                     ) {}
+                    .keyboardDismissal()
                 }
                 // Reinstate a sprint the process died holding (F-SprintPersistence). Idempotent —
                 // a no-op with nothing stored or a sprint already live.
@@ -254,6 +255,9 @@ struct RootView: View {
                 }
             }
         }
+        // b5: one application covers the tabs and every screen pushed inside them; the modal
+        // composers wrap their own roots at their presentation sites.
+        .keyboardDismissal()
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
         // Apple (or password sign-in) lands on Home gracefully (§5).
         .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: authService.state)

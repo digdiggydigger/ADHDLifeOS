@@ -156,6 +156,7 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showSettings) {
                 SettingsView(authService: authService)
+                    .keyboardDismissal()
             }
             .onAppear { momentumPreferences = momentumPreferencesStore.read() }
             .onChange(of: showSettings) { isPresented in
@@ -320,6 +321,12 @@ struct HomeView: View {
         }
     }
 
+    /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
+    /// Chosen over a hand-rolled grid drag because `.onMove` supplies native drag, auto-scroll,
+    /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
+}
+
+extension HomeView {
     /// Rebuilds and publishes the Home Screen widget's payload. Cheap, pure and idempotent, so
     /// calling it from every path that changes either half beats working out which half moved.
     /// The sprint is passed in rather than read off `self` — and required, not defaulted, because
@@ -344,12 +351,6 @@ struct HomeView: View {
         )
     }
 
-    /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
-    /// Chosen over a hand-rolled grid drag because `.onMove` supplies native drag, auto-scroll,
-    /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
-}
-
-extension HomeView {
     /// The FULL set including archived areas — so the Capture triage picker can grey archived areas
     /// rather than being starved of them (they used to be absent entirely here). The grid itself
     /// still shows active areas only, filtered in `HomeService`. In this extension (with the door

@@ -85,6 +85,7 @@ struct CaptureInboxView: View {
             QuickCaptureView(client: captureClient) {
                 Task { await service.refresh() }
             }
+            .keyboardDismissal()
         }
         .navigationDestination(isPresented: Binding(
             get: { inspectingCapture != nil },
@@ -107,6 +108,7 @@ struct CaptureInboxView: View {
             ) {
                 Task { await service.refresh() }
             }
+            .keyboardDismissal()
         }
         .confirmationDialog(
             "Bin this capture?",
