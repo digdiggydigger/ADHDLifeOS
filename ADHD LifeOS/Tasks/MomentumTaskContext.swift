@@ -20,9 +20,9 @@ enum MomentumTaskContext {
     }
 
     /// S3's button: the consequence stated where the choice is made. No streak, no invented
-    /// consequence; a done task's affordance is still Reopen.
-    static func closeButtonLabel(status: TaskStatus, streak: Int) -> String {
-        guard status == .open else { return "Reopen" }
+    /// consequence. Only open tasks show the button — closing is one-way since F-V3-Tasks-rebuild
+    /// (E's addendum removed Reopen everywhere), so there is no done-state label.
+    static func closeButtonLabel(streak: Int) -> String {
         guard streak > 0 else { return "Close it" }
         return "Close it — keeps a \(streak)-day streak"
     }

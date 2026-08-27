@@ -36,19 +36,10 @@ private struct PreviewTaskDetailClientAdapting: TaskDetailClientAdapting {
     func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail {
         fatalError("unused in preview")
     }
+        func deleteTask(id: UUID) async throws {}
     func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
     func addTagToTask(taskId: UUID, tagId: UUID) async throws {}
     func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {}
-}
-
-private struct PreviewNudgeSchedulingClientAdapting: TaskCountdownNudgeSchedulingAdapting {
-    func requestAuthorizationIfNeeded() async -> Bool { false }
-    func scheduleNudges(taskId: UUID, taskTitle: String, fireDates: [ScheduledCountdownNudge]) async {}
-    func cancelNudges(taskId: UUID) async {}
-    func hasScheduledNudges(taskId: UUID) async -> Bool { false }
-    func scheduleDueMomentNotification(taskId: UUID, taskTitle: String, dueDate: Date) async {}
-    func cancelDueMomentNotification(taskId: UUID) async {}
-    func hasDueMomentNotificationScheduled(taskId: UUID) async -> Bool { false }
 }
 
 private func previewDetail(dueDate: Date?) -> some View {
@@ -57,8 +48,7 @@ private func previewDetail(dueDate: Date?) -> some View {
         TaskDetailView(
             taskId: UUID(),
             lifeAreas: [lifeArea],
-            client: PreviewTaskDetailClientAdapting(taskId: UUID(), lifeAreaId: lifeArea.id, dueDate: dueDate),
-            schedulingClient: PreviewNudgeSchedulingClientAdapting()
+            client: PreviewTaskDetailClientAdapting(taskId: UUID(), lifeAreaId: lifeArea.id, dueDate: dueDate)
         ) {}
     }
 }

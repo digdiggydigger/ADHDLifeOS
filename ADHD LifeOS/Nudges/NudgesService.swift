@@ -48,7 +48,10 @@ final class NudgesService: ObservableObject {
     }
 
     func load() async {
-        state = .loading
+        // Quiet reload (SUGG-b4): only the FIRST load may show the loading state — once content
+        // is on screen, a refetch (pull, or the app-wide DataChangeSignal) replaces it in place
+        // instead of flashing it away.
+        if case .loaded = state {} else { state = .loading }
         do {
             let nudges = try await client.fetchNudges()
             state = .loaded(nudges)
@@ -94,7 +97,9 @@ final class NudgesService: ObservableObject {
     func dismiss(_ nudge: Nudge) async -> Bool {
         errorMessage = nil
         do {
-            let updated = try await client.markFired(id: nudge.id)
+            let updated = try await client.markFired(
+                id: nudge.id, existingCompletionDates: nudge.completionDates ?? []
+            )
             replace(updated)
             return true
         } catch {

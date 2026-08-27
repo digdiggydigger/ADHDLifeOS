@@ -34,21 +34,22 @@ final class MomentumTaskContextTests: XCTestCase {
 
     // MARK: - Close button
 
+    /// Only open tasks carry the button now — closing is one-way (E's b11 addendum removed
+    /// Reopen everywhere), so the label no longer takes a status.
     func testCloseButtonLabel_statesTheStreakConsequence() {
         XCTAssertEqual(
-            MomentumTaskContext.closeButtonLabel(status: .open, streak: 7),
+            MomentumTaskContext.closeButtonLabel(streak: 7),
             "Close it — keeps a 7-day streak"
         )
         XCTAssertEqual(
-            MomentumTaskContext.closeButtonLabel(status: .open, streak: 1),
+            MomentumTaskContext.closeButtonLabel(streak: 1),
             "Close it — keeps a 1-day streak"
         )
     }
 
-    /// No streak, no invented consequence — and a done task's affordance is still Reopen.
-    func testCloseButtonLabel_withoutAStreakOrWhenDone() {
-        XCTAssertEqual(MomentumTaskContext.closeButtonLabel(status: .open, streak: 0), "Close it")
-        XCTAssertEqual(MomentumTaskContext.closeButtonLabel(status: .done, streak: 7), "Reopen")
+    /// No streak, no invented consequence.
+    func testCloseButtonLabel_withoutAStreak() {
+        XCTAssertEqual(MomentumTaskContext.closeButtonLabel(streak: 0), "Close it")
     }
 
     // MARK: - Area line

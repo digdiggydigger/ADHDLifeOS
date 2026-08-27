@@ -2,6 +2,11 @@
 //  TaskCreateView.swift
 //  ADHD LifeOS
 //
+//  The v3 task composer (E's 2026-08-25 note): the stock Form became a dedicated S1-style
+//  screen — the title as one big honest box, due dates as chips (`TaskDueChoice`, pure, tested),
+//  every other question labelled optional out loud. The service machinery, the create seams and
+//  the journey identifiers (`taskCreateTitleField`, `taskCreateSubmitButton`) are unchanged.
+//
 
 import SwiftUI
 
@@ -10,112 +15,150 @@ struct TaskCreateView: View {
     let lifeAreas: [LifeArea]
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var isAddMoreInfoExpanded = false
-    @State private var hasDueDate = false
+    @State private var dueChoice: TaskDueChoice = .notYet
 
     init(
         client: TaskCreateClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         lifeAreas: [LifeArea],
+        preselectedLifeAreaId: UUID? = nil,
         onCreated: @escaping () -> Void
     ) {
-        _service = StateObject(wrappedValue: TaskCreateService(client: client, schedulingClient: schedulingClient))
+        _service = StateObject(wrappedValue: {
+            let service = TaskCreateService(client: client)
+            // The v3 area screen's "Add to <area>" opens the form already filed there.
+            service.lifeAreaId = preselectedLifeAreaId
+            return service
+        }())
         self.lifeAreas = lifeAreas
         self.onCreated = onCreated
     }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("Title", text: $service.title)
-                        .accessibilityIdentifier("taskCreateTitleField")
-                }
-
-                DisclosureGroup("Add More Info", isExpanded: $isAddMoreInfoExpanded) {
-                    dueDateSection
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("One clear next action — every detail below is optional.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    ComposerTextBox(
+                        placeholder: "What needs doing?",
+                        text: $service.title,
+                        accessibilityID: "taskCreateTitleField"
+                    )
+                    dueSection
+                    areaSection
                     notesSection
-                    lifeAreaSection
-                    tagSection
+                    tagsSection
+                    if let warningMessage = service.warningMessage {
+                        Text(warningMessage)
+                            .font(.footnote)
+                            .foregroundStyle(Color("StateWarn"))
+                            .accessibilityIdentifier("taskCreateWarningMessage")
+                    }
+                    if let errorMessage = service.errorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundStyle(Color("StateRisk"))
+                            .accessibilityIdentifier("taskCreateErrorMessage")
+                    }
                 }
-
-                TaskCountdownNudgeControl(dueDate: service.dueDate, selection: $service.nudgeSelection)
-
-                Section {
-                    Toggle("Notify me when this is due", isOn: $service.dueMomentNotificationEnabled)
-                        .disabled(service.dueDate == nil)
-                        .accessibilityIdentifier("taskCreateDueMomentNotificationToggle")
-                }
-
-                if let warningMessage = service.warningMessage {
-                    Text(warningMessage)
-                        .foregroundStyle(.orange)
-                        .accessibilityIdentifier("taskCreateWarningMessage")
-                }
-                if let errorMessage = service.errorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("taskCreateErrorMessage")
-                }
+                .padding(16)
             }
-            .navigationTitle("New Task")
+            .background(Color.pageBackground.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom) { footerBar }
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        Task {
-                            if await service.createTask() {
-                                onCreated()
-                                dismiss()
-                            }
-                        }
-                    }
-                    .disabled(!service.isTitleValid || service.isSubmitting)
-                    .accessibilityIdentifier("taskCreateSubmitButton")
+                ToolbarItem(placement: .principal) {
+                    Text("New task")
+                        .font(.headline)
                 }
             }
-            .task { await service.loadTags() }
+            .task {
+                dueChoice = TaskDueChoice.choice(for: service.dueDate, asOf: .now)
+                await service.loadTags()
+            }
         }
     }
 
-    private var dueDateSection: some View {
-        Group {
-            Toggle("Due Date", isOn: $hasDueDate)
-                .onChange(of: hasDueDate) { newValue in
-                    service.dueDate = newValue ? (service.dueDate ?? Date()) : nil
+    // MARK: - Due date
+
+    private var dueSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ComposerSectionHeader(title: "When is it due?", detail: "optional")
+            FlowingChips(spacing: 8) {
+                ForEach(TaskDueChoice.allCases, id: \.title) { choice in
+                    dueChip(choice)
                 }
-            if hasDueDate {
+            }
+            if dueChoice == .custom {
                 DatePicker(
-                    "Date",
+                    "Due",
                     selection: Binding(
-                        get: { service.dueDate ?? Date() },
+                        get: { service.dueDate ?? .now },
                         set: { service.dueDate = $0 }
                     ),
                     displayedComponents: [.date, .hourAndMinute]
                 )
+                .padding(16)
+                .background(Color("CardSurfaceSecondary"), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityIdentifier("taskCreateDueDatePicker")
+            }
+        }
+    }
+
+    private func dueChip(_ choice: TaskDueChoice) -> some View {
+        let selected = dueChoice == choice
+        return Button {
+            Haptics.play(.selection)
+            dueChoice = choice
+            service.dueDate = choice.resolvedDueDate(existing: service.dueDate, asOf: .now)
+        } label: {
+            Text(choice.title)
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
+                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(ChoiceChipButtonStyle(isSelected: selected))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("taskCreateDue-\(choice.title)")
+    }
+
+    // MARK: - Area, notes, tags
+
+    @ViewBuilder
+    private var areaSection: some View {
+        if !lifeAreas.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                ComposerSectionHeader(title: "Life area", detail: "optional")
+                ComposerAreaChips(
+                    lifeAreas: lifeAreas.filter { !$0.archived },
+                    noSelectionLabel: "Decide later",
+                    selection: $service.lifeAreaId
+                )
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("taskCreateLifeAreaPicker")
             }
         }
     }
 
     private var notesSection: some View {
-        TextField("Notes", text: $service.notes, axis: .vertical)
-            .accessibilityIdentifier("taskCreateNotesField")
-    }
-
-    private var lifeAreaSection: some View {
-        LifeAreaPicker(
-            title: "Life Area",
-            noSelectionLabel: "None",
-            lifeAreas: lifeAreas,
-            selection: $service.lifeAreaId,
-            accessibilityID: "taskCreateLifeAreaPicker"
-        )
-    }
-
-    private var tagSection: some View {
         VStack(alignment: .leading, spacing: 8) {
+            ComposerSectionHeader(title: "Notes", detail: "optional")
+            ComposerTextBox(
+                placeholder: "Anything future-you needs to know",
+                text: $service.notes,
+                accessibilityID: "taskCreateNotesField"
+            )
+        }
+    }
+
+    private var tagsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ComposerSectionHeader(title: "Tags", detail: "optional")
             switch service.tagsState {
             case .idle, .loading:
                 ProgressView()
@@ -124,31 +167,85 @@ struct TaskCreateView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .loaded:
-                ForEach(service.availableTags) { tag in
-                    Button {
-                        service.toggleTagSelection(tag)
-                    } label: {
-                        HStack {
-                            Text(tag.name)
-                            Spacer()
-                            if service.selectedTagIds.contains(tag.id) {
-                                Image(systemName: "checkmark")
-                            }
+                if !service.availableTags.isEmpty {
+                    FlowingChips(spacing: 8) {
+                        ForEach(service.availableTags) { tag in
+                            tagChip(tag)
                         }
                     }
                 }
             }
-
-            HStack {
+            HStack(spacing: 8) {
                 TextField("New tag", text: $service.newTagName)
+                    .textInputAutocapitalization(.never)
+                    .padding(.horizontal, 8)
+                    .frame(minHeight: 36)
+                    .background(
+                        Color("CardSurfaceSecondary"),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
                     .accessibilityIdentifier("taskCreateNewTagField")
                 Button("Add") {
                     Task { await service.addNewTag() }
                 }
+                .font(.caption.weight(.semibold))
                 .disabled(service.newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .accessibilityIdentifier("taskCreateAddTagButton")
             }
         }
+    }
+
+    private func tagChip(_ tag: Tag) -> some View {
+        let selected = service.selectedTagIds.contains(tag.id)
+        return Button {
+            Haptics.play(.light)
+            service.toggleTagSelection(tag)
+        } label: {
+            Text(tag.name)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(selected ? AreaPalette.work.onColor : Color("LabelSecondary"))
+                .padding(.horizontal, 8)
+                .frame(minHeight: 36)
+                .background(
+                    selected
+                        ? AnyShapeStyle(Color.accentColor)
+                        : AnyShapeStyle(Color("CardSurfaceSecondary")),
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier("taskCreateTagChip-\(tag.id)")
+    }
+
+    // MARK: - Footer
+
+    private var footerBar: some View {
+        VStack(spacing: 8) {
+            Text("Lands in your list — nothing else happens until you decide it does.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button(service.isSubmitting ? "Adding…" : "Add the task") {
+                Task {
+                    if await service.createTask() {
+                        Haptics.play(.solid)
+                        onCreated()
+                        dismiss()
+                    } else {
+                        Haptics.play(.error)
+                    }
+                }
+            }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .disabled(!service.isTitleValid || service.isSubmitting)
+            .accessibilityIdentifier("taskCreateSubmitButton")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+        .composerFooterSurface()
     }
 }
 
@@ -162,21 +259,19 @@ private struct PreviewTaskCreateClientAdapting: TaskCreateClientAdapting {
     func attachTags(taskId: UUID, tagIds: [UUID]) async throws {}
 }
 
-private struct PreviewNudgeSchedulingClientAdapting: TaskCountdownNudgeSchedulingAdapting {
-    func requestAuthorizationIfNeeded() async -> Bool { false }
-    func scheduleNudges(taskId: UUID, taskTitle: String, fireDates: [ScheduledCountdownNudge]) async {}
-    func cancelNudges(taskId: UUID) async {}
-    func hasScheduledNudges(taskId: UUID) async -> Bool { false }
-    func scheduleDueMomentNotification(taskId: UUID, taskTitle: String, dueDate: Date) async {}
-    func cancelDueMomentNotification(taskId: UUID) async {}
-    func hasDueMomentNotificationScheduled(taskId: UUID) async -> Bool { false }
-}
-
-#Preview {
+#Preview("Light") {
     TaskCreateView(
         client: PreviewTaskCreateClientAdapting(),
-        schedulingClient: PreviewNudgeSchedulingClientAdapting(),
-        lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "#4A90D9", sortOrder: 0)]
+        lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
     ) {}
+    .preferredColorScheme(.light)
+}
+
+#Preview("Dark") {
+    TaskCreateView(
+        client: PreviewTaskCreateClientAdapting(),
+        lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
+    ) {}
+    .preferredColorScheme(.dark)
 }
 #endif

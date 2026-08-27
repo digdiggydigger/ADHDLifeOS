@@ -17,5 +17,6 @@ extension CaptureInboxService {
     func refreshWeekCounterweight() async {
         guard let captures = try? await client.fetchCaptures() else { return }
         weekCounterweightLine = CaptureInboxSummary.weeklyCounterweight(for: captures)
+        weekHealth = CaptureInboxSummary.weekHealth(for: captures)
     }
 }

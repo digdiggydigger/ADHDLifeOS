@@ -29,6 +29,23 @@ struct FocusActivitySnapshot: Equatable, Sendable {
     let checkpointSeconds: [Int]
 }
 
+extension FocusActivitySnapshot {
+    /// Maps the engine's session onto the mirror's wire value — here rather than in the service
+    /// so the mapping lives beside the type it builds.
+    init(session: FocusSession, deadline: Date?) {
+        self.init(
+            taskTitle: session.taskTitle,
+            lifeAreaEmoji: session.lifeAreaEmoji,
+            durationSeconds: session.durationSeconds,
+            deadline: session.isPaused ? nil : deadline,
+            pausedRemainingSeconds: session.isPaused ? session.remainingSeconds : nil,
+            checkpointCount: session.nudgeCheckpoints.count,
+            checkpointsReached: session.triggeredCheckpointIndices.count,
+            checkpointSeconds: session.nudgeCheckpoints
+        )
+    }
+}
+
 /// Seam over ActivityKit: the service reports sprint lifecycle events, the live implementation
 /// (`FocusActivityKitMirror`) projects them onto the Lock Screen / Dynamic Island Activity, and
 /// tests assert the call sequences with a fake. The OS renders the countdown itself from the
@@ -37,6 +54,11 @@ struct FocusActivitySnapshot: Equatable, Sendable {
 @MainActor
 protocol FocusActivityMirroring: AnyObject {
     func sprintStarted(_ snapshot: FocusActivitySnapshot)
+    /// A sprint reinstated from persistence after the process died mid-flight
+    /// (F-SprintPersistence). Distinct from `sprintStarted` because the live implementation must
+    /// sequence AFTER its orphan sweep — the Activity surviving on the Lock Screen belongs to
+    /// this very sprint.
+    func sprintRestored(_ snapshot: FocusActivitySnapshot)
     /// Pause, resume, extend, and checkpoint crossings.
     func sprintUpdated(_ snapshot: FocusActivitySnapshot)
     /// Manual stop, natural completion, and the retirement of a sprint a replacement displaces.

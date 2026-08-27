@@ -44,6 +44,105 @@ final class FirebaseJournalClientAdapterTests: XCTestCase {
         }
     }
 
+    // MARK: - Composer tags (E's 2026-08-25 note)
+
+    /// Tags ride the CREATE payload — `firestore.rules` denies update on logs, so there is no
+    /// arrayUnion path; the document is born with its membership or never has one.
+    func testCreateLog_carriesTagsOntoTheStoredLog() async throws {
+        let tagIds = [UUID(), UUID()]
+        let input = NormalizedCreateLogInput(
+            body: "Tagged", type: .log, lifeAreaId: nil, tagIds: tagIds
+        )
+
+        let created = try await adapter.createLog(input)
+
+        XCTAssertEqual(created.tagIds, tagIds)
+        XCTAssertEqual(store.appendedLogs.first?.tagIds, tagIds)
+    }
+
+    func testCreateLog_noTagsStoresNilNotAnEmptyArray() async throws {
+        let input = NormalizedCreateLogInput(body: "Plain", type: .log, lifeAreaId: nil)
+
+        let created = try await adapter.createLog(input)
+
+        XCTAssertNil(created.tagIds, "an untagged entry must not write an empty tag_ids field")
+    }
+
+    func testFetchAllTags_passesTheStoreListThrough() async throws {
+        let tag = Tag(id: UUID(), name: "errands")
+        store.allTags = [tag]
+
+        let fetched = try await adapter.fetchAllTags()
+
+        XCTAssertEqual(fetched, [tag])
+    }
+
+    func testCreateTag_passesTheDedupedTagThrough() async throws {
+        let tag = Tag(id: UUID(), name: "deep-work")
+        store.createTagResult = tag
+
+        let created = try await adapter.createTag(name: "deep-work")
+
+        XCTAssertEqual(created, tag)
+        XCTAssertEqual(store.createdTagNames, ["deep-work"])
+    }
+
+    func testTagFetchAndCreate_wrapFailuresAsJournalErrors() async {
+        store.fetchAllTagsError = FirebaseManagerError.notSignedIn
+        store.createTagError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchAllTags()) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+        await XCTAssertThrowsErrorAsync(try await adapter.createTag(name: "x")) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
+    // MARK: - The timeline's side streams (E's 2026-08-25 note)
+
+    func testFetchFocusSessions_passesTheStoreListThrough() async throws {
+        let sprint = CompletedFocusSession(
+            id: UUID(), taskId: nil, taskTitle: "Draft", lifeAreaEmoji: "💼",
+            plannedSeconds: 1_500, focusedSeconds: 1_500, checkpointsReached: 0,
+            completedNaturally: true, startedAt: Date(timeIntervalSince1970: 0),
+            endedAt: Date(timeIntervalSince1970: 1_500)
+        )
+        store.focusSessions = [sprint]
+
+        let fetched = try await adapter.fetchFocusSessions()
+
+        XCTAssertEqual(fetched, [sprint])
+    }
+
+    func testFetchFocusSessions_wrapsFailureAsAJournalError() async {
+        store.fetchFocusSessionsError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchFocusSessions()) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
+    func testFetchCaptures_passesTheStoreListThrough() async throws {
+        let capture = Capture(
+            id: UUID(), content: "stray thought", kind: .note, processed: false,
+            createdAt: Date(timeIntervalSince1970: 100)
+        )
+        store.captures = [capture]
+
+        let fetched = try await adapter.fetchCaptures()
+
+        XCTAssertEqual(fetched, [capture])
+    }
+
+    func testFetchCaptures_wrapsFailureAsAJournalError() async {
+        store.fetchCapturesError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchCaptures()) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
     // MARK: - Creating an entry
 
     /// The composer has no date picker, so `entryDate` is stamped client-side as "now" — and the

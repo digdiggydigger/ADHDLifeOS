@@ -171,7 +171,16 @@ struct DailySummaryView: View {
     /// that native controls win where they are already the house pattern.
     private var generateButton: some View {
         Button {
-            Task { await service.generate() }
+            Task {
+                await service.generate()
+                // 30. The summary is a wait — the feel lands when it ACTUALLY finishes, and
+                // reports which way it went rather than buzzing success at a failed generate.
+                if case .failed = service.state {
+                    Haptics.play(.error)
+                } else {
+                    Haptics.play(.success)
+                }
+            }
         } label: {
             HStack(spacing: 4) {
                 if service.isGenerating {

@@ -76,6 +76,10 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
     /// (`LogValidation` enforces that), because the web keeps them on `JournalEntry` alone.
     let energyLevel: EnergyLevel?
     let moodEmoji: String?
+    /// Tag membership, written ONCE at create (E's 2026-08-25 note) — `firestore.rules` denies
+    /// update on logs, so unlike tasks/captures there is no arrayUnion path: the document is born
+    /// with its tags or never has them. `nil` on every entry written before the field existed.
+    let tagIds: [UUID]?
 
     init(
         id: UUID,
@@ -85,7 +89,8 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
         entryDate: Date,
         createdAt: Date,
         energyLevel: EnergyLevel? = nil,
-        moodEmoji: String? = nil
+        moodEmoji: String? = nil,
+        tagIds: [UUID]? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -95,6 +100,7 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
         self.createdAt = createdAt
         self.energyLevel = energyLevel
         self.moodEmoji = moodEmoji
+        self.tagIds = tagIds
     }
 
     enum CodingKeys: String, CodingKey {
@@ -104,6 +110,7 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
         case createdAt = "created_at"
         case energyLevel = "energy_level"
         case moodEmoji = "mood_emoji"
+        case tagIds = "tag_ids"
     }
 
     /// Hand-written for one reason: an `energy_level` this build doesn't recognise decodes to `nil`
@@ -120,7 +127,8 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
             entryDate: try container.decode(Date.self, forKey: .entryDate),
             createdAt: try container.decode(Date.self, forKey: .createdAt),
             energyLevel: (try? container.decodeIfPresent(EnergyLevel.self, forKey: .energyLevel)) ?? nil,
-            moodEmoji: try container.decodeIfPresent(String.self, forKey: .moodEmoji)
+            moodEmoji: try container.decodeIfPresent(String.self, forKey: .moodEmoji),
+            tagIds: try container.decodeIfPresent([UUID].self, forKey: .tagIds)
         )
     }
 }

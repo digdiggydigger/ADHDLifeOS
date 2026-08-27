@@ -3,6 +3,7 @@
 //  ADHD LifeOSTests
 //
 
+import Combine
 import XCTest
 @testable import ADHD_LifeOS
 
@@ -152,5 +153,115 @@ final class JournalServiceTests: XCTestCase {
         XCTAssertFalse(result)
         XCTAssertEqual(sut.createErrorMessage, "Network error")
         XCTAssertEqual(sut.composerBody, "Had a good day")
+    }
+
+    // MARK: - Sprints and captures alongside the logs (E's note, 2026-08-25)
+
+    func testLoad_populatesFocusSessionsAndCaptures() async {
+        let fake = FakeJournalClientAdapting()
+        let sprint = CompletedFocusSession(
+            id: UUID(), taskId: nil, taskTitle: "Draft", lifeAreaEmoji: "💼",
+            plannedSeconds: 1_500, focusedSeconds: 1_500, checkpointsReached: 2,
+            completedNaturally: true, startedAt: Date(timeIntervalSince1970: 0),
+            endedAt: Date(timeIntervalSince1970: 1_500)
+        )
+        let capture = Capture(
+            id: UUID(), content: "stray thought", kind: .note, processed: false,
+            createdAt: Date(timeIntervalSince1970: 100)
+        )
+        fake.focusSessionsResult = .success([sprint])
+        fake.capturesResult = .success([capture])
+        let sut = JournalService(client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.focusSessions, [sprint])
+        XCTAssertEqual(sut.captures, [capture])
+    }
+
+    // MARK: - Composer tags (E's 2026-08-25 note: journal and logs take tags too)
+
+    func testLoad_populatesAvailableTags() async {
+        let fake = FakeJournalClientAdapting()
+        let tag = Tag(id: UUID(), name: "errands")
+        fake.allTagsResult = .success([tag])
+        let sut = JournalService(client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.availableTags, [tag])
+    }
+
+    func testCreateLog_sendsTheSelectedTagsAndResetsThem() async {
+        let fake = FakeJournalClientAdapting()
+        let sut = JournalService(client: fake)
+        let tagIds = [UUID(), UUID()]
+        sut.composerBody = "Tagged entry"
+        sut.composerTagIds = tagIds
+
+        let created = await sut.createLog()
+
+        XCTAssertTrue(created)
+        XCTAssertEqual(fake.lastCreateLogInput?.tagIds, tagIds)
+        XCTAssertEqual(sut.composerTagIds, [], "selection must reset with the rest of the composer")
+    }
+
+    func testCreateTagForComposer_createsSelectsAndListsTheTag() async {
+        let fake = FakeJournalClientAdapting()
+        let tag = Tag(id: UUID(), name: "deep-work")
+        fake.createTagResult = .success(tag)
+        let sut = JournalService(client: fake)
+
+        let returned = await sut.createTagForComposer(name: "deep-work")
+
+        XCTAssertEqual(returned, tag)
+        XCTAssertEqual(sut.composerTagIds, [tag.id], "a freshly made tag is what you meant to use")
+        XCTAssertTrue(sut.availableTags.contains(tag))
+    }
+
+    func testCreateTagForComposer_failureSurfacesTheErrorWithoutSelecting() async {
+        let fake = FakeJournalClientAdapting()
+        fake.createTagResult = .failure(JournalServiceError.fetchFailed("down"))
+        let sut = JournalService(client: fake)
+
+        let returned = await sut.createTagForComposer(name: "deep-work")
+
+        XCTAssertNil(returned)
+        XCTAssertEqual(sut.createErrorMessage, "down")
+        XCTAssertEqual(sut.composerTagIds, [])
+    }
+
+    /// The side streams are garnish, never load-bearing: their failure must not take the written
+    /// journal down — same non-blocking posture as the view's task fetch.
+    func testLoad_sprintOrCaptureFailureLeavesThemEmptyWithoutFailingTheJournal() async {
+        let fake = FakeJournalClientAdapting()
+        let log = makeLog()
+        fake.logsResult = .success([log])
+        fake.focusSessionsResult = .failure(JournalServiceError.fetchFailed("down"))
+        fake.capturesResult = .failure(JournalServiceError.fetchFailed("down"))
+        let sut = JournalService(client: fake)
+
+        await sut.load()
+
+        XCTAssertEqual(sut.state, .loaded([log]))
+        XCTAssertEqual(sut.focusSessions, [])
+        XCTAssertEqual(sut.captures, [])
+    }
+
+    /// SUGG-b4's quiet-reload rule (E's checklist, 2026-08-26): once content is on screen, a
+    /// reload — pull-to-refresh or the app-wide DataChangeSignal — must not flash the loading
+    /// state over it; fresh data replaces stale data in place.
+    func testReloadAfterSuccess_neverFlashesLoading() async {
+        let sut = JournalService(client: FakeJournalClientAdapting())
+        await sut.load()
+
+        var sawLoading = false
+        let watcher = sut.$state.dropFirst().sink { state in
+            if case .loading = state { sawLoading = true }
+        }
+        await sut.load()
+        watcher.cancel()
+
+        XCTAssertFalse(sawLoading, "a reload over loaded content must not flash .loading")
     }
 }

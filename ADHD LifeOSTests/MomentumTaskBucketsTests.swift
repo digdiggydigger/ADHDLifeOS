@@ -6,9 +6,10 @@
 import XCTest
 @testable import ADHD_LifeOS
 
-/// The Tasks tab's Momentum grouping (Concept C, block M3): due-time buckets instead of life
-/// areas — Due today, Tomorrow, Later, Someday, and the evidence pile, Closed today. Same
-/// `LifeAreaTaskGroup` container the list already renders, with bucket names as headers.
+/// The Tasks tab's Momentum grouping (Concept C, block M3; narrowed in F-V3-Tasks-rebuild): due-time
+/// buckets instead of life areas — Due today, Tomorrow, and the evidence pile, Closed today. The
+/// long tail (later / undated) is deliberately NOT here (E's b11 call): Momentum is today's page,
+/// and the rest lives under the Open filter. Same `LifeAreaTaskGroup` container the list renders.
 final class MomentumTaskBucketsTests: XCTestCase {
     private var calendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
@@ -39,9 +40,7 @@ final class MomentumTaskBucketsTests: XCTestCase {
     func testGroup_bucketsByDueness_inFixedOrder() {
         let groups = MomentumTaskBuckets.group(
             tasks: [
-                task("Someday"),
                 task("Closed", status: .done, completedDaysAgo: 0),
-                task("Later", dueDaysFromNow: 3),
                 task("Tomorrow", dueDaysFromNow: 1),
                 task("Today", dueDaysFromNow: 0)
             ],
@@ -50,8 +49,19 @@ final class MomentumTaskBucketsTests: XCTestCase {
 
         XCTAssertEqual(
             groups.map(\.lifeAreaName),
-            ["Due today · 1", "Tomorrow · 1", "Later · 1", "Someday · 1", "Closed today · 1"]
+            ["Due today · 1", "Tomorrow · 1", "Closed today · 1"]
         )
+    }
+
+    /// The long tail is Momentum's biggest overwhelm risk, so it is excluded outright: tasks due
+    /// beyond tomorrow, and undated tasks, render only under the Open filter (E's b11 call).
+    func testGroup_excludesLaterAndUndatedTasks() {
+        let groups = MomentumTaskBuckets.group(
+            tasks: [task("Undated"), task("Later", dueDaysFromNow: 3), task("Today", dueDaysFromNow: 0)],
+            asOf: now, calendar: calendar
+        )
+
+        XCTAssertEqual(groups.map(\.lifeAreaName), ["Due today · 1"])
     }
 
     /// Overdue is not its own shame pile — it joins Due today, the same "due now" reading the
@@ -66,9 +76,11 @@ final class MomentumTaskBucketsTests: XCTestCase {
     }
 
     func testGroup_emptyBucketsAreOmitted() {
-        let groups = MomentumTaskBuckets.group(tasks: [task("Someday")], asOf: now, calendar: calendar)
+        let groups = MomentumTaskBuckets.group(
+            tasks: [task("Tomorrow", dueDaysFromNow: 1)], asOf: now, calendar: calendar
+        )
 
-        XCTAssertEqual(groups.map(\.lifeAreaName), ["Someday · 1"])
+        XCTAssertEqual(groups.map(\.lifeAreaName), ["Tomorrow · 1"])
     }
 
     /// Yesterday's closures are not today's evidence — they belong to the Done filter, not here.
@@ -99,7 +111,11 @@ final class MomentumTaskBucketsTests: XCTestCase {
     /// life-area id) or with the life-area grouping's "unassigned".
     func testGroup_bucketIdsAreDistinct() {
         let groups = MomentumTaskBuckets.group(
-            tasks: [task("Someday"), task("Today", dueDaysFromNow: 0)],
+            tasks: [
+                task("Today", dueDaysFromNow: 0),
+                task("Tomorrow", dueDaysFromNow: 1),
+                task("Closed", status: .done, completedDaysAgo: 0)
+            ],
             asOf: now, calendar: calendar
         )
 

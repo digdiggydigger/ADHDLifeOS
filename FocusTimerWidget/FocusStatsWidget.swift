@@ -173,7 +173,8 @@ struct FocusWidgetLabel: View {
 
     var body: some View {
         Text(text)
-            .font(.caption2.monospaced().weight(.bold))
+            .font(.caption2.weight(.bold))
+                            .tracking(0.5)
             .textCase(.uppercase)
             .foregroundStyle(Color("AccentColor"))
             .lineLimit(1)

@@ -44,9 +44,16 @@ final class SignedInJourneyUITests: XCTestCase {
         XCTAssertTrue(submit.isEnabled, "Create stayed disabled with a title entered")
         submit.tap()
 
+        // The composer creates the task undated, and the default Momentum board deliberately
+        // excludes undated tasks since F-V3-Tasks-rebuild — they live under the Open filter,
+        // so that is where a freshly created task must appear.
+        let openChip = app.buttons["Open"]
+        XCTAssertTrue(openChip.waitForExistence(timeout: UITestSession.timeout), "The Open filter chip is missing")
+        openChip.tap()
+
         XCTAssertTrue(
             app.staticTexts[title].waitForExistence(timeout: UITestSession.timeout),
-            "The created task never appeared in the list"
+            "The created task never appeared under the Open filter"
         )
     }
 
@@ -82,7 +89,11 @@ final class SignedInJourneyUITests: XCTestCase {
     /// the code it was written to verify.
     ///
     /// The task is written straight into Firestore with a known id, so the test can address
-    /// `taskDetails-<uuid>` exactly rather than guessing which row it is opening.
+    /// `taskRow-<uuid>` exactly rather than guessing which row it is opening (F-V3-Tasks-rebuild
+    /// replaced the swipe cards with dense rows — the row's text area opens the detail).
+    ///
+    /// The seeded task is due TODAY: the Momentum board (the default filter) now shows only
+    /// due-today/tomorrow/closed-today, so an undated task would never render on it.
     @MainActor
     func testTaskDetail_opensWithTitleFieldPopulated_notBlank() throws {
         let account = try UITestSession.createAccount(label: "detail")
@@ -93,7 +104,7 @@ final class SignedInJourneyUITests: XCTestCase {
         let app = try UITestSession.launchSignedIn(as: account)
         openTasksTab(app)
 
-        let detailsButton = app.buttons["taskDetails-\(taskID.uuidString)"]
+        let detailsButton = app.descendants(matching: .any)["taskRow-\(taskID.uuidString)"]
         XCTAssertTrue(
             detailsButton.waitForExistence(timeout: UITestSession.timeout),
             "The seeded task never appeared in the list"
@@ -111,7 +122,8 @@ final class SignedInJourneyUITests: XCTestCase {
 
     // MARK: - Due nudge dismissal
 
-    /// Home surfaces overdue nudges in a strip, and dismissing one removes it.
+    /// Today surfaces overdue nudges as v3's "Nudges waiting" row; tapping it crosses to the
+    /// Nudges tab, where dismissal now happens (F-V3-Today replaced the inline dismiss strip).
     ///
     /// The nudge is backdated rather than created through the UI because dueness is computed, not
     /// stored: `NudgeDueness` asks whether the next fire time after `last_fired_at` has elapsed.
@@ -127,19 +139,37 @@ final class SignedInJourneyUITests: XCTestCase {
 
         let app = try UITestSession.launchSignedIn(as: account)
 
-        // Addressed by LABEL, not identifier. The enclosing stack's own identifier is pushed
-        // down over the subtree, so every dismiss button answers to "homeDueNudgesStrip" and
-        // none can be told apart by id — confirmed from the accessibility tree. The label is
-        // per-nudge and survives, so it is what identifies this one.
-        let dismiss = app.buttons["Dismiss \(nudgeLabel)"]
+        // The row is a single combined element (isButton trait), addressed by identifier.
+        let row = app.buttons["homeNudgesWaitingRow"]
         XCTAssertTrue(
-            dismiss.waitForExistence(timeout: UITestSession.timeout),
-            "An overdue nudge did not appear in Home's due strip"
+            row.waitForExistence(timeout: UITestSession.timeout),
+            "An overdue nudge did not surface Today's Nudges-waiting row"
                 + (app.staticTexts[nudgeLabel].exists
                     ? " (its label rendered, so the identifier is the problem)"
                     : " (nothing from the nudge rendered at all)")
         )
+        row.tap()
 
+        // `exists` matches elements on NON-VISIBLE tabs too (TabView keeps every tab's
+        // hierarchy alive), so the cross-tab hop is asserted through the tab bar's own
+        // selection — the check that actually catches a broken "Nudges waiting" row.
+        let nudgesTab = app.tabBars.buttons["Nudges"]
+        let selected = XCTNSPredicateExpectation(
+            predicate: .init(format: "isSelected == true"), object: nudgesTab
+        )
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [selected], timeout: UITestSession.timeout),
+            .completed,
+            "Tapping the Nudges-waiting row did not cross to the Nudges tab"
+        )
+
+        // Dismissal lives on the Nudges tab now, one control per nudge by id.
+        let dismiss = app.buttons["nudgeDismissButton-\(nudgeID.uuidString)"]
+        XCTAssertTrue(
+            dismiss.waitForExistence(timeout: UITestSession.timeout),
+            "The Nudges tab did not show the overdue nudge's dismiss control"
+        )
+        XCTAssertTrue(dismiss.isHittable, "The dismiss control exists but cannot be tapped")
         dismiss.tap()
 
         let gone = XCTNSPredicateExpectation(predicate: .init(format: "exists == false"), object: dismiss)
@@ -147,6 +177,9 @@ final class SignedInJourneyUITests: XCTestCase {
             XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout),
             .completed,
             "The nudge was still listed as due after being dismissed"
+                + (app.staticTexts["nudgesErrorLine"].exists
+                    ? " (service error: \(app.staticTexts["nudgesErrorLine"].label))"
+                    : " (no service error shown)")
         )
     }
 
@@ -163,6 +196,8 @@ final class SignedInJourneyUITests: XCTestCase {
 
     /// Task documents are fully snake_cased (`life_area_id`, `created_at`) — see CLAUDE.md, where
     /// the tasks/captures casing split is spelled out. Document IDs are UPPERCASE `uuidString`.
+    /// Due now, so the row renders on the Momentum board (F-V3-Tasks-rebuild: undated tasks
+    /// appear only under the Open filter).
     private func seedTask(id: UUID, title: String, uid: String) throws {
         try UITestEmulator.writeDocument(
             path: "users/\(uid)/tasks/\(id.uuidString)",
@@ -171,6 +206,7 @@ final class SignedInJourneyUITests: XCTestCase {
                 "title": UITestEmulator.string(title),
                 "status": UITestEmulator.string("open"),
                 "priority": UITestEmulator.string("p3"),
+                "due_date": UITestEmulator.timestamp(Date()),
                 "created_at": UITestEmulator.timestamp(Date())
             ]
         )

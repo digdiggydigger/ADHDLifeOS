@@ -93,6 +93,7 @@ struct CaptureDetailView: View {
                 service: service,
                 onPromoted: { dismiss() }
             )
+            .keyboardDismissal()
         }
         .fullScreenCover(isPresented: $isPresentingPhoto) {
             CapturePhotoLightbox(

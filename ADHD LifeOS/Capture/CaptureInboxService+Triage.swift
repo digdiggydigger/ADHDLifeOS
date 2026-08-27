@@ -12,6 +12,22 @@ import Foundation
 
 @MainActor
 extension CaptureInboxService {
+    var displayedCaptures: [Capture] {
+        CaptureSkipOrdering.apply(
+            captures: CaptureListRefinement.apply(
+                captures: captures, newestFirst: sortNewestFirst, kind: kindFilter
+            ),
+            skippedIds: skippedIds
+        )
+    }
+
+    /// Sends a capture to the back of the displayed queue. Skipping one already at the back
+    /// re-stamps its position, which is what tapping Skip on it again should mean.
+    func skip(_ capture: Capture) {
+        skippedIds.removeAll { $0 == capture.id }
+        skippedIds.append(capture.id)
+    }
+
     /// Discards a capture outright. The triage exit for something that is neither a task nor worth
     /// keeping: without it, a stray thought sat in the inbox forever, because promote-to-task was
     /// the ONLY way anything could leave.

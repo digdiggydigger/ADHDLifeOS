@@ -40,7 +40,7 @@ struct CreateTaskButton: View {
         }
         .buttonStyle(PrimaryActionButtonStyle())
         .disabled(isCreatingTask)
-        .promoteSuccessHaptic(trigger: successHapticTrigger)
+        .haptic(.success, trigger: successHapticTrigger)
         .accessibilityIdentifier("captureCreateTaskButton")
     }
 
@@ -116,23 +116,6 @@ struct CaptureRowLeadingSlot: View {
         }
         .frame(width: 44, height: 44)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
-extension View {
-    /// Success confirmation when a capture is promoted to a task (`CLAUDE.md` §3). `sensoryFeedback`
-    /// is iOS 17+, so on iOS 16 the same `trigger` drives a `UIImpactFeedbackGenerator` via
-    /// `.onChange` instead — the deployment target stays iOS 16.0 (§7). Fired only on success by the
-    /// caller, so a failed create never buzzes as if it confirmed.
-    @ViewBuilder
-    func promoteSuccessHaptic(trigger: Bool) -> some View {
-        if #available(iOS 17.0, *) {
-            self.sensoryFeedback(.impact(flexibility: .solid), trigger: trigger)
-        } else {
-            self.onChange(of: trigger) { _ in
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            }
-        }
     }
 }
 
@@ -230,6 +213,7 @@ struct CapturePhotoLightbox: View {
                         .minimumScaleFactor(0.8)
                     Spacer(minLength: 8)
                     Button {
+                        Haptics.play(.light)
                         dismiss()
                     } label: {
                         Label("Done", systemImage: "xmark")

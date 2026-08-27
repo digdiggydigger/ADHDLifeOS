@@ -62,6 +62,7 @@ extension FirebaseManager {
             merge: true
         )
         try await batch.commit()
+        DataChangeSignal.post()
     }
 
     private static func seedLifeAreas() -> [LifeArea] {

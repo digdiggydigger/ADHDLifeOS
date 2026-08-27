@@ -10,6 +10,24 @@ import Foundation
 /// title and notes themselves reuse `CaptureRowPresentation.primaryText`/`secondaryText`, so the
 /// detail can never disagree with the row that opened it.
 enum CaptureDetailPresentation {
+    /// The detail card's headline. Voice captures stop borrowing their TRANSCRIPT as a title —
+    /// with no explicit title they read "Voice note", and the transcript gets its own labelled
+    /// block below (E's review directive, 2026-08-25).
+    static func headline(for capture: Capture) -> String {
+        if capture.kind == .voice,
+           capture.title?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
+            return "Voice note"
+        }
+        return CaptureRowPresentation.primaryText(for: capture)
+    }
+
+    /// The full transcription, voice captures only — `content` IS the transcript there
+    /// (an empty transcription is rejected at creation, so this is never a hollow block).
+    static func transcript(for capture: Capture) -> String? {
+        guard capture.kind == .voice else { return nil }
+        let trimmed = capture.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
 
     /// The nav bar's principal label — the capture's kind, worn as identity ("🌐 Link"), matching
     /// the B6 frame. Exhaustive so a sixth kind fails the build here rather than shipping a blank

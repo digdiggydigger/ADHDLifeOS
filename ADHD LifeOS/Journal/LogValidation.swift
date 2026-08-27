@@ -23,19 +23,23 @@ struct NormalizedCreateLogInput: Equatable, Sendable {
     /// Journal entries only — see `normalizeCreateLogInput`.
     let energyLevel: EnergyLevel?
     let moodEmoji: String?
+    /// Both types (E's 2026-08-25 note: "journal and logs") — unlike energy/mood.
+    let tagIds: [UUID]
 
     init(
         body: String,
         type: LogType,
         lifeAreaId: UUID?,
         energyLevel: EnergyLevel? = nil,
-        moodEmoji: String? = nil
+        moodEmoji: String? = nil,
+        tagIds: [UUID] = []
     ) {
         self.body = body
         self.type = type
         self.lifeAreaId = lifeAreaId
         self.energyLevel = energyLevel
         self.moodEmoji = moodEmoji
+        self.tagIds = tagIds
     }
 }
 
@@ -55,7 +59,8 @@ enum LogValidation {
         type: LogType,
         lifeAreaId: UUID?,
         energyLevel: EnergyLevel? = nil,
-        moodEmoji: String? = nil
+        moodEmoji: String? = nil,
+        tagIds: [UUID] = []
     ) -> Result<NormalizedCreateLogInput, LogValidationError> {
         let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .failure(.emptyBody) }
@@ -67,7 +72,8 @@ enum LogValidation {
                 type: type,
                 lifeAreaId: lifeAreaId,
                 energyLevel: isJournal ? energyLevel : nil,
-                moodEmoji: isJournal ? trimmedMood.flatMap { $0.isEmpty ? nil : $0 } : nil
+                moodEmoji: isJournal ? trimmedMood.flatMap { $0.isEmpty ? nil : $0 } : nil,
+                tagIds: tagIds
             )
         )
     }

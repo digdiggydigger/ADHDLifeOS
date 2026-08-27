@@ -13,9 +13,24 @@ extension HomeView {
     var momentumLeadSection: some View {
         Group {
             if let celebrated = celebratedTask {
+                let area = homeService.activeAreas.first { $0.id == celebrated.lifeAreaId }
+                let momentum = area.flatMap {
+                    MomentumScoreboard.areaMomentum(
+                        areas: [$0], openTasks: homeService.openTasks, allTasks: homeService.allTasks
+                    ).first
+                }
                 ClosureCelebrationCard(
                     taskTitle: celebrated.title,
-                    closedTodayCount: closedToday.count,
+                    line: MomentumScoreboard.celebrationLine(
+                        closedTodayCount: closedToday.count,
+                        areaName: area?.name,
+                        areaRate: momentum?.rate
+                    ),
+                    nextLabel: MomentumScoreboard.nextButtonLabel(
+                        effortSeconds: MomentumScoreboard.bestNextMove(
+                            in: homeService.openTasks
+                        )?.focusDurationSeconds
+                    ),
                     onUndo: { Task { await undoClose(celebrated) } },
                     onNext: { celebratedTask = nil }
                 )
@@ -46,9 +61,13 @@ extension HomeView {
         if momentumPreferences.showCharts, counts.contains(where: { $0 > 0 }) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Closed this week · \(counts.reduce(0, +))")
-                    .font(.headline)
+                    .sectionLabel()
+                    .foregroundStyle(.secondary)
                 VStack(alignment: .leading, spacing: 8) {
-                    WeekBarStrip(fractions: MomentumWeekCharts.barFractions(counts))
+                    WeekBarStrip(
+                        fractions: MomentumWeekCharts.barFractions(counts),
+                        barColor: Color("StateGoVivid")
+                    )
                     Text(MomentumWeekCharts.closedCaption(sessions: publishedHistory))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -70,6 +89,9 @@ extension HomeView {
             // "still open" counterweight is exactly what a zero streak already does.
             streak: momentumPreferences.showStreaks
                 ? MomentumScoreboard.streak(tasks: homeService.allTasks)
+                : 0,
+            bestStreak: momentumPreferences.showStreaks
+                ? MomentumScoreboard.bestStreak(tasks: homeService.allTasks)
                 : 0,
             openCount: homeService.openTasks.count,
             weekFlags: MomentumScoreboard.trailingWeekClosureFlags(tasks: homeService.allTasks),
@@ -94,8 +116,20 @@ extension HomeView {
                 } ?? false,
                 isClosing: isClosingTask,
                 showsStartSession: activeSprint == nil,
+                // Rides the same history the analytics charts read (`publishedHistory`), which
+                // refetches on every finished sprint — including one settled from a dead launch,
+                // because the offline path bumps `completedSprintCount` too (b10).
+                loggedTodayLabel: MomentumScoreboard.focusLoggedTodayLabel(
+                    sessions: publishedHistory,
+                    taskId: task.id
+                ),
                 onClose: { Task { await closeTask(task) } },
-                onStartSession: { onStartFocus?(FocusSprintPlan(summary: task, lifeArea: area)) }
+                onStartSession: {
+                    onStartFocus?(FocusSprintPlan(
+                        summary: task, lifeArea: area,
+                        defaultDurationSeconds: momentumPreferences.defaultSprintMinutes * 60
+                    ))
+                }
             )
         }
     }
@@ -112,28 +146,74 @@ extension HomeView {
             guard task.id != headline, let due = task.dueDate else { return false }
             return Calendar.current.startOfDay(for: due) <= today
         }
-        if !dueNow.isEmpty {
-            Text("Due now")
-                .font(.headline)
+        let dueNudges = nudgesService.dueNudges()
+        if !dueNow.isEmpty || !dueNudges.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(dueNow, id: \.id) { task in
-                    dueNowRow(task)
+                Text("Due now")
+                    .sectionLabel()
+                    .foregroundStyle(.secondary)
+                VStack(spacing: 0) {
+                    ForEach(dueNow, id: \.id) { task in
+                        dueNowRow(task)
+                        if task.id != dueNow.last?.id || !dueNudges.isEmpty {
+                            Divider()
+                                .padding(.leading, 16)
+                        }
+                    }
+                    if !dueNudges.isEmpty {
+                        nudgesWaitingRow(dueNudges)
+                    }
                 }
+                .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(Color.cardBorder, lineWidth: 1)
+                )
             }
-            .bentoCard()
         }
+    }
+
+    /// v3's "Nudges waiting" row: the count in warn, the labels as metadata, and the chevron
+    /// crossing to the Nudges tab — dismissal happens there now, not inline on Today.
+    func nudgesWaitingRow(_ due: [Nudge]) -> some View {
+        HStack(spacing: 8) {
+            MomentumChip(
+                text: "\(due.count) due",
+                background: Color("CardSurfaceSecondary"),
+                foreground: Color("StateWarn")
+            )
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Nudges waiting")
+                    .font(.callout)
+                Text(due.map(\.label).joined(separator: " · "))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .frame(minHeight: 54)
+        .contentShape(Rectangle())
+        .onTapGesture { onOpenNudges?() }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel("Nudges waiting, \(due.count) due")
+        .accessibilityIdentifier("homeNudgesWaitingRow")
     }
 
     func dueNowRow(_ task: TaskSummary) -> some View {
         HStack(spacing: 8) {
             if let effort = MomentumScoreboard.effortLabel(seconds: task.focusDurationSeconds) {
-                Text(effort)
-                    .font(.caption.weight(.bold))
-                    .monospacedDigit()
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.accentColor.opacity(0.12), in: Capsule())
-                    .foregroundStyle(Color.accentColor)
+                MomentumChip(
+                    text: effort,
+                    background: Color("CardSurfaceSecondary"),
+                    foreground: Color("LabelSecondary")
+                )
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.title)
@@ -150,7 +230,9 @@ extension HomeView {
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.tertiary)
         }
-        .frame(minHeight: 44)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .frame(minHeight: 54)
         .contentShape(Rectangle())
         .onTapGesture { inspectingTask = task }
         .accessibilityAddTraits(.isButton)
@@ -189,11 +271,14 @@ extension HomeView {
     @ViewBuilder
     func lifeAreasHeader(activeAreas: [LifeArea], showArrangeControl: Bool) -> some View {
         HStack {
-            Text("Life Areas")
-                .font(.headline)
+            Text("Your life areas")
+                .sectionLabel()
+                .foregroundStyle(.secondary)
             Spacer()
             if showArrangeControl {
-                Button(isArranging ? "Done" : "Arrange") {
+                Button {
+                    // 27. Arrange mode is a mode change, not a write — light either way.
+                    Haptics.play(.light)
                     if isArranging {
                         isArranging = false
                         Task { await homeService.load() }
@@ -201,31 +286,60 @@ extension HomeView {
                         arrangeAreas = activeAreas
                         isArranging = true
                     }
+                } label: {
+                    Label(
+                        isArranging ? "Done" : "Arrange",
+                        systemImage: isArranging ? "checkmark" : "arrow.up.arrow.down"
+                    )
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(isArranging ? AreaPalette.work.onColor : Color.accentColor)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 44)
+                    .background(
+                        isArranging ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.cardSurface),
+                        in: Capsule()
+                    )
+                    .overlay(Capsule().strokeBorder(Color.cardBorder, lineWidth: isArranging ? 0 : 1))
+                    .contentShape(Capsule())
                 }
-                .font(.body.weight(.semibold))
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
                 .accessibilityIdentifier("homeArrangeButton")
             }
         }
     }
 
+    /// v3's life-areas block: the caps header with the Arrange control, the explainer, and the
+    /// rows themselves.
+    @ViewBuilder
+    func lifeAreasSection(activeAreas: [LifeArea]) -> some View {
+        lifeAreasHeader(activeAreas: activeAreas, showArrangeControl: activeAreas.count >= 2)
+        Text("How many of each area's tasks you have closed this week. Tap one to work inside it.")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+        AreaMomentumList(items: MomentumScoreboard.areaMomentum(
+            areas: activeAreas, openTasks: homeService.openTasks, allTasks: homeService.allTasks
+        ))
+    }
+
     func refreshInboxCount() async {
-        inboxCount = (try? await captureClient.fetchUnprocessedCaptures().count) ?? inboxCount
+        // One fetch feeds both the header badge and Today's inbox card; failure keeps the last
+        // known state rather than blanking a card the user was just looking at.
+        if let waiting = try? await captureClient.fetchUnprocessedCaptures() {
+            inboxCount = waiting.count
+            inboxPeek = HomeInboxPeek.peek(waiting)
+        }
         await refreshClearedCaptureCount()
     }
 
-    /// Two extra fetches, gated on the toggle and failure-tolerant like every scoreboard input —
-    /// the ring reads 0 extra rather than the screen failing.
+    /// Two extra fetches, failure-tolerant like every scoreboard input. No longer gated on the
+    /// toggle — Today's inbox card names the day's throughput regardless (E's 2026-08-25
+    /// follow-up); the toggle still governs what COUNTS toward the ring, exactly as before.
     func refreshClearedCaptureCount() async {
-        guard momentumPreferences.countClearedCaptures else {
-            capturesClearedToday = 0
-            return
-        }
         async let seen = captureClient.fetchSeenCaptures()
         async let processed = captureClient.fetchProcessedCaptures()
         let cleared = ((try? await seen) ?? []) + ((try? await processed) ?? [])
-        capturesClearedToday = MomentumScoreboard.clearedToday(captures: cleared)
+        let handledToday = MomentumScoreboard.clearedToday(captures: cleared)
+        inboxHandledToday = handledToday
+        capturesClearedToday = momentumPreferences.countClearedCaptures ? handledToday : 0
     }
 
     /// The Due-now push's destination, with the S3 Momentum context built from the history Home
@@ -235,7 +349,6 @@ extension HomeView {
             taskId: task.id,
             lifeAreas: homeService.lifeAreas,
             client: taskDetailClient,
-            schedulingClient: schedulingClient,
             onStartFocus: onStartFocus,
             momentumContext: MomentumTaskContext.build(
                 lifeAreaId: task.lifeAreaId,
@@ -251,34 +364,4 @@ extension HomeView {
     /// The S5 entry point: one quiet row under the daily card — the review derives on demand,
     /// so it is always available rather than gated to Sunday (the concept's Sunday cadence
     /// governed AI generation, which stayed with the daily card).
-    var weekReviewRow: some View {
-        Button {
-            isPresentingWeekReview = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "calendar")
-                    .foregroundStyle(Color.accentColor)
-                Text("Week review")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .bentoCard()
-        .accessibilityIdentifier("homeWeekReviewRow")
-    }
-
-    var weekReviewDestination: some View {
-        WeekReviewView(review: MomentumWeekReview.build(
-            tasks: homeService.allTasks,
-            lifeAreas: homeService.lifeAreas,
-            sessions: publishedHistory,
-            inboxCount: inboxCount
-        ))
-    }
 }

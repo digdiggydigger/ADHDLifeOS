@@ -13,7 +13,7 @@ final class TaskCreateServiceTests: XCTestCase {
         let fake = FakeTaskCreateClientAdapting()
         let task = TaskItem(id: UUID(), lifeAreaId: nil, title: "Buy milk", status: .open, priority: .p4, dueDate: nil)
         fake.createTaskResult = .success(task)
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
         sut.title = "Buy milk"
 
         let result = await sut.createTask()
@@ -32,7 +32,7 @@ final class TaskCreateServiceTests: XCTestCase {
         fake.tagsResult = .success([existingTag])
         let task = TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: nil)
         fake.createTaskResult = .success(task)
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
         sut.title = "Task"
         await sut.loadTags()
         sut.toggleTagSelection(existingTag)
@@ -53,7 +53,7 @@ final class TaskCreateServiceTests: XCTestCase {
         fake.createTagResult = .success(newTag)
         let task = TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: nil)
         fake.createTaskResult = .success(task)
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
         sut.title = "Task"
         await sut.loadTags()
         sut.newTagName = "focus"
@@ -71,7 +71,7 @@ final class TaskCreateServiceTests: XCTestCase {
         let fake = FakeTaskCreateClientAdapting()
         let existingTag = Tag(id: UUID(), name: "urgent")
         fake.tagsResult = .success([existingTag])
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
         await sut.loadTags()
         sut.newTagName = "urgent"
 
@@ -84,7 +84,7 @@ final class TaskCreateServiceTests: XCTestCase {
 
     func testCreateTask_emptyTitle_failsWithoutCallingClient() async {
         let fake = FakeTaskCreateClientAdapting()
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
         sut.title = "   "
 
         let result = await sut.createTask()
@@ -97,7 +97,7 @@ final class TaskCreateServiceTests: XCTestCase {
     func testCreateTask_taskInsertFailure_surfacesErrorAndDoesNotSetCreatedTask() async {
         let fake = FakeTaskCreateClientAdapting()
         fake.createTaskResult = .failure(TasksServiceError.fetchFailed("Network error"))
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
         sut.title = "Task"
 
         let result = await sut.createTask()
@@ -114,7 +114,7 @@ final class TaskCreateServiceTests: XCTestCase {
         let task = TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: nil)
         fake.createTaskResult = .success(task)
         fake.attachTagsResult = .failure(TasksServiceError.fetchFailed("Network error"))
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
         sut.title = "Task"
         await sut.loadTags()
         sut.toggleTagSelection(existingTag)
@@ -129,7 +129,7 @@ final class TaskCreateServiceTests: XCTestCase {
 
     func testIsTitleValid_reflectsCurrentTitle() {
         let fake = FakeTaskCreateClientAdapting()
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
 
         XCTAssertFalse(sut.isTitleValid)
 
@@ -143,80 +143,10 @@ final class TaskCreateServiceTests: XCTestCase {
     func testLoadTags_failure_setsFailedState() async {
         let fake = FakeTaskCreateClientAdapting()
         fake.tagsResult = .failure(TasksServiceError.fetchFailed("Network error"))
-        let sut = TaskCreateService(client: fake, schedulingClient: FakeTaskCountdownNudgeSchedulingAdapting())
+        let sut = TaskCreateService(client: fake)
 
         await sut.loadTags()
 
         XCTAssertEqual(sut.tagsState, .failed("Network error"))
-    }
-
-    func testCreateTask_withDueDateAndNudgeSelection_schedulesNudgesAfterCreation() async {
-        let fake = FakeTaskCreateClientAdapting()
-        let dueDate = Date().addingTimeInterval(42 * 60)
-        let task = TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: dueDate)
-        fake.createTaskResult = .success(task)
-        let scheduling = FakeTaskCountdownNudgeSchedulingAdapting()
-        let sut = TaskCreateService(client: fake, schedulingClient: scheduling)
-        sut.title = "Task"
-        sut.dueDate = dueDate
-        sut.nudgeSelection = .evenDivision(count: 2)
-
-        let result = await sut.createTask()
-
-        XCTAssertTrue(result)
-        XCTAssertEqual(scheduling.requestAuthorizationCallCount, 1)
-        XCTAssertEqual(scheduling.scheduleNudgesCallCount, 1)
-        XCTAssertEqual(scheduling.lastScheduleArguments?.taskId, task.id)
-        XCTAssertEqual(scheduling.lastScheduleArguments?.fireDates.count, 2)
-        XCTAssertNil(sut.warningMessage)
-    }
-
-    func testCreateTask_noDueDate_doesNotScheduleNudgesEvenIfSelectionSet() async {
-        let fake = FakeTaskCreateClientAdapting()
-        let task = TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: nil)
-        fake.createTaskResult = .success(task)
-        let scheduling = FakeTaskCountdownNudgeSchedulingAdapting()
-        let sut = TaskCreateService(client: fake, schedulingClient: scheduling)
-        sut.title = "Task"
-        sut.nudgeSelection = .evenDivision(count: 1)
-
-        _ = await sut.createTask()
-
-        XCTAssertEqual(scheduling.scheduleNudgesCallCount, 0)
-        XCTAssertEqual(scheduling.requestAuthorizationCallCount, 0)
-    }
-
-    func testCreateTask_nudgeSelectionNone_doesNotScheduleNudges() async {
-        let fake = FakeTaskCreateClientAdapting()
-        let dueDate = Date().addingTimeInterval(42 * 60)
-        let task = TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: dueDate)
-        fake.createTaskResult = .success(task)
-        let scheduling = FakeTaskCountdownNudgeSchedulingAdapting()
-        let sut = TaskCreateService(client: fake, schedulingClient: scheduling)
-        sut.title = "Task"
-        sut.dueDate = dueDate
-
-        _ = await sut.createTask()
-
-        XCTAssertEqual(scheduling.scheduleNudgesCallCount, 0)
-    }
-
-    func testCreateTask_permissionDenied_surfacesWarningAndDoesNotSchedule() async {
-        let fake = FakeTaskCreateClientAdapting()
-        let dueDate = Date().addingTimeInterval(42 * 60)
-        let task = TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: dueDate)
-        fake.createTaskResult = .success(task)
-        let scheduling = FakeTaskCountdownNudgeSchedulingAdapting()
-        scheduling.authorizationGranted = false
-        let sut = TaskCreateService(client: fake, schedulingClient: scheduling)
-        sut.title = "Task"
-        sut.dueDate = dueDate
-        sut.nudgeSelection = .evenDivision(count: 1)
-
-        let result = await sut.createTask()
-
-        XCTAssertTrue(result, "The task is still created even if nudge permission is denied")
-        XCTAssertEqual(scheduling.scheduleNudgesCallCount, 0)
-        XCTAssertNotNil(sut.warningMessage)
     }
 }

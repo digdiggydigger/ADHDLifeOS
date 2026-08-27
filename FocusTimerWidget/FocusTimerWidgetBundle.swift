@@ -11,5 +11,7 @@ struct FocusTimerWidgetBundle: WidgetBundle {
     var body: some Widget {
         FocusTimerWidgetLiveActivity()
         FocusStatsWidget()
+        LifeAreasWidget()
+        QuickCaptureWidget()
     }
 }

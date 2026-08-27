@@ -12,6 +12,40 @@ import Foundation
 
 @MainActor
 extension CaptureInboxService {
+    // MARK: - Composer draft tags (E's directive: tags at the point of capture)
+
+    /// Attaches the draft's selected tags to a just-created capture. Non-blocking like every
+    /// tag path here: the capture already exists, so a failed attach WARNS rather than failing
+    /// the save (a re-save would duplicate the capture). Selection resets either way.
+    func attachDraftTags(to capture: Capture) async {
+        let selected = newCaptureTagIds
+        newCaptureTagIds = []
+        guard !selected.isEmpty else { return }
+        for tagId in selected {
+            do {
+                try await client.addTag(captureId: capture.id, tagId: tagId)
+            } catch {
+                warningMessage = "Saved, but some tags could not be attached."
+            }
+        }
+    }
+
+    /// Creates a tag from the composer (server dedups by name) and selects it for the draft.
+    @discardableResult
+    func createTagForDraft(name: String) async -> Tag? {
+        triageErrorMessage = nil
+        do {
+            let tag = try await client.createTag(name: name)
+            if !newCaptureTagIds.contains(tag.id) {
+                newCaptureTagIds.append(tag.id)
+            }
+            return tag
+        } catch {
+            triageErrorMessage = Self.message(for: error)
+            return nil
+        }
+    }
+
     /// Failures here are swallowed to an empty list rather than surfaced — a failed tag-search
     /// fetch shouldn't block the rest of the triage UI, same "non-blocking" spirit as
     /// `refresh()`.

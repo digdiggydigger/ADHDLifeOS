@@ -36,11 +36,16 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
     /// Activity's redraw must land first.
     private var lastActivityTask: Task<Void, Never>?
 
+    /// The init-time orphan sweep, retained so `sprintRestored` can sequence after it — the
+    /// sweep must not race the restored sprint's fresh Activity request.
+    private var initialCleanup: Task<Void, Never>?
+
     init(now: @escaping () -> Date = Date.init) {
         self.now = now
-        // Anything alive at construction is an orphan from a killed process — no sprint can be
-        // running before RootView exists — so clear the Lock Screen of stale countdowns.
-        Task { await FocusActivityAttributes.endAllActivities() }
+        // Anything alive at construction is an orphan from a killed process. A restored sprint
+        // re-requests its Activity AFTER this sweep (see `sprintRestored`), so the sweep stays
+        // unconditional and the Lock Screen never carries two cards.
+        initialCleanup = Task { await FocusActivityAttributes.endAllActivities() }
     }
 
     func waitForPendingUpdates() async {
@@ -67,6 +72,16 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
             // The sprint itself is unaffected — the in-app bar remains the source of truth.
             activity = nil
             lastState = nil
+        }
+    }
+
+    func sprintRestored(_ snapshot: FocusActivitySnapshot) {
+        // End-then-request rather than adoption: the orphan card blinks off and the restored one
+        // on, which is visible but honest — and immune to attribute-matching drift.
+        let cleanup = initialCleanup
+        lastActivityTask = Task { [weak self] in
+            await cleanup?.value
+            self?.sprintStarted(snapshot)
         }
     }
 
@@ -148,14 +163,18 @@ extension FocusSessionService {
     /// re-suspends the app.
     static func withLiveActivityMirroring(logger: FocusSessionLogging) -> FocusSessionService {
         let notifications = NotificationCenterFocusNudgeAdapter()
+        let sprintStore = UserDefaultsFocusSprintStore()
         guard #available(iOS 16.1, *) else {
-            let service = FocusSessionService(logger: logger, notificationScheduler: notifications)
+            let service = FocusSessionService(
+                logger: logger, notificationScheduler: notifications, sprintStore: sprintStore
+            )
             connectNotificationTaps(to: service)
             return service
         }
         let mirror = FocusActivityKitMirror()
         let service = FocusSessionService(
-            logger: logger, activityMirror: mirror, notificationScheduler: notifications
+            logger: logger, activityMirror: mirror,
+            notificationScheduler: notifications, sprintStore: sprintStore
         )
         connectNotificationTaps(to: service)
         if #available(iOS 17.0, *) {

@@ -26,14 +26,16 @@ extension CaptureInboxService {
             try await client.uploadMedia(to: target.uploadURL, data: imageData, contentType: Self.photoContentType)
 
             guard case .success(let normalized) = CaptureValidation.normalizeCreateCaptureInput(
-                content: content, kind: .photo, mediaKey: target.mediaKey,
+                content: content, kind: .photo, lifeAreaId: newCaptureLifeAreaId,
+                mediaKey: target.mediaKey,
                 mediaContentType: Self.photoContentType, thumbnailKey: target.thumbnailKey
             ) else {
                 createCaptureErrorMessage = CaptureValidationError.emptyContent.errorDescription
                 return false
             }
 
-            _ = try await client.createCapture(normalized)
+            let created = try await client.createCapture(normalized)
+            await attachDraftTags(to: created)
             content = ""
             kind = CaptureValidation.defaultKind
             return true
@@ -73,14 +75,16 @@ extension CaptureInboxService {
             try await client.uploadMedia(to: target.uploadURL, data: audioData, contentType: Self.voiceContentType)
 
             guard case .success(let normalized) = CaptureValidation.normalizeCreateCaptureInput(
-                content: trimmedTranscription, kind: .voice, mediaKey: target.mediaKey,
+                content: trimmedTranscription, kind: .voice, lifeAreaId: newCaptureLifeAreaId,
+                mediaKey: target.mediaKey,
                 mediaContentType: Self.voiceContentType, thumbnailKey: target.thumbnailKey
             ) else {
                 createCaptureErrorMessage = CaptureValidationError.emptyContent.errorDescription
                 return false
             }
 
-            _ = try await client.createCapture(normalized)
+            let created = try await client.createCapture(normalized)
+            await attachDraftTags(to: created)
             content = ""
             kind = CaptureValidation.defaultKind
             return true

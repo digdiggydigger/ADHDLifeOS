@@ -3,6 +3,7 @@
 //  ADHD LifeOS
 //
 
+import Combine
 import SwiftUI
 
 /// The capture triage screen — since 2026-08-23 purely the to-triage queue: the Seen and
@@ -23,7 +24,8 @@ import SwiftUI
 /// `CaptureDetailView` (design frame B6), where the triage affordances now live. The life-area
 /// race machinery survived the move verbatim, in `CaptureFiledInCard`.
 struct CaptureInboxView: View {
-    @StateObject private var service: CaptureInboxService
+    /// Internal, not private: the v3 sections live in `CaptureInboxSections.swift`.
+    @StateObject var service: CaptureInboxService
     let lifeAreas: [LifeArea]
     /// Retained so the empty state can offer a capture action of its own — reaching the inbox and
     /// finding it empty is exactly when a user is most likely to want to put something in it.
@@ -31,8 +33,14 @@ struct CaptureInboxView: View {
     /// The row whose full-screen detail is pushed. Optional-state + `navigationDestination`
     /// (the `TaskListView` precedent) rather than `NavigationLink` rows, because the rows live in
     /// a `LazyVStack` inside Home's existing stack.
-    @State private var inspectingCapture: Capture?
+    @State var inspectingCapture: Capture?
     @State private var isPresentingQuickCapture = false
+    /// The top card's "Task it" — the existing promote sheet over the first waiting capture.
+    @State var promotingCapture: Capture?
+    @State var momentumPreferences: MomentumPreferences = .default
+    /// The one tag fetch every chip strip resolves against (`CaptureRowPresentation.tags(for:from:)`)
+    /// — zero per-row fetches. Internal like `inspectingCapture`: the sections file reads it.
+    @State var allTags: [Tag] = []
 
     init(
         client: CaptureClientAdapting,
@@ -77,6 +85,7 @@ struct CaptureInboxView: View {
             QuickCaptureView(client: captureClient) {
                 Task { await service.refresh() }
             }
+            .keyboardDismissal()
         }
         .navigationDestination(isPresented: Binding(
             get: { inspectingCapture != nil },
@@ -88,6 +97,26 @@ struct CaptureInboxView: View {
         }
         .task {
             await service.load()
+            momentumPreferences = UserDefaultsMomentumPreferencesStore().read()
+            allTags = await service.fetchAllTags()
+        }
+        // `refresh()`, not `load()`: the quiet path that never blanks the list mid-read. Tags
+        // re-fetch too, so a tag renamed in Settings shows on the triage chips straight away.
+        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            Task {
+                await service.refresh()
+                allTags = await service.fetchAllTags()
+            }
+        }
+        .sheet(item: $promotingCapture) { capture in
+            CapturePromoteSheet(
+                capture: capture,
+                lifeAreaId: capture.lifeAreaId,
+                service: service
+            ) {
+                Task { await service.refresh() }
+            }
+            .keyboardDismissal()
         }
     }
 
@@ -99,27 +128,18 @@ struct CaptureInboxView: View {
     /// Given a purpose line, the nav title becomes a duplicate, so it is hidden (the back button
     /// stays).
     private var purposeHeader: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Frictionless ingestion")
-                .sectionLabel()
-                .foregroundStyle(Color.accentColor)
-            HStack(alignment: .center, spacing: 8) {
-                Text("Capture Inbox")
-                    .font(.largeTitle.bold())
-                    .tracking(-0.5)
-                    .minimumScaleFactor(0.8)
-                    .lineLimit(1)
-                Spacer()
-                CaptureRefinementMenu(service: service)
-            }
-            Text("Dump thoughts and photos instantly, triage when executive bandwidth allows.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .center, spacing: 8) {
+            Text("Capture Inbox")
+                .font(.largeTitle.bold())
+                .tracking(-0.5)
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
+            Spacer()
+            CaptureRefinementMenu(service: service)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
-        .padding(.bottom, 16)
+        .padding(.bottom, 8)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("captureInboxPurposeHeader")
     }
@@ -131,51 +151,35 @@ struct CaptureInboxView: View {
             LazyVStack(alignment: .leading, spacing: 16) {
                 summaryHeader(captures)
 
-                ForEach(service.displayedCaptures) { capture in
-                    row(for: capture)
-                        .bentoCard()
+                // v3's triage shape: the FIRST waiting capture as the decision card, the rest
+                // queued under "Then" — one decision at a time, not a wall of equals.
+                if service.filter == .unprocessed, let top = service.displayedCaptures.first {
+                    topCaptureCard(top)
+                    let rest = Array(service.displayedCaptures.dropFirst())
+                    if !rest.isEmpty {
+                        Text("Then")
+                            .sectionLabel()
+                            .foregroundStyle(Color.accentColor)
+                        ForEach(rest) { capture in
+                            row(for: capture)
+                                .bentoCard()
+                        }
+                    }
+                } else {
+                    ForEach(service.displayedCaptures) { capture in
+                        row(for: capture)
+                            .bentoCard()
+                    }
                 }
+
+                healthSection
             }
             .padding(16)
         }
         .refreshable {
             await service.refresh()
+            allTags = await service.fetchAllTags()
         }
-    }
-
-    private func summaryHeader(_ captures: [Capture]) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(CaptureInboxSummary.headline(count: captures.count, filter: service.filter))
-                .font(.title2.bold())
-                .tracking(-0.5)
-                .minimumScaleFactor(0.8)
-            let breakdown = CaptureInboxSummary.breakdown(for: captures)
-            if !breakdown.isEmpty {
-                Text(breakdown)
-                    .sectionLabel()
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            // The ageing counterweight (Concept C, M5): a frictionless capture button needs the
-            // screen to admit how long things have sat.
-            if let oldestLine = CaptureInboxSummary.oldestLine(for: captures) {
-                Text(oldestLine)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("captureInboxOldestLine")
-            }
-            // S1's weekly ledger (M10): captured vs cleared over the trailing seven days — the
-            // second honest counterweight beside the ageing line.
-            if let weekLine = service.weekCounterweightLine {
-                Text(weekLine)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("captureInboxWeekCounterweight")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("captureInboxSummary")
     }
 
     /// An empty inbox is the goal state, not an error and not a void — so it reads as an
@@ -230,7 +234,11 @@ struct CaptureInboxView: View {
     // MARK: - Row
 
     private func row(for capture: Capture) -> some View {
-        CaptureRowView(capture: capture, lifeAreas: lifeAreas) {
+        CaptureRowView(
+            capture: capture,
+            lifeAreas: lifeAreas,
+            tags: CaptureRowPresentation.tags(for: capture, from: allTags)
+        ) {
             inspectingCapture = capture
         }
     }

@@ -38,6 +38,12 @@ final class CaptureInboxService: ObservableObject {
     @Published private(set) var filter: Filter = .unprocessed
     @Published var content = ""
     @Published var kind: CaptureKind = CaptureValidation.defaultKind
+    /// The composer's optional life-area chip (F-V3-Capture) — rides the existing create input
+    /// and resets with the draft.
+    @Published var newCaptureLifeAreaId: UUID?
+    /// The composer's selected tags (E's directive: tags at the point of capture) — attached
+    /// through the existing addTag seam right after creation, reset with the draft.
+    @Published var newCaptureTagIds: [UUID] = []
     /// `private(set)` relaxed to internal so `CaptureInboxService+Media` can drive it — the
     /// media capture flows moved there to keep this type inside its length budget.
     @Published var isSubmittingCapture = false
@@ -99,16 +105,11 @@ final class CaptureInboxService: ObservableObject {
     }
 
     /// What the rows render: the loaded slice through the refinement menu.
-    var displayedCaptures: [Capture] {
-        CaptureListRefinement.apply(captures: captures, newestFirst: sortNewestFirst, kind: kindFilter)
-    }
-
-    var isContentValid: Bool {
-        if case .success = CaptureValidation.normalizeCreateCaptureInput(content: content, kind: kind) {
-            return true
-        }
-        return false
-    }
+    /// The ids Skip has sent to the back, in skip order (SUGG-b9). In-memory only and never
+    /// persisted — a skip is a way of looking at the queue, not a triage decision. Settable (not
+    /// `private(set)`) on the counterweight precedent: its one writer, `skip(_:)`, lives in the
+    /// `+Triage` extension file with `displayedCaptures`.
+    @Published var skippedIds: [UUID] = []
 
     /// Per-tab counts for the filter picker, so both tabs carry a number the way the web original's
     /// do ("Unprocessed (3)"). A filter with no entry has simply never loaded — the tab renders
@@ -121,6 +122,8 @@ final class CaptureInboxService: ObservableObject {
     /// (not `private(set)`) for the same reason `client` is internal: its one writer lives in
     /// the `+Counterweight` extension file.
     @Published var weekCounterweightLine: String?
+    /// The week's movement numerically — the v3 inbox health chart's input (F-V3-Inbox).
+    @Published var weekHealth: CaptureInboxSummary.WeekHealth?
 
     func load() async {
         state = .loading
@@ -188,7 +191,9 @@ final class CaptureInboxService: ObservableObject {
         createCaptureErrorMessage = nil
 
         let normalized: NormalizedCreateCaptureInput
-        switch CaptureValidation.normalizeCreateCaptureInput(content: content, kind: kind) {
+        switch CaptureValidation.normalizeCreateCaptureInput(
+            content: content, kind: kind, lifeAreaId: newCaptureLifeAreaId
+        ) {
         case .success(let value):
             normalized = value
         case .failure(let error):
@@ -200,9 +205,11 @@ final class CaptureInboxService: ObservableObject {
         defer { isSubmittingCapture = false }
 
         do {
-            _ = try await client.createCapture(normalized)
+            let created = try await client.createCapture(normalized)
+            await attachDraftTags(to: created)
             content = ""
             kind = CaptureValidation.defaultKind
+            newCaptureLifeAreaId = nil
             return true
         } catch {
             createCaptureErrorMessage = Self.message(for: error)
@@ -364,4 +371,13 @@ final class CaptureInboxService: ObservableObject {
 
     static let photoContentType = "image/jpeg"
     static let voiceContentType = "audio/m4a"
+}
+
+extension CaptureInboxService {
+    var isContentValid: Bool {
+        if case .success = CaptureValidation.normalizeCreateCaptureInput(content: content, kind: kind) {
+            return true
+        }
+        return false
+    }
 }

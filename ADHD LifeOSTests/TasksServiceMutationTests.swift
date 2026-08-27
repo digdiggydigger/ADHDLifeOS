@@ -6,8 +6,10 @@
 import XCTest
 @testable import ADHD_LifeOS
 
-/// Covers the swipe-card write-through: optimistic local flip/removal, the exact adapter call, and
-/// the revert-on-failure paths that keep the list in sync with stored truth.
+/// Covers the row's close write-through: optimistic local flip, the exact adapter call, and the
+/// revert-on-failure path that keeps the list in sync with stored truth. Closing is one-way
+/// (F-V3-Tasks-rebuild, E's addendum): there is no reopen, and delete lives on the detail screen
+/// now, so neither has a service path here.
 @MainActor
 final class TasksServiceMutationTests: XCTestCase {
     private let work = LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 0)
@@ -31,11 +33,11 @@ final class TasksServiceMutationTests: XCTestCase {
         return groups.flatMap(\.tasks)
     }
 
-    func testToggleStatus_open_persistsDoneAndUpdatesLocally() async {
+    func testClose_openTask_persistsDoneAndUpdatesLocally() async {
         let task = makeTask("Finish report")
         let (sut, fake) = await loadedService([task])
 
-        await sut.toggleStatus(task)
+        await sut.close(task)
 
         XCTAssertEqual(fake.setStatusCalls.count, 1)
         XCTAssertEqual(fake.setStatusCalls.first?.taskId, task.id)
@@ -43,22 +45,35 @@ final class TasksServiceMutationTests: XCTestCase {
         XCTAssertEqual(groupedTasks(sut).first(where: { $0.id == task.id })?.status, .done)
     }
 
-    func testToggleStatus_done_reopensToOpen() async {
+    /// Closing stamps `completed_at` locally too — the same rule the write applies — so "Closed
+    /// today" can show the task the moment it flips, without waiting on a refetch.
+    func testClose_stampsTheCompletionMomentLocally() async {
+        let task = makeTask("Finish report")
+        let (sut, _) = await loadedService([task])
+
+        await sut.close(task)
+
+        XCTAssertNotNil(groupedTasks(sut).first(where: { $0.id == task.id })?.completedAt)
+    }
+
+    /// One-way street: a done task's circle is display-only and there is no reopen path — a stray
+    /// call on a done task must not write anything.
+    func testClose_doneTask_isANoOp() async {
         let task = makeTask("Already done", status: .done)
         let (sut, fake) = await loadedService([task])
 
-        await sut.toggleStatus(task)
+        await sut.close(task)
 
-        XCTAssertEqual(fake.setStatusCalls.first?.status, .open)
-        XCTAssertEqual(groupedTasks(sut).first(where: { $0.id == task.id })?.status, .open)
+        XCTAssertTrue(fake.setStatusCalls.isEmpty)
+        XCTAssertEqual(groupedTasks(sut).first(where: { $0.id == task.id })?.status, .done)
     }
 
-    func testToggleStatus_failure_revertsToServerTruthAndSurfacesError() async {
-        let task = makeTask("Flaky toggle")
+    func testClose_failure_revertsToServerTruthAndSurfacesError() async {
+        let task = makeTask("Flaky close")
         let (sut, fake) = await loadedService([task])
         fake.setStatusError = TasksServiceError.fetchFailed("network down")
 
-        await sut.toggleStatus(task)
+        await sut.close(task)
 
         // A failed write reloads; the reload returns the original (still-open) task.
         XCTAssertEqual(groupedTasks(sut).first(where: { $0.id == task.id })?.status, .open)
@@ -66,38 +81,13 @@ final class TasksServiceMutationTests: XCTestCase {
         XCTAssertEqual(fake.fetchAllTasksCallCount, 2)  // initial load + reload-on-failure
     }
 
-    func testDelete_removesLocallyAndPersists() async {
-        let keep = makeTask("Keep me")
-        let drop = makeTask("Delete me")
-        let (sut, fake) = await loadedService([keep, drop])
-
-        await sut.delete(drop)
-
-        XCTAssertEqual(fake.deleteTaskCalls, [drop.id])
-        XCTAssertEqual(groupedTasks(sut).map(\.id), [keep.id])
-    }
-
-    func testDelete_failure_restoresTaskAndSurfacesError() async {
-        let keep = makeTask("Keep me")
-        let drop = makeTask("Undeletable")
-        let (sut, fake) = await loadedService([keep, drop])
-        fake.deleteTaskError = TasksServiceError.fetchFailed("delete refused")
-
-        await sut.delete(drop)
-
-        XCTAssertEqual(Set(groupedTasks(sut).map(\.id)), [keep.id, drop.id])
-        XCTAssertEqual(sut.mutationErrorMessage, "delete refused")
-    }
-
-    func testMutation_beforeLoad_isNoOp() async {
+    func testClose_beforeLoad_isNoOp() async {
         let fake = FakeTasksClientAdapting()
         let sut = TasksService(client: fake)
         let task = makeTask("Never loaded")
 
-        await sut.toggleStatus(task)
-        await sut.delete(task)
+        await sut.close(task)
 
         XCTAssertTrue(fake.setStatusCalls.isEmpty)
-        XCTAssertTrue(fake.deleteTaskCalls.isEmpty)
     }
 }

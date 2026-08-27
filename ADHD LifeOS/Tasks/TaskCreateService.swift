@@ -26,15 +26,11 @@ final class TaskCreateService: ObservableObject {
     @Published var errorMessage: String?
     @Published var warningMessage: String?
     @Published private(set) var createdTask: TaskItem?
-    @Published var nudgeSelection: NudgeCountdownSelection = .none
-    @Published var dueMomentNotificationEnabled = false
 
     private let client: TaskCreateClientAdapting
-    private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
 
-    init(client: TaskCreateClientAdapting, schedulingClient: TaskCountdownNudgeSchedulingAdapting) {
+    init(client: TaskCreateClientAdapting) {
         self.client = client
-        self.schedulingClient = schedulingClient
     }
 
     var availableTags: [Tag] {
@@ -122,38 +118,8 @@ final class TaskCreateService: ObservableObject {
             }
         }
 
-        await scheduleNudgesIfNeeded(for: task, dueDate: normalized.dueDate)
-        await scheduleDueMomentNotificationIfNeeded(for: task, dueDate: normalized.dueDate)
-
         createdTask = task
         return true
-    }
-
-    private func scheduleNudgesIfNeeded(for task: TaskItem, dueDate: Date?) async {
-        guard let dueDate else { return }
-        let resolved = TaskCountdownNudgeScheduling.resolveFireDates(
-            selection: nudgeSelection, now: Date(), dueDate: dueDate
-        )
-        guard !resolved.isEmpty else { return }
-
-        guard await schedulingClient.requestAuthorizationIfNeeded() else {
-            let denialNote = "Task created, but notifications permission was denied — nudges were not scheduled."
-            warningMessage = warningMessage.map { "\($0) \(denialNote)" } ?? denialNote
-            return
-        }
-        await schedulingClient.scheduleNudges(taskId: task.id, taskTitle: task.title, fireDates: resolved)
-    }
-
-    private func scheduleDueMomentNotificationIfNeeded(for task: TaskItem, dueDate: Date?) async {
-        guard dueMomentNotificationEnabled, let dueDate else { return }
-
-        guard await schedulingClient.requestAuthorizationIfNeeded() else {
-            let denialNote =
-                "Task created, but notifications permission was denied — due-moment notification was not scheduled."
-            warningMessage = warningMessage.map { "\($0) \(denialNote)" } ?? denialNote
-            return
-        }
-        await schedulingClient.scheduleDueMomentNotification(taskId: task.id, taskTitle: task.title, dueDate: dueDate)
     }
 
     private static func message(for error: Error) -> String {

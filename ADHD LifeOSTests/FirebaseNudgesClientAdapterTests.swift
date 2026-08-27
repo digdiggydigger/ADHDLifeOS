@@ -126,11 +126,14 @@ final class FirebaseNudgesClientAdapterTests: XCTestCase {
     func testMarkFired_writesBothStampsAndReturnsTheReReadDocument() async throws {
         let id = UUID()
 
-        let nudge = try await adapter.markFired(id: id)
+        let nudge = try await adapter.markFired(id: id, existingCompletionDates: [])
 
         XCTAssertEqual(store.fieldUpdates.count, 1)
         XCTAssertEqual(store.fieldUpdates.first?.id, id)
-        XCTAssertEqual(store.fieldUpdates.first?.fields.keys.sorted(), ["last_fired_at", "updated_at"])
+        XCTAssertEqual(
+            store.fieldUpdates.first?.fields.keys.sorted(),
+            ["completion_dates", "last_fired_at", "updated_at"]
+        )
         XCTAssertEqual(store.fetchedIds, [id])
         XCTAssertEqual(nudge.label, "Stored label")
     }
@@ -138,7 +141,7 @@ final class FirebaseNudgesClientAdapterTests: XCTestCase {
     func testMarkFired_stampsWithTheCurrentClientClock() async throws {
         let before = Date()
 
-        _ = try await adapter.markFired(id: UUID())
+        _ = try await adapter.markFired(id: UUID(), existingCompletionDates: [])
 
         let stamped = try XCTUnwrap(
             FirestoreDocumentCoder.date(from: store.fieldUpdates.first?.fields["last_fired_at"])
@@ -147,10 +150,32 @@ final class FirebaseNudgesClientAdapterTests: XCTestCase {
         XCTAssertLessThanOrEqual(stamped, Date())
     }
 
+    /// The stamping call appends the firing instant to the array it was handed — the whole
+    /// array is written, existing stamps included (F-V3-Nudges).
+    func testMarkFired_appendsTheFiringToTheExistingStamps() async throws {
+        let earlier = Date(timeIntervalSince1970: 1_700_000_000)
+
+        _ = try await adapter.markFired(id: UUID(), existingCompletionDates: [earlier])
+
+        let stored = try XCTUnwrap(
+            (store.fieldUpdates.first?.fields["completion_dates"] as? [Any])?.compactMap {
+                FirestoreDocumentCoder.date(from: $0)
+            }
+        )
+        XCTAssertEqual(stored.count, 2)
+        XCTAssertEqual(stored.first, earlier)
+        XCTAssertEqual(
+            stored.last,
+            FirestoreDocumentCoder.date(from: store.fieldUpdates.first?.fields["last_fired_at"])
+        )
+    }
+
     func testMarkFired_firestoreNotFoundBecomesTheTypedNotFoundCase() async {
         store.updateError = Self.firestoreNotFound
 
-        await XCTAssertThrowsErrorAsync(try await adapter.markFired(id: UUID())) { error in
+        await XCTAssertThrowsErrorAsync(
+            try await adapter.markFired(id: UUID(), existingCompletionDates: [])
+        ) { error in
             XCTAssertEqual(error as? NudgesServiceError, .notFound)
         }
     }

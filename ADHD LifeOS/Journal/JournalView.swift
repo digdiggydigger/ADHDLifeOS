@@ -2,165 +2,289 @@
 //  JournalView.swift
 //  ADHD LifeOS
 //
+//  The v3 Journal (F-V3-Journal): one day-grouped stream where written entries and closed tasks
+//  sit together — the day as it actually went, not just what was typed. Closed nudges are absent
+//  until real completion stamps exist (V3-Nudges). The composer stays a sheet; the bottom bar's
+//  "One line about today…" is its door.
+//
 
+import Combine
 import SwiftUI
 
+/// Internal, not private, wherever the timeline sections need it: the day stream and its rows
+/// live in `JournalTimelineSections.swift` for this file's length budget (the
+/// `CaptureInboxSections` arrangement).
 struct JournalView: View {
-    @StateObject private var journalService: JournalService
+    @StateObject var journalService: JournalService
+    /// Retained for the capture rows' door — `CaptureInboxService` wants it so "Journal it"
+    /// keeps working from a capture opened out of the journal itself.
+    let journalClient: JournalClientAdapting
+    /// Closed tasks for the interleaved stream — optional so old call sites and previews keep
+    /// working without one (the timeline then simply shows written entries only).
+    let homeClient: HomeClientAdapting?
+    /// The row doors (E's 2026-08-25 review: "the journal becomes a door, not just a record").
+    /// All optional: a missing client simply leaves that row kind un-tappable, which is exactly
+    /// what previews and the composer's service want.
+    let captureClient: CaptureClientAdapting?
+    let taskDetailClient: TaskDetailClientAdapting?
+    let onStartFocus: ((FocusSprintPlan) -> Void)?
     @State private var isPresentingComposer = false
+    @State var filter: JournalTimeline.Filter = .everything
+    @State var tasks: [TaskItem] = []
+    /// The pushed doors — optional-state + `navigationDestination`, the `CaptureInboxView`
+    /// pattern, because the rows live in a `LazyVStack`.
+    @State var inspectingTaskId: UUID?
+    @State var inspectingCapture: Capture?
 
-    init(client: JournalClientAdapting) {
+    init(
+        client: JournalClientAdapting,
+        homeClient: HomeClientAdapting? = nil,
+        captureClient: CaptureClientAdapting? = nil,
+        taskDetailClient: TaskDetailClientAdapting? = nil,
+        onStartFocus: ((FocusSprintPlan) -> Void)? = nil
+    ) {
         _journalService = StateObject(wrappedValue: JournalService(client: client))
+        self.journalClient = client
+        self.homeClient = homeClient
+        self.captureClient = captureClient
+        self.taskDetailClient = taskDetailClient
+        self.onStartFocus = onStartFocus
+    }
+
+    var canOpenTasks: Bool { taskDetailClient != nil }
+    var canOpenCaptures: Bool { captureClient != nil }
+
+    var filteredTasks: [TaskItem] {
+        guard let areaId = journalService.selectedLifeAreaId else { return tasks }
+        return tasks.filter { $0.lifeAreaId == areaId }
+    }
+
+    /// Area-filtered by the EMOJI the sprint stamped at run time — a focus session document
+    /// carries no life-area id, only `life_area_emoji`, so this is the honest match available.
+    /// A sprint run before an area's emoji changed simply stops matching; history is not rewritten.
+    var filteredSprints: [CompletedFocusSession] {
+        guard let areaId = journalService.selectedLifeAreaId,
+              let emoji = journalService.lifeAreas.first(where: { $0.id == areaId })?.colour
+        else { return journalService.focusSessions }
+        return journalService.focusSessions.filter { $0.lifeAreaEmoji == emoji }
+    }
+
+    var filteredCaptures: [Capture] {
+        guard let areaId = journalService.selectedLifeAreaId else { return journalService.captures }
+        return journalService.captures.filter { $0.lifeAreaId == areaId }
+    }
+
+    func reload() async {
+        await journalService.load()
+        if let homeClient {
+            tasks = (try? await homeClient.fetchAllTasks()) ?? []
+        }
     }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                LifeAreaPicker(
-                    title: "Life Area",
-                    noSelectionLabel: "All",
-                    lifeAreas: journalService.lifeAreas,
-                    selection: $journalService.selectedLifeAreaId,
-                    accessibilityID: "journalLifeAreaFilter"
-                )
-                .padding()
-
-                Group {
-                    switch journalService.state {
-                    case .loading:
-                        ProgressView()
-                            .accessibilityIdentifier("journalLoadingIndicator")
-                    case .loaded(let logs):
-                        if logs.isEmpty {
-                            emptyState
-                        } else {
-                            List(logs) { log in
-                                LogRowView(log: log, lifeAreas: journalService.lifeAreas)
-                                    .listRowBackground(Color.cardSurface)
-                            }
-                            .listStyle(.plain)
-                            .scrollContentBackground(.hidden)
-                        }
-                    case .failed(let message):
-                        VStack(spacing: 12) {
-                            Text("Couldn't load your journal")
-                                .font(.headline)
-                            Text(message)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .padding()
-                        .accessibilityIdentifier("journalErrorMessage")
+            Group {
+                switch journalService.state {
+                case .loading:
+                    ProgressView()
+                        .accessibilityIdentifier("journalLoadingIndicator")
+                case .loaded(let logs):
+                    timeline(logs: logs)
+                case .failed(let message):
+                    VStack(spacing: 8) {
+                        Text("Couldn't load your journal")
+                            .font(.headline)
+                        Text(message)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
+                    .padding(16)
+                    .accessibilityIdentifier("journalErrorMessage")
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            // 2026-08-19 bento token pass: prototype page + card-surface rows (same treatment
-            // as Tasks/Inbox).
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
-            .navigationTitle("Journal")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        isPresentingComposer = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                    .accessibilityIdentifier("journalComposeButton")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .bottom) { composerBar }
             .sheet(isPresented: $isPresentingComposer) {
                 LogComposerView(journalService: journalService, lifeAreas: journalService.lifeAreas) {
                     Task { await journalService.load() }
                 }
+                .keyboardDismissal()
             }
             .task {
-                await journalService.load()
+                await reload()
             }
-        }
-    }
-
-    private var emptyState: some View {
-        Text("No journal entries match this filter")
-            .font(.headline)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilityIdentifier("journalEmptyState")
-    }
-}
-
-private struct LogRowView: View {
-    let log: Log
-    let lifeAreas: [LifeArea]
-
-    private var lifeAreaName: String? {
-        guard let lifeAreaId = log.lifeAreaId else { return nil }
-        // A log belonging to an archived (or unknown) area reads as "Unassigned", consistent with
-        // the Tasks tab — never the archived area's own name. `lifeAreaId` itself is untouched, so
-        // unarchiving restores the name with no data change.
-        guard let area = lifeAreas.first(where: { $0.id == lifeAreaId }), !area.archived else {
-            return TaskGrouping.unassignedLifeAreaName
-        }
-        return area.name
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(log.type == .journal ? "Journal" : "Log")
-                    .sectionLabel()
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    // Tertiary fill, not the card surface — the row itself now sits on
-                    // `cardSurface`, which would make the chip invisible.
-                    .background(Color(.tertiarySystemFill))
-                    .clipShape(Capsule())
-                Spacer()
-                Text(log.entryDate.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+                Task { await reload() }
             }
-            Text(log.body)
-                .font(.body)
-            HStack(spacing: 8) {
-                if let lifeAreaName {
-                    Text(lifeAreaName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            .navigationDestination(isPresented: Binding(
+                get: { inspectingTaskId != nil },
+                set: { if !$0 { inspectingTaskId = nil } }
+            )) {
+                if let taskId = inspectingTaskId, let taskDetailClient {
+                    TaskDetailView(
+                        taskId: taskId,
+                        lifeAreas: journalService.lifeAreas,
+                        client: taskDetailClient,
+                        onStartFocus: onStartFocus,
+                        momentumContext: MomentumTaskContext.build(
+                            lifeAreaId: tasks.first { $0.id == taskId }?.lifeAreaId,
+                            tasks: tasks,
+                            lifeAreas: journalService.lifeAreas,
+                            showStreaks: UserDefaultsMomentumPreferencesStore().read().showStreaks
+                        )
+                    ) {
+                        Task { await reload() }
+                    }
                 }
-                // Shows nothing at all for an entry written before these fields existed — the
-                // absence is the truth, and inventing a "medium" for it would not be.
-                JournalEnergyMoodBadge(energyLevel: log.energyLevel, moodEmoji: log.moodEmoji)
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { inspectingCapture != nil },
+                set: { if !$0 { inspectingCapture = nil } }
+            )) {
+                if let capture = inspectingCapture, let captureClient {
+                    JournalCaptureDoor(
+                        captureId: capture.id,
+                        lifeAreas: journalService.lifeAreas,
+                        client: captureClient,
+                        journalClient: journalClient
+                    )
+                }
             }
         }
-        .padding(.vertical, 4)
-    }
-}
-
-#if DEBUG
-private struct PreviewJournalClientAdapting: JournalClientAdapting {
-    let lifeArea = LifeArea(id: UUID(), name: "Health", colour: "#4A90D9", sortOrder: 0)
-
-    func fetchLifeAreas() async throws -> [LifeArea] { [lifeArea] }
-
-    func fetchLogs() async throws -> [Log] {
-        [
-            Log(
-                id: UUID(), lifeAreaId: lifeArea.id, type: .journal,
-                body: "Went for a run and felt great afterwards.", entryDate: Date(), createdAt: Date()
-            ),
-            Log(
-                id: UUID(), lifeAreaId: nil, type: .log,
-                body: "Took medication at 8am.", entryDate: Date(), createdAt: Date()
-            )
-        ]
     }
 
-    func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
-}
+    // MARK: - Header + chips
 
-#Preview {
-    JournalView(client: PreviewJournalClientAdapting())
+    var header: some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(JournalTimeline.headerLine(
+                    logs: allLogs, tasks: tasks, sprints: journalService.focusSessions
+                ))
+                    .sectionLabel()
+                    .foregroundStyle(.secondary)
+                Text("Journal")
+                    .font(.largeTitle.bold())
+                    .tracking(-0.5)
+            }
+            Spacer()
+            Button {
+                isPresentingComposer = true
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.body)
+                    .foregroundStyle(Color("LabelSecondary"))
+                    .frame(width: 40, height: 40)
+                    .background(Color.cardSurface, in: Circle())
+                    .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 1))
+                    .contentShape(Circle())
+            }
+            .accessibilityLabel("Write an entry")
+            .accessibilityIdentifier("journalComposeButton")
+        }
+    }
+
+    private var allLogs: [Log] {
+        if case .loaded(let logs) = journalService.state { return logs }
+        return []
+    }
+
+    var chips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(JournalTimeline.Filter.allCases, id: \.title) { option in
+                    filterChip(option)
+                }
+                areaChip
+            }
+        }
+    }
+
+    private func filterChip(_ option: JournalTimeline.Filter) -> some View {
+        let selected = filter == option
+        return Button {
+            filter = option
+        } label: {
+            Text(option.title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(selected ? AreaPalette.work.onColor : Color("LabelSecondary"))
+                .padding(.horizontal, 16)
+                .frame(minHeight: 36)
+                .background(
+                    selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color("CardSurfaceSecondary")),
+                    in: Capsule()
+                )
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    /// The area filter as v3's trailing chip — a menu over the same service selection the old
+    /// picker drove.
+    private var areaChip: some View {
+        Menu {
+            Picker("Life Area", selection: $journalService.selectedLifeAreaId) {
+                Text("All areas").tag(UUID?.none)
+                ForEach(journalService.lifeAreas) { area in
+                    Text("\(area.colour) \(area.name)").tag(UUID?.some(area.id))
+                }
+            }
+        } label: {
+            let selectedName = journalService.lifeAreas
+                .first { $0.id == journalService.selectedLifeAreaId }
+                .map { "\($0.colour) \($0.name)" } ?? "All areas"
+            Text(selectedName)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color("LabelSecondary"))
+                .padding(.horizontal, 16)
+                .frame(minHeight: 36)
+                .background(Color("CardSurfaceSecondary"), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .accessibilityIdentifier("journalLifeAreaFilter")
+    }
+
+    // MARK: - Composer bar
+
+    /// Trailing room for the capture disc: its 60pt circle plus its 16pt margin plus an 8pt gap.
+    /// Without it the global FAB floats over this bar's corner and the caption under it
+    /// (E's screenshot, 2026-08-25).
+    private static let captureDiscClearance: CGFloat = 60 + 16 + 8
+
+    private var composerBar: some View {
+        VStack(spacing: 4) {
+            Button {
+                isPresentingComposer = true
+            } label: {
+                Text("One line about today…")
+                    .font(.callout)
+                    .foregroundStyle(Color("LabelSecondary"))
+                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Color.cardBorder, lineWidth: 1)
+                            .background(
+                                Color.cardSurface,
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            )
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("journalComposerBar")
+            Text("Entries are append-only. Energy and mood are asked once, on save.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, Self.captureDiscClearance)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity)
+        .composerFooterSurface()
+    }
 }
-#endif

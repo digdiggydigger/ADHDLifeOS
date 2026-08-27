@@ -29,6 +29,16 @@ final class LifeAreaModelTests: XCTestCase {
         XCTAssertFalse(try decode(archived: "").archived)
     }
 
+    // The stored colour override (E's 2026-08-25 note): present decodes, absent is automatic —
+    // every document written before the field existed must keep decoding.
+    func testDecode_palettePresent() throws {
+        XCTAssertEqual(try decode(archived: #","palette":"growth""#).palette, "growth")
+    }
+
+    func testDecode_absentPalette_isNil() throws {
+        XCTAssertNil(try decode(archived: "").palette)
+    }
+
     func testMemberwiseInit_defaultsArchivedToFalse() {
         let area = LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 1)
         XCTAssertFalse(area.archived)

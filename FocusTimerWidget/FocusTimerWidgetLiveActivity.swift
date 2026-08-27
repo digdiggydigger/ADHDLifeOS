@@ -38,7 +38,8 @@ struct FocusTimerWidgetLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(FocusActivityCopy.status(for: context.state, isComplete: isComplete))
-                            .font(.caption2.monospaced().weight(.bold))
+                            .font(.caption2.weight(.bold))
+                            .tracking(0.5)
                             .textCase(.uppercase)
                             .foregroundStyle(.secondary)
                         Text(context.state.taskTitle)
@@ -122,7 +123,8 @@ struct FocusLiveActivityLockScreenView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(FocusActivityCopy.status(for: state, isComplete: isComplete))
-                        .font(.caption2.monospaced().weight(.bold))
+                        .font(.caption2.weight(.bold))
+                            .tracking(0.5)
                         .textCase(.uppercase)
                         .foregroundStyle(isComplete ? Color.sprintAccent : Color.secondary)
                     Text(state.taskTitle)

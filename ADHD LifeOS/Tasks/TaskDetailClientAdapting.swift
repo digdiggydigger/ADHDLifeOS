@@ -14,6 +14,9 @@ protocol TaskDetailClientAdapting: Sendable {
     func fetchAllTags() async throws -> [Tag]
     func updateTask(id: UUID, payload: TaskUpdatePayload) async throws -> TaskDetail
     func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail
+    /// Hard delete — the detail screen owns deletion since F-V3-Tasks-rebuild (the list's
+    /// swipe-left is gone).
+    func deleteTask(id: UUID) async throws
     func createTag(name: String) async throws -> Tag
     func addTagToTask(taskId: UUID, tagId: UUID) async throws
     func removeTagFromTask(taskId: UUID, tagId: UUID) async throws

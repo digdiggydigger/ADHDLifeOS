@@ -110,4 +110,35 @@ final class FocusSprintConfigurationTests: XCTestCase {
         XCTAssertEqual(plan.nudgeCount, 2)
         XCTAssertEqual(plan.lifeAreaEmoji, "🎯")
     }
+
+    // MARK: - The Settings default (E's 2026-08-25 audit: default sprint length becomes a control)
+
+    func testResolvedDuration_honoursACustomDefaultOnlyWhenNothingIsStored() {
+        XCTAssertEqual(
+            FocusSprintConfiguration.resolvedDuration(explicit: nil, defaultSeconds: 25 * 60),
+            25 * 60,
+            "an untuned task starts from the user's chosen default"
+        )
+        XCTAssertEqual(
+            FocusSprintConfiguration.resolvedDuration(explicit: 600, defaultSeconds: 25 * 60),
+            600,
+            "a task's own stored config always wins over the default"
+        )
+        XCTAssertEqual(
+            FocusSprintConfiguration.resolvedDuration(explicit: nil, defaultSeconds: 999_999),
+            FocusSprintConfiguration.maximumDurationSeconds,
+            "the chosen default is clamped like any other duration"
+        )
+    }
+
+    func testSprintPlan_threadsTheDefaultThrough() {
+        let task = TaskItem(
+            id: UUID(), lifeAreaId: nil, title: "Untuned task",
+            status: .open, priority: .p4, dueDate: nil
+        )
+
+        let plan = FocusSprintPlan(task: task, lifeArea: nil, defaultDurationSeconds: 25 * 60)
+
+        XCTAssertEqual(plan.durationSeconds, 25 * 60)
+    }
 }

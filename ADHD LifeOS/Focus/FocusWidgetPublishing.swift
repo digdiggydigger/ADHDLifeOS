@@ -22,6 +22,8 @@ enum FocusWidgetSnapshotBuilder {
         lifeAreas: [LifeArea],
         sessions: [CompletedFocusSession],
         activeSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
+        dailyGoalMinutes: Int = FocusWidgetSnapshotBuilder.dailyGoalMinutes,
+        defaultSprintSeconds: Int = FocusSprintConfiguration.defaultDurationSeconds,
         now: Date = Date(),
         calendar: Calendar = .current
     ) -> FocusWidgetSnapshot {
@@ -30,7 +32,9 @@ enum FocusWidgetSnapshotBuilder {
             generatedAt: now,
             activeGoal: activeGoal.map { goal in
                 let area = lifeAreas.first { $0.id == goal.lifeAreaId }
-                let duration = FocusSprintConfiguration.resolvedDuration(explicit: goal.focusDurationSeconds)
+                let duration = FocusSprintConfiguration.resolvedDuration(
+                    explicit: goal.focusDurationSeconds, defaultSeconds: defaultSprintSeconds
+                )
                 return FocusWidgetSnapshot.ActiveGoal(
                     title: goal.title,
                     lifeAreaName: area?.name,
@@ -88,6 +92,15 @@ extension FocusSessionService {
 /// real App Group container.
 protocol FocusWidgetPublishing: Sendable {
     func publish(_ snapshot: FocusWidgetSnapshot)
+    /// The Life Areas widget's payload, published from the same Home choke point (E's 2026-08-25
+    /// widgets note) — the two snapshots move together because both are built from Home's state.
+    func publishLifeAreas(_ snapshot: LifeAreasWidgetSnapshot)
+}
+
+extension FocusWidgetPublishing {
+    /// Default no-op so single-purpose fakes and previews keep compiling; the live publisher
+    /// overrides it. Publishing stays best-effort decoration either way.
+    func publishLifeAreas(_ snapshot: LifeAreasWidgetSnapshot) {}
 }
 
 /// The live publisher: writes into the shared App Group container, then asks WidgetKit to rebuild
@@ -107,5 +120,10 @@ struct AppGroupFocusWidgetPublisher: FocusWidgetPublishing {
     func publish(_ snapshot: FocusWidgetSnapshot) {
         store.write(snapshot)
         WidgetCenter.shared.reloadTimelines(ofKind: FocusWidgetSnapshotStore.widgetKind)
+    }
+
+    func publishLifeAreas(_ snapshot: LifeAreasWidgetSnapshot) {
+        LifeAreasWidgetStore().write(snapshot)
+        WidgetCenter.shared.reloadTimelines(ofKind: LifeAreasWidgetStore.widgetKind)
     }
 }

@@ -53,14 +53,18 @@ final class FakeNudgesClientAdapting: NudgesClientAdapting, @unchecked Sendable 
         return try result.get()
     }
 
-    func markFired(id: UUID) async throws -> Nudge {
+    private(set) var lastMarkFiredExistingCompletionDates: [Date]?
+
+    func markFired(id: UUID, existingCompletionDates: [Date]) async throws -> Nudge {
         markFiredCallCount += 1
+        lastMarkFiredExistingCompletionDates = existingCompletionDates
         guard let result = markFiredResult else {
             guard case .success(let existing) = fetchNudgesResult,
                   var updated = existing.first(where: { $0.id == id }) else {
                 throw NudgesServiceError.notFound
             }
             updated.lastFiredAt = Date()
+            updated.completionDates = existingCompletionDates + [Date()]
             return updated
         }
         return try result.get()

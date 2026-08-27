@@ -43,6 +43,7 @@ struct TagEditorListView: View {
         }
         .sheet(isPresented: $isPresentingAdd) {
             AddTagSheet(service: service)
+                .keyboardDismissal()
         }
         .overlay(alignment: .bottom) {
             infoToast
@@ -170,7 +171,12 @@ private struct AddTagSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task {
-                            if await service.create(name: name) { dismiss() }
+                            if await service.create(name: name) {
+                                Haptics.play(.solid)
+                                dismiss()
+                            } else {
+                                Haptics.play(.error)
+                            }
                         }
                     }
                     .disabled(!canSave)

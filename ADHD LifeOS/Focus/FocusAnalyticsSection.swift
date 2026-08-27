@@ -46,7 +46,10 @@ struct FocusAnalyticsSection: View {
         VStack(spacing: 16) {
             switch service.state {
             case .loaded(let sessions) where !sessions.isEmpty:
-                WeeklyFocusSummaryWidget(buckets: FocusAnalytics.currentWeek(sessions: sessions))
+                WeeklyFocusSummaryWidget(
+                    buckets: FocusAnalytics.currentWeek(sessions: sessions),
+                    dailyGoalMinutes: UserDefaultsMomentumPreferencesStore().read().focusDailyGoalMinutes
+                )
                 ProductivityTrendChart(buckets: FocusAnalytics.rollingDays(sessions: sessions))
             case .failed(let message):
                 // Icon + text (§4), quiet footnote weight — visible breakage, minimal noise.

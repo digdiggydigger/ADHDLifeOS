@@ -77,6 +77,24 @@ final class FirebaseTaskDetailClientAdapterTests: XCTestCase {
         XCTAssertTrue(store.fetchedIds.isEmpty, "a failed write must not report a document back")
     }
 
+    // MARK: - Delete (moved here from the list adapter in F-V3-Tasks-rebuild)
+
+    func testDeleteTask_forwardsTheId() async throws {
+        let id = UUID()
+
+        try await adapter.deleteTask(id: id)
+
+        XCTAssertEqual(store.deletedIds, [id])
+    }
+
+    func testDeleteTask_propagatesFailure() async {
+        store.deleteError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.deleteTask(id: UUID())) { error in
+            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
+        }
+    }
+
     // MARK: - Status
 
     func testUpdateStatus_writesTheStatusAndReturnsTheReReadDocument() async throws {

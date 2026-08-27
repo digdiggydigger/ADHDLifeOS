@@ -3,19 +3,19 @@
 //  ADHD LifeOS
 //
 
+import Combine
 import SwiftUI
 
 struct TaskListView: View {
     @StateObject private var tasksService: TasksService
     private let taskCreateClient: TaskCreateClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
-    private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     /// Starts an app-level focus sprint from a resolved plan. Owned by `RootView` (which holds
     /// the `FocusSessionService`), so the running bar outlives this screen.
     private let onStartFocus: (FocusSprintPlan) -> Void
     @State private var isPresentingTaskCreate = false
     /// Non-nil while a task's detail screen is pushed. Drives `navigationDestination(isPresented:)`
-    /// — the swipe card can't be a `NavigationLink` (its own `DragGesture` would fight the link's
+    /// — the row can't be a `NavigationLink` (its own swipe `DragGesture` would fight the link's
     /// tap), so tap-to-inspect is programmatic.
     @State private var inspectingTask: TaskItem?
 
@@ -23,26 +23,34 @@ struct TaskListView: View {
         tasksClient: TasksClientAdapting,
         taskCreateClient: TaskCreateClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: @escaping (FocusSprintPlan) -> Void = { _ in }
     ) {
         _tasksService = StateObject(wrappedValue: TasksService(client: tasksClient))
         self.taskCreateClient = taskCreateClient
         self.taskDetailClient = taskDetailClient
-        self.schedulingClient = schedulingClient
         self.onStartFocus = onStartFocus
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Status", selection: $tasksService.statusFilter) {
-                    ForEach(TaskStatusFilterOption.allCases) { option in
-                        Text(option.label).tag(option)
+                // v3's eyebrow + filter chips (F-V3-Tasks); the sort/priority refinement menu was
+                // retired with the F-V3-Tasks-rebuild dense rows — E confirmed it was unused.
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(MomentumTaskBuckets.headerLine(tasks: tasksService.tasks))
+                        .sectionLabel()
+                        .foregroundStyle(.secondary)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(TaskStatusFilterOption.allCases) { option in
+                                filterChip(option)
+                            }
+                        }
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
                 .accessibilityIdentifier("taskStatusFilter")
 
                 Group {
@@ -75,9 +83,6 @@ struct TaskListView: View {
             .navigationTitle("Tasks")
             .searchable(text: $tasksService.searchText, prompt: "Search tasks")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    refinementMenu
-                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         isPresentingTaskCreate = true
@@ -90,14 +95,19 @@ struct TaskListView: View {
             .sheet(isPresented: $isPresentingTaskCreate) {
                 TaskCreateView(
                     client: taskCreateClient,
-                    schedulingClient: schedulingClient,
                     lifeAreas: tasksService.lifeAreas
                 ) {
                     Task { await tasksService.load() }
                 }
+                .keyboardDismissal()
             }
             .task {
                 await tasksService.load()
+            }
+            // BUG-b7's belt-and-braces: the composer's completion already reloads, but ANY write
+            // from ANY surface (the fan, Settings, a widget-launched capture) lands here too.
+            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+                Task { await tasksService.load() }
             }
             .navigationDestination(isPresented: Binding(
                 get: { inspectingTask != nil },
@@ -108,7 +118,6 @@ struct TaskListView: View {
                         taskId: task.id,
                         lifeAreas: tasksService.lifeAreas,
                         client: taskDetailClient,
-                        schedulingClient: schedulingClient,
                         onStartFocus: onStartFocus,
                         momentumContext: MomentumTaskContext.build(
                             lifeAreaId: task.lifeAreaId,
@@ -135,81 +144,105 @@ struct TaskListView: View {
         }
     }
 
-    /// The grouped task list, rendered as a `ScrollView` + `LazyVStack` of `SwipeableTaskCard`s
-    /// (CLAUDE.md §2 favours this over `List` for non-Settings screens) — `List` also can't host
-    /// the card's horizontal `DragGesture` without its own row-swipe intercepting it.
+    /// The grouped list as the design frame draws it (F-V3-Tasks-rebuild): each bucket's dense
+    /// `TaskRow`s inside ONE bordered card with inset dividers, under a coloured pinned header.
+    /// `ScrollView` + `LazyVStack` per CLAUDE.md §2 — `List` also can't host the row's horizontal
+    /// swipe `DragGesture` without its own row-swipe intercepting it.
     private func taskList(groups: [LifeAreaTaskGroup]) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 24, pinnedViews: [.sectionHeaders]) {
                 ForEach(groups) { group in
                     Section {
-                        VStack(spacing: 8) {
-                            ForEach(group.tasks) { task in
-                                let area = tasksService.lifeAreas.first { $0.id == task.lifeAreaId }
-                                SwipeableTaskCard(
-                                    task: task,
-                                    lifeArea: area,
-                                    onToggle: { Task { await tasksService.toggleStatus(task) } },
-                                    onDelete: { Task { await tasksService.delete(task) } },
-                                    onInspect: { inspectingTask = task },
-                                    onStartFocus: { onStartFocus(FocusSprintPlan(task: task, lifeArea: area)) }
-                                )
-                            }
-                        }
+                        rowCard(for: group)
                     } header: {
-                        // The prototype's mono uppercase card-label voice for section headers.
+                        // v3's coloured bucket voice: warn for due-today, motion-blue for
+                        // tomorrow, closure-green for closed-today; everything else secondary.
                         Text(group.lifeAreaName)
                             .sectionLabel()
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(headerTone(for: group))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 8)
                             .background(.bar)
                     }
-                }
-
-                if UserDefaultsMomentumPreferencesStore().read().showCharts {
-                    TasksFocusWeekSection()
                 }
             }
             .padding(16)
         }
     }
 
+    private func rowCard(for group: LifeAreaTaskGroup) -> some View {
+        // The ▶ sprint launcher rides only the Momentum board's Due-today bucket (E's b11 call:
+        // sprint-starting is a today thing; other buckets keep the quieter tap-circle only).
+        let showsSprintStart = group.customId == "momentum-dueToday"
+        return VStack(spacing: 0) {
+            ForEach(Array(group.tasks.enumerated()), id: \.element.id) { index, task in
+                let area = tasksService.lifeAreas.first { $0.id == task.lifeAreaId }
+                TaskRow(
+                    task: task,
+                    lifeArea: area,
+                    showsSprintStart: showsSprintStart,
+                    onClose: { Task { await tasksService.close(task) } },
+                    onInspect: { inspectingTask = task },
+                    onStartFocus: {
+                        onStartFocus(FocusSprintPlan(
+                            task: task, lifeArea: area,
+                            defaultDurationSeconds:
+                                UserDefaultsMomentumPreferencesStore().read().defaultSprintMinutes * 60
+                        ))
+                    }
+                )
+                if index != group.tasks.indices.last {
+                    Divider()
+                        .padding(.leading, 16)
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.cardBorder, lineWidth: 1)
+        )
+    }
+
+    /// Momentum's board deliberately holds only today/tomorrow/closed-today, so its empty state
+    /// says where the rest went instead of implying there are no tasks at all.
     private var emptyState: some View {
-        Text("No tasks match this filter")
+        Text(tasksService.statusFilter == .momentum
+                ? "Nothing due today or tomorrow — the rest lives under Open"
+                : "No tasks match this filter")
             .font(.headline)
             .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 24)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityIdentifier("tasksEmptyState")
     }
 
-    /// Web-parity sort + urgency refinement (`TaskListView.tsx`'s dropdowns), as a native toolbar
-    /// menu of inline pickers. The glyph fills in when a non-default refinement is active, so the
-    /// state is visible without opening the menu (never colour alone — the fill is a shape change).
-    private var refinementMenu: some View {
-        Menu {
-            Picker("Sort", selection: $tasksService.sortOption) {
-                ForEach(TaskSortOption.allCases) { option in
-                    Text(option.label).tag(option)
-                }
-            }
-            Picker("Priority", selection: $tasksService.priorityFilter) {
-                Text("All Priorities").tag(TaskPriority?.none)
-                ForEach(TaskPriority.allCases, id: \.self) { option in
-                    Text(option.rawValue.uppercased()).tag(TaskPriority?.some(option))
-                }
-            }
+    private func filterChip(_ option: TaskStatusFilterOption) -> some View {
+        let selected = tasksService.statusFilter == option
+        return Button {
+            Haptics.play(.selection)
+            tasksService.statusFilter = option
         } label: {
-            Image(systemName: isRefinementActive
-                ? "line.3.horizontal.decrease.circle.fill"
-                : "line.3.horizontal.decrease.circle")
+            Text(option.label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(selected ? AreaPalette.work.onColor : Color("LabelSecondary"))
+                .padding(.horizontal, 16)
+                .frame(minHeight: 36)
+                .background(
+                    selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color("CardSurfaceSecondary")),
+                    in: Capsule()
+                )
+                .contentShape(Capsule())
         }
-        .accessibilityLabel("Sort and filter")
-        .accessibilityIdentifier("taskRefinementMenu")
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private var isRefinementActive: Bool {
-        tasksService.sortOption != .standard || tasksService.priorityFilter != nil
+    private func headerTone(for group: LifeAreaTaskGroup) -> Color {
+        MomentumTaskBuckets.headerToneAssetName(customId: group.customId)
+            .map { Color($0) } ?? Color("LabelSecondary")
     }
 }
 
@@ -223,17 +256,16 @@ private struct PreviewTasksClientAdapting: TasksClientAdapting {
         [
             TaskItem(
                 id: UUID(), lifeAreaId: lifeArea.id, title: "Drink water",
-                status: .open, priority: .p2, dueDate: nil
+                status: .open, priority: .p2, dueDate: .now
             ),
             TaskItem(
                 id: UUID(), lifeAreaId: lifeArea.id, title: "Morning walk",
-                status: .done, priority: .p4, dueDate: nil
+                status: .done, priority: .p4, dueDate: nil, completedAt: .now
             )
         ]
     }
 
     func setStatus(taskId: UUID, status: TaskStatus) async throws {}
-    func deleteTask(taskId: UUID) async throws {}
 }
 
 private struct PreviewTaskCreateClientAdapting: TaskCreateClientAdapting {
@@ -251,27 +283,17 @@ private struct PreviewTaskDetailClientAdapting: TaskDetailClientAdapting {
         fatalError("unused in preview")
     }
     func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail { fatalError("unused in preview") }
+    func deleteTask(id: UUID) async throws {}
     func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
     func addTagToTask(taskId: UUID, tagId: UUID) async throws {}
     func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {}
-}
-
-private struct PreviewNudgeSchedulingClientAdapting: TaskCountdownNudgeSchedulingAdapting {
-    func requestAuthorizationIfNeeded() async -> Bool { false }
-    func scheduleNudges(taskId: UUID, taskTitle: String, fireDates: [ScheduledCountdownNudge]) async {}
-    func cancelNudges(taskId: UUID) async {}
-    func hasScheduledNudges(taskId: UUID) async -> Bool { false }
-    func scheduleDueMomentNotification(taskId: UUID, taskTitle: String, dueDate: Date) async {}
-    func cancelDueMomentNotification(taskId: UUID) async {}
-    func hasDueMomentNotificationScheduled(taskId: UUID) async -> Bool { false }
 }
 
 #Preview {
     TaskListView(
         tasksClient: PreviewTasksClientAdapting(),
         taskCreateClient: PreviewTaskCreateClientAdapting(),
-        taskDetailClient: PreviewTaskDetailClientAdapting(),
-        schedulingClient: PreviewNudgeSchedulingClientAdapting()
+        taskDetailClient: PreviewTaskDetailClientAdapting()
     )
 }
 #endif

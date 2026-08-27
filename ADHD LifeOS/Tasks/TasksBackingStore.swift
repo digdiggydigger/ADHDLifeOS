@@ -15,7 +15,6 @@ protocol TasksBackingStore {
     func fetchLifeAreas(includeArchived: Bool) async throws -> [LifeArea]
     func fetchTasks() async throws -> [TaskItem]
     func setTaskStatus(id: UUID, status: TaskStatus, now: Date) async throws
-    func deleteTask(id: UUID) async throws
 }
 
 extension FirebaseManager: TasksBackingStore {}

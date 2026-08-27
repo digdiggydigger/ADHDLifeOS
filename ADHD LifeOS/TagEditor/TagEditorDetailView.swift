@@ -63,6 +63,7 @@ struct TagEditorDetailView: View {
 
             Section {
                 Button(role: .destructive) {
+                    Haptics.play(.warning)
                     showDeleteAlert = true
                 } label: {
                     Label("Delete Tag", systemImage: "trash")
@@ -76,7 +77,12 @@ struct TagEditorDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Save") {
                     Task {
-                        if await service.rename(tag: tag, to: name) { dismiss() }
+                        if await service.rename(tag: tag, to: name) {
+                            Haptics.play(.solid)
+                            dismiss()
+                        } else {
+                            Haptics.play(.error)
+                        }
                     }
                 }
                 .disabled(!canSave)

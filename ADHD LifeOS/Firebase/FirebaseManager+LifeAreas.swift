@@ -36,6 +36,7 @@ extension FirebaseManager {
             batch.updateData(["sort_order": index], forDocument: areas.document(id.uuidString))
         }
         try await batch.commit()
+        DataChangeSignal.post()
     }
 
     func deleteLifeArea(id: UUID) async throws {

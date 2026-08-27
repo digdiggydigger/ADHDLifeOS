@@ -39,7 +39,7 @@ struct NotificationCenterFocusNudgeAdapter: FocusNotificationScheduling, @unchec
             let content = UNMutableNotificationContent()
             content.title = notification.title
             content.body = notification.body
-            content.sound = .default
+            content.sound = AppFeedback.notificationSound()
             // Sprint nudges are the point of the feature, so they get time-sensitive delivery where
             // the OS allows it — they should break through Focus modes the way a timer does.
             if #available(iOS 15.0, *) {

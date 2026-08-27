@@ -98,7 +98,7 @@ struct DailySummaryResultCard: View {
         }
         .buttonStyle(PressScaleButtonStyle())
         .disabled(copyText == nil)
-        .copyConfirmationHaptic(trigger: didCopy)
+        .haptic(.success, trigger: didCopy)
         .accessibilityIdentifier("copyDailySummaryButton")
     }
 }
@@ -183,19 +183,6 @@ struct PressScaleButtonStyle: ButtonStyle {
                 .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0),
                 value: configuration.isPressed
             )
-    }
-}
-
-extension View {
-    /// Tactile confirmation on copy (§3). `.sensoryFeedback` is iOS 17+ and the deployment target
-    /// is 16.0, so it is gated — the same §7 precedent as `expandCollapseHaptic`.
-    @ViewBuilder
-    func copyConfirmationHaptic(trigger: Bool) -> some View {
-        if #available(iOS 17.0, *) {
-            self.sensoryFeedback(.success, trigger: trigger)
-        } else {
-            self
-        }
     }
 }
 

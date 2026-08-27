@@ -46,11 +46,16 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        // Foreground presentations follow the same Settings sound gate as scheduled content.
+        let sound: UNNotificationPresentationOptions =
+            AppFeedback.notificationSound() == nil ? [] : .sound
+        let base: UNNotificationPresentationOptions
         if #available(iOS 14.0, *) {
-            completionHandler([.banner, .list, .sound])
+            base = [.banner, .list]
         } else {
-            completionHandler([.alert, .sound])
+            base = .alert
         }
+        completionHandler(base.union(sound))
     }
 
     /// A tap on a delivered notification. For a focus sprint this is the deliberate way out of a
@@ -82,7 +87,6 @@ struct ADHD_LifeOSApp: App {
     private let captureClient: CaptureClientAdapting
     private let nudgesClient: NudgesClientAdapting
     private let journalClient: JournalClientAdapting
-    private let taskCountdownNudgeSchedulingClient: TaskCountdownNudgeSchedulingAdapting
     private let nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
@@ -100,7 +104,6 @@ struct ADHD_LifeOSApp: App {
         captureClient = FirebaseCaptureClientAdapter()
         nudgesClient = FirebaseNudgesClientAdapter()
         journalClient = FirebaseJournalClientAdapter()
-        taskCountdownNudgeSchedulingClient = NotificationCenterCountdownNudgeAdapter()
         nudgeNotificationSchedulingClient = NotificationCenterNudgeAdapter()
         lifeAreaDetailClient = FirebaseLifeAreaDetailClientAdapter()
     }
@@ -116,7 +119,6 @@ struct ADHD_LifeOSApp: App {
                 captureClient: captureClient,
                 nudgesClient: nudgesClient,
                 journalClient: journalClient,
-                taskCountdownNudgeSchedulingClient: taskCountdownNudgeSchedulingClient,
                 nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
                 lifeAreaDetailClient: lifeAreaDetailClient
             )

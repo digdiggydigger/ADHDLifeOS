@@ -128,6 +128,7 @@ struct TaskFocusPlanSection: View {
     private func presetChip(seconds: Int) -> some View {
         let isSelected = durationSeconds == seconds
         return Button {
+            Haptics.play(.light)
             durationSeconds = seconds
             unit = Self.naturalUnit(for: seconds)
         } label: {
@@ -165,10 +166,15 @@ struct TaskFocusPlanSection: View {
             in: unit == .seconds
                 ? FocusSprintConfiguration.minimumDurationSeconds...FocusSprintConfiguration.maximumDurationSeconds
                 : 1...(FocusSprintConfiguration.maximumDurationSeconds / 60),
-            step: unit == .seconds ? 5 : 1
-        ) {
-            LabeledContent("Target", value: FocusTimeFormatting.human(seconds: durationSeconds))
-        }
+            step: unit == .seconds ? 5 : 1,
+            onEditingChanged: { editing in
+                // Once, on release — see the Settings steppers (E, 2026-08-27).
+                if !editing { Haptics.play(.selection) }
+            },
+            label: {
+                LabeledContent("Target", value: FocusTimeFormatting.human(seconds: durationSeconds))
+            }
+        )
         .accessibilityIdentifier("taskDetailFocusDurationStepper")
     }
 

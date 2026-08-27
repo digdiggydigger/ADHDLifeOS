@@ -20,6 +20,7 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
     var createTagResult: Result<Tag, Error> = .success(Tag(id: UUID(), name: "new-tag"))
     var addTagToTaskResult: Result<Void, Error> = .success(())
     var removeTagFromTaskResult: Result<Void, Error> = .success(())
+    var deleteTaskError: Error?
 
     private(set) var fetchTaskCallCount = 0
     private(set) var updateTaskCallCount = 0
@@ -30,6 +31,7 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
     private(set) var lastUpdateTaskPayload: TaskUpdatePayload?
     private(set) var lastAddTagArguments: (taskId: UUID, tagId: UUID)?
     private(set) var lastRemoveTagArguments: (taskId: UUID, tagId: UUID)?
+    private(set) var deleteTaskCalls: [UUID] = []
 
     func fetchTask(id: UUID) async throws -> TaskDetail {
         fetchTaskCallCount += 1
@@ -84,5 +86,10 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
         removeTagFromTaskCallCount += 1
         lastRemoveTagArguments = (taskId, tagId)
         _ = try removeTagFromTaskResult.get()
+    }
+
+    func deleteTask(id: UUID) async throws {
+        deleteTaskCalls.append(id)
+        if let deleteTaskError { throw deleteTaskError }
     }
 }

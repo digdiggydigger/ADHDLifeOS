@@ -50,7 +50,7 @@ struct FocusSprintTimelineCard: View {
             phaseCards
         }
         .bentoCard()
-        .saveSuccessHaptic(trigger: pinHapticTrigger)
+        .haptic(.solid, trigger: pinHapticTrigger)
     }
 
     // MARK: - Track

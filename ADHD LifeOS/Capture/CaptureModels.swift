@@ -52,11 +52,18 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
     /// purpose: a seen capture stays unprocessed so it can still be promoted later. `nil` on every
     /// document written before the flag existed, and it means the same as `false`.
     var seen: Bool?
+    /// Tag membership, read straight off the document so the inbox can chip it without per-row
+    /// fetches. Read-only from this model's point of view: writes stay `arrayUnion`/`arrayRemove`
+    /// in `FirebaseManager+Tags`, and the full-document encode only ever runs at create, where
+    /// this is `nil` and the key is omitted. `tag_ids` is one of the snake_case exceptions in the
+    /// captures convention, because that is what the membership writes have always spelled.
+    var tagIds: [UUID]?
 
     enum CodingKeys: String, CodingKey {
         case id, content, kind, processed, title, status, lifeAreaId
         case mediaURL, mediaContentType, thumbnailURL, linkPreview, aiAssessment, seen, notes, clearedAt
         case createdAt = "created_at"
+        case tagIds = "tag_ids"
     }
 
     /// The URL a photo capture's thumbnail should render from: the server-generated thumbnail when

@@ -30,7 +30,19 @@ struct CaptureDetailContentCard: View {
                 if let domain = CaptureDetailPresentation.sourceDomain(for: capture) {
                     sourceLine(domain)
                 }
-                if let quote = CaptureRowPresentation.secondaryText(for: capture) {
+                if let transcript = CaptureDetailPresentation.transcript(for: capture) {
+                    // The transcript at reading size, labelled — never squeezed into a headline.
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Transcript")
+                            .sectionLabel()
+                            .foregroundStyle(.secondary)
+                        Text(transcript)
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+                    .accessibilityIdentifier("captureDetailTranscript")
+                } else if let quote = CaptureRowPresentation.secondaryText(for: capture) {
                     CaptureQuotedNote(text: quote)
                 }
                 if let assessment = capture.aiAssessment, !assessment.isEmpty {
@@ -66,7 +78,7 @@ struct CaptureDetailContentCard: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("captureDetailTimestamp")
-                Text(CaptureRowPresentation.primaryText(for: capture))
+                Text(CaptureDetailPresentation.headline(for: capture))
                     .font(.title2.bold())
                     .tracking(-0.5)
                     .minimumScaleFactor(0.8)
@@ -173,6 +185,7 @@ struct CaptureDetailNotesEditor: View {
                 .accessibilityIdentifier("captureDetailNotesField")
             if isDirty {
                 Button {
+                    Haptics.play(.solid)
                     Task { await save() }
                 } label: {
                     if isSaving {
@@ -225,7 +238,10 @@ struct CaptureDetailActions: View {
                     CapturePromotedChip()
                         .frame(maxWidth: .infinity)
                 } else {
-                    Button(action: onMakeTask) {
+                    Button {
+                        Haptics.play(.success)
+                        onMakeTask()
+                    } label: {
                         Label("Make a task", systemImage: "checklist")
                     }
                     .buttonStyle(PrimaryActionButtonStyle())
@@ -249,7 +265,10 @@ struct CaptureDetailActions: View {
     // 52pt matches B6's circle exactly; it is a control dimension (multiple of 4, over the 44pt
     // floor), not a spacing token.
     private var archiveButton: some View {
-        Button(action: onArchive) {
+        Button {
+            Haptics.play(.solid)
+            onArchive()
+        } label: {
             if isArchiving {
                 ProgressView()
                     .frame(width: 52, height: 52)

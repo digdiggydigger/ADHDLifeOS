@@ -16,22 +16,20 @@ final class TaskDetailService: ObservableObject {
 
     @Published private(set) var state: LoadState = .loading
     @Published private(set) var tags: [Tag] = []
+    /// Every tag the user has, for the composer-parity chip row (E's follow-up): the detail
+    /// screen shows them all, with the attached ones highlighted, exactly like the create sheet.
+    @Published private(set) var allTags: [Tag] = []
     @Published private(set) var isSaving = false
     @Published var errorMessage: String?
     @Published var warningMessage: String?
-    @Published private(set) var hasScheduledNudges = false
-    @Published private(set) var hasDueMomentNotification = false
 
     private let taskId: UUID
     private let client: TaskDetailClientAdapting
-    private let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     private var task: TaskDetail?
-    private var allTags: [Tag] = []
 
-    init(taskId: UUID, client: TaskDetailClientAdapting, schedulingClient: TaskCountdownNudgeSchedulingAdapting) {
+    init(taskId: UUID, client: TaskDetailClientAdapting) {
         self.taskId = taskId
         self.client = client
-        self.schedulingClient = schedulingClient
     }
 
     func load() async {
@@ -46,8 +44,6 @@ final class TaskDetailService: ObservableObject {
             task = fetchedTask
             tags = fetchedTags
             state = .loaded(fetchedTask)
-            hasScheduledNudges = await schedulingClient.hasScheduledNudges(taskId: taskId)
-            hasDueMomentNotification = await schedulingClient.hasDueMomentNotificationScheduled(taskId: taskId)
         } catch {
             state = .failed(Self.message(for: error))
         }
@@ -71,14 +67,6 @@ final class TaskDetailService: ObservableObject {
                 let updated = try await client.updateTask(id: taskId, payload: payload)
                 task = updated
                 state = .loaded(updated)
-                if payload.dueDate != nil {
-                    if hasScheduledNudges {
-                        await cancelNudges()
-                    }
-                    if hasDueMomentNotification {
-                        await cancelDueMomentNotification()
-                    }
-                }
                 return true
             } catch {
                 errorMessage = Self.message(for: error)
@@ -87,88 +75,39 @@ final class TaskDetailService: ObservableObject {
         }
     }
 
-    func toggleStatus() async {
-        guard let original = task else { return }
-        let newStatus: TaskStatus = original.status == .open ? .done : .open
+    /// One-way close (F-V3-Tasks-rebuild, E's addendum): a done task never reopens, so this is a
+    /// no-op unless the task is open.
+    func close() async {
+        guard let original = task, original.status == .open else { return }
         do {
-            let updated = try await client.updateStatus(id: taskId, status: newStatus)
+            let updated = try await client.updateStatus(id: taskId, status: .done)
             task = updated
             state = .loaded(updated)
-            if newStatus == .done {
-                if hasScheduledNudges {
-                    await cancelNudges()
-                }
-                if hasDueMomentNotification {
-                    await cancelDueMomentNotification()
-                }
-            }
         } catch {
             errorMessage = Self.message(for: error)
         }
     }
 
-    /// Applies a new countdown-nudge selection immediately (same immediate-apply precedent as the
-    /// status toggle and tag add/remove) — cancels any existing nudges for this task first, then
-    /// schedules the new ones against `dueDate`, the view's live/currently-staged due date (not
-    /// `task.dueDate`, which may be stale relative to an unsaved edit — see the FIX block this
-    /// resolves).
-    func updateNudgeSelection(_ selection: NudgeCountdownSelection, dueDate: Date) async {
-        guard selection != .none else {
-            await cancelNudges()
-            return
+    /// Hard delete — the detail screen owns deletion since F-V3-Tasks-rebuild. Returns whether it
+    /// landed, so the view only dismisses a screen whose task is actually gone.
+    func delete() async -> Bool {
+        do {
+            try await client.deleteTask(id: taskId)
+            return true
+        } catch {
+            errorMessage = Self.message(for: error)
+            return false
         }
-
-        let resolved = TaskCountdownNudgeScheduling.resolveFireDates(
-            selection: selection, now: Date(), dueDate: dueDate
-        )
-        guard !resolved.isEmpty else {
-            await cancelNudges()
-            return
-        }
-
-        guard await schedulingClient.requestAuthorizationIfNeeded() else {
-            warningMessage = "Notifications permission denied — nudges were not scheduled."
-            hasScheduledNudges = false
-            return
-        }
-
-        await schedulingClient.scheduleNudges(taskId: taskId, taskTitle: task?.title ?? "", fireDates: resolved)
-        hasScheduledNudges = true
     }
 
-    func disableNudges() async {
-        await cancelNudges()
-    }
-
-    private func cancelNudges() async {
-        await schedulingClient.cancelNudges(taskId: taskId)
-        hasScheduledNudges = false
-    }
-
-    /// Applies the due-moment notification toggle immediately (no Save required — same
-    /// immediate-apply precedent as the countdown-nudge selection above). Independent of
-    /// countdown nudges — toggling this on/off never touches `hasScheduledNudges` or vice versa.
-    func updateDueMomentNotification(enabled: Bool, dueDate: Date) async {
-        guard enabled else {
-            await cancelDueMomentNotification()
-            return
+    /// Composer-parity chip tap: attached → detach, not attached → attach. Applies immediately,
+    /// same precedent as every other tag edit on this screen.
+    func toggleTag(_ tag: Tag) async {
+        if tags.contains(where: { $0.id == tag.id }) {
+            await removeTag(tag)
+        } else {
+            await attach(tag)
         }
-
-        guard await schedulingClient.requestAuthorizationIfNeeded() else {
-            warningMessage = "Notifications permission denied — due-moment notification was not scheduled."
-            hasDueMomentNotification = false
-            return
-        }
-
-        await schedulingClient.scheduleDueMomentNotification(
-            taskId: taskId, taskTitle: task?.title ?? "", dueDate: dueDate
-        )
-        hasDueMomentNotification = true
-    }
-
-    private func cancelDueMomentNotification() async {
-        await schedulingClient.cancelDueMomentNotification(taskId: taskId)
-        hasDueMomentNotification = false
     }
 
     func addTag(name: String) async {

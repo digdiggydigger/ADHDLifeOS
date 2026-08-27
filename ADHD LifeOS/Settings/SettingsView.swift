@@ -9,8 +9,9 @@ import SwiftUI
 /// Apple's purpose-built settings surface, explicitly sanctioned over the `CLAUDE.md` §2
 /// `ScrollView`+`LazyVStack` default for "basic Settings structures". `Form` gives native
 /// inset-grouped styling, free section headers/footers, and correct Dynamic Type row growth
-/// without hand-rolled spacing. Only Notifications (read-only status) and Account (Sign Out) are
-/// live; Life Areas, About & Diagnostics, and Tag Editor are visible-but-disabled placeholders.
+/// without hand-rolled spacing. Every section is live as of the 2026-08-25 audit: the last
+/// placeholder (About & Diagnostics) became the real version/build row, and the preference
+/// sections (momentum, focus, feedback) live in `SettingsPreferenceSections.swift`.
 struct SettingsView: View {
     @ObservedObject var authService: AuthService
     private let authorizationReader: NotificationAuthorizationReading
@@ -21,8 +22,10 @@ struct SettingsView: View {
     @StateObject private var accountDeletionService: AccountDeletionService
     @Environment(\.dismiss) private var dismiss
     @State private var permissionState: NotificationPermissionState = .unknown
-    private let momentumPreferencesStore: MomentumPreferencesStoring
-    @State private var momentumPreferences: MomentumPreferences
+    /// Internal, not private: the preference sections live in `SettingsPreferenceSections.swift`
+    /// (the `HomeAccessoryStrips` arrangement) to keep this type inside its body budget.
+    let momentumPreferencesStore: MomentumPreferencesStoring
+    @State var momentumPreferences: MomentumPreferences
 
     init(
         authService: AuthService,
@@ -50,6 +53,9 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 momentumSection
+                focusSection
+                feedbackSection
+                appearanceSection
                 notificationsSection
                 lifeAreasSection
                 accountSection
@@ -77,72 +83,27 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Section 0 — What counts as momentum (Concept C, block M2)
+    // MARK: - Appearance (F-V3-Settings)
 
-    private var momentumSection: some View {
-        Section {
-            Stepper(
-                value: Binding(
-                    get: { momentumPreferences.dailyGoal },
-                    set: { newValue in
-                        momentumPreferences.dailyGoal = newValue
-                        momentumPreferencesStore.write(momentumPreferences)
-                    }
-                ),
-                in: MomentumPreferences.goalRange
-            ) {
-                LabeledContent(
-                    "Daily goal",
-                    value: "\(momentumPreferences.dailyGoal) \(momentumPreferences.dailyGoal == 1 ? "item" : "items")"
-                )
+    @AppStorage(AppearancePreference.storageKey) private var appearanceRaw =
+        AppearancePreference.system.rawValue
+
+    private var appearanceSection: some View {
+        let current = AppearancePreference(rawValue: appearanceRaw) ?? .system
+        return Section {
+            Picker("Appearance", selection: $appearanceRaw) {
+                ForEach(AppearancePreference.allCases) { option in
+                    Label(option.title, systemImage: option.systemImage)
+                        .tag(option.rawValue)
+                }
             }
-            .accessibilityIdentifier("settingsMomentumGoalStepper")
-
-            Toggle("Show streaks", isOn: Binding(
-                get: { momentumPreferences.showStreaks },
-                set: { newValue in
-                    momentumPreferences.showStreaks = newValue
-                    momentumPreferencesStore.write(momentumPreferences)
-                }
-            ))
-            .accessibilityIdentifier("settingsMomentumStreaksToggle")
-
-            Toggle("Count cleared captures", isOn: Binding(
-                get: { momentumPreferences.countClearedCaptures },
-                set: { newValue in
-                    momentumPreferences.countClearedCaptures = newValue
-                    momentumPreferencesStore.write(momentumPreferences)
-                }
-            ))
-            .accessibilityIdentifier("settingsMomentumCapturesToggle")
-
-            Toggle("Count nudges", isOn: Binding(
-                get: { momentumPreferences.countNudges },
-                set: { newValue in
-                    momentumPreferences.countNudges = newValue
-                    momentumPreferencesStore.write(momentumPreferences)
-                }
-            ))
-            .accessibilityIdentifier("settingsMomentumNudgesToggle")
-
-            Toggle("Show weekly charts", isOn: Binding(
-                get: { momentumPreferences.showCharts },
-                set: { newValue in
-                    momentumPreferences.showCharts = newValue
-                    momentumPreferencesStore.write(momentumPreferences)
-                }
-            ))
-            .accessibilityIdentifier("settingsMomentumChartsToggle")
+            .pickerStyle(.segmented)
+            .haptic(.selection, trigger: appearanceRaw)
+            .accessibilityIdentifier("settingsAppearancePicker")
         } header: {
-            Text("What counts as momentum")
+            Text("Appearance")
         } footer: {
-            Text(
-                "Turn streaks off and the app keeps every number but stops counting consecutive "
-                    + "days. Counting cleared captures lets anything you archive, promote or "
-                    + "journal from the inbox advance the ring too. Counting nudges does the same "
-                    + "for every nudge you dismiss today. Weekly charts can be hidden without "
-                    + "losing any numbers."
-            )
+            Text(current.explanation)
         }
     }
 
@@ -199,7 +160,7 @@ struct SettingsView: View {
             } label: {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Life Areas")
-                    Text("Rename, re-emoji, create, and archive your Home grid.")
+                    Text("Rename, re-emoji, recolour, create, and archive your Home grid.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -213,6 +174,7 @@ struct SettingsView: View {
     private var accountSection: some View {
         Section {
             Button(role: .destructive) {
+                Haptics.play(.warning)
                 Task { await authService.signOut() }
             } label: {
                 Text("Sign Out")
@@ -223,15 +185,14 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Section 4 — About & Diagnostics (disabled placeholder)
+    // MARK: - Section 4 — About (live: version & build, E's 2026-08-25 call)
 
     private var aboutSection: some View {
         Section {
-            disabledPlaceholderRow(
-                title: "About & Diagnostics",
-                caption: "Version, environment, and last refresh.",
-                identifier: "settingsAboutRow"
-            )
+            LabeledContent("Version", value: AboutInfo.current.formatted)
+                .accessibilityIdentifier("settingsAboutRow")
+        } header: {
+            Text("About")
         }
     }
 
@@ -254,21 +215,6 @@ struct SettingsView: View {
     }
 
     // MARK: - Helpers
-
-    /// A visible-but-disabled row: a real title plus a brief secondary caption, greyed via the
-    /// semantic `.secondary` style (not `.opacity`, per `CLAUDE.md` §4) and `.disabled(true)` so it
-    /// reads as inert to VoiceOver. No `.contentShape` — it is intentionally not interactive.
-    private func disabledPlaceholderRow(title: String, caption: String, identifier: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-            Text(caption)
-                .font(.footnote)
-        }
-        .foregroundStyle(.secondary)
-        .disabled(true)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier(identifier)
-    }
 
     private func openIOSSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }

@@ -90,6 +90,40 @@ final class MomentumPreferencesTests: XCTestCase {
         return (UserDefaultsMomentumPreferencesStore(defaults: defaults), defaults)
     }
 
+    // MARK: - Settings additions (E's 2026-08-25 audit)
+
+    func testDefaults_settingsAdditionsStartAtTodaysBehaviour() {
+        let defaults = MomentumPreferences.default
+        XCTAssertEqual(defaults.focusDailyGoalMinutes, 30, "the analytics goal ships at its old constant")
+        XCTAssertEqual(defaults.defaultSprintMinutes, 15, "the sprint default ships at standardDurationSeconds")
+        XCTAssertTrue(defaults.hapticsEnabled)
+        XCTAssertTrue(defaults.soundEnabled)
+    }
+
+    func testDecode_preSettingsPayloadKeepsChoicesAndGainsTheDefaults() throws {
+        let legacy = #"{"dailyGoal":7,"showStreaks":false,"countClearedCaptures":true,"#
+            + #""countNudges":true,"showCharts":false}"#
+        let decoded = try JSONDecoder().decode(MomentumPreferences.self, from: Data(legacy.utf8))
+
+        XCTAssertEqual(decoded.dailyGoal, 7, "existing choices must survive the upgrade")
+        XCTAssertFalse(decoded.showStreaks)
+        XCTAssertEqual(decoded.focusDailyGoalMinutes, 30)
+        XCTAssertEqual(decoded.defaultSprintMinutes, 15)
+        XCTAssertTrue(decoded.hapticsEnabled)
+        XCTAssertTrue(decoded.soundEnabled)
+    }
+
+    func testNormalized_clampsTheNewSteppersIntoTheirRanges() {
+        var preferences = MomentumPreferences.default
+        preferences.focusDailyGoalMinutes = 999
+        preferences.defaultSprintMinutes = 0
+
+        let normalized = preferences.normalized()
+
+        XCTAssertEqual(normalized.focusDailyGoalMinutes, MomentumPreferences.focusGoalRange.upperBound)
+        XCTAssertEqual(normalized.defaultSprintMinutes, MomentumPreferences.sprintMinutesRange.lowerBound)
+    }
+
     func testStore_roundTripsPreferences() {
         let (store, _) = makeStore()
         let prefs = MomentumPreferences(dailyGoal: 8, showStreaks: false)

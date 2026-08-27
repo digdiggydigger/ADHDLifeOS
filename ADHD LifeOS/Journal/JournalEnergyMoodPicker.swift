@@ -42,6 +42,7 @@ struct JournalEnergyMoodPicker: View {
             HStack(spacing: 8) {
                 ForEach(EnergyLevel.allCases, id: \.self) { level in
                     Button {
+                        Haptics.play(.selection)
                         energyLevel = level
                     } label: {
                         energyChip(level)
@@ -96,6 +97,7 @@ struct JournalEnergyMoodPicker: View {
                 HStack(spacing: 8) {
                     ForEach(JournalMood.options, id: \.self) { emoji in
                         Button {
+                            Haptics.play(.selection)
                             moodEmoji = emoji
                         } label: {
                             Text(emoji)

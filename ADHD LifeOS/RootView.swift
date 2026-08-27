@@ -6,6 +6,12 @@
 import SwiftUI
 import UIKit
 
+/// The tab bar's stations under the hybrid v3 IA (E's call, 2026-08-24): five tabs stay, and
+/// selection is state so screens can cross tabs (Today's "Nudges waiting" row → Nudges).
+enum AppTab: Hashable {
+    case today, tasks, areas, journal, nudges
+}
+
 struct RootView: View {
     @ObservedObject var authService: AuthService
     let homeClient: HomeClientAdapting
@@ -15,11 +21,19 @@ struct RootView: View {
     let captureClient: CaptureClientAdapting
     let nudgesClient: NudgesClientAdapting
     let journalClient: JournalClientAdapting
-    let taskCountdownNudgeSchedulingClient: TaskCountdownNudgeSchedulingAdapting
     let nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting
     let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
-    @State private var isPresentingQuickCapture = false
+    /// The capture fan (F-V3-Capture): open = five discs over a scrim; picking one opens the
+    /// composer with that kind already chosen.
+    @State private var isFabOpen = false
+    @State private var composerKind: CaptureKind?
+    @State private var selectedTab: AppTab = .today
+    /// A widget door that arrived before the signed-in tabs existed (dead launch: the URL is
+    /// delivered while auth is still restoring). Held here and drained the moment the tabs mount.
+    @State private var pendingWidgetLink: AppDeepLink?
+    /// The Settings appearance override — same key both ends, so the picker applies live.
+    @AppStorage(AppearancePreference.storageKey) private var appearanceRaw = AppearancePreference.system.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
@@ -31,11 +45,24 @@ struct RootView: View {
 
     /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
     /// success haptic the web fires on start (`triggerHaptic('success')`) happens exactly once
-    /// per launch. `.sensoryFeedback` is iOS 17+, hence the UIKit generator (same §7 precedent
-    /// as `saveSuccessHaptic`).
+    /// per launch.
     private func startFocus(_ plan: FocusSprintPlan) {
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        Haptics.play(.success)
         focusService.start(plan: plan)
+    }
+
+    /// The widget doors' one entry point — called immediately when the tabs are on screen, and
+    /// as the drain for a link that had to wait out a cold launch.
+    private func openWidgetDoor(_ link: AppDeepLink) {
+        switch link {
+        case .areasTab:
+            selectedTab = .areas
+        case .captureComposer(let kind):
+            isFabOpen = false
+            composerKind = kind
+        case .authCallback, .focusWidget:
+            break
+        }
     }
 
     var body: some View {
@@ -46,7 +73,7 @@ struct RootView: View {
             case .signedOut, .linkSent:
                 LoginView(authService: authService)
             case .signedIn:
-                TabView {
+                TabView(selection: $selectedTab) {
                     HomeView(
                         authService: authService,
                         homeClient: homeClient,
@@ -56,38 +83,52 @@ struct RootView: View {
                         nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
                         lifeAreaDetailClient: lifeAreaDetailClient,
                         taskDetailClient: taskDetailClient,
-                        schedulingClient: taskCountdownNudgeSchedulingClient,
                         onStartFocus: startFocus,
                         focusReloadToken: focusService.completedSprintCount,
                         activeSprint: focusService.session.map {
                             ActiveSprintStatus(taskId: $0.taskId, isPaused: $0.isPaused)
                         },
                         widgetSprint: focusService.widgetSprint,
-                        onToggleSprintPause: { focusService.togglePause() }
+                        onToggleSprintPause: { focusService.togglePause() },
+                        onOpenNudges: { selectedTab = .nudges },
+                        taskCreateClient: taskCreateClient
                     )
-                        .tabItem { Label("Home", systemImage: "house") }
+                        // "Today" with v3's trending-up glyph — the Momentum v3 tab identity. The Captures
+                        // slot becomes Areas in the V3-Areas block; the rest keep their glyphs.
+                        .tabItem { Label("Today", systemImage: "chart.line.uptrend.xyaxis") }
+                        .tag(AppTab.today)
                     TaskListView(
                         tasksClient: tasksClient,
                         taskCreateClient: taskCreateClient,
                         taskDetailClient: taskDetailClient,
-                        schedulingClient: taskCountdownNudgeSchedulingClient,
                         onStartFocus: startFocus
                     )
                         .tabItem { Label("Tasks", systemImage: "checklist") }
-                    // Captures joined the bar 2026-08-23 (E's Captures-tab direction): the
-                    // archive of handled captures — Seen and Promoted — while the Inbox (reached
-                    // from Home) became purely the to-triage queue. Stack wrapped at the call
-                    // site, the Nudges precedent below.
-                    NavigationStack {
-                        CapturesTabView(
-                            client: captureClient,
-                            journalClient: journalClient,
-                            homeClient: homeClient
-                        )
-                    }
-                        .tabItem { Label("Captures", systemImage: "tray.full") }
-                    JournalView(client: journalClient)
+                        .tag(AppTab.tasks)
+                    // The Captures slot became Areas in F-V3-Areas (hybrid IA, E's call):
+                    // the archive of handled captures stays reachable through Areas' interim
+                    // "Handled captures" door until V3-Inbox houses it properly.
+                    AreasView(
+                        authService: authService,
+                        homeClient: homeClient,
+                        journalClient: journalClient,
+                        captureClient: captureClient,
+                        lifeAreaDetailClient: lifeAreaDetailClient,
+                        taskDetailClient: taskDetailClient,
+                        onStartFocus: startFocus,
+                        taskCreateClient: taskCreateClient
+                    )
+                        .tabItem { Label("Areas", systemImage: "square.grid.2x2") }
+                        .tag(AppTab.areas)
+                    JournalView(
+                        client: journalClient,
+                        homeClient: homeClient,
+                        captureClient: captureClient,
+                        taskDetailClient: taskDetailClient,
+                        onStartFocus: startFocus
+                    )
                         .tabItem { Label("Journal", systemImage: "book") }
+                        .tag(AppTab.journal)
                     // Tab swap reverted (E, 2026-08-19): Nudges is back, Reminders removed — its
                     // Poke/DynamoDB source didn't survive the Firebase cutover, so the tab only
                     // ever showed an empty list. The Reminders feature files stay compiled but
@@ -99,33 +140,101 @@ struct RootView: View {
                         )
                     }
                         .tabItem { Label("Nudges", systemImage: "bell") }
+                        .tag(AppTab.nudges)
+                }
+                // E's 2026-08-27 call: the tab bar ticks with a light impact rather than the
+                // iOS-conventional selection tick. Fires on the SELECTION, so a programmatic
+                // switch (a widget door, "See nudges") buzzes too — those are still a tab change
+                // from under the user's thumb.
+                .haptic(HapticFeel.tabChange, trigger: selectedTab)
+                .blur(radius: isFabOpen ? 4 : 0)
+                .overlay {
+                    if isFabOpen {
+                        CaptureFanOverlay(
+                            onPick: { kind in
+                                isFabOpen = false
+                                composerKind = kind
+                            },
+                            onDismiss: { isFabOpen = false }
+                        )
+                        .transition(.opacity)
+                    }
                 }
                 .overlay(alignment: .bottom) {
                     // Sits above the tab bar, mirroring the web's `fixed bottom-24` placement.
-                    // The quick-capture button shares this stack so an active sprint pushes it
-                    // ABOVE the timer bar instead of letting it occlude the bar's controls
-                    // (E's bug report, 2026-08-19).
+                    // The FAB shares this stack so an active sprint pushes it ABOVE the timer
+                    // bar instead of letting it occlude the bar's controls (E, 2026-08-19).
                     VStack(alignment: .trailing, spacing: 8) {
                         Button {
-                            isPresentingQuickCapture = true
+                            withAnimation(
+                                reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)
+                            ) {
+                                isFabOpen.toggle()
+                            }
                         } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 48))
+                            // v3's capture disc: a 60pt solid circle with the motion-blue glow,
+                            // not a bare SF glyph — the fan leans out of THIS.
+                            Image(systemName: "plus")
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(AreaPalette.work.onColor)
+                                .frame(width: 60, height: 60)
+                                .background(Color.accentColor, in: Circle())
+                                .shadow(color: Color.accentColor.opacity(0.5), radius: 12, x: 0, y: 8)
+                                .rotationEffect(.degrees(isFabOpen ? 135 : 0))
+                                .contentShape(Circle())
                         }
-                        .padding(.trailing, 20)
+                        .padding(.trailing, 16)
+                        .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
                         .accessibilityIdentifier("quickCaptureButton")
+
+                        // A sprint that finished while the app was dead announces itself here —
+                        // above the tab bar on every tab, gone only when acknowledged.
+                        if let summary = focusService.offlineCompletionSummary {
+                            OfflineSprintSummaryCard(record: summary) {
+                                focusService.acknowledgeOfflineCompletion()
+                            }
+                            .padding(.horizontal, 16)
+                        }
 
                         FocusTimerBar(service: focusService)
                     }
-                    .padding(.bottom, 60)
+                    // Full width with trailing alignment: with no timer bar the stack used to
+                    // shrink to the disc and the .bottom overlay CENTRED it mid-screen (E's
+                    // position review, 2026-08-25). Trailing-pinned, ~12pt above the tab bar.
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.bottom, 52)
                     .animation(
                         reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
                         value: focusService.isActive
                     )
                 }
-                .sheet(isPresented: $isPresentingQuickCapture) {
-                    QuickCaptureView(client: captureClient) {}
+                .fullScreenCover(item: $composerKind) { kind in
+                    QuickCaptureView(
+                        client: captureClient,
+                        kind: kind,
+                        homeClient: homeClient,
+                        taskCreateClient: taskCreateClient,
+                        taskDetailClient: taskDetailClient
+                    ) {}
+                    .keyboardDismissal()
                 }
+                // Reinstate a sprint the process died holding (F-SprintPersistence). Idempotent —
+                // a no-op with nothing stored or a sprint already live.
+                .task {
+                    await focusService.restorePersistedSprint()
+                }
+                // Drain a widget door that arrived before these tabs existed. Deliberately a state
+                // change AFTER mount: presenting the composer by pre-set state on first render is
+                // the flaky path; a post-mount change presents reliably.
+                .task {
+                    if let link = pendingWidgetLink {
+                        pendingWidgetLink = nil
+                        openWidgetDoor(link)
+                    }
+                }
+                .preferredColorScheme(
+                    (AppearancePreference(rawValue: appearanceRaw) ?? .system).colorScheme
+                )
                 // A finished sprint's history write is best-effort, but its failure must not be
                 // SILENT (found 2026-08-19: `logErrorMessage` was set and displayed nowhere) —
                 // same alert pattern as the task list's mutation errors. The sprint itself ended
@@ -143,13 +252,36 @@ struct RootView: View {
                 }
             }
         }
+        // b5: one application covers the tabs and every screen pushed inside them; the modal
+        // composers wrap their own roots at their presentation sites.
+        .keyboardDismissal()
+        // b5 round two: tap anywhere that isn't a text field to dismiss — one window-level
+        // recognizer covers every screen INCLUDING sheets and covers (same UIWindow), so this
+        // is the only install site. Idempotent across auth-state swaps.
+        .onAppear { KeyboardTapAway.installOnKeyWindow() }
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
         // Apple (or password sign-in) lands on Home gracefully (§5).
         .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: authService.state)
+        // The widget doors (E's 2026-08-25 note; cold-launch fix 2026-08-26). Mounted on the
+        // Group — not the TabView — because a dead launch delivers the URL while auth is still
+        // restoring, when the tabs don't exist yet. Fires for EVERY URL alongside the App-level
+        // auth handler; each ignores what isn't theirs.
+        .onOpenURL { url in
+            let link = AppDeepLink.route(url)
+            guard link.requiresSignedInUI else { return }
+            if case .signedIn = authService.state {
+                openWidgetDoor(link)
+            } else {
+                pendingWidgetLink = link
+            }
+        }
         .task {
             if authService.state == .unknown {
                 await authService.restoreSession()
             }
+            // F-V3-Tasks-rebuild: the per-task nudge feature is gone, so sweep anything it
+            // scheduled before its removal — nothing left in the app could ever cancel it.
+            await LegacyTaskNotificationCleanup.run()
         }
         // Returning to the app settles a sprint whose countdown ran out behind a locked screen: the
         // ticker is suspended with the app, so without this the finished sprint stayed "running" —
@@ -159,134 +291,4 @@ struct RootView: View {
             if phase == .active { focusService.syncNow() }
         }
     }
-}
-
-#Preview {
-    struct PreviewAuthClient: AuthClientAdapting {
-        func restoredUser() async -> AuthUser? { nil }
-        func signIn(email: String, password: String) async throws -> AuthUser { fatalError("unused in preview") }
-        func requestOTP(email: String, redirectTo: URL?) async throws {}
-        func completeSession(from url: URL) async throws -> AuthUser { fatalError("unused in preview") }
-        func signOut() async throws {}
-        func validIDToken() async throws -> String { "preview-token" }
-        func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> AuthUser {
-            fatalError("unused in preview")
-        }
-    }
-
-    struct PreviewHomeClient: HomeClientAdapting {
-    func fetchAllTasks() async throws -> [TaskItem] { [] }
-        func fetchLifeAreas() async throws -> [LifeArea] { [] }
-        func fetchOpenTasks() async throws -> [TaskSummary] { [] }
-        func reorder(order: [UUID]) async throws {}
-    }
-
-    struct PreviewTasksClient: TasksClientAdapting {
-        func fetchLifeAreas() async throws -> [LifeArea] { [] }
-        func fetchAllTasks() async throws -> [TaskItem] { [] }
-        func setStatus(taskId: UUID, status: TaskStatus) async throws {}
-        func deleteTask(taskId: UUID) async throws {}
-    }
-
-    struct PreviewTaskCreateClient: TaskCreateClientAdapting {
-        func fetchTags() async throws -> [Tag] { [] }
-        func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
-        func createTask(_ input: NormalizedCreateTaskInput) async throws -> TaskItem { fatalError("unused in preview") }
-        func attachTags(taskId: UUID, tagIds: [UUID]) async throws {}
-    }
-
-    struct PreviewTaskDetailClient: TaskDetailClientAdapting {
-        func fetchTask(id: UUID) async throws -> TaskDetail { fatalError("unused in preview") }
-        func fetchTagsForTask(taskId: UUID) async throws -> [Tag] { [] }
-        func fetchAllTags() async throws -> [Tag] { [] }
-        func updateTask(id: UUID, payload: TaskUpdatePayload) async throws -> TaskDetail {
-            fatalError("unused in preview")
-        }
-        func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail { fatalError("unused in preview") }
-        func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
-        func addTagToTask(taskId: UUID, tagId: UUID) async throws {}
-        func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {}
-    }
-
-    struct PreviewCaptureClient: CaptureClientAdapting {
-        func createCapture(_ input: NormalizedCreateCaptureInput) async throws -> Capture {
-            fatalError("unused in preview")
-        }
-        func fetchUnprocessedCaptures() async throws -> [Capture] { [] }
-        func fetchCaptures() async throws -> [Capture] { [] }
-        func fetchCapture(id: UUID) async throws -> Capture { fatalError("unused in preview") }
-        func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
-            fatalError("unused in preview")
-        }
-        func markProcessed(captureId: UUID) async throws {}
-        func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
-            fatalError("unused in preview")
-        }
-
-    func fetchProcessedCaptures() async throws -> [Capture] { [] }
-    func fetchSeenCaptures() async throws -> [Capture] { [] }
-    func deleteCapture(id: UUID) async throws {}
-        func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
-        func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
-            fatalError("unused in preview")
-        }
-        func fetchAllTags() async throws -> [Tag] { [] }
-        func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
-        func fetchTags(captureId: UUID) async throws -> [Tag] { [] }
-        func addTag(captureId: UUID, tagId: UUID) async throws {}
-        func removeTag(captureId: UUID, tagId: UUID) async throws {}
-    }
-
-    struct PreviewNudgesClient: NudgesClientAdapting {
-        func fetchNudges() async throws -> [Nudge] { [] }
-        func createNudge(label: String, schedule: NudgeSchedule) async throws -> Nudge {
-            fatalError("unused in preview")
-        }
-        func updateNudge(id: UUID, payload: NudgeUpdatePayload) async throws -> Nudge {
-            fatalError("unused in preview")
-        }
-        func markFired(id: UUID) async throws -> Nudge { fatalError("unused in preview") }
-    }
-
-    struct PreviewJournalClient: JournalClientAdapting {
-        func fetchLifeAreas() async throws -> [LifeArea] { [] }
-        func fetchLogs() async throws -> [Log] { [] }
-        func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
-    }
-
-    struct PreviewNudgeSchedulingClient: TaskCountdownNudgeSchedulingAdapting {
-        func requestAuthorizationIfNeeded() async -> Bool { false }
-        func scheduleNudges(taskId: UUID, taskTitle: String, fireDates: [ScheduledCountdownNudge]) async {}
-        func cancelNudges(taskId: UUID) async {}
-        func hasScheduledNudges(taskId: UUID) async -> Bool { false }
-        func scheduleDueMomentNotification(taskId: UUID, taskTitle: String, dueDate: Date) async {}
-        func cancelDueMomentNotification(taskId: UUID) async {}
-        func hasDueMomentNotificationScheduled(taskId: UUID) async -> Bool { false }
-    }
-
-    struct PreviewNudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting {
-        func requestAuthorizationIfNeeded() async -> Bool { false }
-        func scheduleNotifications(nudgeId: UUID, label: String, schedule: NudgeSchedule) async {}
-        func cancelNotifications(nudgeId: UUID) async {}
-        func hasScheduledNotifications(nudgeId: UUID) async -> Bool { false }
-    }
-
-    struct PreviewLifeAreaDetailClient: LifeAreaDetailClientAdapting {
-        func fetchTasks(lifeAreaId: UUID) async throws -> [TaskItem] { [] }
-        func fetchLogs(lifeAreaId: UUID) async throws -> [Log] { [] }
-    }
-
-    return RootView(
-        authService: AuthService(client: PreviewAuthClient()),
-        homeClient: PreviewHomeClient(),
-        tasksClient: PreviewTasksClient(),
-        taskCreateClient: PreviewTaskCreateClient(),
-        taskDetailClient: PreviewTaskDetailClient(),
-        captureClient: PreviewCaptureClient(),
-        nudgesClient: PreviewNudgesClient(),
-        journalClient: PreviewJournalClient(),
-        taskCountdownNudgeSchedulingClient: PreviewNudgeSchedulingClient(),
-        nudgeNotificationSchedulingClient: PreviewNudgeNotificationSchedulingClient(),
-        lifeAreaDetailClient: PreviewLifeAreaDetailClient()
-    )
 }

@@ -93,6 +93,18 @@ enum FirestoreFieldPayloads {
         ]
     }
 
+    /// The life-area colour override's PATCH fragment (E's 2026-08-25 note). `automatic` ERASES
+    /// the field — absence, never "", is the one representation of automatic, so a resolver never
+    /// meets a value it must special-case. Lives here rather than in the adapter because the
+    /// erase sentinel is `FieldValue`, which the adapter (and the test target) cannot import.
+    static func lifeAreaPalette(_ edit: LifeAreaPaletteEdit) -> [String: Any] {
+        switch edit {
+        case .unchanged: return [:]
+        case .set(let key): return ["palette": key]
+        case .automatic: return ["palette": FieldValue.delete()]
+        }
+    }
+
     /// A nudge's partial update. Any real change stamps `updated_at` — from the **server** clock,
     /// unlike `nudgeFired` below. An empty payload writes nothing at all, so a no-op edit does not
     /// bump the timestamp.
@@ -117,9 +129,16 @@ enum FirestoreFieldPayloads {
     /// updated" cannot disagree by a network round trip — deliberately different from
     /// `nudgeUpdate`, which defers to the server clock because it is describing an edit rather
     /// than pinning the moment something happened.
-    static func nudgeFired(now: Date) -> [String: Any] {
+    /// `completionDates` is the FULL array including this firing (read-modify-write from the
+    /// nudge the caller already holds), so the codec seam stays free of arrayUnion sentinels
+    /// the SDK-free tests could not inspect.
+    static func nudgeFired(now: Date, completionDates: [Date]) -> [String: Any] {
         let stamp = Timestamp(date: now)
-        return ["last_fired_at": stamp, "updated_at": stamp]
+        return [
+            "last_fired_at": stamp,
+            "updated_at": stamp,
+            "completion_dates": completionDates.map { Timestamp(date: $0) }
+        ]
     }
 
     /// The delta convention shared by `TaskUpdatePayload`/`CaptureUpdate`: outer `nil` = field

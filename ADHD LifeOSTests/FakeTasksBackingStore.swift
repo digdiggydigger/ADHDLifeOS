@@ -16,7 +16,6 @@ final class FakeTasksBackingStore: TasksBackingStore {
     var fetchLifeAreasError: Error?
     var fetchTasksError: Error?
     var setStatusError: Error?
-    var deleteError: Error?
 
     private(set) var includeArchivedArguments: [Bool] = []
     private(set) var fetchTasksCallCount = 0
@@ -29,7 +28,6 @@ final class FakeTasksBackingStore: TasksBackingStore {
     }
 
     private(set) var statusWrites: [StatusWrite] = []
-    private(set) var deletedIds: [UUID] = []
 
     func fetchLifeAreas(includeArchived: Bool) async throws -> [LifeArea] {
         includeArchivedArguments.append(includeArchived)
@@ -46,10 +44,5 @@ final class FakeTasksBackingStore: TasksBackingStore {
     func setTaskStatus(id: UUID, status: TaskStatus, now: Date) async throws {
         statusWrites.append(StatusWrite(id: id, status: status, now: now))
         if let setStatusError { throw setStatusError }
-    }
-
-    func deleteTask(id: UUID) async throws {
-        deletedIds.append(id)
-        if let deleteError { throw deleteError }
     }
 }

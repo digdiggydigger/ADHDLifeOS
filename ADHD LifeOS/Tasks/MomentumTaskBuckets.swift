@@ -2,10 +2,12 @@
 //  MomentumTaskBuckets.swift
 //  ADHD LifeOS
 //
-//  The Tasks tab's Momentum grouping (Concept C, block M3): dueness buckets instead of life
-//  areas — Due today (overdue folded in, the scoreboard's own "due now" reading), Tomorrow,
-//  Later, Someday, and the evidence pile, Closed today. Reuses `LifeAreaTaskGroup` so the list
-//  renders these with the machinery it already has; each bucket names its own identity.
+//  The Tasks tab's Momentum grouping (Concept C, block M3; narrowed in F-V3-Tasks-rebuild):
+//  dueness buckets instead of life areas — Due today (overdue folded in, the scoreboard's own
+//  "due now" reading), Tomorrow, and the evidence pile, Closed today. The long tail — tasks due
+//  beyond tomorrow, and undated tasks — is deliberately NOT on this board (E's b11 call): dense
+//  rows made it the page's biggest overwhelm risk, so it renders only under the Open filter.
+//  Reuses `LifeAreaTaskGroup` so the list renders these with the machinery it already has.
 //
 
 import Foundation
@@ -14,16 +16,12 @@ enum MomentumTaskBuckets {
     private enum Bucket: String, CaseIterable {
         case dueToday
         case tomorrow
-        case later
-        case someday
         case closedToday
 
         var title: String {
             switch self {
             case .dueToday: return "Due today"
             case .tomorrow: return "Tomorrow"
-            case .later: return "Later"
-            case .someday: return "Someday"
             case .closedToday: return "Closed today"
             }
         }
@@ -53,6 +51,33 @@ enum MomentumTaskBuckets {
         }
     }
 
+    /// "4 open · 1 overdue" — the v3 header's eyebrow. Overdue means an open task whose due
+    /// day has passed; due-today is not yet a miss.
+    static func headerLine(
+        tasks: [TaskItem],
+        asOf now: Date = .now,
+        calendar: Calendar = .current
+    ) -> String {
+        let today = calendar.startOfDay(for: now)
+        let open = tasks.filter { $0.status != .done }
+        let overdue = open.filter { task in
+            guard let due = task.dueDate else { return false }
+            return calendar.startOfDay(for: due) < today
+        }
+        return "\(open.count) open · \(overdue.count) overdue"
+    }
+
+    /// The v3 hue for a bucket's section header — warn for due-today, motion-blue for tomorrow,
+    /// closure-green for closed-today. `nil` keeps the plain secondary voice.
+    static func headerToneAssetName(customId: String?) -> String? {
+        switch customId {
+        case "momentum-dueToday": return "StateWarn"
+        case "momentum-tomorrow": return "AccentColor"
+        case "momentum-closedToday": return "StateGo"
+        default: return nil
+        }
+    }
+
     private static func bucket(
         for task: TaskItem,
         today: Date,
@@ -65,13 +90,15 @@ enum MomentumTaskBuckets {
                   calendar.isDate(completedAt, inSameDayAs: now) else { return nil }
             return .closedToday
         }
-        guard let due = task.dueDate else { return .someday }
+        // Undated tasks belong to the Open filter, not the board.
+        guard let due = task.dueDate else { return nil }
         let dueDay = calendar.startOfDay(for: due)
         if dueDay <= today { return .dueToday }
         // Computed off the injected clock — `isDateInTomorrow` reads the wall clock and would
         // make this untestable and wrong at any other `asOf`.
         if dueDay == calendar.date(byAdding: .day, value: 1, to: today) { return .tomorrow }
-        return .later
+        // Due beyond tomorrow: same rule as undated — Open holds the tail.
+        return nil
     }
 
     /// Urgency first; inside one priority the quick win leads — same reading as the scoreboard's

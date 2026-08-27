@@ -57,7 +57,7 @@ struct FocusCadenceEditorCard: View {
             }
         }
         .bentoCard()
-        .saveSuccessHaptic(trigger: hapticTrigger)
+        .haptic(.solid, trigger: hapticTrigger)
     }
 
     private var currentCadenceDescription: String {

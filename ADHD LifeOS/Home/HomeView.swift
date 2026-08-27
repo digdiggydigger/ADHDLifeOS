@@ -3,6 +3,7 @@
 //  ADHD LifeOS
 //
 
+import Combine
 import SwiftUI
 
 struct HomeView: View {
@@ -18,7 +19,6 @@ struct HomeView: View {
     /// Internal, not private: `HomeMomentumSections` drives the close-from-Home flow.
     let taskDetailClient: TaskDetailClientAdapting
     /// Internal, not private: `HomeMomentumSections` builds the pushed task detail.
-    let schedulingClient: TaskCountdownNudgeSchedulingAdapting
     /// Threaded Home → LifeAreaDetail → TaskDetail so the detail screen reached from a life-area
     /// card can launch a sprint on `RootView`'s app-level `FocusSessionService`. Internal for
     /// `HomeMomentumSections`.
@@ -36,6 +36,11 @@ struct HomeView: View {
     /// while a sprint merely counts down, so `onChange` fires on real events, not on every tick.
     private let widgetSprint: FocusWidgetSnapshot.ActiveSprint?
     private let onToggleSprintPause: () -> Void
+    /// Crosses to the Nudges tab — v3's "Nudges waiting" row navigates there instead of
+    /// dismissing inline. Wired by `RootView` through its tab selection.
+    let onOpenNudges: (() -> Void)?
+    /// For the area screen's "Add to <area>" CTA; `nil` hides it (F-V3-AreaDetail).
+    private let taskCreateClient: TaskCreateClientAdapting?
     /// Publishes the Home Screen widget's snapshot. Home is the right owner: it is the one screen
     /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
     private let widgetPublisher: FocusWidgetPublishing
@@ -43,13 +48,24 @@ struct HomeView: View {
     /// Internal, not private: the week review reads it from `HomeMomentumSections`.
     @State var publishedHistory: [CompletedFocusSession] = []
     @State private var pullRefreshCount = 0
-    @State private var showSettings = false
+    /// Internal, not private: the v3 header lives in `HomeMomentumSections.swift`.
+    @State var showSettings = false
     /// Re-read each time Settings closes — the sheet is the only writer. Internal for
     /// `HomeMomentumSections`.
     let momentumPreferencesStore: MomentumPreferencesStoring
     @State var momentumPreferences: MomentumPreferences = .default
-    @State private var isPresentingInbox = false
+    /// Internal, not private: the v3 header lives in `HomeMomentumSections.swift`.
+    @State var isPresentingInbox = false
     @State var inboxCount = 0
+    /// The newest waiting captures for Today's inbox card (E's 2026-08-25 note) — refreshed with
+    /// the count, from the same fetch.
+    @State var inboxPeek: [Capture] = []
+    /// Captures promoted, journaled or archived TODAY — the card's throughput line. Ungated,
+    /// unlike `capturesClearedToday`: the scoreboard toggle governs what counts toward the ring,
+    /// not what the card may say.
+    @State var inboxHandledToday = 0
+    /// A peek row's pushed capture — the card's rows are doors straight into their capture.
+    @State var inspectingHomeCapture: Capture?
     /// M7: captures whose exit stamp is today, feeding the ring when the Settings toggle counts
     /// them. Refreshed with the inbox count; 0 whenever the toggle is off.
     @State var capturesClearedToday = 0
@@ -79,12 +95,13 @@ struct HomeView: View {
         nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting,
         lifeAreaDetailClient: LifeAreaDetailClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
-        schedulingClient: TaskCountdownNudgeSchedulingAdapting,
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
         focusReloadToken: Int = 0,
         activeSprint: ActiveSprintStatus? = nil,
         widgetSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
         onToggleSprintPause: @escaping () -> Void = {},
+        onOpenNudges: (() -> Void)? = nil,
+        taskCreateClient: TaskCreateClientAdapting? = nil,
         widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher(),
         momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
@@ -94,12 +111,13 @@ struct HomeView: View {
         self.journalClient = journalClient
         self.lifeAreaDetailClient = lifeAreaDetailClient
         self.taskDetailClient = taskDetailClient
-        self.schedulingClient = schedulingClient
         self.onStartFocus = onStartFocus
         self.focusReloadToken = focusReloadToken
         self.activeSprint = activeSprint
         self.widgetSprint = widgetSprint
         self.onToggleSprintPause = onToggleSprintPause
+        self.onOpenNudges = onOpenNudges
+        self.taskCreateClient = taskCreateClient
         self.widgetPublisher = widgetPublisher
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
         _nudgesService = StateObject(
@@ -107,13 +125,6 @@ struct HomeView: View {
                 client: nudgesClient, notificationSchedulingClient: nudgeNotificationSchedulingClient
             )
         )
-    }
-
-    /// The FULL set including archived areas — so the Capture triage picker can grey archived areas
-    /// rather than being starved of them (they used to be absent entirely here). The grid itself
-    /// still shows active areas only, filtered in `HomeService`.
-    private var lifeAreasForPicker: [LifeArea] {
-        homeService.lifeAreas
     }
 
     var body: some View {
@@ -140,27 +151,10 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
-            .navigationTitle("Today")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        isPresentingInbox = true
-                    } label: {
-                        Label("Inbox (\(inboxCount))", systemImage: "tray")
-                    }
-                    .accessibilityIdentifier("inboxButton")
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .accessibilityIdentifier("settingsButton")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showSettings) {
                 SettingsView(authService: authService)
+                    .keyboardDismissal()
             }
             .onAppear { momentumPreferences = momentumPreferencesStore.read() }
             .onChange(of: showSettings) { isPresented in
@@ -168,6 +162,17 @@ struct HomeView: View {
             }
             .navigationDestination(isPresented: $isPresentingInbox) {
                 CaptureInboxView(client: captureClient, journalClient: journalClient, lifeAreas: lifeAreasForPicker)
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { inspectingHomeCapture != nil },
+                set: { if !$0 { inspectingHomeCapture = nil } }
+            )) {
+                inspectedCaptureDoor
+            }
+            .onChange(of: inspectingHomeCapture) { capture in
+                // Coming back from a capture the user may have promoted, journaled or binned —
+                // the card must not keep showing it as waiting.
+                if capture == nil { Task { await refreshInboxCount() } }
             }
             .navigationDestination(isPresented: Binding(
                 get: { inspectingTask != nil },
@@ -196,8 +201,10 @@ struct HomeView: View {
                     lifeArea: lifeArea,
                     client: lifeAreaDetailClient,
                     taskDetailClient: taskDetailClient,
-                    schedulingClient: schedulingClient,
-                    onStartFocus: onStartFocus
+                    onStartFocus: onStartFocus,
+                    allAreas: homeService.activeAreas,
+                    captureClient: captureClient,
+                    taskCreateClient: taskCreateClient
                 )
             }
             .onChange(of: isPresentingInbox) { isPresented in
@@ -264,30 +271,28 @@ struct HomeView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    todayHeader
                     // Concept C's scoreboard leads (2026-08-24, Momentum block M1): the closure
                     // ring and streak, then the one task worth doing next. The Active Goal hero's
                     // slot and start-session funnel live on in BestNextMoveCard.
                     scoreboardSection
                     momentumLeadSection
                     // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
-                    lifeAreasHeader(activeAreas: activeAreas, showArrangeControl: activeAreas.count >= 2)
-                    AreaMomentumStrip(items: MomentumScoreboard.areaMomentum(
-                        areas: activeAreas, openTasks: homeService.openTasks, allTasks: homeService.allTasks
-                    ))
+                    lifeAreasSection(activeAreas: activeAreas)
                     dueNowSection
-                    dueNudgesStrip
+                    // The inbox as a Today card, not just a badge on the tray icon (E's
+                    // 2026-08-25 note): the count and the newest waiting thoughts, one tap
+                    // from triage.
+                    inboxPeekCard
                     if !closedToday.isEmpty {
                         Text("Closed today")
-                            .font(.headline)
+                            .sectionLabel()
+                            .foregroundStyle(.secondary)
                         MomentumClosedTodayCard(tasks: closedToday)
                     }
                     closedWeekChartSection
-                    DailySummaryView(
-                        openTaskCount: counts.reduce(0) { $0 + $1.openTaskCount },
-                        lifeAreaCount: counts.count,
-                        inboxCount: inboxCount,
-                        dueNudgeCount: nudgesService.dueNudges().count
-                    )
+                    // The AI summary lives in the week review now (F-V3-WeekReview) — Today
+                    // stays the scoreboard, the review carries the recap.
                     weekReviewRow
                     FocusAnalyticsSection(reloadToken: focusReloadToken + pullRefreshCount) { sessions in
                         // Fires on first load, on pull-to-refresh, and on every finished sprint
@@ -302,15 +307,31 @@ struct HomeView: View {
             // Pull-to-refresh reloads every Home data source in parallel; the analytics section
             // refetches through its reload token rather than a service reference (it owns its
             // own service by design).
-            .refreshable {
-                pullRefreshCount += 1
-                async let home: Void = homeService.load()
-                async let nudges: Void = nudgesService.load()
-                async let inbox: Void = refreshInboxCount()
-                _ = await (home, nudges, inbox)
-                publishWidgetSnapshot(sprint: widgetSprint)
+            .refreshable { await refreshEverything() }
+            // The app-wide write signal (SUGG-b4/b1): any Firestore write — a capture from the
+            // global fan, an area recoloured in Settings — refetches Today without a pull.
+            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+                Task { await refreshEverything() }
             }
         }
+    }
+
+    /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
+    /// Chosen over a hand-rolled grid drag because `.onMove` supplies native drag, auto-scroll,
+    /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
+}
+
+extension HomeView {
+    /// Every Home data source in parallel — the pull gesture and the app-wide `DataChangeSignal`
+    /// run the same reload, so the two paths can never drift. Bumping `pullRefreshCount` folds
+    /// the analytics section (and its widget republish) into both.
+    func refreshEverything() async {
+        pullRefreshCount += 1
+        async let home: Void = homeService.load()
+        async let nudges: Void = nudgesService.load()
+        async let inbox: Void = refreshInboxCount()
+        _ = await (home, nudges, inbox)
+        publishWidgetSnapshot(sprint: widgetSprint)
     }
 
     /// Rebuilds and publishes the Home Screen widget's payload. Cheap, pure and idempotent, so
@@ -324,12 +345,39 @@ struct HomeView: View {
                 activeGoal: homeService.activeGoal,
                 lifeAreas: homeService.lifeAreas,
                 sessions: publishedHistory,
-                activeSprint: sprint
+                activeSprint: sprint,
+                dailyGoalMinutes: momentumPreferences.focusDailyGoalMinutes,
+                defaultSprintSeconds: momentumPreferences.defaultSprintMinutes * 60
+            )
+        )
+        widgetPublisher.publishLifeAreas(
+            LifeAreasWidgetSnapshotBuilder.snapshot(
+                lifeAreas: homeService.lifeAreas,
+                openTasks: homeService.openTasks
             )
         )
     }
 
-    /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
-    /// Chosen over a hand-rolled grid drag because `.onMove` supplies native drag, auto-scroll,
-    /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
+    /// The FULL set including archived areas — so the Capture triage picker can grey archived areas
+    /// rather than being starved of them (they used to be absent entirely here). The grid itself
+    /// still shows active areas only, filtered in `HomeService`. In this extension (with the door
+    /// below) so `HomeView`'s type body stays inside its 250-line budget.
+    var lifeAreasForPicker: [LifeArea] {
+        homeService.lifeAreas
+    }
+
+    /// The peek rows' pushed capture door — in an extension so `HomeView`'s type body stays
+    /// inside its 250-line budget (extensions are exempt; same file so `journalClient` stays
+    /// private).
+    @ViewBuilder
+    var inspectedCaptureDoor: some View {
+        if let capture = inspectingHomeCapture {
+            JournalCaptureDoor(
+                captureId: capture.id,
+                lifeAreas: homeService.lifeAreas,
+                client: captureClient,
+                journalClient: journalClient
+            )
+        }
+    }
 }

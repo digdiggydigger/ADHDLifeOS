@@ -78,6 +78,55 @@ enum CaptureInboxSummary {
             .joined(separator: " · ")
     }
 
+    // MARK: - v3 inbox health (F-V3-Inbox)
+
+    /// The week's movement, numerically — the health chart's input. Same rolling window and
+    /// stamped-exits-only rule as `weeklyCounterweight`; `nil` when nothing moved either way.
+    struct WeekHealth: Equatable {
+        let captured: Int
+        let cleared: Int
+        /// Captures created per trailing day, oldest first — the health bars.
+        let capturedPerDay: [Int]
+    }
+
+    static func weekHealth(
+        for captures: [Capture],
+        asOf now: Date = .now,
+        calendar: Calendar = .current
+    ) -> WeekHealth? {
+        let today = calendar.startOfDay(for: now)
+        guard let windowStart = calendar.date(byAdding: .day, value: -6, to: today) else { return nil }
+        let capturedThisWeek = captures.filter { $0.createdAt >= windowStart }
+        let cleared = captures.filter { capture in
+            guard let clearedAt = capture.clearedAt else { return false }
+            return clearedAt >= windowStart
+        }.count
+        guard !capturedThisWeek.isEmpty || cleared > 0 else { return nil }
+        let perDay = (0..<7).reversed().compactMap { back -> Int? in
+            guard let day = calendar.date(byAdding: .day, value: -back, to: today) else { return nil }
+            return capturedThisWeek.filter { calendar.isDate($0.createdAt, inSameDayAs: day) }.count
+        }
+        return WeekHealth(captured: capturedThisWeek.count, cleared: cleared, capturedPerDay: perDay)
+    }
+
+    /// Cleared over captured, clamped — the header's thin progress bar. `nil` when nothing was
+    /// captured: there is no denominator, which is not the same claim as 0%.
+    static func progressFraction(captured: Int, cleared: Int) -> Double? {
+        guard captured > 0 else { return nil }
+        return min(1, Double(cleared) / Double(captured))
+    }
+
+    /// v3's warn line under the health chart: the backlog said out loud, small numbers as words.
+    static func sittingLine(count: Int) -> String? {
+        guard count > 0 else { return nil }
+        let words = [1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five",
+                     6: "Six", 7: "Seven", 8: "Eight", 9: "Nine"]
+        let spoken = words[count] ?? "\(count)"
+        return count == 1
+            ? "\(spoken) is still sitting here — decide or bin it."
+            : "\(spoken) are still sitting here — decide or bin them."
+    }
+
     /// Kind names read as plain English rather than as enum cases — `voice` alone is an adjective,
     /// so it becomes "voice memo".
     private static func name(for kind: CaptureKind, count: Int) -> String {

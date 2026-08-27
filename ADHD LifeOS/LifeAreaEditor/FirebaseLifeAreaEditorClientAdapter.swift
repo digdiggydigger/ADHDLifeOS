@@ -27,7 +27,9 @@ struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
         }
     }
 
-    func update(id: UUID, name: String?, colour: String?) async throws -> LifeAreaUpdateOutcome {
+    func update(
+        id: UUID, name: String?, colour: String?, palette: LifeAreaPaletteEdit
+    ) async throws -> LifeAreaUpdateOutcome {
         do {
             if let name, let conflict = try await conflictingArea(named: name, excludingId: id) {
                 return .nameConflict(conflict)
@@ -39,6 +41,7 @@ struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
             if let colour {
                 fields["colour"] = colour
             }
+            fields.merge(FirestoreFieldPayloads.lifeAreaPalette(palette)) { _, new in new }
             try await store.updateLifeArea(id: id, fields: fields)
             return .updated
         } catch {
@@ -87,7 +90,8 @@ struct FirebaseLifeAreaEditorClientAdapter: LifeAreaEditorClientAdapting {
             name: area.name,
             colour: area.colour,
             sortOrder: area.sortOrder,
-            archived: area.archived
+            archived: area.archived,
+            paletteKey: area.palette
         )
     }
 

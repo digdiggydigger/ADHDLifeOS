@@ -145,4 +145,47 @@ final class CaptureRowPresentationTests: XCTestCase {
 
         XCTAssertTrue(captions.allSatisfy { $0.contains(" · ") }, "one separator, every row")
     }
+
+    // MARK: - Tags resolution
+
+    // The chips under a row's meta line resolve against the ONE already-fetched tag list — never a
+    // per-row fetch. Semantics mirror `FirebaseManager.fetchTags(for:parentId:)`: renamed tags show
+    // their current name because resolution happens by id, and dangling ids are silently dropped.
+
+    func testTags_resolveInTheCapturesAttachOrder() {
+        let errands = Tag(id: UUID(), name: "errands")
+        let deep = Tag(id: UUID(), name: "deep-work")
+        let waiting = Tag(id: UUID(), name: "waiting-on")
+        let capture = Capture(
+            id: UUID(), content: "x", kind: .note, processed: false, createdAt: Date(),
+            tagIds: [waiting.id, errands.id]
+        )
+
+        XCTAssertEqual(
+            CaptureRowPresentation.tags(for: capture, from: [errands, deep, waiting]),
+            [waiting, errands],
+            "chip order is the tag_ids array order (attach order), not the fetched list's order"
+        )
+    }
+
+    func testTags_dropDanglingIdsSilently() {
+        let kept = Tag(id: UUID(), name: "kept")
+        let capture = Capture(
+            id: UUID(), content: "x", kind: .note, processed: false, createdAt: Date(),
+            tagIds: [UUID(), kept.id]
+        )
+
+        XCTAssertEqual(CaptureRowPresentation.tags(for: capture, from: [kept]), [kept])
+    }
+
+    func testTags_emptyWhenTheCaptureHasNoMembership() {
+        let tag = Tag(id: UUID(), name: "unused")
+        let noField = Capture(id: UUID(), content: "x", kind: .note, processed: false, createdAt: Date())
+        let emptyField = Capture(
+            id: UUID(), content: "x", kind: .note, processed: false, createdAt: Date(), tagIds: []
+        )
+
+        XCTAssertEqual(CaptureRowPresentation.tags(for: noField, from: [tag]), [])
+        XCTAssertEqual(CaptureRowPresentation.tags(for: emptyField, from: [tag]), [])
+    }
 }
