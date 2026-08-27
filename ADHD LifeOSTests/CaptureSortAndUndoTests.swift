@@ -221,3 +221,25 @@ final class CaptureSortAndUndoTests: XCTestCase {
         XCTAssertEqual(line, "Sorted")
     }
 }
+
+/// The Inbox door on the Captures tab. E's answer to where triage should live was "keep the list,
+/// make the door louder" — a door that never says how much is behind it is exactly the door E
+/// stopped opening.
+final class CaptureInboxDoorTests: XCTestCase {
+
+    func testDoorLine_countsWhatIsWaiting() {
+        XCTAssertEqual(CaptureInboxSummary.doorLine(count: 3), "3 waiting to triage")
+        XCTAssertEqual(CaptureInboxSummary.doorLine(count: 1), "1 waiting to triage")
+    }
+
+    /// An empty inbox is the WIN state for an ADHD user, so the door says so rather than "0".
+    func testDoorLine_emptyInboxIsAWin() {
+        XCTAssertEqual(CaptureInboxSummary.doorLine(count: 0), "Inbox clear")
+    }
+
+    /// Never having looked is not the same as nothing being there — the same rule the filter tabs
+    /// already follow.
+    func testDoorLine_unknownCountSaysNothingAtAll() {
+        XCTAssertNil(CaptureInboxSummary.doorLine(count: nil))
+    }
+}

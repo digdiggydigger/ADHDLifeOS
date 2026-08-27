@@ -140,4 +140,13 @@ enum CaptureInboxSummary {
         }
         return count == 1 ? singular : singular + "s"
     }
+
+    /// The Captures tab's Inbox door. `nil` while the count is unknown — never having looked is
+    /// not the same as nothing being there, the rule the filter tabs already follow — and an empty
+    /// inbox is named as the win it is rather than rendered as a zero.
+    static func doorLine(count: Int?) -> String? {
+        guard let count else { return nil }
+        guard count > 0 else { return "Inbox clear" }
+        return "\(count) waiting to triage"
+    }
 }

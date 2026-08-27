@@ -43,6 +43,7 @@ struct CapturesTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             purposeHeader
+            inboxDoor
             filterPicker
             Group {
                 switch service.state {
@@ -79,8 +80,50 @@ struct CapturesTabView: View {
         }
         .task {
             await service.load()
+            await service.refreshToTriageCount()
             lifeAreas = (try? await homeClient.fetchLifeAreas()) ?? []
         }
+    }
+
+    /// The way into triage, and E's answer to where triage should live: "keep the list, make the
+    /// door louder". It was a tray glyph among the toolbar controls — a button you had to already
+    /// know the meaning of. It is now a full-width row that says how much is behind it, because a
+    /// door that never states its own backlog is the one you stop opening.
+    ///
+    /// The count line is absent, not zero, until it is known (`CaptureInboxSummary.doorLine`).
+    private var inboxDoor: some View {
+        Button {
+            Haptics.play(.light)
+            isPresentingInbox = true
+        } label: {
+            HStack(spacing: 16) {
+                Image(systemName: "tray.full")
+                    .font(.title3)
+                    .foregroundStyle(.tint)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Capture Inbox")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    if let line = CaptureInboxSummary.doorLine(count: service.counts[.unprocessed]) {
+                        Text(line)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minHeight: 44)
+            .bentoCard()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
+        .accessibilityIdentifier("capturesTabInboxButton")
     }
 
     private var purposeHeader: some View {
@@ -95,16 +138,6 @@ struct CapturesTabView: View {
                     .minimumScaleFactor(0.8)
                     .lineLimit(1)
                 Spacer()
-                Button {
-                    isPresentingInbox = true
-                } label: {
-                    Image(systemName: "tray")
-                        .font(.title3)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Capture Inbox")
-                .accessibilityIdentifier("capturesTabInboxButton")
                 CaptureRefinementMenu(service: service)
             }
             Text("Everything you've seen or promoted — kept, still actionable, out of your inbox.")

@@ -19,4 +19,17 @@ extension CaptureInboxService {
         weekCounterweightLine = CaptureInboxSummary.weeklyCounterweight(for: captures)
         weekHealth = CaptureInboxSummary.weekHealth(for: captures)
     }
+
+    /// The Captures tab does not OFFER the to-triage slice, so `refreshInactiveCount` never learns
+    /// it — but that tab's Inbox door has to carry a live number (E, 2026-08-28: "keep the list,
+    /// make the door louder"). Lives here rather than in the service's own file only because that
+    /// file sits at its length ceiling; `fetch`/`counts` are internal for exactly this reason.
+    ///
+    /// Failure-tolerant like every other count on these screens: an unknown count renders no line
+    /// at all rather than claiming zero.
+    func refreshToTriageCount() async {
+        guard !availableFilters.contains(.unprocessed),
+              let waiting = try? await fetch(.unprocessed) else { return }
+        counts[.unprocessed] = waiting.count
+    }
 }

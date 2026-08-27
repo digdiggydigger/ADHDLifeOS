@@ -142,7 +142,8 @@ final class CaptureInboxService: ObservableObject {
     /// Per-tab counts for the filter picker, so both tabs carry a number the way the web original's
     /// do ("Unprocessed (3)"). A filter with no entry has simply never loaded — the tab renders
     /// without a count rather than claiming zero, which is a different and much worse statement.
-    @Published private(set) var counts: [Filter: Int] = [:]
+    /// Settable on the `skippedIds` precedent — `refreshToTriageCount` writes it.
+    @Published var counts: [Filter: Int] = [:]
 
     /// S1's weekly counterweight ("11 captured · 7 cleared this week"), M10 — shown on the
     /// Inbox header and quick capture's footer. `nil` until a fetch lands or when nothing moved
@@ -209,7 +210,7 @@ final class CaptureInboxService: ObservableObject {
         try await fetch(filter)
     }
 
-    private func fetch(_ filter: Filter) async throws -> [Capture] {
+    func fetch(_ filter: Filter) async throws -> [Capture] {
         switch filter {
         case .unprocessed: return try await client.fetchUnprocessedCaptures()
         case .seen: return try await client.fetchSeenCaptures()
