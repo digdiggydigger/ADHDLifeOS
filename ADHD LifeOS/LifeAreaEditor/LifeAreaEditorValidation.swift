@@ -16,12 +16,6 @@ enum LifeAreaNameValidation: Equatable {
 
 /// The outcome of validating a free-typed emoji. The grid path can never produce an invalid value,
 /// so this exists for the free-type field only.
-enum LifeAreaEmojiValidation: Equatable {
-    case invalidEmpty
-    case invalidNotSingleGlyph
-    case valid(String)
-}
-
 /// Pure, unit-testable validation for the Life Area editor.
 enum LifeAreaEditorValidation {
     /// Decide what a proposed rename means relative to the current name, both trimmed first
@@ -46,10 +40,9 @@ enum LifeAreaEditorValidation {
     /// (0) are not. The backend accepts any non-empty string; this one-glyph rule is the client's
     /// choice because `HomeView` renders this value as a single large glyph and anything longer would
     /// render as unreadable mush on the Home card (§8).
+    /// Delegates to the shared `EmojiValidation` now that the picker is used by Places too.
+    /// Kept as-is at this name so existing call sites and tests are untouched by the move.
     static func validateEmoji(_ raw: String) -> LifeAreaEmojiValidation {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return .invalidEmpty }
-        guard trimmed.count == 1 else { return .invalidNotSingleGlyph }
-        return .valid(trimmed)
+        EmojiValidation.validate(raw)
     }
 }

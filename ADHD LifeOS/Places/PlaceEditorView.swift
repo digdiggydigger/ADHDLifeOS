@@ -70,8 +70,12 @@ struct PlaceEditorView: View {
         Section {
             TextField("Name", text: $name)
                 .accessibilityIdentifier("placeEditorNameField")
-            TextField("Emoji (optional)", text: $emoji)
-                .accessibilityIdentifier("placeEditorEmojiField")
+            // The shared grid, not a bare TextField (E's 2026-08-27 note): a text field opened the
+            // alphabetic keyboard, accepted "hello", and gave no sense of what a good pick was.
+            // `allowsClearing` because a place's emoji is genuinely optional — the row falls back
+            // to 📍 — which the Life Area version had no way to express.
+            EmojiPicker(selection: $emoji, palette: EmojiPalette.place, allowsClearing: true)
+                .accessibilityIdentifier("placeEditorEmojiPicker")
         } header: {
             Text("What is it")
         } footer: {

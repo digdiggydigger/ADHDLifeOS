@@ -113,6 +113,19 @@ struct PlacesListView: View {
 
     private var list: some View {
         List {
+            // Loud ONLY when it matters. Under the cap this is a quiet footer at the bottom; over
+            // it, the warning moves to the top where it cannot be scrolled past — because past 20
+            // some places silently stop triggering, and that is the one thing E must not discover
+            // by noticing a nudge that never came.
+            if PlaceMonitoringCapacity.isOverCapacity(placeCount: service.places.count) {
+                Label(
+                    PlaceMonitoringCapacity.summary(placeCount: service.places.count),
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .font(.footnote)
+                .foregroundStyle(Color("StateWarn"))
+                .accessibilityIdentifier("placesCapacityWarning")
+            }
             ForEach(service.places) { place in
                 Button {
                     Haptics.play(.light)
@@ -136,6 +149,15 @@ struct PlacesListView: View {
                     .font(.footnote)
                     .foregroundStyle(Color("StateRisk"))
                     .accessibilityIdentifier("placesInlineError")
+            }
+            if !PlaceMonitoringCapacity.isOverCapacity(placeCount: service.places.count),
+               let summary = PlaceMonitoringCapacity.summaryIfWorthShowing(placeCount: service.places.count) {
+                Text(summary)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .listRowBackground(Color.clear)
+                    .accessibilityIdentifier("placesCapacityCounter")
             }
         }
     }
