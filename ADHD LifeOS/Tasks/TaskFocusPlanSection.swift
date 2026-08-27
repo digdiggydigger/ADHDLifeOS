@@ -166,11 +166,15 @@ struct TaskFocusPlanSection: View {
             in: unit == .seconds
                 ? FocusSprintConfiguration.minimumDurationSeconds...FocusSprintConfiguration.maximumDurationSeconds
                 : 1...(FocusSprintConfiguration.maximumDurationSeconds / 60),
-            step: unit == .seconds ? 5 : 1
-        ) {
-            LabeledContent("Target", value: FocusTimeFormatting.human(seconds: durationSeconds))
-        }
-        .haptic(.selection, trigger: durationSeconds)
+            step: unit == .seconds ? 5 : 1,
+            onEditingChanged: { editing in
+                // Once, on release — see the Settings steppers (E, 2026-08-27).
+                if !editing { Haptics.play(.selection) }
+            },
+            label: {
+                LabeledContent("Target", value: FocusTimeFormatting.human(seconds: durationSeconds))
+            }
+        )
         .accessibilityIdentifier("taskDetailFocusDurationStepper")
     }
 

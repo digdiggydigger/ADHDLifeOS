@@ -20,16 +20,23 @@ extension SettingsView {
                     set: { newValue in
                         momentumPreferences.dailyGoal = newValue
                         momentumPreferencesStore.write(momentumPreferences)
-                    Haptics.play(.selection)
                     }
                 ),
-                in: MomentumPreferences.goalRange
-            ) {
-                LabeledContent(
-                    "Daily goal",
-                    value: "\(momentumPreferences.dailyGoal) \(momentumPreferences.dailyGoal == 1 ? "item" : "items")"
-                )
-            }
+                in: MomentumPreferences.goalRange,
+                onEditingChanged: { editing in
+                    // E's 2026-08-27 call: a stepper confirms ONCE, on release — holding to ramp a
+                    // value must not machine-gun. `onEditingChanged` goes false when the press ends,
+                    // which is also the end of a single tap, so every interaction ticks exactly once.
+                    if !editing { Haptics.play(.selection) }
+                },
+                label: {
+                    LabeledContent(
+                        "Daily goal",
+                        value: "\(momentumPreferences.dailyGoal) "
+                            + (momentumPreferences.dailyGoal == 1 ? "item" : "items")
+                    )
+                }
+            )
             .accessibilityIdentifier("settingsMomentumGoalStepper")
 
             Toggle("Show streaks", isOn: Binding(
@@ -94,14 +101,20 @@ extension SettingsView {
                     set: { newValue in
                         momentumPreferences.focusDailyGoalMinutes = newValue
                         momentumPreferencesStore.write(momentumPreferences)
-                    Haptics.play(.selection)
                     }
                 ),
                 in: MomentumPreferences.focusGoalRange,
-                step: 5
-            ) {
-                LabeledContent("Daily focus goal", value: "\(momentumPreferences.focusDailyGoalMinutes) min")
-            }
+                step: 5,
+                onEditingChanged: { editing in
+                    // E's 2026-08-27 call: a stepper confirms ONCE, on release — holding to ramp a
+                    // value must not machine-gun. `onEditingChanged` goes false when the press ends,
+                    // which is also the end of a single tap, so every interaction ticks exactly once.
+                    if !editing { Haptics.play(.selection) }
+                },
+                label: {
+                    LabeledContent("Daily focus goal", value: "\(momentumPreferences.focusDailyGoalMinutes) min")
+                }
+            )
             .accessibilityIdentifier("settingsFocusGoalStepper")
 
             Stepper(
@@ -110,14 +123,17 @@ extension SettingsView {
                     set: { newValue in
                         momentumPreferences.defaultSprintMinutes = newValue
                         momentumPreferencesStore.write(momentumPreferences)
-                    Haptics.play(.selection)
                     }
                 ),
                 in: MomentumPreferences.sprintMinutesRange,
-                step: 5
-            ) {
-                LabeledContent("Default sprint length", value: "\(momentumPreferences.defaultSprintMinutes) min")
-            }
+                step: 5,
+                onEditingChanged: { editing in
+                    if !editing { Haptics.play(.selection) }
+                },
+                label: {
+                    LabeledContent("Default sprint length", value: "\(momentumPreferences.defaultSprintMinutes) min")
+                }
+            )
             .accessibilityIdentifier("settingsSprintLengthStepper")
         } header: {
             Text("Focus")
