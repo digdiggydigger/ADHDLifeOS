@@ -1,5 +1,22 @@
 # Test Coverage Analysis — ADHD LifeOS
 
+> ## ⚠️ HISTORICAL — do not treat as a current inventory
+>
+> **Preserved 2026-08-27.** Written **2026-08-21**, which is **before the Momentum v3 redesign
+> merged into `main`** (`453dabc`, 46 commits, 327 files, +15,298/−4,053). The file-by-file gaps
+> below describe a tree that no longer exists: `SwipeableTaskCard` was deleted, the per-task nudge
+> feature was removed end to end, and whole areas (Places/location, haptics, the v3 composers) did
+> not exist yet.
+>
+> Kept for its **reasoning** — how the gaps were prioritised, and which categories of code are
+> worth testing versus deliberately left to UI tests — not for its numbers or its file lists.
+>
+> Its own caveat below is still the operative one: no coverage figure here was ever measured.
+> As of 2026-08-27 the suite is **1,584 tests**; re-run the documented coverage command on the Mac
+> before quoting any percentage.
+>
+> Cherry-picked onto `main` so the branch `claude/test-coverage-analysis-hu9auv` could be deleted.
+
 **Date:** 2026-08-21
 **Method:** static analysis of the Swift sources against the XCTest target (declared-type and
 call-site cross-reference), plus target-membership inspection of `project.pbxproj`.
