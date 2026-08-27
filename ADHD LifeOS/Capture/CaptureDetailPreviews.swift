@@ -17,7 +17,6 @@ private struct DetailPreviewCaptureClient: CaptureClientAdapting {
         processed: false,
         createdAt: Date(),
         title: "Swift concurrency: migrating at your own pace",
-        status: .inbox,
         lifeAreaId: nil,
         mediaURL: nil,
         mediaContentType: nil,

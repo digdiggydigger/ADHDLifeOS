@@ -33,15 +33,16 @@ enum AreaDetailPresentation {
         return "\(Int((rate * 100).rounded()))% of this week's \(areaName) items closed"
     }
 
-    /// Waiting captures, split for the two sections: already filed here (awaiting triage) and
-    /// area-less ones the screen offers a real "File here" (writes `life_area_id` via the
-    /// existing `updateCapture` seam — no new backend surface).
-    static func splitCaptures(
-        _ captures: [Capture], areaId: UUID
-    ) -> (filedHere: [Capture], unfiled: [Capture]) {
-        (
-            filedHere: captures.filter { $0.lifeAreaId == areaId },
-            unfiled: captures.filter { $0.lifeAreaId == nil }
-        )
+    /// The waiting captures genuinely filed to THIS area — what the screen's Captures section
+    /// shows, and the count on its chip.
+    ///
+    /// It used to return a second list too: every capture with no area at all, offered a "File
+    /// here" button. That predicate (`lifeAreaId == nil`) never mentions the area on screen, so
+    /// one unfiled capture rendered on EVERY area's detail simultaneously — eight areas, eight
+    /// copies, eight buttons, all writing the same document (the audit's A1). An area shows what
+    /// lives here; what lives nowhere yet belongs to the inbox, where the triage card decides it
+    /// under a rule this screen never enforced.
+    static func capturesFiledHere(_ captures: [Capture], areaId: UUID) -> [Capture] {
+        captures.filter { $0.lifeAreaId == areaId }
     }
 }

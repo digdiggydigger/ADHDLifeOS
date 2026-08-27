@@ -91,7 +91,7 @@ extension LifeAreaDetailView {
             HStack(spacing: 8) {
                 chip(for: .tasks, count: service.allTasks.count)
                 chip(for: .journal, count: service.logs.count)
-                chip(for: .captures, count: splitCaptures.filedHere.count)
+                chip(for: .captures, count: capturesFiledHere.count)
                 chip(for: .all, count: 0)
             }
         }
@@ -237,34 +237,28 @@ extension LifeAreaDetailView {
 
     // MARK: - Captures
 
-    var splitCaptures: (filedHere: [Capture], unfiled: [Capture]) {
-        AreaDetailPresentation.splitCaptures(service.captures, areaId: lifeArea.id)
+    var capturesFiledHere: [Capture] {
+        AreaDetailPresentation.capturesFiledHere(service.captures, areaId: lifeArea.id)
     }
 
+    /// What is waiting under this area — and nothing else. The second list this used to carry
+    /// ("Waiting to be filed here", every area-less capture in the app, with a "File here"
+    /// button) is gone: it repeated the same capture across every area at once, and its button
+    /// was a filing gesture that skipped the rule Sorted enforces. See A1/A2 in
+    /// `AreaDetailPresentation.capturesFiledHere`.
     @ViewBuilder
     var capturesSection: some View {
-        let split = splitCaptures
-        if !split.filedHere.isEmpty {
+        if !capturesFiledHere.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Waiting here")
                     .sectionLabel()
                     .foregroundStyle(.secondary)
-                captureCard(split.filedHere, action: nil)
-            }
-        }
-        if !split.unfiled.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Waiting to be filed here")
-                    .sectionLabel()
-                    .foregroundStyle(.secondary)
-                captureCard(split.unfiled) { capture in
-                    fileCaptureHere(capture)
-                }
+                captureCard(capturesFiledHere)
             }
         }
     }
 
-    private func captureCard(_ captures: [Capture], action: ((Capture) -> Void)?) -> some View {
+    private func captureCard(_ captures: [Capture]) -> some View {
         VStack(spacing: 0) {
             ForEach(Array(captures.enumerated()), id: \.element.id) { index, capture in
                 HStack(spacing: 8) {
@@ -277,18 +271,6 @@ extension LifeAreaDetailView {
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    if let action {
-                        Button("File here") {
-                            Haptics.play(.solid)
-                            action(capture)
-                        }
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(family.color)
-                        .padding(.horizontal, 8)
-                        .frame(minHeight: 32)
-                        .background(family.tint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .accessibilityIdentifier("lifeAreaDetailFileHere-\(capture.id)")
-                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)

@@ -53,7 +53,7 @@ struct CaptureRowView: View {
                 if capture.processed {
                     CapturePromotedChip()
                 } else if capture.seen == true {
-                    CaptureSeenChip()
+                    CaptureSortedChip()
                 }
             }
         } else {
@@ -82,7 +82,7 @@ struct CaptureRowView: View {
         if capture.processed {
             CapturePromotedChip()
         } else if capture.seen == true {
-            CaptureSeenChip()
+            CaptureSortedChip()
         } else {
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.bold))

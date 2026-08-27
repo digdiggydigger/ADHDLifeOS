@@ -148,43 +148,25 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
         XCTAssertEqual(fields.keys.sorted(), ["title"])
     }
 
-    // MARK: - Captures: status and its derived `processed` flag
+    // MARK: - Captures: the retired `status` field
 
-    /// `status` and `processed` are two representations of one fact, written together — the inbox
-    /// query filters on `processed`, so a status change that left it stale would leave a triaged
-    /// capture sitting in the inbox.
-    func testCaptureUpdate_processingSetsBothStatusAndTheProcessedFlag() {
-        let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(status: .processed))
-
-        XCTAssertEqual(fields["status"] as? String, "processed")
-        XCTAssertEqual(fields["processed"] as? Bool, true)
-    }
-
-    func testCaptureUpdate_everyNonProcessedStatusClearsTheProcessedFlag() {
-        for status in [CaptureStatus.inbox, .needsReview] {
-            let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(status: status))
-
-            XCTAssertEqual(fields["processed"] as? Bool, false, "status \(status) is not processed")
-        }
-    }
-
-    /// `needs-review` is hyphenated on the wire, unlike its Swift case name.
-    func testCaptureUpdate_needsReviewKeepsItsHyphenatedRawValue() {
-        let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(status: .needsReview))
-
-        XCTAssertEqual(fields["status"] as? String, "needs-review")
-    }
-
-    func testCaptureUpdate_titleOnly_doesNotTouchTheProcessedFlag() {
+    /// The audit's A4. `status` was a THIRD representation of triage position beside `processed`
+    /// and `seen`: written at create (`inbox`) and on promotion (`processed`), never touched by
+    /// Sorted, and — the point — read by nothing in the app. A field nothing reads cannot be
+    /// wrong in a way anyone notices, which is exactly why it drifted. It is gone; these assert
+    /// the payloads no longer mint it, in the same absence-of-the-wrong-key style as the
+    /// snake_case/camelCase pins above.
+    func testCaptureUpdate_titleOnly_touchesNeitherProcessedNorStatus() {
         let fields = FirestoreFieldPayloads.captureUpdate(CaptureUpdate(title: "Dentist"))
 
+        XCTAssertEqual(fields.keys.sorted(), ["title"])
         XCTAssertNil(fields["processed"], "a rename must not re-file the capture")
-        XCTAssertNil(fields["status"])
+        XCTAssertNil(fields["status"], "status is retired; processed and seen are the state")
     }
 
     // MARK: - Captures: the `seen` archive flag
 
-    /// Archiving writes `seen` and ONLY `seen` — deliberately not `status`/`processed`. A seen
+    /// Archiving writes `seen` and ONLY `seen` — deliberately not `processed`. A seen
     /// capture is filed away, not triaged: it stays `processed == false` so it can still be
     /// promoted to a task later from the Captures tab. "Seen implies processed" is the tempting
     /// wrong version of this, and it would strand archived captures un-promotable.
@@ -249,14 +231,14 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
     /// The processed flip, its status twin and the exit stamp travel in ONE write — previously
     /// `markCaptureProcessed` hand-built this dictionary inline, the exact bypass the file header
     /// warns about.
-    func testCaptureProcessed_writesStatusProcessedAndClearedAtTogether() {
+    func testCaptureProcessed_writesTheProcessedFlagAndClearedAtTogether() {
         let stamp = Date(timeIntervalSince1970: 1_755_000_000)
 
         let fields = FirestoreFieldPayloads.captureProcessed(now: stamp)
 
-        XCTAssertEqual(fields.keys.sorted(), ["clearedAt", "processed", "status"])
+        XCTAssertEqual(fields.keys.sorted(), ["clearedAt", "processed"])
         XCTAssertEqual(fields["processed"] as? Bool, true)
-        XCTAssertEqual(fields["status"] as? String, "processed")
+        XCTAssertNil(fields["status"], "the retired third state field (A4) must not be re-minted")
         XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["clearedAt"]), stamp)
     }
 

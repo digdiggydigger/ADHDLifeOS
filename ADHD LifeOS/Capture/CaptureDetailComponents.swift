@@ -232,15 +232,22 @@ struct CaptureDetailNotesEditor: View {
     }
 }
 
-/// B6's bottom pair: the full-width "Make a task" CTA beside the circular archive ("seen")
-/// button, with the inheritance promise underneath. A promoted capture swaps the CTA for its
-/// status chip, and a capture that is already seen (or promoted) loses the archive button — the
-/// undo lives in the overflow menu instead.
+/// B6's bottom pair: the full-width "Make a task" CTA beside the circular **Sorted** button,
+/// with the inheritance promise underneath. A promoted capture swaps the CTA for its status chip,
+/// and a capture that is already sorted (or promoted) loses the Sorted button — the way back
+/// lives in the overflow menu instead.
+///
+/// Sorted here obeys the same requirement as Sorted on the triage card: it cannot fire without a
+/// life area (`CaptureDetailPresentation.canSort`). It used to be an `archivebox` that wrote the
+/// same state with no requirement at all — see A3 there.
 struct CaptureDetailActions: View {
     let capture: Capture
-    let isArchiving: Bool
+    /// Whether an area has been chosen in the Filed-in card above. The button is present but
+    /// unavailable without one, so the missing decision is visible rather than the exit absent.
+    let canSort: Bool
+    let isSorting: Bool
     let onMakeTask: () -> Void
-    let onArchive: () -> Void
+    let onSort: () -> Void
 
     var body: some View {
         VStack(spacing: 8) {
@@ -259,7 +266,7 @@ struct CaptureDetailActions: View {
                     .accessibilityIdentifier("captureDetailMakeTaskButton")
                 }
                 if !capture.processed && capture.seen != true {
-                    archiveButton
+                    sortedButton
                 }
             }
             if !capture.processed {
@@ -275,18 +282,20 @@ struct CaptureDetailActions: View {
 
     // 52pt matches B6's circle exactly; it is a control dimension (multiple of 4, over the 44pt
     // floor), not a spacing token.
-    private var archiveButton: some View {
+    private var sortedButton: some View {
         Button {
             Haptics.play(.solid)
-            onArchive()
+            onSort()
         } label: {
-            if isArchiving {
+            if isSorting {
                 ProgressView()
                     .frame(width: 52, height: 52)
             } else {
-                Image(systemName: "archivebox")
+                // The triage card's glyph, deliberately: one verb, one mark. `archivebox` said
+                // "filed away" for a state the rest of the app calls Sorted.
+                Image(systemName: "checkmark.circle.fill")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(canSort ? Color("StateGo") : Color.secondary)
                     .frame(width: 52, height: 52)
             }
         }
@@ -294,10 +303,10 @@ struct CaptureDetailActions: View {
         .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 0.5))
         .contentShape(Circle())
         .buttonStyle(.plain)
-        .disabled(isArchiving)
-        .accessibilityLabel("Mark as seen")
-        .accessibilityHint("Moves this capture out of the inbox into the Captures archive")
-        .accessibilityIdentifier("captureDetailArchiveButton")
+        .disabled(isSorting || !canSort)
+        .accessibilityLabel("Sorted")
+        .accessibilityHint(CaptureDetailPresentation.sortHint(canSort: canSort))
+        .accessibilityIdentifier("captureDetailSortedButton")
     }
 }
 
@@ -314,7 +323,6 @@ private struct CaptureDetailComponentsGallery: View {
                         processed: false,
                         createdAt: Date(),
                         title: "Swift concurrency: migrating at your own pace",
-                        status: .inbox,
                         linkPreview: CaptureLinkPreview(
                             url: "https://www.swiftpackageindex.com/migration",
                             title: "Swift concurrency: migrating at your own pace",
@@ -332,11 +340,21 @@ private struct CaptureDetailComponentsGallery: View {
                     ),
                     onSave: { _ in nil }
                 )
+                // Both faces of Sorted, side by side: unavailable until an area is chosen, then
+                // live — the same pairing `SortedButtonStyle` renders on the triage card.
                 CaptureDetailActions(
                     capture: Capture(id: UUID(), content: "Note", kind: .note, processed: false, createdAt: Date()),
-                    isArchiving: false,
+                    canSort: false,
+                    isSorting: false,
                     onMakeTask: {},
-                    onArchive: {}
+                    onSort: {}
+                )
+                CaptureDetailActions(
+                    capture: Capture(id: UUID(), content: "Note", kind: .note, processed: false, createdAt: Date()),
+                    canSort: true,
+                    isSorting: false,
+                    onMakeTask: {},
+                    onSort: {}
                 )
             }
             .padding(16)

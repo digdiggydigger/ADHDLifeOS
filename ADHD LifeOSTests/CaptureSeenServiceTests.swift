@@ -6,10 +6,16 @@
 import XCTest
 @testable import ADHD_LifeOS
 
-/// The third triage exit: **capture seen** — archive without deleting. Discard throws a thought
-/// away and promote turns it into work; seen is for the large middle ground ("noted, nothing to
-/// do") that previously had no honest exit. A seen capture moves to the Captures tab, stays
-/// unprocessed, and remains fully actionable there — including being sent back to the inbox.
+/// The `seen` archive, from the one side that still has its own entry point: **undo**.
+///
+/// The forward direction used to be `markSeen`, a second arealess path into the same state the
+/// triage card's **Sorted** reaches under a rule (a life area is required). Two writers of one
+/// state is how they came to disagree — the audit's A2/A3 — so `markSeen` is gone and the detail
+/// screen's button routes through `sort(capture:into:)` like everything else. `CaptureSortAndUndoTests`
+/// owns the forward contract; this file keeps the return leg.
+///
+/// A seen capture stays unprocessed and remains fully actionable in the Captures archive —
+/// including being sent back to the inbox, which is what these cover.
 @MainActor
 final class CaptureSeenServiceTests: XCTestCase {
     private func capture(_ content: String) -> Capture {
@@ -29,37 +35,33 @@ final class CaptureSeenServiceTests: XCTestCase {
         return SUT(service: service, client: client)
     }
 
-    // MARK: - Mark seen
+    // MARK: - Filing is not clearing
 
-    func testMarkSeen_writesSeenTrueAndRemovesTheRow() async {
-        let noted = capture("Interesting, no action")
-        let env = await makeSUT(loaded: [noted, capture("Keep me")])
+    /// The audit's A2, pinned. THREE gestures wrote a capture's life area and they did not agree:
+    /// the triage card's Sorted files it AND clears it in one write, while the detail screen's
+    /// "Filed in" picker and the area screen's "File here" wrote `lifeAreaId` alone — so filing
+    /// from two of the three left the capture sitting in the inbox afterwards.
+    ///
+    /// The resolution is not to make them all clear: it is that only **Sorted** clears, and the
+    /// picker's job stays "say where this lives". This asserts the picker keeps its hands off the
+    /// exit fields, so the two can never quietly become the same gesture.
+    func testUpdateLifeArea_filesTheCaptureWithoutClearingTheInbox() async {
+        let undecided = capture("Where does this go?")
+        let env = await makeSUT(loaded: [undecided])
+        let areaId = UUID()
 
-        let succeeded = await env.service.markSeen(capture: noted)
+        let succeeded = await env.service.updateLifeArea(capture: undecided, lifeAreaId: areaId)
 
         XCTAssertTrue(succeeded)
-        XCTAssertEqual(env.client.lastUpdateCaptureId, noted.id)
-        XCTAssertEqual(env.client.lastUpdateCaptureChanges?.seen, true)
-        XCTAssertNotNil(
-            env.client.lastUpdateCaptureChanges?.clearedAt.flatMap { $0 },
-            "archiving is an inbox exit and must stamp clearedAt (M7)"
+        XCTAssertEqual(env.client.lastUpdateCaptureChanges?.lifeAreaId, .some(.some(areaId)))
+        XCTAssertNil(env.client.lastUpdateCaptureChanges?.seen, "naming an area is not an exit")
+        XCTAssertNil(
+            env.client.lastUpdateCaptureChanges?.clearedAt,
+            "only Sorted stamps the inbox exit; a picker change must not"
         )
-        XCTAssertEqual(env.service.captures.map(\.content), ["Keep me"])
-    }
-
-    /// Deliberately not optimistic, same as discard: the row leaves only once the write landed. An
-    /// optimistic removal that failed would look exactly like a successful archive while the
-    /// capture was still in the inbox on the next load.
-    func testMarkSeen_failure_keepsTheRowAndSurfacesTheError() async {
-        let noted = capture("Interesting")
-        let env = await makeSUT(loaded: [noted])
-        env.client.updateCaptureResult = .failure(CaptureServiceError.fetchFailed("offline"))
-
-        let succeeded = await env.service.markSeen(capture: noted)
-
-        XCTAssertFalse(succeeded)
-        XCTAssertEqual(env.service.captures.count, 1, "a failed archive must not empty the row")
-        XCTAssertEqual(env.service.triageErrorMessage, "offline")
+        XCTAssertEqual(
+            env.service.captures.count, 1, "the capture is filed, but it has not been decided"
+        )
     }
 
     // MARK: - Undo seen

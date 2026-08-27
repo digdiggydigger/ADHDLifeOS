@@ -13,12 +13,6 @@ enum CaptureKind: String, Codable, Equatable, Sendable, CaseIterable {
     case photo
 }
 
-enum CaptureStatus: String, Codable, Equatable, Sendable, CaseIterable {
-    case inbox
-    case needsReview = "needs-review"
-    case processed
-}
-
 struct CaptureLinkPreview: Codable, Equatable, Sendable {
     let url: String
     let title: String?
@@ -33,7 +27,6 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
     var processed: Bool
     let createdAt: Date
     var title: String?
-    var status: CaptureStatus?
     var lifeAreaId: UUID?
     var mediaURL: URL?
     var mediaContentType: String?
@@ -68,7 +61,7 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
     var longitude: Double?
 
     enum CodingKeys: String, CodingKey {
-        case id, content, kind, processed, title, status, lifeAreaId
+        case id, content, kind, processed, title, lifeAreaId
         case mediaURL, mediaContentType, thumbnailURL, linkPreview, aiAssessment, seen, notes, clearedAt
         case placeId, latitude, longitude
         case createdAt = "created_at"
@@ -76,8 +69,8 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
     }
 
     /// The URL a photo capture's thumbnail should render from: the server-generated thumbnail when
-    /// present, falling back to the original image (e.g. before the thumbnailer Lambda has run, or
-    /// if the thumbnail 404s). `nil` for non-photo captures with no media.
+    /// present, falling back to the original image (nothing generates thumbnails on Firebase, so
+    /// today this is always the original). `nil` for non-photo captures with no media.
     var photoDisplayURL: URL? {
         thumbnailURL ?? mediaURL
     }

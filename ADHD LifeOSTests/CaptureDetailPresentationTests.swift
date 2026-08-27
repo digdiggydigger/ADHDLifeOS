@@ -114,4 +114,39 @@ final class CaptureDetailPresentationTests: XCTestCase {
 
         XCTAssertNil(CaptureDetailPresentation.sourceDomain(for: capture))
     }
+
+    // MARK: - Sorting from the detail screen
+
+    /// The audit's A3: this screen used to archive a capture into the **Sorted** slice in one tap
+    /// with no life area at all, straight past the rule the triage card enforces. One state, one
+    /// rule, both ends — a capture cannot leave the inbox without somewhere to live.
+    func testCanSort_needsALifeArea() {
+        XCTAssertFalse(CaptureDetailPresentation.canSort(selectedLifeAreaId: nil))
+        XCTAssertTrue(CaptureDetailPresentation.canSort(selectedLifeAreaId: UUID()))
+    }
+
+    /// Delegation, not a restatement. Two copies of "an area is required" is precisely how the
+    /// card and this screen came to disagree in the first place.
+    func testCanSort_neverDisagreesWithTheTriageCard() {
+        let areas: [UUID?] = [UUID(), nil]
+        for area in areas {
+            XCTAssertEqual(
+                CaptureDetailPresentation.canSort(selectedLifeAreaId: area),
+                CaptureTriage.canSort(area: area)
+            )
+        }
+    }
+
+    /// A disabled control that never says what is missing is the same dead end the triage card's
+    /// unlit Sorted button had before it learned to glow.
+    func testSortHint_namesTheMissingArea_onlyWhileItCannotFire() {
+        XCTAssertEqual(
+            CaptureDetailPresentation.sortHint(canSort: false),
+            "Choose a life area above first."
+        )
+        XCTAssertEqual(
+            CaptureDetailPresentation.sortHint(canSort: true),
+            "Files this capture in the chosen area and clears it from your inbox."
+        )
+    }
 }

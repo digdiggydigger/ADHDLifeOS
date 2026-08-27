@@ -12,9 +12,9 @@ import Foundation
 
 @MainActor
 extension CaptureInboxService {
-    /// Photo capture flow: mint an upload URL, PUT the (already-downscaled, JPEG-encoded) image
-    /// bytes to S3, then create the capture referencing the returned keys. `content` doubles as the
-    /// optional caption, same field the text-capture composer uses.
+    /// Photo capture flow: mint an upload target, write the (already-downscaled, JPEG-encoded)
+    /// image bytes to Firebase Storage, then create the capture referencing the returned keys.
+    /// `content` doubles as the optional caption, same field the text-capture composer uses.
     @discardableResult
     func createPhotoCapture(imageData: Data) async -> Bool {
         createCaptureErrorMessage = nil
@@ -46,9 +46,9 @@ extension CaptureInboxService {
     }
 
     /// Voice capture flow: transcribe the recorded `.m4a` on-device first (no upload attempted if
-    /// transcription fails/is denied/comes back empty), then mint an upload URL, PUT the audio bytes
-    /// to S3, then create the capture with the transcription as `content`. There is no server-side
-    /// transcription and no thumbnail concept for audio.
+    /// transcription fails/is denied/comes back empty), then mint an upload target, write the audio
+    /// bytes to Firebase Storage, then create the capture with the transcription as `content`.
+    /// There is no server-side transcription and no thumbnail concept for audio.
     @discardableResult
     func createVoiceCapture(audioFileURL: URL) async -> Bool {
         createCaptureErrorMessage = nil

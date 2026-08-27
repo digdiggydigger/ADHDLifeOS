@@ -7,8 +7,7 @@ import XCTest
 @testable import ADHD_LifeOS
 
 /// The pure presentation behind the v3 area screen (F-V3-AreaDetail): the content-filter chips
-/// with their counts, the momentum ring's line, and the split between captures already filed
-/// here and unfiled ones offered a "File here".
+/// with their counts, the momentum ring's line, and the captures genuinely filed to this area.
 final class AreaDetailPresentationTests: XCTestCase {
     private let areaId = UUID()
 
@@ -40,14 +39,25 @@ final class AreaDetailPresentationTests: XCTestCase {
         )
     }
 
-    func testCaptureSplit_filedHereVersusUnfiled() {
+    func testCapturesFiledHere_keepsOnlyThisAreasCaptures() {
         let filed = capture(areaId: areaId)
-        let unfiled = capture(areaId: nil)
         let elsewhere = capture(areaId: UUID())
-        let split = AreaDetailPresentation.splitCaptures(
-            [filed, unfiled, elsewhere], areaId: areaId
+
+        XCTAssertEqual(
+            AreaDetailPresentation.capturesFiledHere([filed, elsewhere], areaId: areaId), [filed]
         )
-        XCTAssertEqual(split.filedHere, [filed])
-        XCTAssertEqual(split.unfiled, [unfiled])
+    }
+
+    /// The bug this replaced: the screen also listed every capture with NO area, matched on
+    /// `lifeAreaId == nil` — a predicate that never mentions the area on screen. One unfiled
+    /// capture therefore rendered on EVERY area's detail at once, each with its own "File here".
+    /// An area shows what is filed here; the inbox owns what is filed nowhere.
+    func testCapturesFiledHere_neverShowsAnUnfiledCapture() {
+        let unfiled = capture(areaId: nil)
+
+        XCTAssertTrue(
+            AreaDetailPresentation.capturesFiledHere([unfiled], areaId: areaId).isEmpty,
+            "an area-less capture belongs to the inbox, not to all eight areas simultaneously"
+        )
     }
 }

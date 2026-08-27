@@ -2,11 +2,11 @@
 //  CapturesTabView.swift
 //  ADHD LifeOS
 //
-//  The Captures tab (2026-08-23): the archive of handled captures. Two slices — Seen (archived
-//  from the Inbox as "noted, nothing to do") and Promoted (already a task or journal entry) —
-//  behind the segmented picker the Inbox used to carry. Everything here is still actionable:
-//  rows push the same `CaptureDetailView`, so a seen capture can still become a task, be
-//  re-filed, or go back to the Inbox.
+//  The Captures tab (2026-08-23): the archive of handled captures. Two slices — Sorted (filed
+//  from the Inbox under a life area) and Promoted (already a task or journal entry) — behind the
+//  segmented picker the Inbox used to carry. Everything here is still actionable: rows push the
+//  same `CaptureDetailView`, so a sorted capture can still become a task, be re-filed, or go back
+//  to the Inbox.
 //
 
 import SwiftUI
@@ -140,7 +140,7 @@ struct CapturesTabView: View {
                 Spacer()
                 CaptureRefinementMenu(service: service)
             }
-            Text("Everything you've seen or promoted — kept, still actionable, out of your inbox.")
+            Text("Everything you've sorted or promoted — kept, still actionable, out of your inbox.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -234,7 +234,7 @@ struct CapturesTabView: View {
             Text(
                 service.filter == .promoted
                     ? "Captures you turn into tasks or journal entries show up here."
-                    : "Captures you archive as seen move here from the Inbox — kept, not deleted."
+                    : "Captures you sort move here from the Inbox — filed, kept, not deleted."
             )
                 .font(.footnote)
                 .foregroundStyle(.secondary)

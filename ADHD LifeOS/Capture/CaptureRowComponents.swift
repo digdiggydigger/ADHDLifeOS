@@ -251,18 +251,24 @@ struct CapturePhotoLightbox: View {
     }
 }
 
-/// The Seen slice's status chip — this capture was archived, not actioned. Secondary styling on
-/// purpose: "seen" is quieter news than "promoted". Icon + text, never colour alone (§4).
-struct CaptureSeenChip: View {
+/// The Sorted slice's status chip — this capture was filed and cleared, not turned into work.
+/// Secondary styling on purpose: sorted is quieter news than promoted, and the checkmark is
+/// hollow where Promoted's is filled, so the two read as different outcomes rather than the same
+/// one twice. Icon + text, never colour alone (§4).
+///
+/// It said "Seen" with an `archivebox` glyph until the A7 audit — the wire spelling leaking onto
+/// a screen whose own filter tab, headline and button all say **Sorted**. `seen` stays the field
+/// name and the state; the user never meets that word again.
+struct CaptureSortedChip: View {
     var body: some View {
-        Label("Seen", systemImage: "archivebox")
+        Label("Sorted", systemImage: "checkmark.circle")
             .font(.caption.weight(.bold))
             .foregroundStyle(.secondary)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .padding(.horizontal, 16)
             .frame(minHeight: 44)
-            .accessibilityIdentifier("captureSeenChip")
+            .accessibilityIdentifier("captureSortedChip")
     }
 }
 

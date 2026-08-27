@@ -204,7 +204,6 @@ final class FirebaseDailySummaryDataAdapterTests: XCTestCase {
             processed: processed,
             createdAt: Date(timeIntervalSince1970: 1_755_000_000),
             title: nil,
-            status: processed ? .processed : .inbox,
             lifeAreaId: nil,
             mediaURL: nil,
             mediaContentType: nil,

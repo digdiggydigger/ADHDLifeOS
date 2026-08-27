@@ -53,6 +53,28 @@ enum CaptureDetailPresentation {
         date.formatted(Date.FormatStyle(date: .long, time: .shortened, locale: locale, timeZone: timeZone))
     }
 
+    /// Whether this screen's **Sorted** button can fire — the same requirement the triage card
+    /// puts on its own Sorted button, delegated rather than restated.
+    ///
+    /// This screen used to carry an `archivebox` button that called `markSeen` outright: one tap,
+    /// no life area, straight into the slice the app calls **Sorted** (the audit's A3). A capture
+    /// could therefore be "sorted" having never been sorted anywhere, and the rule E set in round
+    /// 1 — dealt with always also means "and I know where it lives" — held on exactly one of the
+    /// two paths into that state. Delegating to `CaptureTriage.canSort` is the point: two copies
+    /// of the rule is how they drifted apart the first time.
+    static func canSort(selectedLifeAreaId: UUID?) -> Bool {
+        CaptureTriage.canSort(area: selectedLifeAreaId)
+    }
+
+    /// What the Sorted button promises, or what it is still waiting for. A disabled control that
+    /// never names what is missing is the dead end the triage card's own button had before it
+    /// learned to light up only when ready.
+    static func sortHint(canSort: Bool) -> String {
+        canSort
+            ? "Files this capture in the chosen area and clears it from your inbox."
+            : "Choose a life area above first."
+    }
+
     /// Whether the overflow menu offers "Move back to Inbox". Seen alone is not enough: a
     /// capture archived and LATER promoted is `processed`, and the Inbox query (`processed ==
     /// false`) can never show it again — offering the action there wrote `seen = false`, changed

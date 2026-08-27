@@ -29,7 +29,7 @@ struct CaptureDetailView: View {
     @State private var isPresentingPromoteSheet = false
     @State private var isConfirmingDiscard = false
     @State private var isPresentingPhoto = false
-    @State private var isArchiving = false
+    @State private var isSorting = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -77,12 +77,7 @@ struct CaptureDetailView: View {
                     return updated
                 }
                 filedInSection(capture)
-                CaptureDetailActions(
-                    capture: capture,
-                    isArchiving: isArchiving,
-                    onMakeTask: { isPresentingPromoteSheet = true },
-                    onArchive: { Task { await archive(capture) } }
-                )
+                actionsRow(capture)
             }
             .padding(16)
         }
@@ -118,6 +113,18 @@ struct CaptureDetailView: View {
         .accessibilityIdentifier("captureDetailView")
     }
 
+    /// Extracted for the same reason `contentCard` was — the loaded body's 50-line budget. The
+    /// Sorted button's availability is resolved here, one place, from the Filed-in card's picker.
+    private func actionsRow(_ capture: Capture) -> some View {
+        CaptureDetailActions(
+            capture: capture,
+            canSort: CaptureDetailPresentation.canSort(selectedLifeAreaId: selectedLifeAreaId),
+            isSorting: isSorting,
+            onMakeTask: { isPresentingPromoteSheet = true },
+            onSort: { Task { await sortCapture(capture) } }
+        )
+    }
+
     private func filedInSection(_ capture: Capture) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Filed in")
@@ -129,7 +136,16 @@ struct CaptureDetailView: View {
                 selectedLifeAreaId: $selectedLifeAreaId,
                 triageErrorMessage: service.triageErrorMessage,
                 onSetLifeArea: { lifeAreaId in
-                    await service.updateLifeArea(capture: capture, lifeAreaId: lifeAreaId)
+                    let committed = await service.updateLifeArea(capture: capture, lifeAreaId: lifeAreaId)
+                    if committed {
+                        // This screen holds its own re-fetched copy, and `sort` reads its
+                        // `lifeAreaId` to record what undo should put back. Left stale, undoing a
+                        // sort would restore the area the picker had ALREADY replaced.
+                        var updated = capture
+                        updated.lifeAreaId = lifeAreaId
+                        state = .loaded(updated)
+                    }
+                    return committed
                 },
                 onLoadTags: { await service.fetchTags(for: capture) },
                 onLoadAllTags: { await service.fetchAllTags() },
@@ -162,11 +178,16 @@ struct CaptureDetailView: View {
 
     // MARK: - Actions
 
-    private func archive(_ capture: Capture) async {
-        guard !isArchiving else { return }
-        isArchiving = true
-        defer { isArchiving = false }
-        if await service.markSeen(capture: capture) {
+    /// **Sorted**, from the detail screen — the same one write the triage card makes, through the
+    /// same `sort(capture:into:)`, so the area, the `seen` flag and the exit stamp land together
+    /// and this screen cannot mint a sorted-but-unfiled capture (A3). Routing through it rather
+    /// than keeping a second writer also means an accidental tap here is now undoable, like one
+    /// on the card.
+    private func sortCapture(_ capture: Capture) async {
+        guard !isSorting, let lifeAreaId = selectedLifeAreaId else { return }
+        isSorting = true
+        defer { isSorting = false }
+        if await service.sort(capture: capture, into: lifeAreaId) {
             dismiss()
         }
     }

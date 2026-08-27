@@ -29,11 +29,14 @@ extension CaptureInboxService {
         record(.skipped(captureId: capture.id), sortedInto: nil)
     }
 
-    /// **Sorted** — the triage verb E asked for on 2026-08-28. It is `markSeen` with a condition:
-    /// a life area is required, so the exit stamp and the filing land in ONE write and a capture
-    /// can never end up sorted-but-unfiled. Same non-optimistic discipline as every other exit —
-    /// the row leaves only once the write has landed, and a failure offers no undo, because
-    /// nothing happened.
+    /// **Sorted** — the triage verb E asked for on 2026-08-28, and since the A2/A3 audit the ONLY
+    /// way a capture reaches the `seen` state from anywhere in the app.
+    ///
+    /// A life area is required, so the exit stamp and the filing land in ONE write and a capture
+    /// can never end up sorted-but-unfiled. The capture detail screen used to reach the same state
+    /// through an unconditional `markSeen`; it now calls this, so the requirement holds wherever
+    /// the tap happens. Same non-optimistic discipline as every other exit — the row leaves only
+    /// once the write has landed, and a failure offers no undo, because nothing happened.
     @discardableResult
     func sort(capture: Capture, into lifeAreaId: UUID) async -> Bool {
         triageErrorMessage = nil
@@ -120,30 +123,26 @@ extension CaptureInboxService {
         }
     }
 
-    /// Archives a capture as "seen" — the exit for "noted, nothing to do". Unlike discard the
-    /// capture survives, in the Captures tab, still unprocessed and still promotable. Same
-    /// non-optimistic discipline as discard: the row leaves only once the write has landed.
-    @discardableResult
-    func markSeen(capture: Capture) async -> Bool {
-        await setSeen(capture: capture, to: true)
-    }
-
-    /// Sends a seen capture back to the inbox — the undo for an archive that was premature. An
-    /// explicit `false` lands on the document (see `FirestoreFieldPayloads`); the row leaves the
-    /// Seen list it was tapped on.
+    /// Sends a sorted capture back to the inbox — the way out of a decision taken too early, and
+    /// now the ONLY writer of `seen` besides `sort`.
+    ///
+    /// There used to be a forward twin, `markSeen`, reached from the capture detail screen: it
+    /// wrote the same state with no life area required, so a capture could land in the **Sorted**
+    /// slice having never been sorted anywhere (the audit's A3). The rule belongs to the state,
+    /// not to whichever screen happens to write it, so the forward direction is `sort` everywhere
+    /// and this is what remains.
+    ///
+    /// An explicit `false` lands on the document rather than a delete (see
+    /// `FirestoreFieldPayloads`), the exit stamp is deleted (M7), and the row leaves the Sorted
+    /// list it was tapped on. Non-optimistic like every other exit: the row goes only once the
+    /// write has landed.
     @discardableResult
     func undoSeen(capture: Capture) async -> Bool {
-        await setSeen(capture: capture, to: false)
-    }
-
-    private func setSeen(capture: Capture, to seen: Bool) async -> Bool {
         triageErrorMessage = nil
         do {
-            // Archiving IS the inbox exit, so it carries the stamp; undo re-enters the inbox and
-            // deletes it (M7).
             _ = try await client.updateCapture(
                 id: capture.id,
-                changes: CaptureUpdate(seen: seen, clearedAt: seen ? .some(Date()) : .some(nil))
+                changes: CaptureUpdate(seen: false, clearedAt: .some(nil))
             )
             removeCapture(id: capture.id)
             return true

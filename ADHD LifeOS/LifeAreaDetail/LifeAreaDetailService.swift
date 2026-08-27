@@ -23,11 +23,10 @@ final class LifeAreaDetailService: ObservableObject {
     }
     @Published private(set) var filteredTasks: [TaskItem] = []
     @Published private(set) var logs: [Log] = []
-    /// Every waiting capture — the v3 screen splits them into filed-here and unfiled
-    /// (F-V3-AreaDetail). Degrades to empty like the other optional inputs.
+    /// Every waiting capture; the screen keeps the ones filed to THIS area
+    /// (`AreaDetailPresentation.capturesFiledHere`). Degrades to empty like the other optional
+    /// inputs — losing a capture list must never fail the screen.
     @Published private(set) var captures: [Capture] = []
-    /// Surfaced when a File-here write fails; the view alerts on it.
-    @Published var captureFilingErrorMessage: String?
 
     let lifeAreaId: UUID
     private let client: LifeAreaDetailClientAdapting
@@ -72,20 +71,5 @@ final class LifeAreaDetailService: ObservableObject {
 
     private func recomputeFilteredTasks() {
         filteredTasks = TaskStatusFilter.filter(tasks: tasks, by: statusFilter)
-    }
-
-    /// The real "File here": writes `life_area_id` through the existing update seam, then
-    /// reloads so the capture moves from the unfiled list into filed-here.
-    func fileCaptureHere(_ capture: Capture) async {
-        guard let captureClient else { return }
-        do {
-            _ = try await captureClient.updateCapture(
-                id: capture.id, changes: CaptureUpdate(lifeAreaId: .some(lifeAreaId))
-            )
-            await load()
-        } catch {
-            captureFilingErrorMessage =
-                (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-        }
     }
 }

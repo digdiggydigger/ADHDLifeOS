@@ -93,18 +93,15 @@ struct LifeAreaDetailView: View {
         .alert(
             "Couldn't update",
             isPresented: Binding(
-                get: { toggleErrorMessage != nil || service.captureFilingErrorMessage != nil },
+                get: { toggleErrorMessage != nil },
                 set: { presented in
-                    if !presented {
-                        toggleErrorMessage = nil
-                        service.captureFilingErrorMessage = nil
-                    }
+                    if !presented { toggleErrorMessage = nil }
                 }
             )
         ) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(toggleErrorMessage ?? service.captureFilingErrorMessage ?? "")
+            Text(toggleErrorMessage ?? "")
         }
         .sheet(
             isPresented: $isPresentingAdd,
@@ -175,9 +172,5 @@ struct LifeAreaDetailView: View {
                     (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
         }
-    }
-
-    func fileCaptureHere(_ capture: Capture) {
-        Task { await service.fileCaptureHere(capture) }
     }
 }

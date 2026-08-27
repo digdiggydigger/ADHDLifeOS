@@ -24,11 +24,13 @@ struct CaptureUploadTarget: Equatable, Sendable {
 }
 
 /// A partial update payload for `updateCapture` — mirrors `TaskUpdatePayload`'s per-field
-/// omit-if-nil/explicit-null discipline. `status`/`title` are set-or-omit (outer `nil` = don't
-/// touch); `lifeAreaId` is a nested optional since triage's Life Area picker can explicitly clear
-/// a capture back to "None" — outer `nil` = don't touch, `.some(nil)` = clear to null.
+/// omit-if-nil/explicit-null discipline. `title` is set-or-omit (outer `nil` = don't touch);
+/// `lifeAreaId` is a nested optional since triage's Life Area picker can explicitly clear a
+/// capture back to "None" — outer `nil` = don't touch, `.some(nil)` = clear to null.
+///
+/// There was a `status` field here too, carrying a `CaptureStatus` enum. No caller ever set it
+/// (the audit's A4); `processed` and `seen` are the state.
 struct CaptureUpdate: Equatable, Sendable {
-    var status: CaptureStatus?
     var lifeAreaId: UUID??
     var title: String?
     /// Nested optional like `lifeAreaId`: outer `nil` = untouched, `.some(nil)` = the user erased
@@ -56,16 +58,18 @@ enum CaptureServiceError: LocalizedError, Equatable {
     }
 }
 
-/// Thin seam over the Supabase Postgrest client so `CaptureInboxService` is testable without a
-/// network. Mirrors the web project's `captureService`/`capturePromotion` flow: create, list
-/// unprocessed, and promote (re-check current state, create task, mark processed).
+/// Thin seam over the capture backend so `CaptureInboxService` is testable without a network.
+/// `FirebaseCaptureClientAdapter` is the production conformance; tests use a recording fake.
+/// Mirrors the web prototype's `captureService`/`capturePromotion` flow: create, list unprocessed,
+/// and promote (re-check current state, create task, mark processed).
 protocol CaptureClientAdapting: Sendable {
     func createCapture(_ input: NormalizedCreateCaptureInput) async throws -> Capture
     func fetchUnprocessedCaptures() async throws -> [Capture]
     /// Captures already triaged — the Promoted tab. Separate call rather than a filter argument so
     /// the tab the user isn't looking at is never fetched.
     func fetchProcessedCaptures() async throws -> [Capture]
-    /// Captures archived as "seen" (and not since promoted) — the Captures tab's Seen slice.
+    /// Captures sorted and not since promoted — the Captures tab's Sorted slice. `seen` is the
+    /// field's name on the wire; **Sorted** is the only word the user ever sees for it.
     func fetchSeenCaptures() async throws -> [Capture]
     /// Every capture regardless of state — the input to S1's weekly capture-vs-clear
     /// counterweight (M10). Newest first, straight off the server ordering.
@@ -87,12 +91,12 @@ protocol CaptureClientAdapting: Sendable {
     func addTag(captureId: UUID, tagId: UUID) async throws
     func removeTag(captureId: UUID, tagId: UUID) async throws
 
-    /// Mints a presigned S3 PUT URL (+ `mediaKey`, and for photos a deterministic sibling
-    /// `thumbnailKey`) via `POST /captures/upload-url`. Call before `uploadMedia`, then pass the
-    /// returned `mediaKey`/`thumbnailKey` into `createCapture`.
+    /// Mints an upload target — a Firebase Storage object path (`mediaKey`) and the URL to write
+    /// it at. Call before `uploadMedia`, then pass the returned `mediaKey` into `createCapture`.
+    /// `thumbnailKey` is vestigial: nothing generates thumbnails on Firebase.
     func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget
 
-    /// Uploads raw media bytes directly to S3 via the presigned `uploadURL` from
-    /// `requestUploadURL` — no Authorization header, the signature is embedded in the URL itself.
+    /// Uploads raw media bytes to the `uploadURL` from `requestUploadURL`, through the Firebase
+    /// Storage SDK — which carries the signed-in user's credentials itself.
     func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws
 }

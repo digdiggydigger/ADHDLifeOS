@@ -84,10 +84,6 @@ enum FirestoreFieldPayloads {
     /// stale would strand a triaged capture in the inbox.
     static func captureUpdate(_ changes: CaptureUpdate) -> [String: Any] {
         var fields: [String: Any] = [:]
-        if let status = changes.status {
-            fields["status"] = status.rawValue
-            fields["processed"] = status == .processed
-        }
         if let title = changes.title {
             fields["title"] = title
         }
@@ -100,15 +96,16 @@ enum FirestoreFieldPayloads {
         return fields
     }
 
-    /// The processed flip, its `status` twin, and the M7 inbox-exit stamp — one write, always
-    /// together. Replaces the inline dictionary `markCaptureProcessed` used to hand-build, which
-    /// was the exact payload-layer bypass this file's header warns about.
+    /// The processed flip and the M7 inbox-exit stamp — one write, always together. Replaces the
+    /// inline dictionary `markCaptureProcessed` used to hand-build, which was the exact
+    /// payload-layer bypass this file's header warns about.
+    ///
+    /// It also wrote a `status: "processed"` twin until the A4 audit: a third state field beside
+    /// `processed` and `seen` that nothing in the app ever read, and that Sorted never touched —
+    /// so every sorted capture's `status` still claimed `inbox`. Documents written before this
+    /// keep the stale key; nothing looks at it.
     static func captureProcessed(now: Date) -> [String: Any] {
-        [
-            "processed": true,
-            "status": CaptureStatus.processed.rawValue,
-            "clearedAt": Timestamp(date: now)
-        ]
+        ["processed": true, "clearedAt": Timestamp(date: now)]
     }
 
     /// The life-area colour override's PATCH fragment (E's 2026-08-25 note). `automatic` ERASES

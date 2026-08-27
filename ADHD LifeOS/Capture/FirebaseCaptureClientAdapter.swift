@@ -6,11 +6,11 @@
 import Foundation
 
 /// Production `CaptureClientAdapting` backed by Firestore + Firebase Storage through
-/// `CaptureBackingStore` (`FirebaseManager` in the app, a recording fake in tests). The old
-/// backend's server-side jobs don't exist on the blank slate, so:
-/// captures are created with `status: .inbox` client-side; `linkPreview`/`aiAssessment` stay
-/// `nil` (no enrichment Lambda); and there are no thumbnails (`photoDisplayURL` already falls
-/// back to the full-size image).
+/// `CaptureBackingStore` (`FirebaseManager` in the app, a recording fake in tests).
+///
+/// Nothing enriches a capture server-side on Firebase, so `linkPreview`/`aiAssessment` stay `nil`
+/// and there are no thumbnails (`photoDisplayURL` already falls back to the full-size image). A
+/// new capture is simply `processed: false`, which is the whole of what puts it in the inbox.
 struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
     private let store: CaptureBackingStore
 
@@ -32,7 +32,6 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
             processed: false,
             createdAt: Date(),
             title: input.title,
-            status: .inbox,
             lifeAreaId: input.lifeAreaId,
             mediaURL: mediaURL,
             mediaContentType: input.mediaContentType,

@@ -27,14 +27,14 @@ final class FirebaseCaptureClientAdapterTests: XCTestCase {
 
     // MARK: - Creating a capture
 
-    /// Everything the deleted backend used to fill in server-side is now the adapter's job, and the
-    /// defaults it picks are load-bearing: `processed: false` + `status: .inbox` is what puts a new
-    /// capture in the triage inbox at all.
+    /// Everything the deleted backend used to fill in server-side is now the adapter's job, and
+    /// the default it picks is load-bearing: `processed: false` is the whole of what puts a new
+    /// capture in the triage inbox. (It also stamped `status: .inbox` until the A4 audit — a
+    /// third state field nothing read.)
     func testCreateCapture_landsInTheInboxUnprocessed() async throws {
         let capture = try await adapter.createCapture(Self.input(content: "Ring the dentist"))
 
         XCTAssertEqual(capture.content, "Ring the dentist")
-        XCTAssertEqual(capture.status, .inbox)
         XCTAssertFalse(capture.processed)
         XCTAssertEqual(store.savedCaptures, [capture], "the returned capture must be the one persisted")
     }
@@ -365,7 +365,6 @@ final class FirebaseCaptureClientAdapterTests: XCTestCase {
             processed: false,
             createdAt: createdAt,
             title: title,
-            status: .inbox,
             lifeAreaId: nil,
             mediaURL: nil,
             mediaContentType: nil,
