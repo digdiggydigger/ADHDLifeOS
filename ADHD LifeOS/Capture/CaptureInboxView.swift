@@ -41,6 +41,15 @@ struct CaptureInboxView: View {
     /// The one tag fetch every chip strip resolves against (`CaptureRowPresentation.tags(for:from:)`)
     /// — zero per-row fetches. Internal like `inspectingCapture`: the sections file reads it.
     @State var allTags: [Tag] = []
+    /// The area chip picked on the top card, and WHICH capture it was picked for. Keyed, because
+    /// the card is a queue: sorting one advances to the next, and an inherited selection would
+    /// silently file the next capture wherever the last one went.
+    @State var sortSelection: SortSelection?
+
+    struct SortSelection: Equatable {
+        let captureId: UUID
+        let lifeAreaId: UUID
+    }
 
     init(
         client: CaptureClientAdapting,
@@ -108,6 +117,7 @@ struct CaptureInboxView: View {
                 allTags = await service.fetchAllTags()
             }
         }
+        .safeAreaInset(edge: .bottom) { undoBar }
         .sheet(item: $promotingCapture) { capture in
             CapturePromoteSheet(
                 capture: capture,
@@ -135,6 +145,7 @@ struct CaptureInboxView: View {
                 .minimumScaleFactor(0.8)
                 .lineLimit(1)
             Spacer()
+            undoHeaderButton
             CaptureRefinementMenu(service: service)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -154,7 +165,7 @@ struct CaptureInboxView: View {
                 // v3's triage shape: the FIRST waiting capture as the decision card, the rest
                 // queued under "Then" — one decision at a time, not a wall of equals.
                 if service.filter == .unprocessed, let top = service.displayedCaptures.first {
-                    topCaptureCard(top)
+                    topCaptureDecision(top)
                     let rest = Array(service.displayedCaptures.dropFirst())
                     if !rest.isEmpty {
                         Text("Then")

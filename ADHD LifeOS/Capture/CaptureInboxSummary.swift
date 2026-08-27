@@ -22,7 +22,7 @@ enum CaptureInboxSummary {
         case .unprocessed:
             return count <= 0 ? "Inbox clear" : "\(count) to triage"
         case .seen:
-            return count <= 0 ? "Nothing seen yet" : "\(count) seen"
+            return count <= 0 ? "Nothing sorted yet" : "\(count) sorted"
         case .promoted:
             return count <= 0 ? "Nothing promoted yet" : "\(count) promoted"
         }

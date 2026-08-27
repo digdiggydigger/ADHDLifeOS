@@ -28,7 +28,7 @@ final class CaptureInboxService: ObservableObject {
         var title: String {
             switch self {
             case .unprocessed: return "To triage"
-            case .seen: return "Seen"
+            case .seen: return "Sorted"
             case .promoted: return "Promoted"
             }
         }
@@ -131,6 +131,13 @@ final class CaptureInboxService: ObservableObject {
     /// `private(set)`) on the counterweight precedent: its one writer, `skip(_:)`, lives in the
     /// `+Triage` extension file with `displayedCaptures`.
     @Published var skippedIds: [UUID] = []
+
+    /// The last reversible triage action, driving both undo affordances (E, 2026-08-28: "both").
+    /// Settable on the `skippedIds` precedent — its writers live in the `+Triage` extension file.
+    @Published var lastTriageAction: CaptureTriageAction?
+    /// The area the last sort filed into, for the bar's wording. Deliberately NOT part of the
+    /// action: the action describes the reversal, this describes what just happened.
+    @Published var lastSortedAreaId: UUID?
 
     /// Per-tab counts for the filter picker, so both tabs carry a number the way the web original's
     /// do ("Unprocessed (3)"). A filter with no entry has simply never loaded — the tab renders

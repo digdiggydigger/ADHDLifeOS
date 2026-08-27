@@ -113,10 +113,13 @@ final class CaptureInboxSummaryTests: XCTestCase {
         XCTAssertEqual(CaptureInboxSummary.headline(count: 0, filter: .promoted), "Nothing promoted yet")
     }
 
-    func testHeadline_onTheSeenFilter_describesTheArchive() {
-        XCTAssertEqual(CaptureInboxSummary.headline(count: 3, filter: .seen), "3 seen")
-        XCTAssertEqual(CaptureInboxSummary.headline(count: 1, filter: .seen), "1 seen")
-        XCTAssertEqual(CaptureInboxSummary.headline(count: 0, filter: .seen), "Nothing seen yet")
+    /// The `.seen` case kept its name on the wire and in the state, but the WORD changed to
+    /// "sorted" on 2026-08-28 when E gave the verb a condition (a life area is now required).
+    /// The archive and the button have to say the same thing or the tab stops explaining itself.
+    func testHeadline_onTheSortedFilter_describesTheArchive() {
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 3, filter: .seen), "3 sorted")
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 1, filter: .seen), "1 sorted")
+        XCTAssertEqual(CaptureInboxSummary.headline(count: 0, filter: .seen), "Nothing sorted yet")
     }
 
     // MARK: - Oldest-age line (Concept C, block M5)

@@ -1,0 +1,63 @@
+//
+//  CaptureTriage.swift
+//  ADHD LifeOS
+//
+
+import Foundation
+
+/// A triage action that can be taken back, described by what REVERSING it means.
+///
+/// Only the two actions the card owns outright are here. "Task it" opens the promote sheet (a
+/// flow, not an instant), and "Journal it" writes a `Log` and marks the capture processed — undoing
+/// that would need a log-delete and an unprocess path that do not exist yet. An Undo offered for
+/// something it cannot actually reverse is worse than no Undo, so neither is claimed.
+enum CaptureTriageAction: Equatable, Sendable {
+    /// `previousLifeAreaId` is what the capture was filed under BEFORE the sort — restoring it is
+    /// the whole job, since sorting may have replaced an area or written the first one.
+    case sorted(captureId: UUID, previousLifeAreaId: UUID?)
+    case skipped(captureId: UUID)
+}
+
+/// The rules behind **Sorted** — the triage verb E asked for on 2026-08-28 ("capturing is fine,
+/// deciding isn't").
+///
+/// Sorted is not a new state: `seen` has existed since the third-exit block, but it was reachable
+/// only from capture detail and it required nothing. The verb now carries a condition — **a life
+/// area is required**, tags stay optional (E's call) — so "dealt with" always also means "and I
+/// know where it lives". Pure and total, so the card, the button's enabled state and the undo bar
+/// all read the same rules.
+enum CaptureTriage {
+    /// The area a sort would file this capture under: the chip selection if there is one,
+    /// otherwise whatever the capture already carried.
+    static func resolvedArea(selected: UUID?, existing: UUID?) -> UUID? {
+        selected ?? existing
+    }
+
+    /// A capture filed in the composer is already sorted enough — the requirement is that it ENDS
+    /// UP filed, not that E picks again.
+    static func canSort(selected: UUID?, existing: UUID?) -> Bool {
+        resolvedArea(selected: selected, existing: existing) != nil
+    }
+
+    /// The chips open on the capture's own area, so an already-filed capture shows where it lives
+    /// rather than presenting the choice as unmade.
+    static func initialSelection(for capture: Capture) -> UUID? {
+        capture.lifeAreaId
+    }
+
+    /// What the undo bar says happened. A deleted area degrades to the bare verb rather than
+    /// quoting a raw UUID — the `CapturePlaceLabel` rule, applied to areas.
+    static func confirmation(
+        for action: CaptureTriageAction, sortedInto: UUID?, lifeAreas: [LifeArea]
+    ) -> String {
+        switch action {
+        case .skipped:
+            return "Skipped — it'll come back round"
+        case .sorted:
+            guard let sortedInto, let area = lifeAreas.first(where: { $0.id == sortedInto }) else {
+                return "Sorted"
+            }
+            return "Sorted to \(area.colour) \(area.name)"
+        }
+    }
+}
