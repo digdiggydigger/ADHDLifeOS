@@ -125,8 +125,13 @@ extension LoginView {
         .accessibilityIdentifier("loginPasswordRevealButton")
     }
 
+    /// Tinted only while it would actually do something. `.buttonStyle(.plain)` does not dim a
+    /// disabled button, so with an empty email this read as a live link and did nothing when
+    /// tapped (caught in the simulator, 2026-08-28). The colour reinforces the disabled state
+    /// rather than carrying it alone — `.disabled` is still what VoiceOver announces.
     private var forgotPasswordButton: some View {
-        Button {
+        let canRequest = AuthFormValidation.canRequestReset(email: email) && !isSubmitting
+        return Button {
             Task { await requestPasswordReset() }
         } label: {
             Text("Forgot password?")
@@ -135,8 +140,8 @@ extension LoginView {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.tint)
-        .disabled(!AuthFormValidation.canRequestReset(email: email) || isSubmitting)
+        .foregroundStyle(canRequest ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+        .disabled(!canRequest)
         .frame(maxWidth: .infinity, alignment: .trailing)
         .accessibilityIdentifier("forgotPasswordButton")
     }

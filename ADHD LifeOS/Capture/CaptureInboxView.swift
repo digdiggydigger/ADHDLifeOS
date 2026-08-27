@@ -186,6 +186,10 @@ struct CaptureInboxView: View {
                 healthSection
             }
             .padding(16)
+            // The capture disc floats over the bottom of this scroll view, so the last card —
+            // often the Sorted button itself — sat underneath it with nothing below to scroll to
+            // (E's screenshots, 2026-08-28). This is the room to lift it clear.
+            .padding(.bottom, CaptureDiscMetrics.clearance)
         }
         .refreshable {
             await service.refresh()

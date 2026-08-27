@@ -190,6 +190,30 @@ final class CaptureSortAndUndoTests: XCTestCase {
         XCTAssertEqual(env.service.lastTriageAction, .skipped(captureId: first.id))
     }
 
+    // MARK: - The button only lights up when it can actually be used
+
+    /// E's 2026-08-28 screenshot note: Sorted must be eye-catching ONLY when its requirement is
+    /// met. Pinned as a rule rather than left to the view, so the emphasis and the enabled state
+    /// can never drift apart and promise something the tap won't deliver.
+    func testSortedEmphasis_isReadyExactlyWhenItCanSort() {
+        XCTAssertEqual(CaptureTriage.emphasis(selected: nil, existing: nil), .waiting)
+        XCTAssertEqual(CaptureTriage.emphasis(selected: work.id, existing: nil), .ready)
+        XCTAssertEqual(CaptureTriage.emphasis(selected: nil, existing: work.id), .ready)
+    }
+
+    func testSortedEmphasis_neverDisagreesWithCanSort() {
+        let cases: [(UUID?, UUID?)] = [
+            (nil, nil), (work.id, nil), (nil, work.id), (work.id, health.id)
+        ]
+        for (selected, existing) in cases {
+            XCTAssertEqual(
+                CaptureTriage.emphasis(selected: selected, existing: existing) == .ready,
+                CaptureTriage.canSort(selected: selected, existing: existing),
+                "a glowing button that cannot be tapped is a lie"
+            )
+        }
+    }
+
     // MARK: - What the undo bar says
 
     func testConfirmation_namesTheAreaItSortedInto() {

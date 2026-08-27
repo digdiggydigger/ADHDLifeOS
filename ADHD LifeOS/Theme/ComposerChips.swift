@@ -34,12 +34,18 @@ struct ComposerSectionHeader: View {
 /// area — its own tint once chosen, quiet surface otherwise.
 struct ComposerAreaChips: View {
     let lifeAreas: [LifeArea]
-    let noSelectionLabel: String
+    /// `nil` omits the no-selection chip entirely. The capture triage card REQUIRES an area, and
+    /// there the escape chip did real harm: with nothing chosen it rendered in the accent, so
+    /// "no decision" looked like a decision that had been made (E's screenshot, 2026-08-28).
+    /// Skip is that screen's "not now".
+    let noSelectionLabel: String?
     @Binding var selection: UUID?
 
     var body: some View {
         FlowingChips(spacing: 8) {
-            chip(id: nil, label: noSelectionLabel, family: nil)
+            if let noSelectionLabel {
+                chip(id: nil, label: noSelectionLabel, family: nil)
+            }
             ForEach(lifeAreas) { area in
                 chip(
                     id: area.id,

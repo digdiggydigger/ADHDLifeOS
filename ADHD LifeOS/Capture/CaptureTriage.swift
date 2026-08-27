@@ -45,6 +45,22 @@ enum CaptureTriage {
         capture.lifeAreaId
     }
 
+    /// How much the Sorted button should shout. E's 2026-08-28 screenshot note: it must be
+    /// eye-catching ONLY once the requirement is met — before that it was indistinguishable from
+    /// its own disabled state, so nothing on screen said what was missing.
+    ///
+    /// Derived from `canSort` rather than restated, so the glow and the tap can never disagree.
+    enum SortedEmphasis: Equatable, Sendable {
+        /// Quiet and unavailable — an area has not been chosen.
+        case waiting
+        /// Lit: this will file the capture and clear it from the inbox.
+        case ready
+    }
+
+    static func emphasis(selected: UUID?, existing: UUID?) -> SortedEmphasis {
+        canSort(selected: selected, existing: existing) ? .ready : .waiting
+    }
+
     /// What the undo bar says happened. A deleted area degrades to the bare verb rather than
     /// quoting a raw UUID — the `CapturePlaceLabel` rule, applied to areas.
     static func confirmation(

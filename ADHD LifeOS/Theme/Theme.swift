@@ -71,3 +71,15 @@ extension View {
             .textCase(.uppercase)
     }
 }
+
+/// Room to keep clear of the global capture disc.
+///
+/// The FAB is a fixed overlay above the tab bar, so ANY pinned bar or bottom-of-scroll content
+/// lands underneath it. This was first hit on the journal composer bar (E's screenshot,
+/// 2026-08-25) and again on the inbox's Sorted button and undo bar (E's screenshots,
+/// 2026-08-28) — where it made the undo bar's own Undo button unreachable.
+///
+/// 60pt disc + its 16pt trailing margin + an 8pt breathing gap.
+enum CaptureDiscMetrics {
+    static let clearance: CGFloat = 60 + 16 + 8
+}

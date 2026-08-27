@@ -250,10 +250,9 @@ struct JournalView: View {
 
     // MARK: - Composer bar
 
-    /// Trailing room for the capture disc: its 60pt circle plus its 16pt margin plus an 8pt gap.
-    /// Without it the global FAB floats over this bar's corner and the caption under it
-    /// (E's screenshot, 2026-08-25).
-    private static let captureDiscClearance: CGFloat = 60 + 16 + 8
+    /// Trailing room for the capture disc — see `CaptureDiscMetrics`, which this screen's
+    /// screenshot (E, 2026-08-25) is the origin of.
+    private static let captureDiscClearance = CaptureDiscMetrics.clearance
 
     private var composerBar: some View {
         VStack(spacing: 4) {

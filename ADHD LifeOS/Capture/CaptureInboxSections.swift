@@ -11,7 +11,6 @@ import SwiftUI
 extension CaptureInboxView {
     func topCaptureCard(_ capture: Capture) -> some View {
         let slot = CaptureFan.slot(for: capture.kind)
-        let area = lifeAreas.first { $0.id == capture.lifeAreaId }
         let tags = CaptureRowPresentation.tags(for: capture, from: allTags)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
@@ -32,11 +31,6 @@ extension CaptureInboxView {
                 .font(.title3.bold())
                 .tracking(-0.5)
                 .fixedSize(horizontal: false, vertical: true)
-            if let area {
-                Text("Filed to \(area.colour) \(area.name)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
             // The triage card is a SEPARATE view from `CaptureRowView`, so the place has to be
             // said here too — E caught it showing on the THEN rows and not on the top card
             // (2026-08-27). Same rule: named places only, nothing when there wasn't one.
@@ -79,7 +73,9 @@ extension CaptureInboxView {
                 .foregroundStyle(Color.accentColor)
             ComposerAreaChips(
                 lifeAreas: lifeAreas.filter { !$0.archived },
-                noSelectionLabel: "Not yet",
+                // No escape chip here: an area is the requirement, and with nothing chosen the
+                // escape rendered in the accent — "no decision" looking like a made one.
+                noSelectionLabel: nil,
                 selection: Binding(
                     get: { selectedArea(for: capture) },
                     set: { newValue in
@@ -167,20 +163,33 @@ extension CaptureInboxView {
                 .buttonStyle(MomentumBorderedButtonStyle())
                 .accessibilityIdentifier("captureInboxSkipButton")
             }
-            Button {
-                guard let area else { return }
-                Haptics.play(.success)
-                Task {
-                    if await service.sort(capture: capture, into: area) { sortSelection = nil }
-                }
-            } label: {
-                Label("Sorted", systemImage: "checkmark.circle.fill")
-            }
-            .buttonStyle(MomentumBorderedButtonStyle())
-            .disabled(area == nil)
-            .accessibilityIdentifier("captureInboxSortedButton")
-            .accessibilityHint(area == nil ? "Pick a life area first" : "Files it and clears the inbox")
+            sortedButton(capture, area: area)
         }
+    }
+
+    /// Lit only once an area is chosen — E's 2026-08-28 note. The emphasis comes from
+    /// `CaptureTriage.emphasis`, which is derived from `canSort`, so a glowing button can never be
+    /// one the tap would refuse. `SortedButtonStyle` carries both faces.
+    @ViewBuilder
+    private func sortedButton(_ capture: Capture, area: UUID?) -> some View {
+        let emphasis = CaptureTriage.emphasis(
+            selected: sortSelection?.captureId == capture.id ? sortSelection?.lifeAreaId : nil,
+            existing: capture.lifeAreaId
+        )
+        let isReady = emphasis == .ready
+        Button {
+            guard let area else { return }
+            Haptics.play(.success)
+            Task {
+                if await service.sort(capture: capture, into: area) { sortSelection = nil }
+            }
+        } label: {
+            Label("Sorted", systemImage: "checkmark.circle.fill")
+        }
+        .buttonStyle(SortedButtonStyle(isReady: isReady))
+        .disabled(!isReady)
+        .accessibilityIdentifier("captureInboxSortedButton")
+        .accessibilityHint(isReady ? "Files it and clears the inbox" : "Pick a life area first")
     }
 
     func summaryHeader(_ captures: [Capture]) -> some View {
@@ -288,7 +297,10 @@ extension CaptureInboxView {
                 .foregroundStyle(.tint)
                 .frame(minHeight: 44)
             }
-            .padding(.horizontal, 16)
+            .padding(.leading, 16)
+            // Trailing room for the capture disc, which otherwise floats directly over the Undo
+            // button and makes it untappable (E's screenshot, 2026-08-28).
+            .padding(.trailing, CaptureDiscMetrics.clearance)
             .padding(.vertical, 8)
             .background(.ultraThinMaterial)
             .transition(.move(edge: .bottom).combined(with: .opacity))

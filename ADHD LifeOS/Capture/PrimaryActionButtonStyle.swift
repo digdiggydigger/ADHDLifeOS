@@ -78,3 +78,42 @@ private struct PrimaryActionButtonStylePreview: View {
         .preferredColorScheme(.dark)
 }
 #endif
+
+/// The Sorted verb's two faces in ONE style, so the lit and the quiet state cannot drift into two
+/// different buttons. E's 2026-08-28 screenshots: enabled and disabled looked identical, so the
+/// card never said what was missing — nor when it stopped being missing.
+///
+/// Lit is the go token, the same green a closed task uses, plus a soft bloom of it. §5 bans muddy
+/// shadows and prescribes 0.03 opacity for DEPTH; this is emphasis rather than depth, so the bloom
+/// is a deliberate, restrained exception — one colour, one radius, and gone entirely the moment
+/// the requirement is not met.
+struct SortedButtonStyle: ButtonStyle {
+    let isReady: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout.weight(isReady ? .semibold : .medium))
+            .foregroundStyle(isReady ? Color("OnStateGo") : Color("LabelSecondary"))
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background {
+                if isReady {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color("StateGo"))
+                } else {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Color.cardBorder, lineWidth: 1)
+                }
+            }
+            .shadow(
+                color: Color("StateGo").opacity(isReady ? 0.35 : 0),
+                radius: isReady ? 12 : 0, x: 0, y: 4
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(
+                .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0),
+                value: configuration.isPressed
+            )
+            .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: isReady)
+    }
+}
