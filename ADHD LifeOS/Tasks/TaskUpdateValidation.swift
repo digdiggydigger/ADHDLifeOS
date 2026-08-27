@@ -9,9 +9,13 @@ import Foundation
 /// originally-fetched `TaskDetail` and only carries forward the fields that actually changed,
 /// so `TaskDetailService.save` sends a genuine partial update rather than the whole form.
 enum TaskUpdateValidation {
+    /// `defaultSprintSeconds` is the Settings-chosen fallback the detail screen's planner seeded
+    /// from (E's 2026-08-28 fix). It has to reach the focus diff below or the two disagree, and
+    /// merely OPENING an untuned task reads as an edit.
     static func normalizeUpdateTaskInput(
         original: TaskDetail,
-        edited: TaskEditedFields
+        edited: TaskEditedFields,
+        defaultSprintSeconds: Int = FocusSprintConfiguration.defaultDurationSeconds
     ) -> Result<TaskUpdatePayload, TaskCreateValidationError> {
         let trimmedTitle = edited.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedTitle.isEmpty else { return .failure(.emptyTitle) }
@@ -40,29 +44,34 @@ enum TaskUpdateValidation {
             payload.atPlaceId = .some(edited.atPlaceId)
         }
 
-        applyFocusConfigDiff(from: edited, against: original, to: &payload)
+        applyFocusConfigDiff(
+            from: edited, against: original, defaultSprintSeconds: defaultSprintSeconds, to: &payload
+        )
 
         return .success(payload)
     }
 
-    /// Focus config diffs against the RESOLVED original, not the raw stored value: a legacy
-    /// task with no stored config resolves to the standard defaults, so staging exactly those
-    /// defaults is not an edit and must not manufacture a write. Split out when the at-place
-    /// diff pushed the main function over SwiftLint's complexity budget.
+    /// Focus config diffs against the RESOLVED original, not the raw stored value: a task with no
+    /// stored config resolves to the fallback the planner opened at, so staging exactly that is
+    /// not an edit and must not manufacture a write. Split out when the at-place diff pushed the
+    /// main function over SwiftLint's complexity budget.
     private static func applyFocusConfigDiff(
-        from edited: TaskEditedFields, against original: TaskDetail, to payload: inout TaskUpdatePayload
+        from edited: TaskEditedFields, against original: TaskDetail,
+        defaultSprintSeconds: Int, to payload: inout TaskUpdatePayload
     ) {
+        let originalDuration = FocusSprintConfiguration.resolvedDuration(
+            explicit: original.focusDurationSeconds, defaultSeconds: defaultSprintSeconds
+        )
         if let stagedDuration = edited.focusDurationSeconds {
             let clamped = FocusSprintConfiguration.clampDuration(stagedDuration)
-            if clamped != FocusSprintConfiguration.resolvedDuration(explicit: original.focusDurationSeconds) {
+            if clamped != originalDuration {
                 payload.focusDurationSeconds = clamped
             }
         }
         if let stagedNudges = edited.nudgesCount {
             let clamped = FocusSprintConfiguration.clampNudgeCount(stagedNudges)
             let originalResolved = FocusSprintConfiguration.resolvedNudgeCount(
-                explicit: original.nudgesCount,
-                durationSeconds: FocusSprintConfiguration.resolvedDuration(explicit: original.focusDurationSeconds)
+                explicit: original.nudgesCount, durationSeconds: originalDuration
             )
             if clamped != originalResolved {
                 payload.nudgesCount = clamped

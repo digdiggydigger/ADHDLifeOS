@@ -27,12 +27,20 @@ struct TaskDetailDirtyState: Equatable {
     let hasUnsavedChanges: Bool
     let isDueDateDirty: Bool
 
-    init(original: TaskDetail, edited: TaskEditedFields) {
+    /// `defaultSprintSeconds` must be the same fallback the planner seeded from — see
+    /// `TaskUpdateValidation.normalizeUpdateTaskInput`. Passing the wrong one makes an untouched
+    /// screen read as edited.
+    init(
+        original: TaskDetail, edited: TaskEditedFields,
+        defaultSprintSeconds: Int = FocusSprintConfiguration.defaultDurationSeconds
+    ) {
         // Mirrors the payload's own due-date test (`edited.dueDate != original.dueDate`) — the
         // same equality Save uses to decide whether to send a new due date.
         isDueDateDirty = edited.dueDate != original.dueDate
 
-        switch TaskUpdateValidation.normalizeUpdateTaskInput(original: original, edited: edited) {
+        switch TaskUpdateValidation.normalizeUpdateTaskInput(
+            original: original, edited: edited, defaultSprintSeconds: defaultSprintSeconds
+        ) {
         case .success(let payload):
             hasUnsavedChanges = !payload.isEmpty
         case .failure:

@@ -26,6 +26,12 @@ final class TaskDetailService: ObservableObject {
     /// load-bearing — the same non-blocking posture as the journal's side streams.
     @Published private(set) var places: [Place] = []
 
+    /// The Settings-chosen sprint length a task with no stored config opens at, resolved ONCE at
+    /// construction (E's 2026-08-28 fix). The planner seeds from it and the save diff compares
+    /// against it, so both must read the same value — re-reading the store per use would let a
+    /// mid-screen Settings change split them and make an untouched screen look edited.
+    let defaultSprintSeconds: Int
+
     private let taskId: UUID
     private let client: TaskDetailClientAdapting
     private let placesClient: PlacesClientAdapting
@@ -34,11 +40,15 @@ final class TaskDetailService: ObservableObject {
     init(
         taskId: UUID,
         client: TaskDetailClientAdapting,
-        placesClient: PlacesClientAdapting? = nil
+        placesClient: PlacesClientAdapting? = nil,
+        preferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
         self.taskId = taskId
         self.client = client
         self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
+        defaultSprintSeconds = FocusSprintConfiguration.clampDuration(
+            preferencesStore.read().defaultSprintMinutes * 60
+        )
     }
 
     func load() async {
@@ -65,7 +75,9 @@ final class TaskDetailService: ObservableObject {
         errorMessage = nil
         guard let original = task else { return false }
 
-        switch TaskUpdateValidation.normalizeUpdateTaskInput(original: original, edited: edited) {
+        switch TaskUpdateValidation.normalizeUpdateTaskInput(
+            original: original, edited: edited, defaultSprintSeconds: defaultSprintSeconds
+        ) {
         case .failure(let error):
             errorMessage = error.errorDescription
             return false

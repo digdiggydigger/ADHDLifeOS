@@ -169,9 +169,12 @@ struct TaskDetailView: View {
             return TaskDetailDirtyState(original: task, edited: TaskEditedFields(
                 title: task.title, notes: task.notes ?? "", lifeAreaId: task.lifeAreaId,
                 priority: task.priority, dueDate: task.dueDate, atPlaceId: task.atPlaceId
-            ))
+            ), defaultSprintSeconds: service.defaultSprintSeconds)
         }
-        return TaskDetailDirtyState(original: task, edited: currentEditedFields)
+        return TaskDetailDirtyState(
+            original: task, edited: currentEditedFields,
+            defaultSprintSeconds: service.defaultSprintSeconds
+        )
     }
 }
 
@@ -206,7 +209,9 @@ private extension TaskDetailView {
             priority = task.priority
             dueDate = task.dueDate
             hasDueDate = task.dueDate != nil
-            focusDurationSeconds = FocusSprintConfiguration.resolvedDuration(explicit: task.focusDurationSeconds)
+            focusDurationSeconds = FocusSprintConfiguration.resolvedDuration(
+                explicit: task.focusDurationSeconds, defaultSeconds: service.defaultSprintSeconds
+            )
             focusNudgeCount = FocusSprintConfiguration.resolvedNudgeCount(
                 explicit: task.nudgesCount, durationSeconds: focusDurationSeconds
             )
