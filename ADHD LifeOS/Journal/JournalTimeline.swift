@@ -188,6 +188,24 @@ enum JournalTimeline {
         return event.kind == .arrival ? "Arrived at \(name)" : "Left \(name)"
     }
 
+    /// A written entry's place line: "at The Office 💼", or `nil`.
+    ///
+    /// E's 2026-08-28 call, off four candidate surfaces — journal rows only. Closed-task rows,
+    /// sprint cards and closed-task detail all STORE their place and deliberately do not show it:
+    /// a place line on every row is noise in a stream that exists to be scanned.
+    ///
+    /// The rule is `CapturePlaceLabel`'s verbatim — named places only, so an entry written outside
+    /// every saved place says nothing rather than quoting a bare coordinate, and a dangling id
+    /// (place deleted since) reads as no label rather than a raw UUID. Resolved through the
+    /// place's CURRENT record, like `locationEventLine` above, which is the whole reason the id is
+    /// stored rather than the name.
+    static func placeLine(for log: Log, places: [Place]) -> String? {
+        guard let placeId = log.placeId,
+              let place = places.first(where: { $0.id == placeId }) else { return nil }
+        let name = place.emoji.map { "\(place.name) \($0)" } ?? place.name
+        return "at \(name)"
+    }
+
     /// The sprint row's fact line: "25 min sprint" when it ran its course, "12 of 25 min sprint"
     /// when stopped early — never a silent rounding-up of an abandoned sprint into a full one.
     /// Floor division with a 1-minute floor, same arithmetic as `FocusAnalytics.focusedMinutes`,

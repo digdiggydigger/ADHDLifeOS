@@ -199,13 +199,20 @@ extension JournalView {
             .frame(width: 56, alignment: .leading)
     }
 
+    /// "Journal · 🫀 Health · at The Office 💼". The place rides this ONE string rather than a
+    /// sibling `Text` so the meta line wraps as a unit — an HStack of four fragments would have to
+    /// truncate one of them on a narrow layout, which §1 forbids.
     private func logKindLine(_ log: Log) -> String {
         let kind = log.type == .journal ? "Journal" : "Log"
-        guard
-            let areaId = log.lifeAreaId,
-            let area = journalService.lifeAreas.first(where: { $0.id == areaId }), !area.archived
-        else { return kind }
-        return "\(kind) · \(area.colour) \(area.name)"
+        var line = kind
+        if let areaId = log.lifeAreaId,
+           let area = journalService.lifeAreas.first(where: { $0.id == areaId }), !area.archived {
+            line += " · \(area.colour) \(area.name)"
+        }
+        if let place = JournalTimeline.placeLine(for: log, places: journalService.places) {
+            line += " · \(place)"
+        }
+        return line
     }
 
     private func areaEmoji(for areaId: UUID?) -> String? {
