@@ -58,10 +58,19 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
     /// this is `nil` and the key is omitted. `tag_ids` is one of the snake_case exceptions in the
     /// captures convention, because that is what the membership writes have always spelled.
     var tagIds: [UUID]?
+    /// WHERE this capture was made (F-Location-Tagging). Resolved ONCE at create time: a place's
+    /// radius can be edited later, and re-resolving would silently rewrite where things happened.
+    /// `placeId` is nil when the capture happened outside every named place — the coordinate is
+    /// still kept, because most of life happens away from a saved place. All three are nil on
+    /// every capture made before this shipped, and on any made with tagging or permission off.
+    var placeId: UUID?
+    var latitude: Double?
+    var longitude: Double?
 
     enum CodingKeys: String, CodingKey {
         case id, content, kind, processed, title, status, lifeAreaId
         case mediaURL, mediaContentType, thumbnailURL, linkPreview, aiAssessment, seen, notes, clearedAt
+        case placeId, latitude, longitude
         case createdAt = "created_at"
         case tagIds = "tag_ids"
     }

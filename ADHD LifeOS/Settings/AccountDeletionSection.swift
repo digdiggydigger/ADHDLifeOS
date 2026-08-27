@@ -201,7 +201,7 @@ private struct AppleReauthSheetContent: View {
                     systemImage: "exclamationmark.octagon.fill"
                 )
                 .font(.footnote)
-                .foregroundStyle(.red)
+                .foregroundStyle(Color("StateRisk"))
             }
 
             Button("Cancel", action: onCancel)

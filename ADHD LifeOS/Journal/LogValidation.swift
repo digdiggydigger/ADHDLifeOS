@@ -25,6 +25,11 @@ struct NormalizedCreateLogInput: Equatable, Sendable {
     let moodEmoji: String?
     /// Both types (E's 2026-08-25 note: "journal and logs") — unlike energy/mood.
     let tagIds: [UUID]
+    /// Set by the service AFTER validation — location is not something to validate, and a missing
+    /// stamp is never a reason to refuse an entry. Both types stamp: energy/mood are journal-only
+    /// for web parity, but location has no web precedent to preserve. A `var` outside the init so
+    /// every existing call site stays as it was.
+    var locationStamp: LocationStamp?
 
     init(
         body: String,

@@ -49,6 +49,22 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
         }
     }
 
+    func fetchLocationEvents() async throws -> [LocationEvent] {
+        do {
+            return try await store.fetchLocationEvents()
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
+    func fetchPlaces() async throws -> [Place] {
+        do {
+            return try await store.fetchPlaces()
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
     func fetchAllTags() async throws -> [Tag] {
         do {
             return try await store.fetchTags()
@@ -78,7 +94,10 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
             moodEmoji: input.moodEmoji,
             // Tags ride the create — logs cannot be updated, so nil (key absent) beats an empty
             // array nothing could ever remove.
-            tagIds: input.tagIds.isEmpty ? nil : input.tagIds
+            tagIds: input.tagIds.isEmpty ? nil : input.tagIds,
+            placeId: input.locationStamp?.placeId,
+            latitude: input.locationStamp?.coordinate.latitude,
+            longitude: input.locationStamp?.coordinate.longitude
         )
         do {
             try await store.appendLog(log)

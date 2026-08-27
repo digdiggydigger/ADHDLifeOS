@@ -17,14 +17,16 @@ import SwiftUI
 /// for four one-off accents would bypass the token layer for no gain. Meaning never rests on the
 /// colour — the glyph differs per kind and the caption names it in words (§4).
 enum CaptureKindAccent {
+    /// Delegates to `CaptureFan`, which is the v3 source of truth for what each capture kind
+    /// LOOKS like — the fan disc, the composer dot and the triage card all read from it.
+    ///
+    /// It used to hold its own V1 table (note = .orange, photo = .purple, link = .blue …) and the
+    /// two disagreed: E spotted an inbox row wearing an orange note glyph beside a triage card
+    /// whose Note chip was the accent colour (2026-08-27). Those raw SwiftUI colours also broke
+    /// `CLAUDE.md` §4 — every colour goes through the token layer — so this both unifies the
+    /// identity and puts it back on tokens.
     static func color(for kind: CaptureKind) -> Color {
-        switch kind {
-        case .voice: return .accentColor
-        case .photo: return .purple
-        case .note: return .orange
-        case .link: return .blue
-        case .task: return .green
-        }
+        Color(CaptureFan.slot(for: kind).fillAssetName)
     }
 }
 
@@ -175,10 +177,19 @@ struct CaptureRowSummary<ExpandedLinkContent: View>: View {
     /// Already resolved by the caller (`CaptureRowPresentation.tags(for:from:)`) — the summary
     /// never fetches. Empty means no chip strip at all, not an empty strip.
     var tags: [Tag] = []
+    /// Named places, for showing WHERE a capture happened. Defaulted empty so surfaces that don't
+    /// carry them construct the summary unchanged.
+    var places: [Place] = []
     let isExpanded: Bool
     let onOpenPhoto: () -> Void
     /// The rich link card, which only the owning row can build — passed in rather than duplicated.
     @ViewBuilder var expandedLinkContent: () -> ExpandedLinkContent
+
+    private var captionLine: String {
+        let caption = CaptureRowPresentation.caption(for: capture)
+        guard let place = CapturePlaceLabel.label(for: capture, places: places) else { return caption }
+        return "\(caption) · \(place)"
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -189,7 +200,10 @@ struct CaptureRowSummary<ExpandedLinkContent: View>: View {
                     expandedLinkContent()
                 }
                 detail
-                Text(CaptureRowPresentation.caption(for: capture))
+                // The place rides the existing caption line rather than adding a row of its own:
+                // it belongs with "when" and it keeps the row dense. Absent entirely when the
+                // capture was made outside every named place (E's call).
+                Text(captionLine)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

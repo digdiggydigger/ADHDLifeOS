@@ -16,6 +16,24 @@ enum AppFeedback {
         store.read().hapticsEnabled
     }
 
+    /// Whether records should stamp WHERE they happened. Read at stamp time, so flipping the
+    /// Settings switch silences the very next capture with no relaunch. Location permission is a
+    /// separate and stricter gate — this only decides whether a fix is requested at all.
+    static func locationTaggingEnabled(
+        store: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+    ) -> Bool {
+        store.read().locationTaggingEnabled
+    }
+
+    /// The master switch over every place's arrival/departure nudges (block 4b). Read at
+    /// registration AND fire time, so flipping it silences the very next crossing with no
+    /// relaunch. The Always grant is a separate and stricter gate.
+    static func arrivalNudgesEnabled(
+        store: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+    ) -> Bool {
+        store.read().arrivalNudgesEnabled
+    }
+
     /// What a scheduled notification's `content.sound` should be — `.default` or silent. Only
     /// governs notifications THIS APP schedules; system settings are untouched.
     static func notificationSound(

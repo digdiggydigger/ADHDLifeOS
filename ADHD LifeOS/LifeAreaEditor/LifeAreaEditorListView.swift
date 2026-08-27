@@ -153,7 +153,7 @@ private struct AddLifeAreaSheet: View {
     @ObservedObject var service: LifeAreaEditorService
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
-    @State private var colour = LifeAreaEmojiPicker.curatedEmoji.first ?? "🏠"
+    @State private var colour = EmojiPalette.lifeArea.first ?? "🏠"
     @State private var showConflictAlert = false
 
     private var canSave: Bool {
@@ -173,7 +173,7 @@ private struct AddLifeAreaSheet: View {
                 }
 
                 Section {
-                    LifeAreaEmojiPicker(selection: $colour)
+                    EmojiPicker(selection: $colour)
                 } header: {
                     Text("Emoji")
                 }

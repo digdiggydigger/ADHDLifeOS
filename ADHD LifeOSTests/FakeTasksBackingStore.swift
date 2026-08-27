@@ -24,6 +24,7 @@ final class FakeTasksBackingStore: TasksBackingStore {
     struct StatusWrite {
         let id: UUID
         let status: TaskStatus
+        let locationStamp: LocationStamp?
         let now: Date
     }
 
@@ -41,8 +42,8 @@ final class FakeTasksBackingStore: TasksBackingStore {
         return tasks
     }
 
-    func setTaskStatus(id: UUID, status: TaskStatus, now: Date) async throws {
-        statusWrites.append(StatusWrite(id: id, status: status, now: now))
+    func setTaskStatus(id: UUID, status: TaskStatus, locationStamp: LocationStamp?, now: Date) async throws {
+        statusWrites.append(StatusWrite(id: id, status: status, locationStamp: locationStamp, now: now))
         if let setStatusError { throw setStatusError }
     }
 }

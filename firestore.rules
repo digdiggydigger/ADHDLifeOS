@@ -31,13 +31,21 @@ service cloud.firestore {
         allow update: if false;
       }
 
+      // Recorded fence crossings (block 4c): the same append-only shape as logs — a crossing is
+      // a historical fact and is never rewritten, but account deletion must be able to cascade
+      // it. Deliberately absent from the generic list below for the same additive-allow reason.
+      match /location_events/{eventId} {
+        allow read, create, delete: if isOwner(uid);
+        allow update: if false;
+      }
+
       // Every other app collection gets full owner CRUD. Enumerated rather than a bare
       // wildcard so an unexpected collection name is denied by default ('logs' deliberately
       // absent — see header).
       match /{collection}/{docId} {
         allow read, write: if isOwner(uid)
           && collection in ['tasks', 'life_areas', 'tags', 'captures', 'nudges', 'reminders',
-                            'focus_sessions'];
+                            'focus_sessions', 'places'];
       }
     }
   }

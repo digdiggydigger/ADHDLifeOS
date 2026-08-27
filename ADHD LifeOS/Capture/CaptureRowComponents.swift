@@ -272,7 +272,7 @@ struct CapturePromotedChip: View {
     var body: some View {
         Label("Promoted", systemImage: "checkmark.circle.fill")
             .font(.caption.weight(.bold))
-            .foregroundStyle(.green)
+            .foregroundStyle(Color("StateGo"))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .padding(.horizontal, 16)

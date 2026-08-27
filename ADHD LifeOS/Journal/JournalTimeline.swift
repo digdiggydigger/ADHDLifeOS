@@ -17,8 +17,11 @@ enum JournalTimeline {
         case closedTask(TaskItem)
         case focusSprint(CompletedFocusSession)
         case capture(Capture)
+        /// A fence crossing (block 4c) — the quietest kind here: a plain fact row, visually
+        /// lighter than everything above it, never a door.
+        case locationEvent(LocationEvent)
 
-        /// Safe as a bare UUID across all four kinds: each wraps its own document's id, and a
+        /// Safe as a bare UUID across all five kinds: each wraps its own document's id, and a
         /// promoted task mints a fresh UUID rather than reusing its capture's — no two entries in
         /// one ForEach can collide (the sibling-identity trap the nudge journey once caught).
         var id: UUID {
@@ -27,6 +30,7 @@ enum JournalTimeline {
             case .closedTask(let task): return task.id
             case .focusSprint(let sprint): return sprint.id
             case .capture(let capture): return capture.id
+            case .locationEvent(let event): return event.id
             }
         }
 
@@ -36,6 +40,7 @@ enum JournalTimeline {
             case .closedTask(let task): return task.completedAt ?? .distantPast
             case .focusSprint(let sprint): return sprint.endedAt
             case .capture(let capture): return capture.createdAt
+            case .locationEvent(let event): return event.occurredAt
             }
         }
     }
@@ -86,12 +91,23 @@ enum JournalTimeline {
         tasks: [TaskItem],
         sprints: [CompletedFocusSession] = [],
         captures: [Capture] = [],
+        locationEvents: [LocationEvent] = [],
+        places: [Place] = [],
         filter: Filter = .everything,
         lifeAreaId: UUID? = nil,
         asOf now: Date = .now,
         calendar: Calendar = .current
     ) -> [Day] {
         var entries: [Entry] = []
+        // Fence crossings (block 4c) are ambient garnish, not a category: the Everything view
+        // only, never under a life-area filter (movement has no life area). Dangling events —
+        // their place deleted since — drop HERE, before day-grouping, so they can never leave
+        // an empty day header behind.
+        if filter == .everything, lifeAreaId == nil {
+            entries += locationEvents
+                .filter { event in places.contains { $0.id == event.placeId } }
+                .map(Entry.locationEvent)
+        }
         if filter == .everything || filter == .written {
             entries += logs
                 .filter { lifeAreaId == nil || $0.lifeAreaId == lifeAreaId }
@@ -161,6 +177,15 @@ enum JournalTimeline {
     static func tags(for log: Log, from allTags: [Tag]) -> [Tag] {
         guard let tagIds = log.tagIds else { return [] }
         return tagIds.compactMap { id in allTags.first { $0.id == id } }
+    }
+
+    /// The event row's words: "Arrived at The Office 💼" / "Left Home 🏠". Resolved through the
+    /// place's CURRENT record, so a rename updates every row — the whole reason the id is stored.
+    /// `nil` for a dangling place; `days` has already dropped those, but the row guards anyway.
+    static func locationEventLine(for event: LocationEvent, places: [Place]) -> String? {
+        guard let place = places.first(where: { $0.id == event.placeId }) else { return nil }
+        let name = place.emoji.map { "\(place.name) \($0)" } ?? place.name
+        return event.kind == .arrival ? "Arrived at \(name)" : "Left \(name)"
     }
 
     /// The sprint row's fact line: "25 min sprint" when it ran its course, "12 of 25 min sprint"

@@ -32,11 +32,15 @@ final class JournalService: ObservableObject {
     @Published var composerMoodEmoji: String = JournalMood.defaultEmoji
     @Published private(set) var isCreating = false
     @Published var createErrorMessage: String?
-    /// The two side streams the timeline interleaves beside the logs (E's 2026-08-25 note).
-    /// Garnish, never load-bearing: a failed fetch leaves them empty rather than failing the
-    /// journal — the same non-blocking posture as the view's closed-task fetch.
+    /// The side streams the timeline interleaves beside the logs (E's 2026-08-25 note; the
+    /// fence crossings joined in block 4c). Garnish, never load-bearing: a failed fetch leaves
+    /// them empty rather than failing the journal — the same non-blocking posture as the view's
+    /// closed-task fetch.
     @Published private(set) var focusSessions: [CompletedFocusSession] = []
     @Published private(set) var captures: [Capture] = []
+    @Published private(set) var locationEvents: [LocationEvent] = []
+    /// For the event rows' names — a dangling id reads as no row, never a raw UUID.
+    @Published private(set) var places: [Place] = []
     /// The composer's tag selection (E's 2026-08-25 note) — sent with the create, because logs
     /// are append-only and can never be tagged after the fact.
     @Published var composerTagIds: [UUID] = []
@@ -45,12 +49,21 @@ final class JournalService: ObservableObject {
     @Published private(set) var availableTags: [Tag] = []
 
     private let client: JournalClientAdapting
+    /// Where an entry was written — a closure for the `CaptureInboxService` reason: the default
+    /// does the real work, a test hands over a fixed stamp without CoreLocation or Firestore.
+    /// Unlike captures there is no per-entry switch, so the default's enabled-gate is the global
+    /// Settings toggle (`RecordLocationStamp`).
+    private let locationStamp: @MainActor () async -> LocationStamp?
     private(set) var lifeAreas: [LifeArea] = []
     private var logs: [Log] = []
     private var hasLoadedOnce = false
 
-    init(client: JournalClientAdapting) {
+    init(
+        client: JournalClientAdapting,
+        locationStamp: (@MainActor () async -> LocationStamp?)? = nil
+    ) {
         self.client = client
+        self.locationStamp = locationStamp ?? { await RecordLocationStamp.current() }
     }
 
     var isComposerBodyValid: Bool {
@@ -73,11 +86,15 @@ final class JournalService: ObservableObject {
             async let logsResult = client.fetchLogs()
             async let sprintsResult = client.fetchFocusSessions()
             async let capturesResult = client.fetchCaptures()
+            async let eventsResult = client.fetchLocationEvents()
+            async let placesResult = client.fetchPlaces()
             async let tagsResult = client.fetchAllTags()
             lifeAreas = try await lifeAreasResult
             logs = try await logsResult
             focusSessions = (try? await sprintsResult) ?? []
             captures = (try? await capturesResult) ?? []
+            locationEvents = (try? await eventsResult) ?? []
+            places = (try? await placesResult) ?? []
             availableTags = (try? await tagsResult) ?? []
             hasLoadedOnce = true
             recomputeFeed()
@@ -107,8 +124,14 @@ final class JournalService: ObservableObject {
         isCreating = true
         defer { isCreating = false }
 
+        // Stamped here, after validation and before the write — the capture rule verbatim: a fix
+        // that never arrives must never be why an entry doesn't get written down, so this only
+        // ever ADDS fields and has no failure path back to the caller.
+        var stamped = normalized
+        stamped.locationStamp = await locationStamp()
+
         do {
-            let created = try await client.createLog(normalized)
+            let created = try await client.createLog(stamped)
             logs.append(created)
             recomputeFeed()
             composerBody = ""

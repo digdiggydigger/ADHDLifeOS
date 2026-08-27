@@ -36,10 +36,22 @@ enum TaskUpdateValidation {
         if edited.dueDate != original.dueDate {
             payload.dueDate = .some(edited.dueDate)
         }
+        if edited.atPlaceId != original.atPlaceId {
+            payload.atPlaceId = .some(edited.atPlaceId)
+        }
 
-        // Focus config diffs against the RESOLVED original, not the raw stored value: a legacy
-        // task with no stored config resolves to the standard defaults, so staging exactly those
-        // defaults is not an edit and must not manufacture a write.
+        applyFocusConfigDiff(from: edited, against: original, to: &payload)
+
+        return .success(payload)
+    }
+
+    /// Focus config diffs against the RESOLVED original, not the raw stored value: a legacy
+    /// task with no stored config resolves to the standard defaults, so staging exactly those
+    /// defaults is not an edit and must not manufacture a write. Split out when the at-place
+    /// diff pushed the main function over SwiftLint's complexity budget.
+    private static func applyFocusConfigDiff(
+        from edited: TaskEditedFields, against original: TaskDetail, to payload: inout TaskUpdatePayload
+    ) {
         if let stagedDuration = edited.focusDurationSeconds {
             let clamped = FocusSprintConfiguration.clampDuration(stagedDuration)
             if clamped != FocusSprintConfiguration.resolvedDuration(explicit: original.focusDurationSeconds) {
@@ -56,7 +68,5 @@ enum TaskUpdateValidation {
                 payload.nudgesCount = clamped
             }
         }
-
-        return .success(payload)
     }
 }

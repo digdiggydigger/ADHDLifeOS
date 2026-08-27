@@ -11,6 +11,8 @@ final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendabl
     var logsResult: Result<[Log], Error> = .success([])
     var focusSessionsResult: Result<[CompletedFocusSession], Error> = .success([])
     var capturesResult: Result<[Capture], Error> = .success([])
+    var locationEventsResult: Result<[LocationEvent], Error> = .success([])
+    var placesResult: Result<[Place], Error> = .success([])
     var allTagsResult: Result<[Tag], Error> = .success([])
     var createTagResult: Result<Tag, Error> = .success(Tag(id: UUID(), name: "made-up"))
     var createLogResult: Result<Log, Error>?
@@ -35,6 +37,14 @@ final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendabl
     func fetchFocusSessions() async throws -> [CompletedFocusSession] {
         fetchFocusSessionsCallCount += 1
         return try focusSessionsResult.get()
+    }
+
+    func fetchLocationEvents() async throws -> [LocationEvent] {
+        try locationEventsResult.get()
+    }
+
+    func fetchPlaces() async throws -> [Place] {
+        try placesResult.get()
     }
 
     func fetchCaptures() async throws -> [Capture] {

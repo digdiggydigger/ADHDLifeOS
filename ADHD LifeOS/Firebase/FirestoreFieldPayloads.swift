@@ -37,6 +37,7 @@ enum FirestoreFieldPayloads {
         setNullable(payload.notes, forKey: "notes", in: &fields)
         setNullable(payload.lifeAreaId, forKey: "life_area_id", in: &fields) { $0.uuidString }
         setNullable(payload.dueDate, forKey: "due_date", in: &fields) { Timestamp(date: $0) }
+        setNullable(payload.atPlaceId, forKey: "at_place_id", in: &fields) { $0.uuidString }
         if let focusDurationSeconds = payload.focusDurationSeconds {
             fields["focus_duration_seconds"] = focusDurationSeconds
         }
@@ -53,12 +54,29 @@ enum FirestoreFieldPayloads {
     /// is day-granular and the day that matters is the user's local one. A server UTC stamp would
     /// file an 11pm completion under tomorrow for anyone east of UTC, and would also disagree with
     /// the optimistic value `TasksService` already put on screen.
-    static func taskStatus(_ status: TaskStatus, now: Date) -> [String: Any] {
-        [
+    ///
+    /// The location trio rides the same write under the same rule (block 3 remainder): closing
+    /// with a stamp records WHERE the task was finished; anything else — reopening (Home Momentum
+    /// has undo), or closing with no stamp — ERASES the trio rather than leaving a stale place
+    /// from an earlier close claiming this one happened there.
+    static func taskStatus(_ status: TaskStatus, now: Date, locationStamp: LocationStamp?) -> [String: Any] {
+        var fields: [String: Any] = [
             "status": status.rawValue,
             "completed_at": TaskCompletionStamp.completedAt(for: status, now: now)
                 .map { Timestamp(date: $0) as Any } ?? FieldValue.delete() as Any
         ]
+        if status == .done, let stamp = locationStamp {
+            // A stamp outside every named place still erases `place_id` — value-or-delete, never
+            // absent, because absence in an UPDATE would let an older close's place survive.
+            fields["place_id"] = stamp.placeId.map { $0.uuidString as Any } ?? FieldValue.delete() as Any
+            fields["latitude"] = stamp.coordinate.latitude
+            fields["longitude"] = stamp.coordinate.longitude
+        } else {
+            fields["place_id"] = FieldValue.delete()
+            fields["latitude"] = FieldValue.delete()
+            fields["longitude"] = FieldValue.delete()
+        }
+        return fields
     }
 
     /// Triage's partial update. `status` and `processed` are two representations of one fact and are

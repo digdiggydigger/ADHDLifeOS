@@ -68,7 +68,7 @@ struct CaptureDetailView: View {
     private func loadedContent(_ capture: Capture) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                CaptureDetailContentCard(capture: capture, onOpenPhoto: { isPresentingPhoto = true })
+                contentCard(capture)
                 CaptureDetailNotesEditor(capture: capture) { text in
                     guard let updated = await service.saveNotes(capture: capture, notes: text) else {
                         return nil
@@ -144,7 +144,7 @@ struct CaptureDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Couldn't load this capture", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color("StateWarn"))
             Text(message)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -224,4 +224,15 @@ struct CaptureDetailView: View {
         .accessibilityLabel("More actions")
         .accessibilityIdentifier("captureDetailMenuButton")
     }
+
+    /// Extracted only to keep the loaded body inside its 50-line budget — passing `places`
+    /// three-lines-wide was what tipped it over.
+    private func contentCard(_ capture: Capture) -> some View {
+        CaptureDetailContentCard(
+            capture: capture,
+            places: service.places,
+            onOpenPhoto: { isPresentingPhoto = true }
+        )
+    }
+
 }

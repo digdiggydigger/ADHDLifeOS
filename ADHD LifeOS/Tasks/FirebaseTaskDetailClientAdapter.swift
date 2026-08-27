@@ -11,9 +11,16 @@ import Foundation
 /// (matching the old adapters, which returned the server's row from the PATCH response).
 struct FirebaseTaskDetailClientAdapter: TaskDetailClientAdapting {
     private let store: TaskDetailBackingStore
+    /// Where the task was closed — see `FirebaseTasksClientAdapter` for why the stamp is taken
+    /// at the adapter seam rather than in each of the four closing surfaces.
+    private let locationStamp: @MainActor () async -> LocationStamp?
 
-    init(store: TaskDetailBackingStore = FirebaseManager.shared) {
+    init(
+        store: TaskDetailBackingStore = FirebaseManager.shared,
+        locationStamp: (@MainActor () async -> LocationStamp?)? = nil
+    ) {
         self.store = store
+        self.locationStamp = locationStamp ?? { await RecordLocationStamp.current() }
     }
 
     func fetchTask(id: UUID) async throws -> TaskDetail {
@@ -34,7 +41,10 @@ struct FirebaseTaskDetailClientAdapter: TaskDetailClientAdapting {
     }
 
     func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail {
-        try await store.setTaskStatus(id: id, status: status, now: .now)
+        // Closing stamps WHERE; reopening (Home Momentum's undo) must not even request a fix —
+        // you reopen a task from wherever you are now, which is not where it was closed.
+        let stamp = status == .done ? await locationStamp() : nil
+        try await store.setTaskStatus(id: id, status: status, locationStamp: stamp, now: .now)
         return try await store.fetchTaskDetail(id: id)
     }
 

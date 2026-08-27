@@ -37,12 +37,12 @@ struct CapturePromoteSheet: View {
                     // goes back through the same service path (`pendingTaskIdsByCapture`).
                     if let warningMessage = service.warningMessage {
                         Label(warningMessage, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Color("StateWarn"))
                             .accessibilityIdentifier("capturePromoteWarningMessage")
                     }
                     if let errorMessage = service.errorMessage {
                         Label(errorMessage, systemImage: "exclamationmark.octagon.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color("StateRisk"))
                             .accessibilityIdentifier("capturePromoteErrorMessage")
                     }
                     CreateTaskButton(

@@ -85,6 +85,9 @@ struct HomeView: View {
     /// TaskListView pattern, since the rows live in a LazyVStack inside this stack.
     @State var inspectingTask: TaskSummary?
     @State var isPresentingWeekReview = false
+    /// Variation B's arrival card (block 4c) — `nil` away from every place, or when the place
+    /// has nothing open. Internal for `HomeMomentumSections`, which refreshes it.
+    @State var arrivalSurface: ArrivalSurface?
 
     init(
         authService: AuthService,
@@ -230,6 +233,8 @@ struct HomeView: View {
                 // The Active Goal may have changed (a task closed, a new one topping the list),
                 // so republish even though the history hasn't moved.
                 publishWidgetSnapshot(sprint: widgetSprint)
+                // After the tasks land, deliberately — the card is built from them.
+                await refreshArrivalSurface()
             }
             .task {
                 await refreshInboxCount()
@@ -272,6 +277,12 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     todayHeader
+                    // Variation B (block 4c): here, with something to do here — pinned above
+                    // everything because "you are AT the place" beats every other priority signal
+                    // Today has. Absent the moment either half stops being true.
+                    if let arrivalSurface {
+                        ArrivalSurfaceCard(surface: arrivalSurface, onOpenTask: openArrivalTask)
+                    }
                     // Concept C's scoreboard leads (2026-08-24, Momentum block M1): the closure
                     // ring and streak, then the one task worth doing next. The Active Goal hero's
                     // slot and start-session funnel live on in BestNextMoveCard.
@@ -331,6 +342,8 @@ extension HomeView {
         async let nudges: Void = nudgesService.load()
         async let inbox: Void = refreshInboxCount()
         _ = await (home, nudges, inbox)
+        // After the parallel block, so the card is built from the tasks that just landed.
+        await refreshArrivalSurface()
         publishWidgetSnapshot(sprint: widgetSprint)
     }
 

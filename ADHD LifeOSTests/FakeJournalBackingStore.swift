@@ -44,6 +44,17 @@ final class FakeJournalBackingStore: JournalBackingStore {
         return focusSessions
     }
 
+    var locationEvents: [LocationEvent] = []
+    var places: [Place] = []
+
+    func fetchLocationEvents() async throws -> [LocationEvent] {
+        locationEvents
+    }
+
+    func fetchPlaces() async throws -> [Place] {
+        places
+    }
+
     func fetchCaptures() async throws -> [Capture] {
         if let fetchCapturesError { throw fetchCapturesError }
         return captures

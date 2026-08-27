@@ -215,7 +215,7 @@ struct CaptureInboxView: View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Couldn't load your inbox", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color("StateWarn"))
             Text(message)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -237,7 +237,8 @@ struct CaptureInboxView: View {
         CaptureRowView(
             capture: capture,
             lifeAreas: lifeAreas,
-            tags: CaptureRowPresentation.tags(for: capture, from: allTags)
+            tags: CaptureRowPresentation.tags(for: capture, from: allTags),
+            places: service.places
         ) {
             inspectingCapture = capture
         }

@@ -89,7 +89,7 @@ struct CaptureFiledInCard: View {
             if let triageErrorMessage {
                 Label(triageErrorMessage, systemImage: "exclamationmark.octagon.fill")
                     .font(.footnote)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color("StateRisk"))
                     .accessibilityIdentifier("captureTriageErrorMessage")
             }
         }

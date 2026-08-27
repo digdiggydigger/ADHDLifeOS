@@ -29,6 +29,7 @@ struct TaskDetailView: View {
     @State private var newTagName = ""
     @State private var focusDurationSeconds = FocusSprintConfiguration.defaultDurationSeconds
     @State private var focusNudgeCount = 2
+    @State private var atPlaceId: UUID?
 
     // Staged-vs-immediate clarity state: discard-on-back gate (Part 4), the "Saved" affordance and
     // its haptic trigger (Part 3), and the delete confirmation (F-V3-Tasks-rebuild — delete moved
@@ -155,7 +156,8 @@ struct TaskDetailView: View {
     var currentEditedFields: TaskEditedFields {
         TaskEditedFields(
             title: title, notes: notes, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate,
-            focusDurationSeconds: focusDurationSeconds, nudgesCount: focusNudgeCount
+            focusDurationSeconds: focusDurationSeconds, nudgesCount: focusNudgeCount,
+            atPlaceId: atPlaceId
         )
     }
 
@@ -166,7 +168,7 @@ struct TaskDetailView: View {
         guard hasInitializedFields else {
             return TaskDetailDirtyState(original: task, edited: TaskEditedFields(
                 title: task.title, notes: task.notes ?? "", lifeAreaId: task.lifeAreaId,
-                priority: task.priority, dueDate: task.dueDate
+                priority: task.priority, dueDate: task.dueDate, atPlaceId: task.atPlaceId
             ))
         }
         return TaskDetailDirtyState(original: task, edited: currentEditedFields)
@@ -208,6 +210,7 @@ private extension TaskDetailView {
             focusNudgeCount = FocusSprintConfiguration.resolvedNudgeCount(
                 explicit: task.nudgesCount, durationSeconds: focusDurationSeconds
             )
+            atPlaceId = task.atPlaceId
             hasInitializedFields = true
         }
     }
@@ -242,7 +245,8 @@ private extension TaskDetailView {
                 area: lifeAreas.first { $0.id == lifeAreaId },
                 priority: priority,
                 dueDate: hasDueDate ? dueDate : nil,
-                effortMinutes: focusDurationSeconds / 60
+                effortMinutes: focusDurationSeconds / 60,
+                atPlace: service.places.first { $0.id == atPlaceId }
             )
             .listRowSeparator(.hidden)
 
@@ -280,7 +284,7 @@ private extension TaskDetailView {
     }
 
     var addMoreInfoSection: some View {
-        Section("Add More Info") {
+        Section {
             Toggle("Due Date", isOn: $hasDueDate)
                 .onChange(of: hasDueDate) { newValue in
                     dueDate = newValue ? (dueDate ?? Date()) : nil
@@ -311,6 +315,22 @@ private extension TaskDetailView {
             }
             .haptic(.selection, trigger: priority)
             .accessibilityIdentifier("taskDetailPriorityPicker")
+
+            // Shown only once places exist — a picker whose menu holds nothing but "None" is a
+            // dead control, and Places are created from Settings, not here.
+            if !service.places.isEmpty {
+                TaskAtPlacePicker(
+                    places: service.places,
+                    selection: $atPlaceId,
+                    accessibilityID: "taskDetailAtPlacePicker"
+                )
+            }
+        } header: {
+            Text("Add More Info")
+        } footer: {
+            if !service.places.isEmpty {
+                Text("At Place is where this task can be done — separate from where it ends up being closed.")
+            }
         }
     }
 
@@ -362,12 +382,12 @@ private extension TaskDetailView {
     var messagesSection: some View {
         if let warningMessage = service.warningMessage {
             Label(warningMessage, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color("StateWarn"))
                 .accessibilityIdentifier("taskDetailWarningMessage")
         }
         if let errorMessage = service.errorMessage {
             Label(errorMessage, systemImage: "exclamationmark.octagon.fill")
-                .foregroundStyle(.red)
+                .foregroundStyle(Color("StateRisk"))
                 .accessibilityIdentifier("taskDetailErrorMessage")
         }
     }

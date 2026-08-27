@@ -80,6 +80,14 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
     /// update on logs, so unlike tasks/captures there is no arrayUnion path: the document is born
     /// with its tags or never has them. `nil` on every entry written before the field existed.
     let tagIds: [UUID]?
+    /// WHERE this entry was written (F-Location-Tagging, block 3 remainder). Resolved ONCE at
+    /// create, the capture rule verbatim: a place's radius can be edited later, and re-resolving
+    /// would silently rewrite where things happened. `placeId` is nil outside every named place —
+    /// the coordinate is still kept. All three are nil on entries written before this shipped,
+    /// and on any written with tagging or permission off.
+    let placeId: UUID?
+    let latitude: Double?
+    let longitude: Double?
 
     init(
         id: UUID,
@@ -90,7 +98,10 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
         createdAt: Date,
         energyLevel: EnergyLevel? = nil,
         moodEmoji: String? = nil,
-        tagIds: [UUID]? = nil
+        tagIds: [UUID]? = nil,
+        placeId: UUID? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -101,16 +112,20 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
         self.energyLevel = energyLevel
         self.moodEmoji = moodEmoji
         self.tagIds = tagIds
+        self.placeId = placeId
+        self.latitude = latitude
+        self.longitude = longitude
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, type, body
+        case id, type, body, latitude, longitude
         case lifeAreaId = "life_area_id"
         case entryDate = "entry_date"
         case createdAt = "created_at"
         case energyLevel = "energy_level"
         case moodEmoji = "mood_emoji"
         case tagIds = "tag_ids"
+        case placeId = "place_id"
     }
 
     /// Hand-written for one reason: an `energy_level` this build doesn't recognise decodes to `nil`
@@ -128,7 +143,10 @@ struct Log: Codable, Identifiable, Equatable, Sendable {
             createdAt: try container.decode(Date.self, forKey: .createdAt),
             energyLevel: (try? container.decodeIfPresent(EnergyLevel.self, forKey: .energyLevel)) ?? nil,
             moodEmoji: try container.decodeIfPresent(String.self, forKey: .moodEmoji),
-            tagIds: try container.decodeIfPresent([UUID].self, forKey: .tagIds)
+            tagIds: try container.decodeIfPresent([UUID].self, forKey: .tagIds),
+            placeId: try container.decodeIfPresent(UUID.self, forKey: .placeId),
+            latitude: try container.decodeIfPresent(Double.self, forKey: .latitude),
+            longitude: try container.decodeIfPresent(Double.self, forKey: .longitude)
         )
     }
 }

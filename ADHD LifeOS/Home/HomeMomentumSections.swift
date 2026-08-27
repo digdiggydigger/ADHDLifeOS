@@ -342,6 +342,24 @@ extension HomeView {
         capturesClearedToday = momentumPreferences.countClearedCaptures ? handledToday : 0
     }
 
+    /// Variation B's resolution (block 4c): one When-In-Use fix, then the card content from the
+    /// tasks Home already holds. Nil at every failure — no permission, no fix, no named place,
+    /// nothing open here — and nil simply means no card.
+    func refreshArrivalSurface() async {
+        let place = await CurrentPlaceResolution.current()
+        arrivalSurface = ArrivalSurface.make(currentPlace: place, tasks: homeService.allTasks)
+    }
+
+    /// An arrival-card row is a door into its task, through the same pushed detail the Due-now
+    /// rows use — projected down to the `TaskSummary` that destination expects.
+    func openArrivalTask(_ task: TaskItem) {
+        inspectingTask = TaskSummary(
+            id: task.id, lifeAreaId: task.lifeAreaId, status: task.status,
+            title: task.title, priority: task.priority, dueDate: task.dueDate,
+            focusDurationSeconds: task.focusDurationSeconds, nudgesCount: task.nudgesCount
+        )
+    }
+
     /// The Due-now push's destination, with the S3 Momentum context built from the history Home
     /// already holds.
     func inspectedTaskDetail(_ task: TaskSummary) -> some View {

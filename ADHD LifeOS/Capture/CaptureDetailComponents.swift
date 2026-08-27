@@ -14,6 +14,9 @@ import SwiftUI
 /// and the AI assessment when one has landed.
 struct CaptureDetailContentCard: View {
     let capture: Capture
+    /// Named places, for the "where" beside the timestamp. Defaulted so the preview and any
+    /// surface without them construct this unchanged.
+    var places: [Place] = []
     let onOpenPhoto: () -> Void
 
     var body: some View {
@@ -67,6 +70,14 @@ struct CaptureDetailContentCard: View {
         }
     }
 
+    /// "When", then "where" when there was a named one — the same pairing the rows use, so the
+    /// detail says the same thing in the same order as the row that opened it.
+    private var timestampLine: String {
+        let stamp = CaptureDetailPresentation.timestamp(for: capture.createdAt)
+        guard let place = CapturePlaceLabel.label(for: capture, places: places) else { return stamp }
+        return "\(stamp) · \(place)"
+    }
+
     /// The leading 44pt kind slot is `CaptureRowLeadingSlot`, reused deliberately: it is what
     /// gives a voice capture its playback control on this screen, and it keeps the detail's kind
     /// identity pixel-identical to the row that opened it.
@@ -74,7 +85,7 @@ struct CaptureDetailContentCard: View {
         HStack(alignment: .top, spacing: 8) {
             CaptureRowLeadingSlot(capture: capture)
             VStack(alignment: .leading, spacing: 4) {
-                Text(CaptureDetailPresentation.timestamp(for: capture.createdAt))
+                Text(timestampLine)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .accessibilityIdentifier("captureDetailTimestamp")

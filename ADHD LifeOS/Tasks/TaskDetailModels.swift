@@ -17,6 +17,14 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
     /// Per-task focus-sprint config; `nil` on pre-existing documents (see `TaskItem`).
     var focusDurationSeconds: Int?
     var nudgesCount: Int?
+    /// Where this task can be DONE (block 4a) — the forward link arrival triggers surface.
+    /// Intent, not history: distinct from the `placeId` trio below, which records where the task
+    /// was eventually closed, and editing one never touches the other.
+    var atPlaceId: UUID?
+    /// WHERE this task was closed — same contract as `TaskItem`'s copy of the trio.
+    var placeId: UUID?
+    var latitude: Double?
+    var longitude: Double?
 
     init(
         id: UUID,
@@ -28,7 +36,11 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
         dueDate: Date?,
         createdAt: Date,
         focusDurationSeconds: Int? = nil,
-        nudgesCount: Int? = nil
+        nudgesCount: Int? = nil,
+        atPlaceId: UUID? = nil,
+        placeId: UUID? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -40,15 +52,21 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
         self.createdAt = createdAt
         self.focusDurationSeconds = focusDurationSeconds
         self.nudgesCount = nudgesCount
+        self.atPlaceId = atPlaceId
+        self.placeId = placeId
+        self.latitude = latitude
+        self.longitude = longitude
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, title, notes, status, priority
+        case id, title, notes, status, priority, latitude, longitude
         case lifeAreaId = "life_area_id"
         case dueDate = "due_date"
         case createdAt = "created_at"
         case focusDurationSeconds = "focus_duration_seconds"
         case nudgesCount = "nudges_count"
+        case atPlaceId = "at_place_id"
+        case placeId = "place_id"
     }
 }
 
@@ -71,6 +89,9 @@ struct TaskEditedFields: Equatable, Sendable {
     /// concrete resolved values.
     var focusDurationSeconds: Int?
     var nudgesCount: Int?
+    /// Staged at-place (block 4a). Diffed like `lifeAreaId` — plain optional, nil is a real value
+    /// ("no place") — so every constructor must stage the ORIGINAL's value, not leave the default.
+    var atPlaceId: UUID?
 
     init(
         title: String,
@@ -79,7 +100,8 @@ struct TaskEditedFields: Equatable, Sendable {
         priority: TaskPriority,
         dueDate: Date?,
         focusDurationSeconds: Int? = nil,
-        nudgesCount: Int? = nil
+        nudgesCount: Int? = nil,
+        atPlaceId: UUID? = nil
     ) {
         self.title = title
         self.notes = notes
@@ -88,6 +110,7 @@ struct TaskEditedFields: Equatable, Sendable {
         self.dueDate = dueDate
         self.focusDurationSeconds = focusDurationSeconds
         self.nudgesCount = nudgesCount
+        self.atPlaceId = atPlaceId
     }
 }
 
@@ -101,9 +124,11 @@ struct TaskUpdatePayload: Equatable, Sendable {
     /// overwritten with a concrete value, matching `title`/`priority`.
     var focusDurationSeconds: Int?
     var nudgesCount: Int?
+    /// Nested-optional like `lifeAreaId`: outer `nil` = untouched, `.some(nil)` = cleared.
+    var atPlaceId: UUID??
 
     var isEmpty: Bool {
         title == nil && notes == nil && lifeAreaId == nil && priority == nil && dueDate == nil
-            && focusDurationSeconds == nil && nudgesCount == nil
+            && focusDurationSeconds == nil && nudgesCount == nil && atPlaceId == nil
     }
 }

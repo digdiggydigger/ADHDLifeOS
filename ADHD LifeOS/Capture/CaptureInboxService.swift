@@ -48,6 +48,12 @@ final class CaptureInboxService: ObservableObject {
     /// media capture flows moved there to keep this type inside its length budget.
     @Published var isSubmittingCapture = false
     @Published var createCaptureErrorMessage: String?
+    /// Per-capture override for location, seeded from the global Settings toggle and reset after
+    /// each capture — it is a choice about THIS capture, not a preference (E, 2026-08-27).
+    @Published var attachLocation = false
+    /// The named places, for showing where a capture happened on its row. Loaded alongside the
+    /// captures so a row never has to resolve anything itself.
+    @Published private(set) var places: [Place] = []
     @Published private(set) var createdTask: TaskItem?
     @Published var warningMessage: String?
     @Published var errorMessage: String?
@@ -58,6 +64,8 @@ final class CaptureInboxService: ObservableObject {
     @Published var kindFilter: CaptureKind?
 
     let client: CaptureClientAdapting
+    /// Internal for the `+Create`/`+Triage` reason — the extensions reach it.
+    let placesClient: PlacesClientAdapting
     /// Used only by `logToJournal` — the triage exit that writes a journal entry instead of a task.
     /// Injected rather than folded into `CaptureClientAdapting` so the journal keeps one owner.
     let journalClient: JournalClientAdapting?
@@ -84,17 +92,30 @@ final class CaptureInboxService: ObservableObject {
     /// fetched — not even for the decoration counts.
     let availableFilters: [Filter]
 
+    /// Where a capture happened. A closure rather than a stamper + places client threaded through
+    /// the constructor: the default does the real work, and a test hands over a fixed stamp
+    /// without needing CoreLocation or Firestore.
+    /// Internal rather than private for the `+Triage`/`+Tags` reason: the create path lives in
+    /// `CaptureInboxService+Create.swift` so this type stays inside its length budgets.
+    let locationStamp: @MainActor () async -> LocationStamp?
+
     init(
         client: CaptureClientAdapting,
         journalClient: JournalClientAdapting? = nil,
         transcriber: VoiceTranscribing? = nil,
-        availableFilters: [Filter] = [.unprocessed]
+        availableFilters: [Filter] = [.unprocessed],
+        locationStamp: (@MainActor () async -> LocationStamp?)? = nil,
+        placesClient: PlacesClientAdapting? = nil
     ) {
         self.client = client
+        self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
         self.journalClient = journalClient
         self.transcriber = transcriber ?? SFSpeechVoiceTranscriber()
         self.availableFilters = availableFilters
         self.filter = availableFilters.first ?? .unprocessed
+        // Wrapped rather than referenced: `current` carries default arguments, so it is not a
+        // bare `() async -> LocationStamp?`.
+        self.locationStamp = locationStamp ?? { await CaptureLocationStamp.current() }
     }
 
     var captures: [Capture] {
@@ -136,6 +157,23 @@ final class CaptureInboxService: ObservableObject {
         }
         await refreshInactiveCount()
         await refreshWeekCounterweight()
+        await refreshPlaces()
+        resetLocationChoice()
+    }
+
+    /// Places, for the row labels. A failure here is soft — captures are the point of this screen,
+    /// and losing a place NAME must never take the list down with it.
+    func refreshPlaces() async {
+        places = (try? await placesClient.fetchPlaces()) ?? []
+    }
+
+    /// Back to the global default. The per-capture switch is a choice about ONE capture, so it
+    /// must not quietly become a preference that outlives it.
+    func resetLocationChoice() {
+        attachLocation = CaptureLocationChoice.defaultValue(
+            globalEnabled: AppFeedback.locationTaggingEnabled(),
+            authorization: CoreLocationFixProvider.shared.authorizationState
+        )
     }
 
     /// Learns the count for every OTHER offered tab so the picker isn't half-labelled on a cold
@@ -184,37 +222,6 @@ final class CaptureInboxService: ObservableObject {
             state = .loaded(captures)
         }
         await refreshWeekCounterweight()
-    }
-
-    @discardableResult
-    func createCapture() async -> Bool {
-        createCaptureErrorMessage = nil
-
-        let normalized: NormalizedCreateCaptureInput
-        switch CaptureValidation.normalizeCreateCaptureInput(
-            content: content, kind: kind, lifeAreaId: newCaptureLifeAreaId
-        ) {
-        case .success(let value):
-            normalized = value
-        case .failure(let error):
-            createCaptureErrorMessage = error.errorDescription
-            return false
-        }
-
-        isSubmittingCapture = true
-        defer { isSubmittingCapture = false }
-
-        do {
-            let created = try await client.createCapture(normalized)
-            await attachDraftTags(to: created)
-            content = ""
-            kind = CaptureValidation.defaultKind
-            newCaptureLifeAreaId = nil
-            return true
-        } catch {
-            createCaptureErrorMessage = Self.message(for: error)
-            return false
-        }
     }
 
     @discardableResult

@@ -169,13 +169,46 @@ extension SettingsView {
                 }
             ))
             .accessibilityIdentifier("settingsSoundToggle")
+
+            Toggle("Remember where things happen", isOn: Binding(
+                get: { momentumPreferences.locationTaggingEnabled },
+                set: { newValue in
+                    momentumPreferences.locationTaggingEnabled = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
+                }
+            ))
+            .accessibilityIdentifier("settingsLocationTaggingToggle")
+
+            Toggle("Arrival nudges", isOn: Binding(
+                get: { momentumPreferences.arrivalNudgesEnabled },
+                set: { newValue in
+                    momentumPreferences.arrivalNudgesEnabled = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
+                    // The fences must follow the switch NOW — a nudge arriving after E turned
+                    // this off reads as the app ignoring them.
+                    Task { await LocationTriggerService.shared.refreshRegistrations() }
+                }
+            ))
+            .accessibilityIdentifier("settingsArrivalNudgesToggle")
+
+            // The toggle above only decides whether the app ASKS; iOS holds the real gate. Without
+            // this row a switch left on while permission is denied looks like a broken feature.
+            if #available(iOS 17.0, *) {
+                LocationPermissionBanner(wantsTriggering: false)
+            }
         } header: {
             Text("Feedback")
         } footer: {
             Text(
                 "Haptics are the app's tactile confirmations — saving, promoting, starting a "
                     + "sprint. Notification sounds only covers the reminders this app schedules; "
-                    + "your iOS notification settings are untouched."
+                    + "your iOS notification settings are untouched. Remembering where things "
+                    + "happen records the spot a capture was made, and only ever while iOS has "
+                    + "granted location access — turning it off here stops it regardless. "
+                    + "Arrival nudges is the master switch over every place's nudges: one flip "
+                    + "silences them all, and the per-place choices are kept for when it comes back on."
             )
         }
     }

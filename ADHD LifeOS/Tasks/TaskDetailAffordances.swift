@@ -15,7 +15,7 @@ extension TaskDetailView {
     var savedConfirmationToast: some View {
         Label("Saved", systemImage: "checkmark.circle.fill")
             .font(.footnote.weight(.semibold))
-            .foregroundStyle(.green)
+            .foregroundStyle(Color("StateGo"))
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .background(.ultraThinMaterial, in: Capsule())

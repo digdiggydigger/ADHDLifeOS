@@ -35,7 +35,7 @@ struct FocusTimerBar: View {
                 if let banner = service.checkpointBanner {
                     Label(banner, systemImage: "bell.badge.fill")
                         .font(.caption2)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color("StateWarn"))
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("focusCheckpointBanner")
                 }
@@ -72,13 +72,13 @@ struct FocusTimerBar: View {
                             Group {
                                 if let untilNext = session.secondsUntilNextCheckpoint {
                                     Text("🔔 Next checkpoint in \(FocusTimeFormatting.digital(untilNext))")
-                                        .foregroundStyle(.orange)
+                                        .foregroundStyle(Color("StateWarn"))
                                 } else if session.nudgeCheckpoints.isEmpty {
                                     Text("No checkpoints this sprint")
                                         .foregroundStyle(.secondary)
                                 } else {
                                     Text("✓ All \(session.nudgeCheckpoints.count) checkpoints reached")
-                                        .foregroundStyle(.green)
+                                        .foregroundStyle(Color("StateGo"))
                                 }
                             }
                             .font(.caption2.monospaced())
@@ -220,7 +220,7 @@ struct FocusTimerBar: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isDestructive ? Color.red : Color.accentColor)
+        .foregroundStyle(isDestructive ? Color("StateRisk") : Color.accentColor)
         .accessibilityIdentifier(identifier)
     }
 }

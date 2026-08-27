@@ -78,7 +78,7 @@ struct LifeAreaEditorDetailView: View {
             }
 
             Section {
-                LifeAreaEmojiPicker(selection: $colour)
+                EmojiPicker(selection: $colour)
             } header: {
                 Text("Emoji")
             }

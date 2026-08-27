@@ -35,6 +35,10 @@ private struct PreviewJournalClientAdapting: JournalClientAdapting {
         ]
     }
 
+    func fetchLocationEvents() async throws -> [LocationEvent] { [] }
+
+    func fetchPlaces() async throws -> [Place] { [] }
+
     func fetchCaptures() async throws -> [Capture] {
         [
             Capture(

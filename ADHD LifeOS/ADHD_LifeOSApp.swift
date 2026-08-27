@@ -29,6 +29,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // 2026-08-20). Registering here, before any scheduling can occur, is the only supported
         // place: the delegate must be set before the app finishes launching.
         UNUserNotificationCenter.current().delegate = ForegroundNotificationPresenter.shared
+        // A region crossing can RELAUNCH this app in the background with no UI (block 4b).
+        // Touching the trigger service here rebuilds its CLLocationManager delegate before iOS
+        // delivers the event it woke us for — a monitor created lazily by the first screen
+        // would sleep through it. The handler hangs off the same wiring for the same reason:
+        // recording the crossing (and, block 4c, nudging about it) must not need a screen.
+        LocationTriggerService.shared.onEvent = { event in
+            Task { await PlaceTriggerEventHandler.shared.handle(event) }
+        }
         return true
     }
 }

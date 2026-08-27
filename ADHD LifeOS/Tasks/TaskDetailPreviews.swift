@@ -79,7 +79,7 @@ private struct AffordancePreviews: View {
                     .disabled(true)
                 Label("Saved", systemImage: "checkmark.circle.fill")
                     .font(.footnote)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color("StateGo"))
             } header: {
                 Text("Save — disabled (clean) + confirmation")
             }
