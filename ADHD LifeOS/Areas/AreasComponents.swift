@@ -11,7 +11,8 @@ import SwiftUI
 extension AreasView {
     var unfiledCard: some View {
         Button {
-            isPresentingInbox = true
+            Haptics.play(.light)
+            onOpenCaptures?()
         } label: {
             HStack(spacing: 8) {
                 Text("📥")

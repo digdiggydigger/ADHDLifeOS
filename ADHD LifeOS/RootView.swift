@@ -7,9 +7,14 @@ import SwiftUI
 import UIKit
 
 /// The tab bar's stations under the hybrid v3 IA (E's call, 2026-08-24): five tabs stay, and
-/// selection is state so screens can cross tabs (Today's "Nudges waiting" row → Nudges).
+/// selection is state so screens can cross tabs (Today's inbox card → Captures).
+///
+/// The fifth slot changed hands on 2026-08-28 (round 2 of E's captures rethink). Nudges held it
+/// and became a section on Today; **Captures** took it back, having lost it to Areas in
+/// F-V3-Areas and spent the interim as a pushed guest screen behind five separate doors. Five
+/// stays five: iOS gives five slots before a "More" tab, and a sixth would bury one of these.
 enum AppTab: Hashable {
-    case today, tasks, areas, journal, nudges
+    case today, tasks, areas, journal, captures
 }
 
 struct RootView: View {
@@ -29,6 +34,9 @@ struct RootView: View {
     @State private var isFabOpen = false
     @State private var composerKind: CaptureKind?
     @State private var selectedTab: AppTab = .today
+    /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
+    /// outlives every screen, and this is one count, not a whole inbox.
+    @State private var captureInboxCount = 0
     /// A widget door that arrived before the signed-in tabs existed (dead launch: the URL is
     /// delivered while auth is still restoring). Held here and drained the moment the tabs mount.
     @State private var pendingWidgetLink: AppDeepLink?
@@ -49,6 +57,13 @@ struct RootView: View {
     private func startFocus(_ plan: FocusSprintPlan) {
         Haptics.play(.success)
         focusService.start(plan: plan)
+    }
+
+    /// The tab badge's one writer. A failure leaves the previous number standing rather than
+    /// dropping to zero: an offline moment is not an empty inbox.
+    private func refreshCaptureInboxCount() async {
+        guard let captures = try? await captureClient.fetchUnprocessedCaptures() else { return }
+        captureInboxCount = captures.count
     }
 
     /// The widget doors' one entry point — called immediately when the tabs are on screen, and
@@ -90,7 +105,7 @@ struct RootView: View {
                         },
                         widgetSprint: focusService.widgetSprint,
                         onToggleSprintPause: { focusService.togglePause() },
-                        onOpenNudges: { selectedTab = .nudges },
+                        onOpenCaptures: { selectedTab = .captures },
                         taskCreateClient: taskCreateClient
                     )
                         // "Today" with v3's trending-up glyph — the Momentum v3 tab identity. The Captures
@@ -105,9 +120,8 @@ struct RootView: View {
                     )
                         .tabItem { Label("Tasks", systemImage: "checklist") }
                         .tag(AppTab.tasks)
-                    // The Captures slot became Areas in F-V3-Areas (hybrid IA, E's call):
-                    // the archive of handled captures stays reachable through Areas' interim
-                    // "Handled captures" door until V3-Inbox houses it properly.
+                    // Areas took the Captures slot in F-V3-Areas; the interim "Handled captures"
+                    // door it carried is gone now that Captures has a slot of its own again.
                     AreasView(
                         authService: authService,
                         homeClient: homeClient,
@@ -116,7 +130,8 @@ struct RootView: View {
                         lifeAreaDetailClient: lifeAreaDetailClient,
                         taskDetailClient: taskDetailClient,
                         onStartFocus: startFocus,
-                        taskCreateClient: taskCreateClient
+                        taskCreateClient: taskCreateClient,
+                        onOpenCaptures: { selectedTab = .captures }
                     )
                         .tabItem { Label("Areas", systemImage: "square.grid.2x2") }
                         .tag(AppTab.areas)
@@ -129,18 +144,25 @@ struct RootView: View {
                     )
                         .tabItem { Label("Journal", systemImage: "book") }
                         .tag(AppTab.journal)
-                    // Tab swap reverted (E, 2026-08-19): Nudges is back, Reminders removed — its
-                    // Poke/DynamoDB source didn't survive the Firebase cutover, so the tab only
-                    // ever showed an empty list. The Reminders feature files stay compiled but
-                    // dormant, the same arrangement Nudges had during the 2026-07-22 swap.
+                    // Captures, home at last (E's round-2 call, 2026-08-28). Nudges gave up this
+                    // slot and became a section on Today, where a due one is now dismissed inline
+                    // — more than the teaser row it had here could do. `NudgesView` survives,
+                    // pushed from that section, holding everything a section cannot: create,
+                    // edit, reschedule, history.
                     NavigationStack {
-                        NudgesView(
-                            client: nudgesClient,
-                            notificationSchedulingClient: nudgeNotificationSchedulingClient
+                        CaptureInboxView(
+                            client: captureClient,
+                            journalClient: journalClient,
+                            homeClient: homeClient
                         )
                     }
-                        .tabItem { Label("Nudges", systemImage: "bell") }
-                        .tag(AppTab.nudges)
+                        .tabItem { Label("Captures", systemImage: "tray.full") }
+                        // The count the Areas and Today tray wells used to carry, in the one place
+                        // that outlives them. `.badge(0)` renders nothing, so an empty inbox is
+                        // silent rather than a zero — and a failed refresh keeps the last known
+                        // number instead of claiming zero (never having looked ≠ nothing there).
+                        .badge(captureInboxCount)
+                        .tag(AppTab.captures)
                 }
                 // E's 2026-08-27 call: the tab bar ticks with a light impact rather than the
                 // iOS-conventional selection tick. Fires on the SELECTION, so a programmatic
@@ -222,6 +244,12 @@ struct RootView: View {
                 // a no-op with nothing stored or a sprint already live.
                 .task {
                     await focusService.restorePersistedSprint()
+                }
+                .task { await refreshCaptureInboxCount() }
+                // Any capture written, sorted, promoted or binned anywhere in the app moves this
+                // number — the same signal every other screen reloads on.
+                .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+                    Task { await refreshCaptureInboxCount() }
                 }
                 // Drain a widget door that arrived before these tabs existed. Deliberately a state
                 // change AFTER mount: presenting the composer by pre-set state on first render is

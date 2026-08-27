@@ -38,12 +38,21 @@ private struct PreviewNudgeNotificationSchedulingClient: NudgeNotificationSchedu
     func hasScheduledNotifications(nudgeId: UUID) async -> Bool { false }
 }
 
-#Preview {
-    NavigationStack {
-        NudgesView(
-            client: PreviewNudgesClientAdapting(),
-            notificationSchedulingClient: PreviewNudgeNotificationSchedulingClient()
-        )
+/// The screen takes the pushing view's service now (Today owns it), so the preview owns one too.
+private struct NudgesViewPreviewHost: View {
+    @StateObject private var service = NudgesService(
+        client: PreviewNudgesClientAdapting(),
+        notificationSchedulingClient: PreviewNudgeNotificationSchedulingClient()
+    )
+
+    var body: some View {
+        NavigationStack {
+            NudgesView(service: service)
+        }
     }
+}
+
+#Preview {
+    NudgesViewPreviewHost()
 }
 #endif

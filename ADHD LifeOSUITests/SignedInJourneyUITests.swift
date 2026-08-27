@@ -122,8 +122,13 @@ final class SignedInJourneyUITests: XCTestCase {
 
     // MARK: - Due nudge dismissal
 
-    /// Today surfaces overdue nudges as v3's "Nudges waiting" row; tapping it crosses to the
-    /// Nudges tab, where dismissal now happens (F-V3-Today replaced the inline dismiss strip).
+    /// Today surfaces an overdue nudge as its own dismissable card, and dismissal happens right
+    /// there — no tab hop, because there is no Nudges tab. Captures took that slot back on
+    /// 2026-08-28 and nudges became a section on Today, which restores the inline dismissal
+    /// F-V3-Today had traded away for a row that only crossed to the tab.
+    ///
+    /// The journey got SHORTER as a result, and that is the point: the thing being tested is
+    /// "an overdue nudge can be dealt with", and it is now one tap from launch.
     ///
     /// The nudge is backdated rather than created through the UI because dueness is computed, not
     /// stored: `NudgeDueness` asks whether the next fire time after `last_fired_at` has elapsed.
@@ -139,47 +144,53 @@ final class SignedInJourneyUITests: XCTestCase {
 
         let app = try UITestSession.launchSignedIn(as: account)
 
-        // The row is a single combined element (isButton trait), addressed by identifier.
-        let row = app.buttons["homeNudgesWaitingRow"]
+        // The tab bar arrives with the signed-in shell, but Today's CONTENT arrives later — its
+        // whole scroll view is absent until `HomeService` reaches `.loaded`. Waiting on a
+        // load-bearing Today element first separates "Home never loaded" from "the nudge did not
+        // render", which the same 45s timeout on the card alone cannot tell apart.
         XCTAssertTrue(
-            row.waitForExistence(timeout: UITestSession.timeout),
-            "An overdue nudge did not surface Today's Nudges-waiting row"
-                + (app.staticTexts[nudgeLabel].exists
-                    ? " (its label rendered, so the identifier is the problem)"
-                    : " (nothing from the nudge rendered at all)")
-        )
-        row.tap()
-
-        // `exists` matches elements on NON-VISIBLE tabs too (TabView keeps every tab's
-        // hierarchy alive), so the cross-tab hop is asserted through the tab bar's own
-        // selection — the check that actually catches a broken "Nudges waiting" row.
-        let nudgesTab = app.tabBars.buttons["Nudges"]
-        let selected = XCTNSPredicateExpectation(
-            predicate: .init(format: "isSelected == true"), object: nudgesTab
-        )
-        XCTAssertEqual(
-            XCTWaiter().wait(for: [selected], timeout: UITestSession.timeout),
-            .completed,
-            "Tapping the Nudges-waiting row did not cross to the Nudges tab"
+            app.staticTexts["homeMomentumRing"].waitForExistence(timeout: UITestSession.timeout),
+            "Today never finished loading, so the nudge had nowhere to appear"
         )
 
-        // Dismissal lives on the Nudges tab now, one control per nudge by id.
+        // The overdue nudge's own card. Asserted on the dismiss control directly: it is what the
+        // user came for, and it carries the nudge's id, so a card rendered for the WRONG nudge
+        // fails here rather than passing on a label match.
         let dismiss = app.buttons["nudgeDismissButton-\(nudgeID.uuidString)"]
         XCTAssertTrue(
             dismiss.waitForExistence(timeout: UITestSession.timeout),
-            "The Nudges tab did not show the overdue nudge's dismiss control"
+            "An overdue nudge did not surface a dismissable card on Today"
+                + (app.otherElements["homeNudgesSection"].exists
+                    ? " (the section rendered, so the card's identifier is the problem — check"
+                        + " nothing above it swallowed the children's identifiers)"
+                    : app.staticTexts[nudgeLabel].exists
+                        ? " (its label rendered without the section)"
+                        : " (nothing from the nudge rendered at all)")
         )
-        XCTAssertTrue(dismiss.isHittable, "The dismiss control exists but cannot be tapped")
+
+        // Existing is not reachable. Today is a long scroll and the nudges section sits below the
+        // fold on this device, so the card is in the hierarchy while being untappable — the same
+        // trap `UITestSession.signOutIfSignedIn` hits on the sign-out row. Hunt for it the way a
+        // user would rather than pinning where the fold happens to fall this release.
+        var scrollsRemaining = 8
+        while !dismiss.isHittable, scrollsRemaining > 0 {
+            app.swipeUp()
+            scrollsRemaining -= 1
+        }
+        XCTAssertTrue(
+            dismiss.isHittable, "The nudge's dismiss control never scrolled into reach on Today"
+        )
         dismiss.tap()
 
+        // The card goes because the nudge is no longer DUE — `dismiss` stamps `last_fired_at`,
+        // which moves the next fire time into the future. Today's section shows no error line of
+        // its own (that lives on the pushed manager), so a stuck card here means the write failed
+        // or the section did not recompute.
         let gone = XCTNSPredicateExpectation(predicate: .init(format: "exists == false"), object: dismiss)
         XCTAssertEqual(
             XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout),
             .completed,
-            "The nudge was still listed as due after being dismissed"
-                + (app.staticTexts["nudgesErrorLine"].exists
-                    ? " (service error: \(app.staticTexts["nudgesErrorLine"].label))"
-                    : " (no service error shown)")
+            "The nudge was still shown as due on Today after being dismissed"
         )
     }
 

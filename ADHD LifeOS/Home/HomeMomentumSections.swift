@@ -146,8 +146,9 @@ extension HomeView {
             guard task.id != headline, let due = task.dueDate else { return false }
             return Calendar.current.startOfDay(for: due) <= today
         }
-        let dueNudges = nudgesService.dueNudges()
-        if !dueNow.isEmpty || !dueNudges.isEmpty {
+        // Nudges left this card when they left the tab bar: a due nudge is now its own dismissable
+        // card in `nudgesSection` below, not a chevron row promising a screen that no longer exists.
+        if !dueNow.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Due now")
                     .sectionLabel()
@@ -155,13 +156,10 @@ extension HomeView {
                 VStack(spacing: 0) {
                     ForEach(dueNow, id: \.id) { task in
                         dueNowRow(task)
-                        if task.id != dueNow.last?.id || !dueNudges.isEmpty {
+                        if task.id != dueNow.last?.id {
                             Divider()
                                 .padding(.leading, 16)
                         }
-                    }
-                    if !dueNudges.isEmpty {
-                        nudgesWaitingRow(dueNudges)
                     }
                 }
                 .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -171,39 +169,6 @@ extension HomeView {
                 )
             }
         }
-    }
-
-    /// v3's "Nudges waiting" row: the count in warn, the labels as metadata, and the chevron
-    /// crossing to the Nudges tab — dismissal happens there now, not inline on Today.
-    func nudgesWaitingRow(_ due: [Nudge]) -> some View {
-        HStack(spacing: 8) {
-            MomentumChip(
-                text: "\(due.count) due",
-                background: Color("CardSurfaceSecondary"),
-                foreground: Color("StateWarn")
-            )
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Nudges waiting")
-                    .font(.callout)
-                Text(due.map(\.label).joined(separator: " · "))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .frame(minHeight: 54)
-        .contentShape(Rectangle())
-        .onTapGesture { onOpenNudges?() }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityLabel("Nudges waiting, \(due.count) due")
-        .accessibilityIdentifier("homeNudgesWaitingRow")
     }
 
     func dueNowRow(_ task: TaskSummary) -> some View {

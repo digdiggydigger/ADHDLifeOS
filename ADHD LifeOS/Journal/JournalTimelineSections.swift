@@ -243,7 +243,7 @@ private struct JournalRowDoor: ViewModifier {
 
 /// Owns the `CaptureInboxService` for one pushed capture detail, so the service survives the
 /// push's re-renders (`navigationDestination` rebuilds its content; a `@StateObject` here keeps
-/// one instance for the door's lifetime — the same reason `CapturesTabView` owns its service).
+/// one instance for the door's lifetime — the same reason the Captures tab owns its service).
 struct JournalCaptureDoor: View {
     let captureId: UUID
     let lifeAreas: [LifeArea]

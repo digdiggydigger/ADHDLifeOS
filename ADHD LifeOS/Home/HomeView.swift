@@ -36,9 +36,10 @@ struct HomeView: View {
     /// while a sprint merely counts down, so `onChange` fires on real events, not on every tick.
     private let widgetSprint: FocusWidgetSnapshot.ActiveSprint?
     private let onToggleSprintPause: () -> Void
-    /// Crosses to the Nudges tab — v3's "Nudges waiting" row navigates there instead of
-    /// dismissing inline. Wired by `RootView` through its tab selection.
-    let onOpenNudges: (() -> Void)?
+    /// Crosses to the Captures tab — the inbox peek card's header and "Clear the deck" both
+    /// select it rather than pushing Home's own private copy of the inbox. Wired by `RootView`
+    /// through its tab selection, the way the nudges row used to reach the Nudges tab.
+    let onOpenCaptures: (() -> Void)?
     /// For the area screen's "Add to <area>" CTA; `nil` hides it (F-V3-AreaDetail).
     private let taskCreateClient: TaskCreateClientAdapting?
     /// Publishes the Home Screen widget's snapshot. Home is the right owner: it is the one screen
@@ -54,8 +55,9 @@ struct HomeView: View {
     /// `HomeMomentumSections`.
     let momentumPreferencesStore: MomentumPreferencesStoring
     @State var momentumPreferences: MomentumPreferences = .default
-    /// Internal, not private: the v3 header lives in `HomeMomentumSections.swift`.
-    @State var isPresentingInbox = false
+    /// Today's nudges section pushes the full manager. Internal, not private: the section lives
+    /// in `HomeAccessoryStrips.swift`.
+    @State var isPresentingNudges = false
     @State var inboxCount = 0
     /// The newest waiting captures for Today's inbox card (E's 2026-08-25 note) — refreshed with
     /// the count, from the same fetch.
@@ -103,7 +105,7 @@ struct HomeView: View {
         activeSprint: ActiveSprintStatus? = nil,
         widgetSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
         onToggleSprintPause: @escaping () -> Void = {},
-        onOpenNudges: (() -> Void)? = nil,
+        onOpenCaptures: (() -> Void)? = nil,
         taskCreateClient: TaskCreateClientAdapting? = nil,
         widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher(),
         momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
@@ -119,7 +121,7 @@ struct HomeView: View {
         self.activeSprint = activeSprint
         self.widgetSprint = widgetSprint
         self.onToggleSprintPause = onToggleSprintPause
-        self.onOpenNudges = onOpenNudges
+        self.onOpenCaptures = onOpenCaptures
         self.taskCreateClient = taskCreateClient
         self.widgetPublisher = widgetPublisher
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
@@ -163,8 +165,10 @@ struct HomeView: View {
             .onChange(of: showSettings) { isPresented in
                 if !isPresented { momentumPreferences = momentumPreferencesStore.read() }
             }
-            .navigationDestination(isPresented: $isPresentingInbox) {
-                CaptureInboxView(client: captureClient, journalClient: journalClient, lifeAreas: lifeAreasForPicker)
+            // The full nudge surface, sharing Today's own service so a dismissal on either side
+            // is the same list (the `CaptureDetailView` precedent).
+            .navigationDestination(isPresented: $isPresentingNudges) {
+                NudgesView(service: nudgesService)
             }
             .navigationDestination(isPresented: Binding(
                 get: { inspectingHomeCapture != nil },
@@ -209,11 +213,6 @@ struct HomeView: View {
                     captureClient: captureClient,
                     taskCreateClient: taskCreateClient
                 )
-            }
-            .onChange(of: isPresentingInbox) { isPresented in
-                if !isPresented {
-                    Task { await refreshInboxCount() }
-                }
             }
             // Start, pause, resume, extend, re-plan, end — every event that changes the sprint's
             // deadline or its checkpoint PLAN. Nothing else: the projection is deadline-derived, so
@@ -291,9 +290,11 @@ struct HomeView: View {
                     // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
                     lifeAreasSection(activeAreas: activeAreas)
                     dueNowSection
-                    // The inbox as a Today card, not just a badge on the tray icon (E's
-                    // 2026-08-25 note): the count and the newest waiting thoughts, one tap
-                    // from triage.
+                    // Nudges live here now, not in a tab (E, 2026-08-28): the due ones as
+                    // dismissable cards, the manager one push away.
+                    nudgesSection
+                    // The inbox as a Today card (E's 2026-08-25 note): the count and the newest
+                    // waiting thoughts, one tap from triage — which is now the Captures tab.
                     inboxPeekCard
                     if !closedToday.isEmpty {
                         Text("Closed today")

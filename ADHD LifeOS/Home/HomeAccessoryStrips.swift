@@ -35,7 +35,8 @@ extension HomeView {
     var inboxPeekCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button {
-                isPresentingInbox = true
+                Haptics.play(.light)
+                onOpenCaptures?()
             } label: {
                 HStack(spacing: 8) {
                     Text("📥")
@@ -88,7 +89,7 @@ extension HomeView {
             if inboxCount > 0 {
                 Button("Clear the deck") {
                     Haptics.play(.light)
-                    isPresentingInbox = true
+                    onOpenCaptures?()
                 }
                 .buttonStyle(PrimaryActionButtonStyle())
                 .accessibilityIdentifier("homeInboxClearDeckButton")
@@ -147,9 +148,73 @@ extension HomeView {
         Task { await homeService.submitReorder(activeInNewOrder: arrangeAreas) }
     }
 
-    /// v3's Today header: the date eyebrow over the big title, with the inbox (badged) and
-    /// settings controls as 40pt wells — the navigation bar's replacements, so their
-    /// accessibility identifiers carry over from the old toolbar items.
+    /// Today's nudges module. Nudges lost their tab on 2026-08-28 (Captures took the slot back),
+    /// so this is where a due nudge is met AND dismissed — restoring the inline dismissal that
+    /// F-V3-Today had traded for a row that only crossed to the tab. Everything the module cannot
+    /// hold — creating, editing, rescheduling, the history — is one push away.
+    ///
+    /// Silent when there is nothing due AND nothing scheduled: an empty schedule is not news, and
+    /// Today does not need a card to say so.
+    @ViewBuilder
+    var nudgesSection: some View {
+        let due = nudgesService.dueNudges()
+        let scheduled = HomeNudgesSection.scheduledCount(all: nudgesService.nudges, due: due)
+        if !due.isEmpty || scheduled > 0 {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(HomeNudgesSection.countLine(dueCount: due.count, scheduledCount: scheduled))
+                    .sectionLabel()
+                    .foregroundStyle(due.isEmpty ? Color("LabelSecondary") : Color("StateWarn"))
+                ForEach(HomeNudgesSection.cards(due)) { nudge in
+                    NudgeDueCard(
+                        nudge: nudge,
+                        showStreaks: momentumPreferences.showStreaks,
+                        onDismiss: { await nudgesService.dismiss(nudge) }
+                    )
+                }
+                if let overflow = HomeNudgesSection.overflowLine(dueCount: due.count) {
+                    Text(overflow)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                manageNudgesRow
+            }
+            // `.contain`, not a bare identifier: applied alone, a container's identifier is
+            // inherited by every descendant, so both buttons in here answered to
+            // "homeNudgesSection" and `nudgeDismissButton-<id>` stopped existing entirely. The
+            // section still rendered perfectly — only the UI journey could see this. Same fix as
+            // `captureInboxSortAreaChips`.
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("homeNudgesSection")
+        }
+    }
+
+    private var manageNudgesRow: some View {
+        Button {
+            Haptics.play(.light)
+            isPresentingNudges = true
+        } label: {
+            HStack(spacing: 8) {
+                Text("Manage nudges")
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(Color("LabelSecondary"))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .bentoCard()
+        .accessibilityIdentifier("homeManageNudgesRow")
+    }
+
+    /// v3's Today header: the date eyebrow over the big title, with settings as a 40pt well.
+    ///
+    /// The badged inbox tray well that sat beside it is gone: Captures is a tab now, the tab
+    /// carries the badge, and a header icon that merely selected another tab was the third of
+    /// five doors into one queue (round 2's audit).
     var todayHeader: some View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
@@ -161,25 +226,6 @@ extension HomeView {
                     .tracking(-0.5)
             }
             Spacer()
-            Button {
-                isPresentingInbox = true
-            } label: {
-                headerIconWell(systemImage: "tray")
-                    .overlay(alignment: .topTrailing) {
-                        if inboxCount > 0 {
-                            Text("\(inboxCount)")
-                                .font(.caption2.bold())
-                                .monospacedDigit()
-                                .foregroundStyle(Color("OnStateWarn"))
-                                .padding(.horizontal, 4)
-                                .frame(minWidth: 18, minHeight: 18)
-                                .background(Color("StateWarn"), in: Capsule())
-                                .offset(x: 4, y: -4)
-                        }
-                    }
-            }
-            .accessibilityLabel("Inbox (\(inboxCount))")
-            .accessibilityIdentifier("inboxButton")
             Button {
                 showSettings = true
             } label: {

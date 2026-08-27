@@ -6,9 +6,17 @@
 import Combine
 import SwiftUI
 
-/// The capture triage screen — since 2026-08-23 purely the to-triage queue: the Seen and
-/// Promoted slices moved to the Captures tab (`CapturesTabView`), so the filter picker this
-/// screen carried is gone with them.
+/// **The Captures tab** — captures' home, and the whole of it.
+///
+/// It was a tab until F-V3-Areas took the slot; for the five days after that it was a pushed guest
+/// screen reachable through five different doors, with its own archive (`CapturesTabView`) behind
+/// a sixth. Round 2 of E's captures rethink put it back (2026-08-28): Nudges moved to a section on
+/// Today, this took the freed slot, and `CapturesTabView` folded back in as the third segment it
+/// always was — the two screens were the same `CaptureInboxService` with different
+/// `availableFilters`, and splitting them is exactly what forced the archive to grow its own
+/// Inbox door.
+///
+/// So: one screen, three slices, one way in.
 ///
 /// Design pass, 2026-08-20 — this was the last screen still carrying its pre-token layout. The
 /// 2026-08-19 bento pass had explicitly deferred it ("deliberately still a `List`… rebuilding this
@@ -26,7 +34,11 @@ import SwiftUI
 struct CaptureInboxView: View {
     /// Internal, not private: the v3 sections live in `CaptureInboxSections.swift`.
     @StateObject var service: CaptureInboxService
-    let lifeAreas: [LifeArea]
+    /// Fetched here rather than handed down: as a tab this screen has no parent holding them.
+    /// Internal, not private — the sections file chips with them.
+    @State var lifeAreas: [LifeArea] = []
+    /// The life areas' owner. `CapturesTabView` fetched its own the same way for the same reason.
+    private let homeClient: HomeClientAdapting
     /// Retained so the empty state can offer a capture action of its own — reaching the inbox and
     /// finding it empty is exactly when a user is most likely to want to put something in it.
     private let captureClient: CaptureClientAdapting
@@ -48,18 +60,25 @@ struct CaptureInboxView: View {
     init(
         client: CaptureClientAdapting,
         journalClient: JournalClientAdapting? = nil,
-        lifeAreas: [LifeArea]
+        homeClient: HomeClientAdapting
     ) {
         _service = StateObject(
-            wrappedValue: CaptureInboxService(client: client, journalClient: journalClient)
+            wrappedValue: CaptureInboxService(
+                client: client,
+                journalClient: journalClient,
+                // All three slices on one screen. The decision card and the health chart already
+                // gate themselves on `.unprocessed`, so the other two render as plain lists.
+                availableFilters: [.unprocessed, .seen, .promoted]
+            )
         )
-        self.lifeAreas = lifeAreas
         self.captureClient = client
+        self.homeClient = homeClient
     }
 
     var body: some View {
         VStack(spacing: 0) {
             purposeHeader
+            filterPicker
             Group {
                 switch service.state {
                 case .loading:
@@ -102,6 +121,7 @@ struct CaptureInboxView: View {
             await service.load()
             momentumPreferences = UserDefaultsMomentumPreferencesStore().read()
             allTags = await service.fetchAllTags()
+            lifeAreas = (try? await homeClient.fetchLifeAreas()) ?? []
         }
         // `refresh()`, not `load()`: the quiet path that never blanks the list mid-read. Tags
         // re-fetch too, so a tag renamed in Settings shows on the triage chips straight away.
@@ -147,6 +167,38 @@ struct CaptureInboxView: View {
         .padding(.bottom, 8)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("captureInboxPurposeHeader")
+    }
+
+    /// The three slices, carried over from `CapturesTabView` with its count-carrying labels. A
+    /// tab whose count is not yet known renders its bare title rather than "(0)" — never having
+    /// looked is not the same as nothing being there.
+    private var filterPicker: some View {
+        Picker("Show", selection: filterBinding) {
+            ForEach(service.availableFilters) { option in
+                Text(tabTitle(for: option)).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+        .accessibilityIdentifier("capturesFilterPicker")
+    }
+
+    private func tabTitle(for option: CaptureInboxService.Filter) -> String {
+        guard let count = service.counts[option] else { return option.title }
+        return "\(option.title) (\(count))"
+    }
+
+    private var filterBinding: Binding<CaptureInboxService.Filter> {
+        Binding(
+            get: { service.filter },
+            set: { newValue in
+                // Switching slices abandons a staged pick: it belonged to a capture on the slice
+                // being left, and `StagedSelection` is keyed to that capture anyway.
+                sortSelection = nil
+                Task { await service.select(filter: newValue) }
+            }
+        )
     }
 
     /// Taking a decision back also drops whatever was staged on the card.
@@ -203,32 +255,53 @@ struct CaptureInboxView: View {
     }
 
     /// An empty inbox is the goal state, not an error and not a void — so it reads as an
-    /// achievement and points at the one thing worth doing next.
+    /// achievement and points at the one thing worth doing next. Empty is unremarkable on the
+    /// other two slices, which just say where things will come from; and only the inbox offers a
+    /// capture button, because only there is "put something in it" the useful next move.
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "tray")
+            Image(systemName: emptyGlyph)
                 .font(.largeTitle)
                 .foregroundStyle(Color.accentColor)
-            Text("Inbox clear")
+            Text(CaptureInboxSummary.headline(count: 0, filter: service.filter))
                 .font(.title2.bold())
                 .tracking(-0.5)
-            Text(
-                "Nothing waiting to be triaged. Anything you capture lands here first, "
-                    + "so your head doesn't have to hold it."
-            )
+            Text(emptyMessage)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("Capture something") {
-                isPresentingQuickCapture = true
+            if service.filter == .unprocessed {
+                Button("Capture something") {
+                    isPresentingQuickCapture = true
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .accessibilityIdentifier("captureInboxEmptyCaptureButton")
             }
-            .buttonStyle(PrimaryActionButtonStyle())
-            .accessibilityIdentifier("captureInboxEmptyCaptureButton")
         }
         .padding(24)
         .frame(maxWidth: 420)
         .accessibilityIdentifier("captureInboxEmptyState")
+    }
+
+    private var emptyGlyph: String {
+        switch service.filter {
+        case .unprocessed: return "tray"
+        case .seen: return "checkmark.circle"
+        case .promoted: return "text.badge.checkmark"
+        }
+    }
+
+    private var emptyMessage: String {
+        switch service.filter {
+        case .unprocessed:
+            return "Nothing waiting to be triaged. Anything you capture lands here first, "
+                + "so your head doesn't have to hold it."
+        case .seen:
+            return "Captures you sort move here — filed under a life area, kept, not deleted."
+        case .promoted:
+            return "Captures you turn into tasks or journal entries show up here."
+        }
     }
 
     private func failedState(_ message: String) -> some View {

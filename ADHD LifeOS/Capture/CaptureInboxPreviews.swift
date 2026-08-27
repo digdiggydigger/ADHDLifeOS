@@ -48,22 +48,27 @@ private struct PreviewCaptureClientAdapting: CaptureClientAdapting {
     func removeTag(captureId: UUID, tagId: UUID) async throws {}
 }
 
+/// The tab fetches its own life areas now, so the previews have to supply an owner for them —
+/// this moved here verbatim when `CapturesTabView` folded in.
+private struct PreviewHomeClient: HomeClientAdapting {
+    func fetchAllTasks() async throws -> [TaskItem] { [] }
+    func fetchLifeAreas() async throws -> [LifeArea] {
+        [LifeArea(id: UUID(), name: "Health", colour: "#4A90D9", sortOrder: 0)]
+    }
+    func fetchOpenTasks() async throws -> [TaskSummary] { [] }
+    func reorder(order: [UUID]) async throws {}
+}
+
 #Preview("Light") {
     NavigationStack {
-        CaptureInboxView(
-            client: PreviewCaptureClientAdapting(),
-            lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "#4A90D9", sortOrder: 0)]
-        )
+        CaptureInboxView(client: PreviewCaptureClientAdapting(), homeClient: PreviewHomeClient())
     }
     .preferredColorScheme(.light)
 }
 
 #Preview("Dark") {
     NavigationStack {
-        CaptureInboxView(
-            client: PreviewCaptureClientAdapting(),
-            lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "#4A90D9", sortOrder: 0)]
-        )
+        CaptureInboxView(client: PreviewCaptureClientAdapting(), homeClient: PreviewHomeClient())
     }
     .preferredColorScheme(.dark)
 }
@@ -102,14 +107,14 @@ private struct EmptyInboxPreviewClient: CaptureClientAdapting {
 
 #Preview("Empty — Light") {
     NavigationStack {
-        CaptureInboxView(client: EmptyInboxPreviewClient(), lifeAreas: [])
+        CaptureInboxView(client: EmptyInboxPreviewClient(), homeClient: PreviewHomeClient())
     }
     .preferredColorScheme(.light)
 }
 
 #Preview("Empty — Dark") {
     NavigationStack {
-        CaptureInboxView(client: EmptyInboxPreviewClient(), lifeAreas: [])
+        CaptureInboxView(client: EmptyInboxPreviewClient(), homeClient: PreviewHomeClient())
     }
     .preferredColorScheme(.dark)
 }

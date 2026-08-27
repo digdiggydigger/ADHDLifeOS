@@ -8,7 +8,9 @@ import SwiftUI
 
 /// The Areas tab (F-V3-Areas): the life area as the unit of navigation. Two-up identity-tinted
 /// cards (an odd last card goes full width, as v3 draws Hobbies), the Unfiled card into the
-/// triage inbox, the reorder/editor door, and the week-share bar. The Captures ARCHIVE row is an
+/// reorder/editor door, and the week-share bar. The interim "Handled captures" row that used to
+/// sit here is gone: Captures is a tab again, and its Sorted segment IS the archive.
+/// OLD NOTE, kept for the trail —
 /// interim door — v3 houses it behind the Inbox in the V3-Inbox block; until then it must not
 /// become unreachable when this tab replaces Captures.
 struct AreasView: View {
@@ -23,14 +25,16 @@ struct AreasView: View {
     private let lifeAreaEditorClient: LifeAreaEditorClientAdapting
     private let taskCreateClient: TaskCreateClientAdapting?
     private let onStartFocus: ((FocusSprintPlan) -> Void)?
+    /// Crosses to the Captures tab. Internal, not private: the Unfiled card in
+    /// `AreasComponents.swift` is the one door left here, and it selects the tab rather than
+    /// pushing this tab's own copy of the inbox.
+    let onOpenCaptures: (() -> Void)?
     private let momentumPreferencesStore: MomentumPreferencesStoring
 
     /// Internal, not private: `AreasComponents.swift` reads these.
     @State var momentumPreferences: MomentumPreferences = .default
     @State private var showSettings = false
-    @State var isPresentingInbox = false
     @State private var isPresentingEditor = false
-    @State private var isPresentingArchive = false
 
     init(
         authService: AuthService,
@@ -42,8 +46,10 @@ struct AreasView: View {
         onStartFocus: ((FocusSprintPlan) -> Void)? = nil,
         taskCreateClient: TaskCreateClientAdapting? = nil,
         lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
+        onOpenCaptures: (() -> Void)? = nil,
         momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
+        self.onOpenCaptures = onOpenCaptures
         self.authService = authService
         self.homeClient = homeClient
         self.journalClient = journalClient
@@ -89,18 +95,8 @@ struct AreasView: View {
                 SettingsView(authService: authService)
                     .keyboardDismissal()
             }
-            .navigationDestination(isPresented: $isPresentingInbox) {
-                CaptureInboxView(
-                    client: captureClient, journalClient: journalClient, lifeAreas: service.lifeAreas
-                )
-            }
             .navigationDestination(isPresented: $isPresentingEditor) {
                 LifeAreaEditorListView(client: lifeAreaEditorClient)
-            }
-            .navigationDestination(isPresented: $isPresentingArchive) {
-                CapturesTabView(
-                    client: captureClient, journalClient: journalClient, homeClient: homeClient
-                )
             }
             .navigationDestination(for: LifeArea.self) { lifeArea in
                 LifeAreaDetailView(
@@ -120,9 +116,6 @@ struct AreasView: View {
                 Task { await service.load() }
             }
             .onAppear { momentumPreferences = momentumPreferencesStore.read() }
-            .onChange(of: isPresentingInbox) { presented in
-                if !presented { Task { await service.load() } }
-            }
             .onChange(of: isPresentingEditor) { presented in
                 if !presented { Task { await service.load() } }
             }
@@ -142,10 +135,6 @@ struct AreasView: View {
                     icon: "line.3.horizontal", title: "Reorder or add an area",
                     identifier: "areasReorderRow"
                 ) { isPresentingEditor = true }
-                doorRow(
-                    icon: "tray.full", title: "Handled captures",
-                    identifier: "areasArchiveRow"
-                ) { isPresentingArchive = true }
                 weekShareSection
             }
             .padding(16)
@@ -164,25 +153,6 @@ struct AreasView: View {
                     .tracking(-0.5)
             }
             Spacer()
-            Button {
-                isPresentingInbox = true
-            } label: {
-                iconWell(systemImage: "tray")
-                    .overlay(alignment: .topTrailing) {
-                        if service.inboxCount > 0 {
-                            Text("\(service.inboxCount)")
-                                .font(.caption2.bold())
-                                .monospacedDigit()
-                                .foregroundStyle(Color("OnStateWarn"))
-                                .padding(.horizontal, 4)
-                                .frame(minWidth: 18, minHeight: 18)
-                                .background(Color("StateWarn"), in: Capsule())
-                                .offset(x: 4, y: -4)
-                        }
-                    }
-            }
-            .accessibilityLabel("Inbox (\(service.inboxCount))")
-            .accessibilityIdentifier("areasInboxButton")
             Button {
                 showSettings = true
             } label: {

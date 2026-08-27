@@ -6,17 +6,17 @@
 import Combine
 import SwiftUI
 
+/// The full nudge surface: create, edit, reschedule, pause, and the completion history.
+///
+/// It lost its tab on 2026-08-28 when Captures took the slot back, and is now pushed from Today's
+/// nudges section. It takes the PUSHING screen's service rather than making its own — the
+/// `CaptureDetailView` precedent — so dismissing a nudge here and popping back to Today shows one
+/// consistent list instead of two services disagreeing about what is due.
 struct NudgesView: View {
-    @StateObject private var service: NudgesService
+    @ObservedObject var service: NudgesService
     @State private var expandedNudgeId: UUID?
     @State private var isPresentingAdd = false
     @State private var momentumPreferences: MomentumPreferences = .default
-
-    init(client: NudgesClientAdapting, notificationSchedulingClient: NudgeNotificationSchedulingAdapting) {
-        _service = StateObject(
-            wrappedValue: NudgesService(client: client, notificationSchedulingClient: notificationSchedulingClient)
-        )
-    }
 
     var body: some View {
         Group {
@@ -79,7 +79,11 @@ struct NudgesView: View {
                 }
                 ForEach(ordered) { nudge in
                     if dueIds.contains(nudge.id) {
-                        dueCard(nudge)
+                        NudgeDueCard(
+                            nudge: nudge,
+                            showStreaks: momentumPreferences.showStreaks,
+                            onDismiss: { await service.dismiss(nudge) }
+                        )
                     } else {
                         NudgeRowView(
                             nudge: nudge,
@@ -137,44 +141,6 @@ struct NudgesView: View {
             .accessibilityLabel("New nudge")
             .accessibilityIdentifier("nudgeAddButton")
         }
-    }
-
-    /// A due nudge as v3's card: the label large, the green "Done for now", and — once the new
-    /// stamps have accrued — the streak dots with their honest line.
-    private func dueCard(_ nudge: Nudge) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(nudge.label)
-                .font(.title3.bold())
-                .tracking(-0.3)
-            Text(NudgeSchedule.summary(cronString: nudge.schedule) ?? nudge.schedule)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            if momentumPreferences.showStreaks, let dates = nudge.completionDates, !dates.isEmpty {
-                HStack(spacing: 4) {
-                    ForEach(Array(NudgeStreak.weekFlags(dates: dates).enumerated()), id: \.offset) { _, hit in
-                        Circle()
-                            .fill(hit ? Color("StateGoVivid") : Color("TrackNeutralStrong"))
-                            .frame(width: 8, height: 8)
-                    }
-                }
-                .accessibilityHidden(true)
-                if let line = NudgeStreak.line(dates: dates) {
-                    Text(line)
-                        .font(.footnote)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Button("Done for now") {
-                Haptics.play(.light)
-                Task { await service.dismiss(nudge) }
-            }
-            .buttonStyle(MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo")))
-            .accessibilityLabel("Dismiss \(nudge.label)")
-            .accessibilityIdentifier("nudgeDismissButton-\(nudge.id)")
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .bentoCard()
     }
 
     /// The latest "Done for now" stamps across every nudge — history that only exists now that
