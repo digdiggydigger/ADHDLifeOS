@@ -55,6 +55,11 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// Whether the notifications THIS APP schedules carry sound. System notification settings
     /// are untouched — this only decides what the app asks for.
     var soundEnabled: Bool
+    /// Whether captures, journal entries, closed tasks and sprints record WHERE they happened.
+    /// Consulted at stamp time, so switching it off silences the very next one with no relaunch.
+    /// Location permission is a separate, stricter gate — this only decides whether the app asks
+    /// for a fix at all.
+    var locationTaggingEnabled: Bool
 
     /// Every read path passes through this, so no writer — Stepper, old build, bad migration —
     /// can hand the ring a goal it would divide by zero on.
@@ -88,7 +93,8 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         focusDailyGoalMinutes: Int = 30,
         defaultSprintMinutes: Int = 15,
         hapticsEnabled: Bool = true,
-        soundEnabled: Bool = true
+        soundEnabled: Bool = true,
+        locationTaggingEnabled: Bool = true
     ) {
         self.dailyGoal = dailyGoal
         self.showStreaks = showStreaks
@@ -99,6 +105,7 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         self.defaultSprintMinutes = defaultSprintMinutes
         self.hapticsEnabled = hapticsEnabled
         self.soundEnabled = soundEnabled
+        self.locationTaggingEnabled = locationTaggingEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -112,6 +119,8 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         defaultSprintMinutes = try container.decodeIfPresent(Int.self, forKey: .defaultSprintMinutes) ?? 15
         hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled) ?? true
         soundEnabled = try container.decodeIfPresent(Bool.self, forKey: .soundEnabled) ?? true
+        locationTaggingEnabled = try container
+            .decodeIfPresent(Bool.self, forKey: .locationTaggingEnabled) ?? true
     }
 }
 

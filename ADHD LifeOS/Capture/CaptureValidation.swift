@@ -27,6 +27,9 @@ struct NormalizedCreateCaptureInput: Equatable, Sendable {
     let mediaKey: String?
     let mediaContentType: String?
     let thumbnailKey: String?
+    /// Set by the service AFTER validation — location is not something to validate, and a missing
+    /// stamp is never a reason to refuse a capture.
+    var locationStamp: LocationStamp?
 }
 
 /// Mirrors the web app's capture validation (trim, reject empty, default kind) so mobile and

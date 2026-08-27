@@ -84,17 +84,28 @@ final class CaptureInboxService: ObservableObject {
     /// fetched — not even for the decoration counts.
     let availableFilters: [Filter]
 
+    /// Where a capture happened. A closure rather than a stamper + places client threaded through
+    /// the constructor: the default does the real work, and a test hands over a fixed stamp
+    /// without needing CoreLocation or Firestore.
+    /// Internal rather than private for the `+Triage`/`+Tags` reason: the create path lives in
+    /// `CaptureInboxService+Create.swift` so this type stays inside its length budgets.
+    let locationStamp: @MainActor () async -> LocationStamp?
+
     init(
         client: CaptureClientAdapting,
         journalClient: JournalClientAdapting? = nil,
         transcriber: VoiceTranscribing? = nil,
-        availableFilters: [Filter] = [.unprocessed]
+        availableFilters: [Filter] = [.unprocessed],
+        locationStamp: (@MainActor () async -> LocationStamp?)? = nil
     ) {
         self.client = client
         self.journalClient = journalClient
         self.transcriber = transcriber ?? SFSpeechVoiceTranscriber()
         self.availableFilters = availableFilters
         self.filter = availableFilters.first ?? .unprocessed
+        // Wrapped rather than referenced: `current` carries default arguments, so it is not a
+        // bare `() async -> LocationStamp?`.
+        self.locationStamp = locationStamp ?? { await CaptureLocationStamp.current() }
     }
 
     var captures: [Capture] {
@@ -184,37 +195,6 @@ final class CaptureInboxService: ObservableObject {
             state = .loaded(captures)
         }
         await refreshWeekCounterweight()
-    }
-
-    @discardableResult
-    func createCapture() async -> Bool {
-        createCaptureErrorMessage = nil
-
-        let normalized: NormalizedCreateCaptureInput
-        switch CaptureValidation.normalizeCreateCaptureInput(
-            content: content, kind: kind, lifeAreaId: newCaptureLifeAreaId
-        ) {
-        case .success(let value):
-            normalized = value
-        case .failure(let error):
-            createCaptureErrorMessage = error.errorDescription
-            return false
-        }
-
-        isSubmittingCapture = true
-        defer { isSubmittingCapture = false }
-
-        do {
-            let created = try await client.createCapture(normalized)
-            await attachDraftTags(to: created)
-            content = ""
-            kind = CaptureValidation.defaultKind
-            newCaptureLifeAreaId = nil
-            return true
-        } catch {
-            createCaptureErrorMessage = Self.message(for: error)
-            return false
-        }
     }
 
     @discardableResult

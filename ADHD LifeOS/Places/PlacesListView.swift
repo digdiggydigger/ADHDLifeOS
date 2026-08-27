@@ -105,6 +105,7 @@ struct PlacesListView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+            LocationPermissionBanner(wantsTriggering: true)
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -113,6 +114,10 @@ struct PlacesListView: View {
 
     private var list: some View {
         List {
+            // `wantsTriggering: true` — places exist to be arrived at, so this screen is where the
+            // Always escalation is honest to offer. It only appears when there is something left
+            // to ask for.
+            LocationPermissionBanner(wantsTriggering: true)
             // Loud ONLY when it matters. Under the cap this is a quiet footer at the bottom; over
             // it, the warning moves to the top where it cannot be scrolled past — because past 20
             // some places silently stop triggering, and that is the one thing E must not discover

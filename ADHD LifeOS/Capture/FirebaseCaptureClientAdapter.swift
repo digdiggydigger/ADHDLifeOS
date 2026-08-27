@@ -38,7 +38,10 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
             mediaContentType: input.mediaContentType,
             thumbnailURL: nil,
             linkPreview: nil,
-            aiAssessment: nil
+            aiAssessment: nil,
+            placeId: input.locationStamp?.placeId,
+            latitude: input.locationStamp?.coordinate.latitude,
+            longitude: input.locationStamp?.coordinate.longitude
         )
         try await store.saveCapture(capture)
         return capture

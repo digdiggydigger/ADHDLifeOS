@@ -16,6 +16,15 @@ enum AppFeedback {
         store.read().hapticsEnabled
     }
 
+    /// Whether records should stamp WHERE they happened. Read at stamp time, so flipping the
+    /// Settings switch silences the very next capture with no relaunch. Location permission is a
+    /// separate and stricter gate — this only decides whether a fix is requested at all.
+    static func locationTaggingEnabled(
+        store: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+    ) -> Bool {
+        store.read().locationTaggingEnabled
+    }
+
     /// What a scheduled notification's `content.sound` should be — `.default` or silent. Only
     /// governs notifications THIS APP schedules; system settings are untouched.
     static func notificationSound(
