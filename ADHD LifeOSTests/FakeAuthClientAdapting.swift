@@ -20,6 +20,10 @@ final class FakeAuthClientAdapting: AuthClientAdapting, @unchecked Sendable {
     var signInWithAppleResult: Result<AuthUser, Error> = .failure(
         AuthServiceError.appleSignInFailed("not configured")
     )
+    var signUpResult: Result<AuthUser, Error> = .failure(
+        AuthServiceError.signUpFailed("not configured")
+    )
+    var sendPasswordResetResult: Result<Void, Error> = .success(())
 
     private(set) var signInCallCount = 0
     private(set) var signInWithAppleCallCount = 0
@@ -33,6 +37,12 @@ final class FakeAuthClientAdapting: AuthClientAdapting, @unchecked Sendable {
     private(set) var signOutCallCount = 0
     private(set) var validIDTokenCallCount = 0
     private(set) var restoredUserCallCount = 0
+    private(set) var signUpCallCount = 0
+    private(set) var lastSignUpEmail: String?
+    private(set) var lastSignUpPassword: String?
+    private(set) var lastSignUpDisplayName: String?
+    private(set) var sendPasswordResetCallCount = 0
+    private(set) var lastPasswordResetEmail: String?
 
     func restoredUser() async -> AuthUser? {
         restoredUserCallCount += 1
@@ -44,6 +54,20 @@ final class FakeAuthClientAdapting: AuthClientAdapting, @unchecked Sendable {
         lastSignInEmail = email
         lastSignInPassword = password
         return try signInResult.get()
+    }
+
+    func signUp(email: String, password: String, displayName: String?) async throws -> AuthUser {
+        signUpCallCount += 1
+        lastSignUpEmail = email
+        lastSignUpPassword = password
+        lastSignUpDisplayName = displayName
+        return try signUpResult.get()
+    }
+
+    func sendPasswordReset(email: String) async throws {
+        sendPasswordResetCallCount += 1
+        lastPasswordResetEmail = email
+        try sendPasswordResetResult.get()
     }
 
     func requestOTP(email: String, redirectTo: URL?) async throws {

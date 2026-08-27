@@ -96,15 +96,25 @@ final class FirebaseManager {
     /// uses `merge: true` so a retried sign-up (e.g. after a network drop mid-call) never
     /// clobbers an existing document.
     @discardableResult
-    func signUp(email: String, password: String) async throws -> FirebaseAuthUser {
+    func signUp(email: String, password: String, displayName: String? = nil) async throws -> FirebaseAuthUser {
         let result = try await auth.createUser(withEmail: email, password: password)
-        try await firestore.collection("users").document(result.user.uid).setData(
-            [
-                "email": result.user.email ?? email,
-                "created_at": FieldValue.serverTimestamp()
-            ],
-            merge: true
-        )
+        // The name is persisted the same two ways the Apple path persists Apple's: onto the
+        // Firebase user AND into the profile document, so neither the console nor the app has to
+        // ask the other for it. Best-effort like the profile write below — the account exists and
+        // the session is live by now, so a name that failed to stick must not fail the sign-up.
+        if let displayName, !displayName.isEmpty {
+            let change = result.user.createProfileChangeRequest()
+            change.displayName = displayName
+            try? await change.commitChanges()
+        }
+        var profile: [String: Any] = [
+            "email": result.user.email ?? email,
+            "created_at": FieldValue.serverTimestamp()
+        ]
+        if let displayName, !displayName.isEmpty {
+            profile["display_name"] = displayName
+        }
+        try await firestore.collection("users").document(result.user.uid).setData(profile, merge: true)
         // Best-effort (`try?`): the account exists and the session is live at this point, so a
         // seeding failure (e.g. security rules not yet deployed) must not fail the sign-up —
         // seeding retries on every future sign-in until the `seeded_at` marker lands.
@@ -115,8 +125,8 @@ final class FirebaseManager {
     @discardableResult
     func signIn(email: String, password: String) async throws -> FirebaseAuthUser {
         let result = try await auth.signIn(withEmail: email, password: password)
-        // Same best-effort rationale as `signUp` — and this is the path that seeds accounts
-        // created in the Firebase console (there is no in-app sign-up UI).
+        // Same best-effort rationale as `signUp` — and this is still the path that seeds accounts
+        // created in the Firebase console, which is how every account before 2026-08-28 was made.
         try? await seedDefaultContentIfNeeded()
         return FirebaseAuthUser(uid: result.user.uid, email: result.user.email)
     }
@@ -158,6 +168,17 @@ final class FirebaseManager {
 
     func signOut() throws {
         try auth.signOut()
+    }
+
+    /// Asks Firebase to email a password-reset link. Firebase owns the whole flow from here —
+    /// the email, the web form, the new password — so the app never sees a reset token and has
+    /// no "set a new password" screen to build.
+    ///
+    /// With email-enumeration protection on (Firebase's default for new projects) this succeeds
+    /// for an address that has no account, which is the point: the caller must not be able to
+    /// tell the difference, and neither must the screen.
+    func sendPasswordReset(email: String) async throws {
+        try await auth.sendPasswordReset(withEmail: email)
     }
 
     /// The signed-in user's Firebase ID token, transparently refreshed when the cached one has

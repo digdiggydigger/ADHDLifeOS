@@ -32,6 +32,13 @@ enum AuthServiceError: LocalizedError, Equatable {
     /// Sign in with Apple failed — either Apple returned an unusable credential or the
     /// Firebase token exchange was rejected (bad nonce, provider disabled in the console, …).
     case appleSignInFailed(String)
+    /// Creating the account was rejected — email already in use, password below Firebase's own
+    /// floor, or the network. Distinct from `invalidCredentials` so the screen can say which of
+    /// the two things it was asked to do actually failed.
+    case signUpFailed(String)
+    /// The reset email could not be sent — or was never attempted, because what was typed is not
+    /// an address.
+    case passwordResetFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -41,7 +48,9 @@ enum AuthServiceError: LocalizedError, Equatable {
              .signOutFailed(let message),
              .magicLinkUnavailable(let message),
              .sessionExpired(let message),
-             .appleSignInFailed(let message):
+             .appleSignInFailed(let message),
+             .signUpFailed(let message),
+             .passwordResetFailed(let message):
             return message
         }
     }

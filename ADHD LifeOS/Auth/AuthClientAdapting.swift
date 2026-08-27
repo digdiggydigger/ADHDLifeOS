@@ -9,6 +9,12 @@ import Foundation
 protocol AuthClientAdapting: Sendable {
     func restoredUser() async -> AuthUser?
     func signIn(email: String, password: String) async throws -> AuthUser
+    /// Creates the account and returns the session it just opened — there is no separate
+    /// sign-in step afterwards. `displayName` is already trimmed-to-nil by the caller.
+    func signUp(email: String, password: String, displayName: String?) async throws -> AuthUser
+    /// Asks the provider to email a reset link. Deliberately returns nothing on success: the
+    /// screen's confirmation must not depend on whether the account exists.
+    func sendPasswordReset(email: String) async throws
     func requestOTP(email: String, redirectTo: URL?) async throws
     func completeSession(from url: URL) async throws -> AuthUser
     func signOut() async throws

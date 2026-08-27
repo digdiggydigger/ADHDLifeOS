@@ -15,6 +15,12 @@ import SwiftUI
         func signIn(email: String, password: String) async throws -> AuthUser { fatalError("unused in preview") }
         func requestOTP(email: String, redirectTo: URL?) async throws {}
         func completeSession(from url: URL) async throws -> AuthUser { fatalError("unused in preview") }
+        func signUp(email: String, password: String, displayName: String?) async throws -> AuthUser {
+            AuthUser(id: UUID(), email: email)
+        }
+
+        func sendPasswordReset(email: String) async throws {}
+
         func signOut() async throws {}
         func validIDToken() async throws -> String { "preview-token" }
         func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> AuthUser {

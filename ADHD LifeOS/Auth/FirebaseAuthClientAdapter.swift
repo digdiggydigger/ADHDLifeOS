@@ -15,7 +15,9 @@ import Foundation
 ///   construct one), so the UID is hashed into a *stable* UUID — same user, same UUID, every
 ///   launch. All Firestore scoping uses the raw Firebase UID, never this derived value.
 /// - **Magic links throw `magicLinkUnavailable`,** exactly as `AWSAuthClientAdapter` did
-///   (Stage C.1 stub-and-hide precedent): email/password is the only sign-in path.
+///   (Stage C.1 stub-and-hide precedent): email/password is the only sign-in path. Password
+///   RESET is a different thing and is real (2026-08-28) — Firebase owns that flow end to end,
+///   so no token ever reaches the app.
 struct FirebaseAuthClientAdapter: AuthClientAdapting {
     private let store: AuthBackingStore
 
@@ -38,6 +40,28 @@ struct FirebaseAuthClientAdapter: AuthClientAdapting {
             return Self.authUser(from: try await store.signIn(email: email, password: password))
         } catch {
             throw AuthServiceError.invalidCredentials(Self.message(for: error))
+        }
+    }
+
+    /// Creating an account IS signing in — Firebase opens the session as part of `createUser`,
+    /// and `FirebaseManager.signUp` seeds the starter content on the way through, exactly as
+    /// `signIn` does. Without that seeding a brand-new account would land on an empty Home with
+    /// no life areas at all.
+    func signUp(email: String, password: String, displayName: String?) async throws -> AuthUser {
+        do {
+            return Self.authUser(from: try await store.signUp(
+                email: email, password: password, displayName: displayName
+            ))
+        } catch {
+            throw AuthServiceError.signUpFailed(Self.message(for: error))
+        }
+    }
+
+    func sendPasswordReset(email: String) async throws {
+        do {
+            try await store.sendPasswordReset(email: email)
+        } catch {
+            throw AuthServiceError.passwordResetFailed(Self.message(for: error))
         }
     }
 

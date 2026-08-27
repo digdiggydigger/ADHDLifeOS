@@ -10,10 +10,13 @@ import Foundation
 final class FakeAuthBackingStore: AuthBackingStore {
     var currentUser: FirebaseAuthUser?
     var signInResult = FirebaseAuthUser(uid: "uid-signed-in", email: "e@example.com")
+    var signUpResult = FirebaseAuthUser(uid: "uid-new", email: "e@example.com")
     var appleSignInResult = FirebaseAuthUser(uid: "uid-apple", email: "e@privaterelay.appleid.com")
     var storedIDToken: String? = "id-token"
 
     var signInError: Error?
+    var signUpError: Error?
+    var passwordResetError: Error?
     var appleSignInError: Error?
     var signOutError: Error?
     var seedError: Error?
@@ -23,11 +26,19 @@ final class FakeAuthBackingStore: AuthBackingStore {
     private(set) var signInCredentials: [Credentials] = []
     private(set) var appleCredentials: [AppleCredentials] = []
     private(set) var signOutCallCount = 0
+    private(set) var signUpCredentials: [SignUpCredentials] = []
+    private(set) var passwordResetEmails: [String] = []
 
     /// Named records rather than tuples — SwiftLint caps tuples at two members.
     struct Credentials {
         let email: String
         let password: String
+    }
+
+    struct SignUpCredentials {
+        let email: String
+        let password: String
+        let displayName: String?
     }
 
     struct AppleCredentials {
@@ -45,6 +56,19 @@ final class FakeAuthBackingStore: AuthBackingStore {
         signInCredentials.append(Credentials(email: email, password: password))
         if let signInError { throw signInError }
         return signInResult
+    }
+
+    func signUp(email: String, password: String, displayName: String?) async throws -> FirebaseAuthUser {
+        signUpCredentials.append(
+            SignUpCredentials(email: email, password: password, displayName: displayName)
+        )
+        if let signUpError { throw signUpError }
+        return signUpResult
+    }
+
+    func sendPasswordReset(email: String) async throws {
+        passwordResetEmails.append(email)
+        if let passwordResetError { throw passwordResetError }
     }
 
     func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> FirebaseAuthUser {
