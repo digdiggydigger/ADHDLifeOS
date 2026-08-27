@@ -17,14 +17,16 @@ import SwiftUI
 /// for four one-off accents would bypass the token layer for no gain. Meaning never rests on the
 /// colour — the glyph differs per kind and the caption names it in words (§4).
 enum CaptureKindAccent {
+    /// Delegates to `CaptureFan`, which is the v3 source of truth for what each capture kind
+    /// LOOKS like — the fan disc, the composer dot and the triage card all read from it.
+    ///
+    /// It used to hold its own V1 table (note = .orange, photo = .purple, link = .blue …) and the
+    /// two disagreed: E spotted an inbox row wearing an orange note glyph beside a triage card
+    /// whose Note chip was the accent colour (2026-08-27). Those raw SwiftUI colours also broke
+    /// `CLAUDE.md` §4 — every colour goes through the token layer — so this both unifies the
+    /// identity and puts it back on tokens.
     static func color(for kind: CaptureKind) -> Color {
-        switch kind {
-        case .voice: return .accentColor
-        case .photo: return .purple
-        case .note: return .orange
-        case .link: return .blue
-        case .task: return .green
-        }
+        Color(CaptureFan.slot(for: kind).fillAssetName)
     }
 }
 

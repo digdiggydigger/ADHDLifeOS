@@ -37,6 +37,16 @@ extension CaptureInboxView {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+            // The triage card is a SEPARATE view from `CaptureRowView`, so the place has to be
+            // said here too — E caught it showing on the THEN rows and not on the top card
+            // (2026-08-27). Same rule: named places only, nothing when there wasn't one.
+            if let place = CapturePlaceLabel.label(for: capture, places: service.places) {
+                Text(place)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Captured at \(place)")
+                    .accessibilityIdentifier("captureInboxTopCardPlace")
+            }
             if !tags.isEmpty {
                 TagChipsRow(tags: tags)
             }
