@@ -34,7 +34,8 @@ struct FirebaseTaskCreateClientAdapter: TaskCreateClientAdapting {
             status: .open,
             priority: input.priority,
             dueDate: input.dueDate,
-            createdAt: Date()
+            createdAt: Date(),
+            atPlaceId: input.atPlaceId
         )
         try await store.createTask(task)
         return TaskItem(
@@ -43,7 +44,8 @@ struct FirebaseTaskCreateClientAdapter: TaskCreateClientAdapting {
             title: task.title,
             status: task.status,
             priority: task.priority,
-            dueDate: task.dueDate
+            dueDate: task.dueDate,
+            atPlaceId: task.atPlaceId
         )
     }
 

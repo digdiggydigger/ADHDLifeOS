@@ -47,6 +47,7 @@ struct TaskCreateView: View {
                     )
                     dueSection
                     areaSection
+                    placeSection
                     notesSection
                     tagsSection
                     if let warningMessage = service.warningMessage {
@@ -79,6 +80,7 @@ struct TaskCreateView: View {
             .task {
                 dueChoice = TaskDueChoice.choice(for: service.dueDate, asOf: .now)
                 await service.loadTags()
+                await service.loadPlaces()
             }
         }
     }
@@ -141,6 +143,30 @@ struct TaskCreateView: View {
                 )
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("taskCreateLifeAreaPicker")
+            }
+        }
+    }
+
+    /// The at-place field (block 4a's picker, on the composer since E's 2026-08-28 follow-up).
+    /// Hidden until the user actually has places — an empty picker is a row that asks a question
+    /// with no answers. Carded like the custom due-date picker, the composer's treatment for the
+    /// controls that aren't chips.
+    @ViewBuilder
+    private var placeSection: some View {
+        if !service.places.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                ComposerSectionHeader(title: "Where can it be done?", detail: "optional")
+                TaskAtPlacePicker(
+                    places: service.places,
+                    selection: $service.atPlaceId,
+                    accessibilityID: "taskCreateAtPlacePicker"
+                )
+                .padding(16)
+                .frame(minHeight: 44)
+                .background(
+                    Color("CardSurfaceSecondary"),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                )
             }
         }
     }

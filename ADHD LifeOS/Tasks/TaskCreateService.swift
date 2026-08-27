@@ -19,6 +19,11 @@ final class TaskCreateService: ObservableObject {
     @Published var notes = ""
     @Published var lifeAreaId: UUID?
     @Published var dueDate: Date?
+    /// Where this task can be DONE, chosen in the composer (E's 2026-08-28 follow-up to block 4a).
+    @Published var atPlaceId: UUID?
+    /// The named places behind the at-place picker. Garnish, never load-bearing — the same
+    /// non-blocking posture as task detail's copy of this stream.
+    @Published private(set) var places: [Place] = []
     @Published private(set) var tagsState: TagsLoadState = .idle
     @Published private(set) var selectedTagIds: Set<UUID> = []
     @Published var newTagName = ""
@@ -28,9 +33,11 @@ final class TaskCreateService: ObservableObject {
     @Published private(set) var createdTask: TaskItem?
 
     private let client: TaskCreateClientAdapting
+    private let placesClient: PlacesClientAdapting
 
-    init(client: TaskCreateClientAdapting) {
+    init(client: TaskCreateClientAdapting, placesClient: PlacesClientAdapting? = nil) {
         self.client = client
+        self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
     }
 
     var availableTags: [Tag] {
@@ -57,6 +64,12 @@ final class TaskCreateService: ObservableObject {
         } catch {
             tagsState = .failed(Self.message(for: error))
         }
+    }
+
+    /// Swallows its failure on purpose: a places outage must never stop someone adding a task,
+    /// and an empty list simply hides the picker.
+    func loadPlaces() async {
+        places = (try? await placesClient.fetchPlaces()) ?? []
     }
 
     func toggleTagSelection(_ tag: Tag) {
@@ -93,7 +106,8 @@ final class TaskCreateService: ObservableObject {
         warningMessage = nil
 
         guard case .success(let normalized) = TaskCreateValidation.normalizeCreateTaskInput(
-            title: title, notes: notes, lifeAreaId: lifeAreaId, dueDate: dueDate
+            title: title, notes: notes, lifeAreaId: lifeAreaId, dueDate: dueDate,
+            atPlaceId: atPlaceId
         ) else {
             errorMessage = TaskCreateValidationError.emptyTitle.errorDescription
             return false
