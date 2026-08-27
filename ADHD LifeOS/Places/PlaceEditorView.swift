@@ -22,6 +22,12 @@ struct PlaceEditorView: View {
     @State private var coordinate: PlaceCoordinate?
     @State private var radiusMetres: Double = 200
     @State private var hasSeeded = false
+    @State private var addressQuery = ""
+    /// Owned here so the suggestion list survives the map re-rendering under it.
+    @StateObject private var addressSearch = PlaceAddressSearchService(
+        completer: MapKitAddressProvider.shared,
+        resolver: MapKitAddressProvider.shared
+    )
 
     private var canSave: Bool {
         PlaceEditorValidation.canSave(name: name, coordinate: coordinate) && !isSaving
@@ -66,6 +72,11 @@ struct PlaceEditorView: View {
 
     private var locationSection: some View {
         Section {
+            // Two ways in, because they suit different intents: typing is how you enter
+            // "14 Bridge Street", tapping is how you pick "that corner of the park" (E's
+            // 2026-08-27 critique — the map alone could not do the first).
+            addressField
+            addressResults
             PlaceMapPicker(coordinate: $coordinate, radiusMetres: radiusMetres)
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         } header: {
@@ -74,8 +85,96 @@ struct PlaceEditorView: View {
             // Said out loud rather than implied: an empty map with no instruction is the single
             // most likely way this screen confuses someone.
             Text(coordinate == nil
-                 ? "Tap the map to drop a pin."
-                 : "Tap again anywhere to move the pin.")
+                 ? "Search for an address, or tap the map to drop a pin."
+                 : "Search again, or tap the map to move the pin.")
+        }
+    }
+
+    private var addressField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            TextField("Search for an address", text: $addressQuery)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .onChange(of: addressQuery) { _, newValue in
+                    addressSearch.updateQuery(newValue)
+                }
+                .accessibilityIdentifier("placeEditorAddressField")
+            if !addressQuery.isEmpty {
+                Button {
+                    addressQuery = ""
+                    addressSearch.updateQuery("")
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear the address search")
+                .accessibilityIdentifier("placeEditorAddressClearButton")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var addressResults: some View {
+        switch addressSearch.state {
+        case .idle:
+            EmptyView()
+        case .searching:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Searching…")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityIdentifier("placeEditorAddressSearching")
+        case .noMatches:
+            // "No matches" is information; a blank gap here reads as a broken screen.
+            Text("No matches for that address.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("placeEditorAddressNoMatches")
+        case .failed(let message):
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(Color("StateRisk"))
+                .accessibilityIdentifier("placeEditorAddressError")
+        case .results:
+            ForEach(addressSearch.suggestions) { suggestion in
+                Button {
+                    Task { await choose(suggestion) }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(suggestion.title)
+                            .font(.callout)
+                            .foregroundStyle(Color("LabelPrimary"))
+                        if !suggestion.subtitle.trimmingCharacters(in: .whitespaces).isEmpty {
+                            Text(suggestion.subtitle)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("placeEditorAddressSuggestion-\(suggestion.id)")
+            }
+        }
+    }
+
+    /// A chosen address drops the pin AND fills the name when E hasn't typed one — naming a place
+    /// after the address you just searched for is the overwhelmingly common case.
+    private func choose(_ suggestion: AddressSuggestion) async {
+        guard let resolved = await addressSearch.resolve(suggestion) else { return }
+        Haptics.play(.solid)
+        coordinate = resolved
+        addressQuery = ""
+        if PlaceEditorValidation.normalizedName(name) == nil {
+            name = suggestion.title
         }
     }
 
