@@ -83,6 +83,18 @@ enum UITestSession {
         guard tabBar.exists, !loginField.exists else { return }
 
         app.buttons["settingsButton"].tap()
+
+        // Wait for the sheet itself before hunting inside it. The scroll loop below used to start
+        // after a 2s grace, so a Settings sheet that was still presenting swallowed all eight
+        // swipes — which then scrolled TODAY instead, left it somewhere unexpected, and reported
+        // "did not present a sign-out control" for a screen that simply had not opened yet. It
+        // failed once the suite grew to five journeys and the simulator got slower under them.
+        // `settingsDoneButton` is in the nav bar, so it is present without any scrolling at all.
+        XCTAssertTrue(
+            app.buttons["settingsDoneButton"].waitForExistence(timeout: timeout),
+            "Settings did not open, so sign-out could never be reached"
+        )
+
         let signOut = app.buttons["signOutButton"]
         // SwiftUI materialises Form rows lazily, so a row below the fold does not EXIST to
         // XCUITest until it scrolls into view — and the Momentum blocks keep adding rows above
@@ -95,7 +107,7 @@ enum UITestSession {
             app.swipeUp()
             scrollsRemaining -= 1
         }
-        XCTAssertTrue(signOut.exists, "Settings did not present a sign-out control")
+        XCTAssertTrue(signOut.exists, "Settings opened but presented no sign-out control")
         signOut.tap()
         XCTAssertTrue(
             loginField.waitForExistence(timeout: timeout),

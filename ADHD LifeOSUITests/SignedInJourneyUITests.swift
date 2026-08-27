@@ -160,12 +160,15 @@ final class SignedInJourneyUITests: XCTestCase {
         XCTAssertTrue(
             dismiss.waitForExistence(timeout: UITestSession.timeout),
             "An overdue nudge did not surface a dismissable card on Today"
-                + (app.otherElements["homeNudgesSection"].exists
-                    ? " (the section rendered, so the card's identifier is the problem — check"
-                        + " nothing above it swallowed the children's identifiers)"
-                    : app.staticTexts[nudgeLabel].exists
-                        ? " (its label rendered without the section)"
-                        : " (nothing from the nudge rendered at all)")
+                + (app.otherElements["homeNudgesFailureCard"].exists
+                    ? " (the nudge list failed to LOAD — this is the emulator or the fetch, not"
+                        + " the section)"
+                    : app.otherElements["homeNudgesSection"].exists
+                        ? " (the section rendered, so the card's identifier is the problem —"
+                            + " check nothing above it swallowed the children's identifiers)"
+                        : app.staticTexts[nudgeLabel].exists
+                            ? " (its label rendered without the section)"
+                            : " (nothing from the nudge rendered at all)")
         )
 
         // Existing is not reachable. Today is a long scroll and the nudges section sits below the
@@ -194,7 +197,105 @@ final class SignedInJourneyUITests: XCTestCase {
         )
     }
 
+    // MARK: - Capture triage, on the tab captures finally have
+
+    /// The Captures tab end to end: a waiting capture reaches the decision card, **Sorted** stays
+    /// unavailable until a life area is picked, sorting files it and clears it, and Undo puts it
+    /// back.
+    ///
+    /// This screen was rebuilt across three blocks — the audit rewrote its rules, the IA
+    /// restructure made it a tab and folded the archive into it, and the undo work changed what
+    /// its bottom bar does — with no end-to-end coverage at all. The unit suite cannot see any of
+    /// what this asserts: that the tab exists, that the disabled button is genuinely disabled,
+    /// that a write lands, and that a bar built from `lastTriageAction` can actually be tapped.
+    @MainActor
+    func testCapturesTab_sortsACaptureIntoAnAreaAndTakesItBack() throws {
+        let account = try UITestSession.createAccount(label: "capture")
+        let content = "Book the dentist"
+        try seedWaitingCapture(id: UUID(), content: content, uid: account.uid)
+
+        let app = try UITestSession.launchSignedIn(as: account)
+        openCapturesTab(app)
+
+        XCTAssertTrue(
+            app.staticTexts[content].waitForExistence(timeout: UITestSession.timeout),
+            "A waiting capture did not reach the Captures tab's decision card"
+                + (app.staticTexts["captureInboxEmptyState"].exists
+                    ? " (the inbox rendered as empty — check the seeded document decodes,"
+                        + " especially `created_at`)"
+                    : " (the inbox did not render at all)")
+        )
+
+        // The requirement, seen from outside: Sorted is present but refuses to fire until an area
+        // is chosen. Round 1's whole design rests on this being visibly true.
+        let sorted = app.buttons["captureInboxSortedButton"]
+        XCTAssertTrue(sorted.waitForExistence(timeout: UITestSession.timeout), "No Sorted button")
+        XCTAssertFalse(
+            sorted.isEnabled, "Sorted was live with no life area chosen — the rule is not enforced"
+        )
+
+        // Any area will do; they are seeded server-side with UUIDs a test cannot know.
+        let chip = app.buttons.matching(identifier: "composerAreaChip").firstMatch
+        XCTAssertTrue(chip.waitForExistence(timeout: UITestSession.timeout), "No life-area chips")
+        scrollUntilHittable(chip, in: app)
+        chip.tap()
+
+        XCTAssertTrue(sorted.isEnabled, "Sorted stayed unavailable after an area was chosen")
+        scrollUntilHittable(sorted, in: app)
+        sorted.tap()
+
+        // Sorted files AND clears in one write, so the capture leaves the queue...
+        let gone = XCTNSPredicateExpectation(
+            predicate: .init(format: "exists == false"), object: app.staticTexts[content]
+        )
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout), .completed,
+            "The capture was still in the inbox after being sorted"
+        )
+
+        // ...and the bar offers it back. Tapping the bar's own button is the point: it was fused
+        // into the bar by `.combine` until this journey existed to press it.
+        let undo = app.buttons["Undo"]
+        XCTAssertTrue(
+            undo.waitForExistence(timeout: UITestSession.timeout),
+            "Sorting offered no undo bar"
+                + (app.otherElements["captureInboxUndoBar"].exists
+                    ? " (the bar is there but its button is not addressable)"
+                    : " (no bar at all)")
+        )
+        scrollUntilHittable(undo, in: app)
+        undo.tap()
+
+        XCTAssertTrue(
+            app.staticTexts[content].waitForExistence(timeout: UITestSession.timeout),
+            "Undo did not bring the sorted capture back to the inbox"
+        )
+    }
+
     // MARK: - Navigation
+
+    /// Existing is not reachable — these screens scroll, and an element below the fold is in the
+    /// hierarchy while being untappable. Bounded, so a genuinely absent control still fails fast.
+    @MainActor
+    private func scrollUntilHittable(
+        _ element: XCUIElement, in app: XCUIApplication, attempts: Int = 8
+    ) {
+        var remaining = attempts
+        while !element.isHittable, remaining > 0 {
+            app.swipeUp()
+            remaining -= 1
+        }
+    }
+
+    @MainActor
+    private func openCapturesTab(_ app: XCUIApplication) {
+        let tab = app.tabBars.buttons["Captures"]
+        XCTAssertTrue(
+            tab.waitForExistence(timeout: UITestSession.timeout),
+            "The Captures tab is missing from the tab bar"
+        )
+        tab.tap()
+    }
 
     @MainActor
     private func openTasksTab(_ app: XCUIApplication) {
@@ -219,6 +320,28 @@ final class SignedInJourneyUITests: XCTestCase {
                 "priority": UITestEmulator.string("p3"),
                 "due_date": UITestEmulator.timestamp(Date()),
                 "created_at": UITestEmulator.timestamp(Date())
+            ]
+        )
+    }
+
+    /// One capture sitting in the inbox, written straight to Firestore.
+    ///
+    /// Seeded rather than captured through the UI for the same reason the nudge is: the composer
+    /// is a separate flow with its own failure modes, and this journey is about what happens to a
+    /// capture AFTER it exists. Only the five fields a `Capture` cannot decode without.
+    ///
+    /// Captures are camelCase on the wire EXCEPT `created_at` — the convention split
+    /// `FirestoreFieldPayloads` documents. Spelling `createdAt` here would leave the document
+    /// undecodable and the inbox empty, which is why this is written out rather than derived.
+    private func seedWaitingCapture(id: UUID, content: String, uid: String) throws {
+        try UITestEmulator.writeDocument(
+            path: "users/\(uid)/captures/\(id.uuidString)",
+            fields: [
+                "id": UITestEmulator.string(id.uuidString),
+                "content": UITestEmulator.string(content),
+                "kind": UITestEmulator.string("note"),
+                "processed": UITestEmulator.bool(false),
+                "created_at": UITestEmulator.timestamp(Date().addingTimeInterval(-3600))
             ]
         )
     }

@@ -86,6 +86,12 @@ struct ComposerAreaChips: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
+        // One identifier shared by every area chip, the way Today's life-area strips share
+        // `homeAreaMomentumStrip`. The areas are seeded server-side with UUIDs no test can know in
+        // advance, so "any area chip" is the only addressable thing — and it is also exactly what
+        // a journey wants to say. The escape chip is named apart so it can never be picked by
+        // accident on a screen that offers both.
+        .accessibilityIdentifier(id == nil ? "composerAreaChipNone" : "composerAreaChip")
     }
 }
 

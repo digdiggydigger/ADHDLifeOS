@@ -157,6 +157,34 @@ extension HomeView {
     /// Today does not need a card to say so.
     @ViewBuilder
     var nudgesSection: some View {
+        // A failed load leaves `nudges` empty, which renders EXACTLY like a clean schedule with
+        // nothing due. Today would then quietly stop mentioning nudges at all, and the user's
+        // only clue would be a reminder that never arrived. Say so instead.
+        if case .failed(let message) = nudgesService.state {
+            nudgesFailureCard(message)
+        } else {
+            loadedNudgesSection
+        }
+    }
+
+    private func nudgesFailureCard(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label("Couldn't load your nudges", systemImage: "exclamationmark.triangle.fill")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color("StateWarn"))
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .bentoCard()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("homeNudgesFailureCard")
+    }
+
+    @ViewBuilder
+    private var loadedNudgesSection: some View {
         let due = nudgesService.dueNudges()
         let scheduled = HomeNudgesSection.scheduledCount(all: nudgesService.nudges, due: due)
         if !due.isEmpty || scheduled > 0 {

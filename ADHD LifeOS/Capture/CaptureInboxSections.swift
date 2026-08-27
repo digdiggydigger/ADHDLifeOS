@@ -350,7 +350,12 @@ extension CaptureInboxView {
                 .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0),
                 value: service.lastTriageAction
             )
-            .accessibilityElement(children: .combine)
+            // `.contain`, not `.combine`. Combining merged the Undo button INTO the bar, leaving
+            // one element carrying a label and an action fused together — the button could not be
+            // addressed, reasoned about, or reached on its own. The bar is a container holding a
+            // control, which is what `.contain` means. Same correction as the nudges section on
+            // Today, and the reason this screen now has a journey that taps that button.
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("captureInboxUndoBar")
         }
     }
