@@ -27,22 +27,36 @@ enum CaptureTriageAction: Equatable, Sendable {
 /// know where it lives". Pure and total, so the card, the button's enabled state and the undo bar
 /// all read the same rules.
 enum CaptureTriage {
-    /// The area a sort would file this capture under: the chip selection if there is one,
-    /// otherwise whatever the capture already carried.
-    static func resolvedArea(selected: UUID?, existing: UUID?) -> UUID? {
-        selected ?? existing
+    /// A pick staged on the card, and WHICH capture it was staged for. The card is a queue —
+    /// sorting one advances to the next — so an unkeyed pick would silently file the next capture
+    /// wherever the last one went.
+    ///
+    /// `lifeAreaId` is optional because "cleared" has to be expressible: E can now tap the lit chip
+    /// to unmake the choice (2026-08-28), and on an already-filed capture that has to STICK rather
+    /// than spring back to the stored area.
+    struct StagedSelection: Equatable, Sendable {
+        let captureId: UUID
+        let lifeAreaId: UUID?
     }
 
-    /// A capture filed in the composer is already sorted enough — the requirement is that it ENDS
-    /// UP filed, not that E picks again.
-    static func canSort(selected: UUID?, existing: UUID?) -> Bool {
-        resolvedArea(selected: selected, existing: existing) != nil
+    /// The one resolution: the area this capture would be sorted into right now.
+    ///
+    /// A staged record for THIS capture wins outright — including an empty one, which is what
+    /// makes deselection stick. With nothing staged the chips open on the capture's own area, so a
+    /// capture filed in the composer shows where it lives rather than presenting the choice as
+    /// unmade, and is already sorted enough to go without E re-picking.
+    ///
+    /// Everything reads this — the chips, the button's enabled state, its glow, and the write —
+    /// so they cannot disagree about what is chosen.
+    static func area(staged: StagedSelection?, for capture: Capture) -> UUID? {
+        guard let staged, staged.captureId == capture.id else { return capture.lifeAreaId }
+        return staged.lifeAreaId
     }
 
-    /// The chips open on the capture's own area, so an already-filed capture shows where it lives
-    /// rather than presenting the choice as unmade.
-    static func initialSelection(for capture: Capture) -> UUID? {
-        capture.lifeAreaId
+    /// The requirement, restated in one place: sorting files a capture, so it needs somewhere to
+    /// file it.
+    static func canSort(area: UUID?) -> Bool {
+        area != nil
     }
 
     /// How much the Sorted button should shout. E's 2026-08-28 screenshot note: it must be
@@ -57,8 +71,8 @@ enum CaptureTriage {
         case ready
     }
 
-    static func emphasis(selected: UUID?, existing: UUID?) -> SortedEmphasis {
-        canSort(selected: selected, existing: existing) ? .ready : .waiting
+    static func emphasis(area: UUID?) -> SortedEmphasis {
+        canSort(area: area) ? .ready : .waiting
     }
 
     /// What the undo bar says happened. A deleted area degrades to the bare verb rather than

@@ -74,14 +74,18 @@ extension CaptureInboxView {
             ComposerAreaChips(
                 lifeAreas: lifeAreas.filter { !$0.archived },
                 // No escape chip here: an area is the requirement, and with nothing chosen the
-                // escape rendered in the accent — "no decision" looking like a made one.
+                // escape rendered in the accent — "no decision" looking like a made one. Tapping
+                // the lit chip is the way back to an unmade choice instead.
                 noSelectionLabel: nil,
+                allowsDeselection: true,
                 selection: Binding(
                     get: { selectedArea(for: capture) },
+                    // Always records, even a clear — a nil staged for THIS capture is what makes
+                    // deselecting an already-filed one stick instead of springing back.
                     set: { newValue in
-                        sortSelection = newValue.map {
-                            SortSelection(captureId: capture.id, lifeAreaId: $0)
-                        }
+                        sortSelection = CaptureTriage.StagedSelection(
+                            captureId: capture.id, lifeAreaId: newValue
+                        )
                     }
                 )
             )
@@ -92,13 +96,8 @@ extension CaptureInboxView {
         .bentoCard()
     }
 
-    /// The chips read the pick made for THIS capture, falling back to whatever it was already
-    /// filed under — never a selection made for the capture before it in the queue.
     func selectedArea(for capture: Capture) -> UUID? {
-        if let sortSelection, sortSelection.captureId == capture.id {
-            return sortSelection.lifeAreaId
-        }
-        return CaptureTriage.initialSelection(for: capture)
+        CaptureTriage.area(staged: sortSelection, for: capture)
     }
 
     /// v3's inbox health (chartsOn): captured-per-day bars with the honest cleared line and the
@@ -172,11 +171,7 @@ extension CaptureInboxView {
     /// one the tap would refuse. `SortedButtonStyle` carries both faces.
     @ViewBuilder
     private func sortedButton(_ capture: Capture, area: UUID?) -> some View {
-        let emphasis = CaptureTriage.emphasis(
-            selected: sortSelection?.captureId == capture.id ? sortSelection?.lifeAreaId : nil,
-            existing: capture.lifeAreaId
-        )
-        let isReady = emphasis == .ready
+        let isReady = CaptureTriage.emphasis(area: area) == .ready
         Button {
             guard let area else { return }
             Haptics.play(.success)
@@ -290,8 +285,7 @@ extension CaptureInboxView {
                 .minimumScaleFactor(0.8)
                 Spacer(minLength: 8)
                 Button("Undo") {
-                    Haptics.play(.light)
-                    Task { await service.undoLastTriageAction() }
+                    Task { await undoLastTriage() }
                 }
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.tint)
@@ -319,8 +313,7 @@ extension CaptureInboxView {
     var undoHeaderButton: some View {
         if service.lastTriageAction != nil {
             Button {
-                Haptics.play(.light)
-                Task { await service.undoLastTriageAction() }
+                Task { await undoLastTriage() }
             } label: {
                 Image(systemName: "arrow.uturn.backward.circle")
                     .font(.title3)

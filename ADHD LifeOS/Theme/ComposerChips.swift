@@ -39,6 +39,11 @@ struct ComposerAreaChips: View {
     /// "no decision" looked like a decision that had been made (E's screenshot, 2026-08-28).
     /// Skip is that screen's "not now".
     let noSelectionLabel: String?
+    /// Tapping the chip that is already on clears it. Off by default — the composers offer an
+    /// explicit "Decide later" chip instead. The capture triage card has no such escape (an area
+    /// is its requirement), so there the lit chip itself has to be the way back to an unmade
+    /// choice (E, 2026-08-28).
+    var allowsDeselection: Bool = false
     @Binding var selection: UUID?
 
     var body: some View {
@@ -69,7 +74,7 @@ struct ComposerAreaChips: View {
         }
         return Button {
             Haptics.play(.selection)
-            selection = id
+            selection = (selected && allowsDeselection) ? nil : id
         } label: {
             Text(label)
                 .font(.caption.weight(.semibold))

@@ -41,15 +41,9 @@ struct CaptureInboxView: View {
     /// The one tag fetch every chip strip resolves against (`CaptureRowPresentation.tags(for:from:)`)
     /// — zero per-row fetches. Internal like `inspectingCapture`: the sections file reads it.
     @State var allTags: [Tag] = []
-    /// The area chip picked on the top card, and WHICH capture it was picked for. Keyed, because
-    /// the card is a queue: sorting one advances to the next, and an inherited selection would
-    /// silently file the next capture wherever the last one went.
-    @State var sortSelection: SortSelection?
-
-    struct SortSelection: Equatable {
-        let captureId: UUID
-        let lifeAreaId: UUID
-    }
+    /// The area chip staged on the top card — see `CaptureTriage.StagedSelection` for why it is
+    /// keyed to a capture and why it can be empty.
+    @State var sortSelection: CaptureTriage.StagedSelection?
 
     init(
         client: CaptureClientAdapting,
@@ -153,6 +147,17 @@ struct CaptureInboxView: View {
         .padding(.bottom, 8)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("captureInboxPurposeHeader")
+    }
+
+    /// Taking a decision back also drops whatever was staged on the card.
+    ///
+    /// E's 2026-08-28 call: after an undo the area has to be chosen again. Leaving the pick would
+    /// let the next tap of Sorted file a capture into an area chosen for a DIFFERENT one — and on
+    /// the restored capture it would present a decision E had just said they wanted back.
+    func undoLastTriage() async {
+        Haptics.play(.light)
+        await service.undoLastTriageAction()
+        sortSelection = nil
     }
 
     // MARK: - States

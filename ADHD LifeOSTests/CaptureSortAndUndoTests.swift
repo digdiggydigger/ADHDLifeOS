@@ -44,29 +44,45 @@ final class CaptureSortAndUndoTests: XCTestCase {
 
     // MARK: - The rule: a life area is required
 
-    func testCanSort_needsAnArea_fromTheChipsOrTheCaptureItself() {
+    func testCanSort_needsAnArea() {
         XCTAssertFalse(
-            CaptureTriage.canSort(selected: nil, existing: nil),
+            CaptureTriage.canSort(area: nil),
             "an unfiled capture with no chip picked cannot be sorted — that is the whole point"
         )
-        XCTAssertTrue(CaptureTriage.canSort(selected: work.id, existing: nil))
-        XCTAssertTrue(
-            CaptureTriage.canSort(selected: nil, existing: work.id),
-            "a capture filed in the composer is already sorted enough — don't make E re-pick"
-        )
+        XCTAssertTrue(CaptureTriage.canSort(area: work.id))
     }
 
-    func testResolvedArea_theChipWinsOverWhateverTheCaptureCarried() {
-        XCTAssertEqual(CaptureTriage.resolvedArea(selected: health.id, existing: work.id), health.id)
-        XCTAssertEqual(CaptureTriage.resolvedArea(selected: nil, existing: work.id), work.id)
-        XCTAssertNil(CaptureTriage.resolvedArea(selected: nil, existing: nil))
+    /// With no pick staged the chips open on the capture's own area, so a capture filed in the
+    /// composer shows where it lives rather than presenting the choice as unmade — and is already
+    /// sorted enough to go.
+    func testArea_withNothingStaged_isTheCapturesOwnArea() {
+        XCTAssertEqual(CaptureTriage.area(staged: nil, for: capture("x", lifeAreaId: work.id)), work.id)
+        XCTAssertNil(CaptureTriage.area(staged: nil, for: capture("x")))
     }
 
-    /// The chips open on the capture's own area, so an already-filed capture shows where it lives
-    /// rather than presenting the choice as unmade.
-    func testInitialSelection_isTheCapturesOwnArea() {
-        XCTAssertEqual(CaptureTriage.initialSelection(for: capture("x", lifeAreaId: work.id)), work.id)
-        XCTAssertNil(CaptureTriage.initialSelection(for: capture("x")))
+    func testArea_aStagedPickWinsOverWhateverTheCaptureCarried() {
+        let filed = capture("x", lifeAreaId: work.id)
+        let staged = CaptureTriage.StagedSelection(captureId: filed.id, lifeAreaId: health.id)
+
+        XCTAssertEqual(CaptureTriage.area(staged: staged, for: filed), health.id)
+    }
+
+    /// Deselection (E, 2026-08-28: the picker must be unselectable too). A staged record for THIS
+    /// capture wins even when it is EMPTY — otherwise tapping the lit chip on an already-filed
+    /// capture would spring straight back to its stored area and the choice could never be unmade.
+    func testArea_aStagedCLEARWinsToo_soDeselectingAFiledCaptureSticks() {
+        let filed = capture("x", lifeAreaId: work.id)
+        let cleared = CaptureTriage.StagedSelection(captureId: filed.id, lifeAreaId: nil)
+
+        XCTAssertNil(CaptureTriage.area(staged: cleared, for: filed))
+    }
+
+    /// The card is a queue: a pick staged on the previous capture must never leak onto this one.
+    func testArea_aStagedPickForADifferentCaptureIsIgnored() {
+        let other = CaptureTriage.StagedSelection(captureId: UUID(), lifeAreaId: health.id)
+
+        XCTAssertEqual(CaptureTriage.area(staged: other, for: capture("x", lifeAreaId: work.id)), work.id)
+        XCTAssertNil(CaptureTriage.area(staged: other, for: capture("x")))
     }
 
     // MARK: - Sorting writes one update
@@ -196,22 +212,31 @@ final class CaptureSortAndUndoTests: XCTestCase {
     /// met. Pinned as a rule rather than left to the view, so the emphasis and the enabled state
     /// can never drift apart and promise something the tap won't deliver.
     func testSortedEmphasis_isReadyExactlyWhenItCanSort() {
-        XCTAssertEqual(CaptureTriage.emphasis(selected: nil, existing: nil), .waiting)
-        XCTAssertEqual(CaptureTriage.emphasis(selected: work.id, existing: nil), .ready)
-        XCTAssertEqual(CaptureTriage.emphasis(selected: nil, existing: work.id), .ready)
+        XCTAssertEqual(CaptureTriage.emphasis(area: nil), .waiting)
+        XCTAssertEqual(CaptureTriage.emphasis(area: work.id), .ready)
     }
 
     func testSortedEmphasis_neverDisagreesWithCanSort() {
-        let cases: [(UUID?, UUID?)] = [
-            (nil, nil), (work.id, nil), (nil, work.id), (work.id, health.id)
-        ]
-        for (selected, existing) in cases {
+        for area: UUID? in [nil, work.id, health.id] {
             XCTAssertEqual(
-                CaptureTriage.emphasis(selected: selected, existing: existing) == .ready,
-                CaptureTriage.canSort(selected: selected, existing: existing),
+                CaptureTriage.emphasis(area: area) == .ready,
+                CaptureTriage.canSort(area: area),
                 "a glowing button that cannot be tapped is a lie"
             )
         }
+    }
+
+    /// The bug deselection would have introduced if the button read the staged pick and the stored
+    /// area as two separate things: the chips would show nothing chosen while Sorted stayed lit.
+    /// Both now come from one resolution.
+    func testSortedEmphasis_deselectingAFiledCaptureDimsTheButton() {
+        let filed = capture("x", lifeAreaId: work.id)
+        let cleared = CaptureTriage.StagedSelection(captureId: filed.id, lifeAreaId: nil)
+
+        XCTAssertEqual(
+            CaptureTriage.emphasis(area: CaptureTriage.area(staged: cleared, for: filed)),
+            .waiting
+        )
     }
 
     // MARK: - What the undo bar says
