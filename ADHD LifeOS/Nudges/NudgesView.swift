@@ -166,6 +166,7 @@ struct NudgesView: View {
                 }
             }
             Button("Done for now") {
+                Haptics.play(.light)
                 Task { await service.dismiss(nudge) }
             }
             .buttonStyle(MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo")))
@@ -253,7 +254,10 @@ struct NudgesView: View {
                     Button("Add Nudge") {
                         Task {
                             if await service.createNudge() {
+                                Haptics.play(.solid)
                                 isPresentingAdd = false
+                            } else {
+                                Haptics.play(.error)
                             }
                         }
                     }
@@ -297,12 +301,14 @@ private struct NudgeScheduleEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             DatePicker("Time", selection: timeBinding, displayedComponents: .hourAndMinute)
+                .haptic(.selection, trigger: schedule.minute)
                 .accessibilityIdentifier("\(idPrefix)TimePicker")
 
             HStack {
                 ForEach(0..<7, id: \.self) { day in
                     let isSelected = schedule.weekdays.contains(day)
                     Button(Self.weekdaySymbols[day]) {
+                        Haptics.play(.selection)
                         if isSelected {
                             schedule.weekdays.remove(day)
                         } else {
@@ -377,6 +383,7 @@ private struct NudgeRowView: View {
             HStack {
                 Button("Cancel") { onToggleExpanded() }
                 Button("Save") {
+                    Haptics.play(.solid)
                     Task { await onSave(label, schedule) }
                 }
                 .accessibilityIdentifier("nudgeEditSaveButton-\(nudge.id)")

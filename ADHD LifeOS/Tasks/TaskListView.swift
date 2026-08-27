@@ -222,6 +222,7 @@ struct TaskListView: View {
     private func filterChip(_ option: TaskStatusFilterOption) -> some View {
         let selected = tasksService.statusFilter == option
         return Button {
+            Haptics.play(.selection)
             tasksService.statusFilter = option
         } label: {
             Text(option.label)

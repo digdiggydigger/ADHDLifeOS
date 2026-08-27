@@ -83,6 +83,7 @@ extension CaptureInboxView {
     private func topCardActions(_ capture: Capture) -> some View {
         VStack(spacing: 8) {
             Button {
+                Haptics.play(.success)
                 promotingCapture = capture
             } label: {
                 Label("Task it", systemImage: "text.badge.checkmark")
@@ -91,6 +92,7 @@ extension CaptureInboxView {
             .accessibilityIdentifier("captureInboxTaskItButton")
             HStack(spacing: 8) {
                 Button("Journal it") {
+                    Haptics.play(.success)
                     Task { await service.logToJournal(capture: capture) }
                 }
                 .buttonStyle(MomentumBorderedButtonStyle())
@@ -100,6 +102,7 @@ extension CaptureInboxView {
                 // queue, nothing is written. Binning lives on the full-screen capture view,
                 // behind its own confirmation.
                 Button("Skip") {
+                    Haptics.play(.light)
                     service.skip(capture)
                 }
                 .buttonStyle(MomentumBorderedButtonStyle())

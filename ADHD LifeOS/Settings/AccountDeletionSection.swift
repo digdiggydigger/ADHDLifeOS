@@ -116,6 +116,7 @@ struct AccountDeletionSection: View {
             .accessibilityIdentifier("accountDeletionProgressRow")
         } else {
             Button(role: .destructive) {
+                Haptics.play(.warning)
                 showConfirmation = true
             } label: {
                 Text("Delete Account…")

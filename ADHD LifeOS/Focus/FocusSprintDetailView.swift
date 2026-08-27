@@ -54,7 +54,7 @@ struct FocusSprintDetailView: View {
                 }
             }
         }
-        .saveSuccessHaptic(trigger: controlHapticTrigger)
+        .haptic(.solid, trigger: controlHapticTrigger)
         .accessibilityIdentifier("focusSprintModal")
     }
 

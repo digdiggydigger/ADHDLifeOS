@@ -62,6 +62,7 @@ struct ComposerAreaChips: View {
             (background, foreground) = (AnyShapeStyle(Color("CardSurfaceSecondary")), Color("LabelSecondary"))
         }
         return Button {
+            Haptics.play(.selection)
             selection = id
         } label: {
             Text(label)

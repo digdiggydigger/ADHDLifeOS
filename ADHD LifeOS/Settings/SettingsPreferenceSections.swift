@@ -20,6 +20,7 @@ extension SettingsView {
                     set: { newValue in
                         momentumPreferences.dailyGoal = newValue
                         momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                     }
                 ),
                 in: MomentumPreferences.goalRange
@@ -36,6 +37,7 @@ extension SettingsView {
                 set: { newValue in
                     momentumPreferences.showStreaks = newValue
                     momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                 }
             ))
             .accessibilityIdentifier("settingsMomentumStreaksToggle")
@@ -45,6 +47,7 @@ extension SettingsView {
                 set: { newValue in
                     momentumPreferences.countClearedCaptures = newValue
                     momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                 }
             ))
             .accessibilityIdentifier("settingsMomentumCapturesToggle")
@@ -54,6 +57,7 @@ extension SettingsView {
                 set: { newValue in
                     momentumPreferences.countNudges = newValue
                     momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                 }
             ))
             .accessibilityIdentifier("settingsMomentumNudgesToggle")
@@ -63,6 +67,7 @@ extension SettingsView {
                 set: { newValue in
                     momentumPreferences.showCharts = newValue
                     momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                 }
             ))
             .accessibilityIdentifier("settingsMomentumChartsToggle")
@@ -89,6 +94,7 @@ extension SettingsView {
                     set: { newValue in
                         momentumPreferences.focusDailyGoalMinutes = newValue
                         momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                     }
                 ),
                 in: MomentumPreferences.focusGoalRange,
@@ -104,6 +110,7 @@ extension SettingsView {
                     set: { newValue in
                         momentumPreferences.defaultSprintMinutes = newValue
                         momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                     }
                 ),
                 in: MomentumPreferences.sprintMinutesRange,
@@ -132,6 +139,7 @@ extension SettingsView {
                 set: { newValue in
                     momentumPreferences.hapticsEnabled = newValue
                     momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                 }
             ))
             .accessibilityIdentifier("settingsHapticsToggle")
@@ -141,6 +149,7 @@ extension SettingsView {
                 set: { newValue in
                     momentumPreferences.soundEnabled = newValue
                     momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                 }
             ))
             .accessibilityIdentifier("settingsSoundToggle")

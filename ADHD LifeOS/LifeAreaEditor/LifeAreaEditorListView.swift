@@ -197,7 +197,12 @@ private struct AddLifeAreaSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         Task {
-                            if await service.create(name: name, colour: colour) { dismiss() }
+                            if await service.create(name: name, colour: colour) {
+                                Haptics.play(.solid)
+                                dismiss()
+                            } else {
+                                Haptics.play(.error)
+                            }
                         }
                     }
                     .disabled(!canSave)

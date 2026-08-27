@@ -87,6 +87,7 @@ extension HomeView {
             }
             if inboxCount > 0 {
                 Button("Clear the deck") {
+                    Haptics.play(.light)
                     isPresentingInbox = true
                 }
                 .buttonStyle(PrimaryActionButtonStyle())

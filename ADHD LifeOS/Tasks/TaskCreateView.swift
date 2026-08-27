@@ -112,6 +112,7 @@ struct TaskCreateView: View {
     private func dueChip(_ choice: TaskDueChoice) -> some View {
         let selected = dueChoice == choice
         return Button {
+            Haptics.play(.selection)
             dueChoice = choice
             service.dueDate = choice.resolvedDueDate(existing: service.dueDate, asOf: .now)
         } label: {
@@ -197,6 +198,7 @@ struct TaskCreateView: View {
     private func tagChip(_ tag: Tag) -> some View {
         let selected = service.selectedTagIds.contains(tag.id)
         return Button {
+            Haptics.play(.light)
             service.toggleTagSelection(tag)
         } label: {
             Text(tag.name)
@@ -228,8 +230,11 @@ struct TaskCreateView: View {
             Button(service.isSubmitting ? "Adding…" : "Add the task") {
                 Task {
                     if await service.createTask() {
+                        Haptics.play(.solid)
                         onCreated()
                         dismiss()
+                    } else {
+                        Haptics.play(.error)
                     }
                 }
             }

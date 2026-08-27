@@ -50,7 +50,10 @@ struct AreaTaskRow: View {
                     .frame(width: 44, height: 44)
                     .accessibilityHidden(true)
             } else {
-                Button(action: onTick) {
+                Button {
+                    Haptics.play(.taskClose)
+                    onTick()
+                } label: {
                     if isToggling {
                         ProgressView()
                     } else {

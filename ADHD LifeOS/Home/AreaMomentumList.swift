@@ -22,6 +22,7 @@ struct AreaMomentumList: View {
                     row(item)
                 }
                 .buttonStyle(.plain)
+                .simultaneousGesture(TapGesture().onEnded { Haptics.play(.light) })
                 .accessibilityLabel(accessibilityLabel(for: item))
                 .accessibilityIdentifier("homeAreaRow-\(item.area.id)")
                 if index != items.indices.last {

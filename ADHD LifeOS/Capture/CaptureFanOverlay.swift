@@ -53,6 +53,7 @@ struct CaptureFanOverlay: View {
 
     private func disc(_ slot: CaptureFan.Slot) -> some View {
         Button {
+            Haptics.play(.light)
             onPick(slot.kind)
         } label: {
             VStack(spacing: 2) {

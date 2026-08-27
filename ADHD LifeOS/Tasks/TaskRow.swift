@@ -28,6 +28,14 @@ struct TaskRow: View {
 
     private var isClosed: Bool { task.status == .done }
 
+    /// Both close paths — the tap-circle and the swipe — funnel here, so closing feels identical
+    /// however you did it and the haptic can't be attached to one and forgotten on the other.
+    /// E chose the celebratory success feel for this (2026-08-27).
+    private func close() {
+        Haptics.play(.taskClose)
+        onClose()
+    }
+
     var body: some View {
         ZStack {
             revealLayer
@@ -40,7 +48,7 @@ struct TaskRow: View {
         .accessibilityIdentifier("taskRow-\(task.id.uuidString)")
         .accessibilityActions {
             if !isClosed {
-                Button("Close task", action: onClose)
+                Button("Close task", action: close)
                 if showsSprintStart {
                     Button("Start focus sprint", action: onStartFocus)
                 }
@@ -99,7 +107,7 @@ struct TaskRow: View {
                     .frame(width: 44, height: 44)
                     .accessibilityHidden(true)
             } else {
-                Button(action: onClose) {
+                Button(action: close) {
                     Image(systemName: "circle")
                         .font(.title3)
                         .foregroundStyle(Color("LabelTertiary"))
@@ -144,7 +152,7 @@ struct TaskRow: View {
             .onEnded { value in
                 let closes = TaskRowSwipe.closes(forTranslation: value.translation.width)
                 dragOffset = 0
-                if closes { onClose() }
+                if closes { close() }
             }
     }
 }

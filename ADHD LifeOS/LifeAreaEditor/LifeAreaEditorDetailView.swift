@@ -41,6 +41,7 @@ struct LifeAreaEditorDetailView: View {
     /// Picker — five swatches deserve to be seen side by side, not folded behind a menu.
     private func paletteRow(key: String?, label: String, swatch: AreaPalette?) -> some View {
         Button {
+            Haptics.play(.selection)
             paletteKey = key
         } label: {
             HStack(spacing: 8) {
@@ -107,6 +108,7 @@ struct LifeAreaEditorDetailView: View {
 
             Section {
                 Button {
+                    Haptics.play(.warning)
                     Task {
                         if await service.setArchived(area, archived: !area.archived) { dismiss() }
                     }
@@ -135,7 +137,10 @@ struct LifeAreaEditorDetailView: View {
                     Task {
                         let edit = LifeAreaPaletteEdit.edit(from: area.paletteKey, to: paletteKey)
                         if await service.saveEdits(to: area, name: name, colour: colour, palette: edit) {
+                            Haptics.play(.solid)
                             dismiss()
+                        } else {
+                            Haptics.play(.error)
                         }
                     }
                 }

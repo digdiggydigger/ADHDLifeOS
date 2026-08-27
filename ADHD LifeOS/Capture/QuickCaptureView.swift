@@ -179,8 +179,11 @@ struct QuickCaptureView: View {
     func submit() {
         Task {
             if await save() {
+                Haptics.play(.solid)
                 onCreated()
                 dismiss()
+            } else {
+                Haptics.play(.error)
             }
         }
     }

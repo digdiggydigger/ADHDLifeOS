@@ -56,6 +56,7 @@ struct LifeAreaEmojiPicker: View {
 
     private func emojiCell(_ emoji: String) -> some View {
         Button {
+            Haptics.play(.light)
             selection = emoji
             // A grid pick supersedes and clears any free-type attempt.
             freeTypeText = ""

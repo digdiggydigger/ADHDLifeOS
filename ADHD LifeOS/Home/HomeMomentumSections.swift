@@ -277,6 +277,8 @@ extension HomeView {
             Spacer()
             if showArrangeControl {
                 Button {
+                    // 27. Arrange mode is a mode change, not a write — light either way.
+                    Haptics.play(.light)
                     if isArranging {
                         isArranging = false
                         Task { await homeService.load() }

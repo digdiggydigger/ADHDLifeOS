@@ -185,6 +185,7 @@ struct CaptureDetailNotesEditor: View {
                 .accessibilityIdentifier("captureDetailNotesField")
             if isDirty {
                 Button {
+                    Haptics.play(.solid)
                     Task { await save() }
                 } label: {
                     if isSaving {
@@ -237,7 +238,10 @@ struct CaptureDetailActions: View {
                     CapturePromotedChip()
                         .frame(maxWidth: .infinity)
                 } else {
-                    Button(action: onMakeTask) {
+                    Button {
+                        Haptics.play(.success)
+                        onMakeTask()
+                    } label: {
                         Label("Make a task", systemImage: "checklist")
                     }
                     .buttonStyle(PrimaryActionButtonStyle())
@@ -261,7 +265,10 @@ struct CaptureDetailActions: View {
     // 52pt matches B6's circle exactly; it is a control dimension (multiple of 4, over the 44pt
     // floor), not a spacing token.
     private var archiveButton: some View {
-        Button(action: onArchive) {
+        Button {
+            Haptics.play(.solid)
+            onArchive()
+        } label: {
             if isArchiving {
                 ProgressView()
                     .frame(width: 52, height: 52)

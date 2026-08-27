@@ -82,6 +82,7 @@ struct LogComposerView: View {
     private func typeChip(_ type: LogType, label: String) -> some View {
         let selected = journalService.composerType == type
         return Button {
+            Haptics.play(.selection)
             journalService.composerType = type
         } label: {
             Text(label)
@@ -150,6 +151,7 @@ struct LogComposerView: View {
     private func tagChip(_ tag: Tag) -> some View {
         let selected = journalService.composerTagIds.contains(tag.id)
         return Button {
+            Haptics.play(.light)
             if selected {
                 journalService.composerTagIds.removeAll { $0 == tag.id }
             } else {
@@ -183,8 +185,11 @@ struct LogComposerView: View {
             Button(journalService.isCreating ? "Saving…" : "Save entry") {
                 Task {
                     if await journalService.createLog() {
+                        Haptics.play(.solid)
                         onCreated()
                         dismiss()
+                    } else {
+                        Haptics.play(.error)
                     }
                 }
             }

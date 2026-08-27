@@ -89,7 +89,7 @@ struct TaskDetailView: View {
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: showSavedConfirmation)
-        .saveSuccessHaptic(trigger: saveHapticTrigger)
+        .haptic(.solid, trigger: saveHapticTrigger)
         .navigationTitle("Task")
         // The system back button can't be intercepted, so it's hidden and replaced with a custom
         // control running the unsaved-changes check (Part 4). Hiding it also disables interactive
@@ -114,6 +114,7 @@ struct TaskDetailView: View {
             titleVisibility: .visible
         ) {
             Button("Delete Task", role: .destructive) {
+                Haptics.play(.solid)
                 Task { await performDelete() }
             }
             .accessibilityIdentifier("taskDetailConfirmDeleteButton")
@@ -142,6 +143,7 @@ struct TaskDetailView: View {
 
     private func attemptBack() {
         if case .loaded(let task) = service.state, dirtyState(for: task).hasUnsavedChanges {
+            Haptics.play(.warning)
             showDiscardAlert = true
         } else {
             dismiss()
@@ -248,6 +250,7 @@ private extension TaskDetailView {
             // close button; a closed one gets a quiet, display-only confirmation. No Reopen.
             if task.status == .open {
                 Button {
+                    Haptics.play(.taskClose)
                     Task { await service.close() }
                 } label: {
                     Label(
@@ -306,6 +309,7 @@ private extension TaskDetailView {
                     Text(option.rawValue.uppercased()).tag(option)
                 }
             }
+            .haptic(.selection, trigger: priority)
             .accessibilityIdentifier("taskDetailPriorityPicker")
         }
     }
@@ -326,6 +330,7 @@ private extension TaskDetailView {
     var deleteSection: some View {
         Section {
             Button("Delete Task", role: .destructive) {
+                Haptics.play(.warning)
                 showDeleteConfirmation = true
             }
             .accessibilityIdentifier("taskDetailDeleteButton")

@@ -98,6 +98,7 @@ struct SettingsView: View {
                 }
             }
             .pickerStyle(.segmented)
+            .haptic(.selection, trigger: appearanceRaw)
             .accessibilityIdentifier("settingsAppearancePicker")
         } header: {
             Text("Appearance")
@@ -173,6 +174,7 @@ struct SettingsView: View {
     private var accountSection: some View {
         Section {
             Button(role: .destructive) {
+                Haptics.play(.warning)
                 Task { await authService.signOut() }
             } label: {
                 Text("Sign Out")

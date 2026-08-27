@@ -45,12 +45,9 @@ struct RootView: View {
 
     /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
     /// success haptic the web fires on start (`triggerHaptic('success')`) happens exactly once
-    /// per launch. `.sensoryFeedback` is iOS 17+, hence the UIKit generator (same §7 precedent
-    /// as `saveSuccessHaptic`).
+    /// per launch.
     private func startFocus(_ plan: FocusSprintPlan) {
-        if AppFeedback.hapticsEnabled() {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-        }
+        Haptics.play(.success)
         focusService.start(plan: plan)
     }
 
@@ -145,6 +142,11 @@ struct RootView: View {
                         .tabItem { Label("Nudges", systemImage: "bell") }
                         .tag(AppTab.nudges)
                 }
+                // E's 2026-08-27 call: the tab bar ticks with a light impact rather than the
+                // iOS-conventional selection tick. Fires on the SELECTION, so a programmatic
+                // switch (a widget door, "See nudges") buzzes too — those are still a tab change
+                // from under the user's thumb.
+                .haptic(HapticFeel.tabChange, trigger: selectedTab)
                 .blur(radius: isFabOpen ? 4 : 0)
                 .overlay {
                     if isFabOpen {

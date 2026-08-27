@@ -257,7 +257,10 @@ struct BestNextMoveCard: View {
                     .accessibilityLabel("Focus logged: \(loggedTodayLabel)")
                     .accessibilityIdentifier("homeFocusLoggedChip")
                 }
-                Button(action: onClose) {
+                Button {
+                    Haptics.play(.taskClose)
+                    onClose()
+                } label: {
                     if isClosing {
                         ProgressView()
                             .tint(Color("OnStateGo"))
@@ -324,10 +327,16 @@ struct ClosureCelebrationCard: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack(spacing: 8) {
-                Button("Undo", action: onUndo)
+                Button("Undo") {
+                    Haptics.play(.light)
+                    onUndo()
+                }
                     .buttonStyle(MomentumBorderedButtonStyle(minHeight: 44))
                     .accessibilityIdentifier("homeUndoCloseButton")
-                Button(nextLabel, action: onNext)
+                Button(nextLabel) {
+                    Haptics.play(.light)
+                    onNext()
+                }
                     .buttonStyle(MomentumSolidButtonStyle(fill: .accentColor, foreground: AreaPalette.work.onColor))
                     .accessibilityIdentifier("homeNextMoveButton")
             }

@@ -128,6 +128,7 @@ struct TaskFocusPlanSection: View {
     private func presetChip(seconds: Int) -> some View {
         let isSelected = durationSeconds == seconds
         return Button {
+            Haptics.play(.light)
             durationSeconds = seconds
             unit = Self.naturalUnit(for: seconds)
         } label: {
@@ -169,6 +170,7 @@ struct TaskFocusPlanSection: View {
         ) {
             LabeledContent("Target", value: FocusTimeFormatting.human(seconds: durationSeconds))
         }
+        .haptic(.selection, trigger: durationSeconds)
         .accessibilityIdentifier("taskDetailFocusDurationStepper")
     }
 

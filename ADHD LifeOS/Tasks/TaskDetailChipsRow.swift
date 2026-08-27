@@ -127,6 +127,7 @@ struct TaskDetailTagsSection: View {
     private func tagChip(_ tag: Tag) -> some View {
         let attached = attachedTagIds.contains(tag.id)
         return Button {
+            Haptics.play(.light)
             Task { await onToggle(tag) }
         } label: {
             Text(tag.name)
@@ -150,6 +151,7 @@ struct TaskDetailTagsSection: View {
 
     private var addChip: some View {
         Button {
+            Haptics.play(.light)
             isAdding = true
             addFieldFocused = true
         } label: {

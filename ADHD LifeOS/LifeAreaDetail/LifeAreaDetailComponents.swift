@@ -279,6 +279,7 @@ extension LifeAreaDetailView {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     if let action {
                         Button("File here") {
+                            Haptics.play(.solid)
                             action(capture)
                         }
                         .font(.caption.weight(.semibold))
