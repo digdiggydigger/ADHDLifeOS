@@ -215,6 +215,7 @@ private struct PreviewJournalClientAdapting: JournalClientAdapting {
     func fetchAllTags() async throws -> [Tag] { [Tag(id: UUID(), name: "errands")] }
     func createTag(name: String) async throws -> Tag { Tag(id: UUID(), name: name) }
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
+    func deleteLog(id: UUID) async throws {}
 }
 
 #Preview("Light") {

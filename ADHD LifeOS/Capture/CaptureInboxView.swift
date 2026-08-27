@@ -131,7 +131,23 @@ struct CaptureInboxView: View {
                 allTags = await service.fetchAllTags()
             }
         }
-        .safeAreaInset(edge: .bottom) { undoBar }
+        .safeAreaInset(edge: .bottom) { bottomBar }
+        // Triage's failures were being published and rendered NOWHERE on this screen: a Sorted
+        // that could not write, or an undo that could not restore, both set `triageErrorMessage`
+        // and looked exactly like a button that does nothing. That mattered little while every
+        // failure simply left the row in place; it matters now that undo can decline to act and
+        // deliberately keep its offer standing.
+        .alert(
+            "Couldn't do that",
+            isPresented: Binding(
+                get: { service.triageErrorMessage != nil },
+                set: { if !$0 { service.triageErrorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(service.triageErrorMessage ?? "")
+        }
         .sheet(item: $promotingCapture) { capture in
             CapturePromoteSheet(
                 capture: capture,

@@ -109,6 +109,10 @@ struct FirebaseCaptureClientAdapter: CaptureClientAdapting {
         try await store.markCaptureProcessed(id: captureId)
     }
 
+    func markUnprocessed(captureId: UUID) async throws {
+        try await store.markCaptureUnprocessed(id: captureId)
+    }
+
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
         try await store.updateCapture(id: id, changes: changes)
         return try await store.fetchCapture(id: id)

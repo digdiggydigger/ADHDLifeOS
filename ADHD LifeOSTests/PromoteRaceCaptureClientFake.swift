@@ -107,6 +107,8 @@ final class PromoteRaceCaptureClientFake: CaptureClientAdapting, @unchecked Send
         lock.lock(); markProcessedCallCount += 1; lock.unlock()
     }
 
+    func markUnprocessed(captureId: UUID) async throws {}
+
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
     func fetchSeenCaptures() async throws -> [Capture] { [] }
     func deleteCapture(id: UUID) async throws {}

@@ -74,6 +74,8 @@ extension CaptureInboxService {
             skippedIds.removeAll { $0 == captureId }
             clearLastTriageAction()
             return true
+        case .journaled(let captureId, let logId):
+            return await undoJournalEntry(captureId: captureId, logId: logId)
         case .sorted(let captureId, let previousLifeAreaId):
             triageErrorMessage = nil
             do {
@@ -186,14 +188,45 @@ extension CaptureInboxService {
         }
 
         do {
-            _ = try await journalClient.createLog(normalized)
+            let entry = try await journalClient.createLog(normalized)
             try await client.markProcessed(captureId: capture.id)
             removeCapture(id: capture.id)
+            record(.journaled(captureId: capture.id, logId: entry.id), sortedInto: nil)
             return true
         } catch {
             triageErrorMessage = Self.message(for: error)
             return false
         }
+    }
+
+    /// Reverses "Journal it": the capture comes back to the inbox and the entry it wrote is
+    /// deleted.
+    ///
+    /// **The order is the reverse of the forward path's, for the same reason.** Writing the entry
+    /// first and retiring the capture second means a half-failure never loses the thought;
+    /// restoring the capture first and deleting the entry second means the same thing coming back.
+    /// Delete-first would, on a failed restore, erase the thought from both places at once — the
+    /// one outcome an inbox exists to prevent.
+    ///
+    /// So a failed restore reverses nothing, deletes nothing, and leaves the offer standing. A
+    /// failed delete still counts as an undo — the capture is back, which is what was asked — but
+    /// says plainly what it left behind, the same shape as promotion's partial-failure warning.
+    private func undoJournalEntry(captureId: UUID, logId: UUID) async -> Bool {
+        triageErrorMessage = nil
+        do {
+            try await client.markUnprocessed(captureId: captureId)
+        } catch {
+            triageErrorMessage = Self.message(for: error)
+            return false
+        }
+        do {
+            try await journalClient?.deleteLog(id: logId)
+        } catch {
+            warningMessage = "Capture is back in your inbox, but its journal entry couldn't be removed."
+        }
+        clearLastTriageAction()
+        await refresh()
+        return true
     }
 
     /// A titled capture keeps BOTH lines — the headline it was given and whatever it pointed at —

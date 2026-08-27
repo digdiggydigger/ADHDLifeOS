@@ -16,6 +16,9 @@ final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendabl
     var allTagsResult: Result<[Tag], Error> = .success([])
     var createTagResult: Result<Tag, Error> = .success(Tag(id: UUID(), name: "made-up"))
     var createLogResult: Result<Log, Error>?
+    var deleteLogResult: Result<Void, Error> = .success(())
+    /// Set alongside the capture fake's, so cross-seam call order is assertable.
+    var callSequence: TriageCallSequence?
 
     private(set) var fetchLifeAreasCallCount = 0
     private(set) var fetchLogsCallCount = 0
@@ -23,6 +26,8 @@ final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendabl
     private(set) var fetchCapturesCallCount = 0
     private(set) var createLogCallCount = 0
     private(set) var lastCreateLogInput: NormalizedCreateLogInput?
+    private(set) var lastDeleteLogId: UUID?
+    private(set) var deleteLogCallOrder: Int?
 
     func fetchLifeAreas() async throws -> [LifeArea] {
         fetchLifeAreasCallCount += 1
@@ -58,6 +63,12 @@ final class FakeJournalClientAdapting: JournalClientAdapting, @unchecked Sendabl
 
     func createTag(name: String) async throws -> Tag {
         try createTagResult.get()
+    }
+
+    func deleteLog(id: UUID) async throws {
+        lastDeleteLogId = id
+        deleteLogCallOrder = callSequence?.next()
+        try deleteLogResult.get()
     }
 
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log {

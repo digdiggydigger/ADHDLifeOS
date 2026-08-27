@@ -16,10 +16,13 @@ enum JournalServiceError: LocalizedError, Equatable {
     }
 }
 
-/// Thin seam over the Supabase Postgrest client so `JournalService` is testable without a
-/// network. Mirrors web's `logService`/`supabaseLogService`: fetch life areas (for the filter/
-/// composer pickers), list all logs, and create — no update/delete, `public.logs` has no such
-/// RLS policy.
+/// Thin seam over the journal backend so `JournalService` is testable without a network.
+/// `FirebaseJournalClientAdapter` is the production conformance. Mirrors the web prototype's
+/// `logService`: fetch life areas (for the filter/composer pickers), list all logs, and create.
+///
+/// There is no UPDATE — an entry is never rewritten, which is the design the old Supabase RLS
+/// enforced and `firestore.rules` still does (`allow update: if false` on `logs`). Delete arrived
+/// with capture triage's undo (see `deleteLog`); the rules have permitted it since 2026-08-19.
 protocol JournalClientAdapting: Sendable {
     func fetchLifeAreas() async throws -> [LifeArea]
     func fetchLogs() async throws -> [Log]
@@ -38,4 +41,8 @@ protocol JournalClientAdapting: Sendable {
     /// Creates (or dedups by name, server-side semantics) a tag for the composer.
     func createTag(name: String) async throws -> Tag
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log
+    /// Removes one entry. Written for undoing capture triage's "Journal it", which must be able
+    /// to take back the entry it wrote a moment ago. Not an edit path: an entry that survives is
+    /// still never rewritten.
+    func deleteLog(id: UUID) async throws
 }

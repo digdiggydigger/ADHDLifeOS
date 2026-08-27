@@ -42,6 +42,7 @@ private struct DetailPreviewCaptureClient: CaptureClientAdapting {
         fatalError("unused in preview")
     }
     func markProcessed(captureId: UUID) async throws {}
+    func markUnprocessed(captureId: UUID) async throws {}
     func deleteCapture(id: UUID) async throws {}
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture { Self.sample }
     func fetchAllTags() async throws -> [Tag] { [] }

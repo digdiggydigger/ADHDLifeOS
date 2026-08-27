@@ -108,6 +108,16 @@ enum FirestoreFieldPayloads {
         ["processed": true, "clearedAt": Timestamp(date: now)]
     }
 
+    /// The inverse, for undoing "Journal it" — the capture re-enters the inbox.
+    ///
+    /// The exit stamp is DELETED rather than overwritten: a capture that is back in the inbox has
+    /// not left it, and a stale `clearedAt` would count it toward a day's throughput it no longer
+    /// belongs to. Same rule `CaptureUpdate(clearedAt: .some(nil))` follows when a sort is undone
+    /// (M7's honest-data line).
+    static func captureUnprocessed() -> [String: Any] {
+        ["processed": false, "clearedAt": FieldValue.delete()]
+    }
+
     /// The life-area colour override's PATCH fragment (E's 2026-08-25 note). `automatic` ERASES
     /// the field — absence, never "", is the one representation of automatic, so a resolver never
     /// meets a value it must special-case. Lives here rather than in the adapter because the

@@ -74,6 +74,7 @@ import SwiftUI
             fatalError("unused in preview")
         }
         func markProcessed(captureId: UUID) async throws {}
+        func markUnprocessed(captureId: UUID) async throws {}
         func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
             fatalError("unused in preview")
         }
@@ -115,6 +116,7 @@ import SwiftUI
         func fetchAllTags() async throws -> [Tag] { [] }
         func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
         func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }
+        func deleteLog(id: UUID) async throws {}
     }
 
     struct PreviewNudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting {

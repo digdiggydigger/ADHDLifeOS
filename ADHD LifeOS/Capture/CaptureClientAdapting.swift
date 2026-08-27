@@ -77,6 +77,10 @@ protocol CaptureClientAdapting: Sendable {
     func fetchCapture(id: UUID) async throws -> Capture
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem
     func markProcessed(captureId: UUID) async throws
+    /// Returns a processed capture to the inbox — the inverse of `markProcessed`, and the reason
+    /// "Journal it" can finally be taken back. Its absence is why round 1 shipped undo for Sorted
+    /// and Skip only.
+    func markUnprocessed(captureId: UUID) async throws
     /// Discards a capture outright — the triage exit for something that is neither a task nor worth
     /// keeping. `captures` already grants owner delete in `firestore.rules`, so no rules change.
     func deleteCapture(id: UUID) async throws

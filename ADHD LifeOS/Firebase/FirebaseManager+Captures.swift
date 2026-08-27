@@ -44,6 +44,13 @@ extension FirebaseManager {
         try await update(id: id, fields: FirestoreFieldPayloads.captureProcessed(now: Date()), in: .captures)
     }
 
+    /// Puts a processed capture back in the inbox — the inverse of the flip above, and the half of
+    /// undoing "Journal it" that restores the capture. A *named* wrapper rather than a `processed`
+    /// field on the generic `CaptureUpdate`, so nothing else can flip it in passing.
+    func markCaptureUnprocessed(id: UUID) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.captureUnprocessed(), in: .captures)
+    }
+
     /// Creates or fully overwrites one capture — covers content edits, triage (`status`/
     /// `processed`), and life-area assignment.
     func saveCapture(_ capture: Capture) async throws {

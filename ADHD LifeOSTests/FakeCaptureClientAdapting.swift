@@ -22,6 +22,9 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
         TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: nil)
     )
     var markProcessedResult: Result<Void, Error> = .success(())
+    var markUnprocessedResult: Result<Void, Error> = .success(())
+    /// Set alongside the journal fake's, so cross-seam call order is assertable.
+    var callSequence: TriageCallSequence?
     var requestUploadURLResult: Result<CaptureUploadTarget, Error> = .success(
         CaptureUploadTarget(uploadURL: URL(string: "https://example.com/upload")!, mediaKey: "key", thumbnailKey: nil)
     )
@@ -56,6 +59,10 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
     private(set) var lastCreateCaptureInput: NormalizedCreateCaptureInput?
     private(set) var lastCreateTaskInput: NormalizedPromoteToTaskInput?
     private(set) var lastMarkProcessedCaptureId: UUID?
+    private(set) var lastMarkUnprocessedCaptureId: UUID?
+    /// Where this call fell in the shared sequence — undoing "Journal it" has to restore the
+    /// capture BEFORE deleting its entry, and only ordering can prove that.
+    private(set) var markUnprocessedCallOrder: Int?
     private(set) var lastRequestUploadURLKind: CaptureKind?
     private(set) var lastRequestUploadURLContentType: String?
     private(set) var lastUploadMediaURL: URL?
@@ -127,6 +134,13 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
         markProcessedCallCount += 1
         lastMarkProcessedCaptureId = captureId
         _ = try markProcessedResult.get()
+    }
+
+    func markUnprocessed(captureId: UUID) async throws {
+        callLog.append("markUnprocessed")
+        lastMarkUnprocessedCaptureId = captureId
+        markUnprocessedCallOrder = callSequence?.next()
+        _ = try markUnprocessedResult.get()
     }
 
     func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {

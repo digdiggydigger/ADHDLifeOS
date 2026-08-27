@@ -7,15 +7,19 @@ import Foundation
 
 /// A triage action that can be taken back, described by what REVERSING it means.
 ///
-/// Only the two actions the card owns outright are here. "Task it" opens the promote sheet (a
-/// flow, not an instant), and "Journal it" writes a `Log` and marks the capture processed — undoing
-/// that would need a log-delete and an unprocess path that do not exist yet. An Undo offered for
-/// something it cannot actually reverse is worse than no Undo, so neither is claimed.
+/// Three of the card's four verbs are here. **"Task it" is still not**, and that is not an
+/// oversight: it opens the promote sheet — a flow the user completes, not an instant — and the
+/// task it creates is a real object they may already have edited. An Undo offered for something it
+/// cannot cleanly reverse is worse than no Undo.
 enum CaptureTriageAction: Equatable, Sendable {
     /// `previousLifeAreaId` is what the capture was filed under BEFORE the sort — restoring it is
     /// the whole job, since sorting may have replaced an area or written the first one.
     case sorted(captureId: UUID, previousLifeAreaId: UUID?)
     case skipped(captureId: UUID)
+    /// `logId` is the entry that was written. The capture id alone cannot find it — nothing on
+    /// the `Log` points back at the capture it came from — so undo has to be told outright, and
+    /// it can only ever delete the entry THIS action created.
+    case journaled(captureId: UUID, logId: UUID)
 }
 
 /// The rules behind **Sorted** — the triage verb E asked for on 2026-08-28 ("capturing is fine,
@@ -83,6 +87,8 @@ enum CaptureTriage {
         switch action {
         case .skipped:
             return "Skipped — it'll come back round"
+        case .journaled:
+            return "Journalled — it's in your journal"
         case .sorted:
             guard let sortedInto, let area = lifeAreas.first(where: { $0.id == sortedInto }) else {
                 return "Sorted"

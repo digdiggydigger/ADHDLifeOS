@@ -38,6 +38,7 @@ final class FakeCaptureBackingStore: CaptureBackingStore {
     private(set) var deletedCaptureIds: [UUID] = []
     private(set) var createdTasks: [TaskDetail] = []
     private(set) var markedProcessedIds: [UUID] = []
+    private(set) var markedUnprocessedIds: [UUID] = []
     private(set) var captureUpdates: [(id: UUID, changes: CaptureUpdate)] = []
     private(set) var createdTagNames: [String] = []
     private(set) var tagLookups: [(parent: FirebaseTagParent, parentId: UUID)] = []
@@ -105,6 +106,10 @@ final class FakeCaptureBackingStore: CaptureBackingStore {
 
     func markCaptureProcessed(id: UUID) async throws {
         markedProcessedIds.append(id)
+    }
+
+    func markCaptureUnprocessed(id: UUID) async throws {
+        markedUnprocessedIds.append(id)
     }
 
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws {

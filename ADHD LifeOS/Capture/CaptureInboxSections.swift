@@ -269,6 +269,54 @@ extension CaptureInboxView {
 // `CaptureInboxService+Triage`, so they can never disagree about what would be reversed.
 
 extension CaptureInboxView {
+    /// The bottom bar has two jobs and they are mutually exclusive: offer the undo, or report what
+    /// an undo left behind. The warning wins — it is news, and the offer it would replace has
+    /// already been spent.
+    @ViewBuilder
+    var bottomBar: some View {
+        if service.warningMessage != nil {
+            triageWarningBar
+        } else {
+            undoBar
+        }
+    }
+
+    /// A partial success, said out loud. Undoing "Journal it" restores the capture first and
+    /// deletes its entry second (see `undoJournalEntry`), so the delete can fail on its own — the
+    /// capture is back, which is what was asked, but a duplicate entry is sitting in the journal
+    /// and nothing else would ever mention it.
+    ///
+    /// Dismissed by tapping, not on a timer: a stray journal entry is not urgent, but it is the
+    /// user's to deal with and it should not evaporate before they have read it.
+    @ViewBuilder
+    private var triageWarningBar: some View {
+        if let warning = service.warningMessage {
+            Button {
+                service.warningMessage = nil
+            } label: {
+                HStack(spacing: 8) {
+                    Label(warning, systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(Color("StateWarn"))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    Text("Dismiss")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tint)
+                }
+                .padding(.leading, 16)
+                .padding(.trailing, CaptureDiscMetrics.clearance)
+                .padding(.vertical, 8)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .background(.ultraThinMaterial)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .accessibilityIdentifier("captureInboxWarningBar")
+        }
+    }
+
     @ViewBuilder
     var undoBar: some View {
         if let action = service.lastTriageAction {

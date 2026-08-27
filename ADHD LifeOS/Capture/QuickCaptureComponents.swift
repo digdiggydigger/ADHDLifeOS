@@ -47,6 +47,7 @@ private struct QuickCapturePreviewClient: CaptureClientAdapting {
         fatalError("unused in preview")
     }
     func markProcessed(captureId: UUID) async throws {}
+    func markUnprocessed(captureId: UUID) async throws {}
     func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
         fatalError("unused in preview")
     }

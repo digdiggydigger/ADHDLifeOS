@@ -22,11 +22,13 @@ final class FakeJournalBackingStore: JournalBackingStore {
     var fetchAllTagsError: Error?
     var createTagError: Error?
     var appendError: Error?
+    var deleteError: Error?
 
     private(set) var createdTagNames: [String] = []
 
     private(set) var includeArchivedArguments: [Bool] = []
     private(set) var appendedLogs: [Log] = []
+    private(set) var deletedLogIds: [UUID] = []
 
     func fetchLifeAreas(includeArchived: Bool) async throws -> [LifeArea] {
         includeArchivedArguments.append(includeArchived)
@@ -74,5 +76,10 @@ final class FakeJournalBackingStore: JournalBackingStore {
     func appendLog(_ log: Log) async throws {
         appendedLogs.append(log)
         if let appendError { throw appendError }
+    }
+
+    func deleteLog(id: UUID) async throws {
+        deletedLogIds.append(id)
+        if let deleteError { throw deleteError }
     }
 }

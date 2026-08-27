@@ -119,6 +119,7 @@ final class SequencedCaptureClientFake: CaptureClientAdapting, @unchecked Sendab
         TaskItem(id: UUID(), lifeAreaId: nil, title: "Task", status: .open, priority: .p4, dueDate: nil)
     }
     func markProcessed(captureId: UUID) async throws {}
+    func markUnprocessed(captureId: UUID) async throws {}
     func requestUploadURL(kind: CaptureKind, contentType: String) async throws -> CaptureUploadTarget {
         CaptureUploadTarget(uploadURL: URL(string: "https://example.com/upload")!, mediaKey: "key", thumbnailKey: nil)
     }

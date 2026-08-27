@@ -29,6 +29,11 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
     private func makeSUT(loaded: [Capture]) async -> SUT {
         let client = FakeCaptureClientAdapting()
         let journal = FakeJournalClientAdapting()
+        // One sequence, both seams — undoing "Journal it" spans them and its ORDER is the safety
+        // argument, so the two fakes have to stamp against the same counter.
+        let sequence = TriageCallSequence()
+        client.callSequence = sequence
+        journal.callSequence = sequence
         client.fetchUnprocessedCapturesResult = .success(loaded)
         let service = CaptureInboxService(
             client: client, journalClient: journal, transcriber: FakeVoiceTranscribing()
@@ -130,6 +135,109 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
             env.journal.lastCreateLogInput?.body,
             "Why vague first steps stall you\nhttps://example.com/an-article",
             "a titled capture keeps both its headline and what it pointed at"
+        )
+    }
+
+    // MARK: - Undoing "Journal it"
+
+    /// The exit that had no way back. Sorted and Skip have been undoable since round 1; this one
+    /// was left out because reversing it needs BOTH a log-delete and an inverse to `markProcessed`
+    /// — neither existed, and an Undo offered for something it cannot reverse is worse than none.
+    /// Both exist now, so the queue's fourth verb finally joins them.
+    func testLogToJournal_recordsAnUndoableActionNamingTheEntryItWrote() async {
+        let thought = capture("Rain smelled like school")
+        let env = await makeSUT(loaded: [thought])
+        let logId = UUID()
+        env.journal.createLogResult = .success(
+            Log(id: logId, lifeAreaId: nil, type: .journal, body: "x", entryDate: Date(), createdAt: Date())
+        )
+
+        _ = await env.service.logToJournal(capture: thought)
+
+        XCTAssertEqual(
+            env.service.lastTriageAction, .journaled(captureId: thought.id, logId: logId),
+            "undo has to know WHICH entry to delete — the capture id alone cannot find it"
+        )
+    }
+
+    /// Order is load-bearing and it is the REVERSE of the forward path's. Forward writes the entry
+    /// first and only then retires the capture, so a half-failure never loses the thought. Undo
+    /// restores the capture FIRST for the same reason: if the delete then fails, the capture is
+    /// back and a stray entry remains — visible, recoverable, nothing lost. Deleting first and
+    /// failing to restore would erase the thought from both places at once.
+    func testUndoJournal_restoresTheCaptureBeforeDeletingTheEntry() async {
+        let thought = capture("Rain smelled like school")
+        let env = await makeSUT(loaded: [thought])
+        let logId = UUID()
+        env.journal.createLogResult = .success(
+            Log(id: logId, lifeAreaId: nil, type: .journal, body: "x", entryDate: Date(), createdAt: Date())
+        )
+        _ = await env.service.logToJournal(capture: thought)
+
+        let undone = await env.service.undoLastTriageAction()
+
+        XCTAssertTrue(undone)
+        XCTAssertEqual(env.client.lastMarkUnprocessedCaptureId, thought.id)
+        XCTAssertEqual(env.journal.lastDeleteLogId, logId)
+        XCTAssertEqual(
+            env.client.markUnprocessedCallOrder, 0,
+            "the capture must be back before its entry is deleted"
+        )
+        XCTAssertEqual(env.journal.deleteLogCallOrder, 1)
+    }
+
+    func testUndoJournal_isSpentOnceUsed() async {
+        let thought = capture("Rain smelled like school")
+        let env = await makeSUT(loaded: [thought])
+        _ = await env.service.logToJournal(capture: thought)
+        _ = await env.service.undoLastTriageAction()
+
+        XCTAssertNil(env.service.lastTriageAction)
+        let secondAttempt = await env.service.undoLastTriageAction()
+        XCTAssertFalse(secondAttempt)
+    }
+
+    /// The capture never came back, so nothing was undone and the offer stands. Critically the
+    /// entry is NOT deleted — that would leave the thought nowhere at all.
+    func testUndoJournal_whenTheCaptureCannotBeRestored_deletesNothingAndKeepsTheOffer() async {
+        let thought = capture("Rain smelled like school")
+        let env = await makeSUT(loaded: [thought])
+        _ = await env.service.logToJournal(capture: thought)
+        env.client.markUnprocessedResult = .failure(CaptureServiceError.fetchFailed("offline"))
+
+        let undone = await env.service.undoLastTriageAction()
+
+        XCTAssertFalse(undone)
+        XCTAssertNil(env.journal.lastDeleteLogId, "the entry is the only copy left — never delete it blind")
+        XCTAssertEqual(env.service.triageErrorMessage, "offline")
+        XCTAssertNotNil(env.service.lastTriageAction, "nothing happened, so the offer still stands")
+    }
+
+    /// The half-failure worth naming: the capture IS back, so the undo did the thing the user
+    /// asked for, but a duplicate entry is sitting in their journal. Same shape as the promote
+    /// path's "Task created, but couldn't mark the capture as processed."
+    func testUndoJournal_whenOnlyTheEntryDeleteFails_succeedsAndSaysWhatIsLeftBehind() async {
+        let thought = capture("Rain smelled like school")
+        let env = await makeSUT(loaded: [thought])
+        _ = await env.service.logToJournal(capture: thought)
+        env.journal.deleteLogResult = .failure(JournalServiceError.fetchFailed("offline"))
+
+        let undone = await env.service.undoLastTriageAction()
+
+        XCTAssertTrue(undone, "the capture came back, which is what undo promised")
+        XCTAssertNil(env.service.lastTriageAction, "and the offer is spent")
+        XCTAssertEqual(
+            env.service.warningMessage,
+            "Capture is back in your inbox, but its journal entry couldn't be removed."
+        )
+    }
+
+    func testConfirmation_journalledSaysWhatHappened() {
+        XCTAssertEqual(
+            CaptureTriage.confirmation(
+                for: .journaled(captureId: UUID(), logId: UUID()), sortedInto: nil, lifeAreas: []
+            ),
+            "Journalled — it's in your journal"
         )
     }
 }

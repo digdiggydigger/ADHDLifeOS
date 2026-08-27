@@ -8,8 +8,8 @@ import Foundation
 /// Production `JournalClientAdapting` backed by Firestore through `JournalBackingStore`
 /// (`FirebaseManager` in the app, a recording fake in tests). `createLog`
 /// stamps `entryDate` client-side as "now", matching the old server-side default and the
-/// composer's lack of a date picker. Append-only stays structural: this adapter simply has no
-/// update or delete path, same as the protocol.
+/// composer's lack of a date picker. No-rewriting stays structural: this adapter simply has no
+/// update path, same as the protocol. `deleteLog` exists for capture triage's undo.
 struct FirebaseJournalClientAdapter: JournalClientAdapting {
     private let store: JournalBackingStore
 
@@ -105,6 +105,14 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
             throw JournalServiceError.fetchFailed(Self.message(for: error))
         }
         return log
+    }
+
+    func deleteLog(id: UUID) async throws {
+        do {
+            try await store.deleteLog(id: id)
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
     }
 
     private static func message(for error: Error) -> String {

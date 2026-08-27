@@ -242,6 +242,22 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
         XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["clearedAt"]), stamp)
     }
 
+    /// `captureProcessed`'s inverse, for undoing "Journal it". The exit stamp is DELETED rather
+    /// than written false-ish: a capture back in the inbox has not left it, and a stale
+    /// `clearedAt` would file it into a day it never belonged to (the M7 honest-data rule, the
+    /// same one `CaptureUpdate.clearedAt: .some(nil)` follows when a sort is undone).
+    func testCaptureUnprocessed_clearsTheFlagAndDeletesTheExitStamp() {
+        let fields = FirestoreFieldPayloads.captureUnprocessed()
+
+        XCTAssertEqual(fields.keys.sorted(), ["clearedAt", "processed"])
+        XCTAssertEqual(fields["processed"] as? Bool, false)
+        XCTAssertTrue(
+            FirestoreDocumentCoder.isFieldDelete(fields["clearedAt"]),
+            "back in the inbox means no exit stamp at all, not an old one left standing"
+        )
+        XCTAssertNil(fields["status"])
+    }
+
     // MARK: - Nudges
 
     func testNudgeUpdate_emptyPayload_writesNothing() {

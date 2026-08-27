@@ -26,6 +26,7 @@ protocol CaptureBackingStore {
     func fetchCapture(id: UUID) async throws -> Capture
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws
     func markCaptureProcessed(id: UUID) async throws
+    func markCaptureUnprocessed(id: UUID) async throws
     func deleteCapture(id: UUID) async throws
 
     // Promotion
