@@ -23,6 +23,9 @@ struct PlaceEditorView: View {
     @State private var radiusMetres: Double = 200
     @State private var hasSeeded = false
     @State private var addressQuery = ""
+    /// The last address E chose, held as a FALLBACK name only. E's 2026-08-27 rule: it must not
+    /// write into the name field — it applies at save time, and only if the field is still empty.
+    @State private var chosenAddressTitle: String?
     /// Owned here so the suggestion list survives the map re-rendering under it.
     @StateObject private var addressSearch = PlaceAddressSearchService(
         completer: MapKitAddressProvider.shared,
@@ -30,7 +33,11 @@ struct PlaceEditorView: View {
     )
 
     private var canSave: Bool {
-        PlaceEditorValidation.canSave(name: name, coordinate: coordinate) && !isSaving
+        PlaceEditorValidation.canSave(
+            name: name,
+            coordinate: coordinate,
+            addressFallback: chosenAddressTitle
+        ) && !isSaving
     }
 
     var body: some View {
@@ -67,6 +74,10 @@ struct PlaceEditorView: View {
                 .accessibilityIdentifier("placeEditorEmojiField")
         } header: {
             Text("What is it")
+        } footer: {
+            if PlaceEditorValidation.normalizedName(name) == nil, let chosenAddressTitle {
+                Text("Leave the name blank and this will be saved as \"\(chosenAddressTitle)\".")
+            }
         }
     }
 
@@ -166,16 +177,14 @@ struct PlaceEditorView: View {
         }
     }
 
-    /// A chosen address drops the pin AND fills the name when E hasn't typed one — naming a place
-    /// after the address you just searched for is the overwhelmingly common case.
+    /// Drops the pin and REMEMBERS the address — it deliberately does not touch the name field
+    /// (E's 2026-08-27 bug report: it was filling the field the instant an address was chosen).
     private func choose(_ suggestion: AddressSuggestion) async {
         guard let resolved = await addressSearch.resolve(suggestion) else { return }
         Haptics.play(.solid)
         coordinate = resolved
         addressQuery = ""
-        if PlaceEditorValidation.normalizedName(name) == nil {
-            name = suggestion.title
-        }
+        chosenAddressTitle = suggestion.title
     }
 
     private var radiusSection: some View {
@@ -223,7 +232,8 @@ struct PlaceEditorView: View {
             radiusMetres: radiusMetres,
             emoji: emoji,
             // Preserved on edit so a save cannot orphan records already tagged with this place.
-            createdAt: existing?.createdAt ?? .now
+            createdAt: existing?.createdAt ?? .now,
+            addressFallback: chosenAddressTitle
         ) else { return }
 
         if await onSave(place) {

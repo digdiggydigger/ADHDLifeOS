@@ -23,8 +23,21 @@ enum PlaceEditorValidation {
         return String(trimmed.prefix(maximumNameLength))
     }
 
-    static func canSave(name: String, coordinate: PlaceCoordinate?) -> Bool {
-        normalizedName(name) != nil && coordinate != nil
+    /// The name this place will actually be saved under.
+    ///
+    /// E's 2026-08-27 rule: choosing an address must NOT write into the name field — it only
+    /// supplies a name when the place is saved with the field still empty. So the fallback is
+    /// resolved HERE, at save time, rather than by mutating what E sees.
+    static func effectiveName(typed: String, addressFallback: String?) -> String? {
+        if let typed = normalizedName(typed) { return typed }
+        guard let addressFallback else { return nil }
+        return normalizedName(addressFallback)
+    }
+
+    static func canSave(name: String, coordinate: PlaceCoordinate?, addressFallback: String? = nil) -> Bool {
+        // Save must ENABLE on a blank name when an address was chosen, or the fallback could
+        // never fire — the button would stay disabled and the rule would be unreachable.
+        effectiveName(typed: name, addressFallback: addressFallback) != nil && coordinate != nil
     }
 
     /// Build the `Place` the editor would save, or `nil` when it isn't saveable.
@@ -37,9 +50,11 @@ enum PlaceEditorValidation {
         coordinate: PlaceCoordinate?,
         radiusMetres: Double,
         emoji: String?,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        addressFallback: String? = nil
     ) -> Place? {
-        guard let name = normalizedName(name), let coordinate else { return nil }
+        guard let name = effectiveName(typed: name, addressFallback: addressFallback),
+              let coordinate else { return nil }
         // A blank emoji field must store nil, not "" — an empty string renders as a blank glyph
         // slot everywhere the identity emoji is shown.
         let trimmedEmoji = emoji?.trimmingCharacters(in: .whitespacesAndNewlines)

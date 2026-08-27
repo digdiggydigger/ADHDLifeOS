@@ -93,6 +93,80 @@ final class PlaceEditorValidationTests: XCTestCase {
         XCTAssertNil(place.emoji)
     }
 
+    // MARK: - The address as a fallback NAME (E's 2026-08-27 bug report)
+
+    /// E's rule: choosing an address must NOT write into the name field. It only supplies a name
+    /// when the place is saved with the field still empty.
+    func testEffectiveName_prefersWhatEtyped() {
+        XCTAssertEqual(
+            PlaceEditorValidation.effectiveName(typed: "Home", addressFallback: "14 Bridge Street"),
+            "Home"
+        )
+    }
+
+    func testEffectiveName_fallsBackToTheAddressOnlyWhenNothingWasTyped() {
+        XCTAssertEqual(
+            PlaceEditorValidation.effectiveName(typed: "", addressFallback: "14 Bridge Street"),
+            "14 Bridge Street"
+        )
+        XCTAssertEqual(
+            PlaceEditorValidation.effectiveName(typed: "   ", addressFallback: "14 Bridge Street"),
+            "14 Bridge Street"
+        )
+    }
+
+    func testEffectiveName_isNilWhenThereIsNeither() {
+        XCTAssertNil(PlaceEditorValidation.effectiveName(typed: "  ", addressFallback: nil))
+    }
+
+    /// The fallback is normalized too — an address long enough to break the row is still capped.
+    func testEffectiveName_normalizesTheFallback() {
+        let long = String(repeating: "b", count: PlaceEditorValidation.maximumNameLength + 20)
+
+        XCTAssertEqual(
+            PlaceEditorValidation.effectiveName(typed: "", addressFallback: long)?.count,
+            PlaceEditorValidation.maximumNameLength
+        )
+    }
+
+    /// Save has to ENABLE when the name is blank but an address was chosen, or the fallback could
+    /// never fire — the button would stay disabled and the rule would be unreachable.
+    func testCanSave_withNoTypedNameButAChosenAddress_isAllowed() {
+        XCTAssertTrue(
+            PlaceEditorValidation.canSave(name: "", coordinate: coordinate, addressFallback: "14 Bridge Street")
+        )
+    }
+
+    /// A pin dropped by tapping, with no name and no address, still cannot be saved — there is
+    /// genuinely nothing to call it.
+    func testCanSave_withNeitherANameNorAnAddress_isStillRefused() {
+        XCTAssertFalse(
+            PlaceEditorValidation.canSave(name: "  ", coordinate: coordinate, addressFallback: nil)
+        )
+    }
+
+    func testMakePlace_usesTheAddressFallbackWhenTheNameIsBlank() throws {
+        let place = try XCTUnwrap(
+            PlaceEditorValidation.makePlace(
+                id: UUID(), name: "", coordinate: coordinate, radiusMetres: 200,
+                emoji: nil, addressFallback: "14 Bridge Street"
+            )
+        )
+
+        XCTAssertEqual(place.name, "14 Bridge Street")
+    }
+
+    func testMakePlace_ignoresTheFallbackWhenANameWasTyped() throws {
+        let place = try XCTUnwrap(
+            PlaceEditorValidation.makePlace(
+                id: UUID(), name: "Home", coordinate: coordinate, radiusMetres: 200,
+                emoji: nil, addressFallback: "14 Bridge Street"
+            )
+        )
+
+        XCTAssertEqual(place.name, "Home")
+    }
+
     /// Editing must preserve the id and the original creation date — a save that mints a new id
     /// would orphan every record already tagged with this place.
     func testMakePlace_preservesAnExistingIdAndCreationDate() throws {
