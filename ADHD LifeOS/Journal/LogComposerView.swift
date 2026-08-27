@@ -210,6 +210,8 @@ private struct PreviewJournalClientAdapting: JournalClientAdapting {
     func fetchLogs() async throws -> [Log] { [] }
     func fetchFocusSessions() async throws -> [CompletedFocusSession] { [] }
     func fetchCaptures() async throws -> [Capture] { [] }
+    func fetchLocationEvents() async throws -> [LocationEvent] { [] }
+    func fetchPlaces() async throws -> [Place] { [] }
     func fetchAllTags() async throws -> [Tag] { [Tag(id: UUID(), name: "errands")] }
     func createTag(name: String) async throws -> Tag { Tag(id: UUID(), name: name) }
     func createLog(_ input: NormalizedCreateLogInput) async throws -> Log { fatalError("unused in preview") }

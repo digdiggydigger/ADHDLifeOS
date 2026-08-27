@@ -156,4 +156,39 @@ final class MomentumPreferencesTests: XCTestCase {
 
         XCTAssertEqual(store.read().dailyGoal, 1)
     }
+
+    // MARK: - Location switches (block 4b)
+
+    func testDecode_missingArrivalNudgesReadsAsOn() throws {
+        let legacy = #"{"dailyGoal":7,"showStreaks":false}"#
+        let decoded = try JSONDecoder().decode(MomentumPreferences.self, from: Data(legacy.utf8))
+
+        XCTAssertTrue(decoded.arrivalNudgesEnabled)
+    }
+
+    /// The bug this pins (found 2026-08-27): `normalized()` rebuilt the struct WITHOUT the
+    /// location flags, so both `read()` and `write()` silently reset them to their defaults —
+    /// the Settings toggle could never actually stick off.
+    func testNormalized_preservesTheLocationSwitches() {
+        var preferences = MomentumPreferences.default
+        preferences.locationTaggingEnabled = false
+        preferences.arrivalNudgesEnabled = false
+
+        let normalized = preferences.normalized()
+
+        XCTAssertFalse(normalized.locationTaggingEnabled, "off must survive normalization")
+        XCTAssertFalse(normalized.arrivalNudgesEnabled, "off must survive normalization")
+    }
+
+    func testStore_roundTripsTheLocationSwitchesOff() {
+        let (store, _) = makeStore()
+        var prefs = MomentumPreferences.default
+        prefs.locationTaggingEnabled = false
+        prefs.arrivalNudgesEnabled = false
+
+        store.write(prefs)
+
+        XCTAssertFalse(store.read().locationTaggingEnabled)
+        XCTAssertFalse(store.read().arrivalNudgesEnabled)
+    }
 }

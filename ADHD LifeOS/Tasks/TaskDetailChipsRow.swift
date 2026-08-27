@@ -13,6 +13,9 @@ struct TaskDetailChipsRow: View {
     let priority: TaskPriority
     let dueDate: Date?
     let effortMinutes: Int
+    /// The staged at-place (block 4a), resolved to its current record so a renamed place updates
+    /// the chip. Defaulted so pre-4a call sites render unchanged.
+    var atPlace: Place?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -23,6 +26,13 @@ struct TaskDetailChipsRow: View {
                         text: "\(area.colour) \(area.name)",
                         background: family.tint,
                         foreground: family.color
+                    )
+                }
+                if let atPlace {
+                    MomentumChip(
+                        text: atPlace.emoji.map { "\($0) \(atPlace.name)" } ?? "📍 \(atPlace.name)",
+                        background: Color("CardSurfaceSecondary"),
+                        foreground: Color.accentColor
                     )
                 }
                 MomentumChip(

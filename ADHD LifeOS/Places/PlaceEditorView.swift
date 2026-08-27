@@ -21,6 +21,8 @@ struct PlaceEditorView: View {
     @State private var emoji: String = ""
     @State private var coordinate: PlaceCoordinate?
     @State private var radiusMetres: Double = 200
+    @State private var nudgeOnArrival = false
+    @State private var nudgeOnDeparture = false
     @State private var hasSeeded = false
     @State private var addressQuery = ""
     /// The last address E chose, held as a FALLBACK name only. E's 2026-08-27 rule: it must not
@@ -46,6 +48,7 @@ struct PlaceEditorView: View {
                 identitySection
                 locationSection
                 radiusSection
+                nudgesSection
             }
             .navigationTitle(existing == nil ? "New place" : "Edit place")
             .navigationBarTitleDisplayMode(.inline)
@@ -214,6 +217,27 @@ struct PlaceEditorView: View {
         }
     }
 
+    /// The per-place nudge toggles (block 4b) — staged like every other field here, applied on
+    /// Save. The Always escalation banner appears the moment a toggle goes on: that first flip
+    /// is when the feature finally means something, which is the honest moment to ask.
+    private var nudgesSection: some View {
+        Section {
+            Toggle("Nudge on arrival", isOn: $nudgeOnArrival)
+                .accessibilityIdentifier("placeEditorArrivalToggle")
+            Toggle("Nudge when leaving", isOn: $nudgeOnDeparture)
+                .accessibilityIdentifier("placeEditorDepartureToggle")
+            if nudgeOnArrival || nudgeOnDeparture {
+                LocationPermissionBanner(wantsTriggering: true)
+            }
+        } header: {
+            Text("Nudges")
+        } footer: {
+            Text("Off by default. A nudging place uses one of the "
+                 + "\(PlaceMonitoringCapacity.limit) monitoring slots iOS gives the whole app, "
+                 + "and a nudge only ever fires when this place has open At-Place tasks.")
+        }
+    }
+
     // MARK: - Behaviour
 
     /// Seeds the fields once. Guarded because `.task` can re-run, and re-seeding mid-edit would
@@ -226,6 +250,8 @@ struct PlaceEditorView: View {
         emoji = existing.emoji ?? ""
         coordinate = existing.coordinate
         radiusMetres = existing.radiusMetres
+        nudgeOnArrival = existing.nudgeOnArrival
+        nudgeOnDeparture = existing.nudgeOnDeparture
     }
 
     private func save() async {
@@ -237,7 +263,9 @@ struct PlaceEditorView: View {
             emoji: emoji,
             // Preserved on edit so a save cannot orphan records already tagged with this place.
             createdAt: existing?.createdAt ?? .now,
-            addressFallback: chosenAddressTitle
+            addressFallback: chosenAddressTitle,
+            nudgeOnArrival: nudgeOnArrival,
+            nudgeOnDeparture: nudgeOnDeparture
         ) else { return }
 
         if await onSave(place) {

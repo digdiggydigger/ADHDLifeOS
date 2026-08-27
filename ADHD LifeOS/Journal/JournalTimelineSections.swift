@@ -16,6 +16,7 @@ extension JournalView {
         let days = JournalTimeline.days(
             logs: logs, tasks: filteredTasks,
             sprints: filteredSprints, captures: filteredCaptures,
+            locationEvents: journalService.locationEvents, places: journalService.places,
             filter: filter
         )
         return ScrollView {
@@ -56,9 +57,29 @@ extension JournalView {
                     sprintRow(sprint)
                 case .capture(let capture):
                     captureRow(capture)
+                case .locationEvent(let event):
+                    locationEventRow(event)
                 }
             }
         }
+    }
+
+    /// A fence crossing (block 4c) — deliberately the lightest row here: no card, no door, just
+    /// the arrow, the words and the time. Ambience the eye can skip, exactly as designed.
+    private func locationEventRow(_ event: LocationEvent) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            timeGutter(event.occurredAt)
+            Image(systemName: event.kind == .arrival ? "arrow.forward" : "arrow.backward")
+                .font(.footnote.bold())
+                .foregroundStyle(Color.accentColor)
+            Text(JournalTimeline.locationEventLine(for: event, places: journalService.places) ?? "")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .frame(minHeight: 32)
+        .accessibilityElement(children: .combine)
     }
 
     private func logRow(_ log: Log) -> some View {

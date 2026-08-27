@@ -186,6 +186,7 @@ final class FirebaseManager {
         case reminders
         case focusSessions = "focus_sessions"
         case places
+        case locationEvents = "location_events"
     }
 
     func requireUID() throws -> String {

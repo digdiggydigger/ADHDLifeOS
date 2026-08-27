@@ -282,13 +282,27 @@ struct RootView: View {
             // F-V3-Tasks-rebuild: the per-task nudge feature is gone, so sweep anything it
             // scheduled before its removal — nothing left in the app could ever cancel it.
             await LegacyTaskNotificationCleanup.run()
+            // Block 4b: settle the geofences against the saved places on every launch.
+            // Idempotent — registering the same identifier replaces, never duplicates.
+            await LocationTriggerService.shared.refreshRegistrations()
+        }
+        // A place edit (or the Settings master switch) lands through the shared write plumbing
+        // like every other mutation; the fences follow it without waiting for a relaunch. Cheap
+        // when triggering is off or ungranted — the service's gate fails before any fetch.
+        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            Task { await LocationTriggerService.shared.refreshRegistrations() }
         }
         // Returning to the app settles a sprint whose countdown ran out behind a locked screen: the
         // ticker is suspended with the app, so without this the finished sprint stayed "running" —
         // and its Live Activity stayed on the Lock Screen at 0:00, complete with live Pause/Stop
         // buttons — until the next ticker beat (E's bug, 2026-08-20).
         .onChange(of: scenePhase) { phase in
-            if phase == .active { focusService.syncNow() }
+            if phase == .active {
+                focusService.syncNow()
+                // Foregrounding is also the moment a fresh Always grant (given in Settings while
+                // we were backgrounded) can finally register its fences.
+                Task { await LocationTriggerService.shared.refreshRegistrations() }
+            }
         }
     }
 }

@@ -30,6 +30,8 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
     /// with no stamp means "done, at an unknown time", which deliberately counts as no day's win.
     /// Cleared on re-open — see `TaskCompletionStamp`.
     var completedAt: Date?
+    /// Where this task can be DONE (block 4a) — intent, distinct from the closed-here trio below.
+    var atPlaceId: UUID?
     /// WHERE this task was closed (F-Location-Tagging, block 3 remainder) — stamped by the same
     /// write as `completedAt` and erased with it on re-open. `nil` on every task closed before
     /// this shipped, and on any closed with tagging or permission off.
@@ -47,6 +49,7 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         focusDurationSeconds: Int? = nil,
         nudgesCount: Int? = nil,
         completedAt: Date? = nil,
+        atPlaceId: UUID? = nil,
         placeId: UUID? = nil,
         latitude: Double? = nil,
         longitude: Double? = nil
@@ -60,6 +63,7 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         self.focusDurationSeconds = focusDurationSeconds
         self.nudgesCount = nudgesCount
         self.completedAt = completedAt
+        self.atPlaceId = atPlaceId
         self.placeId = placeId
         self.latitude = latitude
         self.longitude = longitude
@@ -72,6 +76,7 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         case focusDurationSeconds = "focus_duration_seconds"
         case nudgesCount = "nudges_count"
         case completedAt = "completed_at"
+        case atPlaceId = "at_place_id"
         case placeId = "place_id"
     }
 }

@@ -60,9 +60,17 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// Location permission is a separate, stricter gate — this only decides whether the app asks
     /// for a fix at all.
     var locationTaggingEnabled: Bool
+    /// The master switch over every place's arrival/departure nudges (block 4b). One flip
+    /// silences every fence at once; the per-place toggles are kept, so turning it back on
+    /// restores exactly what was set up.
+    var arrivalNudgesEnabled: Bool
 
     /// Every read path passes through this, so no writer — Stepper, old build, bad migration —
     /// can hand the ring a goal it would divide by zero on.
+    ///
+    /// Every field must be passed through EXPLICITLY: an omitted one silently resets to its init
+    /// default on every read AND write — which is exactly how `locationTaggingEnabled` spent a
+    /// session unable to stick off (found 2026-08-27, pinned in `MomentumPreferencesTests`).
     func normalized() -> MomentumPreferences {
         MomentumPreferences(
             dailyGoal: min(max(dailyGoal, Self.goalRange.lowerBound), Self.goalRange.upperBound),
@@ -77,7 +85,9 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
                 max(defaultSprintMinutes, Self.sprintMinutesRange.lowerBound), Self.sprintMinutesRange.upperBound
             ),
             hapticsEnabled: hapticsEnabled,
-            soundEnabled: soundEnabled
+            soundEnabled: soundEnabled,
+            locationTaggingEnabled: locationTaggingEnabled,
+            arrivalNudgesEnabled: arrivalNudgesEnabled
         )
     }
 
@@ -94,7 +104,8 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         defaultSprintMinutes: Int = 15,
         hapticsEnabled: Bool = true,
         soundEnabled: Bool = true,
-        locationTaggingEnabled: Bool = true
+        locationTaggingEnabled: Bool = true,
+        arrivalNudgesEnabled: Bool = true
     ) {
         self.dailyGoal = dailyGoal
         self.showStreaks = showStreaks
@@ -106,6 +117,7 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         self.hapticsEnabled = hapticsEnabled
         self.soundEnabled = soundEnabled
         self.locationTaggingEnabled = locationTaggingEnabled
+        self.arrivalNudgesEnabled = arrivalNudgesEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -121,6 +133,8 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         soundEnabled = try container.decodeIfPresent(Bool.self, forKey: .soundEnabled) ?? true
         locationTaggingEnabled = try container
             .decodeIfPresent(Bool.self, forKey: .locationTaggingEnabled) ?? true
+        arrivalNudgesEnabled = try container
+            .decodeIfPresent(Bool.self, forKey: .arrivalNudgesEnabled) ?? true
     }
 }
 

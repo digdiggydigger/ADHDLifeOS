@@ -51,7 +51,9 @@ enum PlaceEditorValidation {
         radiusMetres: Double,
         emoji: String?,
         createdAt: Date = .now,
-        addressFallback: String? = nil
+        addressFallback: String? = nil,
+        nudgeOnArrival: Bool = false,
+        nudgeOnDeparture: Bool = false
     ) -> Place? {
         guard let name = effectiveName(typed: name, addressFallback: addressFallback),
               let coordinate else { return nil }
@@ -64,7 +66,9 @@ enum PlaceEditorValidation {
             coordinate: coordinate,
             radiusMetres: radiusMetres,
             emoji: (trimmedEmoji?.isEmpty ?? true) ? nil : trimmedEmoji,
-            createdAt: createdAt
+            createdAt: createdAt,
+            nudgeOnArrival: nudgeOnArrival,
+            nudgeOnDeparture: nudgeOnDeparture
         )
     }
 }

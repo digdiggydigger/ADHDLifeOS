@@ -36,6 +36,14 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
     /// Identity glyph, the `LifeArea.colour` arrangement.
     var emoji: String?
     var createdAt: Date
+    /// The per-place nudge toggles (block 4b) — OFF by default, deliberately: a nudging place
+    /// spends one of iOS's 20 silent region slots and earns the right to interrupt, so each
+    /// place opts in rather than every saved place becoming a noise source.
+    var nudgeOnArrival: Bool
+    var nudgeOnDeparture: Bool
+
+    /// Whether this place deserves a region slot at all.
+    var anyNudgeEnabled: Bool { nudgeOnArrival || nudgeOnDeparture }
 
     static func clampedRadius(_ metres: Double) -> Double {
         min(max(metres, minimumRadiusMetres), maximumRadiusMetres)
@@ -47,7 +55,9 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         coordinate: PlaceCoordinate,
         radiusMetres: Double,
         emoji: String? = nil,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        nudgeOnArrival: Bool = false,
+        nudgeOnDeparture: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -55,6 +65,8 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         self.radiusMetres = Self.clampedRadius(radiusMetres)
         self.emoji = emoji
         self.createdAt = createdAt
+        self.nudgeOnArrival = nudgeOnArrival
+        self.nudgeOnDeparture = nudgeOnDeparture
     }
 
     // MARK: - Codable
@@ -70,6 +82,8 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         case radiusMetres = "radius_metres"
         case emoji
         case createdAt = "created_at"
+        case nudgeOnArrival = "nudge_on_arrival"
+        case nudgeOnDeparture = "nudge_on_departure"
     }
 
     init(from decoder: Decoder) throws {
@@ -85,6 +99,9 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         radiusMetres = Self.clampedRadius(try container.decode(Double.self, forKey: .radiusMetres))
         emoji = try container.decodeIfPresent(String.self, forKey: .emoji)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
+        // Absent on every place saved before block 4 — a quiet place, never a failed document.
+        nudgeOnArrival = try container.decodeIfPresent(Bool.self, forKey: .nudgeOnArrival) ?? false
+        nudgeOnDeparture = try container.decodeIfPresent(Bool.self, forKey: .nudgeOnDeparture) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -96,5 +113,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         try container.encode(radiusMetres, forKey: .radiusMetres)
         try container.encodeIfPresent(emoji, forKey: .emoji)
         try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(nudgeOnArrival, forKey: .nudgeOnArrival)
+        try container.encode(nudgeOnDeparture, forKey: .nudgeOnDeparture)
     }
 }

@@ -49,6 +49,22 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
         }
     }
 
+    func fetchLocationEvents() async throws -> [LocationEvent] {
+        do {
+            return try await store.fetchLocationEvents()
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
+    func fetchPlaces() async throws -> [Place] {
+        do {
+            return try await store.fetchPlaces()
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
     func fetchAllTags() async throws -> [Tag] {
         do {
             return try await store.fetchTags()

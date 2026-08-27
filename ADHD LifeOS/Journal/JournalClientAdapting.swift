@@ -28,6 +28,10 @@ protocol JournalClientAdapting: Sendable {
     func fetchFocusSessions() async throws -> [CompletedFocusSession]
     /// The capture log — every thought dumped, stamped at `createdAt`. Read-only.
     func fetchCaptures() async throws -> [Capture]
+    /// The recorded fence crossings the timeline interleaves as quiet event rows (block 4c),
+    /// and the places that give them names. Read-only garnish, like the streams above.
+    func fetchLocationEvents() async throws -> [LocationEvent]
+    func fetchPlaces() async throws -> [Place]
     /// The shared tag registry, for the composer's chips and the rows' resolution — the same
     /// list tasks and captures use.
     func fetchAllTags() async throws -> [Tag]

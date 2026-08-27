@@ -22,14 +22,23 @@ final class TaskDetailService: ObservableObject {
     @Published private(set) var isSaving = false
     @Published var errorMessage: String?
     @Published var warningMessage: String?
+    /// The named places, for the at-place picker and chip (block 4a). Garnish, never
+    /// load-bearing — the same non-blocking posture as the journal's side streams.
+    @Published private(set) var places: [Place] = []
 
     private let taskId: UUID
     private let client: TaskDetailClientAdapting
+    private let placesClient: PlacesClientAdapting
     private var task: TaskDetail?
 
-    init(taskId: UUID, client: TaskDetailClientAdapting) {
+    init(
+        taskId: UUID,
+        client: TaskDetailClientAdapting,
+        placesClient: PlacesClientAdapting? = nil
+    ) {
         self.taskId = taskId
         self.client = client
+        self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
     }
 
     func load() async {
@@ -47,6 +56,8 @@ final class TaskDetailService: ObservableObject {
         } catch {
             state = .failed(Self.message(for: error))
         }
+        // After the task settles, deliberately: a places failure must never take the screen down.
+        places = (try? await placesClient.fetchPlaces()) ?? []
     }
 
     @discardableResult

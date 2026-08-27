@@ -37,6 +37,7 @@ enum FirestoreFieldPayloads {
         setNullable(payload.notes, forKey: "notes", in: &fields)
         setNullable(payload.lifeAreaId, forKey: "life_area_id", in: &fields) { $0.uuidString }
         setNullable(payload.dueDate, forKey: "due_date", in: &fields) { Timestamp(date: $0) }
+        setNullable(payload.atPlaceId, forKey: "at_place_id", in: &fields) { $0.uuidString }
         if let focusDurationSeconds = payload.focusDurationSeconds {
             fields["focus_duration_seconds"] = focusDurationSeconds
         }

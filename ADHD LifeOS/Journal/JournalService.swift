@@ -32,11 +32,15 @@ final class JournalService: ObservableObject {
     @Published var composerMoodEmoji: String = JournalMood.defaultEmoji
     @Published private(set) var isCreating = false
     @Published var createErrorMessage: String?
-    /// The two side streams the timeline interleaves beside the logs (E's 2026-08-25 note).
-    /// Garnish, never load-bearing: a failed fetch leaves them empty rather than failing the
-    /// journal — the same non-blocking posture as the view's closed-task fetch.
+    /// The side streams the timeline interleaves beside the logs (E's 2026-08-25 note; the
+    /// fence crossings joined in block 4c). Garnish, never load-bearing: a failed fetch leaves
+    /// them empty rather than failing the journal — the same non-blocking posture as the view's
+    /// closed-task fetch.
     @Published private(set) var focusSessions: [CompletedFocusSession] = []
     @Published private(set) var captures: [Capture] = []
+    @Published private(set) var locationEvents: [LocationEvent] = []
+    /// For the event rows' names — a dangling id reads as no row, never a raw UUID.
+    @Published private(set) var places: [Place] = []
     /// The composer's tag selection (E's 2026-08-25 note) — sent with the create, because logs
     /// are append-only and can never be tagged after the fact.
     @Published var composerTagIds: [UUID] = []
@@ -82,11 +86,15 @@ final class JournalService: ObservableObject {
             async let logsResult = client.fetchLogs()
             async let sprintsResult = client.fetchFocusSessions()
             async let capturesResult = client.fetchCaptures()
+            async let eventsResult = client.fetchLocationEvents()
+            async let placesResult = client.fetchPlaces()
             async let tagsResult = client.fetchAllTags()
             lifeAreas = try await lifeAreasResult
             logs = try await logsResult
             focusSessions = (try? await sprintsResult) ?? []
             captures = (try? await capturesResult) ?? []
+            locationEvents = (try? await eventsResult) ?? []
+            places = (try? await placesResult) ?? []
             availableTags = (try? await tagsResult) ?? []
             hasLoadedOnce = true
             recomputeFeed()
