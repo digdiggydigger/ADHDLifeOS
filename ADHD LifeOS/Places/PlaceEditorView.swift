@@ -24,6 +24,7 @@ struct PlaceEditorView: View {
     @State private var nudgeOnArrival = false
     @State private var nudgeOnDeparture = false
     @State private var arrivalMessage = ""
+    @State private var departureMessage = ""
     @State private var hasSeeded = false
     @State private var addressQuery = ""
     /// The last address E chose, held as a FALLBACK name only. E's 2026-08-27 rule: it must not
@@ -231,6 +232,10 @@ struct PlaceEditorView: View {
             }
             Toggle("Nudge when leaving", isOn: $nudgeOnDeparture)
                 .accessibilityIdentifier("placeEditorDepartureToggle")
+            if nudgeOnDeparture {
+                TextField("Say this when I leave (optional)", text: $departureMessage, axis: .vertical)
+                    .accessibilityIdentifier("placeEditorDepartureMessageField")
+            }
             if nudgeOnArrival || nudgeOnDeparture {
                 LocationPermissionBanner(wantsTriggering: true)
             }
@@ -239,7 +244,7 @@ struct PlaceEditorView: View {
         } footer: {
             Text("Off by default. A nudging place uses one of the "
                  + "\(PlaceMonitoringCapacity.limit) monitoring slots iOS gives the whole app. "
-                 + "With a message set, arriving here always says it; with none, a nudge only "
+                 + "With a message set, that crossing always says it; with none, a nudge only "
                  + "fires when this place has open At-Place tasks.")
         }
     }
@@ -259,6 +264,7 @@ struct PlaceEditorView: View {
         nudgeOnArrival = existing.nudgeOnArrival
         nudgeOnDeparture = existing.nudgeOnDeparture
         arrivalMessage = existing.arrivalMessage ?? ""
+        departureMessage = existing.departureMessage ?? ""
     }
 
     private func save() async {
@@ -273,7 +279,8 @@ struct PlaceEditorView: View {
             addressFallback: chosenAddressTitle,
             nudgeOnArrival: nudgeOnArrival,
             nudgeOnDeparture: nudgeOnDeparture,
-            arrivalMessage: arrivalMessage
+            arrivalMessage: arrivalMessage,
+            departureMessage: departureMessage
         ) else { return }
 
         if await onSave(place) {

@@ -46,6 +46,11 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
     /// the empty-never-fires gate applies only to places without one. `nil`, never "", when
     /// unset (the emoji rule).
     var arrivalMessage: String?
+    /// E's own words for LEAVING here (the 2026-08-28 request). Same contract as
+    /// `arrivalMessage`, and deliberately a separate field: "remember your keys" on the way out
+    /// is not the sentence you want on the way in, and a place commonly wants one without the
+    /// other. Setting one makes departure fire even with nothing open here.
+    var departureMessage: String?
 
     /// Whether this place deserves a region slot at all.
     var anyNudgeEnabled: Bool { nudgeOnArrival || nudgeOnDeparture }
@@ -63,7 +68,8 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         createdAt: Date = .now,
         nudgeOnArrival: Bool = false,
         nudgeOnDeparture: Bool = false,
-        arrivalMessage: String? = nil
+        arrivalMessage: String? = nil,
+        departureMessage: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -74,6 +80,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         self.nudgeOnArrival = nudgeOnArrival
         self.nudgeOnDeparture = nudgeOnDeparture
         self.arrivalMessage = arrivalMessage
+        self.departureMessage = departureMessage
     }
 
     // MARK: - Codable
@@ -92,6 +99,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         case nudgeOnArrival = "nudge_on_arrival"
         case nudgeOnDeparture = "nudge_on_departure"
         case arrivalMessage = "arrival_message"
+        case departureMessage = "departure_message"
     }
 
     init(from decoder: Decoder) throws {
@@ -111,6 +119,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         nudgeOnArrival = try container.decodeIfPresent(Bool.self, forKey: .nudgeOnArrival) ?? false
         nudgeOnDeparture = try container.decodeIfPresent(Bool.self, forKey: .nudgeOnDeparture) ?? false
         arrivalMessage = try container.decodeIfPresent(String.self, forKey: .arrivalMessage)
+        departureMessage = try container.decodeIfPresent(String.self, forKey: .departureMessage)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -125,5 +134,6 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         try container.encode(nudgeOnArrival, forKey: .nudgeOnArrival)
         try container.encode(nudgeOnDeparture, forKey: .nudgeOnDeparture)
         try container.encodeIfPresent(arrivalMessage, forKey: .arrivalMessage)
+        try container.encodeIfPresent(departureMessage, forKey: .departureMessage)
     }
 }

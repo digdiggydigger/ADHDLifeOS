@@ -54,15 +54,17 @@ enum PlaceEditorValidation {
         addressFallback: String? = nil,
         nudgeOnArrival: Bool = false,
         nudgeOnDeparture: Bool = false,
-        arrivalMessage: String? = nil
+        arrivalMessage: String? = nil,
+        departureMessage: String? = nil
     ) -> Place? {
         guard let name = effectiveName(typed: name, addressFallback: addressFallback),
               let coordinate else { return nil }
         // A blank emoji field must store nil, not "" — an empty string renders as a blank glyph
-        // slot everywhere the identity emoji is shown. The arrival message follows the same rule
-        // for a sharper reason: "" would count as "has a message" and blank-nudge every arrival.
+        // slot everywhere the identity emoji is shown. Both messages follow the same rule for a
+        // sharper reason: "" would count as "has a message" and blank-nudge every crossing.
         let trimmedEmoji = emoji?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedMessage = arrivalMessage?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedArrival = arrivalMessage?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDeparture = departureMessage?.trimmingCharacters(in: .whitespacesAndNewlines)
         return Place(
             id: id,
             name: name,
@@ -72,7 +74,8 @@ enum PlaceEditorValidation {
             createdAt: createdAt,
             nudgeOnArrival: nudgeOnArrival,
             nudgeOnDeparture: nudgeOnDeparture,
-            arrivalMessage: (trimmedMessage?.isEmpty ?? true) ? nil : trimmedMessage
+            arrivalMessage: (trimmedArrival?.isEmpty ?? true) ? nil : trimmedArrival,
+            departureMessage: (trimmedDeparture?.isEmpty ?? true) ? nil : trimmedDeparture
         )
     }
 }

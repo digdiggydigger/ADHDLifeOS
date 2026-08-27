@@ -21,6 +21,9 @@ struct AtPlaceSnapshot: Codable, Equatable {
         /// E's own words for arriving here — see `Place.arrivalMessage` for how a set message
         /// changes the firing rule. `var` optional so pre-message snapshots decode as nil.
         var arrivalMessage: String?
+        /// And for leaving. Same contract, separate words — neither ever speaks on the other's
+        /// crossing.
+        var departureMessage: String?
     }
 
     let entries: [PlaceEntry]
@@ -37,7 +40,8 @@ struct AtPlaceSnapshot: Codable, Equatable {
                             < ($1.priority.rawValue, $1.title.localizedLowercase)
                     }
                     .map(\.title),
-                arrivalMessage: place.arrivalMessage
+                arrivalMessage: place.arrivalMessage,
+                departureMessage: place.departureMessage
             )
         })
     }
@@ -45,9 +49,10 @@ struct AtPlaceSnapshot: Codable, Equatable {
 
 /// The nudge's words — or `nil`, which means DO NOT FIRE.
 ///
-/// The nil cases carry variation A's whole restraint contract: an unknown place, a place with
-/// nothing open, a missing snapshot — all silence. An empty nudge ("You're at Tesco" with
-/// nothing to do there) is exactly how someone learns to swipe these away unread.
+/// The nil cases carry variation A's whole restraint contract: an unknown place, a missing
+/// snapshot, or a place with nothing open AND no words of E's own for this crossing — all
+/// silence. An empty nudge ("You're at Tesco" with nothing to do there) is exactly how someone
+/// learns to swipe these away unread.
 enum ArrivalNudgeContent {
     /// A notification is a glance, not a screen — quote at most this many titles.
     static let maximumQuotedTitles = 2
@@ -60,28 +65,45 @@ enum ArrivalNudgeContent {
         }
         switch event.kind {
         case .arrival:
-            // A custom message fires on its own — E wrote it, so the nudge is never empty. The
-            // task-gate applies only to places without one. Departure stays task-gated always:
-            // the message is an ARRIVAL customisation.
-            switch (entry.arrivalMessage, entry.openTaskTitles.isEmpty) {
-            case (nil, true):
-                return nil
-            case (let message?, true):
-                return (title: "You're at \(entry.displayName)", body: message)
-            case (let message?, false):
-                return (
-                    title: "You're at \(entry.displayName)",
-                    body: "\(message) — \(taskLine(for: entry, joiner: ": "))"
+            return compose(
+                title: "You're at \(entry.displayName)",
+                message: entry.arrivalMessage,
+                tasks: entry.openTaskTitles.isEmpty ? nil : (
+                    alone: taskLine(for: entry, joiner: " — "),
+                    afterMessage: taskLine(for: entry, joiner: ": ")
                 )
-            case (nil, false):
-                return (
-                    title: "You're at \(entry.displayName)",
-                    body: taskLine(for: entry, joiner: " — ")
-                )
-            }
+            )
         case .departure:
-            guard !entry.openTaskTitles.isEmpty else { return nil }
-            return (title: "Leaving \(entry.displayName)", body: departureBody(for: entry))
+            return compose(
+                title: "Leaving \(entry.displayName)",
+                message: entry.departureMessage,
+                tasks: entry.openTaskTitles.isEmpty ? nil : (
+                    alone: departureBody(for: entry), afterMessage: departureBody(for: entry)
+                )
+            )
+        }
+    }
+
+    /// The one firing rule both crossings obey (E's 2026-08-28 request extended it to departure):
+    /// a custom message fires on its own — E wrote it, so the nudge is never empty — and the
+    /// empty-never-fires gate applies only to places without one. Each crossing reads only its
+    /// OWN message; an arrival message never speaks on the way out.
+    ///
+    /// `tasks` carries two phrasings because arrival's task line changes when a message leads it
+    /// — "… — 1 thing lives here — X" reads wrong with the same joiner used twice. `nil` means
+    /// nothing is open here, which is the half of the gate that predates the messages.
+    private static func compose(
+        title: String, message: String?, tasks: (alone: String, afterMessage: String)?
+    ) -> (title: String, body: String)? {
+        switch (message, tasks) {
+        case (nil, nil):
+            return nil
+        case (let message?, nil):
+            return (title: title, body: message)
+        case (let message?, let tasks?):
+            return (title: title, body: "\(message) — \(tasks.afterMessage)")
+        case (nil, let tasks?):
+            return (title: title, body: tasks.alone)
         }
     }
 

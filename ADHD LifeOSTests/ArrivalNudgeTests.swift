@@ -291,8 +291,9 @@ final class ArrivalMessageTests: XCTestCase {
         XCTAssertEqual(content?.body, "Locker code is 4821 — 1 thing lives here: Return the parcel")
     }
 
-    /// The message is an ARRIVAL customisation only — leaving stays task-gated, so a place with
-    /// a message but nothing open departs silently.
+    /// Each crossing reads only its OWN words: an arrival message never speaks on the way out,
+    /// so a place with one but nothing open departs silently. Departure got its own message on
+    /// 2026-08-28 — see `DepartureMessageTests`.
     func testContent_departureIgnoresTheMessage() {
         XCTAssertNil(ArrivalNudgeContent.notification(
             for: departure(), snapshot: entry(message: "Locker code is 4821")
