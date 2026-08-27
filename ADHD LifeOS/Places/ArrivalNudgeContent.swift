@@ -18,6 +18,9 @@ struct AtPlaceSnapshot: Codable, Equatable {
         let displayName: String
         /// Most urgent first — the order the notification body quotes them in.
         let openTaskTitles: [String]
+        /// E's own words for arriving here — see `Place.arrivalMessage` for how a set message
+        /// changes the firing rule. `var` optional so pre-message snapshots decode as nil.
+        var arrivalMessage: String?
     }
 
     let entries: [PlaceEntry]
@@ -33,7 +36,8 @@ struct AtPlaceSnapshot: Codable, Equatable {
                         ($0.priority.rawValue, $0.title.localizedLowercase)
                             < ($1.priority.rawValue, $1.title.localizedLowercase)
                     }
-                    .map(\.title)
+                    .map(\.title),
+                arrivalMessage: place.arrivalMessage
             )
         })
     }
@@ -51,24 +55,44 @@ enum ArrivalNudgeContent {
     static func notification(
         for event: PlaceTriggerEvent, snapshot: AtPlaceSnapshot?
     ) -> (title: String, body: String)? {
-        guard let entry = snapshot?.entries.first(where: { $0.placeId == event.placeId }),
-              !entry.openTaskTitles.isEmpty else { return nil }
+        guard let entry = snapshot?.entries.first(where: { $0.placeId == event.placeId }) else {
+            return nil
+        }
         switch event.kind {
         case .arrival:
-            return (title: "You're at \(entry.displayName)", body: arrivalBody(for: entry))
+            // A custom message fires on its own — E wrote it, so the nudge is never empty. The
+            // task-gate applies only to places without one. Departure stays task-gated always:
+            // the message is an ARRIVAL customisation.
+            switch (entry.arrivalMessage, entry.openTaskTitles.isEmpty) {
+            case (nil, true):
+                return nil
+            case (let message?, true):
+                return (title: "You're at \(entry.displayName)", body: message)
+            case (let message?, false):
+                return (
+                    title: "You're at \(entry.displayName)",
+                    body: "\(message) — \(taskLine(for: entry, joiner: ": "))"
+                )
+            case (nil, false):
+                return (
+                    title: "You're at \(entry.displayName)",
+                    body: taskLine(for: entry, joiner: " — ")
+                )
+            }
         case .departure:
+            guard !entry.openTaskTitles.isEmpty else { return nil }
             return (title: "Leaving \(entry.displayName)", body: departureBody(for: entry))
         }
     }
 
-    private static func arrivalBody(for entry: AtPlaceSnapshot.PlaceEntry) -> String {
+    private static func taskLine(for entry: AtPlaceSnapshot.PlaceEntry, joiner: String) -> String {
         let count = entry.openTaskTitles.count
         let lead = count == 1 ? "1 thing lives here" : "\(count) things live here"
         var quoted = entry.openTaskTitles.prefix(maximumQuotedTitles).joined(separator: " · ")
         if count > maximumQuotedTitles {
             quoted += " · +\(count - maximumQuotedTitles) more"
         }
-        return "\(lead) — \(quoted)"
+        return "\(lead)\(joiner)\(quoted)"
     }
 
     private static func departureBody(for entry: AtPlaceSnapshot.PlaceEntry) -> String {

@@ -23,6 +23,7 @@ struct PlaceEditorView: View {
     @State private var radiusMetres: Double = 200
     @State private var nudgeOnArrival = false
     @State private var nudgeOnDeparture = false
+    @State private var arrivalMessage = ""
     @State private var hasSeeded = false
     @State private var addressQuery = ""
     /// The last address E chose, held as a FALLBACK name only. E's 2026-08-27 rule: it must not
@@ -224,6 +225,10 @@ struct PlaceEditorView: View {
         Section {
             Toggle("Nudge on arrival", isOn: $nudgeOnArrival)
                 .accessibilityIdentifier("placeEditorArrivalToggle")
+            if nudgeOnArrival {
+                TextField("Say this when I arrive (optional)", text: $arrivalMessage, axis: .vertical)
+                    .accessibilityIdentifier("placeEditorArrivalMessageField")
+            }
             Toggle("Nudge when leaving", isOn: $nudgeOnDeparture)
                 .accessibilityIdentifier("placeEditorDepartureToggle")
             if nudgeOnArrival || nudgeOnDeparture {
@@ -233,8 +238,9 @@ struct PlaceEditorView: View {
             Text("Nudges")
         } footer: {
             Text("Off by default. A nudging place uses one of the "
-                 + "\(PlaceMonitoringCapacity.limit) monitoring slots iOS gives the whole app, "
-                 + "and a nudge only ever fires when this place has open At-Place tasks.")
+                 + "\(PlaceMonitoringCapacity.limit) monitoring slots iOS gives the whole app. "
+                 + "With a message set, arriving here always says it; with none, a nudge only "
+                 + "fires when this place has open At-Place tasks.")
         }
     }
 
@@ -252,6 +258,7 @@ struct PlaceEditorView: View {
         radiusMetres = existing.radiusMetres
         nudgeOnArrival = existing.nudgeOnArrival
         nudgeOnDeparture = existing.nudgeOnDeparture
+        arrivalMessage = existing.arrivalMessage ?? ""
     }
 
     private func save() async {
@@ -265,7 +272,8 @@ struct PlaceEditorView: View {
             createdAt: existing?.createdAt ?? .now,
             addressFallback: chosenAddressTitle,
             nudgeOnArrival: nudgeOnArrival,
-            nudgeOnDeparture: nudgeOnDeparture
+            nudgeOnDeparture: nudgeOnDeparture,
+            arrivalMessage: arrivalMessage
         ) else { return }
 
         if await onSave(place) {

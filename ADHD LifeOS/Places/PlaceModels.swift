@@ -41,6 +41,11 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
     /// place opts in rather than every saved place becoming a noise source.
     var nudgeOnArrival: Bool
     var nudgeOnDeparture: Bool
+    /// E's own words for arriving here (the 2026-08-27 follow-up). Setting one CHANGES the
+    /// firing rule on purpose: the message is content, so this place nudges on every arrival —
+    /// the empty-never-fires gate applies only to places without one. `nil`, never "", when
+    /// unset (the emoji rule).
+    var arrivalMessage: String?
 
     /// Whether this place deserves a region slot at all.
     var anyNudgeEnabled: Bool { nudgeOnArrival || nudgeOnDeparture }
@@ -57,7 +62,8 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         emoji: String? = nil,
         createdAt: Date = .now,
         nudgeOnArrival: Bool = false,
-        nudgeOnDeparture: Bool = false
+        nudgeOnDeparture: Bool = false,
+        arrivalMessage: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -67,6 +73,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         self.createdAt = createdAt
         self.nudgeOnArrival = nudgeOnArrival
         self.nudgeOnDeparture = nudgeOnDeparture
+        self.arrivalMessage = arrivalMessage
     }
 
     // MARK: - Codable
@@ -84,6 +91,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         case createdAt = "created_at"
         case nudgeOnArrival = "nudge_on_arrival"
         case nudgeOnDeparture = "nudge_on_departure"
+        case arrivalMessage = "arrival_message"
     }
 
     init(from decoder: Decoder) throws {
@@ -102,6 +110,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         // Absent on every place saved before block 4 — a quiet place, never a failed document.
         nudgeOnArrival = try container.decodeIfPresent(Bool.self, forKey: .nudgeOnArrival) ?? false
         nudgeOnDeparture = try container.decodeIfPresent(Bool.self, forKey: .nudgeOnDeparture) ?? false
+        arrivalMessage = try container.decodeIfPresent(String.self, forKey: .arrivalMessage)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -115,5 +124,6 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(nudgeOnArrival, forKey: .nudgeOnArrival)
         try container.encode(nudgeOnDeparture, forKey: .nudgeOnDeparture)
+        try container.encodeIfPresent(arrivalMessage, forKey: .arrivalMessage)
     }
 }

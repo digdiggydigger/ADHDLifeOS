@@ -53,13 +53,16 @@ enum PlaceEditorValidation {
         createdAt: Date = .now,
         addressFallback: String? = nil,
         nudgeOnArrival: Bool = false,
-        nudgeOnDeparture: Bool = false
+        nudgeOnDeparture: Bool = false,
+        arrivalMessage: String? = nil
     ) -> Place? {
         guard let name = effectiveName(typed: name, addressFallback: addressFallback),
               let coordinate else { return nil }
         // A blank emoji field must store nil, not "" — an empty string renders as a blank glyph
-        // slot everywhere the identity emoji is shown.
+        // slot everywhere the identity emoji is shown. The arrival message follows the same rule
+        // for a sharper reason: "" would count as "has a message" and blank-nudge every arrival.
         let trimmedEmoji = emoji?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedMessage = arrivalMessage?.trimmingCharacters(in: .whitespacesAndNewlines)
         return Place(
             id: id,
             name: name,
@@ -68,7 +71,8 @@ enum PlaceEditorValidation {
             emoji: (trimmedEmoji?.isEmpty ?? true) ? nil : trimmedEmoji,
             createdAt: createdAt,
             nudgeOnArrival: nudgeOnArrival,
-            nudgeOnDeparture: nudgeOnDeparture
+            nudgeOnDeparture: nudgeOnDeparture,
+            arrivalMessage: (trimmedMessage?.isEmpty ?? true) ? nil : trimmedMessage
         )
     }
 }

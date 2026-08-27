@@ -243,3 +243,118 @@ final class ArrivalNudgeTests: XCTestCase {
         XCTAssertEqual(store.readCooldowns(), cooldowns)
     }
 }
+
+/// The per-place custom arrival message (E's follow-up, 2026-08-27): words E chose to hear on
+/// arrival. Its presence changes the firing rule DELIBERATELY — the message is the content, so
+/// the nudge is never empty and the empty-never-fires gate applies only to places without one.
+@MainActor
+final class ArrivalMessageTests: XCTestCase {
+
+    private let noon = Date(timeIntervalSince1970: 1_756_296_000)
+    private let tescoId = UUID()
+
+    private func entry(
+        titles: [String] = [], message: String? = nil
+    ) -> AtPlaceSnapshot {
+        AtPlaceSnapshot(entries: [
+            AtPlaceSnapshot.PlaceEntry(
+                placeId: tescoId, displayName: "Tesco 🛒",
+                openTaskTitles: titles, arrivalMessage: message
+            )
+        ])
+    }
+
+    private func arrival() -> PlaceTriggerEvent {
+        PlaceTriggerEvent(placeId: tescoId, kind: .arrival, occurredAt: noon)
+    }
+
+    private func departure() -> PlaceTriggerEvent {
+        PlaceTriggerEvent(placeId: tescoId, kind: .departure, occurredAt: noon)
+    }
+
+    /// The message alone is enough — E wrote it, so arriving with zero open tasks still says it.
+    func testContent_customMessageFiresWithoutTasks() {
+        let content = ArrivalNudgeContent.notification(
+            for: arrival(), snapshot: entry(message: "Remember why you came in here")
+        )
+
+        XCTAssertEqual(content?.title, "You're at Tesco 🛒")
+        XCTAssertEqual(content?.body, "Remember why you came in here")
+    }
+
+    func testContent_customMessageAndTasksCompose() {
+        let content = ArrivalNudgeContent.notification(
+            for: arrival(),
+            snapshot: entry(titles: ["Return the parcel"], message: "Locker code is 4821")
+        )
+
+        XCTAssertEqual(content?.body, "Locker code is 4821 — 1 thing lives here: Return the parcel")
+    }
+
+    /// The message is an ARRIVAL customisation only — leaving stays task-gated, so a place with
+    /// a message but nothing open departs silently.
+    func testContent_departureIgnoresTheMessage() {
+        XCTAssertNil(ArrivalNudgeContent.notification(
+            for: departure(), snapshot: entry(message: "Locker code is 4821")
+        ))
+    }
+
+    /// No message, no tasks — the original restraint rule is untouched.
+    func testContent_withoutAMessageTheEmptyCaseStillNeverFires() {
+        XCTAssertNil(ArrivalNudgeContent.notification(for: arrival(), snapshot: entry()))
+    }
+
+    // MARK: - The model and the editor carry it
+
+    func testPlace_encodesTheArrivalMessageSnakeCased() throws {
+        let place = Place(
+            id: UUID(), name: "Tesco",
+            coordinate: PlaceCoordinate(latitude: 51.5152, longitude: -0.1418),
+            radiusMetres: 150, emoji: "🛒",
+            nudgeOnArrival: true, arrivalMessage: "Locker code is 4821"
+        )
+
+        let data = try JSONEncoder().encode(place)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        XCTAssertEqual(json["arrival_message"] as? String, "Locker code is 4821")
+        XCTAssertNil(json["arrivalMessage"], "places are snake_cased throughout")
+    }
+
+    func testPlace_legacyDocumentDecodesWithNoMessage() throws {
+        let legacy = Data("""
+        {"id":"5B1E4C1E-0000-0000-0000-000000000009","name":"Tesco","latitude":51.5152,\
+        "longitude":-0.1418,"radius_metres":150,"created_at":0}
+        """.utf8)
+
+        XCTAssertNil(try JSONDecoder().decode(Place.self, from: legacy).arrivalMessage)
+    }
+
+    /// A whitespace-only message stores nil, not "" — an empty string would count as "has a
+    /// message" and turn every arrival into a blank nudge.
+    func testMakePlace_trimsTheMessageToNil() {
+        let made = PlaceEditorValidation.makePlace(
+            id: UUID(), name: "Tesco",
+            coordinate: PlaceCoordinate(latitude: 51.5152, longitude: -0.1418),
+            radiusMetres: 150, emoji: "🛒",
+            nudgeOnArrival: true, arrivalMessage: "   "
+        )
+
+        XCTAssertEqual(made?.nudgeOnArrival, true)
+        XCTAssertNil(made?.arrivalMessage)
+    }
+
+    func testSnapshotBuild_carriesTheMessage() {
+        let tesco = Place(
+            id: tescoId, name: "Tesco",
+            coordinate: PlaceCoordinate(latitude: 51.5152, longitude: -0.1418),
+            radiusMetres: 150, emoji: "🛒",
+            nudgeOnArrival: true, arrivalMessage: "Locker code is 4821"
+        )
+
+        let built = AtPlaceSnapshot.build(places: [tesco], tasks: [])
+
+        XCTAssertEqual(built.entries.first?.arrivalMessage, "Locker code is 4821")
+        XCTAssertEqual(built.entries.first?.openTaskTitles, [])
+    }
+}
