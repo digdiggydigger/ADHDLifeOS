@@ -150,7 +150,7 @@ struct FocusSprintTimelineCard: View {
                 inspectorHeader(
                     title: "Up next · checkpoint \(next.index + 1)",
                     systemImage: "bolt.fill",
-                    tint: .orange,
+                    tint: Color("StateWarn"),
                     detail: "at \(FocusTimeFormatting.human(seconds: next.atSeconds))"
                 )
                 Text(FocusSession.checkpointPrompt(index: next.index, total: total))
@@ -159,7 +159,7 @@ struct FocusSprintTimelineCard: View {
                     .foregroundStyle(.secondary)
             } else {
                 Label("Every checkpoint crossed. Finish strong.", systemImage: "checkmark.seal.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color("StateGo"))
             }
         }
         .font(.footnote)

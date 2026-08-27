@@ -60,9 +60,9 @@ private struct PrimaryActionButtonStylePreview: View {
                 .disabled(true)
 
             Label("Couldn't mark the capture processed.", systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color("StateWarn"))
             Label("Network error. Please try again.", systemImage: "exclamationmark.octagon.fill")
-                .foregroundStyle(.red)
+                .foregroundStyle(Color("StateRisk"))
         }
         .padding(16)
     }

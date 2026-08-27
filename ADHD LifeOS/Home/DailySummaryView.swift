@@ -216,19 +216,19 @@ struct DailySummaryView: View {
         LazyVGrid(columns: metricColumns, spacing: 16) {
             DailyMetricCard(
                 value: "\(openTaskCount)", label: "Open Tasks",
-                systemImage: "checkmark.circle.fill", tint: .green
+                systemImage: "checkmark.circle.fill", tint: Color("StateGo")
             )
             DailyMetricCard(
                 value: "\(dueNudgeCount)", label: "Nudges Due",
-                systemImage: "flame.fill", tint: .red
+                systemImage: "flame.fill", tint: Color("StateRisk")
             )
             DailyMetricCard(
                 value: "\(lifeAreaCount)", label: "Life Areas",
-                systemImage: "square.grid.2x2.fill", tint: .indigo
+                systemImage: "square.grid.2x2.fill", tint: Color("AreaAdminVivid")
             )
             DailyMetricCard(
                 value: "\(inboxCount)", label: "Ideas Offloaded",
-                systemImage: "tray.fill", tint: .orange
+                systemImage: "tray.fill", tint: Color("StateWarn")
             )
         }
     }

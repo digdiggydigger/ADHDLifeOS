@@ -170,7 +170,7 @@ struct LoginView: View {
 
             if let errorMessage = authService.errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.octagon.fill")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color("StateRisk"))
                     .font(.footnote)
                     .accessibilityIdentifier("loginErrorMessage")
             }

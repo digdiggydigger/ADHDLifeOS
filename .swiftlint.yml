@@ -22,3 +22,17 @@ identifier_name:
     - p2
     - p3
     - p4
+
+# `CLAUDE.md` §4: every colour goes through the design-token layer (asset colorsets), never a raw
+# SwiftUI hue. This is a LINT rule rather than a convention because the convention already failed
+# silently — `CaptureKindAccent` kept its own `.orange`/`.purple`/`.blue` table for months, and it
+# only surfaced when E spotted an inbox row disagreeing with the triage card above it (2026-08-27).
+#
+# Semantic colours (`.primary`, `.secondary`, `.accentColor`, `.white`, `.black`, `.clear`) are
+# NOT hues and stay allowed — §4 explicitly endorses them.
+custom_rules:
+  raw_hue_color:
+    name: "Raw hue colour"
+    message: "Use a design token (Color(\"StateGo\") / Color(\"StateWarn\") / Color(\"StateRisk\") / an Area* token) rather than a raw SwiftUI hue — CLAUDE.md §4."
+    regex: '(foregroundStyle|fill|tint|background|stroke|strokeBorder)\(\s*\.(orange|purple|green|blue|red|yellow|pink|indigo|teal|mint|brown|cyan)\s*\)|Color\.(orange|purple|green|blue|red|yellow|pink|indigo|teal|mint|brown|cyan)\b'
+    severity: warning

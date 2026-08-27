@@ -376,7 +376,7 @@ private struct NudgeRowView: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color("StateRisk"))
                     .accessibilityIdentifier("nudgeEditErrorMessage-\(nudge.id)")
             }
 

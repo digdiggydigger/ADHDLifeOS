@@ -362,12 +362,12 @@ private extension TaskDetailView {
     var messagesSection: some View {
         if let warningMessage = service.warningMessage {
             Label(warningMessage, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color("StateWarn"))
                 .accessibilityIdentifier("taskDetailWarningMessage")
         }
         if let errorMessage = service.errorMessage {
             Label(errorMessage, systemImage: "exclamationmark.octagon.fill")
-                .foregroundStyle(.red)
+                .foregroundStyle(Color("StateRisk"))
                 .accessibilityIdentifier("taskDetailErrorMessage")
         }
     }

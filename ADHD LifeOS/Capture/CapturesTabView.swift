@@ -214,7 +214,7 @@ struct CapturesTabView: View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Couldn't load your captures", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color("StateWarn"))
             Text(message)
                 .font(.footnote)
                 .foregroundStyle(.secondary)

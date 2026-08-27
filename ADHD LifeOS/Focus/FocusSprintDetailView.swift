@@ -82,7 +82,7 @@ struct FocusSprintDetailView: View {
         VStack(spacing: 16) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.largeTitle)
-                .foregroundStyle(.green)
+                .foregroundStyle(Color("StateGo"))
             Text("Sprint finished")
                 .font(.title2.bold())
                 .tracking(-0.5)
@@ -138,7 +138,7 @@ struct FocusSprintDetailView: View {
     private func checkpointBanner(_ message: String) -> some View {
         Label(message, systemImage: "bell.badge.fill")
             .font(.footnote.weight(.semibold))
-            .foregroundStyle(.orange)
+            .foregroundStyle(Color("StateWarn"))
             .fixedSize(horizontal: false, vertical: true)
             .bentoCard()
             .accessibilityIdentifier("focusModalBanner")
@@ -187,7 +187,7 @@ struct FocusSprintDetailView: View {
                 title: "Next nudge in \(FocusTimeFormatting.digital(untilNext))"
                     + " · at \(FocusTimeFormatting.human(seconds: next.atSeconds))",
                 systemImage: "bell.badge.fill",
-                tint: .orange
+                tint: Color("StateWarn")
             )
         } else if session.nudgeCheckpoints.isEmpty {
             FocusStatusPill(title: "No nudges scheduled this sprint", systemImage: "bell.slash", tint: .secondary)
@@ -195,7 +195,7 @@ struct FocusSprintDetailView: View {
             FocusStatusPill(
                 title: "All \(session.nudgeCheckpoints.count) checkpoints reached",
                 systemImage: "checkmark.circle.fill",
-                tint: .green
+                tint: Color("StateGo")
             )
         }
     }

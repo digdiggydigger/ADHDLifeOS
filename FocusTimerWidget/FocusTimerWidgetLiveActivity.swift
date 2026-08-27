@@ -189,7 +189,9 @@ private struct FocusSprintControls: View {
                     .font(.caption.weight(.bold))
                     .padding(.vertical, 4)
             }
-            .tint(.red)
+            // Token, not a raw hue (CLAUDE.md §4). The widget carries its OWN copy of the
+            // colorset — palette changes must hit BOTH catalogs.
+            .tint(Color("StateRisk"))
         }
         .buttonStyle(.bordered)
         .buttonBorderShape(.capsule)
