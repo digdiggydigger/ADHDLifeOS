@@ -175,10 +175,19 @@ struct CaptureRowSummary<ExpandedLinkContent: View>: View {
     /// Already resolved by the caller (`CaptureRowPresentation.tags(for:from:)`) — the summary
     /// never fetches. Empty means no chip strip at all, not an empty strip.
     var tags: [Tag] = []
+    /// Named places, for showing WHERE a capture happened. Defaulted empty so surfaces that don't
+    /// carry them construct the summary unchanged.
+    var places: [Place] = []
     let isExpanded: Bool
     let onOpenPhoto: () -> Void
     /// The rich link card, which only the owning row can build — passed in rather than duplicated.
     @ViewBuilder var expandedLinkContent: () -> ExpandedLinkContent
+
+    private var captionLine: String {
+        let caption = CaptureRowPresentation.caption(for: capture)
+        guard let place = CapturePlaceLabel.label(for: capture, places: places) else { return caption }
+        return "\(caption) · \(place)"
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -189,7 +198,10 @@ struct CaptureRowSummary<ExpandedLinkContent: View>: View {
                     expandedLinkContent()
                 }
                 detail
-                Text(CaptureRowPresentation.caption(for: capture))
+                // The place rides the existing caption line rather than adding a row of its own:
+                // it belongs with "when" and it keeps the row dense. Absent entirely when the
+                // capture was made outside every named place (E's call).
+                Text(captionLine)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

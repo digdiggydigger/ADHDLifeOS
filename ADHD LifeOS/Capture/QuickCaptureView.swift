@@ -65,6 +65,36 @@ struct QuickCaptureView: View {
         return !service.isContentValid
     }
 
+    /// The per-capture location switch (E, 2026-08-27). Only shown when permission actually
+    /// allows a fix — a switch that cannot do anything invites a tap that achieves nothing
+    /// silently. Its default is the global Settings toggle, and it resets after every capture,
+    /// because this is a decision about THIS capture rather than a preference.
+    @ViewBuilder
+    private var locationSection: some View {
+        if CaptureLocationChoice.isAvailable(
+            authorization: CoreLocationFixProvider.shared.authorizationState
+        ) {
+            Toggle(isOn: $service.attachLocation) {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Remember where I am")
+                            .font(.subheadline)
+                        Text(service.attachLocation
+                             ? "This capture will record where you made it."
+                             : "This capture won't record where you made it.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: service.attachLocation ? "location.fill" : "location.slash")
+                        .foregroundStyle(service.attachLocation ? Color.accentColor : .secondary)
+                }
+            }
+            .onChange(of: service.attachLocation) { _ in Haptics.play(.selection) }
+            .accessibilityIdentifier("captureLocationToggle")
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -87,6 +117,7 @@ struct QuickCaptureView: View {
                         .foregroundStyle(.secondary)
                     areaSection
                     tagsSection
+                    locationSection
                 }
                 .padding(16)
             }

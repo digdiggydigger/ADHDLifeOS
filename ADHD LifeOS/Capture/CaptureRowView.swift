@@ -16,6 +16,9 @@ struct CaptureRowView: View {
     /// Resolved tags for the chip strip under the meta line. Defaulted empty so surfaces that
     /// don't chip (the Captures-tab archive) construct the row unchanged.
     var tags: [Tag] = []
+    /// Named places, for the "where" on the caption line. Defaulted so the archive surface is
+    /// unchanged.
+    var places: [Place] = []
     /// Pushes the full-screen detail — the row's single action. Leaf controls inside the summary
     /// (voice playback, the photo preview) are Buttons and win their own taps.
     let onOpen: () -> Void
@@ -67,6 +70,7 @@ struct CaptureRowView: View {
             capture: capture,
             lifeAreas: lifeAreas,
             tags: tags,
+            places: places,
             isExpanded: false,
             onOpenPhoto: { isPresentingPhoto = true },
             expandedLinkContent: { EmptyView() }

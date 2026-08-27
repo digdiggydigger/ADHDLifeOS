@@ -22,10 +22,10 @@ enum CaptureLocationStamp {
         places: PlacesClientAdapting = FirebasePlacesClientAdapter(),
         stamper: LocationStamping? = nil
     ) async -> LocationStamp? {
-        // Cheapest gate first: with tagging off or permission absent there is no reason to spend
-        // a Firestore read on the places list at all.
-        guard AppFeedback.locationTaggingEnabled(),
-              CoreLocationFixProvider.shared.authorizationState.allowsTagging else { return nil }
+        // Permission only. The ENABLED gate lives with the caller now: `CaptureInboxService` holds
+        // a per-capture flag seeded from the global setting, and re-checking the global here would
+        // veto an explicit per-capture opt-in — which is exactly what the override exists to allow.
+        guard CoreLocationFixProvider.shared.authorizationState.allowsTagging else { return nil }
         let known = (try? await places.fetchPlaces()) ?? []
         let resolved = stamper ?? LocationStamping(provider: CoreLocationFixProvider.shared)
         return await resolved.stamp(against: known)

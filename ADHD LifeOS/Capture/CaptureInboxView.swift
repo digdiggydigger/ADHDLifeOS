@@ -237,7 +237,8 @@ struct CaptureInboxView: View {
         CaptureRowView(
             capture: capture,
             lifeAreas: lifeAreas,
-            tags: CaptureRowPresentation.tags(for: capture, from: allTags)
+            tags: CaptureRowPresentation.tags(for: capture, from: allTags),
+            places: service.places
         ) {
             inspectingCapture = capture
         }

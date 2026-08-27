@@ -33,7 +33,8 @@ extension CaptureInboxService {
         // never be the reason a thought doesn't get written down, so this can only ever ADD a
         // field — it has no failure path back to the caller.
         var stamped = normalized
-        stamped.locationStamp = await locationStamp()
+        // The per-capture switch is the enabled-gate. Off means no fix is even requested.
+        stamped.locationStamp = attachLocation ? await locationStamp() : nil
 
         do {
             let created = try await client.createCapture(stamped)
@@ -41,6 +42,8 @@ extension CaptureInboxService {
             content = ""
             kind = CaptureValidation.defaultKind
             newCaptureLifeAreaId = nil
+            // A one-off override must not outlive its capture.
+            resetLocationChoice()
             return true
         } catch {
             createCaptureErrorMessage = Self.message(for: error)

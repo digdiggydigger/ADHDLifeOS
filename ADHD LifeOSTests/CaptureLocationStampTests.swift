@@ -19,11 +19,17 @@ final class CaptureLocationStampTests: XCTestCase {
 
     private let coordinate = PlaceCoordinate(latitude: 51.5152, longitude: -0.1418)
 
+    /// `attachLocation` is set explicitly because it now defaults from the REAL authorization
+    /// state, which is `notDetermined` in a simulator — so the default is off and every stamp
+    /// test would otherwise assert against a switch that was never on.
     private func service(
         _ fake: FakeCaptureClientAdapting,
-        stamp: LocationStamp?
+        stamp: LocationStamp?,
+        attachLocation: Bool = true
     ) -> CaptureInboxService {
-        CaptureInboxService(client: fake, locationStamp: { stamp })
+        let service = CaptureInboxService(client: fake, locationStamp: { stamp })
+        service.attachLocation = attachLocation
+        return service
     }
 
     func testCreate_carriesTheStampIntoTheWrite() async {
@@ -92,6 +98,7 @@ final class CaptureLocationStampTests: XCTestCase {
             stampRequests += 1
             return nil
         })
+        sut.attachLocation = true
         sut.content = "   "
 
         let created = await sut.createCapture()
@@ -99,6 +106,40 @@ final class CaptureLocationStampTests: XCTestCase {
         XCTAssertFalse(created)
         XCTAssertEqual(fake.createCaptureCallCount, 0)
         XCTAssertEqual(stampRequests, 0, "validation must fail before a fix is requested")
+    }
+
+    // MARK: - The per-capture switch (E's 2026-08-27 override)
+
+    /// Off means no fix is even REQUESTED — the switch is the enabled-gate, not a filter applied
+    /// after the fact.
+    func testCreate_withTheSwitchOff_takesNoStampAtAll() async {
+        let fake = FakeCaptureClientAdapting()
+        var stampRequests = 0
+        let sut = CaptureInboxService(client: fake, locationStamp: {
+            stampRequests += 1
+            return LocationStamp(coordinate: self.coordinate, placeId: nil)
+        })
+        sut.attachLocation = false
+        sut.content = "Buy milk"
+
+        let created = await sut.createCapture()
+
+        XCTAssertTrue(created, "opting one capture out must not stop it saving")
+        XCTAssertNil(fake.lastCreateCaptureInput?.locationStamp)
+        XCTAssertEqual(stampRequests, 0, "the switch must gate the fix, not filter it afterwards")
+    }
+
+    /// The override is about ONE capture. Leaving it flipped would quietly turn a one-off into a
+    /// preference, and the global Settings toggle would stop meaning anything.
+    func testCreate_resetsTheSwitchAfterwards() async {
+        let fake = FakeCaptureClientAdapting()
+        let sut = service(fake, stamp: LocationStamp(coordinate: coordinate, placeId: nil))
+        sut.content = "Buy milk"
+
+        _ = await sut.createCapture()
+
+        // Simulator authorization is notDetermined, so the reset default is off.
+        XCTAssertFalse(sut.attachLocation, "a one-off override must not outlive its capture")
     }
 
     // MARK: - The model carries it to Firestore
