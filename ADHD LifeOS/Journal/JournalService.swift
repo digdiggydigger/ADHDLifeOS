@@ -45,12 +45,21 @@ final class JournalService: ObservableObject {
     @Published private(set) var availableTags: [Tag] = []
 
     private let client: JournalClientAdapting
+    /// Where an entry was written — a closure for the `CaptureInboxService` reason: the default
+    /// does the real work, a test hands over a fixed stamp without CoreLocation or Firestore.
+    /// Unlike captures there is no per-entry switch, so the default's enabled-gate is the global
+    /// Settings toggle (`RecordLocationStamp`).
+    private let locationStamp: @MainActor () async -> LocationStamp?
     private(set) var lifeAreas: [LifeArea] = []
     private var logs: [Log] = []
     private var hasLoadedOnce = false
 
-    init(client: JournalClientAdapting) {
+    init(
+        client: JournalClientAdapting,
+        locationStamp: (@MainActor () async -> LocationStamp?)? = nil
+    ) {
         self.client = client
+        self.locationStamp = locationStamp ?? { await RecordLocationStamp.current() }
     }
 
     var isComposerBodyValid: Bool {
@@ -107,8 +116,14 @@ final class JournalService: ObservableObject {
         isCreating = true
         defer { isCreating = false }
 
+        // Stamped here, after validation and before the write — the capture rule verbatim: a fix
+        // that never arrives must never be why an entry doesn't get written down, so this only
+        // ever ADDS fields and has no failure path back to the caller.
+        var stamped = normalized
+        stamped.locationStamp = await locationStamp()
+
         do {
-            let created = try await client.createLog(normalized)
+            let created = try await client.createLog(stamped)
             logs.append(created)
             recomputeFeed()
             composerBody = ""

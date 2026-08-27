@@ -127,14 +127,35 @@ struct CompletedFocusSession: Codable, Identifiable, Equatable, Sendable {
     let completedNaturally: Bool
     let startedAt: Date
     let endedAt: Date
+    /// WHERE the sprint ran (F-Location-Tagging, block 3 remainder). Stamped only when the sprint
+    /// ends in a LIVE app — `stop`, and the replacement path in `start` — never when a sprint
+    /// that expired while the app was dead is settled at the next launch: the device's location
+    /// at `endedAt` is unknown by then, and a wrong place is worse than none. `var` because the
+    /// stamp is applied to the record `finishCurrentSprint` returns — that teardown is
+    /// synchronous and cannot await a fix.
+    var placeId: UUID?
+    var latitude: Double?
+    var longitude: Double?
 
     enum CodingKeys: String, CodingKey {
-        case id, taskId = "task_id", taskTitle = "task_title"
+        case id, taskId = "task_id", taskTitle = "task_title", latitude, longitude
         case lifeAreaEmoji = "life_area_emoji"
         case plannedSeconds = "planned_seconds", focusedSeconds = "focused_seconds"
         case checkpointsReached = "checkpoints_reached"
         case completedNaturally = "completed_naturally"
         case startedAt = "started_at", endedAt = "ended_at"
+        case placeId = "place_id"
+    }
+
+    /// A copy carrying `stamp`, or `self` untouched when there is none — additive only, the same
+    /// no-failure-path rule every other stamped record follows.
+    func stamped(with stamp: LocationStamp?) -> CompletedFocusSession {
+        guard let stamp else { return self }
+        var stamped = self
+        stamped.placeId = stamp.placeId
+        stamped.latitude = stamp.coordinate.latitude
+        stamped.longitude = stamp.coordinate.longitude
+        return stamped
     }
 }
 

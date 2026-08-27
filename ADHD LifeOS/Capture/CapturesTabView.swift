@@ -153,7 +153,10 @@ struct CapturesTabView: View {
             LazyVStack(alignment: .leading, spacing: 16) {
                 summaryHeader(captures)
                 ForEach(service.displayedCaptures) { capture in
-                    CaptureRowView(capture: capture, lifeAreas: lifeAreas) {
+                    // `places` was the one row input this tab wasn't passing, so the archive
+                    // showed no place labels while the Inbox did — the service loads them either
+                    // way (block 3 remainder).
+                    CaptureRowView(capture: capture, lifeAreas: lifeAreas, places: service.places) {
                         inspectingCapture = capture
                     }
                     .bentoCard()

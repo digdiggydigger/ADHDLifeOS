@@ -17,6 +17,10 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
     /// Per-task focus-sprint config; `nil` on pre-existing documents (see `TaskItem`).
     var focusDurationSeconds: Int?
     var nudgesCount: Int?
+    /// WHERE this task was closed — same contract as `TaskItem`'s copy of the trio.
+    var placeId: UUID?
+    var latitude: Double?
+    var longitude: Double?
 
     init(
         id: UUID,
@@ -28,7 +32,10 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
         dueDate: Date?,
         createdAt: Date,
         focusDurationSeconds: Int? = nil,
-        nudgesCount: Int? = nil
+        nudgesCount: Int? = nil,
+        placeId: UUID? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -40,15 +47,19 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
         self.createdAt = createdAt
         self.focusDurationSeconds = focusDurationSeconds
         self.nudgesCount = nudgesCount
+        self.placeId = placeId
+        self.latitude = latitude
+        self.longitude = longitude
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, title, notes, status, priority
+        case id, title, notes, status, priority, latitude, longitude
         case lifeAreaId = "life_area_id"
         case dueDate = "due_date"
         case createdAt = "created_at"
         case focusDurationSeconds = "focus_duration_seconds"
         case nudgesCount = "nudges_count"
+        case placeId = "place_id"
     }
 }
 

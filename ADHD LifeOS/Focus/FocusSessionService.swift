@@ -15,7 +15,11 @@ import Foundation
 /// engine claimed, but without accumulating error.
 @MainActor
 final class FocusSessionService: ObservableObject {
-    @Published private(set) var session: FocusSession?
+    /// Several members below are internal rather than private, and three published properties
+    /// have lost their `private(set)`, for one reason: their writers in `restorePersistedSprint`
+    /// moved to `FocusSessionService+Persistence.swift` (the `CaptureInboxService+Create`
+    /// precedent) when this file hit its length budget. The set of writers is unchanged.
+    @Published var session: FocusSession?
     /// Coaching copy for the checkpoint just crossed; the bar shows it briefly.
     @Published private(set) var checkpointBanner: String?
     /// Set when persisting a finished sprint fails — the sprint itself still ended cleanly.
@@ -25,27 +29,34 @@ final class FocusSessionService: ObservableObject {
     /// token, so the analytics refresh right after a sprint instead of on the next cold launch.
     @Published private(set) var completedSprintCount = 0
     /// A sprint that ran out while dead — feeds the confirmation card, persisted until acknowledged.
-    @Published private(set) var offlineCompletionSummary: CompletedFocusSession?
+    @Published var offlineCompletionSummary: CompletedFocusSession?
     /// The cadence the running sprint was last planned with — `start`'s argument until the modal's
     /// live editor replaces it. Published so the editor seeds from what is actually scheduled
     /// rather than from a guess reverse-engineered out of the checkpoint marks.
-    @Published private(set) var cadence: FocusNudgeCadence = .count(1)
+    @Published var cadence: FocusNudgeCadence = .count(1)
 
     private let logger: FocusSessionLogging?
     /// Local persistence for the RUNNING sprint (F-SprintPersistence): written on plan/clock
     /// mutations and checkpoint crossings, cleared on end, read back after a process death.
-    private let sprintStore: FocusSprintPersisting?
+    let sprintStore: FocusSprintPersisting?
     /// Mirrors sprint lifecycle events into the Lock Screen / Dynamic Island Live Activity.
     /// Optional because ActivityKit is iOS 16.1+ against the 16.0 floor (§7) — and so tests can
     /// substitute a fake.
-    private let activityMirror: FocusActivityMirroring?
+    let activityMirror: FocusActivityMirroring?
+    /// Where the sprint ran (block 3 remainder) — a closure for the `CaptureInboxService`
+    /// reason: the default does the real work, a test hands over a fixed stamp. Applied only on
+    /// the LIVE end paths (`stop`, and the replacement in `start`); `restorePersistedSprint`
+    /// deliberately logs unstamped — see `CompletedFocusSession.placeId`. There is no per-sprint
+    /// switch, so the default's enabled-gate is the global Settings toggle
+    /// (`RecordLocationStamp`).
+    private let locationStamp: @MainActor () async -> LocationStamp?
     /// Hands the sprint's checkpoint + completion notifications to the OS. Distinct from the
     /// Activity mirror: the OS re-renders an Activity from a deadline on its own, but a
     /// notification must be scheduled ahead of time — the app is suspended when one comes due.
     private let notificationScheduler: FocusNotificationScheduling?
-    private let now: () -> Date
-    private var deadline: Date?
-    private var startedAt: Date?
+    let now: () -> Date
+    var deadline: Date?
+    var startedAt: Date?
     private var ticker: Task<Void, Never>?
     /// The in-flight notification write. Retained so successive mutations serialise (a pause
     /// landing before the resume that followed it would leave the OS holding a stale schedule)
@@ -59,12 +70,14 @@ final class FocusSessionService: ObservableObject {
         activityMirror: FocusActivityMirroring? = nil,
         notificationScheduler: FocusNotificationScheduling? = nil,
         sprintStore: FocusSprintPersisting? = nil,
+        locationStamp: (@MainActor () async -> LocationStamp?)? = nil,
         now: @escaping () -> Date = Date.init
     ) {
         self.logger = logger
         self.activityMirror = activityMirror
         self.notificationScheduler = notificationScheduler
         self.sprintStore = sprintStore
+        self.locationStamp = locationStamp ?? { await RecordLocationStamp.current() }
         self.now = now
     }
 
@@ -94,7 +107,8 @@ final class FocusSessionService: ObservableObject {
         // previous deferred `Task { await stop() }` ran after this method body, so it tore down
         // the replacement and logged IT (at ~0s) instead of the sprint being displaced.
         if let replaced = finishCurrentSprint(completedNaturally: false) {
-            Task { await log(replaced) }
+            // A live end — the user is right here starting the replacement — so it stamps like one.
+            Task { await log(replaced.stamped(with: locationStamp())) }
         }
         let duration = max(FocusCheckpoints.minimumIntervalSeconds, durationSeconds)
         let started = FocusSession(
@@ -187,13 +201,15 @@ final class FocusSessionService: ObservableObject {
         // suspended app) is a countdown that genuinely ran out — record it as such.
         let ranOut = session.map { !$0.isPaused && $0.isComplete } ?? false
         guard let record = finishCurrentSprint(completedNaturally: completedNaturally || ranOut) else { return }
-        await log(record)
+        // Stamped after the teardown, before the write — additive only, so a fix that never
+        // arrives can delay the history write but never lose it.
+        await log(record.stamped(with: locationStamp()))
     }
 
     /// The synchronous teardown shared by `stop` and the replacement path in `start`: cancels the
     /// ticker, clears all sprint state, ends the Live Activity, and returns the history record
     /// for the caller to persist (awaited in `stop`, fire-and-forget on replacement).
-    private func finishCurrentSprint(completedNaturally: Bool) -> CompletedFocusSession? {
+    func finishCurrentSprint(completedNaturally: Bool) -> CompletedFocusSession? {
         ticker?.cancel()
         ticker = nil
         deadline = nil
@@ -223,7 +239,7 @@ final class FocusSessionService: ObservableObject {
         )
     }
 
-    private func log(_ record: CompletedFocusSession) async {
+    func log(_ record: CompletedFocusSession) async {
         do {
             try await logger?.logCompletedSession(record)
         } catch {
@@ -238,7 +254,7 @@ final class FocusSessionService: ObservableObject {
     ///
     /// Fire-and-forget, because the engine's mutations are synchronous and must stay that way; the
     /// writes are chained so they can never land out of order.
-    private func rescheduleNotifications(requestingAuthorization: Bool = false) {
+    func rescheduleNotifications(requestingAuthorization: Bool = false) {
         guard let notificationScheduler else { return }
         let plan = FocusNotificationPlanning.plan(session: session, deadline: deadline, now: now())
         let previous = notificationTask
@@ -263,7 +279,7 @@ final class FocusSessionService: ObservableObject {
 
     // MARK: - Ticking
 
-    private func startTicking() {
+    func startTicking() {
         ticker?.cancel()
         ticker = Task { [weak self] in
             while !Task.isCancelled {
@@ -330,71 +346,5 @@ final class FocusSessionService: ObservableObject {
         let crossed = current.advance(toRemaining: remaining)
         session = current
         return crossed
-    }
-}
-
-// MARK: - Sprint persistence (F-SprintPersistence)
-extension FocusSessionService {
-    /// Reinstates a sprint the process died holding: running sprints recompute from the saved
-    /// deadline (checkpoints crossed while dead are marked fired WITHOUT nudging), paused ones
-    /// come back frozen, an expired one settles: logged whole, Activity ended, store cleared.
-    func restorePersistedSprint() async {
-        guard let sprintStore else { return }
-        if offlineCompletionSummary == nil {
-            offlineCompletionSummary = sprintStore.readUnacknowledgedCompletion()
-        }
-        guard session == nil, let saved = sprintStore.read() else { return }
-        cadence = saved.cadence
-        startedAt = saved.startedAt
-        var restored = FocusSession(
-            taskId: saved.taskId,
-            taskTitle: saved.taskTitle,
-            lifeAreaEmoji: saved.lifeAreaEmoji,
-            durationSeconds: saved.durationSeconds,
-            remainingSeconds: saved.pausedRemainingSeconds ?? saved.durationSeconds,
-            isPaused: saved.deadline == nil,
-            nudgeCheckpoints: saved.nudgeCheckpoints,
-            triggeredCheckpointIndices: Set(saved.triggeredCheckpointIndices)
-        )
-        if let savedDeadline = saved.deadline {
-            let remaining = Int(savedDeadline.timeIntervalSince(now()).rounded(.up))
-            _ = restored.advance(toRemaining: remaining)
-            session = restored
-            deadline = savedDeadline
-            if restored.isComplete {
-                // Finished while dead: settle it AND make the finish visible — the record feeds
-                // the confirmation card and is held until the user acknowledges it.
-                if let record = finishCurrentSprint(completedNaturally: true) {
-                    offlineCompletionSummary = record
-                    sprintStore.writeUnacknowledgedCompletion(record)
-                    await log(record)
-                }
-                return
-            }
-            startTicking()
-        } else {
-            session = restored
-        }
-        activityMirror?.sprintRestored(FocusActivitySnapshot(session: restored, deadline: deadline))
-        rescheduleNotifications()
-        persistCurrentSprint()
-    }
-
-    /// The confirmation card's dismissal: clears the published summary and its persisted copy.
-    func acknowledgeOfflineCompletion() {
-        offlineCompletionSummary = nil
-        sprintStore?.clearUnacknowledgedCompletion()
-    }
-
-    /// Snapshots the running sprint into the store — or clears it if none is running.
-    private func persistCurrentSprint() {
-        guard let sprintStore else { return }
-        guard let session, let startedAt else {
-            sprintStore.clear()
-            return
-        }
-        sprintStore.write(
-            PersistedFocusSprint(session: session, startedAt: startedAt, deadline: deadline, cadence: cadence)
-        )
     }
 }

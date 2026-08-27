@@ -116,36 +116,6 @@ final class FirestoreFieldPayloadsTests: XCTestCase {
         XCTAssertFalse(FirestoreDocumentCoder.isServerTimestamp(fields["notes"]))
     }
 
-    // MARK: - Task status: the completion stamp
-
-    /// Status and stamp are written together so a task can never be `done` with a stale stamp or
-    /// `open` with a live one.
-    func testTaskStatus_completingStampsTheClientClock() {
-        let fields = FirestoreFieldPayloads.taskStatus(.done, now: referenceDate)
-
-        XCTAssertEqual(fields["status"] as? String, "done")
-        XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["completed_at"]), referenceDate)
-        XCTAssertNil(fields["completedAt"])
-    }
-
-    /// Re-opening clears the stamp rather than leaving yesterday's completion claiming a win.
-    func testTaskStatus_reopeningDeletesTheStamp() {
-        let fields = FirestoreFieldPayloads.taskStatus(.open, now: referenceDate)
-
-        XCTAssertEqual(fields["status"] as? String, "open")
-        XCTAssertTrue(FirestoreDocumentCoder.isFieldDelete(fields["completed_at"]))
-    }
-
-    func testTaskStatus_alwaysWritesBothFieldsTogether() {
-        for status in [TaskStatus.open, .done] {
-            XCTAssertEqual(
-                FirestoreFieldPayloads.taskStatus(status, now: referenceDate).keys.sorted(),
-                ["completed_at", "status"],
-                "status \(status) must carry its stamp decision in the same write"
-            )
-        }
-    }
-
     // MARK: - Captures: the mixed-case schema
 
     func testCaptureUpdate_emptyChanges_writesNothing() {

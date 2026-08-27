@@ -78,7 +78,10 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
             moodEmoji: input.moodEmoji,
             // Tags ride the create — logs cannot be updated, so nil (key absent) beats an empty
             // array nothing could ever remove.
-            tagIds: input.tagIds.isEmpty ? nil : input.tagIds
+            tagIds: input.tagIds.isEmpty ? nil : input.tagIds,
+            placeId: input.locationStamp?.placeId,
+            latitude: input.locationStamp?.coordinate.latitude,
+            longitude: input.locationStamp?.coordinate.longitude
         )
         do {
             try await store.appendLog(log)

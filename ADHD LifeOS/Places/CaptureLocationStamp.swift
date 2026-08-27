@@ -27,7 +27,12 @@ enum CaptureLocationStamp {
         // veto an explicit per-capture opt-in — which is exactly what the override exists to allow.
         guard CoreLocationFixProvider.shared.authorizationState.allowsTagging else { return nil }
         let known = (try? await places.fetchPlaces()) ?? []
-        let resolved = stamper ?? LocationStamping(provider: CoreLocationFixProvider.shared)
+        // `isEnabled: { true }`, NOT the default: the default re-reads the global Settings
+        // toggle, and with the toggle off it would veto the explicit per-capture opt-in this
+        // path exists to honour. Records without a per-record switch go through
+        // `RecordLocationStamp`, where the global toggle IS the gate.
+        let resolved = stamper
+            ?? LocationStamping(provider: CoreLocationFixProvider.shared, isEnabled: { true })
         return await resolved.stamp(against: known)
     }
 }

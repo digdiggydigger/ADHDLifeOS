@@ -25,10 +25,17 @@ extension FirebaseManager {
         try await update(id: id, fields: FirestoreFieldPayloads.taskUpdate(payload), in: .tasks)
     }
 
-    /// Writes the status and its completion stamp in one update — see
-    /// `FirestoreFieldPayloads.taskStatus` for why the stamp is the client's clock.
-    func setTaskStatus(id: UUID, status: TaskStatus, now: Date = .now) async throws {
-        try await update(id: id, fields: FirestoreFieldPayloads.taskStatus(status, now: now), in: .tasks)
+    /// Writes the status, its completion stamp and its location stamp in one update — see
+    /// `FirestoreFieldPayloads.taskStatus` for why the completion stamp is the client's clock
+    /// and why the location trio is value-or-erase, never absent.
+    func setTaskStatus(
+        id: UUID, status: TaskStatus, locationStamp: LocationStamp?, now: Date = .now
+    ) async throws {
+        try await update(
+            id: id,
+            fields: FirestoreFieldPayloads.taskStatus(status, now: now, locationStamp: locationStamp),
+            in: .tasks
+        )
     }
 
     func deleteTask(id: UUID) async throws {
