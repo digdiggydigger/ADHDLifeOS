@@ -32,6 +32,9 @@ struct LogComposerView: View {
                         accessibilityID: "logComposerBodyField",
                         surfaceAsset: JournalComposerPalette.writingSurfaceAsset(
                             for: journalService.composerType
+                        ),
+                        ruled: JournalComposerPalette.forcesLightAppearance(
+                            for: journalService.composerType
                         )
                     )
                     typeSection
@@ -51,6 +54,13 @@ struct LogComposerView: View {
                     }
                 }
                 .padding(16)
+                // Set ONCE, on the container: `.secondary` resolves against the environment's
+                // foreground, so every label inside — including the ones owned by
+                // `ComposerSectionHeader` and `JournalEnergyMoodPicker` — turns warm ink instead
+                // of system grey, which on gold read as mud. E: "the text that sits on the yellow
+                // background gets lost". Cheaper and far more consistent than threading an ink
+                // parameter through three shared components.
+                .foregroundStyle(Color(JournalComposerPalette.inkAsset(for: journalService.composerType)))
             }
             // The surface follows the KIND of entry (E, 2026-08-28): a journal entry writes on a
             // gold pad, a log keeps the ordinary page. Springs rather than cuts, because the chips

@@ -32,6 +32,15 @@ final class ComposerLookCaptureUITests: XCTestCase {
 
         attach(app, named: "01-log-selected")
         journalChip.tap()
+
+        // Let the swap SETTLE before the shutter. The background springs over 0.35s and the first
+        // capture caught a mid-flight frame — Log's content sitting on the gold footer, which
+        // reads as a bug in the app rather than in the camera.
+        //
+        // A plain sleep, deliberately. Every element worth waiting on here is either uppercased by
+        // `.sectionLabel()` (so it does not match the string it is written as) or present in both
+        // states; and this file asserts nothing anyway. A camera may wait for the light.
+        Thread.sleep(forTimeInterval: 1.5)
         attach(app, named: "02-journal-selected")
     }
 

@@ -61,6 +61,15 @@ enum JournalComposerPalette {
         type == .journal
     }
 
+    /// The colour every label on the page resolves against.
+    ///
+    /// System grey on gold reads as mud — E saw it and said the text gets lost. Warm ink
+    /// (`#4A3506`) clears AA against the pad at about 5:1 and belongs to the same world as the
+    /// paper. `LabelPrimary` on the ordinary page, which is exactly what it already was.
+    static func inkAsset(for type: LogType) -> String {
+        type == .journal ? "JournalPaperInk" : "LabelPrimary"
+    }
+
     /// The writing box's fill. Grey-blue (`CardSurfaceSecondary`) is right on the ordinary page
     /// and was the single worst thing on gold — it read as a bruise. On the pad it is white, so
     /// the box you type into looks like the paper it is sitting on.

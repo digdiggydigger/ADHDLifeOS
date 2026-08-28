@@ -95,6 +95,37 @@ struct ComposerAreaChips: View {
     }
 }
 
+/// Feint horizontal rules and a margin line — a sheet of paper, drawn rather than illustrated.
+///
+/// The structure encodes something true rather than decorating: this is the one box on the screen
+/// you write prose INTO, and paper is what that is. Deliberately feint (a 22%-alpha gold) so it
+/// reads as texture at a glance and never competes with the words on top of it.
+private struct PaperRuling: View {
+    /// Roughly one line of body text at default Dynamic Type, so the rules sit under the writing
+    /// rather than across it.
+    private let lineHeight: CGFloat = 28
+    /// Where a notebook's margin falls, and clear of the 16pt text inset.
+    private let marginInset: CGFloat = 44
+
+    var body: some View {
+        GeometryReader { proxy in
+            let rule = Color("JournalPaperRule")
+            ZStack(alignment: .topLeading) {
+                VStack(spacing: 0) {
+                    ForEach(0..<Int(proxy.size.height / lineHeight), id: \.self) { _ in
+                        Spacer(minLength: lineHeight - 1)
+                        rule.frame(height: 1)
+                    }
+                    Spacer(minLength: 0)
+                }
+                rule.frame(width: 1).offset(x: marginInset)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 /// The pinned bottom bar's surface: bar material with a hairline top edge, so the boundary
 /// between scrolling content and the fixed bar is VISIBLE instead of implied — E's 2026-08-25
 /// review marked exactly this line on a screenshot. Every pinned composer/footer bar wears it,
@@ -124,12 +155,21 @@ struct ComposerTextBox: View {
     /// The fill, so a composer on a coloured page can hand it one that belongs there. Defaulted to
     /// the ordinary secondary surface, which is what every caller but the journal pad wants.
     var surfaceAsset: String = "CardSurfaceSecondary"
+    /// Draws feint rules and a margin behind the text, turning the box into a sheet of paper.
+    /// Off everywhere but the journal composer — this is the pad's signature, and a signature
+    /// repeated on every composer is just wallpaper.
+    var ruled = false
 
     var body: some View {
         TextField(placeholder, text: $text, axis: .vertical)
             .lineLimit(4...8)
             .padding(16)
-            .background(Color(surfaceAsset), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(surfaceAsset))
+                    .overlay { if ruled { PaperRuling() } }
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .strokeBorder(Color.cardBorder, lineWidth: 1)
