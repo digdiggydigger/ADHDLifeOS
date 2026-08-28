@@ -9,9 +9,18 @@ import SwiftUI
 /// tap reads as physical rather than as a flat opacity flash (`CLAUDE.md` §3 — explicit primitive
 /// press style, no raw opacity; §5 — spring, not linear easing).
 ///
-/// Colours are adaptive/semantic (§4): the fill is the app `accentColor` when enabled and
-/// `Color(.secondarySystemFill)` when disabled, and the disabled state is carried by that fill plus a
-/// `.secondary` label — **never** `.opacity`. The enabled label is `.white`, the conventional
+/// Colours are adaptive/semantic (§4): the fill is the app `accentColor` when enabled and an
+/// OPAQUE `CardSurfaceSecondary` when disabled, and the disabled state is carried by that fill,
+/// a hairline border and a `.secondary` label — **never** `.opacity`.
+///
+/// The disabled fill used to be `Color(.secondarySystemFill)`, which is translucent by design:
+/// system *fills* are meant to layer over content and take its colour. On a neutral page that
+/// reads as grey and looked fine for months. On the journal composer's gold pad it became gold —
+/// a Save button the same colour as the page behind it (E, on device). A filled prominent control
+/// should not be see-through, so it no longer is, and the hairline keeps it an object on any
+/// background rather than a shape that only exists where it happens to contrast.
+///
+/// The enabled label is `.white`, the conventional
 /// on-accent colour for a filled prominent control (the same contract as the system
 /// `.borderedProminent` style already used in `LoginView`), which holds WCAG contrast against the
 /// saturated accent in both Light and Dark. The label font is the semantic, Dynamic-Type-scaling
@@ -25,10 +34,16 @@ struct PrimaryActionButtonStyle: ButtonStyle {
             .foregroundStyle(isEnabled ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.secondary))
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.vertical, 8)
-            .background(
+            .background {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isEnabled ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.secondarySystemFill)))
-            )
+                    .fill(isEnabled ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color("CardSurfaceSecondary")))
+                    .overlay {
+                        if !isEnabled {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .strokeBorder(Color.cardBorder, lineWidth: 1)
+                        }
+                    }
+            }
             .contentShape(Rectangle())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: configuration.isPressed)
