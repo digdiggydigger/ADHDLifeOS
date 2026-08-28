@@ -459,6 +459,61 @@ single biggest source of noise in this suite, it cost a full 9-minute run in thi
 it remains unrelated to any feature — which is precisely why it keeps not getting fixed. It wants
 a retry loop around `UITestSession.swift:94`.
 
+### FEATURE: F-PadFooterLift — the night footer stops being a cliff  [x] COMPLETED
+
+**E marked up a device shot of the night pad (2026-08-28)**, drawing round the pinned footer bar:
+"it should not be jet black like you have it set currently — I think it should be more easy on the
+eye. Currently it's very abrupt to view."
+
+**The app had already answered this question elsewhere, which is what made it decidable.** E's
+second screenshot — the ORDINARY composer at night — shows its footer sitting *lighter* than its
+page: `#2C2E32` on `#15171C`, a step of **1.32:1**. A lifted pinned bar is the house pattern.
+
+The gold pad was the only screen painting its footer with the DESK (`JournalPaperChrome`
+`#1A1610`), which meant stepping **down** from the page by **6.97:1** — five times the house step,
+and precisely the cliff E was reacting to. It was not a taste disagreement; the pad was the outlier.
+
+**The fix:** the footer gets its own token rather than borrowing the desk's.
+`JournalPaperFooter` dark `#332C20`:
+
+- **1.31:1 lift** off the desk — the ordinary composer's own step, to two decimal places.
+- **warm** (hue 38°, in the pad's family) — no cool grey creeps back onto this screen.
+- **23% saturation against the ink's 85%**, so it reads as a SURFACE, not as a giant selected chip.
+  A more saturated brown at the same luminance would have; contrast ratio cannot see that
+  difference, because it only measures luminance — the saturation gap is what separates them.
+- The parchment caption still clears **10.51:1** on it; the cream Save button still reads as an
+  object sitting on the bar.
+
+Light is byte-identical to the chrome (`#DAA520`), so the day face E approved is untouched **by
+construction**, and that was verified rather than asserted: the day render measures the same
+`#DAA520` footer at the same 5.20:1, with an identical gold pixel count (1,588,099) to the previous
+build, and `#332C20` appears **0 times** in it.
+
+**Deliberately NOT changed:** the header band and the pad's side gutters are still the desk
+`#1A1610`. E marked the footer specifically, and lifting only the pinned bar is exactly what the
+ordinary composer does — its nav area stays with the page while its footer lifts. Say the word if
+the top should follow.
+
+**Acceptance criteria**
+- [x] The night footer is a lifted warm surface, not the desk, at the ordinary composer's own step.
+- [x] The caption and the Save button stay legible on it (10.51:1).
+- [x] The day face is unchanged — verified by measurement, not assumed.
+- [x] Failing test first.
+
+**Verified 2026-08-28:**
+```
+swiftlint lint                → Found 2 violations, 0 serious in 545 files (the two known debts;
+                                 a line_length violation this block introduced was FIXED, not kept)
+xcodebuild build-for-testing  → RED first: "type 'JournalComposerPalette' has no member
+                                 'footerSurfaceAsset'"
+xcodebuild test               → Executed 1838 tests, with 0 failures (0 unexpected)
+                                 ** TEST SUCCEEDED **   (1836 + the 2 added here)
+renders, both appearances     → night footer #332C20, caption 10.51:1
+                                 day footer #DAA520 unchanged, #332C20 present 0 px
+```
+
+---
+
 ### FEATURE: F-AccountName — a name you can actually set  [ ] UNCHECKED
 
 **Settings' Name row is correct code that E will never see fire.** `SettingsView.swift:190` is

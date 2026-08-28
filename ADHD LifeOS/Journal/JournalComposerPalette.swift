@@ -73,6 +73,27 @@ enum JournalComposerPalette {
         type == .journal
     }
 
+    /// The pinned footer's own surface — a LIFTED bar, not the desk it sits on.
+    ///
+    /// E marked this band up on a device shot of the night pad (2026-08-28): "it should not be jet
+    /// black … it's very abrupt to view". The measurement agrees, and the app had already answered
+    /// the question elsewhere: the ORDINARY composer lifts its footer above its own page
+    /// (`#2C2E32` on `#15171C`, a step of 1.32:1). The gold pad was the only screen painting its
+    /// footer with the desk instead, which meant stepping DOWN from the page by 6.97:1 — five
+    /// times the house cliff, and precisely the abruptness E saw.
+    ///
+    /// Dark is `#332C20`: a 1.31:1 lift off the desk, so it matches the ordinary composer's step
+    /// almost exactly; warm (hue 38°, in the pad's family, no cool grey returns here); and at 23%
+    /// saturation against the ink's 85% it reads as a SURFACE rather than as a giant selected chip,
+    /// which a more saturated brown at the same luminance would have. The parchment caption still
+    /// clears 10.51:1 on it and the cream Save button still reads as an object.
+    ///
+    /// Light is the pad's own gold, byte-identical to the chrome, so the day face E approved is
+    /// untouched.
+    static func footerSurfaceAsset(for type: LogType) -> String? {
+        isPaper(for: type) ? "JournalPaperFooter" : nil
+    }
+
     /// The ink for text on the CHROME — the desk, not the page — which today is the pinned
     /// footer's one line.
     ///
@@ -195,14 +216,29 @@ struct ComposerChipPalette: Equatable {
 struct ComposerFooterBackground: ViewModifier {
     let type: LogType
 
+    /// `footerMatchesPage(for:)` and `footerSurfaceAsset(for:)` are both `isPaper`, so inside the
+    /// branch below the fallback is unreachable — it is here to keep this total rather than to
+    /// force-unwrap something that is only conditionally true by coincidence of two predicates.
+    private var surfaceAsset: String {
+        JournalComposerPalette.footerSurfaceAsset(for: type)
+            ?? JournalComposerPalette.chromeAsset(for: type)
+    }
+
     func body(content: Content) -> some View {
         if JournalComposerPalette.footerMatchesPage(for: type) {
             content
-                // The CHROME, not the page. The pad is inset now, so a page-coloured footer ran
-                // full width underneath it and swallowed its bottom corners — the pad stopped
-                // looking like an object exactly where it should have ended (E's render,
-                // 2026-08-28). In light the chrome IS the page gold, so the day face is unchanged.
-                .background(Color(JournalComposerPalette.chromeAsset(for: type)))
+                // Its OWN lifted surface — not the page, and no longer the desk either.
+                //
+                // Not the page: the pad is inset, so a page-coloured footer ran full width
+                // underneath it and swallowed its bottom corners, and the pad stopped looking like
+                // an object exactly where it should have ended (E's render, 2026-08-28).
+                //
+                // Not the desk: that made the night footer jet black, a 6.97:1 step DOWN from the
+                // page where the ordinary composer steps 1.32:1 UP from its own — five times the
+                // cliff, which is what E marked up as abrupt. See `footerSurfaceAsset(for:)`.
+                //
+                // In light this token is byte-identical to the chrome, so the day face is unchanged.
+                .background(Color(surfaceAsset))
                 .overlay(alignment: .top) { Color.cardBorder.frame(height: 1) }
         } else {
             content.composerFooterSurface()

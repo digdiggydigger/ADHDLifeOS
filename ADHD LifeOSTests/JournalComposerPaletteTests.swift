@@ -132,6 +132,32 @@ final class JournalComposerPaletteTests: XCTestCase {
         )
     }
 
+    /// **The pinned footer is a LIFTED surface, not the desk** (E, 2026-08-28, marking up a device
+    /// shot of the night pad: "it should not be jet black … it's very abrupt to view").
+    ///
+    /// Measured, and the app answered this question itself long ago: the ORDINARY composer already
+    /// lifts its footer above its page — `#2C2E32` on `#15171C`, a step of 1.32:1. The gold pad was
+    /// the only screen dropping its footer to the desk instead, a step of 6.97:1 down from the
+    /// page — five times the cliff, which is exactly what read as abrupt. `JournalPaperFooter`
+    /// dark `#332C20` restores the house step at 1.31:1, stays warm (hue 38°), and at 23%
+    /// saturation against the ink's 85% still reads as a surface rather than a giant selected chip.
+    func testTheFooterIsALiftedSurfaceNotTheDesk() {
+        XCTAssertEqual(
+            JournalComposerPalette.footerSurfaceAsset(for: .journal),
+            "JournalPaperFooter"
+        )
+        XCTAssertNotEqual(
+            JournalComposerPalette.footerSurfaceAsset(for: .journal),
+            JournalComposerPalette.chromeAsset(for: .journal),
+            "the footer must not be painted with the desk — that is the abruptness E marked up"
+        )
+    }
+
+    /// Same containment as every other override here: the ordinary composer keeps `.bar`.
+    func testTheOrdinaryFooterKeepsItsBarMaterial() {
+        XCTAssertNil(JournalComposerPalette.footerSurfaceAsset(for: .log))
+    }
+
     /// **The footer's ink is NOT the page's ink, and that is the whole reason it has its own
     /// token.** The chrome tracks the appearance while the page does not: in light the desk IS the
     /// pad's gold, at night it goes near-black while the page stays gold. Painting the footer with
