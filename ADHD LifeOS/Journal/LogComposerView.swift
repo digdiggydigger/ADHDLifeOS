@@ -17,6 +17,18 @@ struct LogComposerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draftTagName = ""
 
+    /// The "optional" suffix's ink — nil on the ordinary page, so it keeps its tertiary grey.
+    private var detailInk: String? {
+        JournalComposerPalette.isPaper(for: journalService.composerType)
+            ? JournalComposerPalette.inkAsset(for: journalService.composerType)
+            : nil
+    }
+
+    /// The wardrobe for whichever kind is being written — see `ComposerChipPalette`.
+    private var chips: ComposerChipPalette {
+        JournalComposerPalette.chipPalette(for: journalService.composerType)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -26,6 +38,9 @@ struct LogComposerView: View {
                         .foregroundStyle(.secondary)
                     ComposerTextBox(
                         placeholder: "What's on your mind?",
+                        placeholderAsset: JournalComposerPalette.placeholderAsset(
+                            for: journalService.composerType
+                        ),
                         text: $journalService.composerBody,
                         accessibilityID: "logComposerBodyField",
                         surfaceAsset: JournalComposerPalette.writingSurfaceAsset(
@@ -37,7 +52,8 @@ struct LogComposerView: View {
                     if journalService.composerType == .journal {
                         JournalEnergyMoodPicker(
                             energyLevel: $journalService.composerEnergyLevel,
-                            moodEmoji: $journalService.composerMoodEmoji
+                            moodEmoji: $journalService.composerMoodEmoji,
+                            palette: chips
                         )
                     }
                     areaSection
@@ -50,6 +66,18 @@ struct LogComposerView: View {
                     }
                 }
                 .padding(16)
+                // The pad as an OBJECT rather than as the whole screen. In light mode the chrome
+                // behind it is the same gold, so this reads full-bleed exactly as it did before;
+                // at night the chrome goes dark and the pad becomes a lit page on a dark desk.
+                // That is what buys the night face a real gold instead of a brown: it reuses the
+                // day face's gold-and-dark-ink pairing, which already clears AA, rather than
+                // hunting in the mid-tone valley where no ink passes.
+                .background(
+                    Color(JournalComposerPalette.backgroundAsset(for: journalService.composerType)),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
                 // Set ONCE, on the container: `.secondary` resolves against the environment's
                 // foreground, so every label inside — including the ones owned by
                 // `ComposerSectionHeader` and `JournalEnergyMoodPicker` — turns warm ink instead
@@ -64,7 +92,7 @@ struct LogComposerView: View {
             // them reads as a glitch; honoured against Reduce Motion like every other transition
             // (§5).
             .background(
-                Color(JournalComposerPalette.backgroundAsset(for: journalService.composerType))
+                Color(JournalComposerPalette.chromeAsset(for: journalService.composerType))
                     .ignoresSafeArea()
             )
             .animation(
@@ -114,7 +142,7 @@ struct LogComposerView: View {
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(ChoiceChipButtonStyle(isSelected: selected))
+        .buttonStyle(ChoiceChipButtonStyle(isSelected: selected, palette: chips))
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("logComposerType-\(type.rawValue)")
     }
@@ -123,10 +151,11 @@ struct LogComposerView: View {
     private var areaSection: some View {
         if !lifeAreas.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                ComposerSectionHeader(title: "Life area", detail: "optional")
+                ComposerSectionHeader(title: "Life area", detail: "optional", detailAsset: detailInk)
                 ComposerAreaChips(
                     lifeAreas: lifeAreas.filter { !$0.archived },
                     noSelectionLabel: "No life area",
+                    palette: chips,
                     selection: $journalService.composerLifeAreaId
                 )
                 .accessibilityElement(children: .contain)
@@ -140,7 +169,7 @@ struct LogComposerView: View {
     /// composers, riding `JournalService.composerTagIds` into the create payload.
     private var tagsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ComposerSectionHeader(title: "Tags", detail: "optional")
+            ComposerSectionHeader(title: "Tags", detail: "optional", detailAsset: detailInk)
             if !journalService.availableTags.isEmpty {
                 FlowingChips(spacing: 8) {
                     ForEach(journalService.availableTags) { tag in
@@ -154,7 +183,7 @@ struct LogComposerView: View {
                     .padding(.horizontal, 8)
                     .frame(minHeight: 36)
                     .background(
-                        Color("CardSurfaceSecondary"),
+                        Color(chips.quietSurface),
                         in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                     )
                     .accessibilityIdentifier("logComposerNewTagField")
@@ -184,13 +213,11 @@ struct LogComposerView: View {
         } label: {
             Text(tag.name)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(selected ? AreaPalette.work.onColor : Color("LabelSecondary"))
+                .foregroundStyle(Color(selected ? chips.selectedLabel : chips.quietLabel))
                 .padding(.horizontal, 8)
                 .frame(minHeight: 36)
                 .background(
-                    selected
-                        ? AnyShapeStyle(Color.accentColor)
-                        : AnyShapeStyle(Color("CardSurfaceSecondary")),
+                    Color(selected ? chips.selectedFill : chips.quietSurface),
                     in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                 )
                 .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -217,7 +244,7 @@ struct LogComposerView: View {
                     }
                 }
             }
-            .buttonStyle(PrimaryActionButtonStyle())
+            .buttonStyle(PrimaryActionButtonStyle(palette: chips))
             .disabled(!journalService.isComposerBodyValid || journalService.isCreating)
             .accessibilityIdentifier("logComposerSubmitButton")
         }

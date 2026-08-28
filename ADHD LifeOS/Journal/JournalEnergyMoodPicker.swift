@@ -17,6 +17,9 @@ import SwiftUI
 struct JournalEnergyMoodPicker: View {
     @Binding var energyLevel: EnergyLevel
     @Binding var moodEmoji: String
+    /// The chip wardrobe. `nil` is the ordinary app chip — the journal pad passes its own so the
+    /// energy and mood rows stop being the loudest blue on a gold page.
+    var palette: ComposerChipPalette?
     /// The inbox nests this inside an already-busy row, so it drops the section labels and tightens
     /// the type; the composer shows the full thing.
     var isCompact = false
@@ -47,7 +50,7 @@ struct JournalEnergyMoodPicker: View {
                     } label: {
                         energyChip(level)
                     }
-                    .buttonStyle(ChoiceChipButtonStyle(isSelected: energyLevel == level))
+                    .buttonStyle(ChoiceChipButtonStyle(isSelected: energyLevel == level, palette: palette))
                     .accessibilityIdentifier("journalEnergyOption-\(level.rawValue)")
                     .accessibilityLabel("\(level.title) energy, \(level.detail)")
                     .accessibilityAddTraits(energyLevel == level ? [.isSelected] : [])
@@ -105,7 +108,7 @@ struct JournalEnergyMoodPicker: View {
                                 .frame(width: 44, height: 44)
                                 .contentShape(Rectangle())
                         }
-                        .buttonStyle(ChoiceChipButtonStyle(isSelected: moodEmoji == emoji))
+                        .buttonStyle(ChoiceChipButtonStyle(isSelected: moodEmoji == emoji, palette: palette))
                         .accessibilityIdentifier("journalMoodOption-\(emoji)")
                         .accessibilityLabel("Mood \(emoji)")
                         .accessibilityAddTraits(moodEmoji == emoji ? [.isSelected] : [])

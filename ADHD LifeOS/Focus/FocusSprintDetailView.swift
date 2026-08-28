@@ -320,13 +320,30 @@ struct FocusStatusPill: View {
 /// spring, never linear easing).
 struct ChoiceChipButtonStyle: ButtonStyle {
     var isSelected: Bool
+    /// An alternate wardrobe. `nil` — the default — is the app's ordinary chip in every one of the
+    /// seven screens that use this style; only the journal pad passes one, so this cannot change
+    /// anything it was not pointed at. See `ComposerChipPalette`.
+    var palette: ComposerChipPalette?
+
+    private var fill: AnyShapeStyle {
+        guard let palette else {
+            return isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.cardSurface)
+        }
+        return AnyShapeStyle(Color(isSelected ? palette.selectedFill : palette.quietSurface))
+    }
+
+    private var label: AnyShapeStyle {
+        guard let palette else {
+            return isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.primary)
+        }
+        return AnyShapeStyle(Color(isSelected ? palette.selectedLabel : palette.quietLabel))
+    }
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.primary))
+            .foregroundStyle(label)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.cardSurface))
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(fill)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)

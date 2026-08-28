@@ -24,8 +24,11 @@ import SwiftUI
 ///    the better one at this size: warmer, richer, and white cards sit ON it instead of glaring
 ///    against it.
 ///
-/// SINGLE colour, no dark variant, because the composer forces the light appearance — see
-/// `forcesLightAppearance`.
+/// 4. E, 2026-08-28, after seeing the night face rendered: rather than keep hunting for a gold
+///    that survives the dark appearance, redesign what SURROUNDS it. The clash was never one wrong
+///    yellow — it was a warm page wearing a cool wardrobe (a blue accent at goldenrod's near-exact
+///    complement, cool-grey quiet chips, a cool near-black writing box). Widen the change and the
+///    contrast ceiling moves. See `chipPalette(for:)` and `chromeAsset(for:)`.
 enum JournalComposerPalette {
     /// A `switch` rather than a ternary so a third `LogType` cannot silently inherit whichever
     /// branch it happened to fall into — it has to decide what it looks like.
@@ -77,8 +80,72 @@ enum JournalComposerPalette {
     /// `CardSurface`, which is white by day and near-black by night: the sheet you write on,
     /// either way.
     static func writingSurfaceAsset(for type: LogType) -> String {
-        type == .journal ? "CardSurface" : "CardSurfaceSecondary"
+        type == .journal ? "JournalPaperSurface" : "CardSurfaceSecondary"
     }
+
+    /// The desk the pad sits on.
+    ///
+    /// In LIGHT this is the pad's own gold, so the page still reads full-bleed and the day face E
+    /// approved is untouched. At night it goes dark and the same structure becomes a lit pad on a
+    /// dark desk. One layout, two appearances, decided entirely in the token layer — there is no
+    /// `colorScheme` branch in this file, and there must not be one.
+    static func chromeAsset(for type: LogType) -> String {
+        type == .journal ? "JournalPaperChrome" : "PageBackground"
+    }
+
+    /// Secondary text on the pad, and it is deliberately the SAME ink as primary.
+    ///
+    /// Arithmetic, not preference: the ink clears AA against the gold at about 5.2:1, so anything
+    /// dimmed from it falls under 4.5:1 — `#6B4E12` on `#DAA520` measures 3.45:1. A mid-tone
+    /// saturated ground simply has no room for a second, quieter ink. So hierarchy on this page
+    /// comes from type weight and size (§1) rather than from a lighter colour or an opacity (§4),
+    /// which is what those rules ask for anyway.
+    static func softInkAsset(for type: LogType) -> String {
+        type == .journal ? inkAsset(for: type) : "LabelSecondary"
+    }
+
+    /// The writing box's prompt. The SHEET has headroom the gold page does not — the ink clears
+    /// about 9.5:1 there — so this is the one place on the pad where a genuinely quieter colour
+    /// can live and still pass AA (`#6B5220` measures 5.98:1 on the day sheet, 5.61:1 at night).
+    /// The system placeholder is near-white and simply vanished on warm paper.
+    static func placeholderAsset(for type: LogType) -> String? {
+        type == .journal ? "JournalPaperPlaceholder" : nil
+    }
+
+    /// The chip wardrobe. Selection on the pad is MONOCHROME (E's call, 2026-08-28): a chosen chip
+    /// fills with the pad's own ink and labels itself in the page colour, so it reads as something
+    /// written on the page rather than a control pasted onto it — and it introduces no new hue to
+    /// keep in agreement with the gold.
+    static func chipPalette(for type: LogType) -> ComposerChipPalette {
+        type == .journal ? .pad : .ordinary
+    }
+}
+
+/// What a composer's chips wear. Value type rather than scattered asset names so the pad and the
+/// ordinary page cannot drift into half-states — every call site takes the whole wardrobe or none
+/// of it.
+///
+/// `ComposerAreaChips` is shared with task-create and capture triage, which must keep the app
+/// accent; `.ordinary` is the default so those screens are unchanged by construction.
+struct ComposerChipPalette: Equatable {
+    let quietSurface: String
+    let quietLabel: String
+    let selectedFill: String
+    let selectedLabel: String
+
+    static let ordinary = ComposerChipPalette(
+        quietSurface: "CardSurfaceSecondary",
+        quietLabel: "LabelSecondary",
+        selectedFill: "AccentColor",
+        selectedLabel: "OnAreaWork"
+    )
+
+    static let pad = ComposerChipPalette(
+        quietSurface: "JournalPaperSurface",
+        quietLabel: "JournalPaperInk",
+        selectedFill: "JournalPaperInk",
+        selectedLabel: "JournalPaper"
+    )
 }
 
 /// The composer's pinned footer: page-coloured on the journal pad, standard bar material on the
@@ -90,7 +157,11 @@ struct ComposerFooterBackground: ViewModifier {
     func body(content: Content) -> some View {
         if JournalComposerPalette.footerMatchesPage(for: type) {
             content
-                .background(Color(JournalComposerPalette.backgroundAsset(for: type)))
+                // The CHROME, not the page. The pad is inset now, so a page-coloured footer ran
+                // full width underneath it and swallowed its bottom corners — the pad stopped
+                // looking like an object exactly where it should have ended (E's render,
+                // 2026-08-28). In light the chrome IS the page gold, so the day face is unchanged.
+                .background(Color(JournalComposerPalette.chromeAsset(for: type)))
                 .overlay(alignment: .top) { Color.cardBorder.frame(height: 1) }
         } else {
             content.composerFooterSurface()

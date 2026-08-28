@@ -237,6 +237,70 @@ No journey run: nothing in `ADHD LifeOSUITests` opens the quick-capture composer
 
 ---
 
+### FEATURE: F-PadBalance — the pad stops fighting its own wardrobe  [x] COMPLETED
+
+**E's reframing, 2026-08-28, and it is the thing that finally settled this:** "it would be much
+easier to perform a light redesign of the rest of the Journal Card in order to create a balanced
+colour scheme … in order to facilitate my request of yellow."
+
+That was correct, and the arithmetic proves why. Asked only to "make the night face more gold", the
+ceiling was hard and close: with the parchment ink fixed, `#7A6000` (which E had ALREADY rejected as
+mustard) measured 4.67:1, and anything goldier failed AA outright. **The ceiling was a consequence
+of the wardrobe, not of the yellow.** A warm page was wearing cool clothes:
+
+| Element | Was | Hue vs goldenrod (43°) |
+|---|---|---|
+| Selected chips | `AccentColor` `#0A7CFF` | **210° — near-exact complement** |
+| Quiet chips | `CardSurfaceSecondary` | ~225°, cool grey |
+| Writing box | `CardSurface` (`#1D2027` at night) | ~218°, cool |
+
+**What shipped**
+- **`JournalPaperChrome`** — the desk. In LIGHT it is the pad's own gold, so the day face reads
+  full-bleed exactly as approved; at night it goes dark and the same structure becomes a lit pad on
+  a dark desk. One layout, two appearances, decided entirely in tokens — **there is no
+  `colorScheme` branch in the palette and there must not be one.**
+- That structural move is what buys the gold: the night pad is a real `#C99A1E` with dark ink,
+  reusing the day face's already-proven pairing instead of hunting the mid-tone valley where no ink
+  passes.
+- **`JournalPaperSurface`** — a warm sheet for the writing box and quiet chips. `CardSurface` was
+  only ever half a fix: white by day, but a COOL near-black at night, i.e. the same mistake in the
+  other appearance.
+- **Monochrome selection** (E's pick): a chosen chip fills with the pad's own ink and labels itself
+  in the page gold. No new hue. Per-area tints are suppressed on the pad — eight more hues is the
+  last thing a surface with a hue problem needs.
+- Four follow-ups from the first render: the Save button (the last cool object), the footer (moved
+  to the chrome so the inset pad's bottom corners survive), the placeholder, and "optional".
+
+**Two findings worth more than this block**
+1. **There is no dimmed ink on the gold page, and that is arithmetic.** Primary ink clears AA at
+   only ~5.2:1, so anything dimmed lands under 4.5 (`#6B4E12` on `#DAA520` = 3.45:1). Hierarchy
+   comes from weight and size (§1), never a lighter ink or an opacity (§4). Encoded as
+   `softInkAsset(for:)` returning the SAME ink, with the measurement in its doc comment.
+2. **The sheet is the one exception**, because the ink clears ~9.5:1 there — which is why the
+   placeholder can be `#6B5220` (5.98:1 day / 5.61:1 night) and still pass.
+
+**Blast radius, and how it was contained.** Four shared components across ~20 call sites
+(`ChoiceChipButtonStyle` ×7, `PrimaryActionButtonStyle` ×10, `ComposerAreaChips` ×3,
+`ComposerSectionHeader` ×3). Every override is OPTIONAL and defaults to nil, so only the pad opts
+in — verified by the journeys, not merely argued.
+
+**Verified 2026-08-28:**
+```
+swiftlint lint                → Found 2 violations, 0 serious in 546 files
+xcodebuild test (unit)        → Executed 1831 tests, with 0 failures (0 unexpected)
+xcodebuild build-for-testing  → exit 0, all targets
+xcodebuild test (5 journeys)  → 4 passed; testCreateTask failed in signOutIfSignedIn setup
+                                (UITestSession.swift:102) and PASSED alone in 114.061s —
+                                the documented harness flakiness, third occurrence today
+```
+`testCreateTask` is the journey that walks `TaskCreateView`, which uses BOTH changed chip
+components — so its passing is the specific evidence that the nil-default containment holds.
+
+**Superseded:** `F-PadWarmNeutral` below is subsumed by this — the cool `#E9ECF3` chips it existed
+to fix are gone from both faces.
+
+---
+
 ### FEATURE: F-PadNightRender — put the journal pad's night face in front of E  [ ] UNCHECKED
 
 **Not a code block — a verification block, and the reason the other three can be judged.** E's

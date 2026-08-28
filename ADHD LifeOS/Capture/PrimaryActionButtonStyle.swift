@@ -27,16 +27,37 @@ import SwiftUI
 /// `.headline` (§1) so the button reflows at accessibility sizes instead of clipping.
 struct PrimaryActionButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    /// An alternate wardrobe, for surfaces the app accent does not belong on. `nil` — the default
+    /// — is the accent, unchanged in all ten call sites. The journal pad passes its own: an
+    /// OPAQUE cool grey was still the last cool object on a warm page (E's render, 2026-08-28),
+    /// which is the same complaint as the translucent fill this style already fixed, one layer on.
+    var palette: ComposerChipPalette?
+
+    private var disabledFill: AnyShapeStyle {
+        AnyShapeStyle(Color(palette?.quietSurface ?? "CardSurfaceSecondary"))
+    }
+
+    private var enabledFill: AnyShapeStyle {
+        guard let palette else { return AnyShapeStyle(Color.accentColor) }
+        return AnyShapeStyle(Color(palette.selectedFill))
+    }
+
+    private var label: AnyShapeStyle {
+        guard let palette else {
+            return isEnabled ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.secondary)
+        }
+        return AnyShapeStyle(Color(isEnabled ? palette.selectedLabel : palette.quietLabel))
+    }
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundStyle(isEnabled ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.secondary))
+            .foregroundStyle(label)
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.vertical, 8)
             .background {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isEnabled ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color("CardSurfaceSecondary")))
+                    .fill(isEnabled ? enabledFill : disabledFill)
                     .overlay {
                         if !isEnabled {
                             RoundedRectangle(cornerRadius: 8, style: .continuous)

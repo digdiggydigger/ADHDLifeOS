@@ -15,6 +15,8 @@ import SwiftUI
 struct ComposerSectionHeader: View {
     let title: String
     var detail: String?
+    /// The "optional" suffix's colour. `nil` keeps the ordinary page's tertiary grey.
+    var detailAsset: String?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -24,7 +26,10 @@ struct ComposerSectionHeader: View {
             if let detail {
                 Text(detail)
                     .font(.footnote)
-                    .foregroundStyle(Color("LabelTertiary"))
+                    // Tertiary grey is right on the ordinary page and wrong on the pad, where it
+                    // was the last grey left. The pad has ONE ink; "optional" is told apart by
+                    // weight and size, which is what §1 asks for anyway.
+                    .foregroundStyle(Color(detailAsset ?? "LabelTertiary"))
             }
         }
     }
@@ -44,6 +49,9 @@ struct ComposerAreaChips: View {
     /// is its requirement), so there the lit chip itself has to be the way back to an unmade
     /// choice (E, 2026-08-28).
     var allowsDeselection: Bool = false
+    /// The wardrobe. Defaults to the app accent, so task-create and capture triage are unchanged
+    /// by construction — only the journal pad passes `.pad`.
+    var palette: ComposerChipPalette = .ordinary
     @Binding var selection: UUID?
 
     var body: some View {
@@ -65,12 +73,20 @@ struct ComposerAreaChips: View {
         let selected = selection == id
         let background: AnyShapeStyle
         let foreground: Color
-        if selected, let family {
+        let isPad = palette == .pad
+        if selected, let family, !isPad {
+            // Per-area tints are right on the ordinary page. On the pad they would smuggle eight
+            // more hues onto a surface whose whole problem was hue disagreement, so it stays
+            // monochrome and the area is told apart by its emoji and name.
             (background, foreground) = (AnyShapeStyle(family.tint), family.color)
         } else if selected {
-            (background, foreground) = (AnyShapeStyle(Color.accentColor), AreaPalette.work.onColor)
+            (background, foreground) = (
+                AnyShapeStyle(Color(palette.selectedFill)), Color(palette.selectedLabel)
+            )
         } else {
-            (background, foreground) = (AnyShapeStyle(Color("CardSurfaceSecondary")), Color("LabelSecondary"))
+            (background, foreground) = (
+                AnyShapeStyle(Color(palette.quietSurface)), Color(palette.quietLabel)
+            )
         }
         return Button {
             Haptics.play(.selection)
@@ -150,6 +166,9 @@ extension View {
 /// The composer text input — S1's "one big honest box" instead of a Form row.
 struct ComposerTextBox: View {
     let placeholder: String
+    /// The prompt's colour. `nil` keeps the system placeholder; the pad passes its own, because
+    /// the system one is near-white and vanished on the warm sheet.
+    var placeholderAsset: String?
     @Binding var text: String
     var accessibilityID: String
     /// The fill, so a composer on a coloured page can hand it one that belongs there. Defaulted to
@@ -160,8 +179,16 @@ struct ComposerTextBox: View {
     /// repeated on every composer is just wallpaper.
     var ruled = false
 
+    /// The prompt as its own `Text`, which is the only way to recolour it independently:
+    /// `.foregroundStyle` on the `TextField` paints the TYPED TEXT as well, so the pad's ink would
+    /// go with it. `prompt:` is iOS 15+, comfortably under this project's 16.0 floor.
+    private var prompt: Text {
+        guard let placeholderAsset else { return Text(placeholder) }
+        return Text(placeholder).foregroundColor(Color(placeholderAsset))
+    }
+
     var body: some View {
-        TextField(placeholder, text: $text, axis: .vertical)
+        TextField("", text: $text, prompt: prompt, axis: .vertical)
             .lineLimit(4...8)
             .padding(16)
             .background {
