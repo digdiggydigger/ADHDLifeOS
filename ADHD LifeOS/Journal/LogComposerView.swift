@@ -15,6 +15,8 @@ struct LogComposerView: View {
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The device's real setting, so the Log side keeps following it exactly as before.
+    @Environment(\.colorScheme) private var systemColorScheme
     @State private var draftTagName = ""
 
     var body: some View {
@@ -27,7 +29,10 @@ struct LogComposerView: View {
                     ComposerTextBox(
                         placeholder: "What's on your mind?",
                         text: $journalService.composerBody,
-                        accessibilityID: "logComposerBodyField"
+                        accessibilityID: "logComposerBodyField",
+                        surfaceAsset: JournalComposerPalette.writingSurfaceAsset(
+                            for: journalService.composerType
+                        )
                     )
                     typeSection
                     if journalService.composerType == .journal {
@@ -47,10 +52,11 @@ struct LogComposerView: View {
                 }
                 .padding(16)
             }
-            // The surface follows the KIND of entry (E, 2026-08-28): a journal entry writes on
-            // paper, a log keeps the ordinary page. Springs rather than cuts, because the chips
-            // that change it are two taps apart and a hard flash between them reads as a glitch;
-            // honoured against Reduce Motion like every other transition (§5).
+            // The surface follows the KIND of entry (E, 2026-08-28): a journal entry writes on a
+            // gold pad, a log keeps the ordinary page. Springs rather than cuts, because the chips
+            // that change it sit right above the background they change and a hard flash between
+            // them reads as a glitch; honoured against Reduce Motion like every other transition
+            // (§5).
             .background(
                 Color(JournalComposerPalette.backgroundAsset(for: journalService.composerType))
                     .ignoresSafeArea()
@@ -60,6 +66,16 @@ struct LogComposerView: View {
                 value: journalService.composerType
             )
             .safeAreaInset(edge: .bottom) { footerBar }
+            // The pad is a physical object, not a themed screen: dark ink and white cards in
+            // both appearances, the way a legal pad does not turn grey when the lights go off.
+            // Applied to the SUBTREE so the chips, pickers, toolbar and footer all come along
+            // without one shared component learning about journals. See
+            // `JournalComposerPalette.forcesLightAppearance` for why no dark-mode yellow works.
+            .environment(
+                \.colorScheme,
+                JournalComposerPalette.forcesLightAppearance(for: journalService.composerType)
+                    ? .light : systemColorScheme
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -212,7 +228,7 @@ struct LogComposerView: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 4)
-        .composerFooterSurface()
+        .modifier(ComposerFooterBackground(type: journalService.composerType))
     }
 }
 

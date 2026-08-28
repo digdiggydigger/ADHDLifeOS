@@ -121,12 +121,15 @@ struct ComposerTextBox: View {
     let placeholder: String
     @Binding var text: String
     var accessibilityID: String
+    /// The fill, so a composer on a coloured page can hand it one that belongs there. Defaulted to
+    /// the ordinary secondary surface, which is what every caller but the journal pad wants.
+    var surfaceAsset: String = "CardSurfaceSecondary"
 
     var body: some View {
         TextField(placeholder, text: $text, axis: .vertical)
             .lineLimit(4...8)
             .padding(16)
-            .background(Color("CardSurfaceSecondary"), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Color(surfaceAsset), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .strokeBorder(Color.cardBorder, lineWidth: 1)
