@@ -301,7 +301,14 @@ to fix are gone from both faces.
 
 ---
 
-### FEATURE: F-PadNightRender — put the journal pad's night face in front of E  [ ] UNCHECKED
+### FEATURE: F-PadNightRender — put the journal pad's night face in front of E  [x] COMPLETED
+
+**CLOSED 2026-08-28.** The harness was rebuilt from `22dba79`, both faces were rendered in both
+appearances with `simctl ui … appearance` driving it explicitly, and E ruled: "make the night face
+more gold", then — after seeing the contrast ceiling — "perform a light redesign of the rest of the
+Journal Card". That produced `200d0ea` (F-PadBalance) above. The cameras were deleted again at E's
+instruction once the judging was done; their four hard-won traps are recorded in
+[[journal-pad-design]] rather than in the repo.
 
 **Not a code block — a verification block, and the reason the other three can be judged.** E's
 five screenshots were all light appearance, so the gold pad's night face (`9848ee8`) remains the
@@ -353,7 +360,11 @@ should not repeat that split.
 
 ---
 
-### FEATURE: F-PadWarmNeutral — the gold pad stops using a cold grey  [ ] UNCHECKED
+### FEATURE: F-PadWarmNeutral — the gold pad stops using a cold grey  [x] SUPERSEDED by F-PadBalance
+
+**Do not work this block.** `200d0ea` replaced every cool surface on the pad — the `#E9ECF3` chips
+this block existed to fix, the writing box, the disabled Save button — with the warm
+`JournalPaperSurface` wardrobe, in BOTH appearances. Kept for the reasoning only.
 
 **Taste, and explicitly E's call — render before committing.** On the gold composer the unselected
 life-area chips and the disabled "Save entry" button are both `CardSurfaceSecondary` = **#E9ECF3**,
