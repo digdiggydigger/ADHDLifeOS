@@ -17,12 +17,18 @@ struct ComposerSectionHeader: View {
     var detail: String?
     /// The "optional" suffix's colour. `nil` keeps the ordinary page's tertiary grey.
     var detailAsset: String?
+    /// The TITLE's ink. `nil` keeps the ordinary page's `.secondary`.
+    ///
+    /// Separate from `detailAsset` because the two fall back to different things — this one to
+    /// `.secondary`, that one to `LabelTertiary` — even though the pad hands both the same ink.
+    /// On the pad this is not decoration: `.secondary` here measured 2.13:1 on E's device (§4).
+    var titleAsset: String?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(title)
                 .sectionLabel()
-                .foregroundStyle(.secondary)
+                .composerSoftInk(titleAsset)
             if let detail {
                 Text(detail)
                     .font(.footnote)
@@ -32,6 +38,39 @@ struct ComposerSectionHeader: View {
                     .foregroundStyle(Color(detailAsset ?? "LabelTertiary"))
             }
         }
+    }
+}
+
+/// An ink override that changes NOTHING when it is `nil`.
+///
+/// The branch is the whole point. `.foregroundStyle(.secondary)` and `.foregroundStyle(Color(x))`
+/// are not two values of one expression — they are two different renderings — so the `nil` case
+/// has to be the LITERAL previous expression rather than a "secondary-looking" stand-in. That is
+/// what keeps task-create and capture triage unchanged BY CONSTRUCTION rather than by inspection,
+/// which is the containment F-PadBalance established across ~20 call sites.
+///
+/// Why it exists at all: under a container that sets a plain `Color` as its foreground style,
+/// `.secondary` inherits that colour at roughly HALF alpha rather than inheriting it. On the
+/// journal pad that turned the page's one ink into a second, dimmer one — measured off E's device
+/// on 2026-08-28 at 2.13:1 by day and 2.18:1 at night, against a 4.5 bar, on a page where the
+/// same ink at full strength clears 5.20:1 / 5.25:1.
+struct ComposerSoftInk: ViewModifier {
+    let asset: String?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let asset {
+            content.foregroundStyle(Color(asset))
+        } else {
+            content.foregroundStyle(.secondary)
+        }
+    }
+}
+
+extension View {
+    /// Paint quiet composer text in `asset`, or leave it exactly as it was when `asset` is `nil`.
+    func composerSoftInk(_ asset: String?) -> some View {
+        modifier(ComposerSoftInk(asset: asset))
     }
 }
 

@@ -50,9 +50,16 @@ enum JournalComposerPalette {
     /// The night face is a real pad in the dark rather than a dimmed version of the day one, and
     /// that distinction is forced by contrast rather than taste. Dimming the gold far enough to be
     /// comfortable at night drags dark ink under 4.5:1 against it — measured, not guessed: ink
-    /// `#4A3506` on a dimmed `#A97C10` is about 3.1:1. So the night page goes properly dark
-    /// (`#2A2109`, warm brown-black) and the ink inverts to parchment (`#F2E2B8`, ~13:1), with the
-    /// same gold ruling lifted to 32% so it still reads. Same object, lights off.
+    /// `#4A3506` on a dimmed `#A97C10` is about 3.1:1.
+    ///
+    /// The dark-PAGE answer that reasoning points at (a `#2A2109` page with parchment `#F2E2B8`
+    /// ink) was written up here for a while and never shipped — E chose the other exit. What ships,
+    /// and what was measured off E's device on 2026-08-28, is that the pad KEEPS its gold at night:
+    /// `JournalPaper` dark is `#C99A1E`, a shade off the day face rather than a fifth of it, and
+    /// the DESK behind it goes near-black (`JournalPaperChrome` `#1A1610`). That reuses the day
+    /// face's proven gold-and-dark-ink pairing — 5.25:1 at night against 5.20:1 by day — instead of
+    /// hunting in the mid-tone valley where no ink passes. Same object, lights off, lamp still on
+    /// it. The gold ruling sits at 32% at night against 22% by day so it still reads.
     static func isPaper(for type: LogType) -> Bool {
         type == .journal
     }
@@ -66,6 +73,21 @@ enum JournalComposerPalette {
         type == .journal
     }
 
+    /// The ink for text on the CHROME — the desk, not the page — which today is the pinned
+    /// footer's one line.
+    ///
+    /// A separate token because the chrome does not track the page: in light it IS the pad's gold,
+    /// but at night it goes near-black while the page stays gold. Painting the footer with the
+    /// PAGE ink was tried and measured before it shipped — `#3D2B05` on the night chrome `#1A1610`
+    /// is **1.33:1**, i.e. an invisible line — while the same ink on the day chrome is a healthy
+    /// 5.20:1. That asymmetry is exactly what a light-only or a render-only check misses.
+    ///
+    /// So the ink follows the surface: `#4A3506` on gold by day (5.20:1), parchment `#EFE0B4` on
+    /// near-black by night (13.71:1).
+    static func chromeInkAsset(for type: LogType) -> String? {
+        isPaper(for: type) ? "JournalPaperChromeInk" : nil
+    }
+
     /// The colour every label on the page resolves against.
     ///
     /// System grey on gold reads as mud — E saw it and said the text gets lost. Warm ink
@@ -77,8 +99,10 @@ enum JournalComposerPalette {
 
     /// The writing box's fill. Grey-blue (`CardSurfaceSecondary`) is right on the ordinary page
     /// and was the single worst thing on gold — it read as a bruise. On the pad it is
-    /// `CardSurface`, which is white by day and near-black by night: the sheet you write on,
-    /// either way.
+    /// `JournalPaperSurface`: warm parchment in BOTH appearances (`#F5E7C0` by day, `#EFE0B4` at
+    /// night) rather than a surface that flips to near-black. Deliberate — the sheet is where this
+    /// screen's contrast headroom lives (ink clears 9.47:1 on it by day and 10.34:1 at night,
+    /// against only ~5.2:1 on the page itself), and inverting it at night would throw that away.
     static func writingSurfaceAsset(for type: LogType) -> String {
         type == .journal ? "JournalPaperSurface" : "CardSurfaceSecondary"
     }
@@ -100,8 +124,19 @@ enum JournalComposerPalette {
     /// saturated ground simply has no room for a second, quieter ink. So hierarchy on this page
     /// comes from type weight and size (§1) rather than from a lighter colour or an opacity (§4),
     /// which is what those rules ask for anyway.
-    static func softInkAsset(for type: LogType) -> String {
-        type == .journal ? inkAsset(for: type) : "LabelSecondary"
+    ///
+    /// **This returned `"LabelSecondary"` for a log, and was dead code for BOTH kinds — no view
+    /// ever called it, and the pad shipped with dimmed labels as a result** (E's device shots,
+    /// 2026-08-28: every `.secondary` label on the page measured 2.13:1 by day and 2.18:1 at
+    /// night, against a 4.5 bar, because `.foregroundStyle(.secondary)` under a container that
+    /// sets a plain `Color` inherits that colour at roughly HALF alpha rather than inheriting it).
+    ///
+    /// Why the opt-out is `nil` and not a colour: an opaque `LabelSecondary` is not what
+    /// `.foregroundStyle(.secondary)` paints, so wiring the old shape up would have restyled the
+    /// ordinary composer as a side effect of fixing the pad. `nil` means "keep exactly what you
+    /// already do", so only the pad opts in — the containment F-PadBalance used for the wardrobe.
+    static func softInkAsset(for type: LogType) -> String? {
+        isPaper(for: type) ? inkAsset(for: type) : nil
     }
 
     /// The writing box's prompt. The SHEET has headroom the gold page does not — the ink clears
@@ -132,19 +167,25 @@ struct ComposerChipPalette: Equatable {
     let quietLabel: String
     let selectedFill: String
     let selectedLabel: String
+    /// The ink for the QUIET text AROUND the chips — a section eyebrow, a chip's sublabel. `nil`
+    /// leaves the caller's existing `.secondary` untouched, which is what every screen but the pad
+    /// wants; see `JournalComposerPalette.softInkAsset(for:)` for why the opt-out is `nil`.
+    let softInk: String?
 
     static let ordinary = ComposerChipPalette(
         quietSurface: "CardSurfaceSecondary",
         quietLabel: "LabelSecondary",
         selectedFill: "AccentColor",
-        selectedLabel: "OnAreaWork"
+        selectedLabel: "OnAreaWork",
+        softInk: nil
     )
 
     static let pad = ComposerChipPalette(
         quietSurface: "JournalPaperSurface",
         quietLabel: "JournalPaperInk",
         selectedFill: "JournalPaperInk",
-        selectedLabel: "JournalPaper"
+        selectedLabel: "JournalPaper",
+        softInk: "JournalPaperInk"
     )
 }
 

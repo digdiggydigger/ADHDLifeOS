@@ -329,6 +329,87 @@ capture fired mid-animation once showed Log's content on the gold footer and rea
 
 ---
 
+### FEATURE: F-PadOneInk — the pad's one ink stops being half an ink  [ ] IN PROGRESS
+
+**Found by measuring E's device shots of `200d0ea` (2026-08-28, four screenshots: both kinds ×
+both appearances), not by reading the code.** The pad's TOKENS were all correct and all clear AA.
+What shipped wrong is that most of the page never used them.
+
+**The tokens, verified against the asset catalog and E's actual pixels — these are fine:**
+
+| pair | light | dark |
+|---|---|---|
+| page (`#DAA520` / `#C99A1E`) + ink (`#4A3506` / `#3D2B05`) | 5.20:1 | 5.25:1 |
+| writing sheet (`#F5E7C0` / `#EFE0B4`) + ink | 9.47:1 | 10.34:1 |
+| placeholder `#6B5220` on sheet | 5.98:1 | 5.61:1 |
+| selected chip label on selected fill | 5.20:1 | 5.25:1 |
+
+The night face is genuinely gold (`#C99A1E`, L=0.356), not the brown 20%-lightness version. The
+inset card with near-black gutters at night is intentional and documented. `200d0ea` held.
+
+**Bug 1 — every quiet label on the pad is the ink at HALF alpha, and fails AA.**
+`LogComposerView` sets `.foregroundStyle(Color(inkAsset))` once on the container, and its comment
+claims `.secondary` inside therefore "turns warm ink instead of system grey". Half true, and the
+half that is wrong is the whole defect: under a container whose foreground style is a plain
+`Color`, `.secondary` inherits that colour **at roughly half alpha**. It is warm — which is why it
+looks fine and why five renders missed it — and it is dimmed.
+
+Measured off E's device, and the blend arithmetic proves the mechanism rather than suggesting it:
+
+- ink `#4A3506` at 50% over `#DAA520` predicts `#926D13`; measured **`#916D12` = 2.13:1**
+- ink `#3D2B05` at 50% over `#C99A1E` predicts `#836212`; measured **`#836212` exactly = 2.18:1**
+
+Against a 4.5 bar, on a page where the same ink at full strength clears 5.20:1 / 5.25:1. Affects
+"WHAT KIND OF ENTRY?", "ENERGY", "MOOD", "LIFE AREA", "TAGS", the lead caption and the kind
+explainer. The tell was visible in one screenshot: "optional" — same component, same line, one
+`detailAsset` away — renders the full 5.20:1 while the title beside it renders 2.13:1.
+
+**`JournalComposerPalette.softInkAsset` — the helper written for exactly this, carrying the 5.2:1
+reasoning in its doc comment — was DEAD CODE.** No view called it. Worse, its unit test
+(`testJournalHasNoSecondaryInk`) passed the entire time, because it asserts the helper returns the
+right answer and nothing asserts anyone asks it. A green test guarding an unused function.
+
+It was also unusable in its old shape: it returned `"LabelSecondary"` for a log, and an opaque
+`LabelSecondary` is not what `.foregroundStyle(.secondary)` paints — wiring it up would have
+restyled the ordinary composer as a side effect. It now returns `String?`, `nil` meaning "keep
+exactly what you already do".
+
+**Bug 2 — the energy sublabels dim by alpha, same class of error.** `.opacity(0.7)` on
+`level.detail` renders ink at 70% on the parchment chip: predicted `#7D6A3E`, measured **`#7D6A3D`
+= 4.27:1**, under the bar by day. Full ink clears 9.47:1 there. The chip's fill already carries
+selection, so the dimming bought no signal.
+
+**Bug 3 — the footer caption is a cool grey on gold, and it is LIGHT-ONLY.** `footerBar` hangs off
+`.safeAreaInset`, outside the ink container, so it inherits nothing: system `#3C3C43` at 60% over
+gold = **2.47:1**. At night it lands on the near-black chrome and measures 6.12:1 — so a dark-only
+or a render-only check passes it. It was also the last cool grey left on this screen.
+
+**The trap inside the fix, caught by measuring before shipping rather than after.** The obvious
+repair — hand the footer the page ink — is wrong, because the footer sits on the CHROME, not the
+page, and the chrome tracks the appearance while the page does not. Page ink `#3D2B05` on the night
+chrome `#1A1610` measures **1.33:1**: an invisible line, in the dark half only. Hence a separate
+`JournalPaperChromeInk` token (light `#4A3506` = 5.20:1 on gold, dark `#EFE0B4` = 13.71:1 on
+near-black). The ink follows the surface.
+
+**Bug 4 — `JournalComposerPalette`'s own doc comments record a night face that does not ship.**
+They describe a `#2A2109` page with parchment `#F2E2B8` ink, and a writing box "white by day and
+near-black by night". Neither value exists in any colorset; the writing box is warm parchment in
+both appearances. This project treats those comments as the measurement record, so a stale one is a
+trap for whoever reasons about this screen next. Corrected to what ships, with the rejected
+alternative kept and labelled as rejected.
+
+**Acceptance criteria**
+- [ ] Every quiet label on the pad resolves to the page's one ink at FULL strength — 5.20:1 by day,
+      5.25:1 at night — with no alpha anywhere in the chain.
+- [ ] The footer line takes the CHROME ink, not the page ink, and is legible in both appearances.
+- [ ] `softInkAsset` is actually called by the view, and returns `nil` for a log so the ordinary
+      composer is unchanged BY CONSTRUCTION, not by inspection.
+- [ ] `TaskCreateView` (5 `ComposerSectionHeader` sites) and the capture triage row
+      (`JournalEnergyMoodPicker`) are untouched — every override is optional and defaults to `nil`.
+- [ ] Tests first, and they must fail for the right reason before the fix.
+- [ ] The stale night-face doc comments say what actually ships.
+- [ ] `testCreateTask` is run, because it walks the shared component this block changed.
+
 ### FEATURE: F-AccountName — a name you can actually set  [ ] UNCHECKED
 
 **Settings' Name row is correct code that E will never see fire.** `SettingsView.swift:190` is

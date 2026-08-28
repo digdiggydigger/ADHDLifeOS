@@ -24,6 +24,13 @@ struct JournalEnergyMoodPicker: View {
     /// the type; the composer shows the full thing.
     var isCompact = false
 
+    /// Whether an unselected chip's sublabel may be dimmed. Only where no ink was handed to us —
+    /// on a page with its own ink, alpha is a second, quieter colour, which is the one thing this
+    /// screen is not allowed to have.
+    private var dimsUnselectedDetail: Bool {
+        palette?.softInk == nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             energyRow
@@ -39,7 +46,7 @@ struct JournalEnergyMoodPicker: View {
             if !isCompact {
                 Text("Energy")
                     .sectionLabel()
-                    .foregroundStyle(.secondary)
+                    .composerSoftInk(palette?.softInk)
             }
 
             HStack(spacing: 8) {
@@ -75,7 +82,13 @@ struct JournalEnergyMoodPicker: View {
                     .font(.caption2)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                    .opacity(energyLevel == level ? 1 : 0.7)
+                    // Alpha is hierarchy the pad cannot afford (§4). Measured off E's device,
+                    // 2026-08-28: ink at 70% on the day chip renders #7D6A3D = 4.27:1, UNDER the
+                    // 4.5 bar, while the same ink at full strength clears 9.47:1 there. The chip's
+                    // fill already carries selection — see the note on `energyChip` — so dropping
+                    // the dimming costs no signal. A page that hands us no ink keeps its dimming,
+                    // so the inbox's triage row is unchanged by construction.
+                    .opacity(dimsUnselectedDetail && energyLevel != level ? 0.7 : 1)
             }
         }
         .padding(.vertical, 8)
@@ -91,7 +104,7 @@ struct JournalEnergyMoodPicker: View {
             if !isCompact {
                 Text("Mood")
                     .sectionLabel()
-                    .foregroundStyle(.secondary)
+                    .composerSoftInk(palette?.softInk)
             }
 
             // Scrolls rather than wraps: eight 44pt targets do not fit a narrow row, and shrinking

@@ -115,6 +115,76 @@ final class JournalComposerPaletteTests: XCTestCase {
             JournalComposerPalette.softInkAsset(for: .journal),
             "the pad deliberately has ONE ink — a dimmed one cannot clear AA on gold"
         )
-        XCTAssertEqual(JournalComposerPalette.softInkAsset(for: .log), "LabelSecondary")
+    }
+
+    /// **`nil` is the whole point, and it is what makes this reachable.**
+    ///
+    /// The previous shape returned `"LabelSecondary"` for a log, which is a perfectly good answer
+    /// that no view could act on: an opaque `LabelSecondary` is NOT what `.foregroundStyle(.secondary)`
+    /// paints today, so wiring it up would have quietly restyled the ordinary composer as a side
+    /// effect of fixing the pad. Returning `nil` means "keep exactly what you already do", so the
+    /// ordinary page is unchanged BY CONSTRUCTION and only the pad opts in — the containment
+    /// pattern F-PadBalance established across ~20 call sites.
+    func testTheOrdinaryPageOptsOutOfTheInkOverrideEntirely() {
+        XCTAssertNil(
+            JournalComposerPalette.softInkAsset(for: .log),
+            "a log must keep its own `.secondary`, not be repainted while fixing the pad"
+        )
+    }
+
+    /// **The footer's ink is NOT the page's ink, and that is the whole reason it has its own
+    /// token.** The chrome tracks the appearance while the page does not: in light the desk IS the
+    /// pad's gold, at night it goes near-black while the page stays gold. Painting the footer with
+    /// the page ink was tried and measured before it shipped — `#3D2B05` on the night chrome
+    /// `#1A1610` is 1.33:1, an invisible line, against 5.20:1 for the same ink on the day chrome.
+    func testTheFooterInkIsNotThePageInk() {
+        XCTAssertNotEqual(
+            JournalComposerPalette.chromeInkAsset(for: .journal),
+            JournalComposerPalette.softInkAsset(for: .journal),
+            "the footer sits on the desk, not the page — one ink cannot serve both at night"
+        )
+        XCTAssertEqual(
+            JournalComposerPalette.chromeInkAsset(for: .journal),
+            "JournalPaperChromeInk"
+        )
+    }
+
+    /// Same containment as every other override on this screen: the ordinary composer opts out.
+    func testTheOrdinaryFooterKeepsItsOwnInk() {
+        XCTAssertNil(JournalComposerPalette.chromeInkAsset(for: .log))
+    }
+
+    /// The pad's soft ink and its chip wardrobe have to name the SAME ink, or the section labels
+    /// and the chips inside them drift apart — two vehicles, one colour.
+    func testTheWardrobeAndTheSoftInkAgree() {
+        XCTAssertEqual(
+            ComposerChipPalette.pad.softInk,
+            JournalComposerPalette.softInkAsset(for: .journal),
+            "the wardrobe and the label ink must be the same ink"
+        )
+        XCTAssertNil(
+            ComposerChipPalette.ordinary.softInk,
+            "the ordinary wardrobe overrides nothing — that is what keeps task-create unchanged"
+        )
+    }
+
+    /// **The regression this block exists to close, stated as arithmetic.**
+    ///
+    /// `.foregroundStyle(.secondary)` under a container that sets a plain `Color` does NOT inherit
+    /// that colour — it inherits it at roughly half alpha. Measured off E's device (2026-08-28):
+    /// ink `#4A3506` at 50% over the day page `#DAA520` renders `#916D12` = **2.13:1**, and at
+    /// night `#3D2B05` over `#C99A1E` renders `#836212` = **2.18:1**. Both fail AA outright, on a
+    /// page where the same ink at full strength clears it at 5.20:1 / 5.25:1.
+    ///
+    /// So the pad may never express hierarchy through alpha, and the only way a view can obey that
+    /// is to be HANDED an ink rather than left to derive one.
+    func testThePadHandsOutARealInkRatherThanSomethingToDim() {
+        for type in LogType.allCases where JournalComposerPalette.isPaper(for: type) {
+            XCTAssertEqual(
+                JournalComposerPalette.softInkAsset(for: type),
+                JournalComposerPalette.inkAsset(for: type),
+                "\(type) is paper, so its quiet labels must be the page's one ink at full strength"
+            )
+        }
     }
 }

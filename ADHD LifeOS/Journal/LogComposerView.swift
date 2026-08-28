@@ -17,11 +17,20 @@ struct LogComposerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draftTagName = ""
 
-    /// The "optional" suffix's ink — nil on the ordinary page, so it keeps its tertiary grey.
-    private var detailInk: String? {
-        JournalComposerPalette.isPaper(for: journalService.composerType)
-            ? JournalComposerPalette.inkAsset(for: journalService.composerType)
-            : nil
+    /// The ink every QUIET label on this screen resolves to — section eyebrows, the "optional"
+    /// suffix, the explainer, the footer line. `nil` on the ordinary page, so it keeps exactly the
+    /// `.secondary` it has always had.
+    ///
+    /// One property rather than per-label decisions, because the failure it exists to prevent was
+    /// precisely a page where SOME labels found the ink and others silently took half of it.
+    private var softInk: String? {
+        JournalComposerPalette.softInkAsset(for: journalService.composerType)
+    }
+
+    /// The ink for text on the CHROME rather than on the page — the pinned footer's line. Not the
+    /// same as `softInk`: at night the page stays gold while the desk goes near-black.
+    private var chromeInk: String? {
+        JournalComposerPalette.chromeInkAsset(for: journalService.composerType)
     }
 
     /// The wardrobe for whichever kind is being written — see `ComposerChipPalette`.
@@ -35,7 +44,7 @@ struct LogComposerView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text(LogComposerCopy.guidance)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .composerSoftInk(softInk)
                     ComposerTextBox(
                         placeholder: "What's on your mind?",
                         placeholderAsset: JournalComposerPalette.placeholderAsset(
@@ -117,7 +126,7 @@ struct LogComposerView: View {
     /// data model, but "which one do I want" shouldn't need remembering the schema.
     private var typeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ComposerSectionHeader(title: "What kind of entry?")
+            ComposerSectionHeader(title: "What kind of entry?", titleAsset: softInk)
             HStack(spacing: 8) {
                 typeChip(.log, label: "Log")
                 typeChip(.journal, label: "Journal")
@@ -126,7 +135,7 @@ struct LogComposerView: View {
             .accessibilityIdentifier("logComposerTypePicker")
             Text(LogComposerCopy.explainer(for: journalService.composerType))
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .composerSoftInk(softInk)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -151,7 +160,7 @@ struct LogComposerView: View {
     private var areaSection: some View {
         if !lifeAreas.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                ComposerSectionHeader(title: "Life area", detail: "optional", detailAsset: detailInk)
+                ComposerSectionHeader(title: "Life area", detail: "optional", detailAsset: softInk, titleAsset: softInk)
                 ComposerAreaChips(
                     lifeAreas: lifeAreas.filter { !$0.archived },
                     noSelectionLabel: "No life area",
@@ -169,7 +178,7 @@ struct LogComposerView: View {
     /// composers, riding `JournalService.composerTagIds` into the create payload.
     private var tagsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ComposerSectionHeader(title: "Tags", detail: "optional", detailAsset: detailInk)
+            ComposerSectionHeader(title: "Tags", detail: "optional", detailAsset: softInk, titleAsset: softInk)
             if !journalService.availableTags.isEmpty {
                 FlowingChips(spacing: 8) {
                     ForEach(journalService.availableTags) { tag in
@@ -229,9 +238,17 @@ struct LogComposerView: View {
 
     private var footerBar: some View {
         VStack(spacing: 8) {
+            // The footer hangs off `.safeAreaInset`, OUTSIDE the container that sets the page's
+            // ink, so it inherits nothing and has to be handed one explicitly. Left alone it was a
+            // cool system grey on warm gold at 2.47:1 — and only by DAY: at night it lands on the
+            // near-black chrome and measures 6.12:1, so a dark-only check passes it. It was the
+            // last cool grey left on this screen (E's device shots, 2026-08-28).
+            //
+            // And it takes the CHROME ink, not the page's — this bar sits on the desk. The page
+            // ink here measures 1.33:1 at night. See `chromeInkAsset(for:)`.
             Text(LogComposerCopy.footer)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .composerSoftInk(chromeInk)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(journalService.isCreating ? "Saving…" : "Save entry") {
                 Task {
