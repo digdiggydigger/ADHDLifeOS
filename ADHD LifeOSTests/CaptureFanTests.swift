@@ -51,8 +51,6 @@ final class CaptureFanTests: XCTestCase {
             CaptureComposerCopy.footer(for: .note),
             "Saves to your inbox — nothing gets scheduled yet."
         )
-        XCTAssertEqual(CaptureComposerCopy.altLabel(for: .task), "Send to inbox instead")
-        XCTAssertEqual(CaptureComposerCopy.altLabel(for: .note), "Make it a task instead")
     }
 
     func testEveryFanTokenExistsInTheCatalog() {

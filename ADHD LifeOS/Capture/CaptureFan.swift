@@ -93,14 +93,4 @@ enum CaptureComposerCopy {
         case .task: return "Add to Today"
         }
     }
-
-    static func altLabel(for kind: CaptureKind) -> String {
-        switch kind {
-        case .note: return "Make it a task instead"
-        case .voice: return "Discard and start again"
-        case .photo: return "Retake the photo"
-        case .link: return "Clear the link"
-        case .task: return "Send to inbox instead"
-        }
-    }
 }

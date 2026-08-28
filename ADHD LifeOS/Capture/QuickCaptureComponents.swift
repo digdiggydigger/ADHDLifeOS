@@ -378,9 +378,6 @@ extension QuickCaptureView {
             ))
             .disabled(isSaveDisabled)
             .accessibilityIdentifier("quickCaptureCTAButton")
-            Button(CaptureComposerCopy.altLabel(for: kind), action: performAlt)
-                .buttonStyle(MomentumBorderedButtonStyle(minHeight: 44))
-                .accessibilityIdentifier("quickCaptureAltButton")
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)

@@ -195,6 +195,48 @@ appearances go to E before this is called settled.
 
 ---
 
+### FEATURE: F-DropAltButton — the composer's second button goes  [x] COMPLETED
+
+**E's call, 2026-08-28, from two device screenshots** ("Retake the photo", "Send to inbox
+instead"): "on proper reflection, these buttons need to be removed from all capture types."
+
+One control, five labels — `CaptureComposerCopy.altLabel(for:)` driving a single bordered button
+under the CTA in `QuickCaptureView`'s footer:
+
+| Kind  | Label                      | What it did                    | Still reachable without it?          |
+|-------|----------------------------|--------------------------------|--------------------------------------|
+| note  | Make it a task instead     | switch kind to task            | **No** — see below                   |
+| task  | Send to inbox instead      | switch kind to note            | **No** — see below                   |
+| voice | Discard and start again    | clear recording, start again   | **Yes** — the record button already reads "Re-record" and `toggleRecording()` nils the URL and restarts. An exact duplicate. |
+| photo | Retake the photo           | clear image, open camera       | **Yes** — "Take Photo" and "Choose Photo" are both already on screen |
+| link  | Clear the link             | empty the text field           | **Yes** — the field is editable and has a paste button |
+
+So three of the five were pure duplicates of a control sitting inches away, which is very likely
+why they read as noise on device.
+
+**The one real loss, stated rather than buried: note ↔ task kind-switching mid-composition is
+gone,** and nothing replaces it. Changing your mind now means cancelling and reopening from the
+capture fan. That is defensible — the fan is where a kind is chosen, and this button was an odd
+hybrid that let the composer contradict the door you came through — and it is the same instinct as
+the round-2 audit's "too many places it lives". But it IS a capability that existed this morning
+and does not now. If E misses it, the honest replacement is a kind control at the TOP of the
+composer next to the title, not a second button in the footer.
+
+Removed all four pieces rather than orphaning any: the button, `altLabel(for:)`, `performAlt()`,
+and the two assertions in `CaptureFanTests`. `isShowingCamera` and `CameraCapturePicker` survive —
+"Take Photo" still uses them, checked rather than assumed.
+
+**Verified 2026-08-28:**
+```
+swiftlint lint                → Found 2 violations, 0 serious in 546 files
+xcodebuild test (unit)        → Executed 1827 tests, with 0 failures (0 unexpected)
+xcodebuild build-for-testing  → exit 0, all targets
+```
+No journey run: nothing in `ADHD LifeOSUITests` opens the quick-capture composer (the
+`composerAreaChip` hits are the capture TRIAGE card, a different screen).
+
+---
+
 ### FEATURE: F-PadNightRender — put the journal pad's night face in front of E  [ ] UNCHECKED
 
 **Not a code block — a verification block, and the reason the other three can be judged.** E's

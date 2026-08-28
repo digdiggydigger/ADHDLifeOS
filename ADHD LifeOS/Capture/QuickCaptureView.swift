@@ -191,22 +191,6 @@ struct QuickCaptureView: View {
         selectedImageData = PhotoCaptureImageProcessing.downscaledJPEGData(from: data) ?? data
     }
 
-    /// The per-kind escape hatch, v3's alt button: kinds that switch destination switch kind in
-    /// place; media kinds reset their media.
-    func performAlt() {
-        switch kind {
-        case .note: service.kind = .task
-        case .task: service.kind = .note
-        case .voice:
-            recordedAudioURL = nil
-            Task { await recorder.startRecording() }
-        case .photo:
-            selectedImageData = nil
-            if UIImagePickerController.isSourceTypeAvailable(.camera) { isShowingCamera = true }
-        case .link: service.content = ""
-        }
-    }
-
     func submit() {
         Task {
             if await save() {
