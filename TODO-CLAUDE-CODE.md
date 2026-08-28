@@ -329,7 +329,7 @@ capture fired mid-animation once showed Log's content on the gold footer and rea
 
 ---
 
-### FEATURE: F-PadOneInk — the pad's one ink stops being half an ink  [ ] IN PROGRESS
+### FEATURE: F-PadOneInk — the pad's one ink stops being half an ink  [x] COMPLETED
 
 **Found by measuring E's device shots of `200d0ea` (2026-08-28, four screenshots: both kinds ×
 both appearances), not by reading the code.** The pad's TOKENS were all correct and all clear AA.
@@ -399,16 +399,65 @@ trap for whoever reasons about this screen next. Corrected to what ships, with t
 alternative kept and labelled as rejected.
 
 **Acceptance criteria**
-- [ ] Every quiet label on the pad resolves to the page's one ink at FULL strength — 5.20:1 by day,
+- [x] Every quiet label on the pad resolves to the page's one ink at FULL strength — 5.20:1 by day,
       5.25:1 at night — with no alpha anywhere in the chain.
-- [ ] The footer line takes the CHROME ink, not the page ink, and is legible in both appearances.
-- [ ] `softInkAsset` is actually called by the view, and returns `nil` for a log so the ordinary
+- [x] The footer line takes the CHROME ink, not the page ink, and is legible in both appearances.
+- [x] `softInkAsset` is actually called by the view, and returns `nil` for a log so the ordinary
       composer is unchanged BY CONSTRUCTION, not by inspection.
-- [ ] `TaskCreateView` (5 `ComposerSectionHeader` sites) and the capture triage row
+- [x] `TaskCreateView` (5 `ComposerSectionHeader` sites) and the capture triage row
       (`JournalEnergyMoodPicker`) are untouched — every override is optional and defaults to `nil`.
-- [ ] Tests first, and they must fail for the right reason before the fix.
-- [ ] The stale night-face doc comments say what actually ships.
-- [ ] `testCreateTask` is run, because it walks the shared component this block changed.
+- [x] Tests first, and they must fail for the right reason before the fix.
+- [x] The stale night-face doc comments say what actually ships.
+- [x] `testCreateTask` is run, because it walks the shared component this block changed.
+
+**Verified 2026-08-28.** The renders here are a MEASURING INSTRUMENT, not a taste check — the
+before/after numbers are read out of the pixels with the same sampler, so "it looks fine" never
+enters it.
+
+```
+swiftlint lint                → Found 2 violations, 0 serious in 544 files
+                                (TaskDetailView 438 file_length + UITests static_over_final_class
+                                 — the two known debts, no new ones)
+xcodebuild build-for-testing  → RED first: "value of type 'ComposerChipPalette' has no member
+                                 'softInk'" (3 failures) — the new API, failing for its own reason
+xcodebuild test (unit)        → Executed 1836 tests, with 0 failures (0 unexpected)
+                                 ** TEST SUCCEEDED **   (1831 baseline + the 5 added here)
+xcodebuild test (5 journeys)  → Executed 5 tests, with 2 failures in 544.060s
+                                 BOTH failures identical, BOTH at UITestSession.swift:102,
+                                 "Settings did not open, so sign-out could never be reached"
+re-run in ISOLATION           → testCreateTask ... passed (112.020 seconds)
+                                 testTaskDetail ... passed (103.638 seconds)
+```
+
+**On those two journey failures — the house rule was followed rather than assumed.** Both are the
+documented `signOutIfSignedIn` fragility, in SETUP, before either test reached the screen it tests,
+and both pass alone. `UITestSession.swift:94` still taps `settingsButton` ONCE with no retry, so a
+swallowed tap surfaces at line 102 as a true statement about the wrong step. That `testCreateTask`
+was one of them mattered here more than usual — it is the journey that walks the shared
+`ComposerSectionHeader` this block changed — which is exactly why it was re-run alone rather than
+waved off. It is green.
+
+**Measured, before → after (E's device shots vs the fixed renders, appearance driven explicitly
+with `simctl ui … appearance`):**
+
+| | before | after |
+|---|---|---|
+| page eyebrows, light | 2.13:1 | **5.20:1** |
+| page eyebrows, dark | 2.18:1 | **5.25:1** |
+| footer caption, light | 2.47:1 | **5.20:1** |
+| footer caption, dark | 6.12:1 | **13.71:1** |
+| energy sublabels, light | 4.27:1 | **9.47:1** |
+| `#916D12` (50% ink, light) | 11,830 px | **0 px** |
+| `#836212` (50% ink, dark) | 12,200 px | **0 px** |
+| `#7B6635` / `#979699` (cool grey) | 2,615 px each | **0 px** |
+
+The zero-pixel counts are the strongest evidence here: the dimmed inks are not merely darker, they
+are absent from the render entirely.
+
+**Not done, and said out loud:** the journey harness's retry-less tap is untouched. It is the
+single biggest source of noise in this suite, it cost a full 9-minute run in this block alone, and
+it remains unrelated to any feature — which is precisely why it keeps not getting fixed. It wants
+a retry loop around `UITestSession.swift:94`.
 
 ### FEATURE: F-AccountName — a name you can actually set  [ ] UNCHECKED
 
