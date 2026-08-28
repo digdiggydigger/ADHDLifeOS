@@ -132,24 +132,28 @@ final class JournalComposerPaletteTests: XCTestCase {
         )
     }
 
-    /// **The pinned footer is a LIFTED surface, not the desk** (E, 2026-08-28, marking up a device
-    /// shot of the night pad: "it should not be jet black … it's very abrupt to view").
+    /// **The footer and the desk are ONE surface, deliberately** (E, 2026-08-29: "do the header
+    /// and gutters too").
     ///
-    /// Measured, and the app answered this question itself long ago: the ORDINARY composer already
-    /// lifts its footer above its page — `#2C2E32` on `#15171C`, a step of 1.32:1. The gold pad was
-    /// the only screen dropping its footer to the desk instead, a step of 6.97:1 down from the
-    /// page — five times the cliff, which is exactly what read as abrupt. `JournalPaperFooter`
-    /// dark `#332C20` restores the house step at 1.31:1, stays warm (hue 38°), and at 23%
-    /// saturation against the ink's 85% still reads as a surface rather than a giant selected chip.
-    func testTheFooterIsALiftedSurfaceNotTheDesk() {
+    /// A day earlier the footer alone was lifted off a jet-black desk, because E had marked up only
+    /// that band. Lifting the whole surround makes that split pointless: two tokens that can never
+    /// differ are drift-bait, and the bar is already told apart by its hairline and by the cream
+    /// Save button sitting on it. So `JournalPaperChrome` carries the warm desk in one place and
+    /// the footer wears it.
+    ///
+    /// The value moved rather than the structure: chrome dark went `#1A1610` -> `#332C20`, a
+    /// 1.31:1 lift, warm at hue 38°, and at 23% saturation against the ink's 85% it stays a surface
+    /// rather than reading as ink. The step down from the gold page softens from 6.97:1 to 5.47:1,
+    /// and the parchment chrome ink still clears 10.51:1 on it.
+    ///
+    /// This assertion is what a future re-split has to come through: it fails the moment the footer
+    /// stops wearing the desk, which forces the reasoning to be written down again rather than
+    /// rediscovered from a screenshot.
+    func testThePadsFooterWearsTheDesk() {
         XCTAssertEqual(
             JournalComposerPalette.footerSurfaceAsset(for: .journal),
-            "JournalPaperFooter"
-        )
-        XCTAssertNotEqual(
-            JournalComposerPalette.footerSurfaceAsset(for: .journal),
             JournalComposerPalette.chromeAsset(for: .journal),
-            "the footer must not be painted with the desk — that is the abruptness E marked up"
+            "the pad's footer and its desk are one surface — see E, 2026-08-29"
         )
     }
 

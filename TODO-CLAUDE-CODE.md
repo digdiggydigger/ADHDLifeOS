@@ -459,7 +459,7 @@ single biggest source of noise in this suite, it cost a full 9-minute run in thi
 it remains unrelated to any feature — which is precisely why it keeps not getting fixed. It wants
 a retry loop around `UITestSession.swift:94`.
 
-### FEATURE: F-PadFooterLift — the night footer stops being a cliff  [x] COMPLETED
+### FEATURE: F-PadFooterLift — the night SURROUND stops being a cliff  [x] COMPLETED
 
 **E marked up a device shot of the night pad (2026-08-28)**, drawing round the pinned footer bar:
 "it should not be jet black like you have it set currently — I think it should be more easy on the
@@ -489,10 +489,18 @@ construction**, and that was verified rather than asserted: the day render measu
 `#DAA520` footer at the same 5.20:1, with an identical gold pixel count (1,588,099) to the previous
 build, and `#332C20` appears **0 times** in it.
 
-**Deliberately NOT changed:** the header band and the pad's side gutters are still the desk
-`#1A1610`. E marked the footer specifically, and lifting only the pinned bar is exactly what the
-ordinary composer does — its nav area stays with the page while its footer lifts. Say the word if
-the top should follow.
+**Second pass, same day + 1 (E, 2026-08-29: "do the header and gutters too").** The first pass
+lifted only the bar E had circled and left the header band and side gutters at `#1A1610`. E asked
+for the rest, which **collapses the token added an hour earlier**: once the whole surround lifts,
+`JournalPaperFooter` and `JournalPaperChrome` can never differ, and two tokens that cannot differ
+are drift-bait. So the lift moved INTO the chrome — dark `#1A1610` → `#332C20` — the extra colorset
+was deleted, and `footerSurfaceAsset(for:)` now returns the chrome asset. It is kept rather than
+inlined only so `testThePadsFooterWearsTheDesk` has something to assert: a future re-split fails
+that test and has to write its reasoning down instead of rediscovering it from a screenshot.
+
+Everything on the new desk was re-checked, not assumed: chrome ink / Save button `#EFE0B4`
+**10.51:1**, the "New entry" title and Cancel in white **13.80:1**. The pad still reads as an object
+on a desk at **5.34:1**, down from a 6.97:1 cliff.
 
 **Acceptance criteria**
 - [x] The night footer is a lifted warm surface, not the desk, at the ordinary composer's own step.
@@ -508,9 +516,21 @@ xcodebuild build-for-testing  → RED first: "type 'JournalComposerPalette' has 
                                  'footerSurfaceAsset'"
 xcodebuild test               → Executed 1838 tests, with 0 failures (0 unexpected)
                                  ** TEST SUCCEEDED **   (1836 + the 2 added here)
-renders, both appearances     → night footer #332C20, caption 10.51:1
-                                 day footer #DAA520 unchanged, #332C20 present 0 px
+renders, both appearances     → FIRST pass:  night footer #332C20, caption 10.51:1
+                                 SECOND pass: #1A1610 present 0 px anywhere in the night render —
+                                 header band, side gutters and footer all measure #332C20
+                                 day face: #332C20 and #1A1610 both 0 px, footer still
+                                 #DAA520 at 5.20:1
 ```
+
+**One honest note on the day-face check.** The gold pixel count moved between the two day renders
+(1,588,099 → 1,666,031) and the distinct-colour count fell. That is **seed data, not this change**:
+the second run's emulator account had no life areas and no tags, so the LIFE AREA section was absent
+entirely and TAGS rendered as just its empty field — fewer chips means more exposed gold and far
+fewer distinct colours, since the area chips carry emoji. The colour facts that actually matter are
+unaffected and were each checked by value rather than by total: page `#DAA520`, footer 5.20:1, and
+both night-only values absent. Worth recording because a raw pixel count is only a valid before/
+after comparison when the seeded content is identical, which across emulator runs it is not.
 
 ---
 

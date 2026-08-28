@@ -82,16 +82,21 @@ enum JournalComposerPalette {
     /// footer with the desk instead, which meant stepping DOWN from the page by 6.97:1 — five
     /// times the house cliff, and precisely the abruptness E saw.
     ///
-    /// Dark is `#332C20`: a 1.31:1 lift off the desk, so it matches the ordinary composer's step
-    /// almost exactly; warm (hue 38°, in the pad's family, no cool grey returns here); and at 23%
-    /// saturation against the ink's 85% it reads as a SURFACE rather than as a giant selected chip,
-    /// which a more saturated brown at the same luminance would have. The parchment caption still
-    /// clears 10.51:1 on it and the cream Save button still reads as an object.
+    /// **It wears the DESK, and that is now the whole answer** (E, 2026-08-29: "do the header and
+    /// gutters too").
     ///
-    /// Light is the pad's own gold, byte-identical to the chrome, so the day face E approved is
-    /// untouched.
+    /// For one day this was its own token, lifted off a jet-black desk, because E had marked up
+    /// only this band. Once the whole surround lifts, that split stops earning anything: the two
+    /// values could never differ, and two tokens that can never differ are drift-bait. The bar is
+    /// already told apart by its hairline and by the cream Save button standing on it.
+    ///
+    /// The lift moved into `JournalPaperChrome` instead — dark `#1A1610` -> `#332C20` — so the
+    /// header band, the pad's side gutters and this bar are one warm desk. See `chromeAsset(for:)`.
+    ///
+    /// Kept as a named accessor rather than inlined, so `testThePadsFooterWearsTheDesk` has
+    /// something to assert: a future re-split fails that test and has to write its reasoning down.
     static func footerSurfaceAsset(for type: LogType) -> String? {
-        isPaper(for: type) ? "JournalPaperFooter" : nil
+        isPaper(for: type) ? chromeAsset(for: type) : nil
     }
 
     /// The ink for text on the CHROME — the desk, not the page — which today is the pinned
@@ -134,6 +139,16 @@ enum JournalComposerPalette {
     /// approved is untouched. At night it goes dark and the same structure becomes a lit pad on a
     /// dark desk. One layout, two appearances, decided entirely in the token layer — there is no
     /// `colorScheme` branch in this file, and there must not be one.
+    ///
+    /// **The night desk is `#332C20`, not a near-black** (E, 2026-08-29, after marking up the
+    /// footer band on a device shot: "it should not be jet black … it's very abrupt to view", then
+    /// "do the header and gutters too"). It was `#1A1610`, which put a 6.97:1 cliff between the
+    /// gold page and everything around it — where the ORDINARY composer steps only 1.32:1 between
+    /// its page and its footer. The pad was the outlier, so the desk moved to match the house step:
+    /// a 1.31:1 lift, warm at hue 38° so no cool grey returns to this screen, and at 23% saturation
+    /// against the ink's 85% it stays a surface rather than reading as ink. The drop from the page
+    /// softens to 5.47:1, which still leaves the pad plainly an object on a desk, and the parchment
+    /// chrome ink clears 10.51:1 against it.
     static func chromeAsset(for type: LogType) -> String {
         type == .journal ? "JournalPaperChrome" : "PageBackground"
     }
