@@ -36,19 +36,21 @@ enum JournalComposerPalette {
         }
     }
 
-    /// Whether the composer renders in the LIGHT appearance regardless of the device setting.
+    /// Whether this kind of entry gets the pad's paper treatment at all — the ruling, the ink,
+    /// the page. Journal only; a Log is a quick line on the ordinary screen.
     ///
-    /// This is what makes a real yellow possible at all, and it took two rounds on device to
-    /// arrive at. A yellow dimmed until white text clears AA stops being yellow — it reads as
-    /// mustard, which E saw and rejected. A yellow bright enough to look like yellow puts this
-    /// app's white dark-mode text at roughly 1.5:1, which is unreadable. There is no dark-mode
-    /// yellow that is both.
+    /// The pad now has TWO faces rather than one forced light one (E, 2026-08-28: "do the legal
+    /// pad treatment for dark mode"). The earlier version rendered the light face whatever the
+    /// device was set to, which was defensible — a legal pad does not turn grey when the lights go
+    /// off — but it meant a bright gold page at night, and no night face at all.
     ///
-    /// So the journal composer is a physical object rather than a themed screen: a gold pad with
-    /// dark ink and white cards, the same in both appearances, the way a legal pad does not turn
-    /// grey when the lights go off. Forcing the appearance on the SUBTREE brings every child —
-    /// chips, pickers, the footer — along without touching a single shared component.
-    static func forcesLightAppearance(for type: LogType) -> Bool {
+    /// The night face is a real pad in the dark rather than a dimmed version of the day one, and
+    /// that distinction is forced by contrast rather than taste. Dimming the gold far enough to be
+    /// comfortable at night drags dark ink under 4.5:1 against it — measured, not guessed: ink
+    /// `#4A3506` on a dimmed `#A97C10` is about 3.1:1. So the night page goes properly dark
+    /// (`#2A2109`, warm brown-black) and the ink inverts to parchment (`#F2E2B8`, ~13:1), with the
+    /// same gold ruling lifted to 32% so it still reads. Same object, lights off.
+    static func isPaper(for type: LogType) -> Bool {
         type == .journal
     }
 
@@ -71,8 +73,9 @@ enum JournalComposerPalette {
     }
 
     /// The writing box's fill. Grey-blue (`CardSurfaceSecondary`) is right on the ordinary page
-    /// and was the single worst thing on gold — it read as a bruise. On the pad it is white, so
-    /// the box you type into looks like the paper it is sitting on.
+    /// and was the single worst thing on gold — it read as a bruise. On the pad it is
+    /// `CardSurface`, which is white by day and near-black by night: the sheet you write on,
+    /// either way.
     static func writingSurfaceAsset(for type: LogType) -> String {
         type == .journal ? "CardSurface" : "CardSurfaceSecondary"
     }

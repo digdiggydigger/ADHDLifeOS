@@ -15,8 +15,6 @@ struct LogComposerView: View {
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// The device's real setting, so the Log side keeps following it exactly as before.
-    @Environment(\.colorScheme) private var systemColorScheme
     @State private var draftTagName = ""
 
     var body: some View {
@@ -33,9 +31,7 @@ struct LogComposerView: View {
                         surfaceAsset: JournalComposerPalette.writingSurfaceAsset(
                             for: journalService.composerType
                         ),
-                        ruled: JournalComposerPalette.forcesLightAppearance(
-                            for: journalService.composerType
-                        )
+                        ruled: JournalComposerPalette.isPaper(for: journalService.composerType)
                     )
                     typeSection
                     if journalService.composerType == .journal {
@@ -76,16 +72,6 @@ struct LogComposerView: View {
                 value: journalService.composerType
             )
             .safeAreaInset(edge: .bottom) { footerBar }
-            // The pad is a physical object, not a themed screen: dark ink and white cards in
-            // both appearances, the way a legal pad does not turn grey when the lights go off.
-            // Applied to the SUBTREE so the chips, pickers, toolbar and footer all come along
-            // without one shared component learning about journals. See
-            // `JournalComposerPalette.forcesLightAppearance` for why no dark-mode yellow works.
-            .environment(
-                \.colorScheme,
-                JournalComposerPalette.forcesLightAppearance(for: journalService.composerType)
-                    ? .light : systemColorScheme
-            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

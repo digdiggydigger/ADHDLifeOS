@@ -45,18 +45,18 @@ final class JournalComposerPaletteTests: XCTestCase {
 
     // MARK: - The legal-pad rule
 
-    /// The gold page is rendered in the LIGHT appearance whatever the device is set to, so its
-    /// ink stays dark and its cards stay white. Two rounds on device proved the alternative: a
-    /// yellow that dims enough for white text stops being yellow and turns to mustard, and a
-    /// yellow bright enough to look like yellow puts white text at ~1.5:1.
-    func testJournalForcesTheLightAppearance() {
-        XCTAssertTrue(JournalComposerPalette.forcesLightAppearance(for: .journal))
+    /// Only a journal entry gets the paper treatment — the page, the ink, the ruling. The pad has
+    /// a day face and a night face now rather than one light face forced on both; the tokens carry
+    /// that, so this only has to say WHO is paper.
+    func testJournalIsPaper() {
+        XCTAssertTrue(JournalComposerPalette.isPaper(for: .journal))
     }
 
-    /// Log is untouched — it follows the device, exactly as every other screen does. This is the
-    /// half of E's instruction that is easiest to break while chasing the other half.
-    func testLogFollowsTheDeviceAppearance() {
-        XCTAssertFalse(JournalComposerPalette.forcesLightAppearance(for: .log))
+    /// Log is untouched — the ordinary page, following the device exactly as every other screen
+    /// does. This is the half of E's instruction that is easiest to break while chasing the other
+    /// half, so it gets its own test rather than riding on the one above.
+    func testLogIsNotPaper() {
+        XCTAssertFalse(JournalComposerPalette.isPaper(for: .log))
     }
 
     /// The writing surface is the one card that must not stay grey: a grey-blue box on gold was
