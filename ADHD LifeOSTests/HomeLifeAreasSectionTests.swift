@@ -44,4 +44,31 @@ final class HomeLifeAreasSectionTests: XCTestCase {
     func testCollapsedLine_noAreasAtAll() {
         XCTAssertEqual(HomeLifeAreasSection.collapsedLine(items: []), "No areas yet")
     }
+
+    // MARK: - The Arrange control's visibility
+
+    /// **Arrange acts on the ROWS, so with the section folded it has nothing to act on** (E's
+    /// screenshot note, 2026-08-28: it should hide inside the fold along with the list). Left
+    /// visible it is a button whose entire effect is off-screen — and tapping it force-expands the
+    /// section, so it silently undoes the fold the user just chose.
+    func testShowsArrangeControl_hiddenWhileTheSectionIsFolded() {
+        XCTAssertFalse(HomeLifeAreasSection.showsArrangeControl(areaCount: 8, isExpanded: false))
+    }
+
+    func testShowsArrangeControl_visibleWhenExpandedWithSomethingToReorder() {
+        XCTAssertTrue(HomeLifeAreasSection.showsArrangeControl(areaCount: 2, isExpanded: true))
+    }
+
+    /// The older rule, which still holds: reordering is meaningless below two rows.
+    func testShowsArrangeControl_hiddenBelowTwoAreasEvenWhenExpanded() {
+        XCTAssertFalse(HomeLifeAreasSection.showsArrangeControl(areaCount: 1, isExpanded: true))
+        XCTAssertFalse(HomeLifeAreasSection.showsArrangeControl(areaCount: 0, isExpanded: true))
+    }
+
+    /// Arrange mode force-expands the section, so `isExpanded` is true throughout it. That is what
+    /// keeps the button — reading "Done" by then — on screen to get back OUT of the mode, rather
+    /// than vanishing under the new rule and stranding the user in it.
+    func testShowsArrangeControl_survivesIntoArrangeModeBecauseThatModeForcesExpansion() {
+        XCTAssertTrue(HomeLifeAreasSection.showsArrangeControl(areaCount: 8, isExpanded: true))
+    }
 }

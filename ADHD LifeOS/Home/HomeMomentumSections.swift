@@ -307,7 +307,14 @@ extension HomeView {
             summary: HomeLifeAreasSection.collapsedLine(items: items),
             isExpanded: isExpanded,
             onToggle: { lifeAreasCollapsed.toggle() },
-            trailing: { arrangeControl(activeAreas: activeAreas, isVisible: activeAreas.count >= 2) }
+            trailing: {
+                arrangeControl(
+                    activeAreas: activeAreas,
+                    isVisible: HomeLifeAreasSection.showsArrangeControl(
+                        areaCount: activeAreas.count, isExpanded: isExpanded
+                    )
+                )
+            }
         )
         .accessibilityIdentifier("homeLifeAreasHeader")
         if isExpanded {

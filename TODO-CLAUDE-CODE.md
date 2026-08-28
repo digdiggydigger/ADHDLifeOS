@@ -115,6 +115,32 @@ step. That helper has already been hardened twice; a third pass wants a retry lo
 
 ---
 
+### FEATURE: F-ArrangeFold — Arrange hides inside the fold with the list it reorders  [x] COMPLETED
+
+**E's screenshot note, 2026-08-28:** with the life-areas list collapsed, the Arrange button stays
+sitting there on its own. It should fold away with the list.
+
+It is a control over the ROWS, so with the section folded its entire effect happens off-screen —
+and it is worse than merely useless, because entering Arrange mode force-expands the section, so
+tapping it while folded silently undoes the fold the user just chose.
+
+The existing `activeAreas.count >= 2` test stayed and gained a second condition, both now stated
+once in `HomeLifeAreasSection.showsArrangeControl(areaCount:isExpanded:)` rather than inline at the
+call site. That same force-expansion is what makes hiding it safe: `isExpanded` is true throughout
+Arrange mode, so the button — reading "Done" by then — stays on screen as the way back out. There
+is no state where this strands someone inside the mode, and a test says so.
+
+**Verified 2026-08-28:**
+```
+swiftlint lint                → Found 2 violations, 0 serious in 543 files
+xcodebuild test (unit)        → Executed 1810 tests, with 0 failures (0 unexpected)
+xcodebuild build-for-testing  → ** TEST BUILD SUCCEEDED **
+```
+No journey run: nothing in `ADHD LifeOSUITests` references the Arrange control or the life-areas
+list, and `home.lifeAreasCollapsed` defaults to false, so Today looks to them exactly as before.
+
+---
+
 ### FEATURE: F-PadNightRender — put the journal pad's night face in front of E  [ ] UNCHECKED
 
 **Not a code block — a verification block, and the reason the other three can be judged.** E's
