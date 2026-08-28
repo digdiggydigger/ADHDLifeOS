@@ -14,6 +14,11 @@ import Foundation
 struct FirebaseAuthUser: Equatable, Sendable {
     let uid: String
     let email: String?
+    /// The name the sign-up form collects, read straight back off the Firebase user. Written both
+    /// there and into the profile document's `display_name` at sign-up, so a second device that
+    /// never saw the form still gets it. `nil` for accounts that never gave one — Apple's private
+    /// relay path, or the optional field left empty.
+    var displayName: String?
 }
 
 enum FirebaseManagerError: LocalizedError {
@@ -89,7 +94,9 @@ final class FirebaseManager {
     // MARK: - Auth
 
     var currentUser: FirebaseAuthUser? {
-        auth.currentUser.map { FirebaseAuthUser(uid: $0.uid, email: $0.email) }
+        auth.currentUser.map {
+            FirebaseAuthUser(uid: $0.uid, email: $0.email, displayName: $0.displayName)
+        }
     }
 
     /// Creates the account and its `users/{uid}` profile document in one call. The profile write
@@ -119,7 +126,13 @@ final class FirebaseManager {
         // seeding failure (e.g. security rules not yet deployed) must not fail the sign-up —
         // seeding retries on every future sign-in until the `seeded_at` marker lands.
         try? await seedDefaultContentIfNeeded()
-        return FirebaseAuthUser(uid: result.user.uid, email: result.user.email)
+        // The name we were just handed wins over the one on `result.user`: the profile
+        // change above is committed but the local user object is not guaranteed to have
+        // refreshed, and the caller's value is the one that definitely reached the server.
+        return FirebaseAuthUser(
+            uid: result.user.uid, email: result.user.email,
+            displayName: displayName ?? result.user.displayName
+        )
     }
 
     @discardableResult
@@ -128,7 +141,10 @@ final class FirebaseManager {
         // Same best-effort rationale as `signUp` — and this is still the path that seeds accounts
         // created in the Firebase console, which is how every account before 2026-08-28 was made.
         try? await seedDefaultContentIfNeeded()
-        return FirebaseAuthUser(uid: result.user.uid, email: result.user.email)
+        return FirebaseAuthUser(
+            uid: result.user.uid, email: result.user.email,
+            displayName: result.user.displayName
+        )
     }
 
     /// Sign in with Apple: exchanges the Apple identity token + raw nonce for a Firebase
@@ -163,7 +179,13 @@ final class FirebaseManager {
         // Same best-effort seeding hook as `signIn`/`signUp` — first Apple sign-in gets the
         // starter content; the `seeded_at` marker makes later calls a single cheap read.
         try? await seedDefaultContentIfNeeded()
-        return FirebaseAuthUser(uid: result.user.uid, email: result.user.email)
+        // The name we were just handed wins over the one on `result.user`: the profile
+        // change above is committed but the local user object is not guaranteed to have
+        // refreshed, and the caller's value is the one that definitely reached the server.
+        return FirebaseAuthUser(
+            uid: result.user.uid, email: result.user.email,
+            displayName: displayName ?? result.user.displayName
+        )
     }
 
     func signOut() throws {

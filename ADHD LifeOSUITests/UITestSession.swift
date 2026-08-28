@@ -82,7 +82,16 @@ enum UITestSession {
         guard settled == .completed || tabBar.exists else { return }
         guard tabBar.exists, !loginField.exists else { return }
 
-        app.buttons["settingsButton"].tap()
+        // Wait for the control before tapping it. `tabBar.exists` only proves the signed-in
+        // SHELL is up; Today's header arrives with its content, which is a separate load. Tapping
+        // a button that is not there yet is a silent no-op, and the failure then surfaced further
+        // down as "Settings did not open" — a true statement about the wrong step.
+        let settingsButton = app.buttons["settingsButton"]
+        XCTAssertTrue(
+            settingsButton.waitForExistence(timeout: timeout),
+            "Today never presented its Settings control, so the previous session could not be ended"
+        )
+        settingsButton.tap()
 
         // Wait for the sheet itself before hunting inside it. The scroll loop below used to start
         // after a 2s grace, so a Settings sheet that was still presenting swallowed all eight

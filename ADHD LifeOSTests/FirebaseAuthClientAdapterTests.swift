@@ -219,5 +219,67 @@ final class FirebaseAuthClientAdapterTests: XCTestCase {
         }
     }
 
+    // MARK: - The name the sign-up form collects
+
+    /// Sign-up has asked for a name since the auth rebuild (`c174cb0`) and wrote it two ways —
+    /// onto the Firebase user and into the profile document's `display_name` — but `AuthUser`
+    /// carried only an id and an email, so nothing could ever read it back and no screen ever
+    /// showed it. The name made a round trip to the server and vanished.
+    func testSignUp_carriesTheNameBackOntoTheUser() async throws {
+        store.signUpResult = FirebaseAuthUser(
+            uid: "uid-new", email: "e@example.com", displayName: "Ethan"
+        )
+
+        let user = try await adapter.signUp(email: "e@example.com", password: "pw", displayName: "Ethan")
+
+        XCTAssertEqual(user.displayName, "Ethan")
+    }
+
+    /// Every entry point maps through the same `authUser(from:)`, so signing in on a second
+    /// device — where the name was never typed — still shows it.
+    func testSignIn_carriesTheNameStoredAgainstTheAccount() async throws {
+        store.signInResult = FirebaseAuthUser(
+            uid: "uid-signed-in", email: "e@example.com", displayName: "Ethan"
+        )
+
+        let user = try await adapter.signIn(email: "e@example.com", password: "pw")
+
+        XCTAssertEqual(user.displayName, "Ethan")
+    }
+
+    func testRestoredSession_carriesTheNameToo() async throws {
+        store.currentUser = FirebaseAuthUser(
+            uid: "uid-restored", email: "e@example.com", displayName: "Ethan"
+        )
+
+        let restored = await adapter.restoredUser()
+        let user = try XCTUnwrap(restored)
+
+        XCTAssertEqual(user.displayName, "Ethan")
+    }
+
+    /// The name field is optional and a person can type spaces into it. Normalising at THIS
+    /// boundary means every screen downstream can treat `nil` as "no name" and never has to
+    /// decide whether "   " counts — the same job `AuthFormValidation.normalizedDisplayName`
+    /// already does for the form.
+    func testDisplayName_blankOrWhitespaceBecomesNoNameAtAll() async throws {
+        for raw in ["", "   ", "\n"] {
+            store.signInResult = FirebaseAuthUser(uid: "uid", email: "e@example.com", displayName: raw)
+
+            let user = try await adapter.signIn(email: "e@example.com", password: "pw")
+
+            XCTAssertNil(user.displayName, "\"\(raw)\" is not a name")
+        }
+    }
+
+    /// An account that never gave one — Apple's private relay path, or the field left empty.
+    func testDisplayName_absentStaysAbsent() async throws {
+        store.signInResult = FirebaseAuthUser(uid: "uid", email: "e@example.com", displayName: nil)
+
+        let user = try await adapter.signIn(email: "e@example.com", password: "pw")
+
+        XCTAssertNil(user.displayName)
+    }
+
     private static let notSignedInMessage = FirebaseManagerError.notSignedIn.errorDescription ?? ""
 }

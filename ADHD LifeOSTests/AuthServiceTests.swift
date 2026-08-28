@@ -143,4 +143,40 @@ final class AuthServiceTests: XCTestCase {
         XCTAssertEqual(sut.state, .signedIn(user))
         XCTAssertEqual(sut.errorMessage, "Network error")
     }
+
+    // MARK: - The signed-in user
+
+    /// Settings shows the account's name and email, so it needs the user itself rather than a
+    /// state enum to unwrap. `.unknown` deliberately answers `nil`: a session still being restored
+    /// has no honest answer, and rendering a blank account row while it settles is worse than
+    /// rendering none.
+    func testSignedInUser_isNilBeforeASessionIsKnown() {
+        let sut = AuthService(client: FakeAuthClientAdapting())
+
+        XCTAssertEqual(sut.state, .unknown)
+        XCTAssertNil(sut.signedInUser, "a session still restoring has no honest answer yet")
+    }
+
+    func testSignedInUser_isTheSignedInUser_nameAndAll() async {
+        let fake = FakeAuthClientAdapting()
+        let user = AuthUser(id: UUID(), email: "e@example.com", displayName: "Ethan")
+        fake.signInResult = .success(user)
+        let sut = AuthService(client: fake)
+
+        await sut.signIn(email: "e@example.com", password: "correct-horse")
+
+        XCTAssertEqual(sut.signedInUser, user)
+        XCTAssertEqual(sut.signedInUser?.displayName, "Ethan")
+    }
+
+    func testSignedInUser_isNilOnceSignedOut() async {
+        let fake = FakeAuthClientAdapting()
+        fake.signInResult = .success(AuthUser(id: UUID(), email: "e@example.com", displayName: "Ethan"))
+        let sut = AuthService(client: fake)
+        await sut.signIn(email: "e@example.com", password: "correct-horse")
+
+        await sut.signOut()
+
+        XCTAssertNil(sut.signedInUser)
+    }
 }

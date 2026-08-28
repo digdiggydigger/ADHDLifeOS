@@ -175,8 +175,26 @@ struct SettingsView: View {
 
     // MARK: - Section 3 — Account (real, Sign Out)
 
+    /// Who you are signed in as, then the way out.
+    ///
+    /// Neither fact was shown anywhere in the app until now. The sign-up form has collected a name
+    /// since the auth rebuild and wrote it to the server twice over, and the email was equally
+    /// invisible — so the only way to tell which account a device was on was to sign out and read
+    /// the address you typed back in. `LabeledContent` is the house pattern for a title-value Form
+    /// row (§7): it reflows at accessibility Dynamic Type sizes instead of wrapping into columns.
+    ///
+    /// A missing name renders NO row rather than "Not set" — the field is optional, Apple's
+    /// private-relay path never supplies one, and an empty row is a worse answer than silence.
     private var accountSection: some View {
         Section {
+            if let name = authService.signedInUser?.displayName {
+                LabeledContent("Name", value: name)
+                    .accessibilityIdentifier("settingsAccountNameRow")
+            }
+            if let email = authService.signedInUser?.email {
+                LabeledContent("Email", value: email)
+                    .accessibilityIdentifier("settingsAccountEmailRow")
+            }
             Button(role: .destructive) {
                 Haptics.play(.warning)
                 Task { await authService.signOut() }

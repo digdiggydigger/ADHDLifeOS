@@ -64,7 +64,8 @@ final class SignedInJourneyUITests: XCTestCase {
     /// user with no way back to their tasks.
     @MainActor
     func testSettings_opensFromHomeAndDismissesBackToIt() throws {
-        let app = try UITestSession.launchSignedIn(label: "settings")
+        let account = try UITestSession.createAccount(label: "settings")
+        let app = try UITestSession.launchSignedIn(as: account)
 
         let settingsButton = app.buttons["settingsButton"]
         XCTAssertTrue(settingsButton.waitForExistence(timeout: UITestSession.timeout))
@@ -72,6 +73,40 @@ final class SignedInJourneyUITests: XCTestCase {
 
         let done = app.buttons["settingsDoneButton"]
         XCTAssertTrue(done.waitForExistence(timeout: UITestSession.timeout), "Settings never presented")
+
+        // Settings is the only place that says WHICH account this device is on. Until now it said
+        // nothing at all — you had to sign out and read the address back to find out.
+        //
+        // TWO traps here, both confirmed by dumping the hierarchy rather than reasoning about it:
+        //
+        // 1. The Account section starts BELOW the fold, and SwiftUI materialises Form rows lazily
+        //    — un-scrolled, the section does not merely sit off-screen, it is absent from the
+        //    accessibility tree entirely. `signOutIfSignedIn` hunts the same section for the same
+        //    reason. So: scroll first, and `waitForExistence` cannot substitute for scrolling.
+        // 2. `LabeledContent` merges its title and value into ONE element reading
+        //    "Email, someone@example.test", so nothing carries the bare address. Match the row by
+        //    identifier and assert its LABEL contains the address — which still catches the
+        //    failure that matters, a row naming the wrong account.
+        let emailRow = app.staticTexts["settingsAccountEmailRow"]
+        scrollUntilHittable(emailRow, in: app)
+        XCTAssertTrue(
+            emailRow.exists,
+            "Settings showed no account email row, even after scrolling to the Account section"
+        )
+        XCTAssertTrue(
+            emailRow.label.contains(account.email),
+            "Settings named the wrong account: '\(emailRow.label)' does not contain '\(account.email)'"
+        )
+
+        // No name row: these accounts are created straight through the Auth REST API, which never
+        // sees the sign-up form's optional name field. Absent means absent — the row is omitted
+        // rather than rendered blank or as "Not set". Checked HERE, with the section on screen, so
+        // "not found" cannot just mean "not scrolled to".
+        XCTAssertFalse(
+            app.descendants(matching: .any)["settingsAccountNameRow"].exists,
+            "A nameless account must not render an empty Name row"
+        )
+
         done.tap()
 
         XCTAssertTrue(

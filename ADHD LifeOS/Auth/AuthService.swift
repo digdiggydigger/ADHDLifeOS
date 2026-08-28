@@ -9,6 +9,14 @@ import Foundation
 @MainActor
 final class AuthService: ObservableObject {
     @Published private(set) var state: AuthState = .unknown
+
+    /// Who is signed in, or `nil` in every other state — including `.unknown`, where a session is
+    /// still being restored and no answer is yet honest. Screens that show account facts read
+    /// this rather than unwrapping `state` themselves, so "signed in" is spelled once.
+    var signedInUser: AuthUser? {
+        guard case .signedIn(let user) = state else { return nil }
+        return user
+    }
     @Published private(set) var errorMessage: String?
     /// The address a reset link was just sent to, or `nil`. Drives the screen's confirmation line
     /// — and it is set on EVERY successful request, whether or not that address has an account,

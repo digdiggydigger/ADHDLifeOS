@@ -8,6 +8,10 @@ import Foundation
 struct AuthUser: Equatable, Sendable {
     let id: UUID
     let email: String?
+    /// Already normalised: trimmed, and `nil` rather than empty. Normalising at the adapter
+    /// boundary means every screen downstream can read `nil` as "no name" without each deciding
+    /// for itself whether "   " counts.
+    var displayName: String?
 }
 
 enum AuthState: Equatable, Sendable {

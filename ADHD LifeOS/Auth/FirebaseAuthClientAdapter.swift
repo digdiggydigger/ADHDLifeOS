@@ -110,8 +110,18 @@ struct FirebaseAuthClientAdapter: AuthClientAdapting {
         }
     }
 
+    /// The one place a Firebase user becomes an app user — every entry point (sign-in, sign-up,
+    /// Apple, a restored session) funnels through here, so the name arrives the same way whether
+    /// it was just typed or merely stored against the account on another device.
+    ///
+    /// The name is normalised HERE and nowhere else, through the same helper the sign-up form
+    /// uses, so a whitespace-only name can never reach a screen as an empty row.
     private static func authUser(from user: FirebaseAuthUser) -> AuthUser {
-        AuthUser(id: stableUUID(fromFirebaseUID: user.uid), email: user.email)
+        AuthUser(
+            id: stableUUID(fromFirebaseUID: user.uid),
+            email: user.email,
+            displayName: user.displayName.flatMap(AuthFormValidation.normalizedDisplayName)
+        )
     }
 
     /// SHA-256 the UID, take 16 bytes, stamp RFC 4122 version/variant bits — deterministic, so
