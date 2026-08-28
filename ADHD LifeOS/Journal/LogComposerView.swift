@@ -14,6 +14,7 @@ struct LogComposerView: View {
     let lifeAreas: [LifeArea]
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draftTagName = ""
 
     var body: some View {
@@ -46,7 +47,18 @@ struct LogComposerView: View {
                 }
                 .padding(16)
             }
-            .background(Color.pageBackground.ignoresSafeArea())
+            // The surface follows the KIND of entry (E, 2026-08-28): a journal entry writes on
+            // paper, a log keeps the ordinary page. Springs rather than cuts, because the chips
+            // that change it are two taps apart and a hard flash between them reads as a glitch;
+            // honoured against Reduce Motion like every other transition (§5).
+            .background(
+                Color(JournalComposerPalette.backgroundAsset(for: journalService.composerType))
+                    .ignoresSafeArea()
+            )
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0),
+                value: journalService.composerType
+            )
             .safeAreaInset(edge: .bottom) { footerBar }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
