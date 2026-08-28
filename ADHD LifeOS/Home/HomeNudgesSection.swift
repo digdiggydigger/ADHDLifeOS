@@ -55,4 +55,92 @@ enum HomeNudgesSection {
     private static func lastFired(_ nudge: Nudge) -> Date {
         nudge.lastFiredAt ?? nudge.createdAt
     }
+
+    // MARK: - The door (E's screenshot note, 2026-08-28)
+
+    /// The card's second line, under "Nudges".
+    ///
+    /// Nothing due is the state a schedule exists to produce, so it is said as settled rather than
+    /// as a count of nothing — the rule "Inbox clear" and the collapsed life-areas line already
+    /// follow. The empty case describes what nudges ARE, because someone with none has no idea.
+    static func doorSubtitle(dueCount: Int, scheduledCount: Int) -> String {
+        if dueCount > 0 {
+            return "Waiting on you — clear them when you can."
+        }
+        return scheduledCount > 0
+            ? "Nothing due — all on time."
+            : "Recurring reminders you set for yourself."
+    }
+
+    /// The chip beside the title, counting whichever number actually matters in this state: what
+    /// is waiting on you if anything is, otherwise how many are simply on the books.
+    static func chipText(dueCount: Int, scheduledCount: Int) -> String {
+        if dueCount > 0 { return "\(dueCount) due" }
+        return scheduledCount > 0 ? "\(scheduledCount) scheduled" : "None yet"
+    }
+
+    /// "Today 18:00" / "Tomorrow 05:00" / "Mon 09:30" — when this nudge next fires, measured from
+    /// `now` rather than from the nudge's own reference date (see `NudgeDueness.nextFire`).
+    ///
+    /// Beyond tomorrow the weekday is NAMED rather than counted: "in 4 days" makes the reader do
+    /// arithmetic to answer a question they asked to avoid doing arithmetic. `nil` for a schedule
+    /// the app cannot parse — the same refusal to invent that `NudgeSchedule.summary` makes.
+    static func nextFireLine(
+        for nudge: Nudge, now: Date, timeZone: TimeZone = .current, locale: Locale = .current
+    ) -> String? {
+        guard let next = NudgeDueness.nextFire(for: nudge, after: now, timeZone: timeZone) else {
+            return nil
+        }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        calendar.locale = locale
+
+        let time = DateFormatter()
+        time.locale = locale
+        time.timeZone = timeZone
+        time.dateStyle = .none
+        time.timeStyle = .short
+        let clock = time.string(from: next)
+
+        // Deliberately NOT `isDateInToday`, which asks the system clock. "Today" here means the
+        // day of `now`, and `now` is a parameter precisely so this is testable at a fixed moment.
+        let days = calendar.dateComponents(
+            [.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: next)
+        ).day ?? 0
+        switch days {
+        case 0: return "Today \(clock)"
+        case 1: return "Tomorrow \(clock)"
+        default:
+            let weekday = calendar.component(.weekday, from: next) - 1
+            let symbols = calendar.shortWeekdaySymbols
+            guard symbols.indices.contains(weekday) else { return clock }
+            return "\(symbols[weekday]) \(clock)"
+        }
+    }
+
+    /// The not-yet-due nudges that get a row, soonest first — the one about to happen is the one
+    /// worth reading, not the one added first.
+    ///
+    /// Excludes anything already due (it has its own card above, and the same nudge twice on one
+    /// screen is worse than saying less), anything paused, and anything whose schedule will not
+    /// parse — an unschedulable nudge has no position in a soonest-first list to claim.
+    static func upcoming(
+        all: [Nudge], due: [Nudge], now: Date, timeZone: TimeZone = .current
+    ) -> [Nudge] {
+        let dueIds = Set(due.map(\.id))
+        let dated: [(nudge: Nudge, fires: Date)] = all.compactMap { nudge in
+            guard !dueIds.contains(nudge.id),
+                  let fires = NudgeDueness.nextFire(for: nudge, after: now, timeZone: timeZone)
+            else { return nil }
+            return (nudge, fires)
+        }
+        return Array(dated.sorted { $0.fires < $1.fires }.prefix(maxCards).map(\.nudge))
+    }
+
+    /// Names only what the rows could not fit. `nil` when they showed everything.
+    static func upcomingOverflowLine(scheduledCount: Int) -> String? {
+        let hidden = scheduledCount - maxCards
+        guard hidden > 0 else { return nil }
+        return hidden == 1 ? "and 1 more scheduled" : "and \(hidden) more scheduled"
+    }
 }

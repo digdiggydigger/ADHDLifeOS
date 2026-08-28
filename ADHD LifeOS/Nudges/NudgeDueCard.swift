@@ -40,7 +40,9 @@ struct NudgeDueCard: View {
             .accessibilityIdentifier("nudgeDismissButton-\(nudge.id)")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .bentoCard()
+        // Urgent, not plain: since the nudges door below became a real card (E, 2026-08-28), a due
+        // nudge sharing its surface would read as equally optional. This is what keeps it above.
+        .urgentBentoCard()
     }
 
     @ViewBuilder

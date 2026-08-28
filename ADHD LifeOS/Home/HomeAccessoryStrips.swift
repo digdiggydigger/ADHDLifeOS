@@ -189,9 +189,8 @@ extension HomeView {
         let scheduled = HomeNudgesSection.scheduledCount(all: nudgesService.nudges, due: due)
         if !due.isEmpty || scheduled > 0 {
             VStack(alignment: .leading, spacing: 8) {
-                Text(HomeNudgesSection.countLine(dueCount: due.count, scheduledCount: scheduled))
-                    .sectionLabel()
-                    .foregroundStyle(due.isEmpty ? Color("LabelSecondary") : Color("StateWarn"))
+                // Due nudges come FIRST and carry the urgent surface — the door below is a card
+                // now, so the loud thing has to be visibly louder rather than merely earlier.
                 ForEach(HomeNudgesSection.cards(due)) { nudge in
                     NudgeDueCard(
                         nudge: nudge,
@@ -204,7 +203,7 @@ extension HomeView {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                manageNudgesRow
+                nudgesDoorCard(due: due, scheduled: scheduled)
             }
             // `.contain`, not a bare identifier: applied alone, a container's identifier is
             // inherited by every descendant, so both buttons in here answered to
@@ -216,26 +215,93 @@ extension HomeView {
         }
     }
 
-    private var manageNudgesRow: some View {
-        Button {
+    /// Today's nudges DOOR, built to the Capture inbox card's anatomy — icon tile, title,
+    /// subtitle, count chip — because E chose that shape for it (2026-08-28) and it is already the
+    /// screen's vocabulary for "a place with things in it".
+    ///
+    /// What it replaced: a grey caps eyebrow over a grey chevron row, sitting between a bold ring
+    /// and a loud blue CTA, which read as the end of the screen rather than a part of it. The
+    /// upcoming rows are the point of the extra height — "4 scheduled" states a number, "Water the
+    /// plants, Today 18:00" states something you can plan around.
+    private func nudgesDoorCard(due: [Nudge], scheduled: Int) -> some View {
+        let upcoming = HomeNudgesSection.upcoming(
+            all: nudgesService.nudges, due: due, now: Date()
+        )
+        return VStack(alignment: .leading, spacing: 8) {
+            nudgesDoorHeader(dueCount: due.count, scheduled: scheduled)
+            ForEach(upcoming) { nudge in
+                upcomingNudgeRow(nudge)
+            }
+            if let overflow = HomeNudgesSection.upcomingOverflowLine(scheduledCount: scheduled) {
+                Text(overflow)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .bentoCard()
+    }
+
+    /// The door's header row, split out only because the card was over its 50-line budget with it
+    /// inline. Mirrors `inboxPeekCard`'s header exactly: 44pt tinted tile, title, subtitle, chip.
+    private func nudgesDoorHeader(dueCount: Int, scheduled: Int) -> some View {
+        let chip = HomeNudgesSection.chipText(dueCount: dueCount, scheduledCount: scheduled)
+        return Button {
             Haptics.play(.light)
             isPresentingNudges = true
         } label: {
             HStack(spacing: 8) {
-                Text("Manage nudges")
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(Color("LabelSecondary"))
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.tertiary)
+                Text("⏰")
+                    .font(.title3)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Color.accentColor.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Nudges")
+                        .font(.headline)
+                    Text(HomeNudgesSection.doorSubtitle(dueCount: dueCount, scheduledCount: scheduled))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
+                MomentumChip(
+                    text: chip,
+                    background: dueCount == 0
+                        ? Color("CardSurfaceSecondary")
+                        : Color("StateWarn").opacity(0.16),
+                    foreground: dueCount == 0 ? Color("LabelSecondary") : Color("StateWarn")
+                )
             }
-            .frame(minHeight: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .bentoCard()
+        .accessibilityLabel("Nudges, \(chip)")
+        .accessibilityHint("Opens your nudge schedule")
         .accessibilityIdentifier("homeManageNudgesRow")
+    }
+
+    /// One upcoming nudge: what it is, and when it next fires. A schedule the app cannot parse
+    /// shows the label alone rather than an invented time (`nextFireLine` returns nil).
+    private func upcomingNudgeRow(_ nudge: Nudge) -> some View {
+        HStack(spacing: 8) {
+            Text(nudge.label)
+                .font(.callout.weight(.medium))
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 8)
+            if let fires = HomeNudgesSection.nextFireLine(for: nudge, now: Date()) {
+                Text(fires)
+                    .font(.footnote)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .layoutPriority(1)
+            }
+        }
+        .frame(minHeight: 44)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("homeUpcomingNudgeRow")
     }
 
     /// v3's Today header: the date eyebrow over the big title, with settings as a 40pt well.

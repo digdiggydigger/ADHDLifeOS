@@ -21,6 +21,23 @@ enum NudgeDueness {
         return next <= now
     }
 
+    /// When this nudge next fires after `reference`, or `nil` if it never computably will —
+    /// paused, an unparseable schedule, or a weekday set that yields nothing inside the week.
+    ///
+    /// Exists so Today's nudges door can say "Tomorrow 05:00" without owning a SECOND occurrence
+    /// calculator that could drift out of agreement with the one dueness measures from. Callers
+    /// showing "when does this next fire" pass `now`; dueness passes the nudge's own reference
+    /// date, and the two questions genuinely differ — a nudge that fired last Tuesday has a next
+    /// fire in the past, which is exactly what makes it due, and is not what a user reading
+    /// "next up" is asking.
+    static func nextFire(for nudge: Nudge, after reference: Date, timeZone: TimeZone = .current) -> Date? {
+        guard nudge.active, let schedule = NudgeSchedule.parse(cronString: nudge.schedule) else {
+            return nil
+        }
+        let next = nextFireTime(after: reference, schedule: schedule, timeZone: timeZone)
+        return next == .distantFuture ? nil : next
+    }
+
     /// Walks forward day-by-day (bounded to a week, since every supported schedule repeats
     /// within 7 days) looking for the first local-time occurrence at the schedule's hour/minute
     /// that is both strictly after `reference` and on a day its weekday set allows.

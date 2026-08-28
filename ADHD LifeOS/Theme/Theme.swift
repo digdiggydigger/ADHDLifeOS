@@ -57,9 +57,47 @@ private struct BentoCardModifier: ViewModifier {
     }
 }
 
+/// The same card, for something that is ASKING rather than merely present.
+///
+/// E's 2026-08-28 call: Today's nudges door was raised out of a grey footer into a real card, and
+/// a due nudge has to keep outranking it — two cards of equal weight say "these matter equally",
+/// which on this screen is the wrong signal. The warn tint and its matching border are what put a
+/// due nudge above the quiet door below it.
+///
+/// The tint is an ALPHA over the card surface rather than its own colorset: it has to sit on the
+/// same surface in both appearances, and `StateWarn` is already the app's one "wants attention"
+/// hue (the inbox chip, the inbox headline, the nudges eyebrow). A second baked token would be a
+/// second thing to keep in agreement with it.
+private struct UrgentBentoCardModifier: ViewModifier {
+    var padding: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Tint FIRST, surface behind it: chained `.background` stacks backwards, so the
+            // opaque surface must be the OUTER one or it paints over the tint entirely.
+            .background(
+                Color("StateWarn").opacity(0.10),
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+            .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color("StateWarn").opacity(0.35), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
+    }
+}
+
 extension View {
     func bentoCard(padding: CGFloat = 16) -> some View {
         modifier(BentoCardModifier(padding: padding))
+    }
+
+    /// A bento card carrying the "wants attention" treatment — see `UrgentBentoCardModifier`.
+    func urgentBentoCard(padding: CGFloat = 16) -> some View {
+        modifier(UrgentBentoCardModifier(padding: padding))
     }
 
     /// v3's section-header treatment: bold SANS caption, uppercase, letterspaced (700 11px,

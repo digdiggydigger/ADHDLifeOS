@@ -141,6 +141,60 @@ list, and `home.lifeAreasCollapsed` defaults to false, so Today looks to them ex
 
 ---
 
+### FEATURE: F-NudgesDoor — the nudges section stops reading as a footer  [x] COMPLETED
+
+**E's screenshot note, 2026-08-28:** the circled nudges area "needs a little bit of work — make it
+stand out more and more prominent to the user's eye."
+
+What it was: a grey caps eyebrow ("NOTHING DUE · 4 SCHEDULED") over a grey chevron row, sitting
+between a bold ring/streak block and a loud blue "Clear the deck" CTA. It read as the end of the
+screen rather than a part of it.
+
+**E's three calls, asked before building:**
+1. **Shape** — match the Capture inbox card's anatomy (icon tile, title, subtitle, count chip) and
+   list the next few nudges underneath. Chosen over a one-line "next up" and over a louder version
+   of the same single row.
+2. **Due state** — raise it too. If the quiet state becomes a card, a due nudge sharing that
+   surface would read as equally optional, which on this screen is the wrong signal.
+3. **Position** — leave it where it is. Folding the life areas already pulls it up the screen.
+
+**What shipped**
+- `nudgesDoorCard` mirrors `inboxPeekCard` exactly — same 44pt tinted tile, title, subtitle, chip.
+- Rows read "Today 18:00" / "Tomorrow 05:00" / "Mon 09:30", soonest first, capped at
+  `maxCards` with "and N more scheduled". Beyond tomorrow the weekday is NAMED — "in 4 days" makes
+  the reader do the arithmetic they asked to avoid.
+- Due nudges now come FIRST and carry a new `urgentBentoCard` (warn tint + matching border), so
+  urgent still visibly outranks quiet.
+
+**Two implementation notes worth keeping**
+- **The next-fire maths is dueness's own, not a second copy.** `NudgeDueness.nextFireTime` existed
+  but was private; it gained a `nextFire(for:after:)` wrapper rather than a duplicate weekday-walk
+  in `HomeNudgesSection`. The two questions genuinely differ and the seam says so: a nudge that
+  fired last Tuesday has a next fire in the PAST, which is exactly what makes it due, and is not
+  what a user reading "next up" is asking. Display passes `now`; dueness passes the nudge's own
+  reference date.
+- **The urgent tint is an alpha over the card surface, not a new colorset.** `StateWarn` is already
+  the app's single "wants attention" hue (inbox chip, inbox headline, the old nudges eyebrow), and
+  a second baked token would be one more thing to keep in agreement with it.
+
+**Verified 2026-08-28:**
+```
+swiftlint lint                → Found 2 violations, 0 serious in 544 files
+xcodebuild build-for-testing  → ** TEST BUILD SUCCEEDED **
+xcodebuild test (unit)        → Executed 1827 tests, with 0 failures (0 unexpected)
+xcodebuild test (5 journeys)  → Executed 5 tests, with 0 failures (0 unexpected) in 524.424s
+```
+`testDueNudge_appearsOnHomeAndCanBeDismissed` is the one that matters: it proves the due card still
+reaches Today and its dismiss button is still addressable after the cards moved to the top of the
+section and changed surface. The journey run was clean first time — no repeat of the
+`signOutIfSignedIn` flakiness recorded under F-TriageCardTruth.
+
+**[ ] OUTSTANDING — E has not seen it.** This is taste, and the standing lesson is that three
+colour attempts were rejected on device before a render loop existed. Stills of both states in both
+appearances go to E before this is called settled.
+
+---
+
 ### FEATURE: F-PadNightRender — put the journal pad's night face in front of E  [ ] UNCHECKED
 
 **Not a code block — a verification block, and the reason the other three can be judged.** E's
