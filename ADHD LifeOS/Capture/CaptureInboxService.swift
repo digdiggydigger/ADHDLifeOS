@@ -184,19 +184,6 @@ final class CaptureInboxService: ObservableObject {
         )
     }
 
-    /// Learns the count for every OTHER offered tab so the picker isn't half-labelled on a cold
-    /// start. A single-filter screen (the Inbox) has no other tabs and fetches nothing here.
-    ///
-    /// Deliberately after the main load and deliberately failure-tolerant: this is decoration on
-    /// tabs the user is not looking at, and it must never delay the list they are, nor turn a
-    /// perfectly good load into an error. A failure just leaves that count unknown.
-    private func refreshInactiveCount() async {
-        for inactive in availableFilters where inactive != filter {
-            guard let captures = try? await fetch(inactive) else { continue }
-            counts[inactive] = captures.count
-        }
-    }
-
     /// Switches tabs and loads that slice. Re-selecting the tab already showing is a no-op — the
     /// user tapping where they already are shouldn't cost a fetch or blank the list mid-read. A
     /// filter this screen doesn't offer is refused outright.
@@ -263,7 +250,11 @@ final class CaptureInboxService: ObservableObject {
         do {
             try await client.markProcessed(captureId: capture.id)
             pendingTaskIdsByCapture[capture.id] = nil
-            state = .loaded(captures.filter { $0.id != capture.id })
+            // Through `removeCapture` rather than open-coding the same filter: this line used to
+            // write `state` directly and so left the tab labels stale exactly like the other four
+            // exits did, on the most-used verb of the five.
+            removeCapture(id: capture.id)
+            await refreshCountsAfterExit()
             return true
         } catch {
             pendingTaskIdsByCapture[capture.id] = taskId
@@ -318,12 +309,20 @@ final class CaptureInboxService: ObservableObject {
         }
     }
 
-    /// Drops a retired capture from the loaded list without a refetch. Lives here rather than in
-    /// `CaptureInboxService+Triage` because `state` has a `private(set)` setter — the only writers
-    /// must be in this file.
+    /// Drops a retired capture from the loaded list without a refetch, and keeps the active tab's
+    /// count in step with it. Lives here rather than in `CaptureInboxService+Triage` because
+    /// `state` has a `private(set)` setter — the only writers must be in this file.
+    ///
+    /// **The count is written from the SAME array the list is**, synchronously and with no fetch,
+    /// so there is no window in which the picker's "To triage (18)" can sit above a headline
+    /// reading "17 left" — the pair E photographed on 2026-08-28. They were separate truths
+    /// before: `state` was rewritten by every exit and `counts` by none of them, so only a fresh
+    /// `load()` ever corrected a tab label.
     func removeCapture(id: UUID) {
         guard case .loaded(let captures) = state else { return }
-        state = .loaded(captures.filter { $0.id != id })
+        let remaining = captures.filter { $0.id != id }
+        state = .loaded(remaining)
+        counts[filter] = remaining.count
     }
 
     private func replaceCapture(_ updated: Capture) {

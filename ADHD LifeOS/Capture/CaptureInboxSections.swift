@@ -27,7 +27,15 @@ extension CaptureInboxView {
                     )
                 }
             }
-            Text(capture.title ?? capture.content)
+            // Through the shared resolver, NOT `title ?? content`. Those two fields are both
+            // legitimately empty on a photo capture, so the coalesce rendered `Text("")` — E's
+            // device screenshot (2026-08-28) is a "Photo / 47 hours old" pair of chips above an
+            // entirely blank card. `primaryText` is the same four-step chain the Then rows and
+            // Today's list already use, and it ends in "Photo capture" for exactly this input.
+            //
+            // Second time this card being a separate view from `CaptureRowView` has cost
+            // something — see the place label below, found the same way in 2026-08-27.
+            Text(CaptureRowPresentation.primaryText(for: capture))
                 .font(.title3.bold())
                 .tracking(-0.5)
                 .fixedSize(horizontal: false, vertical: true)

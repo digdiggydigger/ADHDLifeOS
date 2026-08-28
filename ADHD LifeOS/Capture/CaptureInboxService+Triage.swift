@@ -48,6 +48,7 @@ extension CaptureInboxService {
                 )
             )
             removeCapture(id: capture.id)
+            await refreshCountsAfterExit()
             record(
                 .sorted(captureId: capture.id, previousLifeAreaId: capture.lifeAreaId),
                 sortedInto: lifeAreaId
@@ -87,6 +88,9 @@ extension CaptureInboxService {
                 )
                 clearLastTriageAction()
                 await refresh()
+                // `refresh()` only ever corrects the tab being stood on. Undo moved the capture
+                // OFF another slice, so that one is stale in exactly the way an exit leaves it.
+                await refreshCountsAfterExit()
                 return true
             } catch {
                 triageErrorMessage = Self.message(for: error)
@@ -118,6 +122,7 @@ extension CaptureInboxService {
         do {
             try await client.deleteCapture(id: capture.id)
             removeCapture(id: capture.id)
+            await refreshCountsAfterExit()
             return true
         } catch {
             triageErrorMessage = Self.message(for: error)
@@ -147,6 +152,7 @@ extension CaptureInboxService {
                 changes: CaptureUpdate(seen: false, clearedAt: .some(nil))
             )
             removeCapture(id: capture.id)
+            await refreshCountsAfterExit()
             return true
         } catch {
             triageErrorMessage = Self.message(for: error)
@@ -191,6 +197,7 @@ extension CaptureInboxService {
             let entry = try await journalClient.createLog(normalized)
             try await client.markProcessed(captureId: capture.id)
             removeCapture(id: capture.id)
+            await refreshCountsAfterExit()
             record(.journaled(captureId: capture.id, logId: entry.id), sortedInto: nil)
             return true
         } catch {
@@ -226,6 +233,7 @@ extension CaptureInboxService {
         }
         clearLastTriageAction()
         await refresh()
+        await refreshCountsAfterExit()
         return true
     }
 

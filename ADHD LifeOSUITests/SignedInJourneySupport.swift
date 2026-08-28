@@ -72,15 +72,52 @@ extension SignedInJourneyUITests {
     /// Captures are camelCase on the wire EXCEPT `created_at` — the convention split
     /// `FirestoreFieldPayloads` documents. Spelling `createdAt` here would leave the document
     /// undecodable and the inbox empty, which is why this is written out rather than derived.
-    func seedWaitingCapture(id: UUID, content: String, uid: String) throws {
+    /// The decision card must NAME a capture that has no words of its own, then get out of the way.
+    ///
+    /// Lives here rather than inline because the journey it belongs to is at its 50-line function
+    /// budget. A photo capture carries neither title nor content, and the card used to coalesce
+    /// the two and render the empty string — chips above a blank (E's device screenshot,
+    /// 2026-08-28). `CaptureRowPresentation.primaryText` is the shared resolver that ends in
+    /// "Photo capture" for exactly this input, and a SwiftUI body is not something the unit suite
+    /// can see, so this assertion is the only guard that exists.
+    ///
+    /// Skip is in-memory and writes nothing, which makes it the cheapest way to move the wordless
+    /// capture aside and leave the seeded note on the decision card for the rest of the journey.
+    @MainActor
+    func assertWordlessCaptureIsNamedThenSkipItAside(in app: XCUIApplication) {
+        XCTAssertTrue(
+            app.staticTexts["Photo capture"].waitForExistence(timeout: UITestSession.timeout),
+            "The decision card rendered a wordless capture as a blank instead of naming its kind"
+                + (app.staticTexts["captureInboxEmptyState"].exists
+                    ? " (the inbox rendered as empty — check the seeded document decodes,"
+                        + " especially `created_at`)"
+                    : "")
+        )
+        let skip = app.buttons["captureInboxSkipButton"]
+        XCTAssertTrue(skip.waitForExistence(timeout: UITestSession.timeout), "No Skip button")
+        scrollUntilHittable(skip, in: app)
+        skip.tap()
+    }
+
+    /// `kind` and `age` are parameters because a photo capture with EMPTY content is a real and
+    /// awkward case — it is the one shape whose card has no words of its own to fall back on, and
+    /// the decision card rendered it as a blank until 2026-08-28. `age` decides which capture wins
+    /// the top slot, since the inbox sorts newest-first by default.
+    func seedWaitingCapture(
+        id: UUID,
+        content: String,
+        uid: String,
+        kind: String = "note",
+        age: TimeInterval = -3600
+    ) throws {
         try UITestEmulator.writeDocument(
             path: "users/\(uid)/captures/\(id.uuidString)",
             fields: [
                 "id": UITestEmulator.string(id.uuidString),
                 "content": UITestEmulator.string(content),
-                "kind": UITestEmulator.string("note"),
+                "kind": UITestEmulator.string(kind),
                 "processed": UITestEmulator.bool(false),
-                "created_at": UITestEmulator.timestamp(Date().addingTimeInterval(-3600))
+                "created_at": UITestEmulator.timestamp(Date().addingTimeInterval(age))
             ]
         )
     }

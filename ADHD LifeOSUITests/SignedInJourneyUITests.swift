@@ -248,9 +248,18 @@ final class SignedInJourneyUITests: XCTestCase {
         let account = try UITestSession.createAccount(label: "capture")
         let content = "Book the dentist"
         try seedWaitingCapture(id: UUID(), content: content, uid: account.uid)
+        // Newer, so it takes the decision card first. A photo capture carries no words of its own,
+        // which is the case the card got wrong: it coalesced `title ?? content` and rendered an
+        // empty line where "Photo capture" belonged (E's device screenshot, 2026-08-28). Nothing
+        // in the unit suite can see a SwiftUI body, so this is the only level that catches it.
+        try seedWaitingCapture(
+            id: UUID(), content: "", uid: account.uid, kind: "photo", age: -60
+        )
 
         let app = try UITestSession.launchSignedIn(as: account)
         openCapturesTab(app)
+
+        assertWordlessCaptureIsNamedThenSkipItAside(in: app)
 
         XCTAssertTrue(
             app.staticTexts[content].waitForExistence(timeout: UITestSession.timeout),

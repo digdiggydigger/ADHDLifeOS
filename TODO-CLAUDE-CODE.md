@@ -24,11 +24,169 @@ See `WORKFLOW.md` for the full cycle and FEATURE block template. Quick version:
 
 ## Current Sprint
 
-**Nothing queued, and nothing outstanding on E.** Claude Code is taking direction from E directly
-(E's call, 2026-08-23). Cowork adds FEATURE blocks here when it has designed one.
+**Queued 2026-08-28 from E's on-device review**, in the order E asked for. Five device screenshots
+of `22dba79` covered three of the four things that had shipped unseen; the fourth (the journal
+pad's NIGHT face) is still unconfirmed, which is what block 4 exists to fix. Two of the four blocks
+are defects the screenshots exposed, one is a gap they explained, one is taste.
 
-The last item awaiting E — on-device confirmation of the notification-banner app icon — was verified
-on 2026-08-23 and is closed below.
+**Ownership note:** these blocks were written by Claude Code, not Cowork, on E's direct instruction
+("draft all of them up in a block starting with both the capture bugs"). That crosses the usual
+line in `WORKFLOW.md` the same way the 2026-08-23 archive split did, and for the same reason — E is
+directing this queue in chat. Cowork should feel free to rewrite or replace any of it.
+
+---
+
+### FEATURE: F-TriageCardTruth — the decision card says what it is, and the tabs say how many  [x] COMPLETED
+
+**Two defects, both visible in one screenshot of the Capture Inbox, both about a number or a word
+that disagrees with the truth beside it.**
+
+**Bug 1 — the top triage card renders a blank title for a photo capture.**
+`CaptureInboxSections.swift:30` is `Text(capture.title ?? capture.content)`. `title` is `String?`
+and `content` is a non-optional `String`, so a photo capture with no title and empty content
+renders `Text("")` — E's screenshot shows the "Photo / 47 hours old" chips above an empty card.
+The shared helper `CaptureRowPresentation.primaryText(for:)` already has the correct four-step
+fallback chain ending in `"Photo capture"`, and is already unit-tested for exactly this input
+(`CaptureRowPresentationTests:72`). The `Then` rows and Today's list use it and render correctly.
+The decision card simply hand-rolls its own chain instead.
+
+This is the SECOND time the card being a separate view from `CaptureRowView` has cost something —
+the comment at `CaptureInboxSections.swift:34` records the first (the place label, E, 2026-08-27).
+
+**Bug 2 — every count in the filter picker goes stale after any triage exit.**
+The screenshot reads **"To triage (18)"** beside **"17 left"** with a **17** tab badge, and
+**"Sorted (8)"** on a screen where a capture had just been journalled. The headline counts
+`state`; the picker reads `service.counts[option]` (`CaptureInboxView.swift:204`). `removeCapture`
+(`CaptureInboxService.swift:324`) rewrites `state` and never touches `counts`, and the only other
+writers are `load()`, `refresh()`, `refreshInactiveCount()` and `refreshToTriageCount()` — the last
+of which early-returns on this screen, because it is guarded on the screen NOT offering the
+to-triage slice. So all four exits (`sort`, `logToJournal`, `discard`, `undoSeen`) leave it stale.
+
+**Acceptance criteria**
+- [x] The top decision card resolves its title through `CaptureRowPresentation.primaryText(for:)`;
+      a photo capture with no title and empty content reads "Photo capture", not a blank line.
+- [x] After any triage exit, `counts[activeFilter]` matches the list on screen — the picker can
+      never contradict the headline.
+- [x] After an exit, the DESTINATION tab's count is re-learned too (journalling raises Promoted,
+      sorting raises Sorted), by the existing failure-tolerant `refreshInactiveCount` contract:
+      a failed count fetch leaves that number alone and never surfaces an error.
+- [~] `CaptureInboxService.swift` ends BELOW its 400-line ceiling, not at 398 — it is at the
+      ceiling now, so this block splits before it grows.
+      **PARTIAL, and stated rather than glossed: it ends at 397.** `refreshInactiveCount` moved out
+      to `+Counterweight`, which paid for `removeCapture` growing, but the net is ONE line. That is
+      not headroom. `removeCapture` and `replaceCapture` cannot follow it — `state` has a
+      `private(set)` setter, so its writers are pinned to this file — so a real split has to move
+      something larger (`promoteToTask` is the candidate). The brief's warning stands unchanged.
+- [x] Unit tests first, covering each exit's effect on the active count and the destination count.
+- [x] The Captures UI journey seeds a photo capture as the decision card and asserts it renders a
+      title — the unit suite cannot see a SwiftUI body, and this defect only ever existed there.
+
+**Two things found while fixing it, both folded in:**
+- `promoteToTask` was a FIFTH exit site — it open-coded `state = .loaded(captures.filter { ... })`
+  rather than calling `removeCapture`, so "Task it", the most-used verb of the five, carried the
+  same staleness. It goes through the same door now.
+- Undo needed the identical treatment in reverse: it moves a capture OFF another slice, and
+  `refresh()` only ever corrected the tab being stood on.
+
+**Deliberately NOT done, reasoning in the code:** `weekCounterweightLine` ("27 captured · 10 cleared
+this week") goes stale on the same screen for the same reason. Refreshing it costs a third read per
+tap (`fetchCaptures` pulls everything) on a screen built for rapid one-at-a-time triage, and unlike
+the tab labels nothing sits directly above it contradicting it. `refreshCountsAfterExit` is the
+function it belongs in if that ever changes.
+
+**Verified 2026-08-28:**
+```
+swiftlint lint                → Found 2 violations, 0 serious in 543 files
+                                (TaskDetailView 438 file_length + UITests static_over_final_class)
+xcodebuild build-for-testing  → ** TEST BUILD SUCCEEDED **
+xcodebuild test (unit)        → Executed 1806 tests, with 0 failures (0 unexpected)
+xcodebuild test (5 journeys)  → Executed 5 tests, with 0 failures (0 unexpected) in 526.633s
+coverage                      → CaptureInboxService 91.24%, +Triage 96.08%, +Counterweight 73.68%
+```
+
+**Journey flakiness, recorded because it cost time and will recur.** The first five-journey run on
+this tree failed THREE of them — `testDueNudge`, `testSettings`, `testTaskDetail` — all with
+messages pointing at `signOutIfSignedIn` ("Settings never presented", "Settings did not open, so
+sign-out could never be reached"). Every one passed when re-run alone, and all five then passed
+together on the rebuilt tree in 526s. So it is the documented harness fragility, not this block, and
+not the app. The remaining weak point is visible: `UITestSession.swift:94` taps `settingsButton`
+ONCE with no retry, so a swallowed tap surfaces two lines later as a true statement about the wrong
+step. That helper has already been hardened twice; a third pass wants a retry loop around the tap.
+
+---
+
+### FEATURE: F-PadNightRender — put the journal pad's night face in front of E  [ ] UNCHECKED
+
+**Not a code block — a verification block, and the reason the other three can be judged.** E's
+five screenshots were all light appearance, so the gold pad's night face (`9848ee8`) remains the
+one thing from 2026-08-28 that no human has seen. It also has the worst track record of anything
+in the app: three colour attempts were rejected on device before the render loop was built.
+
+Rebuild the throwaway harness rather than re-deriving it —
+`git show 22dba79:"ADHD LifeOSUITests/ComposerLookCaptureUITests.swift"` is the exact file, deleted
+in `891ea8f`. Drive the appearance explicitly with `xcrun simctl ui <udid> appearance dark`; do not
+trust whichever way the simulator happens to be pointing, because that is precisely what let a
+"forced light" pad ship with no night face at all. Let the spring settle before the shutter — a
+capture fired mid-animation once showed Log's content on the gold footer and read as an app defect.
+
+**Acceptance criteria**
+- [ ] Day and night stills of the journal composer, extracted and handed to E.
+- [ ] The harness is deleted again before commit, or committed deliberately — not left behind.
+- [ ] E's verdict recorded here before anything else touches the pad's colours.
+
+---
+
+### FEATURE: F-AccountName — a name you can actually set  [ ] UNCHECKED
+
+**Settings' Name row is correct code that E will never see fire.** `SettingsView.swift:190` is
+`if let name = authService.signedInUser?.displayName`, so the row hides when there is no name —
+right behaviour. But the name is written ONCE, at sign-up, and nothing anywhere can set it
+afterwards.
+
+Verified live rather than assumed (Firebase MCP, 2026-08-28): E's Auth record
+`xcKeMrUiFoZRGQOEUMNW8y6aXmc2` was created **2026-08-19 02:22 UTC**, nine days before F-DisplayName
+(`9c3418a`), and carries no `displayName` field at all. Its Firestore `users/{uid}` document holds
+only `seeded_at` — not even the `email` that the current `signUp` always writes — so the document
+predates that code path entirely. Nothing is broken; the feature is simply unreachable on the only
+account that matters.
+
+Note while implementing: `signUp` writes the name TWO places — onto the Firebase Auth user
+(`commitChanges`, swallowed with `try?`) and into `users/{uid}.display_name`. Everything that
+READS it reads only the Auth user (`FirebaseManager.swift:98`). A silently-failed `commitChanges`
+would therefore leave a name in Firestore that the app can never show. Whatever this block adds
+should not repeat that split.
+
+**Acceptance criteria**
+- [ ] A name is editable from Settings' Account section, not only at sign-up.
+- [ ] The write lands somewhere the app actually reads back, and a failure is reported rather than
+      swallowed.
+- [ ] Setting a name on an account that has never had one makes the Name row appear.
+- [ ] Clearing it removes the row rather than showing a blank value.
+- [ ] Tests first for the pure validation/normalisation; `AuthFormValidation.normalizedDisplayName`
+      already exists and should be the one rule.
+
+---
+
+### FEATURE: F-PadWarmNeutral — the gold pad stops using a cold grey  [ ] UNCHECKED
+
+**Taste, and explicitly E's call — render before committing.** On the gold composer the unselected
+life-area chips and the disabled "Save entry" button are both `CardSurfaceSecondary` = **#E9ECF3**,
+an opaque BLUE-leaning grey. F-DisabledCTA (`22dba79`) did its job — the button is no longer a
+translucent system fill picking up the gold — but a cold grey on a saturated warm ground is what
+makes those chips read dead and slightly dirty in E's screenshot. The same token looks right
+everywhere else in the app because every other page is already cool grey.
+
+The pad has warm ink for its labels and cool grey for its surfaces; it should pick one.
+
+**Acceptance criteria**
+- [ ] A warm quiet-surface token for the gold page, in the asset catalog with light AND dark
+      variants — never inline hex, per CLAUDE.md §4.
+- [ ] Contrast checked in BOTH appearances, not just the one the simulator opened in.
+- [ ] Rendered and shown to E BEFORE commit. Three colour attempts were rejected on device by
+      guessing; this one does not get guessed.
+- [ ] Nothing outside the gold composer changes appearance.
+
+---
 
 **The history moved.** Every shipped block and every block belonging to a deleted backend now lives
 in `TODO-ARCHIVE.md` — 8,183 lines of it, covering the Supabase, Cognito/AWS and Poke eras, all of
