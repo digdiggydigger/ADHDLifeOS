@@ -292,3 +292,39 @@ final class JournalTimelineTests: XCTestCase {
         )
     }
 }
+
+/// What a folded day still says about itself (E, 2026-08-28). Its own class rather than more rows
+/// in `JournalTimelineTests`, which is already at its type-body budget.
+final class JournalDayCollapsedLineTests: XCTestCase {
+    private let calendar = Calendar(identifier: .gregorian)
+
+    private var now: Date {
+        calendar.date(from: DateComponents(year: 2026, month: 8, day: 14, hour: 9, minute: 41))!
+    }
+
+    private func log(hour: Int) -> Log {
+        Log(
+            id: UUID(), lifeAreaId: nil, type: .journal, body: "entry",
+            entryDate: calendar.date(bySettingHour: hour, minute: 0, second: 0, of: now)!,
+            createdAt: now
+        )
+    }
+
+    /// Without this the Journal folds down to a list of dates with no way to tell a busy day from
+    /// a quiet one short of opening every single one.
+    func testCollapsedLine_countsWhatIsHiddenBehindTheHeader() {
+        let days = JournalTimeline.days(
+            logs: [log(hour: 4), log(hour: 7)], tasks: [], asOf: now, calendar: calendar
+        )
+
+        XCTAssertEqual(days.first?.collapsedLine, "2 entries")
+    }
+
+    func testCollapsedLine_singularEntryReadsAsOne() {
+        let days = JournalTimeline.days(
+            logs: [log(hour: 4)], tasks: [], asOf: now, calendar: calendar
+        )
+
+        XCTAssertEqual(days.first?.collapsedLine, "1 entry")
+    }
+}

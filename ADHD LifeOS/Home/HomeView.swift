@@ -14,7 +14,9 @@ struct HomeView: View {
     @StateObject var nudgesService: NudgesService
     /// Internal, not private: `HomeMomentumSections` refreshes the inbox count.
     let captureClient: CaptureClientAdapting
-    private let journalClient: JournalClientAdapting?
+    /// Internal, not private: the capture door moved to `HomeCaptureDoor.swift` when this file
+    /// crossed its 400-line budget, and it needs this to build the pushed detail.
+    let journalClient: JournalClientAdapting?
     private let lifeAreaDetailClient: LifeAreaDetailClientAdapting
     /// Internal, not private: `HomeMomentumSections` drives the close-from-Home flow.
     let taskDetailClient: TaskDetailClientAdapting
@@ -58,6 +60,10 @@ struct HomeView: View {
     /// Today's nudges section pushes the full manager. Internal, not private: the section lives
     /// in `HomeAccessoryStrips.swift`.
     @State var isPresentingNudges = false
+    /// Today's life-area list, folded or not (E, 2026-08-28). A stored preference, not view state:
+    /// you fold it because you do not want to see it, so it must survive a relaunch. Internal, not
+    /// private — the section lives in `HomeMomentumSections.swift`.
+    @AppStorage("home.lifeAreasCollapsed") var lifeAreasCollapsed = false
     @State var inboxCount = 0
     /// The newest waiting captures for Today's inbox card (E's 2026-08-25 note) — refreshed with
     /// the count, from the same fetch.
@@ -372,26 +378,4 @@ extension HomeView {
         )
     }
 
-    /// The FULL set including archived areas — so the Capture triage picker can grey archived areas
-    /// rather than being starved of them (they used to be absent entirely here). The grid itself
-    /// still shows active areas only, filtered in `HomeService`. In this extension (with the door
-    /// below) so `HomeView`'s type body stays inside its 250-line budget.
-    var lifeAreasForPicker: [LifeArea] {
-        homeService.lifeAreas
-    }
-
-    /// The peek rows' pushed capture door — in an extension so `HomeView`'s type body stays
-    /// inside its 250-line budget (extensions are exempt; same file so `journalClient` stays
-    /// private).
-    @ViewBuilder
-    var inspectedCaptureDoor: some View {
-        if let capture = inspectingHomeCapture {
-            JournalCaptureDoor(
-                captureId: capture.id,
-                lifeAreas: homeService.lifeAreas,
-                client: captureClient,
-                journalClient: journalClient
-            )
-        }
-    }
 }

@@ -77,6 +77,12 @@ enum JournalTimeline {
         var headerLine: String {
             focusedMinutes > 0 ? "\(title) · \(focusedMinutes) min focused" : title
         }
+
+        /// What a COLLAPSED day still says about itself. Without it the Journal folds down to a
+        /// list of dates with no way to tell a busy day from a quiet one short of opening each.
+        var collapsedLine: String {
+            entries.count == 1 ? "1 entry" : "\(entries.count) entries"
+        }
     }
 
     /// A sprint shorter than this is a false start — a mis-tap, an instant abandon — and stays

@@ -43,10 +43,36 @@ extension JournalView {
     }
 
     private func daySection(_ day: JournalTimeline.Day) -> some View {
+        let isExpanded = !collapsedDays.contains(day.id)
+        return VStack(alignment: .leading, spacing: 8) {
+            CollapsibleSectionHeader(
+                title: day.headerLine,
+                summary: day.collapsedLine,
+                isExpanded: isExpanded,
+                onToggle: { toggleDay(day) }
+            )
+            .accessibilityIdentifier("journalDayHeader-\(day.id.timeIntervalSince1970)")
+            if isExpanded {
+                dayEntries(day)
+            }
+        }
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: isExpanded)
+    }
+
+    /// Days are collapsed by EXCEPTION — a set of the folded ones, so a day that has not been
+    /// touched is open. The reverse (a set of expanded days) would fold every new day the moment
+    /// it appeared, which is the opposite of what a journal is for.
+    private func toggleDay(_ day: JournalTimeline.Day) {
+        if collapsedDays.contains(day.id) {
+            collapsedDays.remove(day.id)
+        } else {
+            collapsedDays.insert(day.id)
+        }
+    }
+
+    @ViewBuilder
+    private func dayEntries(_ day: JournalTimeline.Day) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(day.headerLine)
-                .sectionLabel()
-                .foregroundStyle(.secondary)
             ForEach(day.entries) { entry in
                 switch entry {
                 case .log(let log):

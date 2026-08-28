@@ -35,6 +35,13 @@ struct JournalView: View {
     /// pattern, because the rows live in a `LazyVStack`.
     @State var inspectingTaskId: UUID?
     @State var inspectingCapture: Capture?
+    /// The FOLDED days, keyed by their start-of-day date (E, 2026-08-28). Held by exception so an
+    /// untouched day is open, and in memory only — which day you folded yesterday is not a
+    /// preference worth outliving the session. Internal, not private: the day sections live in
+    /// `JournalTimelineSections.swift`.
+    @State var collapsedDays: Set<Date> = []
+    /// Honoured by the fold animation — §5's Reduce Motion rule.
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
 
     init(
         client: JournalClientAdapting,
