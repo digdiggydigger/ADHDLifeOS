@@ -671,7 +671,7 @@ before this branch of work. The seed evidently does not always complete before t
 
 ---
 
-### FEATURE: F-AccountName — a name you can actually set  [ ] UNCHECKED
+### FEATURE: F-AccountName — a name you can actually set  [x] COMPLETED
 
 **Settings' Name row is correct code that E will never see fire.** `SettingsView.swift:190` is
 `if let name = authService.signedInUser?.displayName`, so the row hides when there is no name —
@@ -692,13 +692,48 @@ would therefore leave a name in Firestore that the app can never show. Whatever 
 should not repeat that split.
 
 **Acceptance criteria**
-- [ ] A name is editable from Settings' Account section, not only at sign-up.
-- [ ] The write lands somewhere the app actually reads back, and a failure is reported rather than
+- [x] A name is editable from Settings' Account section, not only at sign-up.
+- [x] The write lands somewhere the app actually reads back, and a failure is reported rather than
       swallowed.
-- [ ] Setting a name on an account that has never had one makes the Name row appear.
-- [ ] Clearing it removes the row rather than showing a blank value.
-- [ ] Tests first for the pure validation/normalisation; `AuthFormValidation.normalizedDisplayName`
+- [x] Setting a name on an account that has never had one makes the Name row appear.
+- [x] Clearing it removes the row rather than showing a blank value.
+- [x] Tests first for the pure validation/normalisation; `AuthFormValidation.normalizedDisplayName`
       already exists and should be the one rule.
+
+**How the note above was honoured.** It warned that `signUp` writes the name TWO places (the Auth
+user via `commitChanges`, swallowed with `try?`, and `users/{uid}.display_name`) while everything
+that READS it reads only the Auth user — so a silently-failed commit leaves a name in Firestore the
+app can never show. This does not repeat that: `FirebaseManager.updateDisplayName` writes **only
+what is read**, and **throws**. The Firestore copy stays a legacy artefact of sign-up, documented as
+unmaintained rather than quietly written to a second time.
+
+`AuthService.updateDisplayName` takes the user BACK from the client rather than patching `state`
+locally, so a failed write leaves the displayed name untouched instead of lying about the server.
+`displayNameUpdateFailed` is its own error case for the same reason.
+
+**The UI keeps the "no row when there is no name" rule** the Account section already documented —
+what was missing was a way IN when it is hidden, which is why the row could never appear on E's own
+account. So: the value row when set (tappable to rename), an "Add your name" button when not.
+
+**Verified 2026-08-29:**
+```
+swiftlint lint          → Found 2 violations, 0 serious (the two known debts; five that THIS block
+                           introduced in its own test file were fixed, not accepted)
+xcodebuild test (unit)  → Executed 1843 tests, with 0 failures (0 unexpected)
+                           (1838 + the 5 written first here)
+journey                 → AccountNameJourneyUITests passed (170.289s) — sets a name on an account
+                           that never had one, asserts the row appears, clears it, asserts it goes
+```
+
+**Three harness truths this cost, each found by a failing run rather than by reasoning:**
+- A `Form` row below the fold does not EXIST to XCUITest, so `waitForExistence` waits for something
+  that will never arrive. It must be scrolled into being.
+- An alert is its own element tree: its text field is not reliably reachable from `app.textFields`.
+  Querying the app found nothing and reported "the alert never opened" about an alert that had.
+- **An alert's Save tap gets swallowed like any other tap**, and when it does the alert just stays
+  up — surfacing several steps later as "the Name row did not appear", about a row never asked for.
+  A screenshot was the only thing that said otherwise. `UITestSession.tap(_:untilGone:)` is the
+  mirror of `tap(_:untilExists:)` and now covers it.
 
 ---
 

@@ -76,6 +76,38 @@ final class AuthService: ObservableObject {
         }
     }
 
+    /// Renames the account from Settings, or clears the name when what is typed is blank.
+    ///
+    /// **Three things here are deliberate.**
+    ///
+    /// It normalizes through `AuthFormValidation.normalizedDisplayName` — the same single rule
+    /// sign-up uses — so a name cannot be trimmed one way at sign-up and another way here, and a
+    /// whitespace-only value becomes `nil` rather than `""`. An empty string would be stored as a
+    /// name the app then tries to greet you by.
+    ///
+    /// It does NOT swallow. `signUp` commits the name to the Auth user with `try?`, which is how
+    /// an account can end up with a name in Firestore that the app can never show — everything
+    /// that READS a name reads the Auth user. Repeating that here would make this feature
+    /// unreliable in exactly the way that is hardest to notice.
+    ///
+    /// And it takes the user back from the client rather than patching `state` locally, so a
+    /// failed write leaves the displayed name untouched instead of lying about the server.
+    @discardableResult
+    func updateDisplayName(_ raw: String) async -> Bool {
+        clearTransientMessages()
+        guard case .signedIn = state else { return false }
+        do {
+            let updated = try await client.updateDisplayName(
+                AuthFormValidation.normalizedDisplayName(raw)
+            )
+            state = .signedIn(updated)
+            return true
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
+    }
+
     /// Firebase owns the reset from here — the email, the web form, the new password — so there is
     /// no token to carry and no second screen to build. An implausible address is refused locally
     /// rather than sent, because the confirmation is deliberately identical for an address that

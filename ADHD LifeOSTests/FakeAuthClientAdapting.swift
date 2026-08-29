@@ -24,6 +24,9 @@ final class FakeAuthClientAdapting: AuthClientAdapting, @unchecked Sendable {
         AuthServiceError.signUpFailed("not configured")
     )
     var sendPasswordResetResult: Result<Void, Error> = .success(())
+    var updateDisplayNameResult: Result<AuthUser, Error> = .failure(
+        AuthServiceError.displayNameUpdateFailed("not configured")
+    )
 
     private(set) var signInCallCount = 0
     private(set) var signInWithAppleCallCount = 0
@@ -43,6 +46,16 @@ final class FakeAuthClientAdapting: AuthClientAdapting, @unchecked Sendable {
     private(set) var lastSignUpDisplayName: String?
     private(set) var sendPasswordResetCallCount = 0
     private(set) var lastPasswordResetEmail: String?
+    /// Recorded separately from the value, because `nil` is a MEANINGFUL argument here — clearing
+    /// the name — and "was it called with nil" and "was it called at all" are different questions.
+    private(set) var updateDisplayNameCalled = false
+    private(set) var lastUpdatedDisplayName: String?
+
+    func updateDisplayName(_ displayName: String?) async throws -> AuthUser {
+        updateDisplayNameCalled = true
+        lastUpdatedDisplayName = displayName
+        return try updateDisplayNameResult.get()
+    }
 
     func restoredUser() async -> AuthUser? {
         restoredUserCallCount += 1

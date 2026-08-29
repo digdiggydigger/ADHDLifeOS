@@ -43,6 +43,11 @@ enum AuthServiceError: LocalizedError, Equatable {
     /// The reset email could not be sent — or was never attempted, because what was typed is not
     /// an address.
     case passwordResetFailed(String)
+    /// Renaming the account was rejected. Its own case rather than a reused one because this is
+    /// the failure that must never be silent: everything in the app reads the name off the Auth
+    /// user, so a swallowed commit leaves the UI showing the OLD name with no sign anything went
+    /// wrong (`signUp` commits with `try?`, which is exactly how that happens).
+    case displayNameUpdateFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -54,7 +59,8 @@ enum AuthServiceError: LocalizedError, Equatable {
              .sessionExpired(let message),
              .appleSignInFailed(let message),
              .signUpFailed(let message),
-             .passwordResetFailed(let message):
+             .passwordResetFailed(let message),
+             .displayNameUpdateFailed(let message):
             return message
         }
     }

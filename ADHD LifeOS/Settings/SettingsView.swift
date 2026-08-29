@@ -23,6 +23,9 @@ struct SettingsView: View {
     @StateObject private var accountDeletionService: AccountDeletionService
     @Environment(\.dismiss) private var dismiss
     @State private var permissionState: NotificationPermissionState = .unknown
+    @State private var isEditingName = false
+    @State private var draftName = ""
+    @State private var nameError: String?
     /// Internal, not private: the preference sections live in `SettingsPreferenceSections.swift`
     /// (the `HomeAccessoryStrips` arrangement) to keep this type inside its body budget.
     let momentumPreferencesStore: MomentumPreferencesStoring
@@ -187,9 +190,22 @@ struct SettingsView: View {
     /// private-relay path never supplies one, and an empty row is a worse answer than silence.
     private var accountSection: some View {
         Section {
+            // The row still hides when there is no name — the note above still holds. What is new
+            // is a way IN when it is hidden: the name used to be written once at sign-up and
+            // nothing could set it afterwards, so on E's own account (created before the sign-up
+            // form collected one) this row could never appear at all. Verified against the live
+            // Auth record rather than assumed.
             if let name = authService.signedInUser?.displayName {
-                LabeledContent("Name", value: name)
-                    .accessibilityIdentifier("settingsAccountNameRow")
+                Button {
+                    beginEditingName(current: name)
+                } label: {
+                    LabeledContent("Name", value: name)
+                }
+                .accessibilityIdentifier("settingsAccountNameRow")
+                .accessibilityHint("Change the name on this account")
+            } else {
+                Button("Add your name") { beginEditingName(current: "") }
+                    .accessibilityIdentifier("settingsAddAccountNameButton")
             }
             if let email = authService.signedInUser?.email {
                 LabeledContent("Email", value: email)
@@ -204,7 +220,41 @@ struct SettingsView: View {
             .accessibilityIdentifier("signOutButton")
         } header: {
             Text("Account")
+        } footer: {
+            if let nameError {
+                Text(nameError)
+                    .foregroundStyle(Color("StateRisk"))
+                    .accessibilityIdentifier("settingsAccountNameError")
+            }
         }
+        .alert("Your name", isPresented: $isEditingName) {
+            TextField("Name", text: $draftName)
+                .textInputAutocapitalization(.words)
+                .accessibilityIdentifier("settingsAccountNameField")
+            Button("Save") { Task { await saveName() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Leave it empty to remove your name.")
+        }
+    }
+
+    /// Opens the rename alert. Split out so both entry points — the value row and the "Add your
+    /// name" button — start from the same place and cannot drift.
+    private func beginEditingName(current: String) {
+        nameError = nil
+        draftName = current
+        isEditingName = true
+    }
+
+    /// Saves, and reports rather than swallows.
+    ///
+    /// `AuthService.updateDisplayName` already normalises through the one validation rule and
+    /// leaves the displayed name untouched when the write fails, so this only has to surface the
+    /// message. Clearing is the same call with an empty field — which is why the alert says so.
+    private func saveName() async {
+        let saved = await authService.updateDisplayName(draftName)
+        nameError = saved ? nil : authService.errorMessage
+        if saved { Haptics.play(.solid) }
     }
 
     // MARK: - Section 4 — About (live: version & build, E's 2026-08-25 call)
@@ -278,6 +328,9 @@ private struct PreviewAuthClientAdapting: AuthClientAdapting {
         AuthUser(id: UUID(), email: email)
     }
 
+    func updateDisplayName(_ displayName: String?) async throws -> AuthUser {
+        AuthUser(id: UUID(), email: "preview@example.com", displayName: displayName)
+    }
     func sendPasswordReset(email: String) async throws {}
 
     func signOut() async throws {}

@@ -18,6 +18,9 @@ private struct PreviewAuthClientAdapting: AuthClientAdapting {
         AuthUser(id: UUID(), email: email)
     }
 
+    func updateDisplayName(_ displayName: String?) async throws -> AuthUser {
+        AuthUser(id: UUID(), email: "preview@example.com", displayName: displayName)
+    }
     func sendPasswordReset(email: String) async throws {}
 
     func signOut() async throws {}

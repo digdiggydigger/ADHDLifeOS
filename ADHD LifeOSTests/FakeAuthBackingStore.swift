@@ -79,6 +79,18 @@ final class FakeAuthBackingStore: AuthBackingStore {
         return appleSignInResult
     }
 
+    var updateDisplayNameError: Error?
+    var updateDisplayNameResult = FirebaseAuthUser(uid: "fake-uid", email: nil, displayName: nil)
+    private(set) var updateDisplayNameCallCount = 0
+    private(set) var lastUpdatedDisplayName: String?
+
+    func updateDisplayName(_ displayName: String?) async throws -> FirebaseAuthUser {
+        updateDisplayNameCallCount += 1
+        lastUpdatedDisplayName = displayName
+        if let updateDisplayNameError { throw updateDisplayNameError }
+        return updateDisplayNameResult
+    }
+
     func signOut() throws {
         signOutCallCount += 1
         if let signOutError { throw signOutError }

@@ -251,6 +251,29 @@ enum UITestSession {
         return expected.exists
     }
 
+    /// Taps `element` until `doomed` goes away — the mirror of `tap(_:untilExists:)`.
+    ///
+    /// Same swallowed-tap problem, from the other side. An alert's Save is the case that forced
+    /// this: the tap was reported as delivered, the alert stayed up with the typed name still in
+    /// it, and the journey failed several steps later claiming a row had not appeared. A
+    /// screenshot was the only thing that said otherwise.
+    @MainActor
+    @discardableResult
+    static func tap(_ element: XCUIElement, untilGone doomed: XCUIElement, attempts: Int = 3) -> Bool {
+        for _ in 1...attempts {
+            if !doomed.exists { return true }
+            guard element.exists else { return !doomed.exists }
+            element.tap()
+            let gone = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "exists == false"), object: doomed
+            )
+            if XCTWaiter().wait(for: [gone], timeout: max(2.0, timeout / Double(attempts))) == .completed {
+                return true
+            }
+        }
+        return !doomed.exists
+    }
+
     /// Taps `element` and waits for the software keyboard before typing.
     ///
     /// On a headless simulator XCUITest can synthesize a tap before SwiftUI has granted the field

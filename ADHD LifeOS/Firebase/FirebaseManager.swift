@@ -188,6 +188,36 @@ final class FirebaseManager {
         )
     }
 
+    /// Commits a new display name to the Auth user, or clears it when `nil`.
+    ///
+    /// **Throwing, where every other profile write in this file is best-effort — and that
+    /// asymmetry is the point.** The `try?`s above are defensible because the thing the user asked
+    /// for (an account, a session) has already succeeded and a profile write is a bonus. Here the
+    /// name IS the thing the user asked for, so swallowing a failure would leave Settings showing
+    /// the old value with no sign anything went wrong.
+    ///
+    /// It writes ONE place, deliberately. `signUp` writes the name to both the Auth user and
+    /// `users/{uid}.display_name`, while everything that READS it reads only the Auth user — so a
+    /// silently-failed commit there can leave a name in Firestore the app can never show. Rather
+    /// than repeat that split, this writes only what is read. The Firestore copy stays a legacy
+    /// artefact of sign-up and is not maintained here; nothing consumes it.
+    ///
+    /// Re-reads `currentUser` after committing rather than trusting the local object: Firebase's
+    /// cached user is not guaranteed to have refreshed, and the caller uses what comes back as the
+    /// value the UI will show.
+    func updateDisplayName(_ displayName: String?) async throws -> FirebaseAuthUser {
+        guard let user = auth.currentUser else {
+            throw AuthServiceError.displayNameUpdateFailed("You are not signed in.")
+        }
+        let change = user.createProfileChangeRequest()
+        change.displayName = displayName
+        try await change.commitChanges()
+        let refreshed = auth.currentUser ?? user
+        return FirebaseAuthUser(
+            uid: refreshed.uid, email: refreshed.email, displayName: refreshed.displayName
+        )
+    }
+
     func signOut() throws {
         try auth.signOut()
     }

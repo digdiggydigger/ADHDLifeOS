@@ -15,6 +15,13 @@ protocol AuthClientAdapting: Sendable {
     /// Asks the provider to email a reset link. Deliberately returns nothing on success: the
     /// screen's confirmation must not depend on whether the account exists.
     func sendPasswordReset(email: String) async throws
+    /// Renames the signed-in account, or clears the name when `nil`, and returns the user as it
+    /// stands afterwards.
+    ///
+    /// Returns the user rather than `Void` so the caller never has to guess: everything in the app
+    /// reads `displayName` off the Auth user, so the value that comes back IS the one the UI will
+    /// show. `nil` clears — `""` is not a name and must never be stored as one.
+    func updateDisplayName(_ displayName: String?) async throws -> AuthUser
     func requestOTP(email: String, redirectTo: URL?) async throws
     func completeSession(from url: URL) async throws -> AuthUser
     func signOut() async throws

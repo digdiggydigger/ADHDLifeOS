@@ -17,6 +17,9 @@ protocol AuthBackingStore {
     func signUp(email: String, password: String, displayName: String?) async throws -> FirebaseAuthUser
     func signIn(email: String, password: String) async throws -> FirebaseAuthUser
     func signInWithApple(idToken: String, rawNonce: String, displayName: String?) async throws -> FirebaseAuthUser
+    /// Commits a new display name to the Auth user — the ONLY thing the app reads it from — and
+    /// throws rather than swallowing. See `FirebaseManager.updateDisplayName`.
+    func updateDisplayName(_ displayName: String?) async throws -> FirebaseAuthUser
     func signOut() throws
     /// Firebase sends the email itself; there is no in-app "new password" screen and no token to
     /// carry. Succeeds whether or not the address has an account — see `AuthService`.

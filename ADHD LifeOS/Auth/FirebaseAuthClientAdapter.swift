@@ -35,6 +35,16 @@ struct FirebaseAuthClientAdapter: AuthClientAdapting {
         return Self.authUser(from: user)
     }
 
+    /// Maps the store's failure into the auth vocabulary the UI speaks, rather than letting a raw
+    /// `NSError` from the SDK reach a Settings row.
+    func updateDisplayName(_ displayName: String?) async throws -> AuthUser {
+        do {
+            return Self.authUser(from: try await store.updateDisplayName(displayName))
+        } catch {
+            throw AuthServiceError.displayNameUpdateFailed(Self.message(for: error))
+        }
+    }
+
     func signIn(email: String, password: String) async throws -> AuthUser {
         do {
             return Self.authUser(from: try await store.signIn(email: email, password: password))
