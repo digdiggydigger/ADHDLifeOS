@@ -37,14 +37,21 @@ final class CaptureDiscClearanceUITests: XCTestCase {
         // So on a fresh account the door this journey needs does not exist — which is what the
         // first run of it reported, accurately, as "Today never rendered the nudges door".
         let account = try UITestSession.createAccount(label: "discnudges")
-        try seedOverdueNudge(id: UUID(), label: "Stretch", uid: account.uid)
+        // TEN, and the count is the whole point. With one nudge the screen does not fill, so the
+        // New nudge row rests near the TOP — measured at y=308 against a disc at y=728 — and the
+        // assertion can never fire. That is how the first version of this journey passed against
+        // a build with the fix deliberately removed. E's screen scrolled; this one has to too.
+        for index in 1...10 {
+            try seedOverdueNudge(id: UUID(), label: "Stretch \(index)", uid: account.uid)
+        }
         let app = try UITestSession.launchSignedIn(as: account)
         openNudges(in: app)
 
         let newNudge = app.buttons["nudgesNewNudgeRow"]
+        scrollUntilExists(newNudge, in: app)
         XCTAssertTrue(
-            newNudge.waitForExistence(timeout: UITestSession.timeout),
-            "The nudges screen never rendered its New nudge row"
+            newNudge.exists,
+            "The nudges screen never rendered its New nudge row, even scrolled to the end"
         )
         scrollToRest(newNudge, in: app)
         assertClearOfCaptureDisc(newNudge, "The nudges screen's New nudge row", in: app)
@@ -91,8 +98,12 @@ final class CaptureDiscClearanceUITests: XCTestCase {
             app.swipeUp()
             remaining -= 1
         }
+        // The arrival landmark is the header's add button, NOT the row this journey measures.
+        // With ten nudges seeded, `nudgesNewNudgeRow` is below the fold on the screen being
+        // opened, so it does not exist on arrival — and waiting for it reported "the door never
+        // opened" about a door that had opened perfectly well.
         XCTAssertTrue(
-            UITestSession.tap(door, untilExists: app.buttons["nudgesNewNudgeRow"]),
+            UITestSession.tap(door, untilExists: app.buttons["nudgeAddButton"]),
             "The nudges door never opened the nudges screen"
         )
     }
@@ -117,6 +128,21 @@ final class CaptureDiscClearanceUITests: XCTestCase {
                 "updated_at": UITestEmulator.timestamp(aMonthAgo)
             ]
         )
+    }
+
+    /// Swipes up until `element` EXISTS — which is not the same as waiting for it.
+    ///
+    /// Both screens here are `LazyVStack`s, so a row below the fold is not merely unhittable, it
+    /// is absent from the hierarchy entirely and `waitForExistence` waits out its full timeout
+    /// for something that will never arrive. This journey hit that twice, on two screens, with
+    /// two misleading messages.
+    @MainActor
+    private func scrollUntilExists(_ element: XCUIElement, in app: XCUIApplication, attempts: Int = 12) {
+        var remaining = attempts
+        while !element.exists, remaining > 0 {
+            app.swipeUp()
+            remaining -= 1
+        }
     }
 
     /// Swipes up until `element` stops moving, so it is measured where the scroll actually leaves
@@ -148,6 +174,11 @@ final class CaptureDiscClearanceUITests: XCTestCase {
             disc.waitForExistence(timeout: UITestSession.timeout),
             "The capture disc is not on screen, so this journey proved nothing"
         )
+        // Traced on PASS as well as on failure. A geometry assertion that only speaks when it
+        // fails cannot be checked for vacuity, and this one WAS vacuous when first written —
+        // it passed against a build with the fix deliberately removed.
+        print("[DISC] \(what): element=\(element.frame) disc=\(disc.frame) "
+            + "screen=\(app.frame) hittable=\(element.isHittable)")
         XCTAssertFalse(
             element.frame.intersects(disc.frame),
             "\(what) at \(element.frame) is underneath the capture disc at \(disc.frame)"
