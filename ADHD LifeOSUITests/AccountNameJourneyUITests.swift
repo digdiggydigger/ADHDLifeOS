@@ -48,7 +48,14 @@ final class AccountNameJourneyUITests: XCTestCase {
             XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout), .completed,
             "Clearing the name left the row behind — it must disappear, not render blank"
         )
-        XCTAssertTrue(addButton.waitForExistence(timeout: UITestSession.timeout))
+        // Scrolled again, not merely waited for. The Form re-renders when the row goes away, and a
+        // lazily-materialised row does not EXIST until it is scrolled into being — the same reason
+        // the first `scrollUntilExists` above is there. Waiting alone failed here once.
+        scrollUntilExists(addButton, in: app)
+        XCTAssertTrue(
+            addButton.waitForExistence(timeout: UITestSession.timeout),
+            "After clearing, the way back in ('Add your name') never returned"
+        )
     }
 
     /// The failure message should say WHY where the app knows why. `updateDisplayName` surfaces a

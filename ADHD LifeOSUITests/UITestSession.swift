@@ -288,11 +288,28 @@ enum UITestSession {
             XCTWaiter().wait(for: [hittable], timeout: timeout), .completed,
             "\(element) never became hittable"
         )
-        element.tap()
-        XCTAssertTrue(
-            app.keyboards.element.waitForExistence(timeout: timeout),
-            "Keyboard did not appear after tapping \(element)"
-        )
+        // Retried on FOCUS, not on the keyboard existing — and that distinction is the whole point.
+        //
+        // A swallowed tap here leaves the field unfocused, which surfaces as "Keyboard did not
+        // appear" (first field) or "Neither element nor any descendant has keyboard focus"
+        // (second field). Reaching for `tap(_:untilExists: app.keyboards.element)` looked right and
+        // was wrong: it short-circuits when the expected element ALREADY exists, and on the
+        // password field the keyboard is still up from the email field — so it never tapped at
+        // all, and typing went nowhere. That regression is why this asks the field itself.
+        //
+        // `hasKeyboardFocus` is KVC-only, so it is read defensively: where it cannot be read the
+        // keyboard's presence is the fallback, which is exactly the old behaviour.
+        func isFocused() -> Bool {
+            if let focused = element.value(forKey: "hasKeyboardFocus") as? Bool { return focused }
+            return app.keyboards.element.exists
+        }
+        for _ in 1...3 {
+            element.tap()
+            let deadline = Date().addingTimeInterval(3)
+            while Date() < deadline, !isFocused() { Thread.sleep(forTimeInterval: 0.2) }
+            if isFocused() { break }
+        }
+        XCTAssertTrue(isFocused(), "\(element) never took keyboard focus")
         element.typeText(text)
     }
 
