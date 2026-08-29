@@ -127,6 +127,7 @@ extension JournalView {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("journalRowContextLine")
                 // The shared read-only component rather than a third hand-rolled copy. It renders
                 // nothing when both halves are nil, so an entry from before these fields existed is
                 // unchanged. See `JournalEnergyMoodBadge`.

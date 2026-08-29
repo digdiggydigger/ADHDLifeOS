@@ -165,7 +165,11 @@ struct JournalEnergyMoodBadge: View {
                         .minimumScaleFactor(0.8)
                 }
             }
+            // `.combine` FIRST, then the identifier: the pair is one element to VoiceOver, and the
+            // identifier names that element rather than being inherited by the two texts inside it
+            // (the container-accessibility rule that has bitten this project before).
             .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("energyMoodBadge")
         }
     }
 }
