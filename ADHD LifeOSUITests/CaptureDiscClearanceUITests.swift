@@ -31,7 +31,14 @@ final class CaptureDiscClearanceUITests: XCTestCase {
     /// rather than on the call.
     @MainActor
     func testNudges_theNewNudgeRowIsNotUnderTheCaptureDisc() throws {
-        let app = try UITestSession.launchSignedIn(label: "discnudges")
+        // Seeded BEFORE launch, and not optional: Today's whole nudges section is guarded on
+        // `!due.isEmpty || scheduled > 0` (`HomeAccessoryStrips.loadedNudgesSection`), and
+        // first-run seeding creates life areas, tags, tasks and a journal entry but NO nudges.
+        // So on a fresh account the door this journey needs does not exist — which is what the
+        // first run of it reported, accurately, as "Today never rendered the nudges door".
+        let account = try UITestSession.createAccount(label: "discnudges")
+        try seedOverdueNudge(id: UUID(), label: "Stretch", uid: account.uid)
+        let app = try UITestSession.launchSignedIn(as: account)
         openNudges(in: app)
 
         let newNudge = app.buttons["nudgesNewNudgeRow"]
@@ -66,12 +73,20 @@ final class CaptureDiscClearanceUITests: XCTestCase {
     @MainActor
     private func openNudges(in app: XCUIApplication) {
         let door = app.buttons["homeManageNudgesRow"]
+        // Today is a `LazyVStack`, so a row below the fold does not merely fail to be hittable —
+        // it does not EXIST, and `waitForExistence` waits out its whole timeout for something
+        // that will never arrive. It has to be scrolled into being first, then into reach.
         XCTAssertTrue(
-            door.waitForExistence(timeout: UITestSession.timeout),
-            "Today never rendered the nudges door"
+            app.buttons["quickCaptureButton"].waitForExistence(timeout: UITestSession.timeout),
+            "The signed-in tabs never appeared"
         )
-        // The door is below the fold on Today; existing is not reachable.
-        var remaining = 8
+        var remaining = 10
+        while !door.exists, remaining > 0 {
+            app.swipeUp()
+            remaining -= 1
+        }
+        XCTAssertTrue(door.exists, "Today never rendered the nudges door, even scrolled to the end")
+        remaining = 6
         while !door.isHittable, remaining > 0 {
             app.swipeUp()
             remaining -= 1
@@ -79,6 +94,28 @@ final class CaptureDiscClearanceUITests: XCTestCase {
         XCTAssertTrue(
             UITestSession.tap(door, untilExists: app.buttons["nudgesNewNudgeRow"]),
             "The nudges door never opened the nudges screen"
+        )
+    }
+
+    /// One overdue nudge, written straight to Firestore before the app launches.
+    ///
+    /// A copy of `SignedInJourneySupport.seedOverdueNudge`, which lives in an extension on
+    /// `SignedInJourneyUITests` and so is not visible here. Field spellings are the ones that
+    /// decode — `last_fired_at`, `created_at`, `updated_at`, snake_cased — and the schedule fires
+    /// at midnight every day, so the last fire is a month in the past whenever the suite runs.
+    private func seedOverdueNudge(id: UUID, label: String, uid: String) throws {
+        let aMonthAgo = Date().addingTimeInterval(-30 * 24 * 3600)
+        try UITestEmulator.writeDocument(
+            path: "users/\(uid)/nudges/\(id.uuidString)",
+            fields: [
+                "id": UITestEmulator.string(id.uuidString),
+                "label": UITestEmulator.string(label),
+                "schedule": UITestEmulator.string("0 0 * * 0,1,2,3,4,5,6"),
+                "active": UITestEmulator.bool(true),
+                "last_fired_at": UITestEmulator.timestamp(aMonthAgo),
+                "created_at": UITestEmulator.timestamp(aMonthAgo),
+                "updated_at": UITestEmulator.timestamp(aMonthAgo)
+            ]
         )
     }
 

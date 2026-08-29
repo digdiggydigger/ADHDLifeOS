@@ -41,7 +41,9 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
         "Home/HomeView.swift",
         "Home/WeekReviewView.swift",
         "Tasks/TaskListView.swift",
-        "Tasks/TaskDetailView.swift",
+        // The task detail screen's `Form` lives in the sections file, not the primary one — that
+        // split happened in this same block, and this test caught the stale entry.
+        "Tasks/TaskDetailFormSections.swift",
         "Areas/AreasView.swift",
         "Nudges/NudgesView.swift",
         "Capture/CaptureInboxView.swift",
