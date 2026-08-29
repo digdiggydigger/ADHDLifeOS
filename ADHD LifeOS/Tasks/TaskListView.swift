@@ -168,6 +168,7 @@ struct TaskListView: View {
             }
             .padding(16)
         }
+        .captureDiscClearance()
     }
 
     private func rowCard(for group: LifeAreaTaskGroup) -> some View {

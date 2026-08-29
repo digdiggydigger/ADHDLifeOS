@@ -322,6 +322,9 @@ struct HomeView: View {
                 }
                 .padding()
             }
+            // Today's last card — the week-review door — ended flush against the tab bar, which
+            // is where the capture disc floats (E, 2026-08-29).
+            .captureDiscClearance()
             // Pull-to-refresh reloads every Home data source in parallel; the analytics section
             // refetches through its reload token rather than a service reference (it owns its
             // own service by design).

@@ -142,6 +142,7 @@ struct LifeAreaDetailView: View {
             }
             .padding(16)
         }
+        .captureDiscClearance()
         .refreshable { await service.load() }
         .navigationDestination(for: TaskItem.self) { task in
             TaskDetailView(

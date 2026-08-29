@@ -259,11 +259,12 @@ struct CaptureInboxView: View {
                 healthSection
             }
             .padding(16)
-            // The capture disc floats over the bottom of this scroll view, so the last card —
-            // often the Sorted button itself — sat underneath it with nothing below to scroll to
-            // (E's screenshots, 2026-08-28). This is the room to lift it clear.
-            .padding(.bottom, CaptureDiscMetrics.clearance)
         }
+        // The capture disc floats over the bottom of this scroll view, so the last card — often
+        // the Sorted button itself — sat underneath it with nothing below to scroll to (E's
+        // screenshots, 2026-08-28). The room to lift it clear, now the shared modifier: this was
+        // the only screen that had it, and it was padded INTO the content rather than inset.
+        .captureDiscClearance()
         .refreshable {
             await service.refresh()
             allTags = await service.fetchAllTags()

@@ -81,6 +81,7 @@ struct CaptureDetailView: View {
             }
             .padding(16)
         }
+        .captureDiscClearance()
         .sheet(isPresented: $isPresentingPromoteSheet) {
             CapturePromoteSheet(
                 capture: capture,

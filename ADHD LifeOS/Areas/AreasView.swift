@@ -97,6 +97,9 @@ struct AreasView: View {
             }
             .navigationDestination(isPresented: $isPresentingEditor) {
                 LifeAreaEditorListView(client: lifeAreaEditorClient)
+                    // Pushed, so it stays under the disc — unlike Settings' copy of this screen,
+                    // which is inside a sheet and covers the disc entirely.
+                    .captureDiscClearance()
             }
             .navigationDestination(for: LifeArea.self) { lifeArea in
                 LifeAreaDetailView(
@@ -139,6 +142,7 @@ struct AreasView: View {
             }
             .padding(16)
         }
+        .captureDiscClearance()
         .refreshable { await service.load() }
     }
 

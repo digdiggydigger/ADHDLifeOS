@@ -121,3 +121,28 @@ extension View {
 enum CaptureDiscMetrics {
     static let clearance: CGFloat = 60 + 16 + 8
 }
+
+extension View {
+    /// Bottom room for the capture disc, on a scrolling screen that lives INSIDE the tab bar.
+    ///
+    /// The metric above had said since 2026-08-25 that any bottom-of-scroll content lands under
+    /// the disc, and two screens out of ten acted on it — so on the other eight the last row sat
+    /// under an opaque 60pt circle permanently, with nothing below it to scroll to. E hit it on
+    /// the nudges screen, whose last row is the only way to create a nudge (2026-08-29).
+    ///
+    /// `safeAreaInset` rather than `.padding(.bottom,)`, so this works on a `Form` and a `List`
+    /// (whose rows are not ours to pad) as well as on a `ScrollView`, and so one spelling serves
+    /// every screen — see `CaptureDiscClearanceCallSiteTests` for why that matters here.
+    /// Applied OUTSIDE the scroll container, which is what makes it an inset rather than content.
+    ///
+    /// Not for sheets or full-screen covers: they are presented above the disc and hide it.
+    func captureDiscClearance() -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) {
+            // Non-hit-testable, or this reserved strip would swallow taps on the rows that scroll
+            // up through it — the exact reachability problem it exists to fix.
+            Color.clear
+                .frame(height: CaptureDiscMetrics.clearance)
+                .allowsHitTesting(false)
+        }
+    }
+}

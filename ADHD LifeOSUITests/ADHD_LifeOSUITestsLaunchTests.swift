@@ -9,7 +9,9 @@ import XCTest
 
 final class ADHD_LifeOSUITestsLaunchTests: XCTestCase {
 
-    override class var runsForEachTargetApplicationUIConfiguration: Bool {
+    // `static` rather than the template's `class`: the class is final, so the two are the same
+    // thing here, and it clears the suite's last standing lint violation.
+    override static var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
 

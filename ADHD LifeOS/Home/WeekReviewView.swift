@@ -51,6 +51,7 @@ struct WeekReviewView: View {
             }
             .padding(16)
         }
+        .captureDiscClearance()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.pageBackground.ignoresSafeArea())
         .navigationTitle("")

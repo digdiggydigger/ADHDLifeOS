@@ -112,6 +112,9 @@ struct NudgesView: View {
             }
             .padding(16)
         }
+        // `newNudgeRow` is the last row AND the only way to create a nudge, so with nothing below
+        // it to scroll to the disc sat on it permanently — E's report, 2026-08-29.
+        .captureDiscClearance()
         .refreshable { await service.load() }
     }
 
