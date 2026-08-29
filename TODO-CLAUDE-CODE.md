@@ -534,6 +534,67 @@ after comparison when the seeded content is identical, which across emulator run
 
 ---
 
+### FEATURE: F-JournalRowMood — the mood stops floating beside a wrapped line  [x] COMPLETED
+
+**E's device shot, 2026-08-29: "a bug relating to the positioning of the mood ratings on entries."**
+The 2:06am row read `Journal · 💬 Relationships ·` / `at Home 📍` with `😴  low` hanging off to the
+right of neither line.
+
+**Three defects in one row, and the third explains the other two.**
+
+1. **The layout.** `logRow` put the context line, the mood and the energy chip in one
+   `HStack(spacing: 4)`. That reserved a trailing column, so the context wrapped even though the
+   card was wide enough for it — orphaning a `·` at the end of the first line — and an `HStack`
+   centres by default, so against a two-line context the pair floated at neither line's height.
+2. **The wrong label.** It rendered `energy.rawValue` — `"low"` — where `EnergyLevel.chipLabel` is
+   `"low energy"`. That property's own doc comment reads *"The journal list's chip, mirroring the
+   web's `{entry.energyLevel} energy`"*, and the journal list was the one place not using it. It is
+   already unit-tested (`LogEnergyMoodTests:50`); only the view ignored it.
+3. **`JournalEnergyMoodBadge` — "the read-only counterpart: how a written entry shows what it was
+   written with" — existed and was used NOWHERE**, while this row hand-rolled its own copy. That is
+   the THIRD time this exact shape has cost something here: `CaptureRowPresentation.primaryText`
+   (blank photo card, `eddef9b`) and `softInkAsset` (dimmed pad labels, `fff08b9`) were the first
+   two. The hand-rolled copy also dropped the badge's `accessibilityLabel("Mood …")` and its
+   `.combine`, so VoiceOver read a bare emoji as its own element.
+
+**The fix:** the context line gets the whole width, and the shared badge sits on its own row beneath
+it. Nothing has to be aligned to anything, so neither failure mode can return.
+
+**A fourth defect the fix CREATED, caught only by putting it on screen.** The badge was a
+`Label(chipLabel, systemImage: "bolt.fill")`, and the bolt landed immediately beside the mood emoji
+— where `JournalMood.defaultEmoji` is ⚡, so the COMMON case rendered **"⚡ ⚡ medium energy"**. The
+glyph was dropped: `chipLabel` already spells the word "energy", so it duplicated rather than
+informed, and `.combine` is what was really doing the VoiceOver work. This is only visible in a
+render — no unit test can see it — which is the argument for rendering every view change.
+
+**Acceptance criteria**
+- [x] The mood and energy sit in a fixed place that cannot depend on whether the context wrapped.
+- [x] The energy reads `chipLabel` ("low energy"), matching the web and the shared badge.
+- [x] The row uses `JournalEnergyMoodBadge` rather than a fourth hand-rolled copy, so it inherits
+      the VoiceOver labelling too.
+- [x] An entry with neither field is unchanged (the badge renders nothing).
+
+**Honestly stated: no new unit test.** The defect lives entirely in a SwiftUI body, and the model
+guarantee it violated (`chipLabel`) was already tested. Verified by render instead, in dark
+appearance, via a throwaway camera that was deleted afterwards.
+
+**The camera lied once first, and it is the documented trap again.** Its first version looked for
+`app.textViews["logComposerBodyField"]` — but `ComposerTextBox` is a `TextField` with
+`axis: .vertical`, so it silently matched nothing, left the body empty, left Save disabled, and
+photographed the composer it never left. **It PASSED while doing so.** The rebuilt version asserts
+Save is enabled, waits for the composer to stop existing, and asserts the timeline is back before
+the shutter.
+
+**Verified 2026-08-29:**
+```
+swiftlint lint  → Found 2 violations, 0 serious in 544 files (the two known debts; none introduced)
+xcodebuild test → Executed 1838 tests, with 0 failures (0 unexpected)  ** TEST SUCCEEDED **
+render (dark)   → "Journal · 🫀 Health" / "⚡ medium energy" / body — context on its own line,
+                   badge beneath it, one bolt, correct label
+```
+
+---
+
 ### FEATURE: F-AccountName — a name you can actually set  [ ] UNCHECKED
 
 **Settings' Name row is correct code that E will never see fire.** `SettingsView.swift:190` is

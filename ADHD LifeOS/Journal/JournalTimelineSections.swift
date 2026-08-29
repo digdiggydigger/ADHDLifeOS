@@ -113,22 +113,24 @@ extension JournalView {
             timeGutter(log.entryDate)
                 .padding(.top, 16)
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
-                    Text(logKindLine(log))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    if let mood = log.moodEmoji {
-                        Text(mood)
-                            .font(.footnote)
-                    }
-                    if let energy = log.energyLevel {
-                        MomentumChip(
-                            text: energy.rawValue,
-                            background: Color("CardSurfaceSecondary"),
-                            foreground: Color("LabelSecondary")
-                        )
-                    }
-                }
+                // The context line gets the WHOLE width, and what the entry was written with sits
+                // under it (E's device shot, 2026-08-29: the mood was in the wrong place).
+                //
+                // It used to share an `HStack` with the mood and the energy chip, which broke in
+                // two ways at once. The trailing pair reserved a column, so "Journal · 💬
+                // Relationships · at Home 📍" wrapped even though the card was wide enough for it —
+                // leaving a separator orphaned at the end of the first line. And an `HStack`
+                // centres by default, so against a two-line context the pair floated at neither
+                // line's height. Given its own row, the context line stops wrapping and the pair
+                // stops floating; nothing has to be aligned to anything.
+                Text(logKindLine(log))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                // The shared read-only component rather than a third hand-rolled copy. It renders
+                // nothing when both halves are nil, so an entry from before these fields existed is
+                // unchanged. See `JournalEnergyMoodBadge`.
+                JournalEnergyMoodBadge(energyLevel: log.energyLevel, moodEmoji: log.moodEmoji)
                 Text(log.body)
                     .font(.subheadline)
                     .fixedSize(horizontal: false, vertical: true)

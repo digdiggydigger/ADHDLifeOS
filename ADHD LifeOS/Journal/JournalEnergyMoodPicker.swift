@@ -151,7 +151,14 @@ struct JournalEnergyMoodBadge: View {
                 }
 
                 if let energyLevel {
-                    Label(energyLevel.chipLabel, systemImage: "bolt.fill")
+                    // No glyph, and that is not an oversight. This was a `Label` with `bolt.fill`
+                    // until the badge was actually put on screen (2026-08-29) — where the bolt
+                    // landed immediately beside the mood emoji, and `JournalMood.defaultEmoji` is
+                    // ⚡, so the COMMON case rendered "⚡ ⚡ medium energy". `chipLabel` already
+                    // spells the word "energy", so the icon was carrying no information it did not
+                    // duplicate. The `.combine` below is what keeps VoiceOver reading the pair as
+                    // one element, which is the job the `Label` was really there for.
+                    Text(energyLevel.chipLabel)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
