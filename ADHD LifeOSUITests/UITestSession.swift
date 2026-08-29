@@ -59,7 +59,51 @@ enum UITestSession {
         dismissSystemAlertIfPresent()
         signOutIfSignedIn(app)
         try signIn(app, email: email)
+        awaitFirstRunSeeding(app, uid: account.uid)
         return app
+    }
+
+    /// Waits for first-run seeding to actually land, and retries it the way the APP does.
+    ///
+    /// `seedDefaultContentIfNeeded()` is called best-effort (`try?`) on sign-in, sign-up and
+    /// session restore. That is deliberate and documented: a seeding failure must not fail the
+    /// sign-up, and it retries on the next entry until the `seeded_at` marker lands. The cost of
+    /// that trade is that a failed seed leaves the session with an EMPTY account, and under a
+    /// loaded emulator it does intermittently fail.
+    ///
+    /// It cost two journey failures on 2026-08-29 with two different messages — "No life-area
+    /// chips" and "The decision card rendered a wordless capture as a blank" — which read like
+    /// unrelated UI bugs and were the same missing seed. Note neither is a TAP problem, so
+    /// `tap(_:untilExists:)` cannot help: this is a different race and wants a different fix.
+    ///
+    /// So: observe the DATA, not a screen, and if it never arrives relaunch — which re-enters
+    /// `restoredUser()` and seeds again, i.e. exactly the retry the app promises. Nothing here
+    /// papers over a product bug; it reproduces the product's own contract.
+    @MainActor
+    static func awaitFirstRunSeeding(_ app: XCUIApplication, uid: String, attempts: Int = 2) {
+        let areas = "users/\(uid)/life_areas"
+        for attempt in 1...attempts {
+            if pollForDocuments(in: areas) { return }
+            guard attempt < attempts else { break }
+            // The app's own retry path: a relaunch restores the session and seeds again.
+            app.terminate()
+            app.launch()
+            dismissSystemAlertIfPresent()
+        }
+        XCTFail(
+            "First-run seeding never landed for \(uid) after \(attempts) app launches."
+                + " Every journey depends on the seeded life areas, so this would surface further"
+                + " down as a missing chip or an empty inbox rather than as what it is."
+        )
+    }
+
+    private static func pollForDocuments(in path: String, seconds: TimeInterval = 20) -> Bool {
+        let deadline = Date().addingTimeInterval(seconds)
+        while Date() < deadline {
+            if UITestEmulator.collectionHasDocuments(path: path) { return true }
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        return false
     }
 
     /// Firebase Auth persists its session in the keychain, and the keychain outlives the app

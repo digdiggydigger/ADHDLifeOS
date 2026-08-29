@@ -113,6 +113,27 @@ enum UITestEmulator {
         }
     }
 
+    /// Whether a collection holds at least one document. `Bearer owner` again, for the same
+    /// reason: this must observe what the APP wrote without being subject to the app's rules.
+    ///
+    /// Exists so a journey can wait on SEEDED DATA rather than on a screen. Waiting on the UI
+    /// conflates "the seed has not landed" with "this view has not drawn yet", and those want
+    /// different fixes — the two intermittent captures-journey failures (2026-08-29) were the
+    /// former while reading exactly like the latter.
+    static func collectionHasDocuments(path: String) -> Bool {
+        let endpoint = "http://\(host):\(firestorePort)/v1/projects/\(projectID)"
+            + "/databases/(default)/documents/\(path)?pageSize=1"
+        guard let url = URL(string: endpoint) else { return false }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer owner", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 10
+        guard
+            let data = send(request),
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return false }
+        return (json["documents"] as? [Any])?.isEmpty == false
+    }
+
     static func string(_ value: String) -> [String: Any] { ["stringValue": value] }
     static func bool(_ value: Bool) -> [String: Any] { ["booleanValue": value] }
     static func timestamp(_ date: Date) -> [String: Any] {
