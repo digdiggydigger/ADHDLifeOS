@@ -91,18 +91,22 @@ enum UITestSession {
             settingsButton.waitForExistence(timeout: timeout),
             "Today never presented its Settings control, so the previous session could not be ended"
         )
-        settingsButton.tap()
+        // Retried, not tapped once. See `tap(_:untilExists:)` — this exact call is the one whose
+        // swallowed taps produced four false failures in a single day.
+        XCTAssertTrue(
+            tap(settingsButton, untilExists: app.buttons["settingsDoneButton"]),
+            "Settings did not open after \(3) attempts, so sign-out could never be reached"
+        )
 
         // Wait for the sheet itself before hunting inside it. The scroll loop below used to start
         // after a 2s grace, so a Settings sheet that was still presenting swallowed all eight
         // swipes — which then scrolled TODAY instead, left it somewhere unexpected, and reported
         // "did not present a sign-out control" for a screen that simply had not opened yet. It
         // failed once the suite grew to five journeys and the simulator got slower under them.
-        // `settingsDoneButton` is in the nav bar, so it is present without any scrolling at all.
-        XCTAssertTrue(
-            app.buttons["settingsDoneButton"].waitForExistence(timeout: timeout),
-            "Settings did not open, so sign-out could never be reached"
-        )
+        // `settingsDoneButton` is in the nav bar, so it is present without any scrolling at all —
+        // which is why it is the thing the retry above waits on. The assertion that used to stand
+        // here is gone rather than kept as a second copy: `tap(_:untilExists:)` has already
+        // established it, and a duplicate would only report the same fact twice.
 
         let signOut = app.buttons["signOutButton"]
         // SwiftUI materialises Form rows lazily, so a row below the fold does not EXIST to
@@ -170,6 +174,38 @@ enum UITestSession {
     }
 
     // MARK: - Input
+
+    /// Taps `element` until `expected` shows up, rather than once and hoping.
+    ///
+    /// **This is the single biggest source of false failures in this suite**, and it is not a
+    /// feature, which is exactly why it went unfixed for so long. A tap synthesised while a screen
+    /// is still settling is a silent no-op — XCUITest reports it as delivered — so the run carries
+    /// on and dies at the NEXT assertion with a true statement about the wrong step. Four false
+    /// journey failures in one day (2026-08-28) all read "Settings did not open"; every one passed
+    /// in isolation, and none of them were about Settings.
+    ///
+    /// Waiting for the element before tapping is necessary and was already done — it is not
+    /// sufficient, because existing is not the same as being ready to receive a hit.
+    ///
+    /// Returns whether `expected` ever appeared, so callers can assert with their own message.
+    @MainActor
+    @discardableResult
+    static func tap(
+        _ element: XCUIElement,
+        untilExists expected: XCUIElement,
+        attempts: Int = 3
+    ) -> Bool {
+        guard element.waitForExistence(timeout: timeout) else { return false }
+        let perAttempt = max(2.0, timeout / Double(attempts))
+        for attempt in 1...attempts {
+            if expected.exists { return true }
+            element.tap()
+            if expected.waitForExistence(timeout: perAttempt) { return true }
+            // Re-check the tap target: a swallowed tap can also mean the screen moved under us.
+            if attempt < attempts, !element.exists { return expected.waitForExistence(timeout: perAttempt) }
+        }
+        return expected.exists
+    }
 
     /// Taps `element` and waits for the software keyboard before typing.
     ///

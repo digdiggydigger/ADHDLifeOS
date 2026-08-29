@@ -595,6 +595,82 @@ render (dark)   → "Journal · 🫀 Health" / "⚡ medium energy" / body — co
 
 ---
 
+### FEATURE: F-JournalJourney — the Journal tab gets a journey, and it asserts LAYOUT  [x] COMPLETED
+
+**Closes both caveats E called out on `e7c5b7c`:** that fix had no test that runs, and it was
+verified by a throwaway camera that was deleted afterwards.
+
+**The journey asserts GEOMETRY, not existence — and that distinction is the whole point.** An
+existence check would have PASSED on the broken build: the badge was on screen the entire time,
+just beside the context line instead of below it.
+
+```
+1. badge.frame.minY >= context.frame.maxY - 2   below, not beside
+2. badge.frame.minX == context.frame.minX ± 2   same left edge, not pushed trailing
+3. badge.label contains "energy"                chipLabel, not the bare rawValue
+```
+
+**Proved by deliberate regression, not asserted.** Reintroducing the exact `HStack` from E's
+screenshot makes it fail with the right message:
+
+```
+XCTAssertGreaterThanOrEqual failed: ("270.0") is less than ("283.66666666666663")
+  - The mood/energy badge overlaps the context line's row — it is beside it, not below it
+```
+
+Working code was committed (`f4b84e1`) BEFORE that regression, restored with `git checkout --`, and
+the restore proved by re-running rather than by inspection — per [[never-destroy-uncommitted-work]].
+
+**The retry loop finally landed, and only because it blocked this.** After restoring, the journey
+failed with "No compose button" — the tab tap swallowed while Today was still settling. That is the
+same single-unretried-tap weakness flagged for `settingsButton` across four false failures on
+2026-08-28. **A guard that fails randomly is not a guard**, so `UITestSession.tap(_:untilExists:)`
+now retries and is wired into both this journey and `signOutIfSignedIn`. The duplicate assertion
+that used to follow the settings tap is deleted rather than left as a second copy of the same fact.
+
+Evidence it worked: in the six-journey run, **all four journeys that historically flaked in
+`signOutIfSignedIn` passed** — `testCreateTask`, `testSettings`, `testTaskDetail`, `testDueNudge`.
+
+**Two traps this produced, both new angles on known ones:**
+- `.accessibilityElement(children: .combine)` publishes one element whose **TYPE is not
+  guaranteed**. Querying `otherElements` found nothing while the badge was plainly on screen; the
+  first run failed with "No energy/mood badge" for exactly that. The query is
+  `descendants(matching: .any)`.
+- Lint flagged the new journey twice — `SignedInJourneyUITests` file_length 409 and a
+  function_body_length of 52. **Both were FIXED, not accepted**: the journey moved to its own
+  `JournalJourneyUITests` class and its body split across a `writeAJournalEntry` helper.
+
+**Acceptance criteria**
+- [x] The Journal tab has a journey that runs, closing a documented gap.
+- [x] It fails on the actual defect, proved by reintroducing it.
+- [x] The retry loop exists and is used by the call site with the known history.
+- [x] No new lint debt.
+
+**Verified 2026-08-29:**
+```
+swiftlint lint          → Found 2 violations, 0 serious in 545 files (the two known debts)
+xcodebuild test (unit)  → Executed 1838 tests, with 0 failures (0 unexpected)
+journey (red check)     → FAILS on the reintroduced bug, with the geometry message above
+journey (restored)      → Executed 1 test, with 0 failures (0 unexpected)
+six journeys            → Executed 6 tests, with 1 failure in 695.723s
+                          the 1 = testCapturesTab, and it is NOT this change — see below
+```
+
+**[OPEN, and separate] `testCapturesTab` has a SEEDING race, distinct from the tap race just
+fixed.** Across three runs it failed twice with two DIFFERENT messages — "No life-area chips"
+(`SignedInJourneyUITests:283`) and "The decision card rendered a wordless capture as a blank"
+(`SignedInJourneySupport:88`) — and passed on the third, in isolation. Both messages are about
+seeded content not being present yet, not about a tap.
+
+It is **not** caused by this work: it passed in the five-journey run at `fff08b9` this morning, and
+nothing since touches the capture inbox (`c864c1c`/`78053ce` are colour tokens; `e7c5b7c`/`f4b84e1`
+touch the journal timeline row). Independent corroboration: a composer render taken at `fff08b9`,
+before any journey change, showed **no life areas and no tags at all** — the same symptom, from
+before this branch of work. The seed evidently does not always complete before the UI reads it.
+`tap(_:untilExists:)` cannot help here; this wants the journey to wait on seeded content.
+
+---
+
 ### FEATURE: F-AccountName — a name you can actually set  [ ] UNCHECKED
 
 **Settings' Name row is correct code that E will never see fire.** `SettingsView.swift:190` is

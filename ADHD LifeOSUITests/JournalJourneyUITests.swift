@@ -73,19 +73,23 @@ final class JournalJourneyUITests: XCTestCase {
     @MainActor
     private func writeAJournalEntry(in app: XCUIApplication) -> String {
 
+        // Retried taps throughout. A tab tap taken while Today is still settling is a silent
+        // no-op, and this journey failed once with "No compose button" for precisely that reason —
+        // a true statement about a screen it had never actually left.
         let journalTab = app.tabBars.buttons["Journal"]
-        XCTAssertTrue(journalTab.waitForExistence(timeout: UITestSession.timeout))
-        journalTab.tap()
-
         let compose = app.buttons["journalComposeButton"]
-        XCTAssertTrue(compose.waitForExistence(timeout: UITestSession.timeout), "No compose button")
-        compose.tap()
+        XCTAssertTrue(
+            UITestSession.tap(journalTab, untilExists: compose),
+            "The Journal tab never presented its compose control"
+        )
+        XCTAssertTrue(
+            UITestSession.tap(compose, untilExists: app.buttons["logComposerType-journal"]),
+            "The composer never opened"
+        )
 
         // Journal, not Log: a Log carries neither energy nor mood, so it would exercise the one
         // case this row leaves alone. The journal composer pre-selects both.
-        let journalChip = app.buttons["logComposerType-journal"]
-        XCTAssertTrue(journalChip.waitForExistence(timeout: UITestSession.timeout), "Composer never opened")
-        journalChip.tap()
+        app.buttons["logComposerType-journal"].tap()
 
         // A life area lengthens the context line, which is what made it wrap in the first place.
         let areaChips = app.buttons.matching(identifier: "composerAreaChip")
