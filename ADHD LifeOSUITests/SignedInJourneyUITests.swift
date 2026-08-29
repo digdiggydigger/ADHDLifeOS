@@ -31,8 +31,10 @@ final class SignedInJourneyUITests: XCTestCase {
         openTasksTab(app)
 
         let createButton = app.buttons["taskCreateButton"]
-        XCTAssertTrue(createButton.waitForExistence(timeout: UITestSession.timeout))
-        createButton.tap()
+        XCTAssertTrue(
+            UITestSession.tap(createButton, untilExists: app.textFields["taskCreateTitleField"]),
+            "The task create sheet never opened"
+        )
 
         // Unique per run: the account is new every time, but a fixed title would still collide
         // with the seeded starter tasks if one were ever renamed to match.
@@ -67,12 +69,14 @@ final class SignedInJourneyUITests: XCTestCase {
         let account = try UITestSession.createAccount(label: "settings")
         let app = try UITestSession.launchSignedIn(as: account)
 
+        // Retried, like every other screen-opening tap in these journeys. A tap swallowed while
+        // Home is still settling is reported as delivered, and the run then dies here claiming
+        // Settings never presented — about a button that was never actually pressed.
         let settingsButton = app.buttons["settingsButton"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: UITestSession.timeout))
-        settingsButton.tap()
-
         let done = app.buttons["settingsDoneButton"]
-        XCTAssertTrue(done.waitForExistence(timeout: UITestSession.timeout), "Settings never presented")
+        XCTAssertTrue(
+            UITestSession.tap(settingsButton, untilExists: done), "Settings never presented"
+        )
 
         // Settings is the only place that says WHICH account this device is on. Until now it said
         // nothing at all — you had to sign out and read the address back to find out.
@@ -107,10 +111,12 @@ final class SignedInJourneyUITests: XCTestCase {
             "A nameless account must not render an empty Name row"
         )
 
-        done.tap()
-
+        // `untilGone`, NOT `untilExists: settingsButton`. Home stays in the hierarchy BEHIND a
+        // sheet, so waiting for its button to exist is satisfied the instant it is asked and
+        // proves nothing about the sheet — the first attempt at this passed that check and then
+        // failed two lines later on the sheet still being up. Wait for the sheet to LEAVE.
         XCTAssertTrue(
-            settingsButton.waitForExistence(timeout: UITestSession.timeout),
+            UITestSession.tap(done, untilGone: done),
             "Dismissing Settings did not return to Home"
         )
         XCTAssertFalse(done.exists, "The Settings sheet was still present after Done")
@@ -144,10 +150,10 @@ final class SignedInJourneyUITests: XCTestCase {
             detailsButton.waitForExistence(timeout: UITestSession.timeout),
             "The seeded task never appeared in the list"
         )
-        detailsButton.tap()
-
         let titleField = app.textFields["taskDetailTitleField"]
-        XCTAssertTrue(titleField.waitForExistence(timeout: UITestSession.timeout), "Task detail never opened")
+        XCTAssertTrue(
+            UITestSession.tap(detailsButton, untilExists: titleField), "Task detail never opened"
+        )
         XCTAssertEqual(
             titleField.value as? String,
             title,
