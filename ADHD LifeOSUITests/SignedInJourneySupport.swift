@@ -26,21 +26,42 @@ extension SignedInJourneyUITests {
         }
     }
 
+    /// Taps a tab until it is actually SELECTED.
+    ///
+    /// These tapped once. A tab tap taken while Today is still settling is a silent no-op, and the
+    /// run then dies at whatever the tab was supposed to reveal — `testCreateTask` failed on
+    /// `taskCreateButton` for exactly this, one commit AFTER `tap(_:untilExists:)` was added and
+    /// wired into `signOutIfSignedIn`. The lesson is that a fix for a class of bug has to be
+    /// applied to every member of the class, not to the one that happened to be failing.
+    ///
+    /// `isSelected` rather than a per-tab landmark, so one helper serves every tab and no caller
+    /// has to know what its destination renders first.
     @MainActor
-    func openCapturesTab(_ app: XCUIApplication) {
-        let tab = app.tabBars.buttons["Captures"]
+    func openTab(_ name: String, in app: XCUIApplication) {
+        let tab = app.tabBars.buttons[name]
         XCTAssertTrue(
             tab.waitForExistence(timeout: UITestSession.timeout),
-            "The Captures tab is missing from the tab bar"
+            "The \(name) tab is missing from the tab bar"
         )
-        tab.tap()
+        let selected = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isSelected == true"), object: tab
+        )
+        for _ in 1...3 {
+            if tab.isSelected { return }
+            tab.tap()
+            if XCTWaiter().wait(for: [selected], timeout: 4) == .completed { return }
+        }
+        XCTAssertTrue(tab.isSelected, "The \(name) tab never became selected")
+    }
+
+    @MainActor
+    func openCapturesTab(_ app: XCUIApplication) {
+        openTab("Captures", in: app)
     }
 
     @MainActor
     func openTasksTab(_ app: XCUIApplication) {
-        let tab = app.tabBars.buttons["Tasks"]
-        XCTAssertTrue(tab.waitForExistence(timeout: UITestSession.timeout), "Tab bar never appeared")
-        tab.tap()
+        openTab("Tasks", in: app)
     }
 
     // MARK: - Firestore fixtures
