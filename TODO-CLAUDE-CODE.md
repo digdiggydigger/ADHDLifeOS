@@ -737,6 +737,104 @@ journey                 → AccountNameJourneyUITests passed (170.289s) — sets
 
 ---
 
+### FEATURE: F-DiscClearance — the capture disc stops sitting on the last row  [x] COMPLETED
+
+**One defect E reported, and the nine other screens that had it.** The FAB overlaps the nudges
+door's last row — `nudgesNewNudgeRow`, a full-width 54pt button that is the ONLY way to create a
+nudge, with nothing below it to scroll to. So the disc sat on it permanently.
+
+**`CaptureDiscMetrics.clearance` already existed and already said this would happen.** Its doc
+comment, written 2026-08-25: *"The FAB is a fixed overlay above the tab bar, so ANY pinned bar or
+bottom-of-scroll content lands underneath it."* Ten screens render inside the `TabView` the disc
+overlays. **Two called it.** That is [[dead-shared-component-pattern]] for the fourth time — a
+helper written, documented, unit-tested, and not called — and the standing lesson from `a943988`
+is that a fix for a class goes to every member, not to the one that happened to be reported.
+
+**Acceptance criteria**
+- [x] One shared modifier, `.captureDiscClearance()`, and exactly one spelling of the vertical
+      clearance in the whole tree. `CaptureInboxView`'s hand-rolled
+      `padding(.bottom, CaptureDiscMetrics.clearance)` — the only site that had it — converted.
+- [x] Applied to every screen under the disc: the five tab roots and everything pushed into their
+      navigation stacks. Sheets and full-screen covers excluded — they cover the disc entirely.
+- [x] `safeAreaInset`, not padding, so ONE spelling serves `ScrollView`, `Form` and `List` alike;
+      a `Form`'s rows are not ours to pad. Non-hit-testable, or the reserved strip would swallow
+      the taps it exists to restore.
+- [x] Tests written first, both red.
+- [x] `TaskDetailView` split — it was at 438/400 before this touched it, and the standing rule is
+      that the next feature touching it splits it.
+
+**The two exclusions are measured, not missed — both are recorded in the call-site test itself.**
+- **`JournalTimelineSections`.** Its composer bar is a `safeAreaInset(edge: .bottom)` that already
+  occupies the disc's band, and already carries the TRAILING half of the same clearance
+  (`JournalView.captureDiscClearance`). Adding the vertical form on top would open a dead 84pt gap
+  under a screen that has been through six colour and layout passes.
+- **`LifeAreaEditorListView`.** Pushed from Areas (under the disc) AND presented inside Settings (a
+  sheet, above it). The clearance is a property of the PRESENTATION, not of the screen, so
+  `AreasView` applies it at its call site and Settings' copy is untouched.
+
+**A call-site test, which is unusual here and deliberate.** The unit suite cannot see this defect
+class: the helper is correct in every one of these bugs, and a SwiftUI body is not reachable from
+XCTest. So `CaptureDiscClearanceCallSiteTests` reads the SOURCE — the layer the claim lives in —
+and asserts three things: every screen under the disc calls the modifier; nobody hand-rolls the
+bottom form; the trailing form has not quietly collapsed into it. It is honest about its limit in
+its own header: it does not catch a brand-new screen, because a list of ten that is wrong loudly
+beats a classifier that is wrong quietly. The geometry itself is asserted on two representative
+screens — one pushed, one tab root — by `CaptureDiscClearanceUITests`, which measures the disc's
+OWN frame rather than trusting a constant copied into the UI test target.
+
+**Verified 2026-08-29:**
+```
+swiftlint lint          → Found 0 violations, 0 serious in 550 files
+                           (was EXACTLY TWO: TaskDetailView file_length 438, and the UITests
+                            static_over_final_class. Both cleared, none introduced.)
+xcodebuild test (unit)  → Executed 1846 tests, with 0 failures (0 unexpected)
+                           ** TEST SUCCEEDED **   (1843 + the 3 written first here)
+journeys (all, alone)   → Executed 12 tests, with 2 failures
+                           9/9 JOURNEYS PASSED, including the two new ones.
+                           The 2 failures are ADHD_LifeOSUITests' old login-form tests, and they
+                           are an ordering artefact, PROVEN not asserted: they fail because a
+                           preceding signed-in journey leaves a Firebase Auth session in the
+                           simulator keychain, so the app restores into the tabs and the login
+                           field never appears. After `xcrun simctl keychain booted reset` both
+                           pass (27.2s / 25.1s). Nothing in this block touches auth or LoginView.
+```
+
+**The red-check, and what it found — this is the part worth reading.**
+
+The geometry journey **passed against a build with the fix deliberately removed.** It was worthless
+as written, and only the red-check said so. Three faults, none of which reasoning would have caught:
+
+1. **It never scrolled, because the screen never filled.** One seeded nudge left the New nudge row
+   at y=308 against a disc at y=728 — 420pt apart, an assertion that could not fire whatever the
+   code did. It seeds TEN now, so the screen scrolls the way E's did.
+2. **The arrival landmark was the row being measured.** `tap(door, untilExists: nudgesNewNudgeRow)`
+   waits for a row below the fold on the screen it just opened, and reported "the nudges door never
+   opened" about a door that had opened fine.
+3. **Waiting for existence before scrolling, twice.** Both screens are `LazyVStack`s; below the fold
+   a row is not merely unhittable, it is ABSENT, so `waitForExistence` waits out its full 45s.
+
+Frames are now traced on PASS as well as failure, because an assertion that only speaks when it
+fails cannot be checked for vacuity. Measured, both ways:
+
+```
+BROKEN   nudges row (16, 720.7, 370, 54)  vs disc (326, 728, 60, 60)  → 46.7pt underneath
+         today  row (16, 683.0, 370, 76)  vs disc (326, 728, 60, 60)  → 31.0pt underneath
+FIXED    nudges row (16, 636.7, 370, 54)  → clear
+         today  row (16, 599.0, 370, 76)  → clear
+         both moved exactly 84pt = CaptureDiscMetrics.clearance
+```
+
+Restored with `git checkout --` and proven by REBUILDING, not assumed.
+
+**Rendered and looked at** (`screenshots/disc-clearance-block/`), because two defects on 2026-08-29
+were introduced BY a fix and invisible to every test. Today, the nudges screen, the task detail
+`Form` and the Journal control all render correctly; the Journal shot is the evidence its exclusion
+was right — its composer bar sits directly above the tab bar with the disc in the space its
+TRAILING padding makes, and 84pt of vertical clearance would have opened a dead gap under it.
+
+
+---
+
 ### FEATURE: F-PadWarmNeutral — the gold pad stops using a cold grey  [x] SUPERSEDED by F-PadBalance
 
 **Do not work this block.** `200d0ea` replaced every cool surface on the pad — the `#E9ECF3` chips
