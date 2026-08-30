@@ -127,9 +127,12 @@ enum CaptureDiscMetrics {
     /// the user is actually scrolling through shows past it. Visual only — the button's outer
     /// frame stays `discDiameter` square, keeping the ≥44pt hit target (§3) and the overlay
     /// stack's layout untouched in both states.
-    static let pillWidth: CGFloat = 40
-    static let pillHeight: CGFloat = 24
-    static let pillGlyphScale: CGFloat = 0.6
+    ///
+    /// Sized by E's device verdict (F-PillTune): the first cut, 40×24, "is too small" — a
+    /// sliver rather than a button. 52×32 stays clearly smaller than the disc it stands in for.
+    static let pillWidth: CGFloat = 52
+    static let pillHeight: CGFloat = 32
+    static let pillGlyphScale: CGFloat = 0.8
 
     /// Derived from the REST state deliberately: the pill is transient, and the last row of
     /// every scroll still has to clear the full disc it settles back into.

@@ -19,7 +19,7 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
 
     func testRootViewInstallsThePanObserver() throws {
         XCTAssertTrue(
-            try Self.rootViewSource().contains("CaptureDiscPanObserver.installOnKeyWindow"),
+            try Self.appSource("RootView.swift").contains("CaptureDiscPanObserver.installOnKeyWindow"),
             "Nothing installs the window-level pan observer, so no drag anywhere can ever reach"
                 + " the activity model — the disc never shrinks and F-DiscPill is dead code."
         )
@@ -27,24 +27,35 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
 
     func testRootViewReadsTheActivityModel() throws {
         XCTAssertTrue(
-            try Self.rootViewSource().contains(".isScrolling"),
+            try Self.appSource("RootView.swift").contains(".isScrolling"),
             "The disc never reads `isScrolling`, so the model can change all it likes and the"
                 + " 60pt circle stays a 60pt circle over the content E reported."
+        )
+    }
+
+    func testRootViewRendersTheDiscLabel() throws {
+        // The face lives in its own file (Theme/CaptureDiscLabel.swift, the 400-line split), so
+        // the chain observer → model → `showsPill` → label needs this link asserted too — a
+        // label nobody renders is the dead-component shape all over again.
+        XCTAssertTrue(
+            try Self.appSource("RootView.swift").contains("CaptureDiscLabel("),
+            "RootView no longer renders `CaptureDiscLabel`, so the morphing face is dead code"
+                + " and whatever replaced it is outside every guard in this file."
         )
     }
 
     // MARK: - The geometry
 
     func testDiscSpellsItsSizeThroughTheMetrics() throws {
-        // The 60pt diameter was inlined in RootView while `CaptureDiscMetrics.clearance` spelled
+        // The 60pt diameter was inlined beside `CaptureDiscMetrics.clearance`, which spelled
         // the SAME 60 as part of its sum — two spellings of one measurement, exactly the drift
-        // the clearance tests exist to prevent. The disc now reads the metric.
-        let source = try Self.rootViewSource()
+        // the clearance tests exist to prevent. The disc's face now reads the metric.
+        let source = try Self.appSource("Theme/CaptureDiscLabel.swift")
         XCTAssertTrue(source.contains("CaptureDiscMetrics.discDiameter"))
         XCTAssertFalse(
             source.contains("width: 60"),
-            "A literal 60pt frame is back in RootView. The disc's size and the clearance must"
-                + " move together — spell it via `CaptureDiscMetrics.discDiameter`."
+            "A literal 60pt frame is back in the disc's face. The disc's size and the clearance"
+                + " must move together — spell it via `CaptureDiscMetrics.discDiameter`."
         )
     }
 
@@ -58,19 +69,22 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
 
     func testPillIsActuallySmallerThanTheDisc() {
         // The entire point of the block. A "pill" the disc's own size would pass every wiring
-        // test and fix nothing.
+        // test and fix nothing. Height was originally bounded at HALF the diameter; E's device
+        // verdict (F-PillTune: "the pill button is too small") raised the pill to 52×32, so the
+        // guard keeps only its real point — strictly smaller than the disc in both axes.
         XCTAssertLessThan(CaptureDiscMetrics.pillWidth, CaptureDiscMetrics.discDiameter)
-        XCTAssertLessThan(CaptureDiscMetrics.pillHeight, CaptureDiscMetrics.discDiameter / 2)
+        XCTAssertLessThan(CaptureDiscMetrics.pillHeight, CaptureDiscMetrics.discDiameter)
         XCTAssertLessThan(CaptureDiscMetrics.pillGlyphScale, 1)
     }
 
     // MARK: - Reading the tree
 
-    private static func rootViewSource() throws -> String {
+    private static func appSource(_ relativePath: String) throws -> String {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()   // ADHD LifeOSTests
             .deletingLastPathComponent()   // repo root
-            .appendingPathComponent("ADHD LifeOS/RootView.swift")
+            .appendingPathComponent("ADHD LifeOS")
+            .appendingPathComponent(relativePath)
         guard let text = try? String(contentsOf: url, encoding: .utf8) else {
             throw PillSourceError.unreadable(url.path)
         }

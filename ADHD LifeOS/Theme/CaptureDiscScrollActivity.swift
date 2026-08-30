@@ -21,10 +21,11 @@ import Foundation
 final class CaptureDiscScrollActivity: ObservableObject {
     @Published private(set) var isScrolling = false
 
-    /// How long the finger must stay up before the disc grows back. Long enough to bridge a
-    /// thumb repositioning between drags, short enough that the disc is back the moment the
-    /// user is plausibly done — the same "one beat" register as `DataChangeSignal`'s 600ms.
-    nonisolated static let settleDelay: TimeInterval = 0.7
+    /// How long the finger must stay up before the disc STARTS growing back. Long enough to
+    /// bridge a thumb repositioning between drags — and deliberately unhurried: E's device
+    /// verdict on the first cut (0.7s) was "needs to regrow EVEN slower" (F-PillTune), so the
+    /// beat is now 1.2s, and the regrow animation itself is a slow expanding fade on top of it.
+    nonisolated static let settleDelay: TimeInterval = 1.2
 
     private let settleDelay: TimeInterval
     private var pendingRestore: Task<Void, Never>?

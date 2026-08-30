@@ -36,6 +36,39 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-PillTune — the pill grows up, and the disc comes back like a sunrise  [x] COMPLETED
+
+**E's device verdict on F-DiscPill (2026-08-30, five stills):** the mechanism works everywhere,
+and two things need retuning: *"the pill button is too small and needs to regrow EVEN slower, a
+slow gradual expanding fade effect would look good."*
+
+**The three turns of the dial:**
+
+1. **Bigger pill** — 40×24 reads as a sliver on device. Goes to **52×32, glyph scale 0.8**:
+   unmistakably a button, still clearly smaller than the 60pt disc it stands in for.
+2. **Longer settle** — `settleDelay` 0.7s → **1.2s**. The finger has to be up for a beat longer
+   before the disc starts coming back.
+3. **The regrow becomes an expanding fade** — the shrink stays a snappy spring (it must feel tied
+   to the finger), but the regrow drops the spring for a **slow `easeOut` (0.9s)**, and the pill
+   state carries slight translucency so the expansion visibly *fades in* to the full disc. One
+   asymmetric-animation ternary; `reduceMotion` still snaps both ways.
+
+**Acceptance criteria:**
+
+- [x] `CaptureDiscMetrics` 52×32, glyph 0.8; the relative guard now bounds height by the full
+      diameter — its point (strictly smaller than the disc) intact.
+- [x] Settle delay 1.2s; the 0.3–1.5s deliberate-beat bounds test holds unchanged.
+- [x] Asymmetric: shrink keeps the finger-tied spring, regrow is `easeOut(0.9)` + a pill-state
+      opacity of 0.85 so the expansion fades in. Reasons in comments at the site.
+- [x] SwiftLint 0 violations, suite 1,886 / 0 (+1: `testRootViewRendersTheDiscLabel`, added
+      because the face moved to `Theme/CaptureDiscLabel.swift` for the 400-line file limit and
+      the wiring chain needed the new link asserted), build green (2026-08-30).
+- [x] Re-rendered on the simulator against the emulator account: `screenshots/disc-pill-tune/`
+      — bigger pill mid-drag, a frame mid-regrow, settled disc. Feel verdict stays E's, on
+      device.
+
+---
+
 ### FEATURE: F-DiscPill — the capture disc gets out of the way while you scroll  [x] COMPLETED
 
 **Queued 2026-08-30 via the post-nudges session opener; E's report, made twice:** the capture disc
