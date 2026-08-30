@@ -63,8 +63,14 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
         // The pill is a MID-SCROLL state; at rest the disc is still the full 60pt, and the last
         // row of every scroll still has to clear it. Eleven call sites depend on this number —
         // if it changes, it must change because the REST geometry changed, not the pill's.
-        XCTAssertEqual(CaptureDiscMetrics.clearance, 84)
-        XCTAssertEqual(CaptureDiscMetrics.clearance, CaptureDiscMetrics.discDiameter + 16 + 8)
+        // 92, not 84, since E's 2026-08-31 margin pass: trailing margin 16 → 24 AND the disc
+        // lifted 8pt off the tab bar — the SAME delta on both axes, which is what lets one
+        // number keep serving the bottom inset and the trailing clearance alike.
+        XCTAssertEqual(CaptureDiscMetrics.clearance, 92)
+        XCTAssertEqual(
+            CaptureDiscMetrics.clearance,
+            CaptureDiscMetrics.discDiameter + CaptureDiscMetrics.edgeMargin + 8
+        )
     }
 
     func testPillIsActuallySmallerThanTheDisc() {

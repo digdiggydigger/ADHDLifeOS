@@ -63,9 +63,18 @@ deep-field gradient FAB + the same glass fan. **E chose B, explicitly.**
 
 **Verified:** SwiftLint 0, suite 1,887 / 0, build green, simulator renders of both variants.
 
-- [ ] OUTSTANDING — E's on-device look. E has already queued the follow-up: *"very small
-      adjustments to the top and bottom spacing (maybe a padding issue?)"* — awaiting E's
-      specifics with the build in hand.
+- [x] **APPROVED BY E ON DEVICE, 2026-08-31** — six screenshots (IMG_8124–8130, light AND
+      dark): *"variant B looks very nice."* The glass fan and gradient disc hold up in both
+      appearances in the field.
+
+**Addendum — E's margin pass (2026-08-31):** *"ADD more spacing/padding to the top and bottom of
+the capture button when it is in pill form. ALSO the WHOLE capture icon location needs more
+Margin applied to the bottom and right-hand side."* Shipped as: pill 52×32 → **52×40**; trailing
+margin 16 → **24** (now `CaptureDiscMetrics.edgeMargin`, read by RootView); the overlay stack
+lifted 52 → **60** off the tab bar — the SAME 8pt delta on both axes, which is what lets
+`clearance` stay one number (84 → **92**) for the bottom inset and the trailing clearance alike.
+All eleven `.captureDiscClearance()` call sites inherit 92 automatically; the freeze test moved
+with the derivation. Suite 1,887 / 0.
 
 ---
 

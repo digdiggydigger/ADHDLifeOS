@@ -117,7 +117,7 @@ extension View {
 /// 2026-08-25) and again on the inbox's Sorted button and undo bar (E's screenshots,
 /// 2026-08-28) — where it made the undo bar's own Undo button unreachable.
 ///
-/// 60pt disc + its 16pt trailing margin + an 8pt breathing gap.
+/// 60pt disc + its 24pt edge margin + an 8pt breathing gap.
 enum CaptureDiscMetrics {
     /// The disc at rest. RootView reads this — the disc's size and the clearance below must
     /// move together, so the measurement is spelled once.
@@ -131,7 +131,9 @@ enum CaptureDiscMetrics {
     /// Sized by E's device verdict (F-PillTune): the first cut, 40×24, "is too small" — a
     /// sliver rather than a button. 52×32 stays clearly smaller than the disc it stands in for.
     static let pillWidth: CGFloat = 52
-    static let pillHeight: CGFloat = 32
+    /// 40, not 32 — E's second device pass (2026-08-31): "ADD more spacing/padding to the top
+    /// and bottom of the capture button when it is in pill form."
+    static let pillHeight: CGFloat = 40
     static let pillGlyphScale: CGFloat = 0.8
 
     /// E's number, chosen off the device GIF (2026-08-30): "try .68 — just below the 0.7 sweet
@@ -141,9 +143,14 @@ enum CaptureDiscMetrics {
     /// would read as disabled — keep taste changes above that floor.
     static let pillOpacity: CGFloat = 0.68
 
+    /// The disc's distance from the trailing screen edge — and, since E's 2026-08-31 margin
+    /// pass raised the disc by the same 8pt the margin grew, the number that keeps the
+    /// clearance sum true on BOTH axes at once.
+    static let edgeMargin: CGFloat = 24
+
     /// Derived from the REST state deliberately: the pill is transient, and the last row of
     /// every scroll still has to clear the full disc it settles back into.
-    static let clearance: CGFloat = discDiameter + 16 + 8
+    static let clearance: CGFloat = discDiameter + edgeMargin + 8
 }
 
 extension View {

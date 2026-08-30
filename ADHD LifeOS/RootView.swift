@@ -207,7 +207,7 @@ struct RootView: View {
                         } label: {
                             CaptureDiscLabel(isFabOpen: isFabOpen, showsPill: showsPill)
                         }
-                        .padding(.trailing, 16)
+                        .padding(.trailing, CaptureDiscMetrics.edgeMargin)
                         .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
                         .accessibilityIdentifier("quickCaptureButton")
 
@@ -224,9 +224,11 @@ struct RootView: View {
                     }
                     // Full width with trailing alignment: with no timer bar the stack used to
                     // shrink to the disc and the .bottom overlay CENTRED it mid-screen (E's
-                    // position review, 2026-08-25). Trailing-pinned, ~12pt above the tab bar.
+                    // position review, 2026-08-25). Trailing-pinned; E's 2026-08-31 margin pass
+                    // lifted it a further 8pt off the tab bar (52 → 60), matching the trailing
+                    // margin's 16 → 24 so `clearance` stays one number for both axes.
                     .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.bottom, 52)
+                    .padding(.bottom, 60)
                     .animation(
                         reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
                         value: focusService.isActive
