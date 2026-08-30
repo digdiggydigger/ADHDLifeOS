@@ -138,6 +138,27 @@ exactly how a genuine failure eventually gets waved through.
       a relaunch still reaches the login form.
 - [x] Red-checked before the fix, and deliberately regressed after it.
 
+**The deliberate regression, run 2026-08-30 after the block was committed and pushed.** The guard
+had only ever gone red for the ORIENTATION reason (F-PortraitArrival), never for the reason it
+exists — and [[geometry-journey-vacuity]] is this repo's standing proof that a test can pass
+against a build with its fix removed. So `signOutIfSignedIn(app)` was removed from
+`launchSignedOut`, the tree REBUILT, and the guard run against it:
+
+```
+BROKEN    SignedOutLaunchUITests.swift:40: error: XCTAssertTrue failed - A relaunch after
+          signing in restored the session instead of reaching the login form.
+          Executed 1 test, with 1 failure (0 unexpected) in 143.062s   EXIT=65
+
+RESTORED  git checkout -- ; REBUILT (exit 0); signOutIfSignedIn(app) back at lines 61 and 95
+          Executed 1 test, with 0 failures (0 unexpected) in 166.768s  EXIT=0
+          ** TEST EXECUTE SUCCEEDED **       working tree clean
+```
+
+Two things make that a real check rather than a ritual. It failed at **line 40 — its own
+assertion, in its own words** — not incidentally at an earlier step, which is how a vacuous test
+fakes a red. And `resetToPortrait` was left in place throughout, so orientation is excluded and
+the missing sign-out was the only variable. Restoration was proven by REBUILDING, not assumed.
+
 **A second change, deliberate and worth flagging.** `ADHD_LifeOSUITests` carried its own
 `focusAndType`, a drifted copy of `UITestSession.focusAndType`. The shared one is strictly better
 — it retries on FOCUS rather than on the keyboard existing, which is the distinction that made the
