@@ -21,13 +21,12 @@ final class ADHD_LifeOSUITestsLaunchTests: XCTestCase {
 
     @MainActor
     func testLaunch() throws {
-        let app = XCUIApplication()
-        app.launch()
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
+        // `launchSignedOut` rather than a bare launch, for the same reason the login tests use
+        // it: Firebase Auth's session survives in the simulator keychain across whole runs, so
+        // a bare launch here photographs whichever state the PREVIOUS run happened to leave —
+        // the tab bar as often as the launch screen. This test cannot fail (it only attaches an
+        // image), which is precisely why the picture has to be deterministic to be worth having.
+        let app = UITestSession.launchSignedOut()
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"

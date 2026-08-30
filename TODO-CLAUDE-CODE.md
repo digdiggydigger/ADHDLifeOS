@@ -36,6 +36,71 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-LoginTestIsolation — the login tests stop inheriting the last run's session  [x] COMPLETED
+
+**Two failures on every full UI-target run, and the harness caused both.**
+`testLoginForm_rendersFieldsAndValidatesInput` and
+`testSignIn_invalidCredentials_showsInlineErrorAndStaysOnLoginForm` only called `app.launch()`.
+Firebase Auth persists its session in the simulator keychain; the keychain outlives the app
+process **and the whole test run**; so the app restored into the tab bar and `loginEmailField`
+never appeared.
+
+**Why those two tests could not be their own guard — this is the part that was not yet written
+down.** XCTest orders classes by name and `ADHD_LifeOSUITests` sorts ahead of every journey, so
+within a single run they execute BEFORE anything signs in, and pass. The session that breaks them
+is left by the PREVIOUS run. That is why `xcrun simctl keychain booted reset` made them pass, and
+why it was never a fix: a person has to remember it, every time, forever.
+
+**And that is the real cost.** Two failures that must be manually discounted on every run is
+exactly how a genuine failure eventually gets waved through.
+
+**Acceptance criteria**
+- [x] `UITestSession.launchSignedOut()` — one entry point, reusing the harness's own
+      `signOutIfSignedIn` rather than a second copy of the sign-out walk.
+- [x] The emulator host is set **only when the emulator answers**. A keychain session can only
+      have come from a journey, and journeys only run against the emulator — so this signs out of
+      the same backend that signed in. With no emulator there is nothing to point at, and
+      `ADHD_LifeOSUITests`' own header promise (fresh clone, zero local setup) still holds.
+- [x] Applied to every member of the class, not just the two that were reported:
+      `testLaunchPerformance` (it was timing whichever state got restored) and
+      `ADHD_LifeOSUITestsLaunchTests.testLaunch` (it was photographing one).
+- [x] `UITestEmulator.isRunning` exposed — a test can now ADAPT to the emulator, not only skip.
+- [x] `SignedOutLaunchUITests`, the guard neither existing test can be: it signs in, then asserts
+      a relaunch still reaches the login form.
+- [x] Red-checked before the fix, and deliberately regressed after it.
+
+**A second change, deliberate and worth flagging.** `ADHD_LifeOSUITests` carried its own
+`focusAndType`, a drifted copy of `UITestSession.focusAndType`. The shared one is strictly better
+— it retries on FOCUS rather than on the keyboard existing, which is the distinction that made the
+password field type into nowhere — and the local copy had none of that. Deleted in favour of the
+shared one. This is [[dead-shared-component-pattern]] again: a helper exists, is documented, and a
+caller hand-rolls a worse copy beside it.
+
+**Verified 2026-08-30:**
+```
+RED   (unmodified main, a journey's session in the keychain)
+      ADHD_LifeOSUITests.swift:50: error: testLoginForm_rendersFieldsAndValidatesInput
+      ADHD_LifeOSUITests.swift:80: error: testSignIn_invalidCredentials_showsInlineError…
+      Executed 2 tests, with 2 failures (0 unexpected) in 83.652 seconds
+      ** TEST EXECUTE FAILED **   EXIT=65
+
+GREEN (same keychain session, with the fix)
+      testLoginForm_rendersFieldsAndValidatesInput                passed (89.245 seconds)
+      testSignIn_invalidCredentials_showsInlineErrorAndStays…     passed (69.546 seconds)
+      Executed 2 tests, with 0 failures (0 unexpected) in 158.792 seconds
+      ** TEST EXECUTE SUCCEEDED **   EXIT=0
+
+swiftlint lint  →  Found 0 violations, 0 serious in 551 files   (550 + the new test file;
+                   the zero baseline set by F-DiscClearance holds)
+```
+
+**The exit-code trap fired again, and the standing rule caught it.** The green-check run's shell
+reported success while the real `xcodebuild` exit was 65, because `echo "EXIT=$?" | tee` returns
+tee's status, not xcodebuild's. `EXIT=` was captured separately, which is the only reason the RED
+above is a measurement rather than an assumption. See [[build-machine-limits]].
+
+---
+
 ### FEATURE: F-TriageCardTruth — the decision card says what it is, and the tabs say how many  [x] COMPLETED
 
 **Two defects, both visible in one screenshot of the Capture Inbox, both about a number or a word

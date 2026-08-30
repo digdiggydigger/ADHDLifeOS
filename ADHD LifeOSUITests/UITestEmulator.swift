@@ -32,7 +32,7 @@ enum UITestEmulator {
     /// `XCTSkip`s the calling test when the Emulator Suite is not up. Integration tests must not
     /// fail a machine that has never started it — see CLAUDE.md's "Firebase emulator" section.
     static func skipUnlessRunning() throws {
-        guard isRunning() else {
+        guard isRunning else {
             throw XCTSkip(
                 """
                 Firebase Emulator Suite is not running at \(host):\(firestorePort). \
@@ -42,7 +42,14 @@ enum UITestEmulator {
         }
     }
 
-    private static func isRunning() -> Bool {
+    /// Whether the Emulator Suite is answering.
+    ///
+    /// Exposed rather than kept behind `skipUnlessRunning` because a test can want to ADAPT to
+    /// the emulator instead of skipping on it. `UITestSession.launchSignedOut()` is the case:
+    /// it must reach the login screen on a fresh clone with no emulator at all, AND sign out of
+    /// an emulator session a journey left in the keychain — so it asks, rather than assuming
+    /// either way.
+    static var isRunning: Bool {
         guard let url = URL(string: "http://\(host):\(firestorePort)/") else { return false }
         var request = URLRequest(url: url)
         request.timeoutInterval = 3

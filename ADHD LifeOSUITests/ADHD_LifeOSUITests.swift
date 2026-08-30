@@ -11,6 +11,12 @@
 //  work. What remains runs against the login screen only — no account, no network writes — so
 //  the target compiles and passes on a fresh clone with zero local setup.
 //
+//  That fresh-clone promise still holds, and `UITestSession.launchSignedOut()` is what keeps it
+//  honest. These tests need the LOGIN screen, and a bare `app.launch()` does not guarantee one:
+//  Firebase Auth persists its session in the simulator keychain, which outlives the whole test
+//  RUN, so a session left by the previous run's journeys restored the app straight into the tab
+//  bar. Both tests below failed on it for exactly that reason. See F-LoginTestIsolation.
+//
 
 import XCTest
 
@@ -20,34 +26,19 @@ final class ADHD_LifeOSUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Taps `element` and waits for the software keyboard to appear before typing.
-    ///
-    /// On a headless simulator, XCUITest can synthesize a tap before SwiftUI has actually
-    /// granted the field keyboard focus, which surfaces as "Neither element nor any descendant
-    /// has keyboard focus" from `typeText`. Waiting for `isHittable` and then for
-    /// `app.keyboards` to appear confirms focus landed before we type, instead of guessing
-    /// with a fixed sleep.
-    @MainActor
-    private func focusAndType(_ element: XCUIElement, text: String, in app: XCUIApplication) {
-        XCTAssertTrue(element.waitForExistence(timeout: 10))
-        let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: element)
-        XCTAssertEqual(XCTWaiter().wait(for: [hittable], timeout: 10), .completed, "\(element) never became hittable")
-        element.tap()
-        let keyboardAppeared = app.keyboards.element.waitForExistence(timeout: 10)
-        XCTAssertTrue(keyboardAppeared, "Keyboard did not appear after tapping \(element)")
-        element.typeText(text)
-    }
-
     @MainActor
     func testLoginForm_rendersFieldsAndValidatesInput() throws {
-        let app = XCUIApplication()
-        app.launch()
+        let app = UITestSession.launchSignedOut()
 
         let emailField = app.textFields["loginEmailField"]
         let passwordField = app.secureTextFields["loginPasswordField"]
         let signInButton = app.buttons["signInButton"]
 
-        XCTAssertTrue(emailField.waitForExistence(timeout: 15))
+        XCTAssertTrue(
+            emailField.waitForExistence(timeout: UITestSession.timeout),
+            "The login form never appeared. If the tab bar is up instead, the app restored a"
+                + " previous session and `launchSignedOut` failed to end it."
+        )
         XCTAssertTrue(passwordField.exists)
         XCTAssertTrue(signInButton.exists)
         // Both alternative sign-in paths are stub-and-hide flags on LoginView, defaulting off:
@@ -61,35 +52,47 @@ final class ADHD_LifeOSUITests: XCTestCase {
 
         XCTAssertFalse(signInButton.isEnabled, "Sign In should be disabled with empty fields")
 
-        focusAndType(emailField, text: "e@example.com", in: app)
+        UITestSession.focusAndType(emailField, text: "e@example.com", in: app)
         XCTAssertFalse(signInButton.isEnabled, "Sign In should stay disabled until a password is entered too")
 
-        focusAndType(passwordField, text: "correct-horse", in: app)
+        UITestSession.focusAndType(passwordField, text: "correct-horse", in: app)
         XCTAssertTrue(signInButton.isEnabled, "Sign In should enable once both fields are filled")
     }
 
     @MainActor
     func testSignIn_invalidCredentials_showsInlineErrorAndStaysOnLoginForm() throws {
-        let app = XCUIApplication()
-        app.launch()
+        let app = UITestSession.launchSignedOut()
 
         let emailField = app.textFields["loginEmailField"]
         let passwordField = app.secureTextFields["loginPasswordField"]
         let signInButton = app.buttons["signInButton"]
 
-        XCTAssertTrue(emailField.waitForExistence(timeout: 15))
+        XCTAssertTrue(
+            emailField.waitForExistence(timeout: UITestSession.timeout),
+            "The login form never appeared — see the note on the test above."
+        )
 
-        focusAndType(emailField, text: "nonexistent-user@example.com", in: app)
-        focusAndType(passwordField, text: "definitely-wrong-password", in: app)
+        UITestSession.focusAndType(emailField, text: "nonexistent-user@example.com", in: app)
+        UITestSession.focusAndType(passwordField, text: "definitely-wrong-password", in: app)
         signInButton.tap()
 
         let errorMessage = app.staticTexts["loginErrorMessage"]
-        XCTAssertTrue(errorMessage.waitForExistence(timeout: 15), "An inline error should appear on failed sign-in")
+        XCTAssertTrue(
+            errorMessage.waitForExistence(timeout: UITestSession.timeout),
+            "An inline error should appear on failed sign-in"
+        )
         XCTAssertTrue(emailField.exists, "Login form should remain visible, not crash or silently fail")
     }
 
     @MainActor
     func testLaunchPerformance() throws {
+        // Signed out ONCE, outside the measured block. A restored session changes what launch
+        // DOES — the tab bar and its first Firestore reads instead of the login form — so a run
+        // that inherited one would be timing a different app than the run before it, and the
+        // metric would drift for a reason that has nothing to do with launch. The block itself
+        // stays a bare launch, because that is the thing being measured.
+        _ = UITestSession.launchSignedOut()
+
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()
         }

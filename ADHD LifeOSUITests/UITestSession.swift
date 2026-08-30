@@ -63,6 +63,37 @@ enum UITestSession {
         return app
     }
 
+    /// A launched app sitting on the LOGIN screen, whatever the last run left in the keychain.
+    ///
+    /// Firebase Auth persists its session in the simulator keychain, and the keychain outlives
+    /// both the app process and the whole test RUN. The two login tests in `ADHD_LifeOSUITests`
+    /// only called `app.launch()`, so they inherited the account the previous run's last journey
+    /// signed into, restored straight into the tab bar, and failed on a `loginEmailField` that
+    /// was never going to appear. `xcrun simctl keychain booted reset` made them pass — which is
+    /// what PROVED the cause, and is not a fix, because a person has to remember it every time.
+    ///
+    /// Two failures on every full UI run is worse than it sounds: they have to be manually
+    /// discounted each time, which is exactly how a real failure eventually gets waved through.
+    ///
+    /// **The emulator host is set only when the emulator is actually answering.** A session in
+    /// the keychain can only have come from a journey, and journeys only ever run against the
+    /// emulator — so pointing at it here signs out of the same backend that signed in. With no
+    /// emulator there is nothing to point at, and `ADHD_LifeOSUITests`' promise in its own header
+    /// holds: those tests still need zero local setup on a fresh clone.
+    @MainActor
+    static func launchSignedOut() -> XCUIApplication {
+        let app = XCUIApplication()
+        if UITestEmulator.isRunning {
+            app.launchEnvironment[emulatorHostKey] = UITestEmulator.host
+        }
+        app.launch()
+        // Before anything queries the app's own UI: a SpringBoard alert renders above it, so a
+        // prompt left standing makes every query miss. Same reason as `launchSignedIn`.
+        dismissSystemAlertIfPresent()
+        signOutIfSignedIn(app)
+        return app
+    }
+
     /// Waits for first-run seeding to actually land, and retries it the way the APP does.
     ///
     /// `seedDefaultContentIfNeeded()` is called best-effort (`try?`) on sign-in, sign-up and
