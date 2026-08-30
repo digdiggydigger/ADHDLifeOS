@@ -76,6 +76,12 @@ lifted 52 → **60** off the tab bar — the SAME 8pt delta on both axes, which 
 All eleven `.captureDiscClearance()` call sites inherit 92 automatically; the freeze test moved
 with the derivation. Suite 1,887 / 0.
 
+**SETTLED BY E ON DEVICE, 2026-08-31** — after two more dials (pill height 40 → 48, then width
+52 → 60, i.e. "goto 4pt" per side): *"those proportions look much better on the app."* The
+capture-disc arc is closed end to end: F-DiscPill → F-PillTune (0.68 glass) → F-FabDeepField
+(gradient + glass fan + margins + 60×48 pill). Do not reopen any of these numbers without a new
+E verdict.
+
 ---
 
 ### FEATURE: F-PillTune — the pill grows up, and the disc comes back like a sunrise  [x] COMPLETED
