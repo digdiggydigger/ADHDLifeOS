@@ -216,12 +216,13 @@ extension HomeView {
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("homeNudgesSection")
             // Latch the moment a nudge exists, so the first-run door is genuinely first-run.
-            // `.task` covers arriving with content already loaded; `.onChange` covers the list
-            // arriving afterwards and the user creating their very first nudge. Writing this in
-            // the body instead would mutate state during view evaluation.
-            .task { if hasAny { hasEverHadNudges = true } }
+            // `.task` covers arriving with content already loaded AND reads the stored answer for
+            // whichever account is signed in; `.onChange` covers the list arriving afterwards and
+            // the user creating their very first nudge. Writing this in the body instead would
+            // mutate state during view evaluation.
+            .task { refreshNudgeFirstRunMarker(hasAny: hasAny) }
             .onChange(of: hasAny) { any in
-                if any { hasEverHadNudges = true }
+                refreshNudgeFirstRunMarker(hasAny: any)
             }
         }
     }
@@ -259,6 +260,16 @@ extension HomeView {
 
     /// The door's header row, split out only because the card was over its 50-line budget with it
     /// inline. Mirrors `inboxPeekCard`'s header exactly: 44pt tinted tile, title, subtitle, chip.
+    /// Reads, and where warranted latches, the signed-in account's first-run marker.
+    ///
+    /// Keyed by uid rather than by device — see `NudgeFirstRunMarker`. With no signed-in user
+    /// there is nothing to key on, so the door stays in its ordinary state rather than guessing.
+    func refreshNudgeFirstRunMarker(hasAny: Bool) {
+        guard let uid = authService.signedInUser?.id.uuidString else { return }
+        if hasAny { NudgeFirstRunMarker.markHasHadNudges(uid: uid) }
+        hasEverHadNudges = NudgeFirstRunMarker.hasEverHadNudges(uid: uid)
+    }
+
     /// The card's one bright control on a first run — muted context, lit action.
     ///
     /// A separate 44pt button rather than text inside the header, because "Add your first nudge"

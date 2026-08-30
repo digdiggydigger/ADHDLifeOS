@@ -80,10 +80,26 @@ Muted context, one lit action.
 **Acceptance criteria**
 - [x] `HomeNudgesSection.shouldRenderSection(hasAny:hasEverHadAny:)` — pure, three tests written
       first, covering all three states including the preserved silence.
-- [x] `@AppStorage("nudges.hasEverHadAny")`, following the house pattern
-      (`home.lifeAreasCollapsed`). Latched by `.task` (arriving with content) AND `.onChange`
-      (the list arriving later, or the user creating their first) — never written during body
-      evaluation.
+- [x] `NudgeFirstRunMarker`, keyed **per account** by uid. Latched by `.task` (arriving with
+      content) AND `.onChange` (the list arriving later, or the user creating their first) —
+      never written during body evaluation.
+
+**A defect I shipped inside this block, and the correction.** The flag was first written as a
+plain `@AppStorage("nudges.hasEverHadAny")` — which is UserDefaults, and therefore **per DEVICE**.
+A second account signed into one phone would inherit the first account's answer, so a genuinely
+new user would never see their first-run door: **the exact dead end this block exists to remove,
+reintroduced one layer up.**
+
+Worse, it shipped with a comment asserting the failure was harmless — *"the worst case is the
+empty door appears once more than it needed to, which is the harmless direction"*. That is
+backwards. This flag can only ever SUPPRESS the door, never add a spare one, so **every error it
+makes is in the harmful direction.** The reasoning was done once, written down confidently, and
+not checked.
+
+No test caught it. It surfaced because E asked to SEE the first-run door on the device, which
+forced the question of what would actually happen — and the answer was "nothing, because your
+phone's flag is already set". `NudgeFirstRunMarker` is keyed by uid, and
+`testTwoAccountsOnOneDevice_doNotShareAnAnswer` is the guard that exists so this cannot come back.
 - [x] The first-run face: ⏰ desaturated with **`.grayscale`, not `.opacity`** — an emoji cannot be
       de-emphasised with `foregroundStyle`, and a translucent glyph reads as broken rather than
       quiet. §4 bans opacity as a substitute for semantic colour; desaturating a picture is a
@@ -105,9 +121,9 @@ GREEN  Executed 1 test, with 0 failures (0 unexpected)   EXIT=0
 
 **Verified 2026-08-30:**
 ```
-swiftlint lint          → Found 0 violations, 0 serious in 556 files
-xcodebuild test (unit)  → Executed 1862 tests, with 0 failures (0 unexpected)
-                          ** TEST SUCCEEDED **   (1859 + the 3 written first here)
+swiftlint lint          → Found 0 violations, 0 serious in 558 files
+xcodebuild test (unit)  → Executed 1867 tests, with 0 failures (0 unexpected)
+                          ** TEST SUCCEEDED **   (1859 + 3 predicate + 5 marker, all first)
 render harness          → first-run door, dark and light, both EXIT=0
 ```
 
