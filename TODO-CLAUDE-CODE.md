@@ -36,6 +36,39 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-FabDeepField — the FAB gets an identity, and the fan stops shouting  [x] COMPLETED
+
+**E's verdict on device (2026-08-30):** the FAB's colour is wrong — *"the colors when the FAB is
+extended… altogether it just doesn't look right."* Diagnosis, confirmed in source: the FAB wore
+plain `AccentColor` (the same blue as the tab tint, "Clear the deck", Arrange and the Work bars),
+the fan was five full-saturation solids borrowed from tile/bar tokens, and the Note disc's fill
+literally WAS `AccentColor` — a second FAB inside the fan.
+
+**Process: a real A/B, rendered before choosing.** Two directions E picked from four were built
+and screenshotted on the simulator (rest / pill / fan-open, archived in
+`screenshots/fab-colour-variants/`): **A** ink FAB (inverted neutral surface) + glass fan, **B**
+deep-field gradient FAB + the same glass fan. **E chose B, explicitly.**
+
+**What shipped:**
+
+- **Deep-field disc**: `CaptureDeep` (new colorset, light `#4C3FE0` / dark `#5246E8`) → accent
+  blue in a top-to-bottom `LinearGradient` on the one `Capsule`. Both hues live in the asset
+  catalog — no raw colour in Swift (§4). Accent glow retained.
+- **Glass fan**: each disc is its kind colour at 18% over `.ultraThinMaterial`, glyph + label in
+  the full kind colour, hairline ring at 40% — the same tinted-tile language as the app's 44pt
+  card icon tiles, so the open fan matches the app instead of fighting it. The Note disc no
+  longer twins the FAB.
+- The unused ink-variant colorsets were DELETED, not left behind (this repo's dead-component
+  rule); variant A survives only as its archived renders.
+
+**Verified:** SwiftLint 0, suite 1,887 / 0, build green, simulator renders of both variants.
+
+- [ ] OUTSTANDING — E's on-device look. E has already queued the follow-up: *"very small
+      adjustments to the top and bottom spacing (maybe a padding issue?)"* — awaiting E's
+      specifics with the build in hand.
+
+---
+
 ### FEATURE: F-PillTune — the pill grows up, and the disc comes back like a sunrise  [x] COMPLETED
 
 **E's device verdict on F-DiscPill (2026-08-30, five stills):** the mechanism works everywhere,

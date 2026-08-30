@@ -18,13 +18,25 @@ struct CaptureDiscLabel: View {
     var body: some View {
         Image(systemName: "plus")
             .font(.title2.weight(.semibold))
+            // "Deep field" (E's pick from the 2026-08-30 A/B render round, over an ink FAB):
+            // the blue family survives, but as a CaptureDeep→accent gradient no flat chrome
+            // element shares — so the FAB separates from the tab tint, the CTAs and the Work
+            // bars without introducing a new hue. Both variants' renders live in
+            // screenshots/fab-colour-variants/.
             .foregroundStyle(AreaPalette.work.onColor)
             .scaleEffect(showsPill ? CaptureDiscMetrics.pillGlyphScale : 1)
             .frame(
                 width: showsPill ? CaptureDiscMetrics.pillWidth : CaptureDiscMetrics.discDiameter,
                 height: showsPill ? CaptureDiscMetrics.pillHeight : CaptureDiscMetrics.discDiameter
             )
-            .background(Color.accentColor, in: Capsule())
+            .background(
+                LinearGradient(
+                    colors: [Color("CaptureDeep"), Color.accentColor],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                in: Capsule()
+            )
             // The glow shrinks with the disc — a pill under the full 12pt bloom would still
             // haze the row it just got out of the way of.
             .shadow(

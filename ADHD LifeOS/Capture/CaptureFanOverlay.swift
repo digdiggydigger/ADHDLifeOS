@@ -64,9 +64,16 @@ struct CaptureFanOverlay: View {
                     .textCase(.uppercase)
                     .tracking(0.5)
             }
-            .foregroundStyle(Color(slot.onAssetName))
+            // Glass tiles, not solids (E's GIF verdict, 2026-08-30: five full-saturation discs
+            // "altogether just doesn't look right"). The kind colour moves INTO the glyph and
+            // label, over its own ~18% tint on material — the exact language of the app's 44pt
+            // card icon tiles, so the open fan finally matches the rest of the app. A hairline
+            // ring in the same hue keeps each disc's edge on the scrim.
+            .foregroundStyle(Color(slot.fillAssetName))
             .frame(width: 62, height: 62)
-            .background(Color(slot.fillAssetName), in: Circle())
+            .background(Color(slot.fillAssetName).opacity(0.18), in: Circle())
+            .background(.ultraThinMaterial, in: Circle())
+            .overlay(Circle().strokeBorder(Color(slot.fillAssetName).opacity(0.4), lineWidth: 1))
             .shadow(color: Color("Scrim").opacity(0.5), radius: 8, x: 0, y: 4)
             .contentShape(Circle())
         }
