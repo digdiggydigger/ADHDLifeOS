@@ -119,7 +119,21 @@ extension View {
 ///
 /// 60pt disc + its 16pt trailing margin + an 8pt breathing gap.
 enum CaptureDiscMetrics {
-    static let clearance: CGFloat = 60 + 16 + 8
+    /// The disc at rest. RootView reads this — the disc's size and the clearance below must
+    /// move together, so the measurement is spelled once.
+    static let discDiameter: CGFloat = 60
+
+    /// The disc mid-scroll (F-DiscPill, E's call 2026-08-30): a small capsule, so the content
+    /// the user is actually scrolling through shows past it. Visual only — the button's outer
+    /// frame stays `discDiameter` square, keeping the ≥44pt hit target (§3) and the overlay
+    /// stack's layout untouched in both states.
+    static let pillWidth: CGFloat = 40
+    static let pillHeight: CGFloat = 24
+    static let pillGlyphScale: CGFloat = 0.6
+
+    /// Derived from the REST state deliberately: the pill is transient, and the last row of
+    /// every scroll still has to clear the full disc it settles back into.
+    static let clearance: CGFloat = discDiameter + 16 + 8
 }
 
 extension View {

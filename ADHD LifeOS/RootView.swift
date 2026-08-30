@@ -33,6 +33,10 @@ struct RootView: View {
     /// composer with that kind already chosen.
     @State private var isFabOpen = false
     @State private var composerKind: CaptureKind?
+    /// F-DiscPill: whether a drag is live anywhere in the window, fed by
+    /// `CaptureDiscPanObserver`. The disc reads it to choose disc vs pill; `@StateObject` so
+    /// the one instance outlives auth-state swaps, matching the observer's once-only install.
+    @StateObject private var discScrollActivity = CaptureDiscScrollActivity()
     @State private var selectedTab: AppTab = .today
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
@@ -50,6 +54,13 @@ struct RootView: View {
     @StateObject private var focusService = FocusSessionService.withLiveActivityMirroring(
         logger: FirebaseFocusSessionAdapter()
     )
+
+    /// The pill is a MID-SCROLL state (F-DiscPill, E's call 2026-08-30: "shrink the disc to a
+    /// small pill while scrolling"). An open fan forces the full disc: its scrim blocks
+    /// scrolling anyway, and the ✕ rotation reads as a disc, not a sliver.
+    private var showsPill: Bool {
+        discScrollActivity.isScrolling && !isFabOpen
+    }
 
     /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
     /// success haptic the web fires on start (`triggerHaptic('success')`) happens exactly once
@@ -194,16 +205,7 @@ struct RootView: View {
                                 isFabOpen.toggle()
                             }
                         } label: {
-                            // v3's capture disc: a 60pt solid circle with the motion-blue glow,
-                            // not a bare SF glyph — the fan leans out of THIS.
-                            Image(systemName: "plus")
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(AreaPalette.work.onColor)
-                                .frame(width: 60, height: 60)
-                                .background(Color.accentColor, in: Circle())
-                                .shadow(color: Color.accentColor.opacity(0.5), radius: 12, x: 0, y: 8)
-                                .rotationEffect(.degrees(isFabOpen ? 135 : 0))
-                                .contentShape(Circle())
+                            CaptureDiscLabel(isFabOpen: isFabOpen, showsPill: showsPill)
                         }
                         .padding(.trailing, 16)
                         .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
@@ -292,7 +294,16 @@ struct RootView: View {
         // b5 round two: tap anywhere that isn't a text field to dismiss — one window-level
         // recognizer covers every screen INCLUDING sheets and covers (same UIWindow), so this
         // is the only install site. Idempotent across auth-state swaps.
-        .onAppear { KeyboardTapAway.installOnKeyWindow() }
+        .onAppear {
+            KeyboardTapAway.installOnKeyWindow()
+            // F-DiscPill's scroll detector: same install site, same lifetime, same window-level
+            // pattern. The callbacks capture the `@StateObject` model, the one object that
+            // outlives every auth-state swap this onAppear can re-fire across.
+            CaptureDiscPanObserver.installOnKeyWindow(
+                onDragBegan: discScrollActivity.dragBegan,
+                onDragEnded: discScrollActivity.dragEnded
+            )
+        }
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
         // Apple (or password sign-in) lands on Home gracefully (§5).
         .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: authService.state)
@@ -338,5 +349,43 @@ struct RootView: View {
                 Task { await LocationTriggerService.shared.refreshRegistrations() }
             }
         }
+    }
+}
+
+/// v3's capture disc face: a 60pt solid circle with the motion-blue glow, not a bare SF glyph —
+/// the fan leans out of THIS. Mid-scroll it collapses to F-DiscPill's capsule so the content
+/// underneath shows past it; one `Capsule` draws both states (a square capsule IS a circle), so
+/// the morph is a plain frame animation. The OUTER frame stays a full-disc square in both
+/// states: the ≥44pt hit target (§3) and the overlay stack's layout never move.
+private struct CaptureDiscLabel: View {
+    let isFabOpen: Bool
+    let showsPill: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Image(systemName: "plus")
+            .font(.title2.weight(.semibold))
+            .foregroundStyle(AreaPalette.work.onColor)
+            .scaleEffect(showsPill ? CaptureDiscMetrics.pillGlyphScale : 1)
+            .frame(
+                width: showsPill ? CaptureDiscMetrics.pillWidth : CaptureDiscMetrics.discDiameter,
+                height: showsPill ? CaptureDiscMetrics.pillHeight : CaptureDiscMetrics.discDiameter
+            )
+            .background(Color.accentColor, in: Capsule())
+            // The glow shrinks with the disc — a pill under the full 12pt bloom would still
+            // haze the row it just got out of the way of.
+            .shadow(
+                color: Color.accentColor.opacity(showsPill ? 0.3 : 0.5),
+                radius: showsPill ? 6 : 12,
+                x: 0,
+                y: showsPill ? 4 : 8
+            )
+            .rotationEffect(.degrees(isFabOpen ? 135 : 0))
+            .frame(width: CaptureDiscMetrics.discDiameter, height: CaptureDiscMetrics.discDiameter)
+            .contentShape(Rectangle())
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+                value: showsPill
+            )
     }
 }

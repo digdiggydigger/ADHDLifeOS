@@ -36,6 +36,63 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-DiscPill — the capture disc gets out of the way while you scroll  [x] COMPLETED
+
+**Queued 2026-08-30 via the post-nudges session opener; E's report, made twice:** the capture disc
+sits over real content throughout the app — over a nudge row's time, over a capture's subtitle,
+over the "Week review" card. E's words: *"the FAB sits over multiple places throughout the app at
+different stages."* Evidence in-repo: `screenshots/nudges-door-device/*` and
+`screenshots/first-nudge-reachable/*`.
+
+**E's design call, already made — do not re-ask:** *shrink the disc to a small pill while
+scrolling.* (Offered and NOT chosen: hide-on-scroll, move into the tab bar, fixed disc + more
+clearance.)
+
+**What this is NOT:** F-DiscClearance (`b62aea4`) already fixed the END of every scroll with the
+84pt `safeAreaInset`. This block is about the disc parking over content MID-scroll.
+
+**Design (Claude Code's execution of E's call):**
+
+- While a drag is in progress anywhere in the signed-in UI, the 60pt disc shrinks to a small
+  pill; when the finger lifts, it grows back after a short settle delay so stop-and-go scrolling
+  doesn't flap. Scroll detection is a window-level `UIPanGestureRecognizer` — the exact
+  `KeyboardTapAway` shape: `cancelsTouchesInView = false`, always-simultaneous, zero per-screen
+  wiring, covers every screen added later.
+- The morph is visual-only: the button's OUTER frame stays 60×60, so the ≥44pt hit target (§3),
+  the timer-bar stack layout, and every UI-test frame assertion are untouched. `Circle` becomes
+  `Capsule` for free — a 60×60 capsule IS a circle — so one shape animates both states.
+- Geometry lives in `CaptureDiscMetrics` beside `clearance`, which does NOT change: the rest
+  state is still a 60pt disc, so the 84pt clearance the eleven call sites depend on holds.
+- The fan overrides the pill: `isFabOpen` forces the full disc (the scrim blocks scrolling
+  anyway, and the ✕ rotation needs the disc).
+- Springs per §5; `reduceMotion` collapses the morph to a snap.
+
+**Acceptance criteria:**
+
+- [x] `CaptureDiscScrollActivity` (ObservableObject): `dragBegan()` shrinks immediately,
+      `dragEnded()` restores after a settle delay (0.7s), a new drag inside the window cancels
+      the restore. Deterministic tests via an injected delay — 8 tests.
+- [x] `CaptureDiscPanObserver`: window-level pan → activity model, state mapping unit-tested via
+      a `react(to:)` seam (`.began` → began; `.ended/.cancelled/.failed` → ended; nothing else)
+      — 5 tests.
+- [x] Call-site guards in the `CaptureDiscClearanceCallSiteTests` mould — 5 tests. Red-checked
+      before wiring: all three RootView guards failed at their own assertions on the unwired
+      tree (18-test run: 15 pass / 3 fail), then 18/18 after wiring. Not vacuous.
+- [x] SwiftLint 0 violations, unit suite 1,885 / 0, build green (2026-08-30).
+- [x] SIMULATOR verification, stronger than the block dared ask for: a fresh emulator account
+      driven through the real signup (`SIMCTL_CHILD_LIFEOS_FIREBASE_EMULATOR_HOST` + idb), then
+      a 2s background drag with a screenshot MID-GESTURE. `screenshots/disc-pill/`: full disc at
+      rest → pill mid-drag with the Relationships row readable past it → full disc again 1.5s
+      after the lift. The discriminator is real: absent the fix, the mid-drag still shows the
+      60pt disc, as the other two stills do.
+- [ ] OUTSTANDING — E has not seen it on device. The morph's FEEL (spring, settle beat) is a
+      device judgement; the simulator proves the mechanism only. Side-finding for the register:
+      the fresh-account signup on the emulator DID seed — six life areas, 5-item today, nudges
+      section present — which answers half of the opener's "did seeding land?" for the code
+      path; E's device run still answers it for production.
+
+---
+
 ### FEATURE: F-SignUpPolish — two things E marked on the signup screen  [x] COMPLETED
 
 **From E's fresh-account signup on device, 2026-08-30** — the first time anyone has walked the
