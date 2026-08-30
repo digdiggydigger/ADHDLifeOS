@@ -36,6 +36,109 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-NudgePresets — the New nudge sheet stops charging five taps for "weekdays"  [x] COMPLETED
+
+**E's verdict, from the device, 2026-08-30: "THIS NEEDS RE-DESIGNING! Its very ugly and awkward to
+use."** The still is `screenshots/nudges-door-device/new-nudge-sheet-BEFORE.jpeg`. Six defects, and
+the ugly one was a genuine layout failure rather than taste:
+
+1. **Every weekday label wrapped mid-word** — "S/un", "M/on", "Tu/e", "W/ed", "Th/u", "Fr/i",
+   "Sa/t". Seven `.bordered` buttons in a bare `HStack` inside a `Form` inset get ~40pt each,
+   narrower than the label needs. §1 forbids exactly this ("must never clip or truncate
+   unexpectedly").
+2. **Sub-44pt hit targets** at ~40pt wide (§3), and a stock `.bordered` where §3 requires an
+   explicit primitive press style.
+3. **One action wearing three labels** — nav title "New nudge", section header "Add Nudge",
+   submit row "Add Nudge".
+4. **The submit read as disabled placeholder text**, not a button, and sat at the bottom of the
+   form instead of the nav bar where iOS puts a confirming action.
+5. **A full-height sheet** holding roughly a third of a screen of content.
+6. **The header `+` was 40×40**, under the same 44pt floor.
+
+**The root cause is this repo's most-repeated defect, for the fifth time.** `ChoiceChipButtonStyle`
+is the house chip — **13 call sites across 8 files**, and `FocusCadenceEditorCard` already uses it
+for preset chips in this exact shape. The New nudge sheet was the ONLY place using stock
+`.bordered`. It never adopted the app's own vocabulary, which is why it read as foreign.
+See [[dead-shared-component-pattern]].
+
+**E's design call, asked before building** (the F-NudgesDoor precedent): *presets first.*
+
+**Acceptance criteria**
+- [x] `NudgeSchedulePreset` — Daily / Weekdays / Weekends / Custom, with the weekday sets, the
+      chip titles and the summary line. **Pure logic, tested first, 13 tests.**
+- [x] Chips laid out 2×2, not 4-across: "Weekends" and "Custom" do not fit four-across at
+      accessibility text sizes, and cramming is what wrapped the labels in the first place.
+- [x] The Custom day row uses **single letters** (S M T W T F S, Sun-first like the Clock app's
+      alarm repeat) at `maxWidth: .infinity, minHeight: 44`, so a label *cannot* wrap and the
+      target meets §3. VoiceOver still reads the full day name via `accessibilityLabel`.
+- [x] **Custom is a disclosure, not a reset** — it reveals the day row and KEEPS the current
+      selection. Clearing would throw away days the user just chose.
+- [x] Editing a nudge that already has a custom pattern **opens with its days showing**, rather
+      than hiding them behind a chip the user would have to guess at.
+- [x] Save in the nav bar (`.confirmationAction`), one title, `.presentationDetents([.medium, .large])`.
+- [x] `ChoiceChipButtonStyle`, `Haptics`, `.bentoCard()`, `.sectionLabel()` reused — no new chip
+      style, no new colour, no new haptic vocabulary.
+- [x] The header `+` raised 40 → 44pt.
+- [x] `NudgesView` hit 481/400, so the standing rule fired: the feature touching an over-budget
+      file splits it. `NudgeScheduleEditor` moved to its own file — **338 / 155**.
+
+**The cron off-by-one is the reason this got unit tests rather than eyeballs.** Sunday is `0`, so
+"weekdays" is `1...5`; the obvious-looking `0...4` schedules Sunday–Thursday and still reads
+correct in review. The red-check planted exactly that:
+
+```
+RED    (weekdays returning [0,1,2,3,4])
+       testWeekdays_isMondayToFriday_notSundayToThursday   failed
+       testMatching_recognisesEachNamedPreset              failed
+       testDaySummary_namedPresets_readAsWords             failed
+       Executed 13 tests, with 4 failures (0 unexpected)
+
+GREEN  (restored to [1,2,3,4,5])
+       Executed 13 tests, with 0 failures (0 unexpected)   ** TEST SUCCEEDED **
+```
+
+The empty set is covered too: it resolves to `.custom`, never `.daily`. Promoting it would light a
+Daily chip for a schedule `NudgeValidation` rejects and `NudgeSchedule.parse` treats as
+never-computably-due.
+
+**E's three calls on the first render, all applied and re-rendered:**
+1. **`.large` when the day row opens.** At `.medium` the day row pushed the time picker below the
+   fold, and setting a time is half the point of the sheet. It GROWS and never shrinks — snapping
+   back on close would yank the sheet out from under the thumb for no gain. The cost is empty
+   space below Time when Custom is open, and that is the right way round.
+2. **"Nudge name"**, replacing a seven-word question that `sectionLabel()` rendered in caps.
+3. **The summary line follows what it describes** — under the chips when the day row is closed,
+   under the DAYS when it is open. The wording was never wrong; the position was. Above the days,
+   a lit "Custom" chip over the words "Every day" read as a contradiction when it was in fact
+   describing the seven days Custom had preserved.
+
+**The harness caught its own bad evidence, which is the reason it is being kept.** The first
+Weekdays still was shot immediately after the tap and caught the spring mid-flight: the day row
+ghosting as it collapsed, the chip half-filled, its label washed out. The state was right and the
+picture was a lie — worse than no picture. It now settles on a real CONDITION, not a sleep:
+choosing Weekdays closes the day row, so `tap(_:untilGone:)` on that row IS the animation-finished
+signal. `RenderHarnessUITests` is committed deliberately (E's call), not deleted — the
+F-PadNightRender rule is satisfied by choosing, not by deleting.
+
+**A separate finding, logged not actioned.** The harness failed on its first run with "Today never
+rendered the nudges door", and it was telling the truth: `loadedNudgesSection` is gated on
+`!due.isEmpty || scheduled > 0`, so on an account with no nudges the whole section — door
+included — does not render. First-run seeding creates life areas, tags, tasks and a journal entry
+but **never a nudge**, and the only route to the Nudges screen is through that hidden door. **A
+brand-new user therefore has no way to create their first nudge.** Not this block's scope; needs
+E's call on the fix (an empty-state door, or a route from Settings).
+
+**Verified 2026-08-30:**
+```
+swiftlint lint          → Found 0 violations, 0 serious in 555 files
+xcodebuild test (unit)  → Executed 1859 tests, with 0 failures (0 unexpected)
+                          ** TEST SUCCEEDED **   EXIT=0   (1846 + the 13 written first here)
+render harness          → dark EXIT=0, light EXIT=0, settled
+```
+Six stills in `screenshots/nudge-presets-block/`, both appearances × three states, all at rest.
+
+---
+
 ### FEATURE: F-PortraitArrival — the journeys stop inheriting the last test's orientation  [x] COMPLETED
 
 **Found by F-LoginTestIsolation's own verification, and it is the same defect one layer down.**
@@ -344,9 +447,24 @@ reaches Today and its dismiss button is still addressable after the cards moved 
 section and changed surface. The journey run was clean first time — no repeat of the
 `signOutIfSignedIn` flakiness recorded under F-TriageCardTruth.
 
-**[ ] OUTSTANDING — E has not seen it.** This is taste, and the standing lesson is that three
-colour attempts were rejected on device before a render loop existed. Stills of both states in both
-appearances go to E before this is called settled.
+**[x] APPROVED BY E ON DEVICE, 2026-08-30.** All four states shot on `wishwashwacky15` at
+`b1f4b6f` and archived in `screenshots/nudges-door-device/`:
+
+```
+dark-5-due.jpeg          chip "5 due" amber · warn-tinted cards above · "and 2 more due"
+light-4-due.jpeg         chip "4 due" amber · same anatomy in the light appearance
+dark-nothing-due.jpeg    chip "8 scheduled" neutral · "Nothing due — all on time."
+light-nothing-due.jpeg   ditto, light
+```
+
+E's verdict: **"Approved — tick it."** The door reads as a card in both appearances, the quiet
+state is settled rather than deficient, and the due state visibly outranks it. This was the last
+unticked acceptance criterion in the whole file.
+
+**Two things the stills exposed that are NOT this block's**, both now their own entries:
+- The three stacked full-width green "Done for now" buttons dominate the due state. E flagged it as
+  a secondary concern while approving the door — noted, not actioned here.
+- The capture disc obscures real content in **all four** shots. See F-DiscPill.
 
 ---
 

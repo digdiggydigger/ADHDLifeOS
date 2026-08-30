@@ -16,6 +16,8 @@ struct NudgesView: View {
     @ObservedObject var service: NudgesService
     @State private var expandedNudgeId: UUID?
     @State private var isPresentingAdd = false
+    /// The add sheet's height. Starts medium and grows to large when the Custom day row opens.
+    @State private var addDetent: PresentationDetent = .medium
     @State private var momentumPreferences: MomentumPreferences = .default
 
     var body: some View {
@@ -136,7 +138,7 @@ struct NudgesView: View {
                 Image(systemName: "plus")
                     .font(.body)
                     .foregroundStyle(Color("LabelSecondary"))
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
                     .background(Color.cardSurface, in: Circle())
                     .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 1))
                     .contentShape(Circle())
@@ -204,23 +206,57 @@ struct NudgesView: View {
         .accessibilityIdentifier("nudgesNewNudgeRow")
     }
 
-    /// The add form, now a sheet — same fields, same identifiers, same service path.
+    /// The add sheet, rebuilt presets-first (F-NudgePresets).
+    ///
+    /// What it replaced, and why — E's verdict on the device was "very ugly and awkward to use":
+    /// a stock `Form` whose one section repeated the word "Add Nudge" as its header AND its
+    /// submit row while the nav bar said "New nudge", so one action wore three labels; a submit
+    /// button that rendered as grey placeholder text rather than anything pressable; a full-height
+    /// sheet holding a third of a screen of content; and seven day toggles so narrow that every
+    /// label wrapped mid-word ("S/un", "M/on", "W/ed").
     private var addSheet: some View {
         NavigationStack {
-            Form {
-                Section("Add Nudge") {
-                    TextField("Label", text: $service.newLabel)
-                        .accessibilityIdentifier("nudgeAddLabelField")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Nudge name")
+                            .sectionLabel()
+                        TextField("Drink water", text: $service.newLabel)
+                            .font(.body)
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("nudgeAddLabelField")
+                    }
+                    .bentoCard()
 
-                    NudgeScheduleEditor(schedule: $service.newSchedule, idPrefix: "nudgeAdd")
+                    NudgeScheduleEditor(schedule: $service.newSchedule, idPrefix: "nudgeAdd") { showing in
+                        // Grow, never shrink. At `.medium` the day row pushes the time picker
+                        // below the fold — and setting a time is half the point of this sheet, so
+                        // it should not need a scroll. Snapping back down on close would yank the
+                        // sheet out from under the thumb for no gain, so this only ever expands.
+                        if showing { addDetent = .large }
+                    }
+                    .bentoCard()
 
                     if let createErrorMessage = service.createErrorMessage {
                         Text(createErrorMessage)
+                            .font(.footnote)
                             .foregroundStyle(Color("StateRisk"))
                             .accessibilityIdentifier("nudgeAddErrorMessage")
                     }
-
-                    Button("Add Nudge") {
+                }
+                .padding(16)
+            }
+            .background(Color.pageBackground)
+            .navigationTitle("New nudge")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { isPresentingAdd = false }
+                }
+                // The confirming action belongs in the nav bar, where iOS puts it — not buried at
+                // the bottom of the form as a row that reads like disabled placeholder text.
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
                         Task {
                             if await service.createNudge() {
                                 Haptics.play(.solid)
@@ -230,67 +266,15 @@ struct NudgesView: View {
                             }
                         }
                     }
+                    .font(.body.weight(.semibold))
                     .disabled(!service.isNewLabelValid || service.isCreating)
                     .accessibilityIdentifier("nudgeAddSubmitButton")
                 }
             }
-            .navigationTitle("New nudge")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { isPresentingAdd = false }
-                }
-            }
         }
-    }
-}
-
-/// A time-of-day picker plus a weekday multi-select, bound to a `NudgeSchedule`. Shared between
-/// the Add Nudge form and each row's Edit form.
-private struct NudgeScheduleEditor: View {
-    @Binding var schedule: NudgeSchedule
-    let idPrefix: String
-
-    private static let weekdaySymbols = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
-    private var timeBinding: Binding<Date> {
-        Binding<Date>(
-            get: {
-                Calendar.current.date(bySettingHour: schedule.hour, minute: schedule.minute, second: 0, of: Date())
-                    ?? Date()
-            },
-            set: { newDate in
-                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                schedule.hour = components.hour ?? schedule.hour
-                schedule.minute = components.minute ?? schedule.minute
-            }
-        )
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            DatePicker("Time", selection: timeBinding, displayedComponents: .hourAndMinute)
-                .haptic(.selection, trigger: schedule.minute)
-                .accessibilityIdentifier("\(idPrefix)TimePicker")
-
-            HStack {
-                ForEach(0..<7, id: \.self) { day in
-                    let isSelected = schedule.weekdays.contains(day)
-                    Button(Self.weekdaySymbols[day]) {
-                        Haptics.play(.selection)
-                        if isSelected {
-                            schedule.weekdays.remove(day)
-                        } else {
-                            schedule.weekdays.insert(day)
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(isSelected ? .accentColor : .secondary)
-                    .accessibilityIdentifier("\(idPrefix)WeekdayToggle-\(day)")
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
-                }
-            }
-        }
+        // The content is short with the day row closed, so a full-height sheet left two thirds of
+        // the screen empty. It is NOT short with the row open — see the callback above.
+        .presentationDetents([.medium, .large], selection: $addDetent)
     }
 }
 

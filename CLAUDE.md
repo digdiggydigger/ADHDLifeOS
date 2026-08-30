@@ -104,8 +104,9 @@ and `FirebaseDailySummaryDataAdapter` are covered (92–100% each). `grep "priva
 FirebaseManager"` returning nothing is the check that the seam is still complete — the last three
 types above do NOT carry the `*ClientAdapter` suffix, so a name-based sweep misses them.
 
-`FirebaseManager`'s own four extensions are covered too, as of the emulator harness below:
-`+Tags` 97.30%, `+Seed` 98.29%, `+Storage` 95.83%, `+AccountDeletion` 90.20% — each previously ~0%.
+The four extensions the emulator harness covers (of the fourteen that exist) were re-measured
+2026-08-30: `+Tags` **97.67%**, `+Seed` **98.31%**, `+Storage` 95.83%, `+AccountDeletion` 90.20%
+— each previously ~0%. The first two had drifted from the figures recorded on 2026-08-23.
 
 What is still uncovered, and why the 70% bar stays out of reach for now:
 - **SwiftUI view bodies (~7,000 lines at ~0%)** — `TaskDetailView`, `FocusTimerBar`,
@@ -187,17 +188,24 @@ unpushed) and push it as your first action if so.
 
 ## Architecture notes
 
-- SwiftUI, Swift, `IPHONEOS_DEPLOYMENT_TARGET = 16.0` — any iOS 17+ API must be
-  `#available`-gated (see §7's `.sensoryFeedback` precedent).
+- SwiftUI, Swift. **The deployment target is not one number:** the app target is
+  `IPHONEOS_DEPLOYMENT_TARGET = 16.0`, the **FocusTimerWidget extension is 16.1** (Live Activities
+  need 16.1). Any iOS 17+ API must be `#available`-gated (see §7's `.sensoryFeedback` precedent),
+  and widget code gates against the higher floor — verified 2026-08-30 in `project.pbxproj`.
 - **Backend: Firebase** (Auth + Firestore + Storage, project `adhdlifeos-acb49`;
   `GoogleService-Info.plist` is committed — private repo, client identifiers only). The Supabase
   and AWS layers this doc previously described were deleted at E's direction in commit `5244650`
   ("cut all services over to Firebase"). No local persistence layer — Firestore is the source of
   truth. Everything goes through per-feature `Firebase*ClientAdapter` structs over the shared
-  `FirebaseManager` (`ADHD LifeOS/Firebase/`). `FirebaseManager.swift` itself holds only the
-  class, auth, and the Firestore plumbing every extension builds on; per-collection storage
-  lives in `FirebaseManager+<Domain>.swift` alongside `+Seed`/`+Storage`/`+AccountDeletion`/
-  `+Emulator`. Add a new collection's methods to its own such file, not to the core one.
+  `FirebaseManager`. **Those adapters live beside the feature they serve — `Auth/`, `Capture/`,
+  `Home/`, `Journal/`, `Nudges/`, `Tasks/` and so on — NOT in `ADHD LifeOS/Firebase/`**, and there
+  are **thirteen** of them (counted 2026-08-30; an earlier "twelve, in `ADHD LifeOS/Firebase/`"
+  was wrong on both the count and the location).
+  `ADHD LifeOS/Firebase/` holds the manager, its **fourteen** `FirebaseManager+<Domain>` files,
+  and the codec/mapping types. `FirebaseManager.swift` itself holds only the class, auth, and the
+  Firestore plumbing every extension builds on; per-collection storage lives in
+  `FirebaseManager+<Domain>.swift` alongside `+Seed`/`+Storage`/`+AccountDeletion`/`+Emulator`.
+  Add a new collection's methods to its own such file, not to the core one.
 - **Adapters depend on a per-feature `*BackingStore` protocol, never on `FirebaseManager` directly**
   (E's 2026-08-23 call). `FirebaseManager` is a `final class` with a `private init` and a `shared`
   singleton, so an adapter holding it concretely cannot be tested at any price. Each adapter gets
@@ -215,8 +223,12 @@ unpushed) and push it as your first action if so.
   does not link the Firebase SDK** — these are static products, and linking one into both the app and
   its hosted test bundle realises every Objective-C class twice. `FirestoreDocumentCoder` is the
   codec seam for the same reason.
-- Schema: per-user subcollections under `users/{uid}` (tasks, life_areas, tags, logs, captures,
-  nudges, reminders, focus_sessions); document IDs are UPPERCASE `uuidString`.
+- Schema: **ten** per-user subcollections under `users/{uid}` — tasks, life_areas, tags, logs,
+  captures, nudges, reminders, focus_sessions, **places, location_events**. Document IDs are
+  UPPERCASE `uuidString`. The last two were added by the location-services work and were missing
+  from this list until 2026-08-30; `firestore.rules` is the authoritative enumeration, and note
+  `logs` and `location_events` each have their OWN match block (append-only, update denied) while
+  the other eight sit in the generic `collection in [...]` allow.
 - Security rules live in-repo (`firestore.rules`, `storage.rules`). **Publishing stays E's call**
   — a rules change is not live until E republishes, so say so in the block report. But
   **verifying is no longer manual: the Firebase CLI IS authenticated** (`firebase login:list` →
@@ -224,7 +236,10 @@ unpushed) and push it as your first action if so.
   `firebase_get_security_rules` returns the LIVE ruleset for `firestore` / `storage`. The old
   claim here that "Claude Code has no Firebase CLI auth" was wrong and left `storage.rules`
   recorded as unconfirmed for months. **Diff live against the repo rather than asking E to paste
-  the console tab.** Both were verified identical on 2026-08-23.
+  the console tab.** Re-verified **2026-08-30**: `firestore.rules` is byte-identical live
+  (including `location_events` and `places`); `storage.rules` is semantically identical but the
+  live copy carries no comment header, i.e. it was published from a pre-comment revision. Nothing
+  is outstanding to republish.
 - Manual-step convention (same as web project): anything requiring the Xcode GUI beyond CLI builds — code signing, provisioning profiles, App Store Connect/TestFlight — is E's job, never attempted by Claude Code directly.
 - Lint: SwiftLint, config at `.swiftlint.yml` (default ruleset unless a rule is explicitly flagged as too noisy and adjusted).
 - Tests live in `ADHD LifeOSTests/` (XCTest), UI tests in `ADHD LifeOSUITests/`.
@@ -260,7 +275,11 @@ Implement layouts as an elite Apple Design Engineer. Every view must look handcr
   Swift**. The one sanctioned home for hex is the asset catalog's colorsets (E's 2026-08-19
   design-token direction): the prototype palette lives there with light+dark variants, and views
   consume it via the generated symbols / `Theme.swift` helpers (`.bentoCard()`, `UrgencyPalette`,
-  `sectionLabel()`, `Color.cardSurface`/`.pageBackground`/`.cardBorder`, coral `AccentColor`).
+  `sectionLabel()`, `Color.cardSurface`/`.pageBackground`/`.cardBorder`).
+  **`AccentColor` is iOS system BLUE — `#0A7CFF` light, `#0A84FF` dark — not coral.** This file
+  claimed "coral `AccentColor`" until 2026-08-30; there is no coral colorset in the catalog and
+  never has been, so the FAB, the selected tab and every `.accentColor` tint are blue and are
+  behaving correctly. Read the asset before describing the palette.
   Do not bypass the token layer with new inline colors — extend it.
 - **Adaptive Semantic Colors**: Use dynamic system assets natively (`Color(.systemBackground)`, `Color(.secondarySystemBackground)`, `Color.primary`, `Color.secondary`).
 - **Contrast Ratios**: Maintain high WCAG contrast safety thresholds. Prefer semantic styling methods such as `.foregroundStyle(.secondary)` over `.opacity(0.5)` to align with active system accessibility overrides.
