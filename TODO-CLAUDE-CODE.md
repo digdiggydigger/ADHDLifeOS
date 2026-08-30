@@ -36,7 +36,7 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
-### FEATURE: F-PortraitArrival — the journeys stop inheriting the last test's orientation  [~] VERIFICATION IN FLIGHT
+### FEATURE: F-PortraitArrival — the journeys stop inheriting the last test's orientation  [x] COMPLETED
 
 **Found by F-LoginTestIsolation's own verification, and it is the same defect one layer down.**
 Fixing the login tests meant running the WHOLE UI target for the first time. It came back
@@ -80,8 +80,22 @@ touch, and a test body cannot change how many configurations XCTest requests.
       screenshots — fixing the suite by silently deleting the capability that exposed the bug.
       The sweep keeps rotating; `resetToPortrait` absorbs what it leaves.
 - [x] `swiftlint lint` → 0 violations, 0 serious in 551 files.
-- [ ] **Full UI target green.** The rerun is in flight at the time of this commit; the RED above
-      is measured, the GREEN is not yet. Do not read this block as closed until the number is here.
+- [x] **Full UI target green** — and it is the first time the whole target has ever been green:
+
+```
+BEFORE   Executed 17 tests, with 10 failures (0 unexpected) in 1847.015 seconds
+         ** TEST EXECUTE FAILED **      EXIT=65
+
+AFTER    Executed 17 tests, with  0 failures (0 unexpected) in 1893.673 seconds
+         ** TEST EXECUTE SUCCEEDED **   EXIT=0
+         passed: 17   failed: 0
+```
+
+The fix is visible in the trace rather than merely inferred — `testLaunch`'s last configuration
+still ends in Landscape Left, and the very next line of the following test is
+`Interface orientation changed to Portrait`. The sweep keeps rotating; the next arrival rights
+itself. Each previously-failing test is individually accounted for: AccountName 140.5s,
+CaptureDisc 109.7s / 97.9s, Journal 113.4s, SignedInJourney 5/5, SignedOutLaunch 1/1.
 
 **Open question for E, NOT actioned.** The app declares landscape support on iPhone
 (`INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone`, the Xcode template default). If the
