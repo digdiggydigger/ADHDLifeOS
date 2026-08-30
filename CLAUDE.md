@@ -71,11 +71,31 @@ runnable. If `xcodebuild` reports the destination is unavailable, run
 A feature isn't done until `swiftlint lint`, the full test suite, and the build all pass — and the
 real terminal output has been pasted for review, not just a "done" summary.
 
-**Coverage reality (2026-08-23, re-measured):** overall coverage is **25.35% (5,272/20,794)**
-over 1,168 tests. **The previously recorded "33.55%" was wrong** — a baseline run of the untouched
-tree at `4c8b282` (1,099 tests, the exact suite that figure described) measures **23.40%
-(4,853/20,735)** with the documented command. Both runs share a denominator, so they measured the
-same thing and the older number simply cannot be reproduced. Don't restore it; re-measure instead.
+**Coverage reality (2026-08-30, re-measured):** the app target is **23.62% (8,673/36,721)** over
+**1,846 unit tests**, measured with the documented command at `b1f4b6f`.
+
+**Do NOT read that as a fall from the 25.35% recorded on 2026-08-23 (5,272/20,794).** The
+denominators are different — 20,794 against 36,721 — so the two ratios are not measuring the same
+extent and cannot be subtracted. This is the very trap the previous note in this slot described,
+and it catches you from the other direction: there, two runs *shared* a denominator and so were
+comparable; here they do not. The number that IS comparable is the numerator, and covered lines
+went **5,272 → 8,673, up 64%**.
+
+The current denominator is the trustworthy one: 36,721 executable lines against 36,742 raw lines
+of Swift across 310 files in `ADHD LifeOS/` + `FocusTimerWidget/`. The old 20,794 was ~57% of the
+tree, so that measurement covered a subset of what it claimed to.
+
+Full target breakdown at `b1f4b6f`:
+
+```
+ADHD LifeOS.app              23.62%  (8673/36721)
+ADHD LifeOSTests.xctest      97.21%  (27728/28523)
+ADHD LifeOSUITests.xctest     0.00%  (0/1281)    ← skipped in the standard run by design
+FocusTimerWidgetExtension    10.97%  (193/1759)
+```
+
+**The standing rule is unchanged and now doubly earned: re-measure, never estimate, and check the
+DENOMINATOR before comparing two coverage figures.**
 
 The Firebase layer is now the best-covered part of the app, not the worst. Every Firebase-backed
 type sits behind a per-feature `*BackingStore` protocol with a recording fake, and all twelve
