@@ -139,6 +139,39 @@ final class RenderHarnessUITests: XCTestCase {
         attach(app, named: "4-first-run-nudges-door")
     }
 
+    /// The Create-account form with the keyboard UP — the two things E marked on device:
+    /// no Done bar floating above the keyboard, and a password card the same height as the others.
+    @MainActor
+    func testRenderSignUpForm() throws {
+        let app = UITestSession.launchSignedOut()
+
+        let email = app.textFields["loginEmailField"]
+        XCTAssertTrue(email.waitForExistence(timeout: UITestSession.timeout), "No login form")
+
+        // Switch to Create account so the name field is in play and the password card sits
+        // between two others — which is what makes an uneven height visible.
+        // A segmented Picker: its segments are buttons labelled by the mode titles, addressed
+        // through the control rather than by an identifier of their own.
+        let createAccount = app.segmentedControls["authModePicker"].buttons["Create account"]
+        XCTAssertTrue(
+            createAccount.waitForExistence(timeout: UITestSession.timeout),
+            "No Create account segment on the mode picker"
+        )
+        XCTAssertTrue(
+            UITestSession.tap(createAccount, untilExists: app.textFields["signUpNameField"]),
+            "Create account did not reveal the sign-up fields"
+        )
+
+        // Focus the PASSWORD field: the keyboard has to be up for the Done bar to be visible at
+        // all, so a shot with it dismissed would prove nothing about the thing being fixed.
+        let password = app.secureTextFields["loginPasswordField"]
+        XCTAssertTrue(password.waitForExistence(timeout: UITestSession.timeout), "No password field")
+        password.tap()
+        XCTAssertTrue(app.keyboards.element.waitForExistence(timeout: 10), "Keyboard never appeared")
+
+        attach(app, named: "5-signup-keyboard-up")
+    }
+
     @MainActor
     private func attach(_ app: XCUIApplication, named name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())

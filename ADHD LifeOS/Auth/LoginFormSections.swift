@@ -72,10 +72,14 @@ extension LoginView {
             }
 
             fieldCard {
-                HStack(spacing: 8) {
-                    passwordField
-                    revealButton
-                }
+                // The reveal button is an OVERLAY, not an HStack sibling. §3 requires a 44×44
+                // touch target, and in a row that 44pt HEIGHT drove the whole card: the password
+                // field stood ~23pt taller than Email and Name, which is the uneven top-and-bottom
+                // spacing E marked on device (2026-08-30). An overlay keeps the full target and
+                // contributes nothing to layout height, so all three cards now match.
+                passwordField
+                    .padding(.trailing, 44)
+                    .overlay(alignment: .trailing) { revealButton }
             }
 
             if let hint = AuthFormValidation.passwordHint(mode: mode, password: password) {

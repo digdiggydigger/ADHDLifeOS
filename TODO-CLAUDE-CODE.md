@@ -36,6 +36,60 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-SignUpPolish — two things E marked on the signup screen  [x] COMPLETED
+
+**From E's fresh-account signup on device, 2026-08-30** — the first time anyone has walked the
+new-user path end to end.
+
+**1. The Done bar floating above the keyboard: "it's clogging the screen up."**
+
+This is BUG-b5 from E's own 2026-08-26 checklist ("the keyboard must never be a trap"), so it was
+NOT deleted. `.keyboardDismissal()` was applied to the `Group` wrapping BOTH auth branches, so the
+login screen inherited a bar meant for the tabs. It now sits on the tabs only.
+
+**That does not reopen b5.** `KeyboardTapAway` is installed window-level and already covers login —
+its own note says tapping away is *"the gesture people actually reach for"*. The bar was redundant
+there, not load-bearing. Verified by reading the install site, not assumed.
+
+**2. The password field's uneven top/bottom spacing** (E marked the gaps on the screenshot).
+
+The reveal button was an `HStack` sibling at `.frame(width: 44, height: 44)`. §3 requires that
+44×44 target — and in a row, its HEIGHT drove the whole card: **Password ≈ 76pt against Email and
+Name at ≈ 53pt**, since `fieldCard` adds 16pt padding all round to a ~21pt text row. The button is
+now an `.overlay`, which keeps the full target and contributes nothing to layout height. All three
+cards match.
+
+**Acceptance criteria**
+- [x] Login no longer shows the keyboard Done bar; the tabs and modal composers still do.
+- [x] Password, Email and Name cards are the same height, verified in a render.
+- [x] The reveal button keeps its 44×44 target (§3) — an overlay, not a shrunken frame.
+
+**Verified 2026-08-30:**
+```
+swiftlint lint          → Found 0 violations, 0 serious in 558 files
+xcodebuild test (unit)  → Executed 1867 tests, with 0 failures (0 unexpected)
+render (signup form)    → dark EXIT=0, light EXIT=0 — the three cards visibly match
+```
+
+**The Done bar removal is NOT visually verified, and that is stated rather than glossed.** The
+render harness could not show it: the simulator runs with a hardware keyboard attached, so no
+software keyboard appears and a `ToolbarItemGroup(placement: .keyboard)` has nothing to attach to.
+`defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false` plus a sim restart
+did not take for the headless test runner.
+
+**No assertion was added for it either**, deliberately: with no software keyboard there is no
+toolbar, so `XCTAssertFalse(app.buttons["Done"].exists)` would pass whether or not the fix existed
+— a vacuous guard, worse than none. See [[geometry-journey-vacuity]]. E reported it from the
+device and confirms it there.
+
+**A near-miss worth recording.** The first signup render was named `5-signup-keyboard-up`, its
+`app.keyboards.element` assertion passed, and the image contained no keyboard — `app.keyboards`
+was satisfied by the hardware keyboard's accessory state. Had it shipped as evidence it would have
+proved nothing. Third time this session a picture nearly passed for proof of something it could not
+show: **an assertion going green is not the same as the screen showing the thing.**
+
+---
+
 ### FEATURE: F-FirstNudgeReachable — a new account can actually make its first nudge  [x] COMPLETED
 
 **A brand-new user could not create a nudge by any action available to them.** Three true things

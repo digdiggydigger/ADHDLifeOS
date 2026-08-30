@@ -278,11 +278,17 @@ struct RootView: View {
                 } message: {
                     Text(focusService.logErrorMessage ?? "")
                 }
+                // b5: one application covers the tabs and every screen pushed inside them; the
+                // modal composers wrap their own roots at their presentation sites.
+                //
+                // Applied to the TABS rather than to the Group around them, so the LOGIN screen
+                // does not inherit a Done bar (E, on device 2026-08-30: "it's clogging the screen
+                // up"). That does not reopen b5 — `KeyboardTapAway` is installed window-level and
+                // already covers login, and its own note says tapping away is "the gesture people
+                // actually reach for". The bar was redundant there, not load-bearing.
+                .keyboardDismissal()
             }
         }
-        // b5: one application covers the tabs and every screen pushed inside them; the modal
-        // composers wrap their own roots at their presentation sites.
-        .keyboardDismissal()
         // b5 round two: tap anywhere that isn't a text field to dismiss — one window-level
         // recognizer covers every screen INCLUDING sheets and covers (same UIWindow), so this
         // is the only install site. Idempotent across auth-state swaps.
