@@ -131,9 +131,10 @@ enum CaptureDiscMetrics {
     /// Sized by E's device verdict (F-PillTune): the first cut, 40×24, "is too small" — a
     /// sliver rather than a button. 52×32 stays clearly smaller than the disc it stands in for.
     static let pillWidth: CGFloat = 52
-    /// 40, not 32 — E's second device pass (2026-08-31): "ADD more spacing/padding to the top
-    /// and bottom of the capture button when it is in pill form."
-    static let pillHeight: CGFloat = 40
+    /// 48 after two device passes (2026-08-31), each E asking for more room above and below
+    /// the plus: 32 → 40 ("ADD more spacing/padding to the top and bottom"), then 40 → 48
+    /// ("ONLY ADD a little bit more padding to the TOP and the BOTTOM").
+    static let pillHeight: CGFloat = 48
     static let pillGlyphScale: CGFloat = 0.8
 
     /// E's number, chosen off the device GIF (2026-08-30): "try .68 — just below the 0.7 sweet
