@@ -75,10 +75,10 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
 
     func testPillIsActuallySmallerThanTheDisc() {
         // The entire point of the block. A "pill" the disc's own size would pass every wiring
-        // test and fix nothing. Height was originally bounded at HALF the diameter; E's device
-        // verdict (F-PillTune: "the pill button is too small") raised the pill to 52×32, so the
-        // guard keeps only its real point — strictly smaller than the disc in both axes.
-        XCTAssertLessThan(CaptureDiscMetrics.pillWidth, CaptureDiscMetrics.discDiameter)
+        // test and fix nothing. E's passes widened it to the slot's full 60pt (width may EQUAL
+        // the diameter but never exceed the fixed outer frame), so the pill-vs-disc distinction
+        // now rides entirely on height — that axis stays strict.
+        XCTAssertLessThanOrEqual(CaptureDiscMetrics.pillWidth, CaptureDiscMetrics.discDiameter)
         XCTAssertLessThan(CaptureDiscMetrics.pillHeight, CaptureDiscMetrics.discDiameter)
         XCTAssertLessThan(CaptureDiscMetrics.pillGlyphScale, 1)
     }

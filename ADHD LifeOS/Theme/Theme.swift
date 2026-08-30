@@ -130,7 +130,11 @@ enum CaptureDiscMetrics {
     ///
     /// Sized by E's device verdict (F-PillTune): the first cut, 40×24, "is too small" — a
     /// sliver rather than a button. 52×32 stays clearly smaller than the disc it stands in for.
-    static let pillWidth: CGFloat = 52
+    /// 60 after E's fourth pass (2026-08-31): "add more padding to the left-hand & right-hand
+    /// sides… goto 4pt" — 4pt per side over the 52 it launched at. Width now fills the disc's
+    /// own slot, so the pill-vs-disc distinction rides entirely on HEIGHT (48 vs 60), which
+    /// the guard test holds strictly.
+    static let pillWidth: CGFloat = 60
     /// 48 after two device passes (2026-08-31), each E asking for more room above and below
     /// the plus: 32 → 40 ("ADD more spacing/padding to the top and bottom"), then 40 → 48
     /// ("ONLY ADD a little bit more padding to the TOP and the BOTTOM").
