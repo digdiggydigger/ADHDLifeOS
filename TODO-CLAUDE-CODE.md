@@ -36,6 +36,61 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-PortraitArrival — the journeys stop inheriting the last test's orientation  [~] VERIFICATION IN FLIGHT
+
+**Found by F-LoginTestIsolation's own verification, and it is the same defect one layer down.**
+Fixing the login tests meant running the WHOLE UI target for the first time. It came back
+**17 tests, 10 failures** — and all ten were one cause, at one line, with one message:
+
+```
+UITestSession.swift:318: "loginPasswordField" SecureTextField never became hittable
+```
+
+**`ADHD_LifeOSUITestsLaunchTests` sets `runsForEachTargetApplicationUIConfiguration`,** so XCTest
+runs `testLaunch` once per UI configuration. Two of the four are landscape, and the LAST one
+leaves the simulator in **Landscape Left**. Orientation, exactly like the keychain, outlives the
+app process — so every test scheduled after it launched into landscape, where the login form's
+password field never becomes hittable.
+
+```
+1203  testLaunch (4th config) started
+1206     Interface orientation changed to Landscape Left
+1381  testLaunch passed                                    ← and the device stays there
+1385  AccountNameJourney            → Landscape Left → FAILED
+1991  CaptureDiscClearance/nudges   → Landscape Left → FAILED
+2594  CaptureDiscClearance/today    → Landscape Left → FAILED
+      … JournalJourney, SignedInJourney ×5, SignedOutLaunch — all of them, all identical
+```
+
+**Why nobody had seen it.** The whole UI target had never been run in one go. The run recorded as
+"9/9 journeys" totalled twelve tests, which only adds up as **three plus nine** — so it cannot have
+included `testLaunch`. Every previous run was scoped, and the scope excluded the one test that
+poisons the rest. `JournalJourneyUITests` proves the ordering-dependence directly: it passed alone
+in 150s at 04:39 and failed in-suite at 05:31.
+
+**Not introduced by F-LoginTestIsolation.** That block changed `testLaunch`'s BODY; the
+configuration sweep comes from `runsForEachTargetApplicationUIConfiguration`, which it did not
+touch, and a test body cannot change how many configurations XCTest requests.
+
+**Acceptance criteria**
+- [x] `UITestSession.resetToPortrait()`, called from `launchSignedIn` (every journey) and by
+      default from `launchSignedOut`.
+- [x] **`testLaunch` is the one deliberate exemption** (`resettingOrientation: false`). Forcing
+      portrait there would collapse the four-configuration sweep into four identical portrait
+      screenshots — fixing the suite by silently deleting the capability that exposed the bug.
+      The sweep keeps rotating; `resetToPortrait` absorbs what it leaves.
+- [x] `swiftlint lint` → 0 violations, 0 serious in 551 files.
+- [ ] **Full UI target green.** The rerun is in flight at the time of this commit; the RED above
+      is measured, the GREEN is not yet. Do not read this block as closed until the number is here.
+
+**Open question for E, NOT actioned.** The app declares landscape support on iPhone
+(`INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone`, the Xcode template default). If the
+login screen genuinely cannot reach its password field in landscape, that is a real usability
+defect on a supported orientation — but "not hittable inside 45s" is evidence, not proof, and
+nothing here changes app behaviour. A landscape still of the login screen would settle it.
+
+---
+
 ### FEATURE: F-LoginTestIsolation — the login tests stop inheriting the last run's session  [x] COMPLETED
 
 **Two failures on every full UI-target run, and the harness caused both.**
