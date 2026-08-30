@@ -58,6 +58,31 @@ enum HomeNudgesSection {
 
     // MARK: - The door (E's screenshot note, 2026-08-28)
 
+    /// The one bright thing on the first-run door.
+    ///
+    /// E's call, 2026-08-30: "a grayed out effect over the nudges section with a clear direction
+    /// to 'Add your first nudge'". Everything descriptive is muted and the ACTION is not, so the
+    /// card reads as an invitation rather than as a disabled control — which is the real risk of
+    /// graying something out.
+    static let firstRunDirective = "Add your first nudge"
+
+    /// Whether Today renders the nudges section at all — THREE states, not two.
+    ///
+    /// This used to be `hasAny`, and that one word was a dead end. The door is the only route to
+    /// the Nudges screen, first-run seeding never creates a nudge, and the section was hidden
+    /// whenever there were none — so a brand-new account could not reach the feature by any
+    /// action available to it. The empty-state copy for this very card already existed and was
+    /// already unit-tested (`doorSubtitle(0, 0)`, `chipText(0, 0)`, `countLine(0, 0)`); the gate
+    /// made every line of it unreachable.
+    ///
+    /// The original decision is preserved rather than reversed. "An empty schedule is not news,
+    /// and Today does not need a card to say so" was right about a STATUS card, and only wrong
+    /// about a feature's sole entrance — so silence returns the moment the user has ever had a
+    /// nudge, and only a first-run account sees the empty door.
+    static func shouldRenderSection(hasAny: Bool, hasEverHadAny: Bool) -> Bool {
+        hasAny || !hasEverHadAny
+    }
+
     /// The card's second line, under "Nudges".
     ///
     /// Nothing due is the state a schedule exists to produce, so it is said as settled rather than

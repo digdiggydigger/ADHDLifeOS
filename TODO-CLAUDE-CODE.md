@@ -36,6 +36,83 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-FirstNudgeReachable — a new account can actually make its first nudge  [x] COMPLETED
+
+**A brand-new user could not create a nudge by any action available to them.** Three true things
+that only add up to a dead end when you put them together:
+
+1. `loadedNudgesSection` was gated on `!due.isEmpty || scheduled > 0` — no nudges, no section.
+2. First-run seeding creates six life areas, five tags, three tasks and a journal entry, and
+   **never a nudge**.
+3. The **only** route to the Nudges screen is the door inside that section.
+
+So the feature was unreachable until a nudge already existed, and nothing the user could do would
+produce one.
+
+**Found by accident, and the accident is the interesting part.** `RenderHarnessUITests` failed on a
+fresh account with "Today never rendered the nudges door" while being pointed at something else
+entirely. The message was true; the assumption that a signed-in account can see the door was not.
+
+**This is [[dead-shared-component-pattern]] for the SIXTH time, and the most clear-cut yet.** The
+empty-state copy for this exact card already existed AND was already unit-tested:
+
+```
+doorSubtitle(0, 0) → "Recurring reminders you set for yourself."   HomeNudgesDoorTests:61
+chipText(0, 0)     → "None yet"                                     HomeNudgesDoorTests:79
+countLine(0, 0)    → "No nudges yet"                                HomeNudgesSectionTests:86
+```
+
+Its own doc comment says *"The empty case describes what nudges ARE, because someone with none has
+no idea."* Someone designed this screen, wrote down why it mattered, and unit-tested every string —
+and the gate meant no user could ever see a word of it.
+
+**The gate was DELIBERATE, and is preserved rather than reversed.** Its doc comment read *"Silent
+when there is nothing due AND nothing scheduled: an empty schedule is not news, and Today does not
+need a card to say so."* That reasoning is right about a STATUS card and only wrong about a
+feature's sole entrance. E's call was the third option offered: **show it empty only until the
+first nudge exists.** So `shouldRenderSection(hasAny:hasEverHadAny:)` has three states, not two,
+and silence returns the moment the user has ever had a nudge.
+
+**E's design call on the empty face, 2026-08-30:** *"show the nudges door with something such as a
+grayed out effect over the nudges section with a clear direction to 'Add your first nudge'."*
+Muted context, one lit action.
+
+**Acceptance criteria**
+- [x] `HomeNudgesSection.shouldRenderSection(hasAny:hasEverHadAny:)` — pure, three tests written
+      first, covering all three states including the preserved silence.
+- [x] `@AppStorage("nudges.hasEverHadAny")`, following the house pattern
+      (`home.lifeAreasCollapsed`). Latched by `.task` (arriving with content) AND `.onChange`
+      (the list arriving later, or the user creating their first) — never written during body
+      evaluation.
+- [x] The first-run face: ⏰ desaturated with **`.grayscale`, not `.opacity`** — an emoji cannot be
+      de-emphasised with `foregroundStyle`, and a translucent glyph reads as broken rather than
+      quiet. §4 bans opacity as a substitute for semantic colour; desaturating a picture is a
+      different operation.
+- [x] "Add your first nudge" is a **real 44pt Button**, not styled text — it has to be pressable to
+      mean what it says.
+- [x] `FirstRunJourneyUITests` — seeds NOTHING on purpose. The moment it arranges a nudge it stops
+      testing the thing it exists for.
+
+**Red-checked, and it failed at its own assertion rather than incidentally:**
+```
+RED    FirstRunJourneyUITests.swift:51: XCTAssertTrue failed - A brand-new account cannot see
+       the nudges door, so it can never create a first nudge. The section is gated on already
+       having one, and nothing else routes there.
+       Executed 1 test, with 1 failure (0 unexpected)
+
+GREEN  Executed 1 test, with 0 failures (0 unexpected)   EXIT=0
+```
+
+**Verified 2026-08-30:**
+```
+swiftlint lint          → Found 0 violations, 0 serious in 556 files
+xcodebuild test (unit)  → Executed 1862 tests, with 0 failures (0 unexpected)
+                          ** TEST SUCCEEDED **   (1859 + the 3 written first here)
+render harness          → first-run door, dark and light, both EXIT=0
+```
+
+---
+
 ### FEATURE: F-NudgePresets — the New nudge sheet stops charging five taps for "weekdays"  [x] COMPLETED
 
 **E's verdict, from the device, 2026-08-30: "THIS NEEDS RE-DESIGNING! Its very ugly and awkward to

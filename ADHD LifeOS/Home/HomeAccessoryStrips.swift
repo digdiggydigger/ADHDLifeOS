@@ -153,8 +153,10 @@ extension HomeView {
     /// F-V3-Today had traded for a row that only crossed to the tab. Everything the module cannot
     /// hold — creating, editing, rescheduling, the history — is one push away.
     ///
-    /// Silent when there is nothing due AND nothing scheduled: an empty schedule is not news, and
-    /// Today does not need a card to say so.
+    /// Silent when there is nothing due AND nothing scheduled — an empty schedule is not news,
+    /// and Today does not need a card to say so — EXCEPT on a first run, when this card is the
+    /// only route to the Nudges screen and hiding it made the feature unreachable. See
+    /// `HomeNudgesSection.shouldRenderSection`.
     @ViewBuilder
     var nudgesSection: some View {
         // A failed load leaves `nudges` empty, which renders EXACTLY like a clean schedule with
@@ -187,7 +189,8 @@ extension HomeView {
     private var loadedNudgesSection: some View {
         let due = nudgesService.dueNudges()
         let scheduled = HomeNudgesSection.scheduledCount(all: nudgesService.nudges, due: due)
-        if !due.isEmpty || scheduled > 0 {
+        let hasAny = !due.isEmpty || scheduled > 0
+        if HomeNudgesSection.shouldRenderSection(hasAny: hasAny, hasEverHadAny: hasEverHadNudges) {
             VStack(alignment: .leading, spacing: 8) {
                 // Due nudges come FIRST and carry the urgent surface — the door below is a card
                 // now, so the loud thing has to be visibly louder rather than merely earlier.
@@ -203,7 +206,7 @@ extension HomeView {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                nudgesDoorCard(due: due, scheduled: scheduled)
+                nudgesDoorCard(due: due, scheduled: scheduled, isFirstRun: !hasAny)
             }
             // `.contain`, not a bare identifier: applied alone, a container's identifier is
             // inherited by every descendant, so both buttons in here answered to
@@ -212,6 +215,14 @@ extension HomeView {
             // `captureInboxSortAreaChips`.
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("homeNudgesSection")
+            // Latch the moment a nudge exists, so the first-run door is genuinely first-run.
+            // `.task` covers arriving with content already loaded; `.onChange` covers the list
+            // arriving afterwards and the user creating their very first nudge. Writing this in
+            // the body instead would mutate state during view evaluation.
+            .task { if hasAny { hasEverHadNudges = true } }
+            .onChange(of: hasAny) { any in
+                if any { hasEverHadNudges = true }
+            }
         }
     }
 
@@ -223,19 +234,23 @@ extension HomeView {
     /// and a loud blue CTA, which read as the end of the screen rather than a part of it. The
     /// upcoming rows are the point of the extra height — "4 scheduled" states a number, "Water the
     /// plants, Today 18:00" states something you can plan around.
-    private func nudgesDoorCard(due: [Nudge], scheduled: Int) -> some View {
+    private func nudgesDoorCard(due: [Nudge], scheduled: Int, isFirstRun: Bool) -> some View {
         let upcoming = HomeNudgesSection.upcoming(
             all: nudgesService.nudges, due: due, now: Date()
         )
         return VStack(alignment: .leading, spacing: 8) {
-            nudgesDoorHeader(dueCount: due.count, scheduled: scheduled)
-            ForEach(upcoming) { nudge in
-                upcomingNudgeRow(nudge)
-            }
-            if let overflow = HomeNudgesSection.upcomingOverflowLine(scheduledCount: scheduled) {
-                Text(overflow)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            nudgesDoorHeader(dueCount: due.count, scheduled: scheduled, isFirstRun: isFirstRun)
+            if isFirstRun {
+                firstNudgeDirective
+            } else {
+                ForEach(upcoming) { nudge in
+                    upcomingNudgeRow(nudge)
+                }
+                if let overflow = HomeNudgesSection.upcomingOverflowLine(scheduledCount: scheduled) {
+                    Text(overflow)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -244,7 +259,26 @@ extension HomeView {
 
     /// The door's header row, split out only because the card was over its 50-line budget with it
     /// inline. Mirrors `inboxPeekCard`'s header exactly: 44pt tinted tile, title, subtitle, chip.
-    private func nudgesDoorHeader(dueCount: Int, scheduled: Int) -> some View {
+    /// The card's one bright control on a first run — muted context, lit action.
+    ///
+    /// A separate 44pt button rather than text inside the header, because "Add your first nudge"
+    /// has to BE pressable to mean what it says. Both it and the header open the same screen.
+    private var firstNudgeDirective: some View {
+        Button {
+            Haptics.play(.light)
+            isPresentingNudges = true
+        } label: {
+            Label(HomeNudgesSection.firstRunDirective, systemImage: "plus.circle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("homeNudgesFirstRunDirective")
+    }
+
+    private func nudgesDoorHeader(dueCount: Int, scheduled: Int, isFirstRun: Bool) -> some View {
         let chip = HomeNudgesSection.chipText(dueCount: dueCount, scheduledCount: scheduled)
         return Button {
             Haptics.play(.light)
@@ -253,14 +287,22 @@ extension HomeView {
             HStack(spacing: 8) {
                 Text("⏰")
                     .font(.title3)
+                    // `.grayscale`, not `.opacity`: an emoji cannot be de-emphasised with
+                    // `foregroundStyle`, and a translucent glyph over a card reads as broken
+                    // rather than quiet. §4 bans opacity as a substitute for semantic colour;
+                    // desaturating a picture is a different thing and is the honest tool here.
+                    .grayscale(isFirstRun ? 1 : 0)
                     .frame(width: 44, height: 44)
                     .background(
-                        Color.accentColor.opacity(0.12),
+                        isFirstRun
+                            ? AnyShapeStyle(Color("CardSurfaceSecondary"))
+                            : AnyShapeStyle(Color.accentColor.opacity(0.12)),
                         in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                     )
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Nudges")
                         .font(.headline)
+                        .foregroundStyle(isFirstRun ? Color.secondary : Color.primary)
                     Text(HomeNudgesSection.doorSubtitle(dueCount: dueCount, scheduledCount: scheduled))
                         .font(.footnote)
                         .foregroundStyle(.secondary)

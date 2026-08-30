@@ -195,4 +195,26 @@ final class HomeNudgesDoorTests: XCTestCase {
         XCTAssertEqual(HomeNudgesSection.upcomingOverflowLine(scheduledCount: 4), "and 1 more scheduled")
         XCTAssertEqual(HomeNudgesSection.upcomingOverflowLine(scheduledCount: 6), "and 3 more scheduled")
     }
+
+    // MARK: - Whether Today shows the section at all (F-FirstNudgeReachable)
+
+    /// Content always shows. This is the uncontroversial case and the one that already worked.
+    func testShouldRender_withNudges_isTrue() {
+        XCTAssertTrue(HomeNudgesSection.shouldRenderSection(hasAny: true, hasEverHadAny: false))
+        XCTAssertTrue(HomeNudgesSection.shouldRenderSection(hasAny: true, hasEverHadAny: true))
+    }
+
+    /// The bug this predicate exists for. A brand-new account has no nudges and has never had
+    /// one, and the door is the ONLY route to the Nudges screen — so hiding it here left the
+    /// feature unreachable by anything the user could do.
+    func testShouldRender_emptyAndNeverHadAny_isTrue_soAFirstNudgeCanBeMade() {
+        XCTAssertTrue(HomeNudgesSection.shouldRenderSection(hasAny: false, hasEverHadAny: false))
+    }
+
+    /// And the original decision is preserved rather than reversed: once you have had a nudge,
+    /// an empty schedule goes back to being silent. "An empty schedule is not news" was right
+    /// about a status card; it was only wrong about the feature's sole entrance.
+    func testShouldRender_emptyButHasHadSome_isFalse_theOriginalSilence() {
+        XCTAssertFalse(HomeNudgesSection.shouldRenderSection(hasAny: false, hasEverHadAny: true))
+    }
 }

@@ -64,6 +64,11 @@ struct HomeView: View {
     /// you fold it because you do not want to see it, so it must survive a relaunch. Internal, not
     /// private — the section lives in `HomeMomentumSections.swift`.
     @AppStorage("home.lifeAreasCollapsed") var lifeAreasCollapsed = false
+    /// Whether this device has ever seen a nudge exist. Drives the first-run door — see
+    /// `HomeNudgesSection.shouldRenderSection`. Local rather than per-account on purpose: the
+    /// worst case of getting it wrong is that the empty door appears once more than it needed to,
+    /// which is the harmless direction for a control whose job is to be findable.
+    @AppStorage("nudges.hasEverHadAny") var hasEverHadNudges = false
     @State var inboxCount = 0
     /// The newest waiting captures for Today's inbox card (E's 2026-08-25 note) — refreshed with
     /// the count, from the same fetch.

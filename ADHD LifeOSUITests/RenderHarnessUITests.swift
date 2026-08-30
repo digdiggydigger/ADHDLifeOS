@@ -108,6 +108,37 @@ final class RenderHarnessUITests: XCTestCase {
         )
     }
 
+    /// The first-run nudges door: muted card, lit "Add your first nudge".
+    ///
+    /// Seeds NOTHING — the whole point is what a brand-new account sees.
+    @MainActor
+    func testRenderFirstRunNudgesDoor() throws {
+        try UITestEmulator.skipUnlessRunning()
+
+        let app = try UITestSession.launchSignedIn(label: "firstrunrender")
+        XCTAssertTrue(
+            app.buttons["quickCaptureButton"].waitForExistence(timeout: UITestSession.timeout),
+            "The signed-in tabs never appeared"
+        )
+        let door = app.buttons["homeManageNudgesRow"]
+        var remaining = 10
+        while !door.exists, remaining > 0 {
+            app.swipeUp()
+            remaining -= 1
+        }
+        XCTAssertTrue(door.exists, "No nudges door on a fresh account")
+        remaining = 6
+        while !door.isHittable, remaining > 0 {
+            app.swipeUp()
+            remaining -= 1
+        }
+        XCTAssertTrue(
+            app.buttons["homeNudgesFirstRunDirective"].waitForExistence(timeout: UITestSession.timeout),
+            "The first-run door showed no 'Add your first nudge' direction"
+        )
+        attach(app, named: "4-first-run-nudges-door")
+    }
+
     @MainActor
     private func attach(_ app: XCUIApplication, named name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
