@@ -77,6 +77,22 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
         XCTAssertLessThan(CaptureDiscMetrics.pillGlyphScale, 1)
     }
 
+    func testPillOpacityStaysInTheReadableGlassBand() throws {
+        // E's dial sits at 0.68 (device GIF, 2026-08-30). The bounds are the point, not the
+        // number: at 1.0 the pill is opaque and the trailing corner swallows content again;
+        // below 0.5 a blue control at two-thirds ghost reads as disabled, and the white glyph
+        // starts failing against light backgrounds. Retune inside the band freely.
+        XCTAssertLessThan(CaptureDiscMetrics.pillOpacity, 1)
+        XCTAssertGreaterThanOrEqual(CaptureDiscMetrics.pillOpacity, 0.5)
+        // One spelling: the label must read the metric, not carry its own inline alpha.
+        XCTAssertTrue(
+            try Self.appSource("Theme/CaptureDiscLabel.swift")
+                .contains("CaptureDiscMetrics.pillOpacity"),
+            "The disc face no longer reads `pillOpacity` — the metric and the rendered alpha"
+                + " have come apart, and this test is guarding a number nothing uses."
+        )
+    }
+
     // MARK: - Reading the tree
 
     private static func appSource(_ relativePath: String) throws -> String {

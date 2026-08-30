@@ -134,6 +134,13 @@ enum CaptureDiscMetrics {
     static let pillHeight: CGFloat = 32
     static let pillGlyphScale: CGFloat = 0.8
 
+    /// E's number, chosen off the device GIF (2026-08-30): "try .68 — just below the 0.7 sweet
+    /// spot." The GIF showed the OPAQUE pill still swallowing whatever scrolls through the
+    /// trailing corner (a nudges chip, a capture row's edge); at 0.68 that content reads
+    /// through it, and the regrow's fade-in starts from visibly glassy. Below ~0.5 the pill
+    /// would read as disabled — keep taste changes above that floor.
+    static let pillOpacity: CGFloat = 0.68
+
     /// Derived from the REST state deliberately: the pill is transient, and the last row of
     /// every scroll still has to clear the full disc it settles back into.
     static let clearance: CGFloat = discDiameter + 16 + 8

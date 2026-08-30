@@ -34,10 +34,10 @@ struct CaptureDiscLabel: View {
                 y: showsPill ? 4 : 8
             )
             .rotationEffect(.degrees(isFabOpen ? 135 : 0))
-            // Slightly translucent as a pill, so the regrow below reads as an expanding FADE —
-            // and mid-scroll a touch more of the row underneath shows through, which is the
-            // pill's whole job.
-            .opacity(showsPill ? 0.85 : 1)
+            // Translucent as a pill (E dialled 0.85 → 0.68 off the device GIF), so the row
+            // underneath reads THROUGH it — the pill's whole job — and the regrow below starts
+            // from visibly glassy, making the expanding fade unmistakable.
+            .opacity(showsPill ? CaptureDiscMetrics.pillOpacity : 1)
             .frame(width: CaptureDiscMetrics.discDiameter, height: CaptureDiscMetrics.discDiameter)
             .contentShape(Rectangle())
             // ASYMMETRIC by E's device verdict (F-PillTune): the shrink keeps the snappy spring

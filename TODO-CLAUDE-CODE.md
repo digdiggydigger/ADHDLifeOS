@@ -67,6 +67,17 @@ slow gradual expanding fade effect would look good."*
       — bigger pill mid-drag, a frame mid-regrow, settled disc. Feel verdict stays E's, on
       device.
 
+**Addendum, same evening — the pill goes glass (E's GIF verdict).** E recorded the tuned build
+(`Capture PillButton preview.gif`, 85 frames analysed via an ImageIO frame dump) and dialled the
+pill's translucency himself: *"try .68 — just below the 0.7 sweet spot."* Shipped as
+`CaptureDiscMetrics.pillOpacity = 0.68` (one spelling; the label reads the metric), guarded by
+`testPillOpacityStaysInTheReadableGlassBand` — bounds 0.5…<1 because at 1.0 the trailing corner
+swallows content again (the GIF showed the opaque pill covering a nudges chip and a capture
+row's edge) and below ~0.5 a blue control reads as disabled. Suite 1,887 / 0.
+`screenshots/disc-pill-tune/4-glass-pill-068.png` shows the Money row's progress bar reading
+through the pill. The GIF also confirmed the design's known boundary: stop mid-page and the disc
+regrows over content after the settle — flagged to E as a decision, not changed.
+
 ---
 
 ### FEATURE: F-DiscPill — the capture disc gets out of the way while you scroll  [x] COMPLETED
