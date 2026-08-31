@@ -377,7 +377,7 @@ extension QuickCaptureView {
                 fill: Color(fanSlot.fillAssetName), foreground: Color(fanSlot.onAssetName)
             ))
             .disabled(isSaveDisabled)
-            .accessibilityIdentifier("quickCaptureCTAButton")
+            .accessibilityIdentifier("quickCaptureSubmitButton")
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)

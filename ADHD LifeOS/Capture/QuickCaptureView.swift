@@ -137,11 +137,6 @@ struct QuickCaptureView: View {
                             .font(.headline)
                     }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { submit() }
-                        .disabled(isSaveDisabled)
-                        .accessibilityIdentifier("quickCaptureSubmitButton")
-                }
             }
             .task {
                 await service.refreshWeekCounterweight()
