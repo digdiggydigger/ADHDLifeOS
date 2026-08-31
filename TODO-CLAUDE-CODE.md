@@ -79,6 +79,49 @@ as [[landscape-fix]] records. The guard doing its job is why the failure was leg
 
 ---
 
+### FEATURE: F-ComposerSingleSave — one commit button on the capture composer  [x] COMPLETED
+
+**E's report (2026-08-31, two device screenshots): the Task-kind composer showed BOTH a toolbar
+"Save" and the green "Add to Today", while the New task sheet has a single footer button.**
+Diagnosis: both called the same `submit()` — the toolbar Save was a pure duplicate, for all four
+kinds, not just Task. Shipped as `4c0630f`: toolbar Save deleted, the footer CTA (the designed
+primary, with the week-counterweight line) is the single commit, and it now carries the
+`quickCaptureSubmitButton` identifier (`quickCaptureCTAButton` no longer exists).
+
+**Acceptance criteria**
+- [x] No new pure logic → no new unit tests; the guard is the landscape render sweep, which taps
+      that identifier to submit a note. Re-run post-change: passed (122.6s), EXIT=0 — the footer
+      stays reachable above the keyboard in landscape.
+- [x] Full unit suite **1,888 / 0**; lint 0 violations; build succeeded.
+
+### FEATURE: F-JournalComposerLocation — the entry composer's location switch  [x] COMPLETED
+
+**E's ask (2026-08-31): "add the ability to log a location when a Log or Journal entry is
+created — the same way that captures etc can", settled in chat as a COMBINATION of the per-entry
+toggle and showing the place while composing.** Entries were already stamped SILENTLY behind the
+global toggle; the gap was visibility and per-entry control. Shipped as `4dcb21b`:
+`JournalService.composerAttachLocation` gates the stamp (the captures rule verbatim — seeded
+from the global toggle, reset on load + after every save, and OFF requests no fix at all), the
+default stamp closure moved `RecordLocationStamp` → `CaptureLocationStamp` so the global re-read
+cannot veto an explicit opt-in, and the subtitle names the resolving place live — "This entry
+will record you're at The Office 💼." — through a `JournalTimeline.placeLine(placeId:)` overload
+the saved row's spelling delegates to. Triage's Journal-it path is untouched (it never stamped).
+The subtitle takes `composerSoftInk`, never `.secondary` — the gold-pad half-alpha trap.
+
+**Acceptance criteria**
+- [x] TDD: 8 new tests across `JournalLocationStampTests` / `LogComposerCopyTests` /
+      `JournalPlaceLineTests`; red-check run properly per the standing rule — gate reverted
+      AFTER the commit, off-test failed for the right reason (`("1") is not equal to ("0") —
+      off must not cost a fix`), restored with `git checkout --`, re-run green.
+- [x] Full unit suite **1,896 / 0**, EXIT=0; lint 0 violations in 566 files; build succeeded.
+- [x] Device carries both blocks — `devicectl` install + launch verified 2026-08-31 09:40.
+
+**E's device verdict (2026-08-31, on `4dcb21b`): "i tried both things and both are working
+well."** Both blocks are settled — the single-commit composer and the location switch's gold-pad
+styling both passed E's on-device look.
+
+---
+
 ### FEATURE: F-TabBarMinimize — the tab bar gets out of the way while you scroll down  [x] COMPLETED
 
 **E's ask (2026-08-31, in chat): "make the nav bar at the bottom of the screen transparent when
