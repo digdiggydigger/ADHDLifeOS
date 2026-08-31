@@ -47,14 +47,16 @@ struct CaptureDiscLabel: View {
             )
             .rotationEffect(.degrees(isFabOpen ? 135 : 0))
             // Translucent as a pill (E dialled 0.85 → 0.68 off the device GIF), so the row
-            // underneath reads THROUGH it — the pill's whole job — and the regrow below starts
-            // from visibly glassy, making the expanding fade unmistakable.
+            // underneath reads THROUGH it — the pill's whole job, doubly so now the pill STAYS
+            // through the whole read (F-PillStay) — and the regrow starts from visibly glassy,
+            // making the expanding fade unmistakable.
             .opacity(showsPill ? CaptureDiscMetrics.pillOpacity : 1)
             .frame(width: CaptureDiscMetrics.discDiameter, height: CaptureDiscMetrics.discDiameter)
             .contentShape(Rectangle())
             // ASYMMETRIC by E's device verdict (F-PillTune): the shrink keeps the snappy spring
-            // because it must feel tied to the finger, but the regrow is "a slow gradual
-            // expanding fade" — a long easeOut, no bounce. The ternary reads the NEW value at
+            // because it must feel tied to the finger, but the regrow — now triggered by an
+            // UP-scroll rather than a settle timer (F-PillStay) — is "a slow gradual expanding
+            // fade": a long easeOut, no bounce. The ternary reads the NEW value at
             // re-evaluation, so each direction gets its own curve.
             .animation(
                 reduceMotion

@@ -3,102 +3,94 @@
 //  ADHD LifeOSTests
 //
 
-import Combine
 import XCTest
 @testable import ADHD_LifeOS
 
-/// F-DiscPill's state machine: the capture disc shrinks to a pill the moment a drag starts and
-/// grows back only after the finger has been up for a settle delay, so stop-and-go scrolling
-/// reads as one continuous pill rather than a disc that flaps between sizes.
+/// F-PillStay's state machine (superseding F-DiscPill's settle-timer version, at E's direction:
+/// "stay in pill form until the page is scrolled upwards again"). The pill is DIRECTIONAL and
+/// STICKY: dragging the finger up (reading down the page) collapses the disc and it stays
+/// collapsed — through the lift, through momentum, indefinitely; dragging the finger down
+/// (scrolling back up) restores the disc. A ±threshold latch keeps touch jitter from flapping
+/// the state, and a mid-drag reversal flips it without a new touch.
 ///
-/// Tests inject a short delay; the production default is asserted separately so a "fix" that
-/// zeroes the debounce cannot pass unnoticed.
+/// There are deliberately NO timers here — the old settle-debounce restore is gone, and these
+/// tests are all synchronous because the model's behaviour is.
 @MainActor
 final class CaptureDiscScrollActivityTests: XCTestCase {
 
-    /// Long enough to observe, short enough not to slow the suite.
-    private static let testDelay: TimeInterval = 0.05
-
-    /// Comfortably past `testDelay` — where the restore lands if nothing cancelled it.
-    private static let pastTheDelay: TimeInterval = 1.0
+    /// One comfortable step past the latch threshold.
+    private static let step = CaptureDiscScrollActivity.directionThreshold + 1
 
     func testStartsAtRest() {
-        XCTAssertFalse(CaptureDiscScrollActivity(settleDelay: Self.testDelay).isScrolling)
+        XCTAssertFalse(CaptureDiscScrollActivity().prefersPill)
     }
 
-    func testDragBeganShrinksImmediately() {
-        let activity = CaptureDiscScrollActivity(settleDelay: Self.testDelay)
+    func testScrollingDownCollapsesToThePill() {
+        let activity = CaptureDiscScrollActivity()
         activity.dragBegan()
-        XCTAssertTrue(activity.isScrolling, "The shrink must be synchronous — a pill that arrives"
-            + " after a debounce would spend the whole scroll as a disc.")
+        activity.dragMoved(translationY: -Self.step)
+        XCTAssertTrue(activity.prefersPill, "Finger moving up = reading down the page = pill.")
     }
 
-    func testDragEndedDoesNotRestoreSynchronously() {
-        let activity = CaptureDiscScrollActivity(settleDelay: Self.testDelay)
+    func testThePillSticksAfterTheDragEnds() {
+        // The heart of F-PillStay: no terminal event, no timer, nothing restores the disc
+        // except an upward scroll. The model has no way to hear "drag ended" at all now —
+        // stickiness by construction, not by a flag.
+        let activity = CaptureDiscScrollActivity()
         activity.dragBegan()
-        activity.dragEnded()
-        XCTAssertTrue(activity.isScrolling, "Lifting the finger must not snap the disc back —"
-            + " momentum is still moving content underneath it.")
-    }
-
-    func testDragEndedRestoresAfterTheSettleDelay() {
-        let activity = CaptureDiscScrollActivity(settleDelay: Self.testDelay)
+        activity.dragMoved(translationY: -Self.step)
+        // A second drag that goes nowhere near the threshold changes nothing either.
         activity.dragBegan()
-        activity.dragEnded()
-        wait(for: [expectRestored(activity)], timeout: Self.pastTheDelay)
-        XCTAssertFalse(activity.isScrolling)
+        activity.dragMoved(translationY: -1)
+        XCTAssertTrue(activity.prefersPill)
     }
 
-    func testNewDragCancelsThePendingRestore() {
-        let activity = CaptureDiscScrollActivity(settleDelay: Self.testDelay)
+    func testScrollingUpRestoresTheDisc() {
+        let activity = CaptureDiscScrollActivity()
         activity.dragBegan()
-        activity.dragEnded()
+        activity.dragMoved(translationY: -Self.step)
         activity.dragBegan()
-
-        // Wait out where the cancelled restore WOULD have landed. An inverted expectation is
-        // the assertion: `isScrolling` never drops.
-        let neverRestored = expectRestored(activity)
-        neverRestored.isInverted = true
-        wait(for: [neverRestored], timeout: Self.testDelay * 4)
-        XCTAssertTrue(
-            activity.isScrolling,
-            "A drag that starts inside the settle window is the SAME scroll — the pill must hold."
-        )
+        activity.dragMoved(translationY: Self.step)
+        XCTAssertFalse(activity.prefersPill, "Finger moving down = scrolling back up = disc.")
     }
 
-    func testDragEndedWithoutBeganStaysAtRest() {
-        // The recognizer cannot deliver .ended without .began, but the model must not rely on
-        // that ordering: an unmatched end is a no-op, not a latch into some third state.
-        let activity = CaptureDiscScrollActivity(settleDelay: Self.testDelay)
-        activity.dragEnded()
-        XCTAssertFalse(activity.isScrolling)
-    }
-
-    func testRepeatedDragBeganIsIdempotent() {
-        let activity = CaptureDiscScrollActivity(settleDelay: Self.testDelay)
+    func testAMidDragReversalFlipsWithoutANewTouch() {
+        // Drag down the page, then pull back up in the SAME gesture: the anchor re-bases at
+        // each flip, so the reversal only needs the threshold of travel from the turn, not
+        // from the gesture's start.
+        let activity = CaptureDiscScrollActivity()
         activity.dragBegan()
+        activity.dragMoved(translationY: -Self.step)
+        XCTAssertTrue(activity.prefersPill)
+        // Back to 0: a full threshold-plus of travel upward from the re-based anchor.
+        activity.dragMoved(translationY: 0)
+        XCTAssertFalse(activity.prefersPill)
+    }
+
+    func testJitterUnderTheThresholdNeverFlaps() {
+        let activity = CaptureDiscScrollActivity()
         activity.dragBegan()
-        XCTAssertTrue(activity.isScrolling)
+        activity.dragMoved(translationY: -Self.step)
+        // Wobble around the anchor by less than the threshold, both directions.
+        activity.dragMoved(translationY: -Self.step + 4)
+        activity.dragMoved(translationY: -Self.step - 4)
+        activity.dragMoved(translationY: -Self.step + 4)
+        XCTAssertTrue(activity.prefersPill, "±4pt of touch jitter must not restore the disc.")
     }
 
-    func testProductionSettleDelayIsADeliberateBeat() {
-        // The debounce is the feature: 0 would flap on every stop-and-go scroll, and multiple
-        // seconds would park a pill over nothing long after the scroll ended.
-        XCTAssertGreaterThanOrEqual(CaptureDiscScrollActivity.settleDelay, 0.3)
-        XCTAssertLessThanOrEqual(CaptureDiscScrollActivity.settleDelay, 1.5)
+    func testResetRestoresTheDisc() {
+        // The one restore that isn't a scroll: a context switch (tab change) starts fresh —
+        // a sticky pill on a page the user never scrolled reads as a bug.
+        let activity = CaptureDiscScrollActivity()
+        activity.dragBegan()
+        activity.dragMoved(translationY: -Self.step)
+        activity.reset()
+        XCTAssertFalse(activity.prefersPill)
     }
 
-    // MARK: - Support
-
-    /// Fulfilled when `isScrolling` next publishes `false`.
-    private func expectRestored(_ activity: CaptureDiscScrollActivity) -> XCTestExpectation {
-        let expectation = expectation(description: "isScrolling returned to false")
-        let cancellable = activity.$isScrolling
-            .dropFirst()
-            .filter { !$0 }
-            .sink { _ in expectation.fulfill() }
-        // Keep the subscription alive until the wait resolves it.
-        addTeardownBlock { cancellable.cancel() }
-        return expectation
+    func testThresholdIsADeliberateLatch() {
+        // 0 would flap on every touch tremor; a huge value would make the pill feel deaf.
+        XCTAssertGreaterThan(CaptureDiscScrollActivity.directionThreshold, 4)
+        XCTAssertLessThanOrEqual(CaptureDiscScrollActivity.directionThreshold, 44)
     }
 }

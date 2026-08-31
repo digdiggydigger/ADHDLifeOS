@@ -55,11 +55,11 @@ struct RootView: View {
         logger: FirebaseFocusSessionAdapter()
     )
 
-    /// The pill is a MID-SCROLL state (F-DiscPill, E's call 2026-08-30: "shrink the disc to a
-    /// small pill while scrolling"). An open fan forces the full disc: its scrim blocks
-    /// scrolling anyway, and the ✕ rotation reads as a disc, not a sliver.
+    /// The pill is a STICKY scrolled-down state (F-PillStay, E's call 2026-08-31: "stay in
+    /// pill form until the page is scrolled upwards again"). An open fan forces the full disc:
+    /// its scrim blocks scrolling anyway, and the ✕ rotation reads as a disc, not a sliver.
     private var showsPill: Bool {
-        discScrollActivity.isScrolling && !isFabOpen
+        discScrollActivity.prefersPill && !isFabOpen
     }
 
     /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
@@ -180,6 +180,10 @@ struct RootView: View {
                 // switch (a widget door, "See nudges") buzzes too — those are still a tab change
                 // from under the user's thumb.
                 .haptic(HapticFeel.tabChange, trigger: selectedTab)
+                // F-PillStay's one non-scroll restore: a fresh tab starts with the full disc —
+                // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
+                // call beyond E's stated rule; E can veto.)
+                .onChange(of: selectedTab) { _ in discScrollActivity.reset() }
                 .blur(radius: isFabOpen ? 4 : 0)
                 .overlay {
                     if isFabOpen {
@@ -298,12 +302,12 @@ struct RootView: View {
         // is the only install site. Idempotent across auth-state swaps.
         .onAppear {
             KeyboardTapAway.installOnKeyWindow()
-            // F-DiscPill's scroll detector: same install site, same lifetime, same window-level
+            // The pill's scroll detector: same install site, same lifetime, same window-level
             // pattern. The callbacks capture the `@StateObject` model, the one object that
             // outlives every auth-state swap this onAppear can re-fire across.
             CaptureDiscPanObserver.installOnKeyWindow(
                 onDragBegan: discScrollActivity.dragBegan,
-                onDragEnded: discScrollActivity.dragEnded
+                onDragMoved: discScrollActivity.dragMoved
             )
         }
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with

@@ -27,8 +27,8 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
 
     func testRootViewReadsTheActivityModel() throws {
         XCTAssertTrue(
-            try Self.appSource("RootView.swift").contains(".isScrolling"),
-            "The disc never reads `isScrolling`, so the model can change all it likes and the"
+            try Self.appSource("RootView.swift").contains(".prefersPill"),
+            "The disc never reads `prefersPill`, so the model can change all it likes and the"
                 + " 60pt circle stays a 60pt circle over the content E reported."
         )
     }

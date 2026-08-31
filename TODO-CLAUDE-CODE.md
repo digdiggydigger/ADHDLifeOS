@@ -36,6 +36,40 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-PillStay — the pill stays until you scroll back up  [x] COMPLETED
+
+**E's direction (2026-08-31), changing the settled motion model:** *"currently, the pill button
+returns back to its normal size — I want this to stay in pill form until the page is scrolled
+upwards again."*
+
+So the pill goes DIRECTIONAL and STICKY, the classic FAB pattern: scrolling down (finger moving
+up) collapses the disc and it STAYS collapsed — through the stop, through momentum, through
+reading; scrolling up (finger moving down) restores the disc immediately. The 1.2s settle timer
+and its debounce machinery are REMOVED, not parked — dead code is this repo's most repeated
+defect. The shrink spring and the expanding-fade regrow animations are untouched; only the
+trigger changes.
+
+**Mechanics:** the window-level pan observer now forwards `.changed` translation; the model
+keeps a directional anchor and flips on ±12pt of travel in the new direction, so jitter can't
+flap it and a mid-drag reversal switches state without a new touch. One judgment call beyond
+E's words: a TAB CHANGE resets to the disc — a sticky pill on a fresh tab reads as a bug, and
+E can veto this.
+
+**Acceptance criteria:**
+
+- [x] `CaptureDiscScrollActivity` rewritten: `prefersPill`, ±12pt directional latch with a
+      re-basing anchor, no timers — 8 synchronous tests.
+- [x] `CaptureDiscPanObserver.react(to:translationY:)` forwards began + changed; terminal
+      states silent by design — 4 tests.
+- [x] Call-site guards moved to `.prefersPill`; wiring chain asserted end to end.
+- [x] SwiftLint 0 violations, suite 1,886 / 0 (settle-timer tests removed with the timer),
+      build green (2026-08-31).
+- [x] Discriminator rendered on the simulator (`screenshots/pill-stay/`): the pill still
+      standing FIVE seconds after the down-scroll ended — the old build regrows at 1.2s — then
+      the disc back after one up-scroll.
+
+---
+
 ### FEATURE: F-FabDeepField — the FAB gets an identity, and the fan stops shouting  [x] COMPLETED
 
 **E's verdict on device (2026-08-30):** the FAB's colour is wrong — *"the colors when the FAB is
