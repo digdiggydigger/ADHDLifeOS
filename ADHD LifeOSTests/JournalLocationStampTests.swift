@@ -23,6 +23,7 @@ final class JournalLocationStampTests: XCTestCase {
         let placeId = UUID()
         let sut = service(fake, stamp: LocationStamp(coordinate: coordinate, placeId: placeId))
         sut.composerBody = "Slept badly, still shipped"
+        sut.composerAttachLocation = true
 
         let created = await sut.createLog()
 
@@ -39,6 +40,7 @@ final class JournalLocationStampTests: XCTestCase {
         let sut = service(fake, stamp: LocationStamp(coordinate: coordinate, placeId: nil))
         sut.composerBody = "Quick note"
         sut.composerType = .log
+        sut.composerAttachLocation = true
 
         _ = await sut.createLog()
 
@@ -53,6 +55,7 @@ final class JournalLocationStampTests: XCTestCase {
         let fake = FakeJournalClientAdapting()
         let sut = service(fake, stamp: nil)
         sut.composerBody = "Slept badly, still shipped"
+        sut.composerAttachLocation = true
 
         let created = await sut.createLog()
 
@@ -72,12 +75,78 @@ final class JournalLocationStampTests: XCTestCase {
             return nil
         })
         sut.composerBody = "   "
+        sut.composerAttachLocation = true
 
         let created = await sut.createLog()
 
         XCTAssertFalse(created)
         XCTAssertEqual(fake.createLogCallCount, 0)
         XCTAssertEqual(stampRequests, 0, "validation must fail before a fix is requested")
+    }
+
+    // MARK: - The per-entry switch (E, 2026-08-31: the captures rule, applied to the composer)
+
+    /// The composer's switch is now the gate, exactly as `CaptureInboxService.attachLocation` is
+    /// for captures. Off means OFF: no stamp on the write, and no fix even requested — a control
+    /// that says "won't record where you made it" while a fix is quietly taken would be lying.
+    func testCreateLog_withLocationChoiceOff_requestsNoFixAndCarriesNoStamp() async {
+        let fake = FakeJournalClientAdapting()
+        var stampRequests = 0
+        let sut = JournalService(client: fake, locationStamp: {
+            stampRequests += 1
+            return LocationStamp(coordinate: self.coordinate, placeId: UUID())
+        })
+        sut.composerBody = "Slept badly, still shipped"
+        sut.composerAttachLocation = false
+
+        let created = await sut.createLog()
+
+        XCTAssertTrue(created, "declining location must never fail the entry")
+        XCTAssertEqual(stampRequests, 0, "off must not cost a fix, let alone record one")
+        XCTAssertNil(fake.lastCreateLogInput?.locationStamp)
+    }
+
+    // MARK: - The composer's preview ("show me where this will say I was")
+
+    func testRefreshComposerLocationPreview_whenChoiceIsOff_staysEmpty() async {
+        let fake = FakeJournalClientAdapting()
+        var stampRequests = 0
+        let sut = JournalService(client: fake, locationStamp: {
+            stampRequests += 1
+            return LocationStamp(coordinate: self.coordinate, placeId: UUID())
+        })
+        sut.composerAttachLocation = false
+
+        await sut.refreshComposerLocationPreview()
+
+        XCTAssertNil(sut.composerLocationPreview)
+        XCTAssertEqual(stampRequests, 0, "an off switch must not cost a fix")
+    }
+
+    func testRefreshComposerLocationPreview_whenChoiceIsOn_takesAStamp() async {
+        let fake = FakeJournalClientAdapting()
+        let placeId = UUID()
+        let sut = service(fake, stamp: LocationStamp(coordinate: coordinate, placeId: placeId))
+        sut.composerAttachLocation = true
+
+        await sut.refreshComposerLocationPreview()
+
+        XCTAssertEqual(sut.composerLocationPreview?.placeId, placeId)
+    }
+
+    /// Toggling off after a preview was taken must also clear it — a lingering "at the Office"
+    /// under a switch that now says "won't record" would contradict the switch.
+    func testRefreshComposerLocationPreview_turningOffClearsAnEarlierPreview() async {
+        let fake = FakeJournalClientAdapting()
+        let sut = service(fake, stamp: LocationStamp(coordinate: coordinate, placeId: UUID()))
+        sut.composerAttachLocation = true
+        await sut.refreshComposerLocationPreview()
+        XCTAssertNotNil(sut.composerLocationPreview)
+
+        sut.composerAttachLocation = false
+        await sut.refreshComposerLocationPreview()
+
+        XCTAssertNil(sut.composerLocationPreview)
     }
 
     // MARK: - The adapter carries it onto the document

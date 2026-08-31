@@ -206,7 +206,14 @@ enum JournalTimeline {
     /// place's CURRENT record, like `locationEventLine` above, which is the whole reason the id is
     /// stored rather than the name.
     static func placeLine(for log: Log, places: [Place]) -> String? {
-        guard let placeId = log.placeId,
+        placeLine(placeId: log.placeId, places: places)
+    }
+
+    /// The same line for a place that isn't on a saved row yet — the composer's live preview
+    /// (E, 2026-08-31: "show the place while composing") resolves through this so the promise
+    /// and the row it becomes can never spell the place differently.
+    static func placeLine(placeId: UUID?, places: [Place]) -> String? {
+        guard let placeId,
               let place = places.first(where: { $0.id == placeId }) else { return nil }
         let name = place.emoji.map { "\(place.name) \($0)" } ?? place.name
         return "at \(name)"

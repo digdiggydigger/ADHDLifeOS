@@ -27,4 +27,33 @@ final class LogComposerCopyTests: XCTestCase {
             "Entries are append-only — saved means saved."
         )
     }
+
+    /// The location switch says what THIS entry will do, and names the place when one resolves
+    /// (E, 2026-08-31: "show the place while composing") — the capture composer's subtitle,
+    /// upgraded with `JournalTimeline.placeLine`'s spelling ("at The Office 💼").
+    func testLocationSubtitle_offSaysWontRecord() {
+        XCTAssertEqual(
+            LogComposerCopy.locationSubtitle(attach: false, placeLine: nil),
+            "This entry won't record where you made it."
+        )
+        XCTAssertEqual(
+            LogComposerCopy.locationSubtitle(attach: false, placeLine: "at The Office 💼"),
+            "This entry won't record where you made it.",
+            "off wins even when a stale place line is still around"
+        )
+    }
+
+    func testLocationSubtitle_onWithoutANamedPlace_saysWillRecord() {
+        XCTAssertEqual(
+            LogComposerCopy.locationSubtitle(attach: true, placeLine: nil),
+            "This entry will record where you made it."
+        )
+    }
+
+    func testLocationSubtitle_onInsideANamedPlace_namesIt() {
+        XCTAssertEqual(
+            LogComposerCopy.locationSubtitle(attach: true, placeLine: "at The Office 💼"),
+            "This entry will record you're at The Office 💼."
+        )
+    }
 }

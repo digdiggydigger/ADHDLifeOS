@@ -91,4 +91,16 @@ final class JournalPlaceLineTests: XCTestCase {
 
         XCTAssertEqual(line, "at The Office 💼")
     }
+
+    /// The composer's live preview (E, 2026-08-31) resolves a bare `placeId` through the SAME
+    /// spelling as the saved row it becomes — one rule, not a hand-rolled twin. The log-taking
+    /// overload above delegates here, so these two can never drift apart.
+    func testPlaceLine_byPlaceId_matchesTheRowSpelling() {
+        XCTAssertEqual(
+            JournalTimeline.placeLine(placeId: officeId, places: [office()]),
+            "at The Office 💼"
+        )
+        XCTAssertNil(JournalTimeline.placeLine(placeId: nil, places: [office()]))
+        XCTAssertNil(JournalTimeline.placeLine(placeId: officeId, places: []))
+    }
 }

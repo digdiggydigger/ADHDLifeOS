@@ -67,6 +67,7 @@ struct LogComposerView: View {
                     }
                     areaSection
                     tagsSection
+                    locationSection
                     if let errorMessage = journalService.createErrorMessage {
                         Text(errorMessage)
                             .font(.footnote)
@@ -109,6 +110,7 @@ struct LogComposerView: View {
                 value: journalService.composerType
             )
             .safeAreaInset(edge: .bottom) { footerBar }
+            .task { await journalService.refreshComposerLocationPreview() }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -207,6 +209,50 @@ struct LogComposerView: View {
                 .disabled(draftTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .accessibilityIdentifier("logComposerAddTagButton")
             }
+        }
+    }
+
+    /// The per-entry location switch (E, 2026-08-31) — the capture composer's control, worn in
+    /// this screen's wardrobe, and upgraded to NAME the place it resolves while you're still
+    /// writing. Only shown when permission can actually deliver, like captures: a switch that
+    /// cannot do anything invites a tap that achieves nothing silently. The subtitle takes
+    /// `softInk`, never `.secondary` — on the gold pad `.secondary` is the ink at half alpha,
+    /// the exact failure `softInk` exists to prevent.
+    @ViewBuilder
+    private var locationSection: some View {
+        if CaptureLocationChoice.isAvailable(
+            authorization: CoreLocationFixProvider.shared.authorizationState
+        ) {
+            Toggle(isOn: $journalService.composerAttachLocation) {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Remember where I am")
+                            .font(.subheadline)
+                        Text(LogComposerCopy.locationSubtitle(
+                            attach: journalService.composerAttachLocation,
+                            placeLine: JournalTimeline.placeLine(
+                                placeId: journalService.composerLocationPreview?.placeId,
+                                places: journalService.places
+                            )
+                        ))
+                        .font(.footnote)
+                        .composerSoftInk(softInk)
+                    }
+                } icon: {
+                    Image(systemName: journalService.composerAttachLocation
+                          ? "location.fill" : "location.slash")
+                        .foregroundStyle(
+                            Color(journalService.composerAttachLocation
+                                  ? chips.selectedFill : chips.quietLabel)
+                        )
+                }
+            }
+            .tint(Color(chips.selectedFill))
+            .onChange(of: journalService.composerAttachLocation) { _ in
+                Haptics.play(.selection)
+                Task { await journalService.refreshComposerLocationPreview() }
+            }
+            .accessibilityIdentifier("logComposerLocationToggle")
         }
     }
 
