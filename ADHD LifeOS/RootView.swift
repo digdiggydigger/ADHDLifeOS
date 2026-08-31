@@ -44,6 +44,9 @@ struct RootView: View {
     /// A widget door that arrived before the signed-in tabs existed (dead launch: the URL is
     /// delivered while auth is still restoring). Held here and drained the moment the tabs mount.
     @State private var pendingWidgetLink: AppDeepLink?
+    /// A place-action tap that arrived while signed out or mid-restore — the widget-link
+    /// arrangement, for the same cold-launch reason.
+    @State private var pendingActionDoor: PlaceActionDoor?
     /// The Settings appearance override — same key both ends, so the picker applies live.
     @AppStorage(AppearancePreference.storageKey) private var appearanceRaw = AppearancePreference.system.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -88,6 +91,18 @@ struct RootView: View {
             composerKind = kind
         case .authCallback, .focusWidget:
             break
+        }
+    }
+
+    /// The place-action doors (F-PlaceActions-3): a tapped notification's in-app half. External
+    /// URL opens never reach here — the router hands those straight to the system.
+    private func openActionDoor(_ door: PlaceActionDoor) {
+        switch door {
+        case .screen(let screen):
+            selectedTab = screen.appTab
+        case .sprint(let minutes):
+            let fallback = UserDefaultsMomentumPreferencesStore().read().defaultSprintMinutes
+            startFocus(PlaceActionSprint.plan(minutes: minutes, defaultMinutes: fallback))
         }
     }
 
@@ -268,6 +283,7 @@ struct RootView: View {
                         pendingWidgetLink = nil
                         openWidgetDoor(link)
                     }
+                    if let door = pendingActionDoor { pendingActionDoor = nil; openActionDoor(door) }
                 }
                 .preferredColorScheme(
                     (AppearancePreference(rawValue: appearanceRaw) ?? .system).colorScheme
@@ -328,6 +344,10 @@ struct RootView: View {
             }
         }
         .task {
+            // Place-action doors: replay-on-connect, pending-while-signed-out (widget-link rules).
+            PlaceActionNotificationRouter.shared.connect { door in
+                if case .signedIn = authService.state { openActionDoor(door) } else { pendingActionDoor = door }
+            }
             if authService.state == .unknown {
                 await authService.restoreSession()
             }

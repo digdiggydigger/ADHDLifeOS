@@ -54,14 +54,25 @@ struct UserDefaultsArrivalNudgeStateStore: ArrivalNudgeStateStoring {
 /// Posts one local notification, now. Distinct from the sprint/nudge SCHEDULERS on purpose —
 /// a fence crossing is already the moment, so there is nothing to schedule.
 protocol ImmediateNotifying: Sendable {
-    func post(title: String, body: String, identifier: String) async
+    /// `userInfo` carries what a TAP on the notification needs (a place action's own JSON);
+    /// empty for notifications whose tap just opens the app.
+    func post(title: String, body: String, identifier: String, userInfo: [String: String]) async
+}
+
+extension ImmediateNotifying {
+    func post(title: String, body: String, identifier: String) async {
+        await post(title: title, body: body, identifier: identifier, userInfo: [:])
+    }
 }
 
 struct NotificationCenterImmediateNotifier: ImmediateNotifying {
-    func post(title: String, body: String, identifier: String) async {
+    func post(title: String, body: String, identifier: String, userInfo: [String: String]) async {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
+        if !userInfo.isEmpty {
+            content.userInfo = userInfo
+        }
         // The same Settings sound gate every scheduled notification honours.
         if let sound = AppFeedback.notificationSound() {
             content.sound = sound

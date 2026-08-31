@@ -76,10 +76,36 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        FocusNotificationRouter.shared.handle(
-            notificationIdentifier: response.notification.request.identifier,
-            actionIdentifier: response.actionIdentifier
-        )
+        let identifier = response.notification.request.identifier
+        let userInfo = response.notification.request.content.userInfo
+        // Place-action taps first (F-PlaceActions-3) — their identifiers carry a prefix, so
+        // everything else still falls through to the focus router untouched. On main because
+        // the router opens app state and URLs.
+        DispatchQueue.main.async {
+            let handledAsPlaceAction = PlaceActionNotificationRouter.shared.handle(
+                notificationIdentifier: identifier,
+                userInfo: userInfo,
+                openURL: { url, failureBody in
+                    UIApplication.shared.open(url, options: [:]) { success in
+                        guard !success else { return }
+                        // Honest, and through the same in-foreground banner plumbing as every
+                        // other immediate notification — never silence.
+                        Task {
+                            await NotificationCenterImmediateNotifier().post(
+                                title: "That didn't open",
+                                body: failureBody,
+                                identifier: "placeActionOpenFailure"
+                            )
+                        }
+                    }
+                }
+            )
+            guard !handledAsPlaceAction else { return }
+            FocusNotificationRouter.shared.handle(
+                notificationIdentifier: identifier,
+                actionIdentifier: response.actionIdentifier
+            )
+        }
         completionHandler()
     }
 }

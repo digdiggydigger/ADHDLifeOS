@@ -16,7 +16,7 @@ final class ArrivalNudgeTests: XCTestCase {
     private final class FakeNotifier: ImmediateNotifying {
         private(set) var posted: [(title: String, body: String)] = []
 
-        func post(title: String, body: String, identifier: String) async {
+        func post(title: String, body: String, identifier: String, userInfo: [String: String]) async {
             posted.append((title, body))
         }
     }
