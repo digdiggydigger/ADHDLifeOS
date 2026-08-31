@@ -148,7 +148,7 @@ through two question rounds; these decisions are E's and are not to be re-litiga
 - One tap can only do ONE thing on iOS: external actions each get their own notification;
   in-app actions run themselves on the wake and the nudge reports what happened.
 
-### FEATURE: F-PlaceActions-1-Model — the action catalogue, fences, and snapshot  [ ] UNCHECKED
+### FEATURE: F-PlaceActions-1-Model — the action catalogue, fences, and snapshot  [x] COMPLETED
 
 The pure layer, TDD-heavy. `PlaceAction` (id, direction, kind + per-kind payload; snake_case
 wire, flat fields with a `kind` discriminator; unknown or payload-broken kinds degrade to
@@ -160,11 +160,21 @@ slot — configuring an action IS the opt-in gesture the per-place philosophy re
 `AtPlaceSnapshot.PlaceEntry` carries the actions (background wakes can't count on network).
 
 **Acceptance criteria**
-- [ ] Round-trip tests for every kind through JSON AND `FirestoreDocumentCoder`; unknown-kind
-      payload preservation pinned; a pre-actions place document decodes quietly.
-- [ ] Plan tests: action-only place gets a region with the right directions; quiet places
-      still get nothing.
-- [ ] Deliberate-regression red-check after commit (the standing rule), full suite, lint, build.
+- [x] Round-trip tests for every kind through JSON AND `FirestoreDocumentCoder`; unknown-kind
+      payload preservation pinned; a pre-actions place document decodes quietly. 23 new tests
+      across four suites.
+- [x] Plan tests: action-only place gets a region with the right directions; quiet places
+      still get nothing; toggle + action compose across directions on one region.
+- [x] Deliberate-regression red-check after commit (the standing rule), full suite **1,918 / 0**,
+      lint 0 violations in 568 files, build succeeded.
+
+**Found en route:** `PlaceEditorValidation.makePlace` REBUILDS the place on save, so `actions`
+had to be threaded through it and `PlaceEditorView.save()` (`existing?.actions ?? []`) in THIS
+block — without that, any rename or radius tweak would have silently stripped a place's actions
+the moment block 2 shipped them. The id/createdAt preservation precedent, now pinned by a test.
+Also: `try?` FLATTENS nested optionals (SE-0230), so `decodeIfPresent` alone cannot tell
+"minutes absent" (valid) from "minutes undecodable" (degrade) — the decoder checks
+`container.contains` first, and a test failure caught it before it shipped.
 
 ### FEATURE: F-PlaceActions-2-Editor — actions on the Place editor  [ ] UNCHECKED
 

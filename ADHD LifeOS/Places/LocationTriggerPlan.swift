@@ -34,8 +34,9 @@ struct PlaceTriggerEvent: Equatable, Sendable {
 /// - the Settings master switch and the Always grant both plan NOTHING — When In Use regions
 ///   deliver only in the foreground, which defeats an arrival trigger entirely, and registering
 ///   them anyway would be the silent failure the permission split exists to prevent;
-/// - only places with a nudge toggle on compete for a slot, so a quiet place can never crowd out
-///   a fence that would actually fire;
+/// - only places that WANT a crossing compete for a slot — a nudge toggle or a configured
+///   action, either is the opt-in (the Place Actions arc widened this from toggles alone) —
+///   so a quiet place can never crowd out a fence that would actually fire;
 /// - past 20 the nearest win, via `PlaceGeometry.placesToMonitor` — the selection the
 ///   significant-change fallback re-runs on every wake.
 enum LocationTriggerPlan {
@@ -46,14 +47,14 @@ enum LocationTriggerPlan {
         isEnabled: Bool
     ) -> [PlaceRegion] {
         guard isEnabled, authorization.allowsTriggering else { return [] }
-        let nudging = places.filter(\.anyNudgeEnabled)
-        return PlaceGeometry.placesToMonitor(from: nudging, around: location).map { place in
+        let wanting = places.filter(\.wantsAnyCrossing)
+        return PlaceGeometry.placesToMonitor(from: wanting, around: location).map { place in
             PlaceRegion(
                 placeId: place.id,
                 center: place.coordinate,
                 radiusMetres: place.radiusMetres,
-                notifyOnEntry: place.nudgeOnArrival,
-                notifyOnExit: place.nudgeOnDeparture
+                notifyOnEntry: place.wantsArrivalCrossing,
+                notifyOnExit: place.wantsDepartureCrossing
             )
         }
     }

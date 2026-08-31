@@ -280,7 +280,11 @@ struct PlaceEditorView: View {
             nudgeOnArrival: nudgeOnArrival,
             nudgeOnDeparture: nudgeOnDeparture,
             arrivalMessage: arrivalMessage,
-            departureMessage: departureMessage
+            departureMessage: departureMessage,
+            // Preserved on edit like id/createdAt — the editing UI arrives in block 2, and
+            // until then (and after, for fields this sheet doesn't show) a save must never
+            // strip what a place already does.
+            actions: existing?.actions ?? []
         ) else { return }
 
         if await onSave(place) {

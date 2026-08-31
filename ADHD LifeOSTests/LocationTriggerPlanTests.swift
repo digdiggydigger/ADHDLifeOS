@@ -75,6 +75,50 @@ final class LocationTriggerPlanTests: XCTestCase {
         XCTAssertEqual(plan.first?.radiusMetres, 150)
     }
 
+    /// The Place Actions arc widened the opt-in: a configured action earns its direction's
+    /// fence with BOTH nudge toggles off — configuring "arrive → Spotify" is E saying interrupt
+    /// me here, and a fence that silently never registered would be the arc's worst failure.
+    func testRegions_anActionAloneEarnsARegionForItsDirection() {
+        var actionOnly = place(name: "Gym")
+        actionOnly.actions = [
+            PlaceAction(
+                id: UUID(), direction: .arrival,
+                kind: .openApp(scheme: "spotify", displayName: "Spotify")
+            )
+        ]
+
+        let plan = LocationTriggerPlan.regions(
+            places: [actionOnly], around: nil,
+            authorization: .always, isEnabled: true
+        )
+
+        XCTAssertEqual(plan.map(\.placeId), [actionOnly.id])
+        XCTAssertEqual(plan.first?.notifyOnEntry, true)
+        XCTAssertEqual(plan.first?.notifyOnExit, false)
+    }
+
+    /// And the directions compose: an arrival toggle plus a departure action watch BOTH
+    /// crossings on one region.
+    func testRegions_togglesAndActionsComposeAcrossDirections() {
+        var mixed = place(arrival: true)
+        mixed.actions = [
+            PlaceAction(
+                id: UUID(), direction: .departure,
+                kind: .textContact(
+                    contactName: "Home", phoneNumber: "+44111", messageBody: "On my way"
+                )
+            )
+        ]
+
+        let plan = LocationTriggerPlan.regions(
+            places: [mixed], around: nil,
+            authorization: .always, isEnabled: true
+        )
+
+        XCTAssertEqual(plan.first?.notifyOnEntry, true)
+        XCTAssertEqual(plan.first?.notifyOnExit, true)
+    }
+
     /// The 20-slot budget applies to NUDGING places only, nearest first — quiet places must not
     /// crowd out a fence that would actually fire.
     func testRegions_respectsTheRegionBudgetNearestFirst() {

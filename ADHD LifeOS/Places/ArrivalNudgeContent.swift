@@ -24,6 +24,11 @@ struct AtPlaceSnapshot: Codable, Equatable {
         /// And for leaving. Same contract, separate words — neither ever speaks on the other's
         /// crossing.
         var departureMessage: String?
+        /// What this place DOES on a crossing (the Place Actions arc) — carried into the
+        /// snapshot for the same reason the messages are: a background wake can't count on a
+        /// network, so execution reads config from here, never from a cold fetch. Optional so
+        /// every pre-actions snapshot on a device decodes quietly.
+        var actions: [PlaceAction]?
     }
 
     let entries: [PlaceEntry]
@@ -41,7 +46,8 @@ struct AtPlaceSnapshot: Codable, Equatable {
                     }
                     .map(\.title),
                 arrivalMessage: place.arrivalMessage,
-                departureMessage: place.departureMessage
+                departureMessage: place.departureMessage,
+                actions: place.actions
             )
         })
     }
