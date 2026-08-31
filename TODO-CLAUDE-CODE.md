@@ -122,6 +122,97 @@ styling both passed E's on-device look.
 
 ---
 
+## Place Actions arc — E's spec, settled 2026-08-31 in chat (branch `feature/place-actions`)
+
+**E's ask: "assign specific actions to a place — when I go to a certain location, it opens a
+specific application, or sends a text message to a predefined contact, etcetera."** Settled
+through two question rounds; these decisions are E's and are not to be re-litigated per block:
+
+- **Execution model: BOTH, layered.** One-tap actionable nudges from our app are the core
+  (iOS hard-blocks auto-opening apps and auto-sending texts from a background wake — no
+  third-party app can do either silently); a "Make this automatic" helper walks E into Apple's
+  Shortcuts app for the actions Apple lets run zero-touch, and our in-app actions ship as App
+  Intents so Shortcuts can drive them too.
+- **Action kinds at launch: ALL of** open app / open URL / text a predefined contact / in-app
+  (start sprint, create capture, journal line, open screen) — **"and likely more"**, so the
+  kind enum is an open catalogue: an unknown kind decodes as unsupported WITH its payload
+  preserved, never a failed place. (E's device routinely lags main — an old build editing a
+  place must not strip a newer build's action.)
+- **Directions: arrival AND departure, per action.** A place carries a LIST of actions, each
+  with its own direction.
+- **Firing rule: option 1 now** — a configured action counts as content, so its crossing fires
+  (the custom-message precedent), and the 30-min bounce cooldown applies. **Option 3 (per-action
+  re-fire tuning) is E's declared follow-up, later** — the model leaves room (a future `refire`
+  field per action), but no UI or behaviour for it ships in this arc.
+- Config lives on the **Place editor** (Settings → Places), as E said ("defined in the settings").
+- One tap can only do ONE thing on iOS: external actions each get their own notification;
+  in-app actions run themselves on the wake and the nudge reports what happened.
+
+### FEATURE: F-PlaceActions-1-Model — the action catalogue, fences, and snapshot  [ ] UNCHECKED
+
+The pure layer, TDD-heavy. `PlaceAction` (id, direction, kind + per-kind payload; snake_case
+wire, flat fields with a `kind` discriminator; unknown or payload-broken kinds degrade to
+`.unsupported` carrying the raw payload for verbatim re-encode). `Place.actions: [PlaceAction]`
+(absent on every existing document → `[]`, the nudge-toggle precedent). An action for a
+direction makes the place WANT that crossing: `wantsArrivalCrossing` / `wantsDepartureCrossing`
+(toggle OR action), consumed by `LocationTriggerPlan` so an action-only place earns a region
+slot — configuring an action IS the opt-in gesture the per-place philosophy requires.
+`AtPlaceSnapshot.PlaceEntry` carries the actions (background wakes can't count on network).
+
+**Acceptance criteria**
+- [ ] Round-trip tests for every kind through JSON AND `FirestoreDocumentCoder`; unknown-kind
+      payload preservation pinned; a pre-actions place document decodes quietly.
+- [ ] Plan tests: action-only place gets a region with the right directions; quiet places
+      still get nothing.
+- [ ] Deliberate-regression red-check after commit (the standing rule), full suite, lint, build.
+
+### FEATURE: F-PlaceActions-2-Editor — actions on the Place editor  [ ] UNCHECKED
+
+An **Actions** section on `PlaceEditorView`: list rows ("On arrival → Open Spotify"),
+add/edit/delete. Direction → kind → detail flow: curated app catalogue (known URL schemes:
+Spotify, Maps, YouTube, Phone, Mail…) + custom-scheme field (iOS has no third-party app picker
+— the catalogue is the ceiling); system contact picker (`CNContactPickerViewController`, no
+Contacts permission needed for one-off picks) + message body for texts; screen list for
+open-screen; minutes for sprint (defaulting to E's sprint setting); text fields for
+capture/journal bodies. Validation in a pure `PlaceActionValidation` (trimmed-to-nil like
+`arrivalMessage` — "" must never save).
+
+**Acceptance criteria**
+- [ ] Validation + row-label logic pure and tested first; §1–6 styling; iOS 16 floor respected.
+- [ ] Editing a place with an UNSUPPORTED action shows it honestly and preserves it on save.
+- [ ] Suite, lint, build; simulator screenshots of the editor flow for E.
+
+### FEATURE: F-PlaceActions-3-Execution — actions fire on a crossing  [ ] UNCHECKED
+
+The wake path: after the cooldown gate, matching-direction actions execute. **In-app actions
+run themselves** (journal line writes place-stamped, capture drops into the inbox, sprint
+starts) and the nudge REPORTS what ran; **external actions each post their own notification**
+whose tap executes exactly one thing (URL-scheme open; `sms:` compose pre-filled to the
+predefined contact — the final Send tap is Apple's floor). An action makes its crossing fire
+(firing-rule extension in `ArrivalNudgeContent` / a new `PlaceActionExecuting` seam, fake-driven
+in tests). Not-installed app → honest in-app "couldn't open" surface, never silence.
+
+**Acceptance criteria**
+- [ ] Executor seam unit-tested with fakes (every kind, both directions, cooldown respected,
+      empty-never-fires untouched for action-less places).
+- [ ] Notification routing: tap → the right action, verified on simulator.
+- [ ] **Field test on `wishwashwacky15`** — a real crossing runs an in-app action and delivers
+      an external one — before this block may be ticked (the location-merge precedent).
+
+### FEATURE: F-PlaceActions-4-Shortcuts — the zero-touch layer  [ ] UNCHECKED
+
+App Intents ("Start a sprint", "Capture a note", "Log a journal line") so Shortcuts can drive
+the in-app actions; a "Make this automatic" row per external action opening a step-by-step
+guide into Apple's Shortcuts app (Apple allows NO programmatic creation of automations — the
+guide is the honest ceiling, and it says which steps are E's). iOS 16 App Intents floor
+verified per API used.
+
+**Acceptance criteria**
+- [ ] Intents callable from the Shortcuts app on device; guide content pure and tested.
+- [ ] Suite, lint, build; E walks one real automation end-to-end on device.
+
+---
+
 ### FEATURE: F-TabBarMinimize — the tab bar gets out of the way while you scroll down  [x] COMPLETED
 
 **E's ask (2026-08-31, in chat): "make the nav bar at the bottom of the screen transparent when
