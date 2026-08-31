@@ -55,7 +55,13 @@ identifiers untouched.
 
 **Verified:** SwiftLint 0, suite 1,886 / 0, build green; rendered end-to-end on the simulator
 through the REAL path (fan → note → save → Captures → Task it):
-`screenshots/promote-sheet/`. E's device look outstanding.
+`screenshots/promote-sheet/`.
+
+**SEEN BY E ON DEVICE, 2026-08-31 (IMG_8134/8135):** interactions confirmed working (Today
+selected, Exact day toggled, Date row appears). One nit PARKED at E's direction, not actioned:
+the iOS-default GREEN toggle sits off-palette beside the blue chips — "flag the green-iOS-
+toggles to be dealt with later down the line." It is on the pre-release UI list in the
+register; an app-wide `.tint` decision, not a per-sheet patch.
 
 ---
 
