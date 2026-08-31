@@ -259,7 +259,7 @@ in tests). Not-installed app → honest in-app "couldn't open" surface, never si
   no didEnter) — simulate a `simctl location start` ROUTE instead. Notifications need the
   app's own permission prompt first (start a sprint once).
 
-### FEATURE: F-PlaceActions-4-Shortcuts — the zero-touch layer  [ ] UNCHECKED
+### FEATURE: F-PlaceActions-4-Shortcuts — the zero-touch layer  [x] COMPLETED
 
 App Intents ("Start a sprint", "Capture a note", "Log a journal line") so Shortcuts can drive
 the in-app actions; a "Make this automatic" row per external action opening a step-by-step
@@ -268,7 +268,8 @@ guide is the honest ceiling, and it says which steps are E's). iOS 16 App Intent
 verified per API used.
 
 **Acceptance criteria**
-- [ ] Intents callable from the Shortcuts app on device; guide content pure and tested.
+- [x] Intents callable from the Shortcuts app on device; guide content pure and tested.
+      **E's field verdict, 2026-08-31 evening: "block 4 - success"** — the device walk passed.
       **BUILT and sim-verified 2026-08-31 (device half is E's):** three intents ship —
       "Capture a note" and "Log a journal line" run WITHOUT opening the app (writes through
       `ShortcutIntentRunner`, stamped via `RecordLocationStamp`, `DataChangeSignal` posted so
@@ -303,11 +304,12 @@ verified per API used.
       verified, then deleted through Settings → Delete Account (re-auth flow exercised live);
       `auth_get_users` confirms `users: []`. Nothing of E's was touched. Upside: the intents
       are proven against the LIVE rules, not just the emulator.
-- [ ] Suite, lint, build; E walks one real automation end-to-end on device.
-      **My half done 2026-08-31:** suite **1,983 / 0** (18 new: 9 guide + 7 runner + 2 router),
-      SwiftLint 0 violations in 581 files, sim build succeeded, red-check after commit. E's
-      half: one real automation (Arrive → Run Immediately → a LifeOS action) walked on
-      `wishwashwacky15`.
+- [x] Suite, lint, build; E walks one real automation end-to-end on device.
+      **Both halves done 2026-08-31:** suite **1,983 / 0** (18 new: 9 guide + 7 runner + 2
+      router), SwiftLint 0 violations in 581 files, sim build succeeded, red-check after
+      commit; E walked the automation on `wishwashwacky15` and reported success the same
+      evening. The arc's merge still waits on Block 3's double-confirm retest (E: "will test
+      later").
 
 ---
 
