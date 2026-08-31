@@ -290,7 +290,15 @@ verified per API used.
       timer bar + Live Activity running at the default length. One sim quirk: tapping an App
       Shortcut TILE directly says "Unable to run App Shortcut" (the Siri runner path); inside a
       shortcut the actions run fine — retest the tile on device.
-      **Drive honesty:** the MCP sim launcher dropped the `SIMCTL_CHILD_` env, so the drive ran
+      **Editor drive (second pass, properly against the EMULATOR via shell `simctl launch`):**
+      fresh account → Settings → Places → New place "Gym" → arrival Open Spotify action →
+      the "Make “Open Spotify” automatic" row appeared, its sheet presented over the editor
+      (sibling sheets on the Add button — the block-2 per-row trap did NOT recur), all four
+      steps + intro + afterword rendered naming Gym and Spotify, and Open Shortcuts handed
+      off into Apple's app. Reachability proven, not just tested (the dead-shared-component
+      lesson).
+      **Drive honesty:** the ios-simulator MCP's `launch_app` DROPPED the `SIMCTL_CHILD_` env
+      (shell `simctl launch` passes it fine), so the FIRST drive silently ran
       against PRODUCTION on a throwaway account (block4drive@example.com) — created 18:04,
       verified, then deleted through Settings → Delete Account (re-auth flow exercised live);
       `auth_get_users` confirms `users: []`. Nothing of E's was touched. Upside: the intents
