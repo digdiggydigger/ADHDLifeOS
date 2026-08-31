@@ -36,6 +36,45 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-FanLandscape — the fan points left when the phone is sideways  [x] COMPLETED
+
+**E's call (2026-08-31, with a device screenshot of the broken state): "This DOES NOT work.
+You've got to change the direction of the fan to horizontal pointing to the left direction."**
+This is the design decision the F-LandscapeFix sweep logged: the portrait arc's 519pt of
+`fromBottom` put Note and Voice above a 402pt landscape screen, Photo half-clipped, composers
+unreachable through the fan sideways.
+
+**The shape: the SAME arc, rotated.** `CaptureFan.horizontalSlots` is the portrait table with
+its axes swapped — 78pt centres now running leftward (Task nearest the FAB at 207, Note farthest
+at 519), the 57/70/75/70/57 bow turned vertical, the reverse-frequency stagger untouched. The
+overlay picks the table by `verticalSizeClass` (compact = landscape iPhone); portrait keeps the
+E-settled arc byte-for-byte.
+
+**Acceptance criteria**
+- [x] **Unit red first**: two new `CaptureFanTests` (explicit values, not the derivation) failed
+      to compile on the unfixed tree — `type 'CaptureFan' has no member 'horizontalSlots'`,
+      EXIT=65. Green after the table: CaptureFanTests **7 / 0**.
+- [x] **Journey red proved REACHABILITY, not just correctness** (the dead-shared-component
+      guard, this repo's six-instance defect class): with the table implemented and unit-green
+      but the overlay still unwired, the reworked sweep — which now taps `captureFan-note`
+      DIRECTLY in landscape instead of detouring through portrait — failed at exactly the old
+      defect: `captureFan-note` at `{{724.0, -168.0}}`, kAXErrorCannotComplete, EXIT=65.
+- [x] **Green after the one-line wiring, twice consecutively** (138.8s, 191.4s). Ground truth on
+      the external recording (`screenshots/fan-landscape/`): all five tiles on-screen in a
+      leftward row out of the ✕, middle tile at the bow's crest, stagger arriving Task-first;
+      the note composer opens and submits in landscape.
+- [x] Full unit suite **1,888 / 0**, EXIT=0. `swiftlint lint` 0 violations.
+- [x] **Full UI target run whole: `Executed 23 tests, with 0 failures (0 unexpected) in
+      2589.293 seconds`, EXIT=0** — including the reworked sweep tapping the fan in landscape.
+- [x] Device carries the block — built 08:02:59, `devicectl` install + launch verified
+      2026-08-31 08:04.
+
+**Flake note for the record:** the swallowed-rotation sulk hit once more (a sweep run failed at
+the window guard after heavy interactive idb driving); a fresh `simctl` boot cleared it, exactly
+as [[landscape-fix]] records. The guard doing its job is why the failure was legible.
+
+---
+
 ### FEATURE: F-TabBarMinimize — the tab bar gets out of the way while you scroll down  [x] COMPLETED
 
 **E's ask (2026-08-31, in chat): "make the nav bar at the bottom of the screen transparent when

@@ -15,6 +15,14 @@ struct CaptureFanOverlay: View {
 
     @State private var appeared = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Compact height is the landscape iPhone, where the portrait arc dies off the top of the
+    /// screen — the fan swaps to `horizontalSlots`, the same arc pointing LEFT out of the FAB
+    /// (F-FanLandscape, E's 2026-08-31 call).
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    private var slots: [CaptureFan.Slot] {
+        verticalSizeClass == .compact ? CaptureFan.horizontalSlots : CaptureFan.slots
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -39,7 +47,7 @@ struct CaptureFanOverlay: View {
                 .padding(.top, 96)
                 .padding(.leading, 16)
 
-                ForEach(CaptureFan.slots, id: \.kind) { slot in
+                ForEach(slots, id: \.kind) { slot in
                     disc(slot)
                         .position(
                             x: proxy.size.width - slot.fromTrailing,

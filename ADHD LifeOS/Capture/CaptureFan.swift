@@ -46,6 +46,25 @@ enum CaptureFan {
              systemImage: "checkmark.circle.fill", label: "Task")
     ]
 
+    /// The landscape fan (F-FanLandscape, E's 2026-08-31 call: "change the direction of the fan
+    /// to horizontal pointing to the left"). The portrait arc dies sideways — 519pt of
+    /// `fromBottom` puts Note and Voice above a 402pt screen, which is how the landscape sweep
+    /// found the composers unreachable. This is the SAME arc rotated onto the horizontal: every
+    /// number is the portrait table's with its axes swapped, so the 78pt centres, the bow and
+    /// the reverse-frequency stagger survive the rotation, and Task stays nearest the FAB.
+    static let horizontalSlots: [Slot] = slots.map { slot in
+        Slot(
+            kind: slot.kind,
+            fromTrailing: slot.fromBottom,
+            fromBottom: slot.fromTrailing,
+            appearanceDelay: slot.appearanceDelay,
+            fillAssetName: slot.fillAssetName,
+            onAssetName: slot.onAssetName,
+            systemImage: slot.systemImage,
+            label: slot.label
+        )
+    }
+
     static func slot(for kind: CaptureKind) -> Slot {
         slots.first { $0.kind == kind } ?? slots[0]
     }
