@@ -53,33 +53,21 @@ extension LoginView {
 
     var fieldsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if mode == .createAccount {
-                fieldCard {
-                    TextField("Your name (optional)", text: $displayName)
-                        .textContentType(.name)
-                        .accessibilityIdentifier("signUpNameField")
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            fieldCard {
-                TextField("Email", text: $email)
-                    .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .accessibilityIdentifier("loginEmailField")
-            }
-
-            fieldCard {
-                // The reveal button is an OVERLAY, not an HStack sibling. §3 requires a 44×44
-                // touch target, and in a row that 44pt HEIGHT drove the whole card: the password
-                // field stood ~23pt taller than Email and Name, which is the uneven top-and-bottom
-                // spacing E marked on device (2026-08-30). An overlay keeps the full target and
-                // contributes nothing to layout height, so all three cards now match.
-                passwordField
-                    .padding(.trailing, 44)
-                    .overlay(alignment: .trailing) { revealButton }
+            // F-LandscapeFix: in compact height (the landscape iPhone) the cards sit side by
+            // side in ONE row. The landscape keyboard plus the pinned footer leave a viewport of
+            // roughly two card-heights, and SwiftUI's keyboard avoidance keeps only the FOCUSED
+            // field inside it — so with stacked cards the password field is buried under the
+            // keyboard BY CONSTRUCTION the moment Email is focused, which is how it spent 45s
+            // unhittable across ten tests. Scroll-on-focus was tried twice and lost both times:
+            // `scrollTo`'s anchors align against the full bounds (the keyboard inset is invisible
+            // to it), and a timed scroll is undone by the system's own caret-keeping scrolls
+            // mid-typing. A row needs none of that — keeping the focused field visible keeps the
+            // whole row visible, because the row IS all the fields. 874pt of landscape width
+            // holds three cards comfortably; portrait keeps the approved stack untouched.
+            if verticalSizeClass == .compact {
+                HStack(alignment: .top, spacing: 8) { fieldCards }
+            } else {
+                fieldCards
             }
 
             if let hint = AuthFormValidation.passwordHint(mode: mode, password: password) {
@@ -93,6 +81,43 @@ extension LoginView {
                 forgotPasswordButton
             }
         }
+    }
+
+    /// The three cards, stacked or rowed by `fieldsSection`'s size-class branch. Each carries
+    /// `maxWidth: .infinity` so the row splits the width evenly and the stack still fills it.
+    @ViewBuilder
+    private var fieldCards: some View {
+        if mode == .createAccount {
+            fieldCard {
+                TextField("Your name (optional)", text: $displayName)
+                    .textContentType(.name)
+                    .accessibilityIdentifier("signUpNameField")
+            }
+            .frame(maxWidth: .infinity)
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
+
+        fieldCard {
+            TextField("Email", text: $email)
+                .textContentType(.emailAddress)
+                .keyboardType(.emailAddress)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .accessibilityIdentifier("loginEmailField")
+        }
+        .frame(maxWidth: .infinity)
+
+        fieldCard {
+            // The reveal button is an OVERLAY, not an HStack sibling. §3 requires a 44×44
+            // touch target, and in a row that 44pt HEIGHT drove the whole card: the password
+            // field stood ~23pt taller than Email and Name, which is the uneven top-and-bottom
+            // spacing E marked on device (2026-08-30). An overlay keeps the full target and
+            // contributes nothing to layout height, so all three cards now match.
+            passwordField
+                .padding(.trailing, 44)
+                .overlay(alignment: .trailing) { revealButton }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     /// The reveal swaps the field type, so BOTH spellings carry the same identifier: the signed-in

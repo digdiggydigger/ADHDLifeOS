@@ -36,6 +36,84 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-LandscapeFix — the login screen works sideways, and the landscape sweep ran  [x] COMPLETED
+
+**E's calls, made in advance (session opener, 2026-08-31): both orientations stay supported; fix
+the login screen first, then sweep the other screens.** The proven defect was F-PortraitArrival's:
+`loginPasswordField` never hittable in landscape, 45s × ten tests.
+
+**The diagnosis is NOT what the opener guessed.** The form was already in a `ScrollView`, and it
+fits landscape fine until a field is focused (ground-truth frame: everything visible, footer
+included). The defect is keyboard-shaped: the landscape keyboard plus the footer bar riding above
+it leave a viewport of roughly two card-heights, SwiftUI's keyboard avoidance keeps only the
+FOCUSED field inside it, and the password card below is buried BY CONSTRUCTION the moment Email is
+focused. Nothing scrolls it into reach — XCUITest doesn't scroll, and a person shouldn't have to.
+
+**Scroll-on-focus was tried twice and condemned by its own evidence** (kept as the comment on
+`fieldsSection`): `scrollTo`'s anchors align against the scroll view's FULL bounds — the keyboard
+inset is invisible to it, so anchoring the successor's `.bottom` was a 45-second no-op on the test
+recording — and the `.top`-anchor retry with a settle timer passed once, then flaked back red on
+identical code: a one-shot timed scroll loses to the system's own caret-keeping scrolls mid-typing.
+A fix whose success depends on unexplained timing is not a fix.
+
+**The fix that shipped: the row.** In compact height `fieldsSection` lays the cards side by side —
+email + password (plus name in Create mode) in one `HStack`. Keeping the focused field visible
+keeps the whole row visible, because the row IS all the fields. No timers, no scroll choreography,
+nothing for the keyboard to bury. Portrait renders the approved stack untouched.
+
+**Acceptance criteria**
+- [x] **Red first**: `LandscapeLoginUITests.testSignIn_completesInLandscape` — portrait arrival,
+      rotate, then the SAME shared `UITestSession.signIn` flow every journey uses (made internal
+      for exactly this). On the unfixed tree it died at the identical line and message as the ten
+      F-PortraitArrival failures: `"loginPasswordField" SecureTextField never became hittable`,
+      EXIT=65.
+- [x] **Green, twice consecutively** — 0 failures at 103s and 94s runs on the same code, unlike
+      the scroll attempt's one-green-then-red. Ground truth on the screen recording: email typed
+      and password card SIDE BY SIDE above the keyboard, footer's Sign in visible below.
+- [x] **Anti-vacuity guard that earned its keep**: the journey asserts the WINDOW is wider than
+      tall before signing in — and on its second-ever run it caught a real swallowed rotation
+      ("Device orientation changed to Landscape Left" with no interface change ever following).
+- [x] `UITestSession.rotateToLandscape(_:)` — the set retried through a portrait toggle, judged
+      by the window's own frame; `resetToPortrait` moved with it into `UITestOrientation.swift`
+      (UITestSession had hit 408 lines against the 400 budget; now 355).
+- [x] **The landscape sweep ran as renders, not guesses** (`testRenderLandscapeSweep`, kept in
+      the render harness): all five tabs plus BOTH composers, each composer driven to a real
+      submit in landscape on the throwaway emulator account.
+- [x] **Ground truth is the screen recording, not `app.screenshot()`** — on a rotated simulator
+      the XCTAttachment stills come back letterboxed in a portrait frame with the content column
+      squeezed, which reads as a half-black broken screen that the simctl recording proves is
+      full-bleed and fine. Evidence for this block was extracted from
+      `xcrun simctl io recordVideo` frames.
+- [x] `swiftlint lint` → 0 violations. Unit suite **1,886 / 0** (EXIT=0). Coverage 30.09%
+      (11,227/37,314) — denominators differ from the recorded 23.62% (37,314 vs 36,721) so the
+      ratios are not comparable; covered lines 8,673 → 11,227.
+- [x] **Full UI target run whole: `Executed 23 tests, with 0 failures (0 unexpected) in
+      2493.052 seconds`, EXIT=0** — every prior test plus the landscape journey (91.4s) and the
+      sweep (176.1s), with `testLaunch`'s four configuration runs reported individually (the old
+      "17" counted that sweep as one line; nothing was dropped — all 23 are individually named
+      and green in the log).
+
+**Sweep findings — logged, deliberately not fixed here:**
+1. **The capture fan clips off-screen in landscape (REAL defect, needs E's design call).** The
+   glass tiles arc UP from the FAB; landscape height can't hold the arc — NOTE and VOICE sit
+   fully off the top edge (`captureFan-note` frames at y = −168), PHOTO is half-clipped; only
+   TASK and LINK remain usable, so the composers are unreachable through the fan sideways. The
+   fan's arc is E-settled design (capture-disc arc, do-not-re-litigate) — a landscape arrangement
+   is a design decision, not a patch. The sweep photographs it and routes around it (composer
+   opened portrait, rotated, typed, submitted — a route a user genuinely has).
+2. Everything else swept clean: Today, Tasks, Areas, Captures, Journal, the note composer and the
+   journal pad all render full-bleed and usable in landscape.
+3. One cosmetic note, not logged as a defect: on landscape Today the floating glass tab bar sits
+   directly over the Best-next-move card's green "Close it" button and picks the green up through
+   the glass. Same composition exists in portrait; landscape just brings them together.
+
+**Harness debt observed, out of scope:** `signOutIfSignedIn`'s "settled" wait says *whichever
+appears first* but `XCTWaiter().wait(for:)` completes when ALL expectations do — so every
+signed-out launch that lands on the login screen burns the full 45s before proceeding. Correct
+behaviour, wasted time; worth its own small tick.
+
+---
+
 ### FEATURE: F-PromoteSheetPolish — the Make-a-task sheet stops looking like debug UI  [x] COMPLETED
 
 **E's screenshot verdict (2026-08-31): "this view/display needs fixing - it looks horrible."**

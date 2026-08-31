@@ -205,8 +205,11 @@ enum UITestSession {
         )
     }
 
+    /// Internal rather than private since F-LandscapeFix: `LandscapeLoginUITests` runs this exact
+    /// flow after rotating, so a landscape regression fails at the same line the ten
+    /// F-PortraitArrival failures died on, not in a lookalike copy.
     @MainActor
-    private static func signIn(_ app: XCUIApplication, email: String) throws {
+    static func signIn(_ app: XCUIApplication, email: String) throws {
         let emailField = app.textFields["loginEmailField"]
         let passwordField = app.secureTextFields["loginPasswordField"]
         let signInButton = app.buttons["signInButton"]
@@ -230,33 +233,6 @@ enum UITestSession {
                     ? "the form showed: \(app.staticTexts["loginErrorMessage"].label)"
                     : "no inline error was shown")
         )
-    }
-
-    /// Puts the DEVICE back in portrait before a test launches into it.
-    ///
-    /// `ADHD_LifeOSUITestsLaunchTests` sets `runsForEachTargetApplicationUIConfiguration`, so
-    /// XCTest runs it once per UI configuration — and two of the four are landscape, the LAST of
-    /// which leaves the simulator in Landscape Left. Orientation, like the keychain, outlives the
-    /// app process: every journey scheduled after it launched into landscape, where the login
-    /// form's password field never becomes hittable, and died at `focusAndType`'s hittability
-    /// wait. TEN of the seventeen tests in the first whole-target run failed that way on
-    /// 2026-08-30 — every single test scheduled after `testLaunch` — with one identical message
-    /// that said nothing about orientation.
-    ///
-    /// It had gone unseen because the whole UI target had never actually been run in one go: the
-    /// run recorded as "9/9 journeys" totalled twelve tests, which only adds up as three plus
-    /// nine, so it cannot have included `testLaunch` at all.
-    ///
-    /// This is the same defect as the one `launchSignedOut` exists to fix, one layer down: a test
-    /// has to ARRIVE in a known state rather than inherit the previous one's. Auth was the state
-    /// that had been noticed; orientation was the one that had not.
-    ///
-    /// Deliberately NOT applied inside `launchSignedOut` unconditionally — `testLaunch` calls
-    /// that, and forcing portrait there would defeat the configuration sweep it exists to run.
-    @MainActor
-    static func resetToPortrait() {
-        guard XCUIDevice.shared.orientation != .portrait else { return }
-        XCUIDevice.shared.orientation = .portrait
     }
 
     /// Grants (or otherwise clears) any pending iOS permission alert. Cheap when there is none:

@@ -172,6 +172,109 @@ final class RenderHarnessUITests: XCTestCase {
         attach(app, named: "5-signup-keyboard-up")
     }
 
+    /// F-LandscapeFix's scout: every tab plus both composers, photographed in landscape, so the
+    /// sweep the block promises is a set of renders rather than a set of guesses. Both composers
+    /// are dismissed by SUBMITTING — the throwaway emulator account absorbs the entry and the
+    /// capture, and submitting exercises the landscape flow instead of tiptoeing around it.
+    @MainActor
+    func testRenderLandscapeSweep() throws {
+        try UITestEmulator.skipUnlessRunning()
+        let app = try UITestSession.launchSignedIn(label: "landsweep")
+
+        addTeardownBlock { @MainActor in
+            UITestSession.resetToPortrait()
+        }
+        XCTAssertTrue(
+            UITestSession.rotateToLandscape(app),
+            "The window never went landscape — these stills would photograph portrait"
+        )
+
+        attach(app, named: "landscape-1-today")
+        try sweepFanAndNoteComposer(app)
+
+        for tab in ["Tasks", "Areas", "Captures"] {
+            let button = app.tabBars.buttons[tab]
+            XCTAssertTrue(button.waitForExistence(timeout: UITestSession.timeout), "No \(tab) tab")
+            button.tap()
+            attach(app, named: "landscape-\(tab.lowercased())")
+        }
+        try sweepJournalPad(app)
+    }
+
+    /// The fan opens for its still — which photographs a KNOWN defect: in landscape the tiles
+    /// arc off the TOP of the screen (`captureFan-note` frames at y = -168), so the composers
+    /// are unreachable through it. Logged for E's priority call, not fixed here — the fan's
+    /// arc is an E-settled design. The note tile therefore cannot be tapped in landscape;
+    /// the composer is opened in portrait and THEN rotated, which is a route a user genuinely
+    /// has (rotate mid-composer) rather than a cheat.
+    @MainActor
+    private func sweepFanAndNoteComposer(_ app: XCUIApplication) throws {
+        let fab = app.buttons["quickCaptureButton"]
+        let noteTile = app.buttons["captureFan-note"]
+        XCTAssertTrue(
+            UITestSession.tap(fab, untilExists: noteTile),
+            "The capture fan never opened"
+        )
+        attach(app, named: "landscape-2-capture-fan")
+        XCTAssertTrue(
+            UITestSession.tap(fab, untilGone: noteTile),
+            "The capture fan never closed again"
+        )
+
+        UITestSession.resetToPortrait()
+        XCTAssertTrue(
+            UITestSession.tap(fab, untilExists: noteTile),
+            "The capture fan never reopened in portrait"
+        )
+        XCTAssertTrue(
+            UITestSession.tap(noteTile, untilExists: app.textFields["quickCaptureContentField"]),
+            "The note composer never opened from the fan"
+        )
+        XCTAssertTrue(
+            UITestSession.rotateToLandscape(app),
+            "The window never returned to landscape for the composer still"
+        )
+        attach(app, named: "landscape-3-note-composer")
+        UITestSession.focusAndType(
+            app.textFields["quickCaptureContentField"], text: "Landscape sweep capture", in: app
+        )
+        attach(app, named: "landscape-4-note-composer-keyboard")
+        XCTAssertTrue(
+            UITestSession.tap(
+                app.buttons["quickCaptureSubmitButton"],
+                untilGone: app.textFields["quickCaptureContentField"]
+            ),
+            "The note composer never submitted, so the sweep cannot continue past it"
+        )
+    }
+
+    @MainActor
+    private func sweepJournalPad(_ app: XCUIApplication) throws {
+        let journalTab = app.tabBars.buttons["Journal"]
+        XCTAssertTrue(journalTab.waitForExistence(timeout: UITestSession.timeout), "No Journal tab")
+        journalTab.tap()
+        attach(app, named: "landscape-5-journal")
+        XCTAssertTrue(
+            UITestSession.tap(
+                app.buttons["journalComposeButton"],
+                untilExists: app.textFields["logComposerBodyField"]
+            ),
+            "The journal pad never opened"
+        )
+        attach(app, named: "landscape-6-journal-pad")
+        UITestSession.focusAndType(
+            app.textFields["logComposerBodyField"], text: "Landscape sweep entry", in: app
+        )
+        attach(app, named: "landscape-7-journal-pad-keyboard")
+        XCTAssertTrue(
+            UITestSession.tap(
+                app.buttons["logComposerSubmitButton"],
+                untilGone: app.textFields["logComposerBodyField"]
+            ),
+            "The journal pad never submitted"
+        )
+    }
+
     @MainActor
     private func attach(_ app: XCUIApplication, named name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())

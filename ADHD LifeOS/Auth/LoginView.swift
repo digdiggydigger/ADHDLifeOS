@@ -37,6 +37,9 @@ struct LoginView: View {
     var showsSignInWithApple: Bool = false
 
     @Environment(\.colorScheme) var colorScheme
+    /// Compact height is the landscape iPhone, where `fieldsSection` lays the cards side by side
+    /// (F-LandscapeFix) — see the note on that section for why this is a row and not a scroll.
+    @Environment(\.verticalSizeClass) var verticalSizeClass
 
     @State var mode: AuthFormValidation.Mode = .signIn
     @State var email = ""
