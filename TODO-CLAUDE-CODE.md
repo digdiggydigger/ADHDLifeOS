@@ -36,6 +36,29 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-PromoteSheetPolish — the Make-a-task sheet stops looking like debug UI  [x] COMPLETED
+
+**E's screenshot verdict (2026-08-31): "this view/display needs fixing - it looks horrible."**
+
+Root cause, found in source: `ChoiceChipButtonStyle` styles only the BACKGROUND — the sprint
+planner pads its own labels, but this sheet passed bare `Button("10 min")`s, so the fill hugged
+the text and the selected state read as a text highlight. Beside that, `Picker("Priority")` sat
+outside any `Form`, which renders as a bare "P4 ⌄" floating with no label, and the Due Date
+toggle was an orphan row.
+
+**What shipped:** one `chip()` builder — equal-width, 44pt-min labels (§3's target is the
+VISIBLE control) — worn by all four groups: EFFORT (10/15/30 min + "Unsure", was lowercase
+"unknown"), WHEN (Today/Tomorrow/Someday), PRIORITY (P1–P4 chips replacing the floating
+picker), and DUE DATE (section label + "Exact day" toggle + date picker). Groups 16pt apart in
+the bento card, macro groups 24pt (§2). Behaviour, service calls and all accessibility
+identifiers untouched.
+
+**Verified:** SwiftLint 0, suite 1,886 / 0, build green; rendered end-to-end on the simulator
+through the REAL path (fan → note → save → Captures → Task it):
+`screenshots/promote-sheet/`. E's device look outstanding.
+
+---
+
 ### FEATURE: F-PillStay — the pill stays until you scroll back up  [x] COMPLETED
 
 **E's direction (2026-08-31), changing the settled motion model:** *"currently, the pill button

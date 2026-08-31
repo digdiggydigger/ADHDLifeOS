@@ -29,7 +29,9 @@ struct CapturePromoteSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                // 24 between the macro groups (§2): the task's name, the decision card, and
+                // the commit row read as three thoughts, not one run-on.
+                VStack(alignment: .leading, spacing: 24) {
                     titlePreview
                     form
                     // The partial-failure path must stay reachable: "task created, but couldn't
@@ -83,76 +85,115 @@ struct CapturePromoteSheet: View {
     }
 
     private var form: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
             effortRow
             whenRow
-            Picker("Priority", selection: $priority) {
-                ForEach(TaskPriority.allCases, id: \.self) { option in
-                    Text(option.rawValue.uppercased()).tag(option)
-                }
-            }
-            .accessibilityIdentifier("capturePromotePriorityPicker")
-
-            Toggle("Due Date", isOn: $hasDueDate)
-                .onChange(of: hasDueDate) { newValue in
-                    dueDate = newValue ? (dueDate ?? Date()) : nil
-                }
-            if hasDueDate {
-                DatePicker(
-                    "Date",
-                    selection: Binding(get: { dueDate ?? Date() }, set: { dueDate = $0 }),
-                    displayedComponents: .date
-                )
-            }
+            priorityRow
+            dueDateRow
         }
         .bentoCard()
     }
 
+    /// The one chip the whole sheet wears (E's verdict on the first cut, 2026-08-31: "it looks
+    /// horrible"). `ChoiceChipButtonStyle` styles only the BACKGROUND — the sprint planner pads
+    /// its own labels, and this sheet passed bare `Button("10 min")`s, so the fill hugged the
+    /// text and the selected state read as a text highlight. Equal-width 44pt labels give the
+    /// style something chip-shaped to wrap (§3's target is the VISIBLE control, not an
+    /// invisible frame around a sliver).
+    private func chip(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(ChoiceChipButtonStyle(isSelected: isSelected))
+    }
+
     /// S2's chips: an effort estimate the new task keeps as its sprint target, and coarse
-    /// due-date presets (the picker below still takes any date).
+    /// due-date presets (the exact-date picker below still takes any date).
     private var effortRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Effort")
                 .sectionLabel()
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
                 ForEach([600, 900, 1800], id: \.self) { seconds in
-                    Button(MomentumScoreboard.effortLabel(seconds: seconds) ?? "") {
+                    chip(
+                        MomentumScoreboard.effortLabel(seconds: seconds) ?? "",
+                        isSelected: effortSeconds == seconds
+                    ) {
                         effortSeconds = effortSeconds == seconds ? nil : seconds
                     }
-                    .buttonStyle(ChoiceChipButtonStyle(isSelected: effortSeconds == seconds))
-                    .frame(minHeight: 44)
                 }
-                Button("unknown") {
+                chip("Unsure", isSelected: effortSeconds == nil) {
                     effortSeconds = nil
                 }
-                .buttonStyle(ChoiceChipButtonStyle(isSelected: effortSeconds == nil))
-                .frame(minHeight: 44)
             }
             .accessibilityIdentifier("capturePromoteEffortChips")
         }
     }
 
     private var whenRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("When")
                 .sectionLabel()
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
-                Button("Today") { setDue(daysFromNow: 0) }
-                    .buttonStyle(ChoiceChipButtonStyle(isSelected: isDueSet(daysFromNow: 0)))
-                    .frame(minHeight: 44)
-                Button("Tomorrow") { setDue(daysFromNow: 1) }
-                    .buttonStyle(ChoiceChipButtonStyle(isSelected: isDueSet(daysFromNow: 1)))
-                    .frame(minHeight: 44)
-                Button("Someday") {
+                chip("Today", isSelected: isDueSet(daysFromNow: 0)) { setDue(daysFromNow: 0) }
+                chip("Tomorrow", isSelected: isDueSet(daysFromNow: 1)) { setDue(daysFromNow: 1) }
+                chip("Someday", isSelected: !hasDueDate) {
                     hasDueDate = false
                     dueDate = nil
                 }
-                .buttonStyle(ChoiceChipButtonStyle(isSelected: !hasDueDate))
-                .frame(minHeight: 44)
             }
             .accessibilityIdentifier("capturePromoteWhenChips")
+        }
+    }
+
+    /// P1–P4 as the same chips as everything above — the first cut left the default `Picker`
+    /// outside any `Form`, which renders as a bare "P4 ⌄" floating with no label at all.
+    private var priorityRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Priority")
+                .sectionLabel()
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                ForEach(TaskPriority.allCases, id: \.self) { option in
+                    chip(option.rawValue.uppercased(), isSelected: priority == option) {
+                        priority = option
+                    }
+                }
+            }
+            .accessibilityIdentifier("capturePromotePriorityPicker")
+        }
+    }
+
+    /// The refinement under the When presets: an exact calendar date. The toggle mirrors the
+    /// chips (Someday clears it; Today/Tomorrow set it), so it carries a label that says what
+    /// it really is rather than a second spelling of "due".
+    private var dueDateRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Due date")
+                .sectionLabel()
+                .foregroundStyle(.secondary)
+            Toggle(isOn: $hasDueDate) {
+                Text("Exact day")
+                    .font(.subheadline)
+            }
+            .onChange(of: hasDueDate) { newValue in
+                dueDate = newValue ? (dueDate ?? Date()) : nil
+            }
+            if hasDueDate {
+                DatePicker(
+                    "Date",
+                    selection: Binding(get: { dueDate ?? Date() }, set: { dueDate = $0 }),
+                    displayedComponents: .date
+                )
+                .font(.subheadline)
+            }
         }
     }
 
