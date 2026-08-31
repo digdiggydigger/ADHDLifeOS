@@ -41,7 +41,12 @@ final class PlaceActionHandlerTests: XCTestCase {
 
     private final class FakeRecorder: LocationEventRecording {
         private(set) var recorded: [LocationEvent] = []
-        func record(_ event: LocationEvent) async throws { recorded.append(event) }
+        func record(_ event: LocationEvent) async throws {
+            // A real record suspends — the duplicate-delivery test needs the handler to be
+            // mid-flight when the second delivery lands, exactly as Firestore makes it live.
+            await Task.yield()
+            recorded.append(event)
+        }
     }
 
     private final class WriterLog {
@@ -83,8 +88,10 @@ final class PlaceActionHandlerTests: XCTestCase {
         PlaceTriggerEventHandler(
             recorder: FakeRecorder(), notifier: notifier, store: store,
             isEnabled: { enabled },
-            journalWriter: { writers.journal($0) },
-            captureWriter: { writers.capture($0) }
+            // The writers SUSPEND, like the Firestore calls they stand in for — the
+            // duplicate-delivery race lives in exactly that suspension window.
+            journalWriter: { input in await Task.yield(); return writers.journal(input) },
+            captureWriter: { input in await Task.yield(); return writers.capture(input) }
         )
     }
 
@@ -212,6 +219,23 @@ final class PlaceActionHandlerTests: XCTestCase {
 
         XCTAssertEqual(writers.journalInputs.count, 1, "the bounce must not double-write")
         XCTAssertEqual(notifier.posted.count, postedAfterFirst)
+    }
+
+    /// iOS can deliver the same crossing twice in quick succession (seen live in the block-3
+    /// simulator drive: two `didEnterRegion` for one arrival, seconds apart). Both used to pass
+    /// the cooldown check before either wrote it — the handler suspends at its awaits — and the
+    /// journal line was written twice. The in-flight guard closes that window.
+    func testHandle_simultaneousDuplicateDeliveriesRunOnce() async {
+        let store = FakeStore()
+        store.snapshot = gymSnapshot(actions: [journalAction()])
+        let writers = WriterLog()
+        let sut = makeSUT(store: store, notifier: FakeNotifier(), writers: writers)
+
+        async let first: Void = sut.handle(arrival())
+        async let second: Void = sut.handle(arrival())
+        _ = await (first, second)
+
+        XCTAssertEqual(writers.journalInputs.count, 1, "one crossing, one line — however many deliveries")
     }
 
     func testHandle_actionlessEmptyPlaceStillNeverFires() async {

@@ -53,7 +53,20 @@ final class PlaceTriggerEventHandler {
         }
     }
 
+    /// Crossings currently being handled, keyed place|direction. iOS can deliver one crossing
+    /// twice within seconds (seen live, block-3 simulator drive), and the persisted cooldown
+    /// cannot stop the twin: this method SUSPENDS between reading the cooldown and writing it,
+    /// so both deliveries used to pass the check and the journal line was written twice. The
+    /// guard is checked and set before the first await, which on the main actor closes the
+    /// window; the persisted cooldown still covers duplicates across relaunches.
+    private var inFlight: Set<String> = []
+
     func handle(_ event: PlaceTriggerEvent) async {
+        let flightKey = "\(event.placeId.uuidString)|\(event.kind.rawValue)"
+        guard !inFlight.contains(flightKey) else { return }
+        inFlight.insert(flightKey)
+        defer { inFlight.remove(flightKey) }
+
         // The silent timeline log. Quietly best-effort: a dropped event on an offline background
         // wake is a small gap in garnish, and there is no screen to surface an error on anyway.
         try? await recorder.record(
