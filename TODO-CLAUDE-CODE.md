@@ -232,7 +232,16 @@ in tests). Not-installed app → honest in-app "couldn't open" surface, never si
       interactive taps, so the tap-through is E's field test's to confirm.
 - [ ] **Field test on `wishwashwacky15`** — a real crossing runs an in-app action and delivers
       an external one, and the taps route — before this block may be ticked (the location-merge
-      precedent). **Installed and ready for E.**
+      precedent). **FIRST PASS DONE (E, 2026-08-31, on foot):** E configured real actions —
+      "Open Monzo, on arrival" at the Bank (the CUSTOM scheme field, proven in anger: Monzo is
+      not in the catalogue) and "Open Spotify, when leaving" on Home alongside BOTH custom
+      messages — walked the fences, and the notifications fired and routed. One wrinkle: after
+      the tap, iOS asked "do you want to open Spotify?" — the async hop before
+      `UIApplication.open` breaks the tap's user-initiated attribution, which is what invites
+      that dialog. Fixed to open synchronously in the delegate callback (`0c65ca5`); E re-tests
+      on the next walk. If the dialog survives, it is Apple's cross-app guard, stated honestly.
+      The in-app auto-run half is simulator-proven; E can field-confirm by adding a journal-line
+      action to any place.
 
 **Found on the drive (both fixed, both red-checked):**
 - **Duplicate-delivery race (`338005f`):** iOS delivered one arrival twice in seconds; both
