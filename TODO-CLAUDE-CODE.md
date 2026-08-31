@@ -69,6 +69,10 @@ E-settled arc byte-for-byte.
 - [x] Device carries the block — built 08:02:59, `devicectl` install + launch verified
       2026-08-31 08:04.
 
+**E's device verdict (2026-08-31, on `bbc54b7`): "the fan feels good - tick it."** The
+landscape fan is SETTLED alongside the portrait arc — both directions now carry an E-approved
+arrangement; do not re-litigate either.
+
 **Flake note for the record:** the swallowed-rotation sulk hit once more (a sweep run failed at
 the window guard after heavy interactive idb driving); a fresh `simctl` boot cleared it, exactly
 as [[landscape-fix]] records. The guard doing its job is why the failure was legible.
