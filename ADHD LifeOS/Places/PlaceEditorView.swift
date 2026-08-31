@@ -25,6 +25,9 @@ struct PlaceEditorView: View {
     @State private var nudgeOnDeparture = false
     @State private var arrivalMessage = ""
     @State private var departureMessage = ""
+    /// Staged like every other field and applied on Save — including `.unsupported` actions
+    /// from a newer build, which ride through untouched.
+    @State private var actions: [PlaceAction] = []
     @State private var hasSeeded = false
     @State private var addressQuery = ""
     /// The last address E chose, held as a FALLBACK name only. E's 2026-08-27 rule: it must not
@@ -51,6 +54,7 @@ struct PlaceEditorView: View {
                 locationSection
                 radiusSection
                 nudgesSection
+                PlaceActionsSection(actions: $actions)
             }
             .navigationTitle(existing == nil ? "New place" : "Edit place")
             .navigationBarTitleDisplayMode(.inline)
@@ -265,6 +269,7 @@ struct PlaceEditorView: View {
         nudgeOnDeparture = existing.nudgeOnDeparture
         arrivalMessage = existing.arrivalMessage ?? ""
         departureMessage = existing.departureMessage ?? ""
+        actions = existing.actions
     }
 
     private func save() async {
@@ -281,10 +286,7 @@ struct PlaceEditorView: View {
             nudgeOnDeparture: nudgeOnDeparture,
             arrivalMessage: arrivalMessage,
             departureMessage: departureMessage,
-            // Preserved on edit like id/createdAt — the editing UI arrives in block 2, and
-            // until then (and after, for fields this sheet doesn't show) a save must never
-            // strip what a place already does.
-            actions: existing?.actions ?? []
+            actions: actions
         ) else { return }
 
         if await onSave(place) {

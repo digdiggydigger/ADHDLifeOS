@@ -176,7 +176,7 @@ Also: `try?` FLATTENS nested optionals (SE-0230), so `decodeIfPresent` alone can
 "minutes absent" (valid) from "minutes undecodable" (degrade) — the decoder checks
 `container.contains` first, and a test failure caught it before it shipped.
 
-### FEATURE: F-PlaceActions-2-Editor — actions on the Place editor  [ ] UNCHECKED
+### FEATURE: F-PlaceActions-2-Editor — actions on the Place editor  [x] COMPLETED
 
 An **Actions** section on `PlaceEditorView`: list rows ("On arrival → Open Spotify"),
 add/edit/delete. Direction → kind → detail flow: curated app catalogue (known URL schemes:
@@ -188,9 +188,25 @@ capture/journal bodies. Validation in a pure `PlaceActionValidation` (trimmed-to
 `arrivalMessage` — "" must never save).
 
 **Acceptance criteria**
-- [ ] Validation + row-label logic pure and tested first; §1–6 styling; iOS 16 floor respected.
-- [ ] Editing a place with an UNSUPPORTED action shows it honestly and preserves it on save.
-- [ ] Suite, lint, build; simulator screenshots of the editor flow for E.
+- [x] Validation + row-label logic pure and tested first (`PlaceActionEditing.swift` /
+      `PlaceActionEditingTests`, 16 tests: per-kind validation, scheme/web-address
+      normalization, draft↔action editing round trip, honest unsupported labels, screen tokens
+      pinned to `AppTab` spellings). The Places feature is iOS-17-gated with E's standing
+      authorisation, so no fresh 16.0 gating was needed.
+- [x] Editing a place with an UNSUPPORTED action shows it honestly (named row + "kept safe"
+      footnote, not editable, delete allowed) and preserves it on save (`PlaceActionDraft`
+      REFUSES to open for one — test-pinned — so the sheet can never save a stripped version).
+- [x] Suite **1,934 / 0**; lint 0 in 571 files; build succeeded. Simulator drive against the
+      emulator: fresh account → Settings → Places → New place → two actions added (arrival →
+      Spotify from the catalogue, departure → text with typed number), place saved, REOPENED
+      and both rows decoded back with the same ids — the full write→read round trip through
+      the live rules. Screenshots sent to E.
+
+**Found en route (device-class bug, caught in the simulator drive):** `.sheet(item:)` attached
+to a Form `Section` gets applied PER ROW, and the duplicate presentations dismissed the whole
+place editor the moment "Add an action" was tapped — the sheet now hangs off the Add button
+(any single concrete view inside the section works). This never surfaced in unit tests and
+never could; it is exactly what the drive exists to catch.
 
 ### FEATURE: F-PlaceActions-3-Execution — actions fire on a crossing  [ ] UNCHECKED
 
