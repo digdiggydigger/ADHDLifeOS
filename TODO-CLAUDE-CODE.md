@@ -67,6 +67,8 @@ E can veto this.
 - [x] Discriminator rendered on the simulator (`screenshots/pill-stay/`): the pill still
       standing FIVE seconds after the down-scroll ended — the old build regrows at 1.2s — then
       the disc back after one up-scroll.
+- [x] **APPROVED BY E ON DEVICE, 2026-08-31: "looks good."** The tab-change reset was offered
+      for veto and not vetoed — it stands.
 
 ---
 
