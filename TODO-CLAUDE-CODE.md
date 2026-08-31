@@ -269,7 +269,37 @@ verified per API used.
 
 **Acceptance criteria**
 - [ ] Intents callable from the Shortcuts app on device; guide content pure and tested.
+      **BUILT and sim-verified 2026-08-31 (device half is E's):** three intents ship —
+      "Capture a note" and "Log a journal line" run WITHOUT opening the app (writes through
+      `ShortcutIntentRunner`, stamped via `RecordLocationStamp`, `DataChangeSignal` posted so
+      an open app refreshes); "Start a sprint" opens the app (`openAppWhenRun` — ActivityKit's
+      background refusal, the block-3 precedent) and rides `PlaceActionNotificationRouter.open(_:)`,
+      the notification-tap plumbing minus the notification. An `AppShortcutsProvider`
+      (`@available(iOS 16.4, *)` — the `shortTitle:systemImageName:` init's floor; on 16.0–16.3
+      the intents still sit in the action library) surfaces all three under a LifeOS section
+      with zero setup. Guide content is `PlaceAutomationGuide` (9 tests, every word pinned):
+      guides ONLY for openApp/openURL/textContact/startSprint — journal/capture already run
+      zero-touch on OUR fences, openScreen has no Shortcuts action that could reach it, and
+      unsupported can't be taught; the intro says every tap is E's (Apple allows no programmatic
+      automation creation), and the afterword warns the in-app action keeps nudging unless
+      deleted. Sheet + per-action "Make this automatic" rows on the place editor
+      (`PlaceActionsSection`, split to its own file at the 400-line lint bar).
+      **Sim drive (18:04–18:35):** all three actions found and run from Apple's Shortcuts app —
+      capture dialog "Captured …to your inbox." and the capture in the inbox peek card; journal
+      dialog "Journaled …" and the line in the timeline; sprint foregrounding the app with the
+      timer bar + Live Activity running at the default length. One sim quirk: tapping an App
+      Shortcut TILE directly says "Unable to run App Shortcut" (the Siri runner path); inside a
+      shortcut the actions run fine — retest the tile on device.
+      **Drive honesty:** the MCP sim launcher dropped the `SIMCTL_CHILD_` env, so the drive ran
+      against PRODUCTION on a throwaway account (block4drive@example.com) — created 18:04,
+      verified, then deleted through Settings → Delete Account (re-auth flow exercised live);
+      `auth_get_users` confirms `users: []`. Nothing of E's was touched. Upside: the intents
+      are proven against the LIVE rules, not just the emulator.
 - [ ] Suite, lint, build; E walks one real automation end-to-end on device.
+      **My half done 2026-08-31:** suite **1,983 / 0** (18 new: 9 guide + 7 runner + 2 router),
+      SwiftLint 0 violations in 581 files, sim build succeeded, red-check after commit. E's
+      half: one real automation (Arrive → Run Immediately → a LifeOS action) walked on
+      `wishwashwacky15`.
 
 ---
 

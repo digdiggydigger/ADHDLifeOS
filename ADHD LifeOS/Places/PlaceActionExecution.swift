@@ -202,6 +202,13 @@ final class PlaceActionNotificationRouter {
         return true
     }
 
+    /// Block 4's second way IN: the "Start a sprint" App Intent hands its door here directly —
+    /// no notification involved, but the same pending/replay rules apply, because an intent can
+    /// be the very thing that cold-launches the app.
+    func open(_ door: PlaceActionDoor) {
+        deliver(door)
+    }
+
     private func deliver(_ door: PlaceActionDoor) {
         if let openDoor {
             openDoor(door)

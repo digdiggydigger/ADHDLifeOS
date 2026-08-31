@@ -279,6 +279,32 @@ final class PlaceActionNotificationRouterTests: XCTestCase {
         XCTAssertEqual(doors, [.screen(.journal)])
     }
 
+    /// Block 4: the "Start a sprint" App Intent hands its door straight to the router — the
+    /// same plumbing a notification tap uses, minus the notification.
+    func testOpen_deliversImmediatelyWhenConnected() {
+        let router = PlaceActionNotificationRouter()
+        var doors: [PlaceActionDoor] = []
+        router.connect { doors.append($0) }
+
+        router.open(.sprint(minutes: 40))
+
+        XCTAssertEqual(doors, [.sprint(minutes: 40)])
+    }
+
+    /// An intent can run the app up from cold, arriving before the tabs — the door waits and
+    /// replays exactly once, like a cold-launch tap.
+    func testOpen_beforeConnect_holdsTheDoorAndReplaysItOnce() {
+        let router = PlaceActionNotificationRouter()
+
+        router.open(.sprint(minutes: nil))
+
+        var doors: [PlaceActionDoor] = []
+        router.connect { doors.append($0) }
+        router.connect { doors.append($0) }
+
+        XCTAssertEqual(doors, [.sprint(minutes: nil)])
+    }
+
     /// Ours-but-broken (userInfo missing or undecodable) is still HANDLED — falling through to
     /// the focus router with a placeAction identifier would be worse than doing nothing.
     func testHandle_brokenUserInfoIsStillClaimed() {
