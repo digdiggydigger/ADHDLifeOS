@@ -184,6 +184,7 @@ struct RootView: View {
                 // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
                 // call beyond E's stated rule; E can veto.)
                 .onChange(of: selectedTab) { _ in discScrollActivity.reset() }
+                .minimizesTabBarOnScrollDown()
                 .blur(radius: isFabOpen ? 4 : 0)
                 .overlay {
                     if isFabOpen {
@@ -354,6 +355,23 @@ struct RootView: View {
                 // we were backgrounded) can finally register its fences.
                 Task { await LocationTriggerService.shared.refreshRegistrations() }
             }
+        }
+    }
+}
+
+private extension View {
+    /// E's 2026-08-31 call: the tab bar gets out of the way while you scroll DOWN and comes back
+    /// the moment you scroll up — the same directional grammar the capture pill speaks
+    /// (F-PillStay), delivered by the SYSTEM so the two never fight over gesture semantics. On
+    /// iOS 26 the Liquid Glass bar collapses to the selected tab; earlier systems keep the
+    /// standard bar — the behaviour does not exist there, and hand-rolling transparency against
+    /// a UIKit bar is a fight this app does not need on a floor it will outlive.
+    @ViewBuilder
+    func minimizesTabBarOnScrollDown() -> some View {
+        if #available(iOS 26.0, *) {
+            self.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            self
         }
     }
 }

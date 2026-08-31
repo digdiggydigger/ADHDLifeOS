@@ -36,6 +36,43 @@ directing this queue in chat. Cowork should feel free to rewrite or replace any 
 
 ---
 
+### FEATURE: F-TabBarMinimize — the tab bar gets out of the way while you scroll down  [x] COMPLETED
+
+**E's ask (2026-08-31, in chat): "make the nav bar at the bottom of the screen transparent when
+scrolling downwards", plus keep the newest build on the phone.**
+
+**The read on "transparent":** the intent is the bar stopping covering content while reading
+downwards. iOS 26 has a system behaviour for exactly this — the Liquid Glass bar collapses to
+just the selected tab on scroll down and returns on scroll up (`tabBarMinimizeBehavior(.onScrollDown)`,
+`@available(iOS 26.0, *)`, verified in the SDK swiftinterface). That shipped, as one gated
+modifier on `RootView`'s TabView (`minimizesTabBarOnScrollDown()`, the same `@ViewBuilder`
+`#available` shape as `.haptic`). It is the same directional grammar the capture pill speaks
+(F-PillStay), delivered by the system so the two never fight. If E literally wants a full-size
+but see-through bar instead, that is a different dial — say so on device review.
+
+- iOS 16–25 keep the standard bar: the behaviour does not exist there and hand-rolling
+  transparency against a UIKit bar is not worth the fight on a floor the app will outlive.
+- No new pure logic → no new unit tests; the verification is renders with a genuine
+  discriminator, the F-DiscPill proof pattern.
+
+**Acceptance criteria**
+- [x] Build succeeds; `swiftlint lint` clean on the touched file; RootView 377 lines.
+- [x] **Discriminator renders** (simulator, restored emulator session, idb swipes;
+      `screenshots/tabbar-minimize/`): full five-tab bar at rest → after a scroll-down swipe the
+      bar is a single Today-glyph pill and content flows through where it sat → after a decisive
+      scroll-up flick the full bar is back. A gentle 220pt up-drag did NOT restore it in the sim
+      — consistent with the system's own threshold and/or idb gesture synthesis; E judges the
+      real feel on device.
+- [x] Full unit suite **1,886 / 0**, EXIT=0.
+- [x] **Full UI target run whole: `Executed 23 tests, with 0 failures (0 unexpected) in
+      2569.535 seconds`, EXIT=0.** This was the load-bearing gate: journeys address
+      `app.tabBars.buttons` after scrolling, which is precisely what this behaviour changes —
+      all 23 individually green.
+- [x] Device carries the block — built 06:34:40, `devicectl` install + launch verified
+      2026-08-31 06:35.
+
+---
+
 ### FEATURE: F-LandscapeFix — the login screen works sideways, and the landscape sweep ran  [x] COMPLETED
 
 **E's calls, made in advance (session opener, 2026-08-31): both orientations stay supported; fix
