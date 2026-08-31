@@ -219,11 +219,36 @@ predefined contact — the final Send tap is Apple's floor). An action makes its
 in tests). Not-installed app → honest in-app "couldn't open" surface, never silence.
 
 **Acceptance criteria**
-- [ ] Executor seam unit-tested with fakes (every kind, both directions, cooldown respected,
-      empty-never-fires untouched for action-less places).
-- [ ] Notification routing: tap → the right action, verified on simulator.
+- [x] Executor seam unit-tested with fakes (31 new tests: every kind, both directions, cooldown
+      respected, kill-switch split — auto-runs are records and run with it OFF, notifications
+      don't — failed-write-retries, empty-never-fires untouched for action-less places).
+- [x] Verified on simulator against REAL geofence crossings (a drive into a
+      Buckingham Palace fence, route-simulated movement): the auto-run journal line written place-stamped from a
+      background wake and visible in the Journal timeline; the crossing nudge reporting it
+      ("You're at Gym 🏋️ — Journaled …"); the arrival external ("Open Spotify … tap to open.")
+      and the departure external ("Text … — sending stays with you.") both delivered. Tap
+      routing is pin-tested through the router; the delegate glue follows
+      `FocusNotificationRouter`'s proven pattern — the sim's lock screen kept swallowing
+      interactive taps, so the tap-through is E's field test's to confirm.
 - [ ] **Field test on `wishwashwacky15`** — a real crossing runs an in-app action and delivers
-      an external one — before this block may be ticked (the location-merge precedent).
+      an external one, and the taps route — before this block may be ticked (the location-merge
+      precedent). **Installed and ready for E.**
+
+**Found on the drive (both fixed, both red-checked):**
+- **Duplicate-delivery race (`338005f`):** iOS delivered one arrival twice in seconds; both
+  passed the cooldown check before either wrote it (the handler suspends between read and
+  write) and the journal line landed TWICE. In-flight guard keyed place|direction, set before
+  the first await. The test only went red once the fake writers SUSPENDED like Firestore —
+  a sync fake never opens the race window.
+- **Deviation from this block's sketch, reported:** `startSprint` is TAP-to-start, not
+  auto-run — ActivityKit refuses to start a Live Activity from a background wake, and a sprint
+  silently half-spent before E sits down punishes the arrival it was meant to reward.
+- **Sim-harness traps for the record:** `simctl privacy grant location-always` on the shared
+  simulator breaks two unit tests that read live authorization (the hosted test target IS the
+  app) — `simctl privacy reset location` after any drive. A location TELEPORT collapses the
+  significant-change replan and the crossing into one instant (fence registers already-Inside,
+  no didEnter) — simulate a `simctl location start` ROUTE instead. Notifications need the
+  app's own permission prompt first (start a sprint once).
 
 ### FEATURE: F-PlaceActions-4-Shortcuts — the zero-touch layer  [ ] UNCHECKED
 
