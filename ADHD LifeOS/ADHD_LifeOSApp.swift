@@ -79,10 +79,13 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         let identifier = response.notification.request.identifier
         let userInfo = response.notification.request.content.userInfo
         // Place-action taps first (F-PlaceActions-3) — their identifiers carry a prefix, so
-        // everything else still falls through to the focus router untouched. On main because
-        // the router opens app state and URLs.
-        DispatchQueue.main.async {
-            let handledAsPlaceAction = PlaceActionNotificationRouter.shared.handle(
+        // everything else still falls through to the focus router untouched. SYNCHRONOUSLY on
+        // the delegate callback (documented main-thread), never through an async hop: E's
+        // field test showed iOS inserting its "LifeOS wants to open Spotify" confirmation, and
+        // an async dispatch before `UIApplication.open` is exactly what breaks the tap's
+        // user-initiated attribution and invites that dialog.
+        let handledAsPlaceAction = MainActor.assumeIsolated {
+            PlaceActionNotificationRouter.shared.handle(
                 notificationIdentifier: identifier,
                 userInfo: userInfo,
                 openURL: { url, failureBody in
@@ -100,7 +103,8 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
                     }
                 }
             )
-            guard !handledAsPlaceAction else { return }
+        }
+        if !handledAsPlaceAction {
             FocusNotificationRouter.shared.handle(
                 notificationIdentifier: identifier,
                 actionIdentifier: response.actionIdentifier
