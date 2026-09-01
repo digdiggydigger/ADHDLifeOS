@@ -313,6 +313,118 @@ verified per API used.
 
 ---
 
+## App Directory arc — E's design, settled 2026-09-01 (fresh session, branch `feature/app-directory`, AFTER the place-actions merge)
+
+**E's ask: when adding a place action, "select an application that they have installed on the
+device" — fully custom, any app.** Designed in a six-question round on 2026-09-01; the full
+approved plan (with the four blocks in implementation detail) lives at
+`~/.claude/plans/dont-action-anything-yet-structured-backus.md` and the session opener at
+`../Momentum-v3-Design-Handoff/SESSION-OPENER-app-directory.md`. E's settled decisions — not
+to be re-litigated per block:
+
+- **iOS ceiling acknowledged:** no installed-app enumeration API exists for anyone. The shape
+  is a big searchable directory (hundreds of curated apps) + a "smart custom" path (bare
+  scheme, kept, AND any pasted share-link opened as a universal link — app if installed, web
+  if not) + config-time verification for a budgeted subset.
+- **Verification is three honest states** — installed / doesn't look installed / can't check —
+  because `LSApplicationQueriesSchemes` caps at 50 schemes per build (the plist currently has
+  NONE) and `canOpenURL` on an undeclared scheme lies. Tap-time honesty stays the backstop.
+- **Deep destinations too** (Spotify playlist, Maps directions to the place itself, chat) via
+  a **new wire kind `open_link`** — a new KIND, never a field on `open_app`, because the
+  encoder drops unknown fields on known kinds but preserves unknown kinds via `.unsupported`.
+- **Directory ships bundled + remote top-up**: Swift-constant base list; a read-only
+  `/catalog/app_directory` Firestore doc (the app's first global read, new rules match block,
+  E publishes) grows it without a release. Every failure mode degrades to bundled+cache.
+- **REJECTED: a run-a-shortcut action kind** (fragile, user-maintained). **PARKED: true
+  Spotify OAuth integration** — a separate future arc E wants "at some point".
+- **Sequencing (E, explicit): built in a FRESH session, only after `feature/place-actions`
+  merges to main** (which waits on E's Block 3 double-confirm retest). The opener carries the
+  state gate.
+
+### FEATURE: F-AppDirectory-1-Directory — the big searchable directory (bundled)  [ ] UNCHECKED
+
+`PlaceAppDirectoryEntry` (scheme = identity, name, keywords, universal-link hosts, destination
+templates, rank, hidden) with per-entry lenient decode (a malformed entry is dropped, never
+fatal) and a pure `merge(bundled:remote:)` keyed by scheme. Bundled list as a Swift constant
+(`PlaceAppDirectoryBundled.swift`), few hundred curated apps — curation IS the work; a wrong
+scheme teaches E the feature lies, so long-tail entries prefer universal links over guessed
+schemes. `PlaceAppDirectorySearch.filter` ranked name-prefix > contains > keyword > scheme.
+`PlaceAppPickerView` (iOS 17-gated searchable List sheet) replaces the 10-entry Picker;
+"Something else…" leads to smart custom. Saves still produce plain `.openApp` — zero wire
+change. ALSO lands the forward encoder fix: known kinds capture and re-encode non-typed extra
+fields (`extraPayload`), so future optional fields survive builds from this arc on.
+
+**Acceptance criteria**
+- [ ] Directory model, lenient decode, merge, search ranking, and the extras round-trip
+      (`open_app` JSON + stranger field → re-encode → intact) all TDD-pinned; every bundled
+      entry swept through `normalizedScheme` by a test.
+- [ ] Picker sheet drives on the simulator: search finds apps, a pick saves as `.openApp`,
+      custom path still reachable. Suite, lint, build; red-check after commit.
+
+### FEATURE: F-AppDirectory-2-Links — pasted links, `open_link`, universal-link opener, destinations  [ ] UNCHECKED
+
+New wire kind `open_link` (`display_name`, `link`, optional `scheme`): pasted share-links and
+deep destinations. Old builds degrade it to `.unsupported` with payload preserved and the
+honest "added by a newer version" row — the designed-for path. Smart custom gains the
+paste-a-link field (https-only via `normalizedWebAddress`, name inferred from host, editable).
+Destination step in the picker for entries with templates (one `{value}` substitution,
+percent-encoded; skippable in one tap — the default is the plain open; Maps gets "Directions
+to this place" from the place's own coordinate). `PlaceLinkOpenPlan` (https → universal-first,
+scheme → direct) + `PlaceLinkOpener`: attempt 1 with `.universalLinksOnly: true` issued
+SYNCHRONOUSLY on the delegate callback (the 0c65ca5 attribution lesson — pinned by a test that
+the fake open fires before the call returns), plain open in the completion on failure, honest
+banner only after the last attempt. Router signature untouched.
+
+**Acceptance criteria**
+- [ ] `open_link` round-trips through JSON AND `FirestoreDocumentCoder`; broken-payload and
+      old-build degradation pinned; route/split/labels/notification copy extended and pinned;
+      opener strategy + synchronous-first-attempt pinned with a recording fake.
+- [ ] Sim drive: paste a share link → action saves → notification tap opens; destination step
+      produces a working deep link. Suite, lint, build; red-check after commit.
+
+### FEATURE: F-AppDirectory-3-Verify — config-time install verification  [ ] UNCHECKED
+
+`Info.plist` gains `LSApplicationQueriesSchemes` (curated top ~45 of the bundled list —
+headroom under the 50 cap; compile-time only, remote entries can never buy a slot).
+`PlaceQueryableSchemes.declared` + a parity test reading the plist via `Bundle.main`
+(set-equality, count ≤ 50 — drift is a red test). `PlaceAppInstallVerdict` decides the three
+states BEFORE `canOpenURL` (undeclared → can't-check, never consulted — tripwire-tested).
+Copy pinned in `PlaceAppInstallCopy`; never claims "not installed" when it can't know.
+One-method `SchemeInstallChecking` adapter. Note: the simulator has almost no third-party
+apps, so "doesn't look installed" is the expected sim state; declared schemes get one manual
+device sweep.
+
+**Acceptance criteria**
+- [ ] Verdict logic (incl. the never-calls-canOpen tripwire), copy, and plist parity all
+      TDD-pinned; badges/footers render in the picker and editor on the simulator.
+- [ ] Suite, lint, build; red-check after commit.
+
+### FEATURE: F-AppDirectory-4-Remote — the directory grows without a release  [ ] UNCHECKED
+
+`/catalog/app_directory` single-doc read — the app's FIRST global Firestore read, deliberately
+NOT in the per-user `Collection` enum: named `fetchAppDirectoryDocument()` in
+`FirebaseManager+AppDirectory.swift`, narrow `AppDirectoryBackingStore` +
+`FirebaseAppDirectoryClientAdapter` + recording fake. Rules addition (E publishes manually;
+verify live via the Firebase MCP diff): `match /catalog/{docId} { allow read: if request.auth
+!= null; allow write: if false; }` — until published, permission-denied is treated exactly
+like offline. Fetch when the picker opens, throttled by a pure 24h-TTL cache policy; the sheet
+always renders bundled+cache synchronously and a completed fetch updates the NEXT open (no
+reshuffle under E's finger). Cache = JSON blob + fetchedAt in UserDefaults behind a two-method
+protocol; corruption degrades to bundled.
+
+**Acceptance criteria**
+- [ ] Cache policy, cache resilience, per-entry lossy remote decode, and the composition
+      (fetch error → picker identical to bundled+cache) all TDD-pinned with the recording
+      fake; emulator drive with a seeded `/catalog/app_directory` doc shows a remote entry
+      appearing.
+- [ ] Rules diff reported for E to publish; suite, lint, build; red-check after commit.
+
+**Arc close-out:** field gate before the `--no-ff` merge — E walks, on device: a directory
+pick, a pasted-link custom app, one deep destination, and one "doesn't look installed"
+verdict for an app E doesn't have.
+
+---
+
 ### FEATURE: F-TabBarMinimize — the tab bar gets out of the way while you scroll down  [x] COMPLETED
 
 **E's ask (2026-08-31, in chat): "make the nav bar at the bottom of the screen transparent when
