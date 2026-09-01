@@ -23,6 +23,12 @@ struct PlaceAppPickerView: View {
     let onPick: (PlaceAppDirectoryEntry) -> Void
     let onPickLink: (PlaceActionDraftLinkPick) -> Void
     let onCustom: () -> Void
+    /// Injected so previews don't consult UIKit; the default is the real check.
+    var checkInstalled: (String?) -> PlaceAppInstallVerdict = { scheme in
+        PlaceAppInstallVerdict.verdict(scheme: scheme) {
+            UIApplicationSchemeInstallChecker().canOpen($0)
+        }
+    }
 
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
@@ -77,7 +83,7 @@ struct PlaceAppPickerView: View {
                     // A push, not a pick: the destination step owns the choice — and its
                     // first row is the plain open, so the default stays one tap away.
                     NavigationLink(value: entry) {
-                        Text(entry.name)
+                        rowLabel(for: entry)
                     }
                     .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
                 }
@@ -91,12 +97,29 @@ struct PlaceAppPickerView: View {
             onPick(entry)
             dismiss()
         } label: {
-            Text(entry.name)
+            rowLabel(for: entry)
                 .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .contentShape(Rectangle())
         .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
+    }
+
+    /// POSITIVE-ONLY badge (F-AppDirectory-3): a quiet check for "looks installed", and
+    /// nothing otherwise — 150 "doesn't look installed" marks would be noise, and most
+    /// entries have no verification slot at all. VoiceOver reads the badge as one element
+    /// with the row.
+    private func rowLabel(for entry: PlaceAppDirectoryEntry) -> some View {
+        HStack(spacing: 8) {
+            Text(entry.name)
+            if checkInstalled(entry.scheme) == .looksInstalled {
+                Image(systemName: "checkmark.circle")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Installed on this iPhone")
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// The honest miss: the directory is curated, not complete — the custom path underneath is

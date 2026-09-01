@@ -405,7 +405,7 @@ banner only after the last attempt. Router signature untouched.
       (router + opener synchrony) — a real crossing tap is field-gate territory. Suite
       **2,056/0** (0 skipped), lint 0/594, build green; red-check after commit.
 
-### FEATURE: F-AppDirectory-3-Verify — config-time install verification  [ ] UNCHECKED
+### FEATURE: F-AppDirectory-3-Verify — config-time install verification  [x] COMPLETED
 
 `Info.plist` gains `LSApplicationQueriesSchemes` (curated top ~45 of the bundled list —
 headroom under the 50 cap; compile-time only, remote entries can never buy a slot).
@@ -418,9 +418,18 @@ apps, so "doesn't look installed" is the expected sim state; declared schemes ge
 device sweep.
 
 **Acceptance criteria**
-- [ ] Verdict logic (incl. the never-calls-canOpen tripwire), copy, and plist parity all
-      TDD-pinned; badges/footers render in the picker and editor on the simulator.
-- [ ] Suite, lint, build; red-check after commit.
+- [x] Verdict logic (incl. the never-calls-canOpen tripwire), copy, and plist parity all
+      TDD-pinned (9 new tests; parity reads the BUILT product's Info.plist via `Bundle.main`
+      and set-compares both ways). **45 declared schemes** — top of the rank order + the
+      everyday-UK four (strava, deliveroo, ubereats, monzo) — in `Info.plist` (the target
+      merges the plist FILE into its generated one, so array keys ride there).
+- [x] Badges/footers render on the simulator WITH real discriminators: Apple Maps — the one
+      declared app actually installed on the sim — carries the quiet positive-only checkmark
+      while every other row stays clean; picking Spotify shows the pinned "Doesn't look
+      installed. Saving is fine…" footer with Save still enabled. Suite **2,065/0**
+      (0 skipped), lint 0/596, build green; red-check after commit. Each declared scheme
+      still needs its one manual DEVICE sweep (sim has no third-party apps) — field-gate
+      territory; a "doesn't look installed" there for an app E HAS is a wrong scheme to cull.
 
 ### FEATURE: F-AppDirectory-4-Remote — the directory grows without a release  [ ] UNCHECKED
 

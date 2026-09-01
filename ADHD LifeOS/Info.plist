@@ -13,6 +13,54 @@
 			</array>
 		</dict>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>youtube</string>
+		<string>whatsapp</string>
+		<string>spotify</string>
+		<string>maps</string>
+		<string>instagram</string>
+		<string>music</string>
+		<string>googlegmail</string>
+		<string>tiktok</string>
+		<string>nflx</string>
+		<string>fb</string>
+		<string>twitter</string>
+		<string>message</string>
+		<string>photos-redirect</string>
+		<string>chatgpt</string>
+		<string>uber</string>
+		<string>com.amazon.mobile.shopping</string>
+		<string>calshow</string>
+		<string>mobilenotes</string>
+		<string>googlechrome</string>
+		<string>discord</string>
+		<string>reddit</string>
+		<string>fb-messenger</string>
+		<string>claude</string>
+		<string>googledrive</string>
+		<string>slack</string>
+		<string>snapchat</string>
+		<string>tg</string>
+		<string>notion</string>
+		<string>itms-apps</string>
+		<string>facetime</string>
+		<string>podcasts</string>
+		<string>x-apple-reminderkit</string>
+		<string>waze</string>
+		<string>linkedin</string>
+		<string>msteams</string>
+		<string>zoomus</string>
+		<string>disneyplus</string>
+		<string>twitch</string>
+		<string>ms-outlook</string>
+		<string>citymapper</string>
+		<string>strava</string>
+		<string>deliveroo</string>
+		<string>ubereats</string>
+		<string>monzo</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
