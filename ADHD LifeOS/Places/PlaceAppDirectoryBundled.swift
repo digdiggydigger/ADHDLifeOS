@@ -32,7 +32,10 @@ enum PlaceAppDirectoryBundled {
               universalLinkHosts: ["music.apple.com"], rank: 85),
         .init(scheme: "maps", name: "Apple Maps", keywords: ["directions", "navigation", "route"],
               universalLinkHosts: ["maps.apple.com"],
-              destinations: [.init(name: "Directions to an address", template: "maps://?daddr={value}")],
+              destinations: [
+                .init(name: "Directions to an address", template: "maps://?daddr={value}",
+                      placeCoordinatePrefill: true)
+              ],
               rank: 90),
         .init(scheme: "videos", name: "Apple TV", keywords: ["tv", "movies", "streaming"], rank: 40),
         .init(scheme: "itms-apps", name: "App Store", keywords: ["apps", "download", "updates"], rank: 60),
@@ -67,7 +70,8 @@ enum PlaceAppDirectoryBundled {
               keywords: ["directions", "navigation", "route", "traffic"],
               universalLinkHosts: ["maps.app.goo.gl", "maps.google.com"],
               destinations: [
-                .init(name: "Directions to an address", template: "comgooglemaps://?daddr={value}")
+                .init(name: "Directions to an address", template: "comgooglemaps://?daddr={value}",
+                      placeCoordinatePrefill: true)
               ],
               rank: 95),
         .init(scheme: "googlephotos", name: "Google Photos", keywords: ["pictures", "backup"], rank: 60),

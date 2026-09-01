@@ -15,6 +15,10 @@ import SwiftUI
 struct PlaceActionEditorSheet: View {
     /// `nil` when adding.
     let existing: PlaceAction?
+    /// For the picker's destination step: the place the editor is already inside, so
+    /// "Directions to <place>" needs nothing typed.
+    let placeName: String
+    let placeCoordinate: PlaceCoordinate?
     let onSave: (PlaceAction) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -64,9 +68,20 @@ struct PlaceActionEditorSheet: View {
             .sheet(isPresented: $isPickingApp) {
                 PlaceAppPickerView(
                     entries: PlaceAppDirectoryBundled.entries,
+                    placeName: placeName,
+                    placeCoordinate: placeCoordinate,
                     onPick: { entry in
                         draft.appScheme = entry.scheme
                         draft.appName = entry.name
+                        draft.appLink = ""
+                        draft.destinationPick = nil
+                        wantsCustomApp = false
+                    },
+                    onPickLink: { pick in
+                        draft.destinationPick = pick
+                        draft.appScheme = ""
+                        draft.appName = ""
+                        draft.appLink = ""
                         wantsCustomApp = false
                     },
                     onCustom: {
@@ -76,6 +91,7 @@ struct PlaceActionEditorSheet: View {
                             draft.appScheme = ""
                             draft.appName = ""
                         }
+                        draft.destinationPick = nil
                         wantsCustomApp = true
                     }
                 )
@@ -122,45 +138,14 @@ struct PlaceActionEditorSheet: View {
     }
 
     private var openAppDetail: some View {
-        Section {
-            Button {
-                isPickingApp = true
-            } label: {
-                LabeledContent("App", value: selectedAppLabel)
-            }
-            .accessibilityIdentifier("actionEditorAppPicker")
-            if showsCustomAppFields {
-                TextField("URL scheme (like spotify)", text: $draft.appScheme)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .accessibilityIdentifier("actionEditorSchemeField")
-                TextField("Shown as (optional)", text: $draft.appName)
-                    .accessibilityIdentifier("actionEditorAppNameField")
-            }
-        } header: {
-            Text("Which app")
-        } footer: {
-            Text("Arrives as a notification — tapping it opens the app. "
-                 + "If the app isn't installed, nothing can open.")
-        }
+        PlaceActionAppDetailSection(
+            draft: $draft, isPickingApp: $isPickingApp, wantsCustomApp: wantsCustomApp
+        )
     }
 
     /// The directory entry a pick landed on, if the current scheme is one of its.
     private var selectedDirectoryApp: PlaceAppDirectoryEntry? {
-        PlaceAppDirectoryBundled.entries.first(where: { $0.scheme == draft.appScheme })
-    }
-
-    private var selectedAppLabel: String {
-        if let selectedDirectoryApp { return selectedDirectoryApp.name }
-        if wantsCustomApp || !draft.appScheme.isEmpty { return "Custom" }
-        return "Choose\u{2026}"
-    }
-
-    /// Custom fields show when E stepped out of the directory — or when the action being
-    /// edited carries a scheme the directory doesn't know, which must never render as a blank
-    /// pick with its fields hidden.
-    private var showsCustomAppFields: Bool {
-        wantsCustomApp || (!draft.appScheme.isEmpty && selectedDirectoryApp == nil)
+        draft.selectedDirectoryApp(in: PlaceAppDirectoryBundled.entries)
     }
 
     private var openURLDetail: some View {
@@ -260,8 +245,12 @@ struct PlaceActionEditorSheet: View {
         guard let existing, let seeded = PlaceActionDraft(editing: existing) else { return }
         draft = seeded
         // An open-app action the directory doesn't know is a custom one — its fields must be
-        // visible from the first render, never hidden behind a blank-looking pick.
+        // visible from the first render, never hidden behind a blank-looking pick. Same for a
+        // hand-pasted web link (a destination pick shows through its own label instead).
         if case .openApp = existing.kind, selectedDirectoryApp == nil {
+            wantsCustomApp = true
+        }
+        if case .openLink = existing.kind, !draft.appLink.isEmpty {
             wantsCustomApp = true
         }
     }
@@ -303,13 +292,16 @@ private struct ContactPicker: UIViewControllerRepresentable {
 #if DEBUG
 @available(iOS 17.0, *)
 #Preview("Sheet — Light") {
-    PlaceActionEditorSheet(existing: nil) { _ in }
+    PlaceActionEditorSheet(
+        existing: nil, placeName: "Gym",
+        placeCoordinate: PlaceCoordinate(latitude: 51.5152, longitude: -0.1418)
+    ) { _ in }
         .preferredColorScheme(.light)
 }
 
 @available(iOS 17.0, *)
 #Preview("Sheet — Dark") {
-    PlaceActionEditorSheet(existing: nil) { _ in }
+    PlaceActionEditorSheet(existing: nil, placeName: "Gym", placeCoordinate: nil) { _ in }
         .preferredColorScheme(.dark)
 }
 #endif

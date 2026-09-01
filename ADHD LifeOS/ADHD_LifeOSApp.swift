@@ -89,18 +89,29 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
                 notificationIdentifier: identifier,
                 userInfo: userInfo,
                 openURL: { url, failureBody in
-                    UIApplication.shared.open(url, options: [:]) { success in
-                        guard !success else { return }
-                        // Honest, and through the same in-foreground banner plumbing as every
-                        // other immediate notification — never silence.
-                        Task {
-                            await NotificationCenterImmediateNotifier().post(
-                                title: "That didn't open",
-                                body: failureBody,
-                                identifier: "placeActionOpenFailure"
+                    // Universal-first for web links (the app if installed, the web if not),
+                    // one plain open for schemes. The opener keeps attempt 1 synchronous on
+                    // this callback — the attribution rule lives in `PlaceLinkOpening.swift`.
+                    PlaceLinkOpener(
+                        open: { url, universalLinksOnly, completion in
+                            UIApplication.shared.open(
+                                url,
+                                options: universalLinksOnly ? [.universalLinksOnly: true] : [:],
+                                completionHandler: completion
                             )
+                        },
+                        notifyFailure: { body in
+                            // Honest, and through the same in-foreground banner plumbing as
+                            // every other immediate notification — never silence.
+                            Task {
+                                await NotificationCenterImmediateNotifier().post(
+                                    title: "That didn't open",
+                                    body: body,
+                                    identifier: "placeActionOpenFailure"
+                                )
+                            }
                         }
-                    }
+                    ).run(PlaceLinkOpenPlan.plan(for: url), failureBody: failureBody)
                 }
             )
         }

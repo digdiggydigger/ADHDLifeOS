@@ -13,13 +13,18 @@ import Foundation
 /// template holds at most ONE `{value}` slot, substituted percent-encoded — anything richer
 /// is expressed as a pass-through (empty/slotless template) where E pastes the whole share
 /// link and it IS the destination.
-struct PlaceAppDestinationTemplate: Equatable, Sendable {
+struct PlaceAppDestinationTemplate: Equatable, Hashable, Sendable {
     let name: String
     let template: String
+    /// Whether this template can take the PLACE's own coordinate as its value — curated with
+    /// a flag, never inferred from names, so the lenient remote decode can carry it. The
+    /// destination step turns it into a one-tap "Directions to <place>" row.
+    let placeCoordinatePrefill: Bool
 
-    init(name: String, template: String) {
+    init(name: String, template: String, placeCoordinatePrefill: Bool = false) {
         self.name = name
         self.template = template
+        self.placeCoordinatePrefill = placeCoordinatePrefill
     }
 
     var isPassThrough: Bool { !template.contains(Self.slot) }
@@ -48,7 +53,7 @@ struct PlaceAppDestinationTemplate: Equatable, Sendable {
 /// block-1 pick saves it straight into `.openApp` — so an entry without a CONFIDENT published
 /// scheme does not belong in the directory at all (it reaches E via block 2's pasted links
 /// instead). A wrong scheme teaches E the whole feature lies.
-struct PlaceAppDirectoryEntry: Identifiable, Equatable, Sendable {
+struct PlaceAppDirectoryEntry: Identifiable, Equatable, Hashable, Sendable {
     let scheme: String
     let name: String
     var keywords: [String]
@@ -117,7 +122,21 @@ enum PlaceAppDirectory {
               let template = object[WireKey.destinationTemplate] as? String,
               template.components(separatedBy: PlaceAppDestinationTemplate.slot).count <= 2
         else { return nil }
-        return PlaceAppDestinationTemplate(name: name, template: template)
+        return PlaceAppDestinationTemplate(
+            name: name,
+            template: template,
+            placeCoordinatePrefill: object[WireKey.destinationPrefill] as? Bool ?? false
+        )
+    }
+
+    /// The directory app claiming a pasted link's host, if any — how "smart custom"
+    /// recognises `open.spotify.com/...` as Spotify. Hosts are stored lowercased; the pasted
+    /// side is lowercased here so E's keyboard can't defeat the match.
+    static func entry(
+        claimingHost host: String, in entries: [PlaceAppDirectoryEntry]
+    ) -> PlaceAppDirectoryEntry? {
+        let needle = host.lowercased()
+        return entries.first { $0.universalLinkHosts.contains(needle) }
     }
 
     /// Remote wins WHOLESALE per scheme — no per-field merging, so a remote row is exactly
@@ -145,6 +164,29 @@ enum PlaceAppDirectory {
         static let hidden = "hidden"
         static let destinationName = "name"
         static let destinationTemplate = "template"
+        static let destinationPrefill = "place_coordinate_prefill"
+    }
+}
+
+/// The pure parts of a destination pick — display names and the coordinate prefill value —
+/// so the sheet assembles picks from pinned pieces.
+enum PlaceAppDestinationPick {
+    static func displayName(
+        entry: PlaceAppDirectoryEntry, destination: PlaceAppDestinationTemplate
+    ) -> String {
+        "\(entry.name) — \(destination.name)"
+    }
+
+    static func directionsDisplayName(
+        entry: PlaceAppDirectoryEntry, placeName: String
+    ) -> String {
+        "\(entry.name) — Directions to \(placeName)"
+    }
+
+    /// "lat,long" at five decimals (~1 m) — the form both Maps apps read as a destination.
+    /// The comma percent-encodes inside the template's value slot; both apps decode it.
+    static func coordinateValue(_ coordinate: PlaceCoordinate) -> String {
+        String(format: "%.5f,%.5f", coordinate.latitude, coordinate.longitude)
     }
 }
 

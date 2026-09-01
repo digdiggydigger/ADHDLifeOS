@@ -373,7 +373,7 @@ fields (`extraPayload`), so future optional fields survive builds from this arc 
       "Something else…" (+ honest not-in-the-list empty state). Suite **2,015/0** (0 skipped —
       emulator up), lint 0/587, build green; red-check after commit.
 
-### FEATURE: F-AppDirectory-2-Links — pasted links, `open_link`, universal-link opener, destinations  [ ] UNCHECKED
+### FEATURE: F-AppDirectory-2-Links — pasted links, `open_link`, universal-link opener, destinations  [x] COMPLETED
 
 New wire kind `open_link` (`display_name`, `link`, optional `scheme`): pasted share-links and
 deep destinations. Old builds degrade it to `.unsupported` with payload preserved and the
@@ -388,11 +388,22 @@ the fake open fires before the call returns), plain open in the completion on fa
 banner only after the last attempt. Router signature untouched.
 
 **Acceptance criteria**
-- [ ] `open_link` round-trips through JSON AND `FirestoreDocumentCoder`; broken-payload and
-      old-build degradation pinned; route/split/labels/notification copy extended and pinned;
-      opener strategy + synchronous-first-attempt pinned with a recording fake.
-- [ ] Sim drive: paste a share link → action saves → notification tap opens; destination step
-      produces a working deep link. Suite, lint, build; red-check after commit.
+- [x] `open_link` round-trips through JSON AND `FirestoreDocumentCoder` (degradation pinned
+      through the CODEC too); route/split/labels/notification copy/automation guide extended
+      and pinned; `PlaceLinkOpenPlan` + `PlaceLinkOpener` with the synchronous-first-attempt
+      pin. (2026-09-01: 41 new tests. Two design additions the plan implied but didn't spell:
+      `placeCoordinatePrefill` flag on destination templates — curated, remote-decodable,
+      never name-matched — and `PlaceActionDraftLinkPick`, a verbatim carrier so a
+      destination's SCHEME link never meets the https-only hand-paste rule; plus
+      `seededKindChoice` → `seededWireKind`, because open_app and open_link share one editor
+      menu choice and extras must follow the WIRE kind.)
+- [x] Sim drive against the emulator: pasted share link saved and HOST-RECOGNISED (wire shows
+      `open_link` + display_name "Spotify" + scheme spotify, neither typed); destination step
+      drove "Directions to Gym" one-tap → wire shows `comgooglemaps://?daddr=51.51520%2C-0.14180`;
+      the coordinate-daddr form OPENED Apple Maps into its directions flow, and the https link
+      fell to Safari (web-if-not-installed). The notification TAP itself is unit-pinned
+      (router + opener synchrony) — a real crossing tap is field-gate territory. Suite
+      **2,056/0** (0 skipped), lint 0/594, build green; red-check after commit.
 
 ### FEATURE: F-AppDirectory-3-Verify — config-time install verification  [ ] UNCHECKED
 

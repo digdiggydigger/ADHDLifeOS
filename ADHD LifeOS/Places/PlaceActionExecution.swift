@@ -31,7 +31,7 @@ enum PlaceActionPlan {
             switch action.kind {
             case .journalLine, .createCapture:
                 autoRun.append(action)
-            case .openApp, .openURL, .textContact, .startSprint, .openScreen:
+            case .openApp, .openLink, .openURL, .textContact, .startSprint, .openScreen:
                 external.append(action)
             case .unsupported:
                 // Holds its fence (the intent came from a newer build) but cannot run here —
@@ -124,6 +124,8 @@ enum PlaceActionTapRoute: Equatable {
         switch action.kind {
         case .openApp(let scheme, _):
             return URL(string: "\(scheme)://").map { .open($0) }
+        case .openLink(_, let link, _):
+            return URL(string: link).map { .open($0) }
         case .openURL(let urlString):
             return URL(string: urlString).map { .open($0) }
         case .textContact(_, let phoneNumber, let messageBody):
