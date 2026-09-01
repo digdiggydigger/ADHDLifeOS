@@ -311,4 +311,57 @@ final class FirestoreDocumentCoderTests: XCTestCase {
             completedAt: completedAt
         )
     }
+
+    // MARK: - Place actions (F-PlaceActions-1-Model)
+
+    /// The JSON round-trip tests are not enough here: `PlaceAction`'s Codable walks a
+    /// dynamic-keys container, and `Firestore.Encoder` is the codec the app actually runs on —
+    /// a nested array of flat maps has to survive THAT, including the unsupported-kind payload
+    /// capture, or the whole forward-compatibility story is a JSON-only fiction.
+    func testPlaceWithActions_survivesTheRealCodec() throws {
+        let place = Place(
+            id: UUID(), name: "Gym",
+            coordinate: PlaceCoordinate(latitude: 51.5152, longitude: -0.1418),
+            radiusMetres: 150,
+            createdAt: Date(timeIntervalSince1970: 1_700_000_000),
+            actions: [
+                PlaceAction(
+                    id: UUID(), direction: .arrival,
+                    kind: .openApp(scheme: "spotify", displayName: "Spotify")
+                ),
+                PlaceAction(
+                    id: UUID(), direction: .arrival,
+                    kind: .startSprint(minutes: nil)
+                ),
+                PlaceAction(
+                    id: UUID(), direction: .departure,
+                    kind: .textContact(
+                        contactName: "Home", phoneNumber: "+44111", messageBody: "On my way"
+                    )
+                )
+            ]
+        )
+
+        let fields = try FirestoreDocumentCoder.encode(place)
+        let decoded = try FirestoreDocumentCoder.decode(Place.self, from: fields)
+
+        XCTAssertEqual(decoded, place)
+    }
+
+    func testUnsupportedAction_survivesTheRealCodec() throws {
+        let document: [String: Any] = [
+            "id": UUID().uuidString,
+            "direction": "arrival",
+            "kind": "play_soundscape",
+            "soundscape_name": "Rainforest",
+            "volume": 0.8
+        ]
+
+        let decoded = try FirestoreDocumentCoder.decode(PlaceAction.self, from: document)
+        let reencoded = try FirestoreDocumentCoder.encode(decoded)
+
+        XCTAssertEqual(reencoded["kind"] as? String, "play_soundscape")
+        XCTAssertEqual(reencoded["soundscape_name"] as? String, "Rainforest")
+        XCTAssertEqual(reencoded["volume"] as? Double, 0.8)
+    }
 }

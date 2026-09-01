@@ -76,10 +76,40 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        FocusNotificationRouter.shared.handle(
-            notificationIdentifier: response.notification.request.identifier,
-            actionIdentifier: response.actionIdentifier
-        )
+        let identifier = response.notification.request.identifier
+        let userInfo = response.notification.request.content.userInfo
+        // Place-action taps first (F-PlaceActions-3) — their identifiers carry a prefix, so
+        // everything else still falls through to the focus router untouched. SYNCHRONOUSLY on
+        // the delegate callback (documented main-thread), never through an async hop: E's
+        // field test showed iOS inserting its "LifeOS wants to open Spotify" confirmation, and
+        // an async dispatch before `UIApplication.open` is exactly what breaks the tap's
+        // user-initiated attribution and invites that dialog.
+        let handledAsPlaceAction = MainActor.assumeIsolated {
+            PlaceActionNotificationRouter.shared.handle(
+                notificationIdentifier: identifier,
+                userInfo: userInfo,
+                openURL: { url, failureBody in
+                    UIApplication.shared.open(url, options: [:]) { success in
+                        guard !success else { return }
+                        // Honest, and through the same in-foreground banner plumbing as every
+                        // other immediate notification — never silence.
+                        Task {
+                            await NotificationCenterImmediateNotifier().post(
+                                title: "That didn't open",
+                                body: failureBody,
+                                identifier: "placeActionOpenFailure"
+                            )
+                        }
+                    }
+                }
+            )
+        }
+        if !handledAsPlaceAction {
+            FocusNotificationRouter.shared.handle(
+                notificationIdentifier: identifier,
+                actionIdentifier: response.actionIdentifier
+            )
+        }
         completionHandler()
     }
 }

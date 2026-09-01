@@ -122,6 +122,312 @@ styling both passed E's on-device look.
 
 ---
 
+## Place Actions arc — E's spec, settled 2026-08-31 in chat (branch `feature/place-actions`)
+
+**E's ask: "assign specific actions to a place — when I go to a certain location, it opens a
+specific application, or sends a text message to a predefined contact, etcetera."** Settled
+through two question rounds; these decisions are E's and are not to be re-litigated per block:
+
+- **Execution model: BOTH, layered.** One-tap actionable nudges from our app are the core
+  (iOS hard-blocks auto-opening apps and auto-sending texts from a background wake — no
+  third-party app can do either silently); a "Make this automatic" helper walks E into Apple's
+  Shortcuts app for the actions Apple lets run zero-touch, and our in-app actions ship as App
+  Intents so Shortcuts can drive them too.
+- **Action kinds at launch: ALL of** open app / open URL / text a predefined contact / in-app
+  (start sprint, create capture, journal line, open screen) — **"and likely more"**, so the
+  kind enum is an open catalogue: an unknown kind decodes as unsupported WITH its payload
+  preserved, never a failed place. (E's device routinely lags main — an old build editing a
+  place must not strip a newer build's action.)
+- **Directions: arrival AND departure, per action.** A place carries a LIST of actions, each
+  with its own direction.
+- **Firing rule: option 1 now** — a configured action counts as content, so its crossing fires
+  (the custom-message precedent), and the 30-min bounce cooldown applies. **Option 3 (per-action
+  re-fire tuning) is E's declared follow-up, later** — the model leaves room (a future `refire`
+  field per action), but no UI or behaviour for it ships in this arc.
+- Config lives on the **Place editor** (Settings → Places), as E said ("defined in the settings").
+- One tap can only do ONE thing on iOS: external actions each get their own notification;
+  in-app actions run themselves on the wake and the nudge reports what happened.
+
+### FEATURE: F-PlaceActions-1-Model — the action catalogue, fences, and snapshot  [x] COMPLETED
+
+The pure layer, TDD-heavy. `PlaceAction` (id, direction, kind + per-kind payload; snake_case
+wire, flat fields with a `kind` discriminator; unknown or payload-broken kinds degrade to
+`.unsupported` carrying the raw payload for verbatim re-encode). `Place.actions: [PlaceAction]`
+(absent on every existing document → `[]`, the nudge-toggle precedent). An action for a
+direction makes the place WANT that crossing: `wantsArrivalCrossing` / `wantsDepartureCrossing`
+(toggle OR action), consumed by `LocationTriggerPlan` so an action-only place earns a region
+slot — configuring an action IS the opt-in gesture the per-place philosophy requires.
+`AtPlaceSnapshot.PlaceEntry` carries the actions (background wakes can't count on network).
+
+**Acceptance criteria**
+- [x] Round-trip tests for every kind through JSON AND `FirestoreDocumentCoder`; unknown-kind
+      payload preservation pinned; a pre-actions place document decodes quietly. 23 new tests
+      across four suites.
+- [x] Plan tests: action-only place gets a region with the right directions; quiet places
+      still get nothing; toggle + action compose across directions on one region.
+- [x] Deliberate-regression red-check after commit (the standing rule), full suite **1,918 / 0**,
+      lint 0 violations in 568 files, build succeeded.
+
+**Found en route:** `PlaceEditorValidation.makePlace` REBUILDS the place on save, so `actions`
+had to be threaded through it and `PlaceEditorView.save()` (`existing?.actions ?? []`) in THIS
+block — without that, any rename or radius tweak would have silently stripped a place's actions
+the moment block 2 shipped them. The id/createdAt preservation precedent, now pinned by a test.
+Also: `try?` FLATTENS nested optionals (SE-0230), so `decodeIfPresent` alone cannot tell
+"minutes absent" (valid) from "minutes undecodable" (degrade) — the decoder checks
+`container.contains` first, and a test failure caught it before it shipped.
+
+### FEATURE: F-PlaceActions-2-Editor — actions on the Place editor  [x] COMPLETED
+
+An **Actions** section on `PlaceEditorView`: list rows ("On arrival → Open Spotify"),
+add/edit/delete. Direction → kind → detail flow: curated app catalogue (known URL schemes:
+Spotify, Maps, YouTube, Phone, Mail…) + custom-scheme field (iOS has no third-party app picker
+— the catalogue is the ceiling); system contact picker (`CNContactPickerViewController`, no
+Contacts permission needed for one-off picks) + message body for texts; screen list for
+open-screen; minutes for sprint (defaulting to E's sprint setting); text fields for
+capture/journal bodies. Validation in a pure `PlaceActionValidation` (trimmed-to-nil like
+`arrivalMessage` — "" must never save).
+
+**Acceptance criteria**
+- [x] Validation + row-label logic pure and tested first (`PlaceActionEditing.swift` /
+      `PlaceActionEditingTests`, 16 tests: per-kind validation, scheme/web-address
+      normalization, draft↔action editing round trip, honest unsupported labels, screen tokens
+      pinned to `AppTab` spellings). The Places feature is iOS-17-gated with E's standing
+      authorisation, so no fresh 16.0 gating was needed.
+- [x] Editing a place with an UNSUPPORTED action shows it honestly (named row + "kept safe"
+      footnote, not editable, delete allowed) and preserves it on save (`PlaceActionDraft`
+      REFUSES to open for one — test-pinned — so the sheet can never save a stripped version).
+- [x] Suite **1,934 / 0**; lint 0 in 571 files; build succeeded. Simulator drive against the
+      emulator: fresh account → Settings → Places → New place → two actions added (arrival →
+      Spotify from the catalogue, departure → text with typed number), place saved, REOPENED
+      and both rows decoded back with the same ids — the full write→read round trip through
+      the live rules. Screenshots sent to E.
+
+**Found en route (device-class bug, caught in the simulator drive):** `.sheet(item:)` attached
+to a Form `Section` gets applied PER ROW, and the duplicate presentations dismissed the whole
+place editor the moment "Add an action" was tapped — the sheet now hangs off the Add button
+(any single concrete view inside the section works). This never surfaced in unit tests and
+never could; it is exactly what the drive exists to catch.
+
+### FEATURE: F-PlaceActions-3-Execution — actions fire on a crossing  [x] COMPLETED
+
+The wake path: after the cooldown gate, matching-direction actions execute. **In-app actions
+run themselves** (journal line writes place-stamped, capture drops into the inbox, sprint
+starts) and the nudge REPORTS what ran; **external actions each post their own notification**
+whose tap executes exactly one thing (URL-scheme open; `sms:` compose pre-filled to the
+predefined contact — the final Send tap is Apple's floor). An action makes its crossing fire
+(firing-rule extension in `ArrivalNudgeContent` / a new `PlaceActionExecuting` seam, fake-driven
+in tests). Not-installed app → honest in-app "couldn't open" surface, never silence.
+
+**Acceptance criteria**
+- [x] Executor seam unit-tested with fakes (31 new tests: every kind, both directions, cooldown
+      respected, kill-switch split — auto-runs are records and run with it OFF, notifications
+      don't — failed-write-retries, empty-never-fires untouched for action-less places).
+- [x] Verified on simulator against REAL geofence crossings (a drive into a
+      Buckingham Palace fence, route-simulated movement): the auto-run journal line written place-stamped from a
+      background wake and visible in the Journal timeline; the crossing nudge reporting it
+      ("You're at Gym 🏋️ — Journaled …"); the arrival external ("Open Spotify … tap to open.")
+      and the departure external ("Text … — sending stays with you.") both delivered. Tap
+      routing is pin-tested through the router; the delegate glue follows
+      `FocusNotificationRouter`'s proven pattern — the sim's lock screen kept swallowing
+      interactive taps, so the tap-through is E's field test's to confirm.
+- [x] **Field test on `wishwashwacky15`** — a real crossing runs an in-app action and delivers
+      an external one, and the taps route — before this block may be ticked (the location-merge
+      precedent). **FIRST PASS DONE (E, 2026-08-31, on foot):** E configured real actions —
+      "Open Monzo, on arrival" at the Bank (the CUSTOM scheme field, proven in anger: Monzo is
+      not in the catalogue) and "Open Spotify, when leaving" on Home alongside BOTH custom
+      messages — walked the fences, and the notifications fired and routed. One wrinkle: after
+      the tap, iOS asked "do you want to open Spotify?" — the async hop before
+      `UIApplication.open` breaks the tap's user-initiated attribution, which is what invites
+      that dialog. Fixed to open synchronously in the delegate callback (`0c65ca5`); E re-tests
+      on the next walk. If the dialog survives, it is Apple's cross-app guard, stated honestly.
+      The in-app auto-run half is simulator-proven; E can field-confirm by adding a journal-line
+      action to any place.
+      **SECOND PASS DONE (E, 2026-09-01): "block 3 it works"** — the double-confirm retest
+      passed with the synchronous-open fix in place; block ticked, arc complete, merged to
+      main the same day.
+
+**Found on the drive (both fixed, both red-checked):**
+- **Duplicate-delivery race (`338005f`):** iOS delivered one arrival twice in seconds; both
+  passed the cooldown check before either wrote it (the handler suspends between read and
+  write) and the journal line landed TWICE. In-flight guard keyed place|direction, set before
+  the first await. The test only went red once the fake writers SUSPENDED like Firestore —
+  a sync fake never opens the race window.
+- **Deviation from this block's sketch, reported:** `startSprint` is TAP-to-start, not
+  auto-run — ActivityKit refuses to start a Live Activity from a background wake, and a sprint
+  silently half-spent before E sits down punishes the arrival it was meant to reward.
+- **Sim-harness traps for the record:** `simctl privacy grant location-always` on the shared
+  simulator breaks two unit tests that read live authorization (the hosted test target IS the
+  app) — `simctl privacy reset location` after any drive. A location TELEPORT collapses the
+  significant-change replan and the crossing into one instant (fence registers already-Inside,
+  no didEnter) — simulate a `simctl location start` ROUTE instead. Notifications need the
+  app's own permission prompt first (start a sprint once).
+
+### FEATURE: F-PlaceActions-4-Shortcuts — the zero-touch layer  [x] COMPLETED
+
+App Intents ("Start a sprint", "Capture a note", "Log a journal line") so Shortcuts can drive
+the in-app actions; a "Make this automatic" row per external action opening a step-by-step
+guide into Apple's Shortcuts app (Apple allows NO programmatic creation of automations — the
+guide is the honest ceiling, and it says which steps are E's). iOS 16 App Intents floor
+verified per API used.
+
+**Acceptance criteria**
+- [x] Intents callable from the Shortcuts app on device; guide content pure and tested.
+      **E's field verdict, 2026-08-31 evening: "block 4 - success"** — the device walk passed.
+      **BUILT and sim-verified 2026-08-31 (device half is E's):** three intents ship —
+      "Capture a note" and "Log a journal line" run WITHOUT opening the app (writes through
+      `ShortcutIntentRunner`, stamped via `RecordLocationStamp`, `DataChangeSignal` posted so
+      an open app refreshes); "Start a sprint" opens the app (`openAppWhenRun` — ActivityKit's
+      background refusal, the block-3 precedent) and rides `PlaceActionNotificationRouter.open(_:)`,
+      the notification-tap plumbing minus the notification. An `AppShortcutsProvider`
+      (`@available(iOS 16.4, *)` — the `shortTitle:systemImageName:` init's floor; on 16.0–16.3
+      the intents still sit in the action library) surfaces all three under a LifeOS section
+      with zero setup. Guide content is `PlaceAutomationGuide` (9 tests, every word pinned):
+      guides ONLY for openApp/openURL/textContact/startSprint — journal/capture already run
+      zero-touch on OUR fences, openScreen has no Shortcuts action that could reach it, and
+      unsupported can't be taught; the intro says every tap is E's (Apple allows no programmatic
+      automation creation), and the afterword warns the in-app action keeps nudging unless
+      deleted. Sheet + per-action "Make this automatic" rows on the place editor
+      (`PlaceActionsSection`, split to its own file at the 400-line lint bar).
+      **Sim drive (18:04–18:35):** all three actions found and run from Apple's Shortcuts app —
+      capture dialog "Captured …to your inbox." and the capture in the inbox peek card; journal
+      dialog "Journaled …" and the line in the timeline; sprint foregrounding the app with the
+      timer bar + Live Activity running at the default length. One sim quirk: tapping an App
+      Shortcut TILE directly says "Unable to run App Shortcut" (the Siri runner path); inside a
+      shortcut the actions run fine — retest the tile on device.
+      **Editor drive (second pass, properly against the EMULATOR via shell `simctl launch`):**
+      fresh account → Settings → Places → New place "Gym" → arrival Open Spotify action →
+      the "Make “Open Spotify” automatic" row appeared, its sheet presented over the editor
+      (sibling sheets on the Add button — the block-2 per-row trap did NOT recur), all four
+      steps + intro + afterword rendered naming Gym and Spotify, and Open Shortcuts handed
+      off into Apple's app. Reachability proven, not just tested (the dead-shared-component
+      lesson).
+      **Drive honesty:** the ios-simulator MCP's `launch_app` DROPPED the `SIMCTL_CHILD_` env
+      (shell `simctl launch` passes it fine), so the FIRST drive silently ran
+      against PRODUCTION on a throwaway account (block4drive@example.com) — created 18:04,
+      verified, then deleted through Settings → Delete Account (re-auth flow exercised live);
+      `auth_get_users` confirms `users: []`. Nothing of E's was touched. Upside: the intents
+      are proven against the LIVE rules, not just the emulator.
+- [x] Suite, lint, build; E walks one real automation end-to-end on device.
+      **Both halves done 2026-08-31:** suite **1,983 / 0** (18 new: 9 guide + 7 runner + 2
+      router), SwiftLint 0 violations in 581 files, sim build succeeded, red-check after
+      commit; E walked the automation on `wishwashwacky15` and reported success the same
+      evening. The arc's merge still waits on Block 3's double-confirm retest (E: "will test
+      later").
+
+---
+
+## App Directory arc — E's design, settled 2026-09-01 (fresh session, branch `feature/app-directory`, AFTER the place-actions merge)
+
+**E's ask: when adding a place action, "select an application that they have installed on the
+device" — fully custom, any app.** Designed in a six-question round on 2026-09-01; the full
+approved plan (with the four blocks in implementation detail) lives at
+`~/.claude/plans/dont-action-anything-yet-structured-backus.md` and the session opener at
+`../Momentum-v3-Design-Handoff/SESSION-OPENER-app-directory.md`. E's settled decisions — not
+to be re-litigated per block:
+
+- **iOS ceiling acknowledged:** no installed-app enumeration API exists for anyone. The shape
+  is a big searchable directory (hundreds of curated apps) + a "smart custom" path (bare
+  scheme, kept, AND any pasted share-link opened as a universal link — app if installed, web
+  if not) + config-time verification for a budgeted subset.
+- **Verification is three honest states** — installed / doesn't look installed / can't check —
+  because `LSApplicationQueriesSchemes` caps at 50 schemes per build (the plist currently has
+  NONE) and `canOpenURL` on an undeclared scheme lies. Tap-time honesty stays the backstop.
+- **Deep destinations too** (Spotify playlist, Maps directions to the place itself, chat) via
+  a **new wire kind `open_link`** — a new KIND, never a field on `open_app`, because the
+  encoder drops unknown fields on known kinds but preserves unknown kinds via `.unsupported`.
+- **Directory ships bundled + remote top-up**: Swift-constant base list; a read-only
+  `/catalog/app_directory` Firestore doc (the app's first global read, new rules match block,
+  E publishes) grows it without a release. Every failure mode degrades to bundled+cache.
+- **REJECTED: a run-a-shortcut action kind** (fragile, user-maintained). **PARKED: true
+  Spotify OAuth integration** — a separate future arc E wants "at some point".
+- **Sequencing (E, explicit): built in a FRESH session, only after `feature/place-actions`
+  merges to main** (which waits on E's Block 3 double-confirm retest). The opener carries the
+  state gate.
+
+### FEATURE: F-AppDirectory-1-Directory — the big searchable directory (bundled)  [ ] UNCHECKED
+
+`PlaceAppDirectoryEntry` (scheme = identity, name, keywords, universal-link hosts, destination
+templates, rank, hidden) with per-entry lenient decode (a malformed entry is dropped, never
+fatal) and a pure `merge(bundled:remote:)` keyed by scheme. Bundled list as a Swift constant
+(`PlaceAppDirectoryBundled.swift`), few hundred curated apps — curation IS the work; a wrong
+scheme teaches E the feature lies, so long-tail entries prefer universal links over guessed
+schemes. `PlaceAppDirectorySearch.filter` ranked name-prefix > contains > keyword > scheme.
+`PlaceAppPickerView` (iOS 17-gated searchable List sheet) replaces the 10-entry Picker;
+"Something else…" leads to smart custom. Saves still produce plain `.openApp` — zero wire
+change. ALSO lands the forward encoder fix: known kinds capture and re-encode non-typed extra
+fields (`extraPayload`), so future optional fields survive builds from this arc on.
+
+**Acceptance criteria**
+- [ ] Directory model, lenient decode, merge, search ranking, and the extras round-trip
+      (`open_app` JSON + stranger field → re-encode → intact) all TDD-pinned; every bundled
+      entry swept through `normalizedScheme` by a test.
+- [ ] Picker sheet drives on the simulator: search finds apps, a pick saves as `.openApp`,
+      custom path still reachable. Suite, lint, build; red-check after commit.
+
+### FEATURE: F-AppDirectory-2-Links — pasted links, `open_link`, universal-link opener, destinations  [ ] UNCHECKED
+
+New wire kind `open_link` (`display_name`, `link`, optional `scheme`): pasted share-links and
+deep destinations. Old builds degrade it to `.unsupported` with payload preserved and the
+honest "added by a newer version" row — the designed-for path. Smart custom gains the
+paste-a-link field (https-only via `normalizedWebAddress`, name inferred from host, editable).
+Destination step in the picker for entries with templates (one `{value}` substitution,
+percent-encoded; skippable in one tap — the default is the plain open; Maps gets "Directions
+to this place" from the place's own coordinate). `PlaceLinkOpenPlan` (https → universal-first,
+scheme → direct) + `PlaceLinkOpener`: attempt 1 with `.universalLinksOnly: true` issued
+SYNCHRONOUSLY on the delegate callback (the 0c65ca5 attribution lesson — pinned by a test that
+the fake open fires before the call returns), plain open in the completion on failure, honest
+banner only after the last attempt. Router signature untouched.
+
+**Acceptance criteria**
+- [ ] `open_link` round-trips through JSON AND `FirestoreDocumentCoder`; broken-payload and
+      old-build degradation pinned; route/split/labels/notification copy extended and pinned;
+      opener strategy + synchronous-first-attempt pinned with a recording fake.
+- [ ] Sim drive: paste a share link → action saves → notification tap opens; destination step
+      produces a working deep link. Suite, lint, build; red-check after commit.
+
+### FEATURE: F-AppDirectory-3-Verify — config-time install verification  [ ] UNCHECKED
+
+`Info.plist` gains `LSApplicationQueriesSchemes` (curated top ~45 of the bundled list —
+headroom under the 50 cap; compile-time only, remote entries can never buy a slot).
+`PlaceQueryableSchemes.declared` + a parity test reading the plist via `Bundle.main`
+(set-equality, count ≤ 50 — drift is a red test). `PlaceAppInstallVerdict` decides the three
+states BEFORE `canOpenURL` (undeclared → can't-check, never consulted — tripwire-tested).
+Copy pinned in `PlaceAppInstallCopy`; never claims "not installed" when it can't know.
+One-method `SchemeInstallChecking` adapter. Note: the simulator has almost no third-party
+apps, so "doesn't look installed" is the expected sim state; declared schemes get one manual
+device sweep.
+
+**Acceptance criteria**
+- [ ] Verdict logic (incl. the never-calls-canOpen tripwire), copy, and plist parity all
+      TDD-pinned; badges/footers render in the picker and editor on the simulator.
+- [ ] Suite, lint, build; red-check after commit.
+
+### FEATURE: F-AppDirectory-4-Remote — the directory grows without a release  [ ] UNCHECKED
+
+`/catalog/app_directory` single-doc read — the app's FIRST global Firestore read, deliberately
+NOT in the per-user `Collection` enum: named `fetchAppDirectoryDocument()` in
+`FirebaseManager+AppDirectory.swift`, narrow `AppDirectoryBackingStore` +
+`FirebaseAppDirectoryClientAdapter` + recording fake. Rules addition (E publishes manually;
+verify live via the Firebase MCP diff): `match /catalog/{docId} { allow read: if request.auth
+!= null; allow write: if false; }` — until published, permission-denied is treated exactly
+like offline. Fetch when the picker opens, throttled by a pure 24h-TTL cache policy; the sheet
+always renders bundled+cache synchronously and a completed fetch updates the NEXT open (no
+reshuffle under E's finger). Cache = JSON blob + fetchedAt in UserDefaults behind a two-method
+protocol; corruption degrades to bundled.
+
+**Acceptance criteria**
+- [ ] Cache policy, cache resilience, per-entry lossy remote decode, and the composition
+      (fetch error → picker identical to bundled+cache) all TDD-pinned with the recording
+      fake; emulator drive with a seeded `/catalog/app_directory` doc shows a remote entry
+      appearing.
+- [ ] Rules diff reported for E to publish; suite, lint, build; red-check after commit.
+
+**Arc close-out:** field gate before the `--no-ff` merge — E walks, on device: a directory
+pick, a pasted-link custom app, one deep destination, and one "doesn't look installed"
+verdict for an app E doesn't have.
+
+---
+
 ### FEATURE: F-TabBarMinimize — the tab bar gets out of the way while you scroll down  [x] COMPLETED
 
 **E's ask (2026-08-31, in chat): "make the nav bar at the bottom of the screen transparent when

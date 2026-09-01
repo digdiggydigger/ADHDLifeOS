@@ -68,6 +68,25 @@ final class PlaceEditorValidationTests: XCTestCase {
         XCTAssertEqual(place.emoji, "🏋️")
     }
 
+    /// The editor rebuilds the `Place` on save, so anything it doesn't show must be threaded
+    /// through — the id/createdAt precedent, now covering actions. Without this, ANY edit to a
+    /// place (a rename, a radius tweak) would silently strip every action it carries.
+    func testMakePlace_preservesTheActionsItWasHanded() throws {
+        let spotify = PlaceAction(
+            id: UUID(), direction: .arrival,
+            kind: .openApp(scheme: "spotify", displayName: "Spotify")
+        )
+
+        let place = try XCTUnwrap(
+            PlaceEditorValidation.makePlace(
+                id: UUID(), name: "Gym", coordinate: coordinate, radiusMetres: 200,
+                emoji: nil, actions: [spotify]
+            )
+        )
+
+        XCTAssertEqual(place.actions, [spotify])
+    }
+
     func testMakePlace_returnsNilWhenItCannotBeSaved() {
         XCTAssertNil(
             PlaceEditorValidation.makePlace(

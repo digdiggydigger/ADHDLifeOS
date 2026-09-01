@@ -24,6 +24,16 @@ struct AtPlaceSnapshot: Codable, Equatable {
         /// And for leaving. Same contract, separate words — neither ever speaks on the other's
         /// crossing.
         var departureMessage: String?
+        /// What this place DOES on a crossing (the Place Actions arc) — carried into the
+        /// snapshot for the same reason the messages are: a background wake can't count on a
+        /// network, so execution reads config from here, never from a cold fetch. Optional so
+        /// every pre-actions snapshot on a device decodes quietly.
+        var actions: [PlaceAction]?
+        /// The place's centre, so an auto-run journal line or capture can stamp WHERE it
+        /// happened without requesting a fix on a background wake — the crossing itself is the
+        /// evidence E is here. Optional for the same pre-actions-snapshot reason.
+        var latitude: Double?
+        var longitude: Double?
     }
 
     let entries: [PlaceEntry]
@@ -41,7 +51,10 @@ struct AtPlaceSnapshot: Codable, Equatable {
                     }
                     .map(\.title),
                 arrivalMessage: place.arrivalMessage,
-                departureMessage: place.departureMessage
+                departureMessage: place.departureMessage,
+                actions: place.actions,
+                latitude: place.coordinate.latitude,
+                longitude: place.coordinate.longitude
             )
         })
     }
@@ -58,14 +71,16 @@ enum ArrivalNudgeContent {
     static let maximumQuotedTitles = 2
 
     static func notification(
-        for event: PlaceTriggerEvent, snapshot: AtPlaceSnapshot?
+        for event: PlaceTriggerEvent, snapshot: AtPlaceSnapshot?,
+        executedLines: [String] = []
     ) -> (title: String, body: String)? {
         guard let entry = snapshot?.entries.first(where: { $0.placeId == event.placeId }) else {
             return nil
         }
+        let base: (title: String, body: String)?
         switch event.kind {
         case .arrival:
-            return compose(
+            base = compose(
                 title: "You're at \(entry.displayName)",
                 message: entry.arrivalMessage,
                 tasks: entry.openTaskTitles.isEmpty ? nil : (
@@ -74,7 +89,7 @@ enum ArrivalNudgeContent {
                 )
             )
         case .departure:
-            return compose(
+            base = compose(
                 title: "Leaving \(entry.displayName)",
                 message: entry.departureMessage,
                 tasks: entry.openTaskTitles.isEmpty ? nil : (
@@ -82,6 +97,17 @@ enum ArrivalNudgeContent {
                 )
             )
         }
+        // The Place Actions extension of the firing rule: something RAN, so the crossing has
+        // content and reports it — the same reasoning that lets a custom message fire alone.
+        // With nothing run, the original gate stands untouched.
+        guard !executedLines.isEmpty else { return base }
+        let report = executedLines.joined(separator: " · ")
+        guard let base else {
+            let title = event.kind == .arrival
+                ? "You're at \(entry.displayName)" : "Leaving \(entry.displayName)"
+            return (title: title, body: report)
+        }
+        return (title: base.title, body: "\(base.body) · \(report)")
     }
 
     /// The one firing rule both crossings obey (E's 2026-08-28 request extended it to departure):

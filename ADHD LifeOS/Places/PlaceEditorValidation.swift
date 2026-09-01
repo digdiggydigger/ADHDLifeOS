@@ -55,7 +55,8 @@ enum PlaceEditorValidation {
         nudgeOnArrival: Bool = false,
         nudgeOnDeparture: Bool = false,
         arrivalMessage: String? = nil,
-        departureMessage: String? = nil
+        departureMessage: String? = nil,
+        actions: [PlaceAction] = []
     ) -> Place? {
         guard let name = effectiveName(typed: name, addressFallback: addressFallback),
               let coordinate else { return nil }
@@ -75,7 +76,8 @@ enum PlaceEditorValidation {
             nudgeOnArrival: nudgeOnArrival,
             nudgeOnDeparture: nudgeOnDeparture,
             arrivalMessage: (trimmedArrival?.isEmpty ?? true) ? nil : trimmedArrival,
-            departureMessage: (trimmedDeparture?.isEmpty ?? true) ? nil : trimmedDeparture
+            departureMessage: (trimmedDeparture?.isEmpty ?? true) ? nil : trimmedDeparture,
+            actions: actions
         )
     }
 }

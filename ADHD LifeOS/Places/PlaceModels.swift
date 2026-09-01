@@ -51,9 +51,26 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
     /// is not the sentence you want on the way in, and a place commonly wants one without the
     /// other. Setting one makes departure fire even with nothing open here.
     var departureMessage: String?
+    /// What this place DOES on a crossing (the Place Actions arc, E's 2026-08-31 spec) — a
+    /// list, each action with its own direction. Absent on every place saved before the arc.
+    var actions: [PlaceAction]
 
-    /// Whether this place deserves a region slot at all.
+    /// Whether this place deserves a region slot at all — the nudge toggles' own meaning,
+    /// untouched by actions (the toggles are E's per-place interrupt opt-in for TASK nudges).
     var anyNudgeEnabled: Bool { nudgeOnArrival || nudgeOnDeparture }
+
+    /// Whether this place wants to be woken for a crossing in each direction. Configuring an
+    /// action IS an opt-in gesture — "arrive → Spotify" is E saying interrupt me here — so an
+    /// action earns its direction's fence exactly as the matching toggle does. Unsupported
+    /// actions count on purpose: the intent came from a newer build, and dropping its fence
+    /// here would silently disarm it until the device catches up.
+    var wantsArrivalCrossing: Bool {
+        nudgeOnArrival || actions.contains { $0.direction == .arrival }
+    }
+    var wantsDepartureCrossing: Bool {
+        nudgeOnDeparture || actions.contains { $0.direction == .departure }
+    }
+    var wantsAnyCrossing: Bool { wantsArrivalCrossing || wantsDepartureCrossing }
 
     static func clampedRadius(_ metres: Double) -> Double {
         min(max(metres, minimumRadiusMetres), maximumRadiusMetres)
@@ -69,7 +86,8 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         nudgeOnArrival: Bool = false,
         nudgeOnDeparture: Bool = false,
         arrivalMessage: String? = nil,
-        departureMessage: String? = nil
+        departureMessage: String? = nil,
+        actions: [PlaceAction] = []
     ) {
         self.id = id
         self.name = name
@@ -81,6 +99,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         self.nudgeOnDeparture = nudgeOnDeparture
         self.arrivalMessage = arrivalMessage
         self.departureMessage = departureMessage
+        self.actions = actions
     }
 
     // MARK: - Codable
@@ -100,6 +119,7 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         case nudgeOnDeparture = "nudge_on_departure"
         case arrivalMessage = "arrival_message"
         case departureMessage = "departure_message"
+        case actions
     }
 
     init(from decoder: Decoder) throws {
@@ -120,6 +140,9 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         nudgeOnDeparture = try container.decodeIfPresent(Bool.self, forKey: .nudgeOnDeparture) ?? false
         arrivalMessage = try container.decodeIfPresent(String.self, forKey: .arrivalMessage)
         departureMessage = try container.decodeIfPresent(String.self, forKey: .departureMessage)
+        // Absent on every place saved before the actions arc — a place with nothing to do,
+        // never a failed document.
+        actions = try container.decodeIfPresent([PlaceAction].self, forKey: .actions) ?? []
     }
 
     func encode(to encoder: Encoder) throws {
@@ -135,5 +158,6 @@ struct Place: Codable, Identifiable, Equatable, Sendable {
         try container.encode(nudgeOnDeparture, forKey: .nudgeOnDeparture)
         try container.encodeIfPresent(arrivalMessage, forKey: .arrivalMessage)
         try container.encodeIfPresent(departureMessage, forKey: .departureMessage)
+        try container.encode(actions, forKey: .actions)
     }
 }
