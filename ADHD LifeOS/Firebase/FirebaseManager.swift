@@ -283,6 +283,14 @@ final class FirebaseManager {
         try userDocument().collection(name.rawValue)
     }
 
+    /// A GLOBAL (non-per-user) document's fields, `nil` when the document doesn't exist.
+    /// Deliberately path-based and separate from the `Collection` plumbing above — the only
+    /// global data is the read-only app-directory catalogue (`+AppDirectory`), and routing it
+    /// through `users/{uid}` machinery would teach the next reader it is per-user.
+    func fetchGlobalDocumentData(path: String) async throws -> [String: Any]? {
+        try await firestore.document(path).getDocument().data()
+    }
+
     func fetchAll<Model: Decodable>(
         _ type: Model.Type,
         from name: Collection,

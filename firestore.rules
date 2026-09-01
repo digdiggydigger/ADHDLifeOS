@@ -18,6 +18,15 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    // The app-directory catalogue (F-AppDirectory-4, 2026-09-01): the ONE path that is not
+    // per-user. Read-only for any signed-in user; no client may ever write — the console is
+    // the only writer. Until this block is published, the app's read fails permission-denied,
+    // which it treats exactly like being offline (bundled + cache carry the picker).
+    match /catalog/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     match /users/{uid} {
       // The profile document itself: email, created_at, and the seeded_at first-login marker.
       allow read, write: if isOwner(uid);

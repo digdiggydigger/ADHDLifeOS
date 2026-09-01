@@ -21,6 +21,7 @@ extension PlaceActionDraft {
 struct PlaceActionAppDetailSection: View {
     @Binding var draft: PlaceActionDraft
     @Binding var isPickingApp: Bool
+    @Binding var pickerEntries: [PlaceAppDirectoryEntry]
     let wantsCustomApp: Bool
     /// Injected so previews don't consult UIKit; the default is the real check.
     var checkInstalled: (String?) -> PlaceAppInstallVerdict = { scheme in
@@ -32,7 +33,11 @@ struct PlaceActionAppDetailSection: View {
     var body: some View {
         Section {
             Button {
+                // Snapshot NOW, then kick the throttled refresh — a completed fetch feeds
+                // the next open, never the one being presented.
+                pickerEntries = PlaceAppDirectoryProvider.shared.snapshot()
                 isPickingApp = true
+                Task { await PlaceAppDirectoryProvider.shared.refreshIfDue() }
             } label: {
                 LabeledContent("App", value: selectedAppLabel)
             }

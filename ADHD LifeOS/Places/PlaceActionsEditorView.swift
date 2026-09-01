@@ -29,6 +29,10 @@ struct PlaceActionEditorSheet: View {
     /// E stepped out to "Something else…" (or is editing an action the directory doesn't
     /// know) — the scheme/name fields show instead of a directory pick.
     @State private var wantsCustomApp = false
+    /// The directory the OPEN picker renders: snapshotted when the sheet presents (bundled +
+    /// last good remote), so a refresh landing mid-open never reshuffles under E's finger —
+    /// it updates what the NEXT open snapshots (F-AppDirectory-4).
+    @State private var pickerEntries: [PlaceAppDirectoryEntry] = []
 
     private var canSave: Bool { PlaceActionValidation.canSave(draft) }
 
@@ -67,7 +71,7 @@ struct PlaceActionEditorSheet: View {
             }
             .sheet(isPresented: $isPickingApp) {
                 PlaceAppPickerView(
-                    entries: PlaceAppDirectoryBundled.entries,
+                    entries: pickerEntries,
                     placeName: placeName,
                     placeCoordinate: placeCoordinate,
                     onPick: { entry in
@@ -139,7 +143,8 @@ struct PlaceActionEditorSheet: View {
 
     private var openAppDetail: some View {
         PlaceActionAppDetailSection(
-            draft: $draft, isPickingApp: $isPickingApp, wantsCustomApp: wantsCustomApp
+            draft: $draft, isPickingApp: $isPickingApp, pickerEntries: $pickerEntries,
+            wantsCustomApp: wantsCustomApp
         )
     }
 

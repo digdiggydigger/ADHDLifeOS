@@ -431,7 +431,7 @@ device sweep.
       still needs its one manual DEVICE sweep (sim has no third-party apps) — field-gate
       territory; a "doesn't look installed" there for an app E HAS is a wrong scheme to cull.
 
-### FEATURE: F-AppDirectory-4-Remote — the directory grows without a release  [ ] UNCHECKED
+### FEATURE: F-AppDirectory-4-Remote — the directory grows without a release  [x] COMPLETED
 
 `/catalog/app_directory` single-doc read — the app's FIRST global Firestore read, deliberately
 NOT in the per-user `Collection` enum: named `fetchAppDirectoryDocument()` in
@@ -445,11 +445,21 @@ reshuffle under E's finger). Cache = JSON blob + fetchedAt in UserDefaults behin
 protocol; corruption degrades to bundled.
 
 **Acceptance criteria**
-- [ ] Cache policy, cache resilience, per-entry lossy remote decode, and the composition
-      (fetch error → picker identical to bundled+cache) all TDD-pinned with the recording
-      fake; emulator drive with a seeded `/catalog/app_directory` doc shows a remote entry
-      appearing.
-- [ ] Rules diff reported for E to publish; suite, lint, build; red-check after commit.
+- [x] Cache policy, cache resilience, per-entry lossy remote decode, and the composition
+      (fetch error → cache stamp AND snapshot untouched) all TDD-pinned with recording fakes
+      (11 new tests, incl. the no-reshuffle pin: a taken snapshot never moves, the NEXT open
+      sees the fetch). `fetchGlobalDocumentData(path:)` added to the manager CORE as the one
+      global-read plumbing; `+AppDirectory` names the document; NOT in the `Collection` enum.
+- [x] Emulator drive (2026-09-01): seeded `/catalog/app_directory` with a rank-100 "Zzz
+      Remote Test" entry — FIRST picker open showed bundled only (fetch kicked), SECOND open
+      showed the remote entry at the very top. The read went through the NEW rules match
+      (emulator hot-reloaded `firestore.rules`). Suite **2,076/0** (0 skipped), lint 0/600,
+      build green; red-check after commit.
+- [x] **Rules diff for E to publish:** `firestore.rules` gained
+      `match /catalog/{docId} { allow read: if request.auth != null; allow write: if false; }`
+      — LIVE production still lacks it; until E republishes, the app's remote fetch fails
+      permission-denied and behaves exactly like offline (bundled + cache carry the picker),
+      so nothing breaks in the meantime.
 
 **Arc close-out:** field gate before the `--no-ff` merge — E walks, on device: a directory
 pick, a pasted-link custom app, one deep destination, and one "doesn't look installed"
