@@ -16,18 +16,9 @@ final class PlaceActionEditingTests: XCTestCase {
         return draft
     }
 
-    // MARK: - The catalogue
-
-    func testCatalog_schemesAreUniqueAndNormalizedAlready() {
-        let schemes = PlaceActionCatalog.apps.map(\.scheme)
-        XCTAssertEqual(Set(schemes).count, schemes.count, "duplicate scheme in the catalogue")
-        for scheme in schemes {
-            XCTAssertEqual(
-                PlaceActionCatalog.normalizedScheme(scheme), scheme,
-                "\(scheme) does not survive its own normalizer"
-            )
-        }
-    }
+    // MARK: - The normalizer
+    // (The 10-entry catalogue that lived here was superseded by `PlaceAppDirectoryBundled`;
+    // its uniqueness/normalization sweep now runs in `PlaceAppDirectoryBundledTests`.)
 
     func testNormalizedScheme_trimsLowercasesAndStripsThePastedTail() {
         XCTAssertEqual(PlaceActionCatalog.normalizedScheme("  Spotify://  "), "spotify")
@@ -177,6 +168,59 @@ final class PlaceActionEditingTests: XCTestCase {
             kind: .unsupported(rawKind: "play_soundscape", payload: [:])
         )
         XCTAssertNil(PlaceActionDraft(editing: future))
+    }
+
+    /// The sheet rebuilds the action from the draft on save — a second stripping hole the
+    /// encoder-side capture can't close on its own. A newer build's extra field must survive
+    /// this build EDITING the action, not just storing it.
+    func testDraft_carriesAStrangerFieldThroughAnEditSave() throws {
+        let document: [String: Any] = [
+            "id": UUID().uuidString,
+            "direction": "arrival",
+            "kind": "open_app",
+            "scheme": "spotify",
+            "display_name": "Spotify",
+            "from_the_future": "keep me"
+        ]
+        let action = try JSONDecoder().decode(
+            PlaceAction.self, from: JSONSerialization.data(withJSONObject: document)
+        )
+
+        let reopened = try XCTUnwrap(PlaceActionDraft(editing: action))
+        let saved = try XCTUnwrap(PlaceActionValidation.makeAction(from: reopened, id: action.id))
+
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(saved)) as? [String: Any]
+        )
+        XCTAssertEqual(json["from_the_future"] as? String, "keep me")
+        XCTAssertEqual(json["scheme"] as? String, "spotify")
+    }
+
+    /// Switching the kind is E deliberately replacing the action — the old kind's future
+    /// fields don't ride along onto a kind they were never written for.
+    func testDraft_dropsTheStrangerWhenTheKindChanges() throws {
+        let document: [String: Any] = [
+            "id": UUID().uuidString,
+            "direction": "arrival",
+            "kind": "open_app",
+            "scheme": "spotify",
+            "display_name": "Spotify",
+            "from_the_future": "keep me"
+        ]
+        let action = try JSONDecoder().decode(
+            PlaceAction.self, from: JSONSerialization.data(withJSONObject: document)
+        )
+
+        var reopened = try XCTUnwrap(PlaceActionDraft(editing: action))
+        reopened.kindChoice = .openURL
+        reopened.urlString = "example.com"
+        let saved = try XCTUnwrap(PlaceActionValidation.makeAction(from: reopened, id: action.id))
+
+        let json = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(saved)) as? [String: Any]
+        )
+        XCTAssertNil(json["from_the_future"])
+        XCTAssertEqual(json["kind"] as? String, "open_url")
     }
 
     // MARK: - Row labels

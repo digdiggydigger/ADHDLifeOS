@@ -21,6 +21,10 @@ struct PlaceActionEditorSheet: View {
     @State private var draft = PlaceActionDraft()
     @State private var hasSeeded = false
     @State private var isPickingContact = false
+    @State private var isPickingApp = false
+    /// E stepped out to "Something else…" (or is editing an action the directory doesn't
+    /// know) — the scheme/name fields show instead of a directory pick.
+    @State private var wantsCustomApp = false
 
     private var canSave: Bool { PlaceActionValidation.canSave(draft) }
 
@@ -56,6 +60,25 @@ struct PlaceActionEditorSheet: View {
                     draft.contactName = name
                     draft.contactPhone = phone
                 }
+            }
+            .sheet(isPresented: $isPickingApp) {
+                PlaceAppPickerView(
+                    entries: PlaceAppDirectoryBundled.entries,
+                    onPick: { entry in
+                        draft.appScheme = entry.scheme
+                        draft.appName = entry.name
+                        wantsCustomApp = false
+                    },
+                    onCustom: {
+                        // A stale directory pick clears so the fields start blank; what E
+                        // TYPED under custom earlier survives the round trip through the sheet.
+                        if selectedDirectoryApp != nil {
+                            draft.appScheme = ""
+                            draft.appName = ""
+                        }
+                        wantsCustomApp = true
+                    }
+                )
             }
         }
     }
@@ -100,14 +123,13 @@ struct PlaceActionEditorSheet: View {
 
     private var openAppDetail: some View {
         Section {
-            Picker("App", selection: catalogSelection) {
-                Text("Custom…").tag("")
-                ForEach(PlaceActionCatalog.apps) { app in
-                    Text(app.name).tag(app.scheme)
-                }
+            Button {
+                isPickingApp = true
+            } label: {
+                LabeledContent("App", value: selectedAppLabel)
             }
             .accessibilityIdentifier("actionEditorAppPicker")
-            if PlaceActionCatalog.apps.first(where: { $0.scheme == draft.appScheme }) == nil {
+            if showsCustomAppFields {
                 TextField("URL scheme (like spotify)", text: $draft.appScheme)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -123,24 +145,22 @@ struct PlaceActionEditorSheet: View {
         }
     }
 
-    /// The picker drives scheme AND display name for catalogue picks; choosing "Custom…"
-    /// clears both so the fields underneath start blank rather than holding a stale pick.
-    private var catalogSelection: Binding<String> {
-        Binding(
-            get: {
-                PlaceActionCatalog.apps.first(where: { $0.scheme == draft.appScheme })?.scheme ?? ""
-            },
-            set: { scheme in
-                Haptics.play(.selection)
-                guard let app = PlaceActionCatalog.apps.first(where: { $0.scheme == scheme }) else {
-                    draft.appScheme = ""
-                    draft.appName = ""
-                    return
-                }
-                draft.appScheme = app.scheme
-                draft.appName = app.name
-            }
-        )
+    /// The directory entry a pick landed on, if the current scheme is one of its.
+    private var selectedDirectoryApp: PlaceAppDirectoryEntry? {
+        PlaceAppDirectoryBundled.entries.first(where: { $0.scheme == draft.appScheme })
+    }
+
+    private var selectedAppLabel: String {
+        if let selectedDirectoryApp { return selectedDirectoryApp.name }
+        if wantsCustomApp || !draft.appScheme.isEmpty { return "Custom" }
+        return "Choose\u{2026}"
+    }
+
+    /// Custom fields show when E stepped out of the directory — or when the action being
+    /// edited carries a scheme the directory doesn't know, which must never render as a blank
+    /// pick with its fields hidden.
+    private var showsCustomAppFields: Bool {
+        wantsCustomApp || (!draft.appScheme.isEmpty && selectedDirectoryApp == nil)
     }
 
     private var openURLDetail: some View {
@@ -239,6 +259,11 @@ struct PlaceActionEditorSheet: View {
         hasSeeded = true
         guard let existing, let seeded = PlaceActionDraft(editing: existing) else { return }
         draft = seeded
+        // An open-app action the directory doesn't know is a custom one — its fields must be
+        // visible from the first render, never hidden behind a blank-looking pick.
+        if case .openApp = existing.kind, selectedDirectoryApp == nil {
+            wantsCustomApp = true
+        }
     }
 }
 

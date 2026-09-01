@@ -344,7 +344,7 @@ to be re-litigated per block:
   merges to main** (which waits on E's Block 3 double-confirm retest). The opener carries the
   state gate.
 
-### FEATURE: F-AppDirectory-1-Directory — the big searchable directory (bundled)  [ ] UNCHECKED
+### FEATURE: F-AppDirectory-1-Directory — the big searchable directory (bundled)  [x] COMPLETED
 
 `PlaceAppDirectoryEntry` (scheme = identity, name, keywords, universal-link hosts, destination
 templates, rank, hidden) with per-entry lenient decode (a malformed entry is dropped, never
@@ -358,11 +358,20 @@ change. ALSO lands the forward encoder fix: known kinds capture and re-encode no
 fields (`extraPayload`), so future optional fields survive builds from this arc on.
 
 **Acceptance criteria**
-- [ ] Directory model, lenient decode, merge, search ranking, and the extras round-trip
+- [x] Directory model, lenient decode, merge, search ranking, and the extras round-trip
       (`open_app` JSON + stranger field → re-encode → intact) all TDD-pinned; every bundled
-      entry swept through `normalizedScheme` by a test.
-- [ ] Picker sheet drives on the simulator: search finds apps, a pick saves as `.openApp`,
-      custom path still reachable. Suite, lint, build; red-check after commit.
+      entry swept through `normalizedScheme` by a test. (2026-09-01: 33 new tests across
+      `PlaceAppDirectoryTests`, `PlaceAppDirectoryBundledTests`, `PlaceActionExtraPayloadTests`
+      + draft threading in `PlaceActionEditingTests` — the edit-save rebuild was a second
+      stripping hole, closed via `PlaceActionDraft.extraPayload`. Bundled list is **152
+      entries**, not "few hundred": the curation rule (documented schemes only, omit rather
+      than guess — Google Calendar, Dropbox, Cash App, Fantastical, Prime Video, Max checked
+      and OMITTED) outranked list size; block 4's remote top-up is the growth path.)
+- [x] Picker sheet drives on the simulator: search finds apps ("Spot" → Spotify), a pick saves
+      as `.openApp` (verified ON THE WIRE in the emulator's Firestore doc: flat snake_case,
+      `kind=open_app scheme=spotify display_name=Spotify`), custom path reachable via
+      "Something else…" (+ honest not-in-the-list empty state). Suite **2,015/0** (0 skipped —
+      emulator up), lint 0/587, build green; red-check after commit.
 
 ### FEATURE: F-AppDirectory-2-Links — pasted links, `open_link`, universal-link opener, destinations  [ ] UNCHECKED
 

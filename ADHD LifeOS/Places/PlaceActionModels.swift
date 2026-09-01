@@ -82,11 +82,20 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
     let id: UUID
     var direction: PlaceActionDirection
     var kind: Kind
+    /// Fields a NEWER build wrote onto a kind this build knows (the F-AppDirectory-1 encoder
+    /// fix). `.unsupported` already preserves unknown KINDS; without this, a known kind that
+    /// grew an optional field would have it silently stripped by an older build's re-save.
+    /// Empty for `.unsupported` — there the whole payload already rides in the case itself.
+    var extraPayload: [String: PlaceActionValue]
 
-    init(id: UUID, direction: PlaceActionDirection, kind: Kind) {
+    init(
+        id: UUID, direction: PlaceActionDirection, kind: Kind,
+        extraPayload: [String: PlaceActionValue] = [:]
+    ) {
         self.id = id
         self.direction = direction
         self.kind = kind
+        self.extraPayload = extraPayload
     }
 
     // MARK: - Wire format
@@ -138,6 +147,13 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
         direction = try container.decode(PlaceActionDirection.self, forKey: DynamicKey(.direction))
         let rawKind = try container.decode(String.self, forKey: DynamicKey(.kind))
         kind = Self.decodeKind(rawKind, from: container)
+        if case .unsupported = kind {
+            extraPayload = [:]
+        } else {
+            extraPayload = Self.capturePayload(
+                from: container, excluding: Self.typedPayloadKeys(forRawKind: rawKind)
+            )
+        }
     }
 
     /// A known kind with its payload intact decodes typed; anything else — unknown kind, or a
@@ -202,19 +218,40 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
         try? container.decodeIfPresent(String.self, forKey: DynamicKey(key))
     }
 
-    /// Everything on the object except the reserved trio, as far as it can be represented. A
-    /// value that is neither string, number, nor bool (a nested map, say) is dropped — the
-    /// preservation guarantee covers flat payloads, which is what every shipped kind writes.
+    /// Everything on the object except the reserved trio and `excluding`, as far as it can be
+    /// represented. A value that is neither string, number, nor bool (a nested map, say) is
+    /// dropped — the preservation guarantee covers flat payloads, which is what every shipped
+    /// kind writes.
     private static func capturePayload(
-        from container: KeyedDecodingContainer<DynamicKey>
+        from container: KeyedDecodingContainer<DynamicKey>,
+        excluding excluded: Set<String> = []
     ) -> [String: PlaceActionValue] {
         var payload: [String: PlaceActionValue] = [:]
-        for key in container.allKeys where ReservedKey(rawValue: key.stringValue) == nil {
+        for key in container.allKeys
+        where ReservedKey(rawValue: key.stringValue) == nil && !excluded.contains(key.stringValue) {
             if let value = try? container.decode(PlaceActionValue.self, forKey: key) {
                 payload[key.stringValue] = value
             }
         }
         return payload
+    }
+
+    /// The keys a kind's TYPED payload owns — and only its own: another kind's key appearing on
+    /// this kind is a stranger and must be captured, not skipped, so excluding all of
+    /// `PayloadKey` here would be wrong.
+    private static func typedPayloadKeys(forRawKind rawKind: String) -> Set<String> {
+        guard let name = KindName(rawValue: rawKind) else { return [] }
+        let keys: [PayloadKey]
+        switch name {
+        case .openApp: keys = [.scheme, .displayName]
+        case .openURL: keys = [.url]
+        case .textContact: keys = [.contactName, .phoneNumber, .messageBody]
+        case .startSprint: keys = [.minutes]
+        case .createCapture: keys = [.captureText]
+        case .journalLine: keys = [.journalBody]
+        case .openScreen: keys = [.screen]
+        }
+        return Set(keys.map(\.rawValue))
     }
 
     func encode(to encoder: Encoder) throws {
@@ -251,6 +288,34 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
             for (key, value) in payload {
                 try container.encode(value, forKey: DynamicKey(stringValue: key))
             }
+        }
+        try encodeExtraPayload(into: &container)
+    }
+
+    /// Extras fill gaps, never overwrite: a key colliding with the reserved trio or with the
+    /// kind's own typed payload is skipped, so a hand-built collision cannot corrupt the typed
+    /// fields. `.unsupported` writes nothing here — its whole payload lives in the case.
+    private func encodeExtraPayload(
+        into container: inout KeyedEncodingContainer<DynamicKey>
+    ) throws {
+        if case .unsupported = kind { return }
+        let occupied = Self.typedPayloadKeys(forRawKind: wireKindName)
+        for (key, value) in extraPayload
+        where ReservedKey(rawValue: key) == nil && !occupied.contains(key) {
+            try container.encode(value, forKey: DynamicKey(stringValue: key))
+        }
+    }
+
+    private var wireKindName: String {
+        switch kind {
+        case .openApp: return KindName.openApp.rawValue
+        case .openURL: return KindName.openURL.rawValue
+        case .textContact: return KindName.textContact.rawValue
+        case .startSprint: return KindName.startSprint.rawValue
+        case .createCapture: return KindName.createCapture.rawValue
+        case .journalLine: return KindName.journalLine.rawValue
+        case .openScreen: return KindName.openScreen.rawValue
+        case .unsupported(let rawKind, _): return rawKind
         }
     }
 }

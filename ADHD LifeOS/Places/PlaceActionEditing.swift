@@ -5,33 +5,11 @@
 
 import Foundation
 
-/// One entry in the curated "open this app" list (F-PlaceActions-2-Editor). iOS has no picker
-/// for other people's apps, so a hand-kept catalogue of reliable URL schemes is the ceiling —
-/// with the custom-scheme field underneath it for everything the list doesn't know.
-struct PlaceActionCatalogApp: Identifiable, Equatable, Sendable {
-    /// The URL scheme, which doubles as the stable identity.
-    let scheme: String
-    let name: String
-    var id: String { scheme }
-}
-
+/// Scheme normalization for the "open this app" path. The 10-entry `apps` catalogue that
+/// lived here (F-PlaceActions-2-Editor) was superseded by the full searchable directory
+/// (`PlaceAppDirectoryBundled`, F-AppDirectory-1) — its ten schemes all live on there, pinned
+/// by the bundled sweep's continuity test.
 enum PlaceActionCatalog {
-    /// Deliberately short and reliable over long and speculative — a scheme that silently
-    /// stopped working teaches E the whole feature is broken. Checked against each app's
-    /// published scheme, alphabetical by name.
-    static let apps: [PlaceActionCatalogApp] = [
-        PlaceActionCatalogApp(scheme: "music", name: "Apple Music"),
-        PlaceActionCatalogApp(scheme: "maps", name: "Apple Maps"),
-        PlaceActionCatalogApp(scheme: "calshow", name: "Calendar"),
-        PlaceActionCatalogApp(scheme: "comgooglemaps", name: "Google Maps"),
-        PlaceActionCatalogApp(scheme: "instagram", name: "Instagram"),
-        PlaceActionCatalogApp(scheme: "message", name: "Mail"),
-        PlaceActionCatalogApp(scheme: "photos-redirect", name: "Photos"),
-        PlaceActionCatalogApp(scheme: "spotify", name: "Spotify"),
-        PlaceActionCatalogApp(scheme: "whatsapp", name: "WhatsApp"),
-        PlaceActionCatalogApp(scheme: "youtube", name: "YouTube")
-    ]
-
     /// What E typed into the custom field, reduced to a bare scheme: trimmed, lowercased, and
     /// stripped of a pasted "://..." tail — "Spotify://" and "spotify://open" both mean
     /// "spotify". `nil` when nothing usable remains.
@@ -107,6 +85,12 @@ struct PlaceActionDraft: Equatable {
     var captureText = ""
     var journalBody = ""
     var screen: PlaceActionScreen = .today
+    /// A newer build's extra fields on the action being edited, carried so the save's rebuild
+    /// doesn't strip them (the makePlace rebuild-on-save trap, at the action level). They
+    /// re-attach only while the kind stays what it was seeded as — switching kind is E
+    /// deliberately replacing the action, and the old kind's future fields don't ride along.
+    var extraPayload: [String: PlaceActionValue] = [:]
+    var seededKindChoice: KindChoice?
 
     init() {}
 
@@ -115,6 +99,8 @@ struct PlaceActionDraft: Equatable {
     init?(editing action: PlaceAction) {
         self.init()
         direction = action.direction
+        extraPayload = action.extraPayload
+        defer { seededKindChoice = kindChoice }
         switch action.kind {
         case .openApp(let scheme, let displayName):
             kindChoice = .openApp
@@ -156,7 +142,12 @@ enum PlaceActionValidation {
     }
 
     static func makeAction(from draft: PlaceActionDraft, id: UUID) -> PlaceAction? {
-        kind(from: draft).map { PlaceAction(id: id, direction: draft.direction, kind: $0) }
+        kind(from: draft).map {
+            PlaceAction(
+                id: id, direction: draft.direction, kind: $0,
+                extraPayload: draft.kindChoice == draft.seededKindChoice ? draft.extraPayload : [:]
+            )
+        }
     }
 
     private static func kind(from draft: PlaceActionDraft) -> PlaceAction.Kind? {
