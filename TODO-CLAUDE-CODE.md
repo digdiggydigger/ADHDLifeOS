@@ -208,7 +208,7 @@ place editor the moment "Add an action" was tapped — the sheet now hangs off t
 (any single concrete view inside the section works). This never surfaced in unit tests and
 never could; it is exactly what the drive exists to catch.
 
-### FEATURE: F-PlaceActions-3-Execution — actions fire on a crossing  [ ] UNCHECKED
+### FEATURE: F-PlaceActions-3-Execution — actions fire on a crossing  [x] COMPLETED
 
 The wake path: after the cooldown gate, matching-direction actions execute. **In-app actions
 run themselves** (journal line writes place-stamped, capture drops into the inbox, sprint
@@ -230,7 +230,7 @@ in tests). Not-installed app → honest in-app "couldn't open" surface, never si
       routing is pin-tested through the router; the delegate glue follows
       `FocusNotificationRouter`'s proven pattern — the sim's lock screen kept swallowing
       interactive taps, so the tap-through is E's field test's to confirm.
-- [ ] **Field test on `wishwashwacky15`** — a real crossing runs an in-app action and delivers
+- [x] **Field test on `wishwashwacky15`** — a real crossing runs an in-app action and delivers
       an external one, and the taps route — before this block may be ticked (the location-merge
       precedent). **FIRST PASS DONE (E, 2026-08-31, on foot):** E configured real actions —
       "Open Monzo, on arrival" at the Bank (the CUSTOM scheme field, proven in anger: Monzo is
@@ -242,6 +242,9 @@ in tests). Not-installed app → honest in-app "couldn't open" surface, never si
       on the next walk. If the dialog survives, it is Apple's cross-app guard, stated honestly.
       The in-app auto-run half is simulator-proven; E can field-confirm by adding a journal-line
       action to any place.
+      **SECOND PASS DONE (E, 2026-09-01): "block 3 it works"** — the double-confirm retest
+      passed with the synchronous-open fix in place; block ticked, arc complete, merged to
+      main the same day.
 
 **Found on the drive (both fixed, both red-checked):**
 - **Duplicate-delivery race (`338005f`):** iOS delivered one arrival twice in seconds; both
