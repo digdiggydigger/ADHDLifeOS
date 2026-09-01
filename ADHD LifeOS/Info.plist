@@ -13,13 +13,6 @@
 			</array>
 		</dict>
 	</array>
-	<!-- Location services (F-Location-Foundation, 2026-08-27). Both strings are REQUIRED:
-	     iOS silently refuses the prompt if the matching key is missing, so a build without
-	     these fails by never asking rather than by erroring. -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Records where a capture, journal entry or focus sprint happened, so you can see where you actually get things done.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Lets Momentum nudge you when you arrive at one of your places — like surfacing your errands when you reach the shops. Your location is never shared with anyone.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

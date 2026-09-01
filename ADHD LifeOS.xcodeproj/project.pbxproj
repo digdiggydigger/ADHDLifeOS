@@ -617,7 +617,10 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "ADHD LifeOS/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = LifeOS;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCameraUsageDescription = "ADHD LifeOS uses the camera to take a photo for a capture.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Lets Momentum nudge you when you arrive at one of your places — like surfacing your errands when you reach the shops. Your location is never shared with anyone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Records where a capture, journal entry or focus sprint happened, so you can see where you actually get things done.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ADHD LifeOS uses the microphone to record a voice note for a capture.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ADHD LifeOS uses your photo library to attach a photo to a capture.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "ADHD LifeOS uses speech recognition to transcribe your voice note.";
@@ -625,13 +628,12 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.ethananthony.ADHD-LifeOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -658,7 +660,10 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "ADHD LifeOS/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = LifeOS;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCameraUsageDescription = "ADHD LifeOS uses the camera to take a photo for a capture.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Lets Momentum nudge you when you arrive at one of your places — like surfacing your errands when you reach the shops. Your location is never shared with anyone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Records where a capture, journal entry or focus sprint happened, so you can see where you actually get things done.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ADHD LifeOS uses the microphone to record a voice note for a capture.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ADHD LifeOS uses your photo library to attach a photo to a capture.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "ADHD LifeOS uses speech recognition to transcribe your voice note.";
@@ -666,13 +671,12 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.ethananthony.ADHD-LifeOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
