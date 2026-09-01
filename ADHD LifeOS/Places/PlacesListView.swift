@@ -15,6 +15,9 @@ struct PlacesListView: View {
     @State private var editingPlace: Place?
     @State private var isCreating = false
     @State private var pendingDeletion: Place?
+    #if DEBUG
+    @State private var testFirePlace: Place?
+    #endif
 
     init(client: PlacesClientAdapting) {
         _service = StateObject(wrappedValue: PlacesService(client: client))
@@ -132,14 +135,19 @@ struct PlacesListView: View {
                 .accessibilityIdentifier("placesCapacityWarning")
             }
             ForEach(service.places) { place in
-                Button {
-                    Haptics.play(.light)
-                    editingPlace = place
-                } label: {
-                    PlaceRow(place: place)
+                HStack(spacing: 8) {
+                    Button {
+                        Haptics.play(.light)
+                        editingPlace = place
+                    } label: {
+                        PlaceRow(place: place)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("placeRow-\(place.id)")
+                    #if DEBUG
+                    testFireButton(for: place)
+                    #endif
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("placeRow-\(place.id)")
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {
                         Haptics.play(.warning)
@@ -170,6 +178,50 @@ struct PlacesListView: View {
     private func save(_ place: Place) async -> Bool {
         await service.save(place)
     }
+
+    #if DEBUG
+    /// TEMPORARY (E's 2026-09-01 field-gate ask): fires this place's triggers on demand so an
+    /// action can be tested without walking across the fence. Debug builds only — see
+    /// `PlaceTriggerTestFire` for the two deliberate departures from a real crossing.
+    private func testFireButton(for place: Place) -> some View {
+        Button {
+            Haptics.play(.light)
+            testFirePlace = place
+        } label: {
+            Image(systemName: "play.circle.fill")
+                .font(.title3)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityIdentifier("placeTestFireButton-\(place.id)")
+        .accessibilityLabel("Test triggers for \(place.name)")
+        .confirmationDialog(
+            "Test-fire \(place.name)?",
+            isPresented: Binding(
+                get: { testFirePlace?.id == place.id },
+                set: { if !$0 { testFirePlace = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Simulate arrival") { testFire(place, kind: .arrival) }
+            Button("Simulate departure") { testFire(place, kind: .departure) }
+            Button("Cancel", role: .cancel) { testFirePlace = nil }
+        } message: {
+            Text("Runs this place's actions and notifications exactly like a real crossing. "
+                 + "Cooldown and the nudge master switch are bypassed.")
+        }
+    }
+
+    private func testFire(_ place: Place, kind: PlaceTriggerEvent.Kind) {
+        Haptics.play(.solid)
+        Task {
+            await PlaceTriggerTestFire.fire(place: place, kind: kind)
+            Haptics.play(.success)
+        }
+    }
+    #endif
 }
 
 /// One place: identity glyph, name, and the radius that will actually be geofenced.
