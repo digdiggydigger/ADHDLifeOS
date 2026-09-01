@@ -5,12 +5,15 @@
 //  The shipped base of the app directory (F-AppDirectory-1-Directory). A Swift constant, not a
 //  bundle resource — there is no load step to fail, and the sweep test walks the real list.
 //
-//  THE CURATION RULE, which outranks list size: every scheme here is checked against published
-//  documentation or the well-established scheme collections — a wrong scheme teaches E the
-//  whole feature lies. Apps whose scheme could not be confirmed are OMITTED, not guessed
-//  (checked and left out 2026-09-01: Google Calendar, Dropbox, Cash App, Fantastical, Prime
-//  Video, Max). They stay reachable through block 2's pasted share-links, and block 4's remote
-//  top-up can add them later without a release.
+//  THE CURATION RULE, which outranks list size: a wrong scheme teaches E the whole feature
+//  lies, so apps whose scheme could not be confirmed are OMITTED, not guessed (checked and
+//  left out 2026-09-01: Google Calendar, Dropbox, Cash App, Fantastical, Prime Video, Max —
+//  they stay reachable through block 2's pasted share-links, and block 4's remote top-up can
+//  add them without a release). Verification tier, honestly: Amazon's scheme was confirmed
+//  against current documentation this session; the rest are drawn from the well-established
+//  iOS scheme collections rather than per-entry primary-source checks, so the long tail
+//  carries residual risk that block 3's device sweep (top-45 only) will not cover. Tap-time
+//  honesty (the executor's "couldn't open" path) is the backstop for any entry that rots.
 //
 //  Ranks are the directory's own sense of "the apps most people mean": 90s for the giants,
 //  0–20 for the long tail. Higher lists first within a search tier.
