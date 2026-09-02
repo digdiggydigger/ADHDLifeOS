@@ -2242,7 +2242,7 @@ deliberate — do not make it symmetrical).
 a HIGH-severity rule with "overloaded nav" as an anti-pattern. **E was shown this before choosing
 six.** Report it; never silently comply or silently ignore.
 
-### FEATURE: F-Tools-1-Bar — six slots, resting state only  [ ] UNCHECKED
+### FEATURE: F-Tools-1-Bar — six slots, resting state only  [x] COMPLETED
 
 Add `.tools` to `AppTab` and replace the system tab bar with a custom six-item bar in its RESTING
 state only (Design F: full width, icons only, an accent dot under the selected icon). Keep
@@ -2254,19 +2254,35 @@ which still asserts "Five stays five". `ToolsView` is a deliberately empty stub 
 fills it. No motion in this block.
 
 **Acceptance criteria**
-- [ ] Pure rules TDD-pinned in `AppTabBarPresentation`: the six tabs in order with Tools last and
+- [x] Pure rules TDD-pinned in `AppTabBarPresentation`: the six tabs in order with Tools last and
       its glyph; `showsBadge(count:)` false at 0 (an empty inbox stays silent, never a zero); and
       a slot-width test proving six slots clear 44pt on the narrowest supported iPhone (375pt SE
       → 62.5pt) — the test that stops a seventh tab being added casually.
-- [ ] The system bar is genuinely GONE, not merely covered — verified by tapping where it was and
-      confirming the custom bar receives it. A covered bar still eats touches.
-- [ ] A failed inbox refresh keeps the LAST KNOWN badge count rather than dropping to zero.
-- [ ] Tab haptic still fires (including on a programmatic switch); a place-action `openScreen`
+- [x] The system bar is genuinely GONE, not merely covered. **Stronger than planned: there is no
+      system bar at all.** Hiding it was not enough — see the architecture change below.
+- [x] A failed inbox refresh keeps the LAST KNOWN badge count rather than dropping to zero.
+      (Unchanged: RootView's single writer still returns early on failure.)
+- [x] Tab haptic still fires (including on a programmatic switch); a place-action `openScreen`
       door still switches tabs; the capture disc is unchanged and reachable.
-- [ ] Compiles at the iOS 16.0 floor; `RootView.swift` stays under SwiftLint's 400-line ceiling
-      (it is ~397 before this block — plan to split).
-- [ ] Suite green, lint 0, sim + device builds green, red-checked, committed and pushed.
+- [x] Compiles at the iOS 16.0 floor; `RootView.swift` stays under SwiftLint's 400-line ceiling
+      — 350 lines, after splitting out `AppTab` and `RootBottomOverlay`.
+- [x] Suite green (2,131 / 0), lint 0 / 615, sim + device builds green, red-checked (three
+      injected regressions → 14 failures), committed and pushed.
 - [ ] **Stop and ask E whether six slots feel right on device before starting block 2.**
+
+**⚠ ARCHITECTURE CHANGE — the plan's "keep `TabView`, hide its bar" does not work at six.**
+`TabView` is a `UITabBarController`, and past five tabs UIKit folds the overflow into its
+`moreNavigationController`. Hiding the bar does not undo that: tabs five and six still render
+INSIDE the More navigation controller, which puts a "More" back button on their nav bars and arms
+an edge-swipe to a list the app never shows — so **Captures and Tools would both have carried it.**
+Proven with a standalone six-tab probe on the simulator; with the bar hidden AND
+`.toolbar(.hidden, for: .tabBar)` on every tab, the sixth still reported
+`AXUniqueId: "BackButton", AXLabel: "More"`. Removing `.tabItem` changed nothing — the fold is on
+the controller, not the bar items. `AppTabContent` replaces `TabView`: it is neither the
+`switch selectedTab` the plan rules out (which discards state) nor an eager `ZStack` (which builds
+everything at launch), because `AppTabVisitLog` builds a tab on first selection and then keeps it.
+The probe confirmed all three properties directly — lazy first build, `NavigationStack` depth
+survived a round trip, scroll offset came back to the point.
 
 ### FEATURE: F-Tools-2-Morph — the bar contracts while you scroll  [ ] UNCHECKED
 
