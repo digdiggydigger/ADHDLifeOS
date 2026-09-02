@@ -194,11 +194,15 @@ struct RootView: View {
                     discScrollActivity.reset()
                     tabBarScrollActivity.reset()
                 }
-                // Our bar, in the space the system's used to occupy. An OVERLAY, drawn over the
-                // height `AppTabContent` already reserved for it — NOT a `safeAreaInset` on this
-                // container, which is what it was until E's device screenshot showed the Journal
-                // composer sliced in half by it. An outer `safeAreaInset` does not reach into a
-                // child's own `NavigationStack`; see `AppTabContent` for the measurements.
+                // Our bar, in the space the system's used to occupy. A bottom safe-area INSET:
+                // it positions the bar correctly, insets every scroll view so the last row still
+                // clears it, and — the point of E's last verdict — leaves the content itself
+                // full height, so the page scrolls BEHIND the bar rather than stopping at a
+                // reserved strip.
+                //
+                // The two screens that pin their own bottom furniture inside a `NavigationStack`
+                // do not inherit this (a SwiftUI inset does not cross that boundary) and ask for
+                // the room with `appTabBarClearance()` instead.
                 //
                 // Placed above `.blur` deliberately: the bar dims with the content when the
                 // capture fan opens, the way the system bar did.
@@ -206,7 +210,7 @@ struct RootView: View {
                 // There is no system bar to hide any more — `AppTabContent` is not a
                 // `UITabBarController`, which is the whole reason a sixth tab is possible at
                 // all. See that file for what `TabView` did to tabs five and six.
-                .overlay(alignment: .bottom) {
+                .safeAreaInset(edge: .bottom, spacing: 0) {
                     AppTabBar(
                         selection: $selectedTab,
                         captureInboxCount: captureInboxCount,

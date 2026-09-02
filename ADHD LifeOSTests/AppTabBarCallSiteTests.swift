@@ -23,56 +23,62 @@ final class AppTabBarCallSiteTests: XCTestCase {
         )
     }
 
-    /// **The bar's height must be RESERVED as layout space, and the bar drawn over that reserve.**
+    /// **Content must run BEHIND the bar, not stop above it.**
     ///
-    /// It was a `safeAreaInset` on the container first, and E's device screenshot showed the
-    /// Journal composer sliced in half by the bar, its caption line gone. A SwiftUI
-    /// `safeAreaInset` applied outside a view does not reach into that view's own
-    /// `NavigationStack` — and the Journal composer, the inbox's Sorted bar and the app picker's
-    /// footer all pin themselves with exactly that modifier, inside exactly such a stack.
-    /// `TabView` never had the problem because UIKit sets `additionalSafeAreaInsets` on each
-    /// tab's view CONTROLLER, which a nested `UINavigationController` inherits.
+    /// This flipped twice. The bar began as a `safeAreaInset`; E's screenshot showed the Journal
+    /// composer sliced in half by it, because a SwiftUI safe-area inset does not cross into a
+    /// child's own `NavigationStack`. The fix was to reserve the bar's height in the container —
+    /// which worked, and was wrong: a reserve is a strip of dead layout the page cannot enter, so
+    /// the bar sat on a plinth. E: *"I'd much rather the background surrounding the nav bar is
+    /// transparent so that I can see the content scrolling behind it."*
     ///
-    /// So the two halves are asserted together: the reserve exists in `AppTabContent`, and
-    /// RootView draws the bar as an overlay rather than an inset. Either one alone is the bug —
-    /// a reserve with an inset double-counts the height, an overlay with no reserve is what E saw.
-    func testTheBarsHeightIsReservedAsLayoutSpaceAndTheBarOverlaysIt() throws {
-        let container = try Self.appSource("AppTabContent.swift")
-        XCTAssertTrue(
-            container.contains("frame(height: AppTabBarMetrics.rowHeight)"),
-            "`AppTabContent` no longer reserves the bar's height, so the bar covers the bottom of"
-                + " every screen — and every screen that pins its own bottom bar loses it."
-        )
+    /// So the inset is back and the reserve is gone, with the two screens that pin their own
+    /// furniture asking for room explicitly. Both halves are asserted, because either alone is a
+    /// bug: an inset with a reserve double-counts the height, and a reserve without the inset is
+    /// the plinth E rejected.
+    func testTheBarIsASafeAreaInsetAndTheContainerReservesNothing() throws {
         let root = try Self.appSource("RootView.swift")
-        // The bar's own call site must sit under a `.bottom` overlay. Matched as two adjacent
-        // lines rather than one blob so re-indenting the file cannot break the guard.
-        let overlayLine = ".overlay(alignment: .bottom) {"
-        let barLine = "AppTabBar("
-        let overlaidBar = root
-            .components(separatedBy: overlayLine)
-            .dropFirst()
-            .contains { $0.prefix(200).contains(barLine) }
         XCTAssertTrue(
-            overlaidBar,
-            "The bar is no longer drawn as a bottom overlay over the reserved height."
-        )
-        XCTAssertFalse(
             root.contains("safeAreaInset(edge: .bottom, spacing: 0) {"),
-            "The bar is a `safeAreaInset` again. That is the arrangement that sliced the Journal"
-                + " composer in half — an outer inset does not reach past a child's NavigationStack."
+            "The tab bar is no longer a bottom safe-area inset, so scroll views are not inset for"
+                + " it and the last row of every screen sits under the bar unreachable."
+        )
+        let container = try Self.appSource("AppTabContent.swift")
+        XCTAssertFalse(
+            container.contains("frame(height: AppTabBarMetrics.rowHeight)"),
+            "`AppTabContent` is reserving the bar's height again. That is the plinth: content"
+                + " stops above the bar instead of scrolling behind it."
         )
     }
 
-    /// The capture disc, the offline sprint card and the focus timer bar all ride one stack, and
-    /// its lift is measured from the top of the BAR. With the bar an overlay rather than an
-    /// inset, `.bottom` means the safe area's bottom — so the bar's own height has to be in the
-    /// sum, or E's 60pt gap puts the disc on the bar instead of above it.
-    func testTheBottomFurnitureClearsTheBarsHeight() throws {
-        XCTAssertTrue(
-            try Self.appSource("RootBottomOverlay.swift")
-                .contains("liftAboveBar + AppTabBarMetrics.rowHeight"),
-            "The bottom furniture no longer adds the bar's height to its lift, so the capture disc"
-                + " and the focus timer bar sit on top of the tab bar."
+    /// The two screens that pin their OWN bottom furniture inside a `NavigationStack`, and so
+    /// never inherit the bar's inset. A helper nothing calls is this repo's most repeated defect,
+    /// so the call sites are enumerated rather than the definition.
+    func testEveryTabLevelPinnedBarAsksForTabBarClearance() throws {
+        for (file, furniture) in [
+            ("Journal/JournalView.swift", "composerBar"),
+            ("Capture/CaptureInboxView.swift", "bottomBar")
+        ] {
+            XCTAssertTrue(
+                try Self.appSource(file)
+                    .contains(".safeAreaInset(edge: .bottom) { \(furniture).appTabBarClearance() }"),
+                "\(file) pins `\(furniture)` without `appTabBarClearance()`, so it sits under the"
+                    + " tab bar — the Journal composer's caption line is what this looked like."
+            )
+        }
+    }
+
+    /// The capture disc, the offline sprint card and the focus timer bar all ride one stack whose
+    /// lift is measured from the top of the BAR. With the bar a safe-area inset, `.bottom`
+    /// alignment already means that — so the lift must NOT also add the bar's height, or the disc
+    /// floats a bar's height too high. (It did add it, for the round the bar was an overlay.)
+    func testTheBottomFurnitureIsLiftedFromTheTopOfTheBar() throws {
+        let source = try Self.appSource("RootBottomOverlay.swift")
+        XCTAssertFalse(
+            source.contains("AppTabBarMetrics.rowHeight"),
+            "The bottom furniture is adding the bar's height to its lift again. The bar is a"
+                + " safe-area inset, so `.bottom` is already the top of the bar — this"
+                + " double-counts and pushes the capture disc a full bar too high."
         )
     }
 

@@ -113,7 +113,7 @@ struct JournalView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .bottom) { composerBar }
+            .safeAreaInset(edge: .bottom) { composerBar.appTabBarClearance() }
             .sheet(isPresented: $isPresentingComposer) {
                 LogComposerView(journalService: journalService, lifeAreas: journalService.lifeAreas) {
                     Task { await journalService.load() }

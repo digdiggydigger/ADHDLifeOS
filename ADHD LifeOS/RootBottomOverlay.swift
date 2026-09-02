@@ -30,12 +30,10 @@ struct RootBottomOverlay: View {
     /// matching the trailing margin's 16 → 24 so `CaptureDiscMetrics.clearance` stays one number
     /// for both axes.
     ///
-    /// Since F-Tools-1-Bar this is measured from the top of the bar EXPLICITLY. The bar is an
-    /// overlay rather than a safe-area inset (see `AppTabContent`), so `.bottom` alignment now
-    /// means the bottom of the safe area, not the top of the bar — and without the bar's own
-    /// height added, E's 60pt gap would put the disc ON the bar instead of above it.
-    private static let liftAboveBar: CGFloat = 60
-    private static let bottomPadding = liftAboveBar + AppTabBarMetrics.rowHeight
+    /// The bar is a bottom safe-area inset, so `.bottom` alignment already means the top of the
+    /// bar — the gap is measured from there and needs no correction. (It briefly needed the
+    /// bar's height added, during the round when the bar was an overlay over a reserved strip.)
+    private static let bottomPadding: CGFloat = 60
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 8) {

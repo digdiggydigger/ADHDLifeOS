@@ -94,23 +94,26 @@ struct AppTabBar: View {
             // on into the home-indicator strip. E's GIF verdict: that strip was "empty space
             // that is coloured below the tab bar… wasted space", and it measured 53pt.
             //
-            // **And no material.** There was an `.ultraThinMaterial` behind `BarSurface` for
-            // §5's layer architecture, and it did two things, both bad. It BLED into the safe
-            // area — SwiftUI extends a material background to the screen edge even when the view
-            // it backs does not — painting the strip below the bar #272B2B against a bar of
-            // #1F2028, so the thing E photographed and called a bug read as a second, lighter
-            // bar underneath the first. And it was blurring nothing: `AppTabContent` reserves
-            // this band, so no content ever passes beneath the resting bar. `BarSurface`'s own
-            // 8% translucency over the page is the whole effect, and it is honest about it.
+            // **Glass, and now it means something.** The material was removed for a round
+            // because it BLED into the safe area — SwiftUI extends a material background to the
+            // screen edge even when the view it backs does not — painting the strip below the bar
+            // #272B2B against a bar of #1F2028, so it read as a second, lighter bar underneath
+            // the first. It was also blurring nothing, because the container reserved that band
+            // and no content could pass beneath.
+            //
+            // Both of those are fixed rather than avoided: `in: Rectangle()` clips each fill to
+            // the bar's own frame (a bare `.background(Color…)` extends into the safe area too —
+            // `Color` and shapes do that by design), and content now scrolls behind the bar, so
+            // the blur has something real to blur. `BarSurface`'s 6%/8% translucency over it is
+            // what stops the glyphs having to compete with whatever is passing underneath.
             row
                 .frame(height: AppTabBarMetrics.rowHeight)
                 .frame(maxWidth: .infinity)
-                // `in: Rectangle()` is doing real work: a bare `.background(Color…)` EXTENDS
-                // into the safe area — `Color` and shapes do that by design as backgrounds —
-                // which is the same bleed the material had, just a shade that happened to match.
-                // Filling an explicit shape clips the fill to the bar's own 72pt frame, so the
-                // home-indicator strip below it is page, not chrome.
+                // Chained backwards: `BarSurface` sits closest to the glyphs, the material
+                // behind it. Both clipped to the bar's 72pt frame, so neither reaches the
+                // home-indicator strip — that strip is content now.
                 .background(Color.barSurface, in: Rectangle())
+                .background(.ultraThinMaterial, in: Rectangle())
         }
     }
 
@@ -238,6 +241,32 @@ private struct AppTabBarSlotStyle: ButtonStyle {
                 reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0),
                 value: configuration.isPressed
             )
+    }
+}
+
+extension View {
+    /// Room for the app's tab bar, for a view that pins its OWN furniture to the bottom of a tab.
+    ///
+    /// **Why this is needed at all, given the bar is already a `safeAreaInset`.** That inset is
+    /// applied outside each tab's content, and **a SwiftUI safe-area inset does not cross into a
+    /// child's own `NavigationStack`** — every screen here builds one. So a screen that pins a
+    /// bar of its own with `safeAreaInset` measures from the raw screen safe area and lands under
+    /// ours. E photographed exactly that: the Journal composer sliced in half, its caption line
+    /// gone. (`TabView` never had the problem, because UIKit sets `additionalSafeAreaInsets` on
+    /// each tab's view CONTROLLER, which a nested `UINavigationController` inherits.)
+    ///
+    /// The round that reserved the bar's height in the container instead fixed this and broke
+    /// something better: a reserve is a strip of dead layout the page cannot enter, so the bar
+    /// sat on a plinth rather than floating over live content — E's *"I'd much rather the
+    /// background surrounding the nav bar is transparent so that I can see the content scrolling
+    /// behind it"*. Content wins; the two screens that pin furniture ask for the room here.
+    ///
+    /// Applied to the furniture INSIDE the screen's own `safeAreaInset` closure, so the screen's
+    /// scroll content is inset by the furniture and this together — the last row still clears
+    /// both. `AppTabBarCallSiteTests` enumerates the call sites, because a helper nothing calls
+    /// is this repo's most repeated defect.
+    func appTabBarClearance() -> some View {
+        padding(.bottom, AppTabBarMetrics.rowHeight)
     }
 }
 

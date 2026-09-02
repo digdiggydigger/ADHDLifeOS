@@ -53,17 +53,18 @@ struct AppTabVisitLog {
 /// at launch; a screen pushed on tab one was still pushed after a round trip through tab six; and
 /// a scroll offset on tab six came back to the point (row 0 at y = −377.33 both times).
 ///
-/// **Why the bar's height is reserved here rather than by a `safeAreaInset` on the container.**
-/// It was a `safeAreaInset` first, and E's device screenshot showed the Journal composer sliced
-/// in half by the bar — its caption line gone entirely. A SwiftUI `safeAreaInset` applied OUTSIDE
-/// a view **does not reach into that view's own `NavigationStack`**: every screen here pins its
-/// own bottom furniture with `safeAreaInset` (the Journal composer, the inbox's Sorted bar, the
-/// picker's footer) and each of those sat at the raw screen safe area, under the bar. `TabView`
-/// never had the problem because UIKit sets `additionalSafeAreaInsets` on each tab's view
-/// CONTROLLER, which a nested `UINavigationController` inherits — a SwiftUI modifier has no such
-/// reach. Measured in the probe: composer bottom 822.67 against a bar top of 784, overlapping by
-/// 38pt; with the reserve, 766.67 and clear. Reserving the height in a `VStack` shrinks the
-/// child's frame, so its own inset lands above the bar the way it always did.
+/// **The container deliberately reserves NOTHING for the tab bar.** It did for one round — a
+/// `VStack` with a `Color.clear` strip — because an outer `safeAreaInset` does not reach into a
+/// child's own `NavigationStack`, and the Journal composer ended up sliced in half by the bar.
+/// That fix was wrong, and E's verdict named why: *"I'd much rather the background surrounding
+/// the nav bar is transparent so that I can see the content scrolling behind it."* A reserve is
+/// the opposite of that — it is a strip of dead layout the page cannot enter, so the bar sits on
+/// a plinth instead of floating over live content, and no shade of backdrop fixes it.
+///
+/// So content fills the screen and the bar floats over it. The two screens that pin their OWN
+/// bottom furniture inside a `NavigationStack` — and therefore never see the outer inset — ask
+/// for the room explicitly with `appTabBarClearance()`, which `AppTabBarCallSiteTests` enumerates
+/// so a third cannot be added without noticing.
 struct AppTabContent<Content: View>: View {
     let selection: AppTab
     @ViewBuilder var content: (AppTab) -> Content
@@ -80,16 +81,7 @@ struct AppTabContent<Content: View>: View {
         ZStack {
             ForEach(AppTab.allCases, id: \.self) { tab in
                 if visitLog.isBuilt(tab) {
-                    VStack(spacing: 0) {
-                        content(tab)
-                        // The bar's height, reserved as REAL layout space rather than as a
-                        // `safeAreaInset` on this container. See the type comment: an outer
-                        // `safeAreaInset` does not reach past a child's own `NavigationStack`,
-                        // and every screen that pins its own bottom bar depends on it doing so.
-                        Color.clear
-                            .frame(height: AppTabBarMetrics.rowHeight)
-                            .allowsHitTesting(false)
-                    }
+                    content(tab)
                         .opacity(tab == selection ? 1 : 0)
                         // Both needed. Without `allowsHitTesting` the invisible tabs still take
                         // taps meant for the visible one; without `accessibilityHidden` VoiceOver
@@ -100,12 +92,6 @@ struct AppTabContent<Content: View>: View {
                 }
             }
         }
-        // The reserved strip is `Color.clear`, so without this it shows the WINDOW behind it —
-        // pure black, against a page that is merely dark. E's GIF caught it as a band of the
-        // wrong colour under the floating card. Painting the page's own background behind the
-        // whole container makes the reserve seamless with the page instead, so the card reads as
-        // floating over the page rather than sitting on a plinth.
-        .background(Color.pageBackground.ignoresSafeArea())
         .onChange(of: selection) { visitLog.select($0) }
     }
 }
