@@ -87,6 +87,31 @@ final class AppTabBarPresentationTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(width, AppTabBarPresentation.minimumTouchTarget)
     }
 
+    // MARK: - The morph's geometry (F-Tools-2-Morph)
+
+    /// **The floating state must fit the band the resting state reserves.** `AppTabContent`
+    /// reserves `rowHeight` once and never reflows it — content shifting under a bar that morphs
+    /// as you scroll would be intolerable — so Design B has to live inside that reserve. Card
+    /// height plus lift must equal it exactly; a lift chosen by eye would drift the moment the
+    /// row height changed, which it already has once (56 → 72 on E's device verdict).
+    func testTheFloatingCardFitsTheReservedBandExactly() {
+        let cardHeight = AppTabBarMetrics.chipHeight + AppTabBarMetrics.floatingPaddingVertical * 2
+        XCTAssertEqual(cardHeight + AppTabBarMetrics.floatingLift, AppTabBarMetrics.rowHeight)
+    }
+
+    /// The chip is the touch target while floating, not merely a decoration inside one.
+    func testTheChipItselfHoldsTheTouchTargetWidth() {
+        XCTAssertGreaterThanOrEqual(
+            AppTabBarMetrics.chipWidth, AppTabBarPresentation.minimumTouchTarget
+        )
+    }
+
+    /// Dark needs more body than light: the same alpha that reads as a wash on white disappears
+    /// against `CardSurface`'s near-black.
+    func testTheChipTintIsStrongerInDark() {
+        XCTAssertGreaterThan(AppTabBarMetrics.chipTintDark, AppTabBarMetrics.chipTintLight)
+    }
+
     func testMinimumTouchTarget_isTheHIGFloor() {
         XCTAssertEqual(AppTabBarPresentation.minimumTouchTarget, 44)
     }

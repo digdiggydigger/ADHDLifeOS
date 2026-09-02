@@ -47,7 +47,7 @@ final class AppTabBarCallSiteTests: XCTestCase {
         // The bar's own call site must sit under a `.bottom` overlay. Matched as two adjacent
         // lines rather than one blob so re-indenting the file cannot break the guard.
         let overlayLine = ".overlay(alignment: .bottom) {"
-        let barLine = "AppTabBar(selection: $selectedTab, captureInboxCount: captureInboxCount)"
+        let barLine = "AppTabBar("
         let overlaidBar = root
             .components(separatedBy: overlayLine)
             .dropFirst()
@@ -143,6 +143,65 @@ final class AppTabBarCallSiteTests: XCTestCase {
             try Self.appSource("RootView.swift").contains("captureInboxCount: captureInboxCount"),
             "RootView keeps the inbox count and never hands it to the bar, so the Captures badge"
                 + " can never appear however full the inbox gets."
+        )
+    }
+
+    // MARK: - The morph (F-Tools-2-Morph)
+
+    /// **The failure mode this guards is silent.** `CaptureDiscPanObserver.installOnKeyWindow` is
+    /// idempotent via `guard shared == nil`, and **the FIRST install's callbacks win** — so a
+    /// second consumer calling install again would no-op, `TabBarScrollActivity` would never hear
+    /// a drag, and the bar would simply never move. Nothing would error; nothing would log.
+    ///
+    /// So the assertion is that the ONE install feeds BOTH models from the same callback.
+    func testTheSinglePanObserverInstallFeedsBothScrollModels() throws {
+        let source = try Self.appSource("RootView.swift")
+        XCTAssertEqual(
+            source.components(separatedBy: "CaptureDiscPanObserver.installOnKeyWindow").count - 1, 1,
+            "There is more than one install of the pan observer. The second silently no-ops —"
+                + " `guard shared == nil` means the FIRST install's callbacks win."
+        )
+        XCTAssertTrue(
+            source.contains("discScrollActivity.dragMoved(translationY: translationY)"),
+            "The disc's model is no longer fed by the observer, so the capture disc can never"
+                + " collapse to its pill."
+        )
+        XCTAssertTrue(
+            source.contains("tabBarScrollActivity.dragMoved()"),
+            "`TabBarScrollActivity` is not fed by the observer's callback, so the bar never"
+                + " morphs — and nothing errors to tell you."
+        )
+    }
+
+    /// A tab change resets BOTH, for the same reason: a bar stuck mid-morph, or a disc stuck as
+    /// a pill, on a screen the user never scrolled reads as a bug.
+    func testATabChangeResetsBothScrollModels() throws {
+        let source = try Self.appSource("RootView.swift")
+        XCTAssertTrue(source.contains("discScrollActivity.reset()"))
+        XCTAssertTrue(
+            source.contains("tabBarScrollActivity.reset()"),
+            "Switching tabs leaves the bar in whatever shape the last scroll left it."
+        )
+    }
+
+    /// The bar has to be TOLD the page is moving. Without this the model can be perfectly
+    /// correct, perfectly tested, and drive nothing — this repo's most repeated defect.
+    func testTheMovingFlagReachesTheBar() throws {
+        XCTAssertTrue(
+            try Self.appSource("RootView.swift")
+                .contains("isScrolling: tabBarScrollActivity.isMoving"),
+            "`TabBarScrollActivity` is never handed to `AppTabBar`, so the bar cannot morph."
+        )
+    }
+
+    /// The disc's own model must keep the behaviour E settled on 2026-08-31. The morph is
+    /// momentary; the disc is sticky; they are deliberately no longer in lockstep.
+    func testTheDiscsStickyModelWasNotEditedIntoATimer() throws {
+        let source = try Self.appSource("Theme/CaptureDiscScrollActivity.swift")
+        XCTAssertFalse(
+            source.contains("Timer") || source.contains("asyncAfter") || source.contains("sleep"),
+            "A timer has appeared in the DISC's activity model. Its stickiness is E's settled"
+                + " call — the momentary signal belongs in `TabBarScrollActivity`, not here."
         )
     }
 

@@ -118,6 +118,40 @@ enum AppTabBarMetrics {
     /// The count pill: 16pt round for a single digit, a capsule beyond that.
     static let badgeDiameter: CGFloat = 16
 
+    // MARK: - Design B, the floating state (F-Tools-2-Morph)
+
+    /// While the page is moving the bar contracts to a floating card — E's pick for the second
+    /// half of the morph. These are the concept's numbers, on §2's grid where the concept was
+    /// already on it and rounded onto it where it was not (the concept drew a 6/4 inner padding;
+    /// 8/4 is the nearest grid pair and reads identically at this size).
+    static let floatingInset: CGFloat = 12
+    static let floatingCornerRadius: CGFloat = 22
+    static let floatingPaddingVertical: CGFloat = 8
+    static let floatingPaddingHorizontal: CGFloat = 4
+
+    /// The selected indicator's OTHER form: the dot grows into a tinted chip behind the glyph.
+    /// 44×34 is the concept's, and the 44 is not a coincidence — it keeps §3's touch target
+    /// satisfied by the chip itself, not merely by the slot around it.
+    static let chipWidth: CGFloat = 44
+    static let chipHeight: CGFloat = 34
+    static let chipCornerRadius: CGFloat = 11
+
+    /// Accent at 12% in light and 20% in dark: the same tint reads as a wash on white and needs
+    /// more body to register against `CardSurface`'s near-black.
+    static let chipTintLight: CGFloat = 0.12
+    static let chipTintDark: CGFloat = 0.20
+
+    /// How far the floating card sits off the bottom — **derived, not chosen**, so the two states
+    /// occupy exactly the same band. `AppTabContent` reserves `rowHeight` once and never reflows
+    /// it as you scroll (content shifting under a morphing bar would be intolerable), so B must
+    /// fit inside that reserve rather than merely be near it: card height + lift == rowHeight.
+    ///
+    /// It lands on 22 with today's numbers, which is what the concept drew — but as a
+    /// consequence rather than a coincidence. Change `rowHeight` or the chip and this follows.
+    static var floatingLift: CGFloat {
+        rowHeight - (chipHeight + floatingPaddingVertical * 2)
+    }
+
     /// Where the pill sits against the glyph's top-trailing corner. §2 allows 4pt for micro
     /// positioning; the concept's 9/-5 is rounded onto that grid.
     static let badgeOffset = CGSize(width: 8, height: -4)

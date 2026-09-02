@@ -26,35 +26,83 @@ struct AppTabBar: View {
     /// The Captures inbox count. Passed in rather than fetched: RootView owns the single writer,
     /// and a bar that fetched its own would be a second source of truth for one number.
     var captureInboxCount: Int
+    /// Is the page moving right now? `TabBarScrollActivity` answers it — momentary, not sticky.
+    /// Defaulted so the resting bar can still be built (previews, and any caller that has no
+    /// scroll to speak of) without pretending to know about scrolling.
+    var isScrolling: Bool = false
 
     @Namespace private var indicatorNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
-    private var selectionAnimation: Animation? {
+    private var morphAnimation: Animation? {
         reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)
     }
 
+    /// The chip's tint needs more body against `CardSurface`'s near-black than against white.
+    private var chipTint: Color {
+        Color.accentColor.opacity(
+            colorScheme == .dark
+                ? AppTabBarMetrics.chipTintDark
+                : AppTabBarMetrics.chipTintLight
+        )
+    }
+
     var body: some View {
-        HStack(spacing: 0) {
+        slots
+            // A tab bar that grew with Dynamic Type would eat the screen at accessibility sizes —
+            // the system's own bar caps for the same reason. Glyphs still scale up to xxxLarge.
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .animation(morphAnimation, value: selection)
+            .animation(morphAnimation, value: isScrolling)
+    }
+
+    /// The one row of slots, in whichever container the current state calls for. Deliberately
+    /// ONE `ForEach` across both states: the slots keep their view identity through the morph,
+    /// which is what lets the indicator travel rather than cross-fade.
+    @ViewBuilder
+    private var slots: some View {
+        let row = HStack(spacing: 0) {
             ForEach(AppTabBarPresentation.tabs) { slot in
                 slotButton(slot)
             }
         }
-        .frame(height: AppTabBarMetrics.rowHeight)
-        .frame(maxWidth: .infinity)
-        // `BarSurface` carries the translucency (6% light / 8% dark); the material behind it is
-        // what that translucency reveals, so the bar reads as glass over content rather than as
-        // a washed-out white. §5's layer architecture, and the token's first call site — it has
-        // been in the catalog unused since the v3 palette landed.
-        .background {
-            Color.barSurface
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .bottom)
+        if isScrolling {
+            // Design B: a floating card, inset from both edges and lifted off the bottom, so the
+            // page reads past it on either side while it is in the way.
+            row
+                .padding(.vertical, AppTabBarMetrics.floatingPaddingVertical)
+                .padding(.horizontal, AppTabBarMetrics.floatingPaddingHorizontal)
+                .background(
+                    Color.cardSurface,
+                    in: RoundedRectangle(
+                        cornerRadius: AppTabBarMetrics.floatingCornerRadius, style: .continuous
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: AppTabBarMetrics.floatingCornerRadius, style: .continuous
+                    )
+                    .strokeBorder(Color.cardBorder, lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 8)
+                .padding(.horizontal, AppTabBarMetrics.floatingInset)
+                .padding(.bottom, AppTabBarMetrics.floatingLift)
+        } else {
+            // Design F: full width, edge to edge. `BarSurface` carries the translucency (6%
+            // light / 8% dark) and the material behind it is what that translucency reveals, so
+            // the bar reads as glass over content rather than as a washed-out white (§5's layer
+            // architecture) — and it is the token's first call site, unused in the catalog since
+            // the v3 palette landed.
+            row
+                .frame(height: AppTabBarMetrics.rowHeight)
+                .frame(maxWidth: .infinity)
+                .background {
+                    Color.barSurface
+                        .background(.ultraThinMaterial)
+                        .ignoresSafeArea(edges: .bottom)
+                }
         }
-        // A tab bar that grew with Dynamic Type would eat the screen at accessibility sizes —
-        // the system's own bar caps for the same reason. Glyphs still scale up to xxxLarge.
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-        .animation(selectionAnimation, value: selection)
     }
 
     private func slotButton(_ slot: AppTabBarPresentation.Slot) -> some View {
@@ -63,9 +111,22 @@ struct AppTabBar: View {
         return Button {
             selection = slot.tab
         } label: {
-            VStack(spacing: AppTabBarMetrics.glyphToIndicatorSpacing) {
+            VStack(spacing: isScrolling ? 0 : AppTabBarMetrics.glyphToIndicatorSpacing) {
                 glyph(slot, isSelected: isSelected, badgeCount: badgeCount)
-                indicator(isSelected: isSelected)
+                    // Floating, the mark sits BEHIND the glyph rather than under it — the chip
+                    // is the indicator, so there is nothing to stack below.
+                    .background {
+                        if isScrolling && isSelected { chip }
+                    }
+                    .frame(
+                        width: isScrolling ? AppTabBarMetrics.chipWidth : nil,
+                        height: isScrolling ? AppTabBarMetrics.chipHeight : nil
+                    )
+                // The dot's row collapses to nothing while floating, which is what shrinks the
+                // bar's height as it contracts.
+                if !isScrolling {
+                    indicator(isSelected: isSelected)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: AppTabBarPresentation.minimumTouchTarget)
             // The whole slot is the target, not just the glyph — six slots on an SE are 62.5pt
@@ -115,6 +176,16 @@ struct AppTabBar: View {
                     .matchedGeometryEffect(id: AppTabBarMetrics.indicatorID, in: indicatorNamespace)
             }
         }
+    }
+
+    /// Design B's position mark — the dot's other form. It shares the dot's
+    /// `matchedGeometryEffect` id, which is the whole point: the mark GROWS from one into the
+    /// other and slides between slots, rather than one fading out while the other fades in.
+    private var chip: some View {
+        RoundedRectangle(cornerRadius: AppTabBarMetrics.chipCornerRadius, style: .continuous)
+            .fill(chipTint)
+            .frame(width: AppTabBarMetrics.chipWidth, height: AppTabBarMetrics.chipHeight)
+            .matchedGeometryEffect(id: AppTabBarMetrics.indicatorID, in: indicatorNamespace)
     }
 }
 

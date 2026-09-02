@@ -26,6 +26,10 @@ struct RootView: View {
     /// `CaptureDiscPanObserver`. The disc reads it to choose disc vs pill; `@StateObject` so
     /// the one instance outlives auth-state swaps, matching the observer's once-only install.
     @StateObject private var discScrollActivity = CaptureDiscScrollActivity()
+    /// F-Tools-2-Morph: is the page moving RIGHT NOW? A second model, not a flag on the disc's —
+    /// that one is sticky by construction (E's settled "stay in pill form until scrolled
+    /// upwards") and cannot express momentary. Both are fed by the SAME observer install below.
+    @StateObject private var tabBarScrollActivity = TabBarScrollActivity()
     @State private var selectedTab: AppTab = .today
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
@@ -185,7 +189,10 @@ struct RootView: View {
                 // F-PillStay's one non-scroll restore: a fresh tab starts with the full disc —
                 // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
                 // call beyond E's stated rule; E can veto.)
-                .onChange(of: selectedTab) { _ in discScrollActivity.reset() }
+                .onChange(of: selectedTab) { _ in
+                    discScrollActivity.reset()
+                    tabBarScrollActivity.reset()
+                }
                 // Our bar, in the space the system's used to occupy. An OVERLAY, drawn over the
                 // height `AppTabContent` already reserved for it — NOT a `safeAreaInset` on this
                 // container, which is what it was until E's device screenshot showed the Journal
@@ -199,7 +206,11 @@ struct RootView: View {
                 // `UITabBarController`, which is the whole reason a sixth tab is possible at
                 // all. See that file for what `TabView` did to tabs five and six.
                 .overlay(alignment: .bottom) {
-                    AppTabBar(selection: $selectedTab, captureInboxCount: captureInboxCount)
+                    AppTabBar(
+                        selection: $selectedTab,
+                        captureInboxCount: captureInboxCount,
+                        isScrolling: tabBarScrollActivity.isMoving
+                    )
                 }
                 .blur(radius: isFabOpen ? 4 : 0)
                 .overlay {
@@ -293,9 +304,17 @@ struct RootView: View {
             // The pill's scroll detector: same install site, same lifetime, same window-level
             // pattern. The callbacks capture the `@StateObject` model, the one object that
             // outlives every auth-state swap this onAppear can re-fire across.
+            //
+            // `installOnKeyWindow` is idempotent (`guard shared == nil`) and **the FIRST
+            // install's callbacks win** — so a second consumer cannot simply call it again, it
+            // would silently no-op and its model would never hear a thing. Both models are fed
+            // from this one install for that reason.
             CaptureDiscPanObserver.installOnKeyWindow(
                 onDragBegan: discScrollActivity.dragBegan,
-                onDragMoved: discScrollActivity.dragMoved
+                onDragMoved: { translationY in
+                    discScrollActivity.dragMoved(translationY: translationY)
+                    tabBarScrollActivity.dragMoved()
+                }
             )
         }
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
