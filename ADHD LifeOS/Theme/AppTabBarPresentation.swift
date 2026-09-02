@@ -141,16 +141,16 @@ enum AppTabBarMetrics {
     static let chipTintLight: CGFloat = 0.12
     static let chipTintDark: CGFloat = 0.20
 
-    /// How far the floating card sits off the bottom — **derived, not chosen**, so the two states
-    /// occupy exactly the same band. `AppTabContent` reserves `rowHeight` once and never reflows
-    /// it as you scroll (content shifting under a morphing bar would be intolerable), so B must
-    /// fit inside that reserve rather than merely be near it: card height + lift == rowHeight.
+    /// How far the floating card sits off the bottom of the safe area.
     ///
-    /// It lands on 22 with today's numbers, which is what the concept drew — but as a
-    /// consequence rather than a coincidence. Change `rowHeight` or the chip and this follows.
-    static var floatingLift: CGFloat {
-        rowHeight - (chipHeight + floatingPaddingVertical * 2)
-    }
+    /// **8, down from the concept's 22**, on E's GIF verdict: *"when scrolling, the icon nav bar
+    /// should move further down the page to create more space"*. It was derived at 22 so the card
+    /// exactly filled the reserved band; that constraint is gone now the slack above the card is
+    /// page-coloured backdrop rather than chrome, and the card only has to FIT the reserve.
+    ///
+    /// Not smaller than 8: the safe area already excludes the home indicator, so this is the gap
+    /// above it, and at zero the card reads as jammed into the bottom edge.
+    static let floatingLift: CGFloat = 8
 
     /// Where the pill sits against the glyph's top-trailing corner. §2 allows 4pt for micro
     /// positioning; the concept's 9/-5 is rounded onto that grid.

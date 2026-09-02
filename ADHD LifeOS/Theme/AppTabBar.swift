@@ -90,18 +90,22 @@ struct AppTabBar: View {
                 .padding(.horizontal, AppTabBarMetrics.floatingInset)
                 .padding(.bottom, AppTabBarMetrics.floatingLift)
         } else {
-            // Design F: full width, edge to edge. `BarSurface` carries the translucency (6%
-            // light / 8% dark) and the material behind it is what that translucency reveals, so
-            // the bar reads as glass over content rather than as a washed-out white (§5's layer
-            // architecture) — and it is the token's first call site, unused in the catalog since
-            // the v3 palette landed.
+            // Design F: full width, but stopping at the bottom of the SAFE AREA rather than
+            // running on into the home-indicator strip. E's GIF verdict: that strip was "empty
+            // space that is coloured below the tab bar… wasted space", and it measured 53pt.
+            // Without `ignoresSafeArea` the page shows through it instead, which is what E asked
+            // for — the bar is 72pt of chrome, not 106.
+            //
+            // `BarSurface` carries the translucency (6% light / 8% dark) and the material behind
+            // it is what that translucency reveals, so the bar reads as glass over content rather
+            // than as a washed-out white (§5's layer architecture) — and it is the token's first
+            // call site, unused in the catalog since the v3 palette landed.
             row
                 .frame(height: AppTabBarMetrics.rowHeight)
                 .frame(maxWidth: .infinity)
                 .background {
                     Color.barSurface
                         .background(.ultraThinMaterial)
-                        .ignoresSafeArea(edges: .bottom)
                 }
         }
     }

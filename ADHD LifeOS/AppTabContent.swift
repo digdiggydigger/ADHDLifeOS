@@ -100,6 +100,12 @@ struct AppTabContent<Content: View>: View {
                 }
             }
         }
+        // The reserved strip is `Color.clear`, so without this it shows the WINDOW behind it —
+        // pure black, against a page that is merely dark. E's GIF caught it as a band of the
+        // wrong colour under the floating card. Painting the page's own background behind the
+        // whole container makes the reserve seamless with the page instead, so the card reads as
+        // floating over the page rather than sitting on a plinth.
+        .background(Color.pageBackground.ignoresSafeArea())
         .onChange(of: selection) { visitLog.select($0) }
     }
 }

@@ -89,14 +89,25 @@ final class AppTabBarPresentationTests: XCTestCase {
 
     // MARK: - The morph's geometry (F-Tools-2-Morph)
 
-    /// **The floating state must fit the band the resting state reserves.** `AppTabContent`
-    /// reserves `rowHeight` once and never reflows it — content shifting under a bar that morphs
-    /// as you scroll would be intolerable — so Design B has to live inside that reserve. Card
-    /// height plus lift must equal it exactly; a lift chosen by eye would drift the moment the
-    /// row height changed, which it already has once (56 → 72 on E's device verdict).
-    func testTheFloatingCardFitsTheReservedBandExactly() {
+    /// **The floating state must fit inside the band the resting state reserves.**
+    /// `AppTabContent` reserves `rowHeight` once and never reflows it — content shifting under a
+    /// bar that morphs as you scroll would be intolerable — so Design B has to live within that
+    /// reserve. It no longer has to FILL it: E's GIF verdict was that the card should "move
+    /// further down the page to create more space", so the lift shrank and the slack above the
+    /// card is now page-coloured backdrop rather than chrome.
+    func testTheFloatingCardFitsInsideTheReservedBand() {
         let cardHeight = AppTabBarMetrics.chipHeight + AppTabBarMetrics.floatingPaddingVertical * 2
-        XCTAssertEqual(cardHeight + AppTabBarMetrics.floatingLift, AppTabBarMetrics.rowHeight)
+        XCTAssertLessThanOrEqual(
+            cardHeight + AppTabBarMetrics.floatingLift, AppTabBarMetrics.rowHeight,
+            "The floating card is taller than the space reserved for it, so it covers content."
+        )
+    }
+
+    /// It must not sit flush on the home indicator either. The safe area already excludes the
+    /// indicator, so the lift is the gap between the card and it — at zero the card reads as
+    /// jammed into the bottom edge, and the system gesture area crowds it.
+    func testTheFloatingCardKeepsAGapAboveTheHomeIndicator() {
+        XCTAssertGreaterThanOrEqual(AppTabBarMetrics.floatingLift, 8)
     }
 
     /// The chip is the touch target while floating, not merely a decoration inside one.
