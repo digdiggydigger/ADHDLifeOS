@@ -32,6 +32,9 @@ struct PlaceActionsSection: View {
     /// For the automation guides' location step — the fences don't transfer to Shortcuts, so
     /// the guide can only NAME the place E should pick in Apple's own location picker.
     let placeName: String
+    /// For the app picker's destination step — "Directions to this place" resolves from the
+    /// coordinate the editor already holds. `nil` until the pin is placed.
+    let placeCoordinate: PlaceCoordinate?
     @State private var editorContext: PlaceActionEditorContext?
     @State private var guideContext: PlaceAutomationGuideContext?
 
@@ -75,7 +78,11 @@ struct PlaceActionsSection: View {
             // editor on device (2026-08-31, caught in the block-2 simulator drive). Any single
             // concrete view inside the section can host it; rows share it via `editorContext`.
             .sheet(item: $editorContext) { context in
-                PlaceActionEditorSheet(existing: context.editing) { saved in
+                PlaceActionEditorSheet(
+                    existing: context.editing,
+                    placeName: placeName,
+                    placeCoordinate: placeCoordinate
+                ) { saved in
                     Haptics.play(.solid)
                     if let index = actions.firstIndex(where: { $0.id == saved.id }) {
                         actions[index] = saved

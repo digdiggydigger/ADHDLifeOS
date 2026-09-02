@@ -15,12 +15,24 @@ import SwiftUI
 struct PlaceActionEditorSheet: View {
     /// `nil` when adding.
     let existing: PlaceAction?
+    /// For the picker's destination step: the place the editor is already inside, so
+    /// "Directions to <place>" needs nothing typed.
+    let placeName: String
+    let placeCoordinate: PlaceCoordinate?
     let onSave: (PlaceAction) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var draft = PlaceActionDraft()
     @State private var hasSeeded = false
     @State private var isPickingContact = false
+    @State private var isPickingApp = false
+    /// E stepped out to "Something else…" (or is editing an action the directory doesn't
+    /// know) — the scheme/name fields show instead of a directory pick.
+    @State private var wantsCustomApp = false
+    /// The directory the OPEN picker renders: snapshotted when the sheet presents (bundled +
+    /// last good remote), so a refresh landing mid-open never reshuffles under E's finger —
+    /// it updates what the NEXT open snapshots (F-AppDirectory-4).
+    @State private var pickerEntries: [PlaceAppDirectoryEntry] = []
 
     private var canSave: Bool { PlaceActionValidation.canSave(draft) }
 
@@ -57,11 +69,42 @@ struct PlaceActionEditorSheet: View {
                     draft.contactPhone = phone
                 }
             }
+            .sheet(isPresented: $isPickingApp) {
+                PlaceAppPickerView(
+                    entries: pickerEntries,
+                    placeName: placeName,
+                    placeCoordinate: placeCoordinate,
+                    onPick: { entry in
+                        draft.appScheme = entry.scheme
+                        draft.appName = entry.name
+                        draft.appLink = ""
+                        draft.destinationPick = nil
+                        wantsCustomApp = false
+                    },
+                    onPickLink: { pick in
+                        draft.destinationPick = pick
+                        draft.appScheme = ""
+                        draft.appName = ""
+                        draft.appLink = ""
+                        wantsCustomApp = false
+                    },
+                    onCustom: {
+                        // A stale directory pick clears so the fields start blank; what E
+                        // TYPED under custom earlier survives the round trip through the sheet.
+                        if selectedDirectoryApp != nil {
+                            draft.appScheme = ""
+                            draft.appName = ""
+                        }
+                        draft.destinationPick = nil
+                        wantsCustomApp = true
+                    }
+                )
+            }
         }
     }
 
     private var whenSection: some View {
-        Section("When") {
+        Section {
             Picker("When", selection: $draft.direction) {
                 Text("On arrival").tag(PlaceActionDirection.arrival)
                 Text("When leaving").tag(PlaceActionDirection.departure)
@@ -70,18 +113,23 @@ struct PlaceActionEditorSheet: View {
             .labelsHidden()
             .onChange(of: draft.direction) { _, _ in Haptics.play(.selection) }
             .accessibilityIdentifier("actionEditorDirectionPicker")
+        } header: {
+            Text("When").sectionLabel()
         }
     }
 
     private var whatSection: some View {
-        Section("What") {
+        Section {
             Picker("Action", selection: $draft.kindChoice) {
                 ForEach(PlaceActionDraft.KindChoice.allCases, id: \.self) { choice in
-                    Text(choice.displayName).tag(choice)
+                    Label(choice.displayName, systemImage: PlaceAppPickerPresentation.kindGlyph(for: choice))
+                        .tag(choice)
                 }
             }
             .onChange(of: draft.kindChoice) { _, _ in Haptics.play(.selection) }
             .accessibilityIdentifier("actionEditorKindPicker")
+        } header: {
+            Text("What").sectionLabel()
         }
     }
 
@@ -99,48 +147,15 @@ struct PlaceActionEditorSheet: View {
     }
 
     private var openAppDetail: some View {
-        Section {
-            Picker("App", selection: catalogSelection) {
-                Text("Custom…").tag("")
-                ForEach(PlaceActionCatalog.apps) { app in
-                    Text(app.name).tag(app.scheme)
-                }
-            }
-            .accessibilityIdentifier("actionEditorAppPicker")
-            if PlaceActionCatalog.apps.first(where: { $0.scheme == draft.appScheme }) == nil {
-                TextField("URL scheme (like spotify)", text: $draft.appScheme)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .accessibilityIdentifier("actionEditorSchemeField")
-                TextField("Shown as (optional)", text: $draft.appName)
-                    .accessibilityIdentifier("actionEditorAppNameField")
-            }
-        } header: {
-            Text("Which app")
-        } footer: {
-            Text("Arrives as a notification — tapping it opens the app. "
-                 + "If the app isn't installed, nothing can open.")
-        }
+        PlaceActionAppDetailSection(
+            draft: $draft, isPickingApp: $isPickingApp, pickerEntries: $pickerEntries,
+            wantsCustomApp: wantsCustomApp
+        )
     }
 
-    /// The picker drives scheme AND display name for catalogue picks; choosing "Custom…"
-    /// clears both so the fields underneath start blank rather than holding a stale pick.
-    private var catalogSelection: Binding<String> {
-        Binding(
-            get: {
-                PlaceActionCatalog.apps.first(where: { $0.scheme == draft.appScheme })?.scheme ?? ""
-            },
-            set: { scheme in
-                Haptics.play(.selection)
-                guard let app = PlaceActionCatalog.apps.first(where: { $0.scheme == scheme }) else {
-                    draft.appScheme = ""
-                    draft.appName = ""
-                    return
-                }
-                draft.appScheme = app.scheme
-                draft.appName = app.name
-            }
-        )
+    /// The directory entry a pick landed on, if the current scheme is one of its.
+    private var selectedDirectoryApp: PlaceAppDirectoryEntry? {
+        draft.selectedDirectoryApp(in: PlaceAppDirectoryBundled.entries)
     }
 
     private var openURLDetail: some View {
@@ -151,7 +166,7 @@ struct PlaceActionEditorSheet: View {
                 .autocorrectionDisabled()
                 .accessibilityIdentifier("actionEditorURLField")
         } header: {
-            Text("Which address")
+            Text("Which address").sectionLabel()
         } footer: {
             Text("Arrives as a notification — tapping it opens the page.")
         }
@@ -174,7 +189,7 @@ struct PlaceActionEditorSheet: View {
             TextField("Message", text: $draft.messageBody, axis: .vertical)
                 .accessibilityIdentifier("actionEditorMessageField")
         } header: {
-            Text("Who and what")
+            Text("Who and what").sectionLabel()
         } footer: {
             Text("Arrives as a notification — tapping it opens Messages with this filled in. "
                  + "iOS always leaves the final Send to you.")
@@ -187,7 +202,7 @@ struct PlaceActionEditorSheet: View {
                 .keyboardType(.numberPad)
                 .accessibilityIdentifier("actionEditorMinutesField")
         } header: {
-            Text("How long")
+            Text("How long").sectionLabel()
         } footer: {
             Text("Runs by itself when the crossing fires — no tap needed. "
                  + "Between \(MomentumPreferences.sprintMinutesRange.lowerBound) and "
@@ -200,7 +215,7 @@ struct PlaceActionEditorSheet: View {
             TextField("What lands in your inbox", text: $draft.captureText, axis: .vertical)
                 .accessibilityIdentifier("actionEditorCaptureField")
         } header: {
-            Text("The note")
+            Text("The note").sectionLabel()
         } footer: {
             Text("Runs by itself when the crossing fires — no tap needed.")
         }
@@ -211,7 +226,7 @@ struct PlaceActionEditorSheet: View {
             TextField("What gets written", text: $draft.journalBody, axis: .vertical)
                 .accessibilityIdentifier("actionEditorJournalField")
         } header: {
-            Text("The line")
+            Text("The line").sectionLabel()
         } footer: {
             Text("Runs by itself when the crossing fires, stamped with this place.")
         }
@@ -226,7 +241,7 @@ struct PlaceActionEditorSheet: View {
             }
             .accessibilityIdentifier("actionEditorScreenPicker")
         } header: {
-            Text("Which screen")
+            Text("Which screen").sectionLabel()
         } footer: {
             Text("Arrives as a notification — tapping it lands you there.")
         }
@@ -239,6 +254,15 @@ struct PlaceActionEditorSheet: View {
         hasSeeded = true
         guard let existing, let seeded = PlaceActionDraft(editing: existing) else { return }
         draft = seeded
+        // An open-app action the directory doesn't know is a custom one — its fields must be
+        // visible from the first render, never hidden behind a blank-looking pick. Same for a
+        // hand-pasted web link (a destination pick shows through its own label instead).
+        if case .openApp = existing.kind, selectedDirectoryApp == nil {
+            wantsCustomApp = true
+        }
+        if case .openLink = existing.kind, !draft.appLink.isEmpty {
+            wantsCustomApp = true
+        }
     }
 }
 
@@ -278,13 +302,16 @@ private struct ContactPicker: UIViewControllerRepresentable {
 #if DEBUG
 @available(iOS 17.0, *)
 #Preview("Sheet — Light") {
-    PlaceActionEditorSheet(existing: nil) { _ in }
+    PlaceActionEditorSheet(
+        existing: nil, placeName: "Gym",
+        placeCoordinate: PlaceCoordinate(latitude: 51.5152, longitude: -0.1418)
+    ) { _ in }
         .preferredColorScheme(.light)
 }
 
 @available(iOS 17.0, *)
 #Preview("Sheet — Dark") {
-    PlaceActionEditorSheet(existing: nil) { _ in }
+    PlaceActionEditorSheet(existing: nil, placeName: "Gym", placeCoordinate: nil) { _ in }
         .preferredColorScheme(.dark)
 }
 #endif

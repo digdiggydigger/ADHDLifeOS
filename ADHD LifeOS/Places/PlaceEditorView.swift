@@ -54,7 +54,7 @@ struct PlaceEditorView: View {
                 locationSection
                 radiusSection
                 nudgesSection
-                PlaceActionsSection(actions: $actions, placeName: name)
+                PlaceActionsSection(actions: $actions, placeName: name, placeCoordinate: coordinate)
             }
             .navigationTitle(existing == nil ? "New place" : "Edit place")
             .navigationBarTitleDisplayMode(.inline)

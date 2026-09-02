@@ -344,7 +344,7 @@ to be re-litigated per block:
   merges to main** (which waits on E's Block 3 double-confirm retest). The opener carries the
   state gate.
 
-### FEATURE: F-AppDirectory-1-Directory — the big searchable directory (bundled)  [ ] UNCHECKED
+### FEATURE: F-AppDirectory-1-Directory — the big searchable directory (bundled)  [x] COMPLETED
 
 `PlaceAppDirectoryEntry` (scheme = identity, name, keywords, universal-link hosts, destination
 templates, rank, hidden) with per-entry lenient decode (a malformed entry is dropped, never
@@ -358,13 +358,22 @@ change. ALSO lands the forward encoder fix: known kinds capture and re-encode no
 fields (`extraPayload`), so future optional fields survive builds from this arc on.
 
 **Acceptance criteria**
-- [ ] Directory model, lenient decode, merge, search ranking, and the extras round-trip
+- [x] Directory model, lenient decode, merge, search ranking, and the extras round-trip
       (`open_app` JSON + stranger field → re-encode → intact) all TDD-pinned; every bundled
-      entry swept through `normalizedScheme` by a test.
-- [ ] Picker sheet drives on the simulator: search finds apps, a pick saves as `.openApp`,
-      custom path still reachable. Suite, lint, build; red-check after commit.
+      entry swept through `normalizedScheme` by a test. (2026-09-01: 33 new tests across
+      `PlaceAppDirectoryTests`, `PlaceAppDirectoryBundledTests`, `PlaceActionExtraPayloadTests`
+      + draft threading in `PlaceActionEditingTests` — the edit-save rebuild was a second
+      stripping hole, closed via `PlaceActionDraft.extraPayload`. Bundled list is **152
+      entries**, not "few hundred": the curation rule (documented schemes only, omit rather
+      than guess — Google Calendar, Dropbox, Cash App, Fantastical, Prime Video, Max checked
+      and OMITTED) outranked list size; block 4's remote top-up is the growth path.)
+- [x] Picker sheet drives on the simulator: search finds apps ("Spot" → Spotify), a pick saves
+      as `.openApp` (verified ON THE WIRE in the emulator's Firestore doc: flat snake_case,
+      `kind=open_app scheme=spotify display_name=Spotify`), custom path reachable via
+      "Something else…" (+ honest not-in-the-list empty state). Suite **2,015/0** (0 skipped —
+      emulator up), lint 0/587, build green; red-check after commit.
 
-### FEATURE: F-AppDirectory-2-Links — pasted links, `open_link`, universal-link opener, destinations  [ ] UNCHECKED
+### FEATURE: F-AppDirectory-2-Links — pasted links, `open_link`, universal-link opener, destinations  [x] COMPLETED
 
 New wire kind `open_link` (`display_name`, `link`, optional `scheme`): pasted share-links and
 deep destinations. Old builds degrade it to `.unsupported` with payload preserved and the
@@ -379,13 +388,24 @@ the fake open fires before the call returns), plain open in the completion on fa
 banner only after the last attempt. Router signature untouched.
 
 **Acceptance criteria**
-- [ ] `open_link` round-trips through JSON AND `FirestoreDocumentCoder`; broken-payload and
-      old-build degradation pinned; route/split/labels/notification copy extended and pinned;
-      opener strategy + synchronous-first-attempt pinned with a recording fake.
-- [ ] Sim drive: paste a share link → action saves → notification tap opens; destination step
-      produces a working deep link. Suite, lint, build; red-check after commit.
+- [x] `open_link` round-trips through JSON AND `FirestoreDocumentCoder` (degradation pinned
+      through the CODEC too); route/split/labels/notification copy/automation guide extended
+      and pinned; `PlaceLinkOpenPlan` + `PlaceLinkOpener` with the synchronous-first-attempt
+      pin. (2026-09-01: 41 new tests. Two design additions the plan implied but didn't spell:
+      `placeCoordinatePrefill` flag on destination templates — curated, remote-decodable,
+      never name-matched — and `PlaceActionDraftLinkPick`, a verbatim carrier so a
+      destination's SCHEME link never meets the https-only hand-paste rule; plus
+      `seededKindChoice` → `seededWireKind`, because open_app and open_link share one editor
+      menu choice and extras must follow the WIRE kind.)
+- [x] Sim drive against the emulator: pasted share link saved and HOST-RECOGNISED (wire shows
+      `open_link` + display_name "Spotify" + scheme spotify, neither typed); destination step
+      drove "Directions to Gym" one-tap → wire shows `comgooglemaps://?daddr=51.51520%2C-0.14180`;
+      the coordinate-daddr form OPENED Apple Maps into its directions flow, and the https link
+      fell to Safari (web-if-not-installed). The notification TAP itself is unit-pinned
+      (router + opener synchrony) — a real crossing tap is field-gate territory. Suite
+      **2,056/0** (0 skipped), lint 0/594, build green; red-check after commit.
 
-### FEATURE: F-AppDirectory-3-Verify — config-time install verification  [ ] UNCHECKED
+### FEATURE: F-AppDirectory-3-Verify — config-time install verification  [x] COMPLETED
 
 `Info.plist` gains `LSApplicationQueriesSchemes` (curated top ~45 of the bundled list —
 headroom under the 50 cap; compile-time only, remote entries can never buy a slot).
@@ -398,11 +418,20 @@ apps, so "doesn't look installed" is the expected sim state; declared schemes ge
 device sweep.
 
 **Acceptance criteria**
-- [ ] Verdict logic (incl. the never-calls-canOpen tripwire), copy, and plist parity all
-      TDD-pinned; badges/footers render in the picker and editor on the simulator.
-- [ ] Suite, lint, build; red-check after commit.
+- [x] Verdict logic (incl. the never-calls-canOpen tripwire), copy, and plist parity all
+      TDD-pinned (9 new tests; parity reads the BUILT product's Info.plist via `Bundle.main`
+      and set-compares both ways). **45 declared schemes** — top of the rank order + the
+      everyday-UK four (strava, deliveroo, ubereats, monzo) — in `Info.plist` (the target
+      merges the plist FILE into its generated one, so array keys ride there).
+- [x] Badges/footers render on the simulator WITH real discriminators: Apple Maps — the one
+      declared app actually installed on the sim — carries the quiet positive-only checkmark
+      while every other row stays clean; picking Spotify shows the pinned "Doesn't look
+      installed. Saving is fine…" footer with Save still enabled. Suite **2,065/0**
+      (0 skipped), lint 0/596, build green; red-check after commit. Each declared scheme
+      still needs its one manual DEVICE sweep (sim has no third-party apps) — field-gate
+      territory; a "doesn't look installed" there for an app E HAS is a wrong scheme to cull.
 
-### FEATURE: F-AppDirectory-4-Remote — the directory grows without a release  [ ] UNCHECKED
+### FEATURE: F-AppDirectory-4-Remote — the directory grows without a release  [x] COMPLETED
 
 `/catalog/app_directory` single-doc read — the app's FIRST global Firestore read, deliberately
 NOT in the per-user `Collection` enum: named `fetchAppDirectoryDocument()` in
@@ -416,11 +445,21 @@ reshuffle under E's finger). Cache = JSON blob + fetchedAt in UserDefaults behin
 protocol; corruption degrades to bundled.
 
 **Acceptance criteria**
-- [ ] Cache policy, cache resilience, per-entry lossy remote decode, and the composition
-      (fetch error → picker identical to bundled+cache) all TDD-pinned with the recording
-      fake; emulator drive with a seeded `/catalog/app_directory` doc shows a remote entry
-      appearing.
-- [ ] Rules diff reported for E to publish; suite, lint, build; red-check after commit.
+- [x] Cache policy, cache resilience, per-entry lossy remote decode, and the composition
+      (fetch error → cache stamp AND snapshot untouched) all TDD-pinned with recording fakes
+      (11 new tests, incl. the no-reshuffle pin: a taken snapshot never moves, the NEXT open
+      sees the fetch). `fetchGlobalDocumentData(path:)` added to the manager CORE as the one
+      global-read plumbing; `+AppDirectory` names the document; NOT in the `Collection` enum.
+- [x] Emulator drive (2026-09-01): seeded `/catalog/app_directory` with a rank-100 "Zzz
+      Remote Test" entry — FIRST picker open showed bundled only (fetch kicked), SECOND open
+      showed the remote entry at the very top. The read went through the NEW rules match
+      (emulator hot-reloaded `firestore.rules`). Suite **2,076/0** (0 skipped), lint 0/600,
+      build green; red-check after commit.
+- [x] **Rules diff for E to publish:** `firestore.rules` gained
+      `match /catalog/{docId} { allow read: if request.auth != null; allow write: if false; }`
+      — LIVE production still lacks it; until E republishes, the app's remote fetch fails
+      permission-denied and behaves exactly like offline (bundled + cache carry the picker),
+      so nothing breaks in the meantime.
 
 **Arc close-out:** field gate before the `--no-ff` merge — E walks, on device: a directory
 pick, a pasted-link custom app, one deep destination, and one "doesn't look installed"

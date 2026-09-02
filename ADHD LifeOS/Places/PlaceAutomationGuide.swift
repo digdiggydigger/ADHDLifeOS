@@ -50,6 +50,8 @@ struct PlaceAutomationGuide: Equatable {
             return "Add the \u{201C}Open App\u{201D} action and choose \(displayName)."
         case .openURL(let urlString):
             return "Add the \u{201C}Open URLs\u{201D} action and enter \(urlString)."
+        case .openLink(_, let link, _):
+            return "Add the \u{201C}Open URLs\u{201D} action and enter \(link)."
         case .textContact(let contactName, _, let messageBody):
             return "Add the \u{201C}Send Message\u{201D} action, send it to \(contactName), "
                 + "and type the message: \u{201C}\(messageBody)\u{201D}."

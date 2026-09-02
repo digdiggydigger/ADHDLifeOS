@@ -20,6 +20,11 @@ final class PlaceActionModelsTests: XCTestCase {
     private func everyKind() -> [PlaceAction.Kind] {
         [
             .openApp(scheme: "spotify", displayName: "Spotify"),
+            .openLink(
+                displayName: "Spotify — A playlist",
+                link: "https://open.spotify.com/playlist/abc123",
+                scheme: "spotify"
+            ),
             .openURL(urlString: "https://example.com/timesheet"),
             .textContact(contactName: "Ben", phoneNumber: "+441234567890", messageBody: "Here!"),
             .startSprint(minutes: 25),

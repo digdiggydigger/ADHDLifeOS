@@ -5,33 +5,11 @@
 
 import Foundation
 
-/// One entry in the curated "open this app" list (F-PlaceActions-2-Editor). iOS has no picker
-/// for other people's apps, so a hand-kept catalogue of reliable URL schemes is the ceiling —
-/// with the custom-scheme field underneath it for everything the list doesn't know.
-struct PlaceActionCatalogApp: Identifiable, Equatable, Sendable {
-    /// The URL scheme, which doubles as the stable identity.
-    let scheme: String
-    let name: String
-    var id: String { scheme }
-}
-
+/// Scheme normalization for the "open this app" path. The 10-entry `apps` catalogue that
+/// lived here (F-PlaceActions-2-Editor) was superseded by the full searchable directory
+/// (`PlaceAppDirectoryBundled`, F-AppDirectory-1) — its ten schemes all live on there, pinned
+/// by the bundled sweep's continuity test.
 enum PlaceActionCatalog {
-    /// Deliberately short and reliable over long and speculative — a scheme that silently
-    /// stopped working teaches E the whole feature is broken. Checked against each app's
-    /// published scheme, alphabetical by name.
-    static let apps: [PlaceActionCatalogApp] = [
-        PlaceActionCatalogApp(scheme: "music", name: "Apple Music"),
-        PlaceActionCatalogApp(scheme: "maps", name: "Apple Maps"),
-        PlaceActionCatalogApp(scheme: "calshow", name: "Calendar"),
-        PlaceActionCatalogApp(scheme: "comgooglemaps", name: "Google Maps"),
-        PlaceActionCatalogApp(scheme: "instagram", name: "Instagram"),
-        PlaceActionCatalogApp(scheme: "message", name: "Mail"),
-        PlaceActionCatalogApp(scheme: "photos-redirect", name: "Photos"),
-        PlaceActionCatalogApp(scheme: "spotify", name: "Spotify"),
-        PlaceActionCatalogApp(scheme: "whatsapp", name: "WhatsApp"),
-        PlaceActionCatalogApp(scheme: "youtube", name: "YouTube")
-    ]
-
     /// What E typed into the custom field, reduced to a bare scheme: trimmed, lowercased, and
     /// stripped of a pasted "://..." tail — "Spotify://" and "spotify://open" both mean
     /// "spotify". `nil` when nothing usable remains.
@@ -68,6 +46,15 @@ enum PlaceActionScreen: String, CaseIterable, Equatable, Sendable {
     }
 }
 
+/// A destination pick's already-resolved parts: the picker built the link from a CURATED
+/// template, so it saves verbatim — it may legitimately be a scheme URL, which the https-only
+/// hand-paste rule would (rightly) refuse.
+struct PlaceActionDraftLinkPick: Equatable {
+    var displayName: String
+    var link: String
+    var scheme: String?
+}
+
 /// Everything the action editor sheet can hold, kind fields side by side — switching kind must
 /// not wipe what E typed under another kind (the composer-type precedent), so all fields
 /// coexist and validation reads only the chosen kind's.
@@ -98,6 +85,15 @@ struct PlaceActionDraft: Equatable {
     var kindChoice: KindChoice = .openApp
     var appScheme = ""
     var appName = ""
+    /// A pasted share-link (or a resolved destination link). When it holds anything, the
+    /// link decides the kind: the save is `open_link`, and the link must validate.
+    var appLink = ""
+    /// The scheme a destination pick or an edit seeded — an explicit claim about which app
+    /// the link belongs to, ahead of host recognition.
+    var linkSchemeHint: String?
+    /// A destination pick from the app picker's destination step — saved verbatim, and it
+    /// outranks both text paths while present.
+    var destinationPick: PlaceActionDraftLinkPick?
     var urlString = ""
     var contactName = ""
     var contactPhone = ""
@@ -107,6 +103,14 @@ struct PlaceActionDraft: Equatable {
     var captureText = ""
     var journalBody = ""
     var screen: PlaceActionScreen = .today
+    /// A newer build's extra fields on the action being edited, carried so the save's rebuild
+    /// doesn't strip them (the makePlace rebuild-on-save trap, at the action level). They
+    /// re-attach only while the WIRE kind stays what it was seeded as — the menu choice is
+    /// not enough, because one choice can produce both `open_app` and `open_link` — and a
+    /// changed wire kind is E deliberately replacing the action, whose future fields don't
+    /// ride along.
+    var extraPayload: [String: PlaceActionValue] = [:]
+    var seededWireKind: String?
 
     init() {}
 
@@ -115,11 +119,16 @@ struct PlaceActionDraft: Equatable {
     init?(editing action: PlaceAction) {
         self.init()
         direction = action.direction
+        extraPayload = action.extraPayload
+        seededWireKind = action.wireKindName
         switch action.kind {
         case .openApp(let scheme, let displayName):
             kindChoice = .openApp
             appScheme = scheme
             appName = displayName
+        case .openLink(let displayName, let link, let scheme):
+            kindChoice = .openApp
+            seedOpenLink(displayName: displayName, link: link, scheme: scheme)
         case .openURL(let urlString):
             kindChoice = .openURL
             self.urlString = urlString
@@ -145,23 +154,55 @@ struct PlaceActionDraft: Equatable {
             return nil
         }
     }
+
+    /// A web link reopens in the editable paste field; a scheme link (a destination pick's
+    /// curated product) would fail the https-only paste rule, so it reopens through the
+    /// verbatim pick carrier instead — never unsaveable, never stripped.
+    private mutating func seedOpenLink(displayName: String, link: String, scheme: String?) {
+        if link.lowercased().hasPrefix("http") {
+            appName = displayName
+            appLink = link
+            linkSchemeHint = scheme
+        } else {
+            destinationPick = PlaceActionDraftLinkPick(
+                displayName: displayName, link: link, scheme: scheme
+            )
+        }
+    }
 }
 
 /// Draft → `PlaceAction`, or `nil` when it isn't saveable — the `PlaceEditorValidation` shape.
 /// Every text field is trimmed, and trimmed-to-empty is REJECTED rather than saved as "" (the
 /// arrivalMessage rule: "" on the wire would count as content and misfire).
 enum PlaceActionValidation {
-    static func canSave(_ draft: PlaceActionDraft) -> Bool {
-        makeAction(from: draft, id: UUID()) != nil
+    static func canSave(
+        _ draft: PlaceActionDraft,
+        directory: [PlaceAppDirectoryEntry] = PlaceAppDirectoryBundled.entries
+    ) -> Bool {
+        makeAction(from: draft, id: UUID(), directory: directory) != nil
     }
 
-    static func makeAction(from draft: PlaceActionDraft, id: UUID) -> PlaceAction? {
-        kind(from: draft).map { PlaceAction(id: id, direction: draft.direction, kind: $0) }
+    static func makeAction(
+        from draft: PlaceActionDraft, id: UUID,
+        directory: [PlaceAppDirectoryEntry] = PlaceAppDirectoryBundled.entries
+    ) -> PlaceAction? {
+        guard let kind = kind(from: draft, directory: directory) else { return nil }
+        let action = PlaceAction(
+            id: id, direction: draft.direction, kind: kind, extraPayload: draft.extraPayload
+        )
+        // Extras follow the WIRE kind: pasting a link into an edited open_app action changes
+        // it to open_link, and the old kind's future fields must not ride along.
+        guard action.wireKindName == draft.seededWireKind else {
+            return PlaceAction(id: id, direction: draft.direction, kind: kind)
+        }
+        return action
     }
 
-    private static func kind(from draft: PlaceActionDraft) -> PlaceAction.Kind? {
+    private static func kind(
+        from draft: PlaceActionDraft, directory: [PlaceAppDirectoryEntry]
+    ) -> PlaceAction.Kind? {
         switch draft.kindChoice {
-        case .openApp: return openAppKind(from: draft)
+        case .openApp: return openAppKind(from: draft, directory: directory)
         case .openURL: return normalizedWebAddress(draft.urlString).map { .openURL(urlString: $0) }
         case .textContact: return textContactKind(from: draft)
         case .startSprint: return sprintKind(from: draft)
@@ -171,9 +212,37 @@ enum PlaceActionValidation {
         }
     }
 
-    private static func openAppKind(from draft: PlaceActionDraft) -> PlaceAction.Kind? {
+    private static func openAppKind(
+        from draft: PlaceActionDraft, directory: [PlaceAppDirectoryEntry]
+    ) -> PlaceAction.Kind? {
+        // A destination pick is already resolved from a curated template — verbatim, first.
+        if let pick = draft.destinationPick {
+            return .openLink(displayName: pick.displayName, link: pick.link, scheme: pick.scheme)
+        }
+        // The link field is the more deliberate act: when it holds anything, it decides the
+        // kind and must validate — silently falling back to the scheme path would save
+        // something other than what E pasted.
+        guard trimmed(draft.appLink) == nil else {
+            return openLinkKind(from: draft, directory: directory)
+        }
         guard let scheme = PlaceActionCatalog.normalizedScheme(draft.appScheme) else { return nil }
         return .openApp(scheme: scheme, displayName: trimmed(draft.appName) ?? scheme)
+    }
+
+    /// Precedence, both ways: an EXPLICIT claim (the seeded hint / what E typed) beats host
+    /// recognition, which beats having nothing.
+    private static func openLinkKind(
+        from draft: PlaceActionDraft, directory: [PlaceAppDirectoryEntry]
+    ) -> PlaceAction.Kind? {
+        guard let link = normalizedWebAddress(draft.appLink),
+              let host = URL(string: link)?.host?.lowercased() else { return nil }
+        let recognised = PlaceAppDirectory.entry(claimingHost: host, in: directory)
+        let scheme = draft.linkSchemeHint
+            ?? recognised?.scheme
+            ?? PlaceActionCatalog.normalizedScheme(draft.appScheme)
+        let bareHost = host.hasPrefix("www.") ? String(host.dropFirst("www.".count)) : host
+        let name = trimmed(draft.appName) ?? recognised?.name ?? bareHost
+        return .openLink(displayName: name, link: link, scheme: scheme)
     }
 
     private static func textContactKind(from draft: PlaceActionDraft) -> PlaceAction.Kind? {
@@ -222,6 +291,8 @@ enum PlaceActionRowLabel {
     static func title(for action: PlaceAction) -> String {
         switch action.kind {
         case .openApp(_, let displayName):
+            return "Open \(displayName)"
+        case .openLink(let displayName, _, _):
             return "Open \(displayName)"
         case .openURL(let urlString):
             return "Open \(URL(string: urlString)?.host ?? urlString)"

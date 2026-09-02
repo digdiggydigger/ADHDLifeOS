@@ -62,6 +62,13 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
         /// Opens another app via its URL scheme — executes from a notification tap only; iOS
         /// forbids launching another app from a background wake.
         case openApp(scheme: String, displayName: String)
+        /// A link destination (F-AppDirectory-2): a pasted share-link, or a resolved deep
+        /// destination from the directory. Opened universal-first — the app if installed, the
+        /// web if not. `scheme` rides along only for labels and install verification; the LINK
+        /// is what opens. A new KIND, never a field on `open_app`: the encoder re-encodes
+        /// known kinds from typed payload, so an older build would strip an extra field —
+        /// whereas an unknown kind degrades to `.unsupported` with its payload intact.
+        case openLink(displayName: String, link: String, scheme: String?)
         case openURL(urlString: String)
         /// Pre-fills a message to the predefined contact. The final Send tap is Apple's floor —
         /// no third-party app may auto-send.
@@ -82,11 +89,20 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
     let id: UUID
     var direction: PlaceActionDirection
     var kind: Kind
+    /// Fields a NEWER build wrote onto a kind this build knows (the F-AppDirectory-1 encoder
+    /// fix). `.unsupported` already preserves unknown KINDS; without this, a known kind that
+    /// grew an optional field would have it silently stripped by an older build's re-save.
+    /// Empty for `.unsupported` — there the whole payload already rides in the case itself.
+    var extraPayload: [String: PlaceActionValue]
 
-    init(id: UUID, direction: PlaceActionDirection, kind: Kind) {
+    init(
+        id: UUID, direction: PlaceActionDirection, kind: Kind,
+        extraPayload: [String: PlaceActionValue] = [:]
+    ) {
         self.id = id
         self.direction = direction
         self.kind = kind
+        self.extraPayload = extraPayload
     }
 
     // MARK: - Wire format
@@ -100,6 +116,7 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
 
     private enum KindName: String {
         case openApp = "open_app"
+        case openLink = "open_link"
         case openURL = "open_url"
         case textContact = "text_contact"
         case startSprint = "start_sprint"
@@ -111,6 +128,7 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
     private enum PayloadKey: String {
         case scheme
         case displayName = "display_name"
+        case link
         case url
         case contactName = "contact_name"
         case phoneNumber = "phone_number"
@@ -138,6 +156,13 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
         direction = try container.decode(PlaceActionDirection.self, forKey: DynamicKey(.direction))
         let rawKind = try container.decode(String.self, forKey: DynamicKey(.kind))
         kind = Self.decodeKind(rawKind, from: container)
+        if case .unsupported = kind {
+            extraPayload = [:]
+        } else {
+            extraPayload = Self.capturePayload(
+                from: container, excluding: Self.typedPayloadKeys(forRawKind: rawKind)
+            )
+        }
     }
 
     /// A known kind with its payload intact decodes typed; anything else — unknown kind, or a
@@ -161,6 +186,8 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
             guard let scheme = string(.scheme, container),
                   let displayName = string(.displayName, container) else { return nil }
             return .openApp(scheme: scheme, displayName: displayName)
+        case .openLink:
+            return openLinkKind(from: container)
         case .textContact:
             guard let contact = string(.contactName, container),
                   let phone = string(.phoneNumber, container),
@@ -183,6 +210,22 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
         }
     }
 
+    private static func openLinkKind(
+        from container: KeyedDecodingContainer<DynamicKey>
+    ) -> Kind? {
+        guard let displayName = string(.displayName, container),
+              let link = string(.link, container) else { return nil }
+        // Absent scheme is a VALID payload (an unrecognised pasted link has nothing to
+        // verify against); only a present-but-undecodable value degrades. Two steps
+        // because `try?` FLATTENS the nested optional (SE-0230) — the minutes precedent.
+        guard container.contains(DynamicKey(.scheme)) else {
+            return .openLink(displayName: displayName, link: link, scheme: nil)
+        }
+        guard let scheme = try? container.decode(String.self, forKey: DynamicKey(.scheme))
+        else { return nil }
+        return .openLink(displayName: displayName, link: link, scheme: scheme)
+    }
+
     /// The kinds whose whole payload is one string field.
     private static func singleStringKind(
         _ name: KindName, from container: KeyedDecodingContainer<DynamicKey>
@@ -192,7 +235,7 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
         case .createCapture: return string(.captureText, container).map { .createCapture(text: $0) }
         case .journalLine: return string(.journalBody, container).map { .journalLine(body: $0) }
         case .openScreen: return string(.screen, container).map { .openScreen(screen: $0) }
-        case .openApp, .textContact, .startSprint: return nil
+        case .openApp, .openLink, .textContact, .startSprint: return nil
         }
     }
 
@@ -202,19 +245,41 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
         try? container.decodeIfPresent(String.self, forKey: DynamicKey(key))
     }
 
-    /// Everything on the object except the reserved trio, as far as it can be represented. A
-    /// value that is neither string, number, nor bool (a nested map, say) is dropped — the
-    /// preservation guarantee covers flat payloads, which is what every shipped kind writes.
+    /// Everything on the object except the reserved trio and `excluding`, as far as it can be
+    /// represented. A value that is neither string, number, nor bool (a nested map, say) is
+    /// dropped — the preservation guarantee covers flat payloads, which is what every shipped
+    /// kind writes.
     private static func capturePayload(
-        from container: KeyedDecodingContainer<DynamicKey>
+        from container: KeyedDecodingContainer<DynamicKey>,
+        excluding excluded: Set<String> = []
     ) -> [String: PlaceActionValue] {
         var payload: [String: PlaceActionValue] = [:]
-        for key in container.allKeys where ReservedKey(rawValue: key.stringValue) == nil {
+        for key in container.allKeys
+        where ReservedKey(rawValue: key.stringValue) == nil && !excluded.contains(key.stringValue) {
             if let value = try? container.decode(PlaceActionValue.self, forKey: key) {
                 payload[key.stringValue] = value
             }
         }
         return payload
+    }
+
+    /// The keys a kind's TYPED payload owns — and only its own: another kind's key appearing on
+    /// this kind is a stranger and must be captured, not skipped, so excluding all of
+    /// `PayloadKey` here would be wrong.
+    private static func typedPayloadKeys(forRawKind rawKind: String) -> Set<String> {
+        guard let name = KindName(rawValue: rawKind) else { return [] }
+        let keys: [PayloadKey]
+        switch name {
+        case .openApp: keys = [.scheme, .displayName]
+        case .openLink: keys = [.displayName, .link, .scheme]
+        case .openURL: keys = [.url]
+        case .textContact: keys = [.contactName, .phoneNumber, .messageBody]
+        case .startSprint: keys = [.minutes]
+        case .createCapture: keys = [.captureText]
+        case .journalLine: keys = [.journalBody]
+        case .openScreen: keys = [.screen]
+        }
+        return Set(keys.map(\.rawValue))
     }
 
     func encode(to encoder: Encoder) throws {
@@ -226,6 +291,11 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
             try container.encode(KindName.openApp.rawValue, forKey: DynamicKey(.kind))
             try container.encode(scheme, forKey: DynamicKey(.scheme))
             try container.encode(displayName, forKey: DynamicKey(.displayName))
+        case .openLink(let displayName, let link, let scheme):
+            try container.encode(KindName.openLink.rawValue, forKey: DynamicKey(.kind))
+            try container.encode(displayName, forKey: DynamicKey(.displayName))
+            try container.encode(link, forKey: DynamicKey(.link))
+            try container.encodeIfPresent(scheme, forKey: DynamicKey(.scheme))
         case .openURL(let urlString):
             try container.encode(KindName.openURL.rawValue, forKey: DynamicKey(.kind))
             try container.encode(urlString, forKey: DynamicKey(.url))
@@ -251,6 +321,37 @@ struct PlaceAction: Codable, Identifiable, Equatable, Sendable {
             for (key, value) in payload {
                 try container.encode(value, forKey: DynamicKey(stringValue: key))
             }
+        }
+        try encodeExtraPayload(into: &container)
+    }
+
+    /// Extras fill gaps, never overwrite: a key colliding with the reserved trio or with the
+    /// kind's own typed payload is skipped, so a hand-built collision cannot corrupt the typed
+    /// fields. `.unsupported` writes nothing here — its whole payload lives in the case.
+    private func encodeExtraPayload(
+        into container: inout KeyedEncodingContainer<DynamicKey>
+    ) throws {
+        if case .unsupported = kind { return }
+        let occupied = Self.typedPayloadKeys(forRawKind: wireKindName)
+        for (key, value) in extraPayload
+        where ReservedKey(rawValue: key) == nil && !occupied.contains(key) {
+            try container.encode(value, forKey: DynamicKey(stringValue: key))
+        }
+    }
+
+    /// Internal, not private: the editor's extras-threading follows the WIRE kind (one editor
+    /// menu choice can produce both `open_app` and `open_link`), so it needs the real name.
+    var wireKindName: String {
+        switch kind {
+        case .openApp: return KindName.openApp.rawValue
+        case .openLink: return KindName.openLink.rawValue
+        case .openURL: return KindName.openURL.rawValue
+        case .textContact: return KindName.textContact.rawValue
+        case .startSprint: return KindName.startSprint.rawValue
+        case .createCapture: return KindName.createCapture.rawValue
+        case .journalLine: return KindName.journalLine.rawValue
+        case .openScreen: return KindName.openScreen.rawValue
+        case .unsupported(let rawKind, _): return rawKind
         }
     }
 }
