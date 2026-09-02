@@ -30,32 +30,88 @@ final class PlaceAppPickerPresentationTests: XCTestCase {
         XCTAssertEqual(PlaceAppPickerPresentation.monogram(for: ""), "")
     }
 
-    // MARK: - Browse split
+    // MARK: - Popular head
 
-    func testBrowseSplit_popularKeepsRankOrder_restIsAlphabetical() {
+    func testPopular_keepsRankOrderAndStopsAtTheCount() {
         let ranked = [
-            entry("Spotify", scheme: "spotify", rank: 1),
-            entry("WhatsApp", scheme: "whatsapp", rank: 2),
-            entry("Zoom", scheme: "zoomus", rank: 3),
-            entry("Deliveroo", scheme: "deliveroo", rank: 4)
+            entry("Spotify", scheme: "spotify", rank: 4),
+            entry("WhatsApp", scheme: "whatsapp", rank: 3),
+            entry("Zoom", scheme: "zoomus", rank: 2),
+            entry("Deliveroo", scheme: "deliveroo", rank: 1)
         ]
 
-        let split = PlaceAppPickerPresentation.browseSplit(ranked, popularCount: 2)
-
-        XCTAssertEqual(split.popular.map(\.name), ["Spotify", "WhatsApp"])
         XCTAssertEqual(
-            split.rest.map(\.name), ["Deliveroo", "Zoom"],
-            "The long tail reads alphabetically — rank stops meaning anything down there"
+            PlaceAppPickerPresentation.popular(ranked, count: 2).map(\.name),
+            ["Spotify", "WhatsApp"],
+            "The head is taken in the order given — rank order, straight off the search"
         )
     }
 
-    func testBrowseSplit_shortListIsAllPopular() {
+    func testPopular_shortListIsReturnedWhole() {
         let ranked = [entry("Spotify", scheme: "spotify", rank: 1)]
 
-        let split = PlaceAppPickerPresentation.browseSplit(ranked, popularCount: 8)
+        XCTAssertEqual(PlaceAppPickerPresentation.popular(ranked, count: 8).map(\.name), ["Spotify"])
+    }
 
-        XCTAssertEqual(split.popular.map(\.name), ["Spotify"])
-        XCTAssertTrue(split.rest.isEmpty)
+    // MARK: - Category browse
+
+    private func categorised(
+        _ name: String, _ scheme: String, _ category: PlaceAppCategory, hidden: Bool = false
+    ) -> PlaceAppDirectoryEntry {
+        PlaceAppDirectoryEntry(
+            scheme: scheme, name: name, keywords: [], universalLinkHosts: [],
+            destinations: [], rank: 0, hidden: hidden, category: category
+        )
+    }
+
+    func testCategoryBrowse_ordersCategoriesByDeclaration_andEntriesAlphabetically() {
+        let entries = [
+            categorised("Zoom", "zoomus", .social),
+            categorised("Strava", "strava", .health),
+            categorised("Discord", "discord", .social),
+            categorised("Notes", "mobilenotes", .apple)
+        ]
+
+        let sections = PlaceAppPickerPresentation.categoryBrowse(entries)
+
+        XCTAssertEqual(
+            sections.map(\.category), [.apple, .social, .health],
+            "Declaration order IS browse order — Apple, then Social, then Health"
+        )
+        XCTAssertEqual(
+            sections[1].entries.map(\.name), ["Discord", "Zoom"],
+            "Inside a category the eye needs A-Z, not rank"
+        )
+    }
+
+    func testCategoryBrowse_dropsEmptyCategoriesAndHiddenEntries() {
+        let entries = [
+            categorised("Discord", "discord", .social),
+            categorised("Retired", "retired", .money, hidden: true)
+        ]
+
+        let sections = PlaceAppPickerPresentation.categoryBrowse(entries)
+
+        XCTAssertEqual(sections.map(\.category), [.social])
+        XCTAssertEqual(
+            sections.first?.count, 1,
+            "A category whose only entry is hidden must not show as an empty row"
+        )
+    }
+
+    /// The categories are COMPLETE, not a partition against the popular head: an app in the
+    /// top eight still appears under its own category, because a category that quietly omits
+    /// the most obvious app in it reads as broken.
+    func testCategoryBrowse_coversEveryVisibleEntryExactlyOnce() {
+        let all = PlaceAppDirectoryBundled.entries
+        let sections = PlaceAppPickerPresentation.categoryBrowse(all)
+
+        let browsed = sections.flatMap(\.entries).map(\.scheme)
+        XCTAssertEqual(
+            Set(browsed), Set(all.filter { !$0.hidden }.map(\.scheme)),
+            "Every visible bundled app must be reachable by browsing"
+        )
+        XCTAssertEqual(browsed.count, Set(browsed).count, "No app listed under two categories")
     }
 
     // MARK: - Kind glyphs

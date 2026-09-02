@@ -37,6 +37,12 @@ struct PlaceAppPickerView: View {
         PlaceAppDirectorySearch.filter(query, in: entries)
     }
 
+    /// Off the same `entries` snapshot the sheet opened with, so the map cannot reshuffle
+    /// under a finger mid-browse.
+    private var browseSections: [PlaceAppCategoryBrowseSection] {
+        PlaceAppPickerPresentation.categoryBrowse(entries)
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -50,6 +56,17 @@ struct PlaceAppPickerView: View {
             .searchable(text: $query, prompt: "Search apps")
             .navigationTitle("Which app")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: PlaceAppCategory.self) { category in
+                List {
+                    Section {
+                        ForEach(entries(in: category)) { entry in
+                            directoryRow(for: entry)
+                        }
+                    }
+                }
+                .navigationTitle(category.displayName)
+                .navigationBarTitleDisplayMode(.inline)
+            }
             .navigationDestination(for: PlaceAppDirectoryEntry.self) { entry in
                 PlaceAppDestinationStep(
                     entry: entry,
@@ -74,17 +91,50 @@ struct PlaceAppPickerView: View {
         }
     }
 
-    /// Browsing reads as "Popular" then an alphabetical "All apps"; a live search collapses
-    /// to one ranked section — the split only helps an eye that has nothing to search for.
+    /// Browsing reads as a short "Popular" head then a ten-row category map (E's 2026-09-02
+    /// choice over a flat A–Z tail): the whole 152-app directory fits one screen instead of
+    /// scrolling 144 rows. A live search collapses to one ranked section — the map only helps
+    /// an eye that has nothing to search for.
     @ViewBuilder
     private var resultsSection: some View {
         if query.trimmingCharacters(in: .whitespaces).isEmpty {
-            let split = PlaceAppPickerPresentation.browseSplit(results)
-            entrySection(split.popular, header: "Popular")
-            entrySection(split.rest, header: "All apps")
+            entrySection(PlaceAppPickerPresentation.popular(results), header: "Popular")
+            categoryMapSection
         } else {
             entrySection(results, header: nil)
         }
+    }
+
+    /// One row per non-empty category. The count is the point: it tells the eye how much is
+    /// behind the chevron before spending a tap on it.
+    private var categoryMapSection: some View {
+        Section {
+            ForEach(browseSections) { section in
+                NavigationLink(value: section.category) {
+                    LabeledContent {
+                        Text("\(section.count)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } label: {
+                        Text(section.category.displayName)
+                            .font(.callout)
+                            .foregroundStyle(Color("LabelPrimary"))
+                    }
+                    .frame(minHeight: 44)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(
+                        "\(section.category.displayName), \(section.count) apps"
+                    )
+                }
+                .accessibilityIdentifier("appPickerCategoryRow-\(section.category.rawValue)")
+            }
+        } header: {
+            Text("Browse by category").sectionLabel()
+        }
+    }
+
+    private func entries(in category: PlaceAppCategory) -> [PlaceAppDirectoryEntry] {
+        browseSections.first { $0.category == category }?.entries ?? []
     }
 
     @ViewBuilder
@@ -92,22 +142,29 @@ struct PlaceAppPickerView: View {
         if !entries.isEmpty {
             Section {
                 ForEach(entries) { entry in
-                    if entry.destinations.isEmpty {
-                        plainRow(for: entry)
-                    } else {
-                        // A push, not a pick: the destination step owns the choice — and its
-                        // first row is the plain open, so the default stays one tap away.
-                        NavigationLink(value: entry) {
-                            rowLabel(for: entry)
-                        }
-                        .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
-                    }
+                    directoryRow(for: entry)
                 }
             } header: {
                 if let header {
                     Text(header).sectionLabel()
                 }
             }
+        }
+    }
+
+    /// Shared by the Popular head, a search result and a category screen, so an app behaves
+    /// identically wherever it is met.
+    @ViewBuilder
+    private func directoryRow(for entry: PlaceAppDirectoryEntry) -> some View {
+        if entry.destinations.isEmpty {
+            plainRow(for: entry)
+        } else {
+            // A push, not a pick: the destination step owns the choice — and its first row is
+            // the plain open, so the default stays one tap away.
+            NavigationLink(value: entry) {
+                rowLabel(for: entry)
+            }
+            .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
         }
     }
 

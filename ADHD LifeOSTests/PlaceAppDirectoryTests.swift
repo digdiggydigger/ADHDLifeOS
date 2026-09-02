@@ -115,6 +115,34 @@ final class PlaceAppDirectoryTests: XCTestCase {
 
     // MARK: - Merge
 
+    // MARK: - Category (F-AppDirectory-Categories)
+
+    func testEntryDecode_readsTheCategory() throws {
+        let entry = try XCTUnwrap(
+            PlaceAppDirectory.entry(
+                fromObject: ["scheme": "nflx", "name": "Netflix", "category": "streaming"]
+            )
+        )
+
+        XCTAssertEqual(entry.category, .streaming)
+    }
+
+    /// Lenient by the same philosophy as the rest of the decode: a remote row naming a group
+    /// this build has never heard of still BROWSES, under "More apps", rather than vanishing.
+    func testEntryDecode_unknownOrAbsentCategoryLandsInOther() throws {
+        let absent = try XCTUnwrap(
+            PlaceAppDirectory.entry(fromObject: ["scheme": "nflx", "name": "Netflix"])
+        )
+        let unknown = try XCTUnwrap(
+            PlaceAppDirectory.entry(
+                fromObject: ["scheme": "tg", "name": "Telegram", "category": "wingdings"]
+            )
+        )
+
+        XCTAssertEqual(absent.category, .other)
+        XCTAssertEqual(unknown.category, .other)
+    }
+
     func testMerge_withNoRemote_isIdentity() {
         let bundled = [entry(scheme: "spotify", name: "Spotify"), entry(scheme: "maps", name: "Maps")]
         XCTAssertEqual(PlaceAppDirectory.merge(bundled: bundled, remote: []), bundled)

@@ -18,16 +18,36 @@ enum PlaceAppPickerPresentation {
         return String(first).uppercased()
     }
 
-    /// The browse split: the ranked head reads as "Popular" (rank order, the directory's own
-    /// sense of what most people mean), and the long tail reads alphabetically — past the head,
-    /// rank stops meaning anything and A–Z is the only order a scanning eye can use.
-    static func browseSplit(
-        _ ranked: [PlaceAppDirectoryEntry], popularCount: Int = 8
-    ) -> (popular: [PlaceAppDirectoryEntry], rest: [PlaceAppDirectoryEntry]) {
-        let popular = Array(ranked.prefix(popularCount))
-        let rest = ranked.dropFirst(popularCount)
-            .sorted { $0.name.localizedLowercase < $1.name.localizedLowercase }
-        return (popular, rest)
+    /// The ranked head, shown as "Popular" above the category map — the directory's own sense
+    /// of what most people mean, so the common pick never needs a category tapped at all.
+    ///
+    /// Replaced the old `browseSplit`: its alphabetical 144-row tail is exactly what the
+    /// collapsed shape does away with, and leaving the function half-used would have been the
+    /// dead-code pattern this repo keeps re-learning.
+    static func popular(
+        _ ranked: [PlaceAppDirectoryEntry], count: Int = 8
+    ) -> [PlaceAppDirectoryEntry] {
+        Array(ranked.prefix(count))
+    }
+
+    /// The category map: one section per non-empty category, in declaration order, each
+    /// holding its apps A–Z.
+    ///
+    /// Deliberately **complete rather than a partition** — an app in the popular head still
+    /// appears under its own category, because a category that quietly omits the most obvious
+    /// app in it reads as broken. Hidden entries never surface, and a category left empty by
+    /// that filtering is dropped rather than shown as a row leading nowhere.
+    static func categoryBrowse(
+        _ entries: [PlaceAppDirectoryEntry]
+    ) -> [PlaceAppCategoryBrowseSection] {
+        let visible = entries.filter { !$0.hidden }
+        return PlaceAppCategory.allCases.compactMap { category in
+            let members = visible
+                .filter { $0.category == category }
+                .sorted { $0.name.localizedLowercase < $1.name.localizedLowercase }
+            guard !members.isEmpty else { return nil }
+            return PlaceAppCategoryBrowseSection(category: category, entries: members)
+        }
     }
 
     /// **The directory tick is OFF — E's call, 2026-09-02:** "do not display the tick icon …
@@ -38,8 +58,8 @@ enum PlaceAppPickerPresentation {
     ///
     /// Nothing underneath was removed: `PlaceQueryableSchemes`, the three-state verdict,
     /// `PlaceAppInstallCopy` and the Info.plist parity tripwire are intact and still tested,
-    /// and the action editor's own verdict line is untouched. Flip this to `true` on E's word
-    /// and the tick returns — no other change.
+    /// and the action editor's own verdict line stays visible by E's explicit instruction.
+    /// Flip this to `true` on E's word and the tick returns — no other change.
     static let showsInstalledBadge = false
 
     /// Whether one directory row draws its installed tick. The verdict is an `@autoclosure`
@@ -65,4 +85,13 @@ enum PlaceAppPickerPresentation {
         case .openScreen: return "rectangle.on.rectangle"
         }
     }
+}
+
+/// One row of the picker's category map: the group, and the apps that browse under it.
+struct PlaceAppCategoryBrowseSection: Identifiable, Equatable {
+    let category: PlaceAppCategory
+    let entries: [PlaceAppDirectoryEntry]
+
+    var id: PlaceAppCategory { category }
+    var count: Int { entries.count }
 }

@@ -49,6 +49,41 @@ struct PlaceAppDestinationTemplate: Equatable, Hashable, Sendable {
     )
 }
 
+/// The directory's taxonomy. `PlaceAppDirectoryBundled` was ALREADY written as ten curated
+/// arrays that were flattened away at composition; this surfaces that grouping as a field so
+/// the picker can offer a ten-row map instead of a 144-row alphabetical wall (E's 2026-09-02
+/// call for collapsed category sections).
+///
+/// **Declaration order IS browse order.** `.other` is the lenient landing spot, and exists for
+/// REMOTE rows only: an entry with no category, or one naming a group this build has never
+/// heard of, still browses under "More apps" rather than disappearing from the list. Nothing
+/// bundled may sit there — a test holds that.
+enum PlaceAppCategory: String, CaseIterable, Identifiable, Hashable, Sendable {
+    case apple, google, social, streaming, productivity
+    case reading, travel, health, money, utilities
+    case other
+
+    var id: String { rawValue }
+
+    /// Kept short on purpose: each of these shares a row with a count and a chevron, and §1
+    /// forbids the truncation a long name would risk at large Dynamic Type sizes.
+    var displayName: String {
+        switch self {
+        case .apple: return "Apple built-ins"
+        case .google: return "Google"
+        case .social: return "Social & messaging"
+        case .streaming: return "Streaming & audio"
+        case .productivity: return "Productivity & work"
+        case .reading: return "Reading & news"
+        case .travel: return "Travel & food"
+        case .health: return "Health & fitness"
+        case .money: return "Money & shopping"
+        case .utilities: return "Browsers & utilities"
+        case .other: return "More apps"
+        }
+    }
+}
+
 /// One app the directory can offer. The scheme is the identity — merge keys on it, and a
 /// block-1 pick saves it straight into `.openApp` — so an entry without a CONFIDENT published
 /// scheme does not belong in the directory at all (it reaches E via block 2's pasted links
@@ -65,11 +100,14 @@ struct PlaceAppDirectoryEntry: Identifiable, Equatable, Hashable, Sendable {
     /// A retired entry: kept in the merged list so a saved action keeps its name, but never
     /// offered by search again. Only remote rows ever set this.
     var hidden: Bool
+    /// Which group this app browses under. Defaults to `.other` so the bundled arrays can be
+    /// tagged once at composition rather than repeated on all 152 entries.
+    var category: PlaceAppCategory
 
     init(
         scheme: String, name: String, keywords: [String] = [],
         universalLinkHosts: [String] = [], destinations: [PlaceAppDestinationTemplate] = [],
-        rank: Int = 0, hidden: Bool = false
+        rank: Int = 0, hidden: Bool = false, category: PlaceAppCategory = .other
     ) {
         self.scheme = scheme
         self.name = name
@@ -78,6 +116,7 @@ struct PlaceAppDirectoryEntry: Identifiable, Equatable, Hashable, Sendable {
         self.destinations = destinations
         self.rank = rank
         self.hidden = hidden
+        self.category = category
     }
 
     var id: String { scheme }
@@ -112,7 +151,9 @@ enum PlaceAppDirectory {
             destinations: (object[WireKey.destinations] as? [[String: Any]] ?? [])
                 .compactMap(destination(fromObject:)),
             rank: object[WireKey.rank] as? Int ?? 0,
-            hidden: object[WireKey.hidden] as? Bool ?? false
+            hidden: object[WireKey.hidden] as? Bool ?? false,
+            category: (object[WireKey.category] as? String)
+                .flatMap(PlaceAppCategory.init(rawValue:)) ?? .other
         )
     }
 
@@ -162,6 +203,7 @@ enum PlaceAppDirectory {
         static let destinations = "destinations"
         static let rank = "rank"
         static let hidden = "hidden"
+        static let category = "category"
         static let destinationName = "name"
         static let destinationTemplate = "template"
         static let destinationPrefill = "place_coordinate_prefill"

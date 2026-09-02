@@ -22,8 +22,15 @@
 import Foundation
 
 enum PlaceAppDirectoryBundled {
-    static let entries: [PlaceAppDirectoryEntry] = apple + google + social + streaming
-        + productivity + reading + travel + health + money + utilities
+    /// The ten curated arrays, each stamped with its category as it is flattened. Tagging
+    /// HERE rather than on all 152 entries keeps the taxonomy in one readable place and makes
+    /// an untagged array impossible to miss — the MARK headings below and this list are the
+    /// same fact, stated once.
+    static let entries: [PlaceAppDirectoryEntry] =
+        tagged(apple, .apple) + tagged(google, .google) + tagged(social, .social)
+        + tagged(streaming, .streaming) + tagged(productivity, .productivity)
+        + tagged(reading, .reading) + tagged(travel, .travel) + tagged(health, .health)
+        + tagged(money, .money) + tagged(utilities, .utilities)
 
     // MARK: - Apple built-ins
 
@@ -294,4 +301,17 @@ enum PlaceAppDirectoryBundled {
         .init(scheme: "protonmail", name: "Proton Mail", keywords: ["email", "private"], rank: 35),
         .init(scheme: "roblox", name: "Roblox", keywords: ["games", "play"], rank: 45)
     ]
+}
+
+/// Stamps a curated array with its category on the way into the flattened list. File-scoped
+/// deliberately: inside the enum it counted against `type_body_length`, and it is plumbing
+/// rather than part of the directory's content.
+private func tagged(
+    _ entries: [PlaceAppDirectoryEntry], _ category: PlaceAppCategory
+) -> [PlaceAppDirectoryEntry] {
+    entries.map {
+        var entry = $0
+        entry.category = category
+        return entry
+    }
 }

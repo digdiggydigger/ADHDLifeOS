@@ -112,4 +112,49 @@ final class PlaceAppDirectoryBundledTests: XCTestCase {
             XCTAssertTrue(schemes.contains(scheme), "legacy scheme '\(scheme)' fell out of the directory")
         }
     }
+
+    // MARK: - Category taxonomy (F-AppDirectory-Categories)
+
+    /// `.other` is the REMOTE fallback. Nothing bundled may land there — the ten curated
+    /// arrays are the taxonomy, so an untagged array would silently dump its apps into
+    /// "More apps" and read as a bug rather than a category.
+    func testBundled_everyEntryCarriesARealCategory() {
+        let untagged = PlaceAppDirectoryBundled.entries.filter { $0.category == .other }
+
+        XCTAssertTrue(
+            untagged.isEmpty,
+            "Untagged bundled entries fell through to \"More apps\": "
+                + untagged.map(\.name).joined(separator: ", ")
+        )
+    }
+
+    /// The counts are the curation, pinned. If an entry moves between arrays this test says
+    /// so — which is the only way a silent regrouping gets caught.
+    func testBundled_categoryCountsMatchTheTenCuratedArrays() {
+        var counts: [PlaceAppCategory: Int] = [:]
+        for entry in PlaceAppDirectoryBundled.entries {
+            counts[entry.category, default: 0] += 1
+        }
+
+        XCTAssertEqual(counts[.apple], 22)
+        XCTAssertEqual(counts[.google], 11)
+        XCTAssertEqual(counts[.social], 23)
+        XCTAssertEqual(counts[.streaming], 17)
+        XCTAssertEqual(counts[.productivity], 30)
+        XCTAssertEqual(counts[.reading], 12)
+        XCTAssertEqual(counts[.travel], 14)
+        XCTAssertEqual(counts[.health], 5)
+        XCTAssertEqual(counts[.money], 11)
+        XCTAssertEqual(counts[.utilities], 7)
+        XCTAssertEqual(
+            counts.values.reduce(0, +), PlaceAppDirectoryBundled.entries.count,
+            "Every entry belongs to exactly one category"
+        )
+    }
+
+    func testEveryCategory_hasANonEmptyDisplayName() {
+        for category in PlaceAppCategory.allCases {
+            XCTAssertFalse(category.displayName.isEmpty, "\(category) has no display name")
+        }
+    }
 }
