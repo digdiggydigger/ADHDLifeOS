@@ -26,10 +26,11 @@ struct AppTabBar: View {
     /// The Captures inbox count. Passed in rather than fetched: RootView owns the single writer,
     /// and a bar that fetched its own would be a second source of truth for one number.
     var captureInboxCount: Int
-    /// Is the page moving right now? `TabBarScrollActivity` answers it — momentary, not sticky.
-    /// Defaulted so the resting bar can still be built (previews, and any caller that has no
-    /// scroll to speak of) without pretending to know about scrolling.
-    var isScrolling: Bool = false
+    /// Should the bar be the floating card? `TabBarScrollActivity` answers it, from scroll
+    /// POSITION: contract on the way down, hold until the page is back near the top. Defaulted
+    /// so the resting bar can still be built (previews, and any caller with no scroll to speak
+    /// of) without pretending to know where the page is.
+    var isFloating: Bool = false
 
     @Namespace private var indicatorNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -54,7 +55,7 @@ struct AppTabBar: View {
             // the system's own bar caps for the same reason. Glyphs still scale up to xxxLarge.
             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             .animation(morphAnimation, value: selection)
-            .animation(morphAnimation, value: isScrolling)
+            .animation(morphAnimation, value: isFloating)
     }
 
     /// The one row of slots, in whichever container the current state calls for. Deliberately
@@ -67,7 +68,7 @@ struct AppTabBar: View {
                 slotButton(slot)
             }
         }
-        if isScrolling {
+        if isFloating {
             // Design B: a floating card, inset from both edges and lifted off the bottom, so the
             // page reads past it on either side while it is in the way.
             row
@@ -111,20 +112,20 @@ struct AppTabBar: View {
         return Button {
             selection = slot.tab
         } label: {
-            VStack(spacing: isScrolling ? 0 : AppTabBarMetrics.glyphToIndicatorSpacing) {
+            VStack(spacing: isFloating ? 0 : AppTabBarMetrics.glyphToIndicatorSpacing) {
                 glyph(slot, isSelected: isSelected, badgeCount: badgeCount)
                     // Floating, the mark sits BEHIND the glyph rather than under it — the chip
                     // is the indicator, so there is nothing to stack below.
                     .background {
-                        if isScrolling && isSelected { chip }
+                        if isFloating && isSelected { chip }
                     }
                     .frame(
-                        width: isScrolling ? AppTabBarMetrics.chipWidth : nil,
-                        height: isScrolling ? AppTabBarMetrics.chipHeight : nil
+                        width: isFloating ? AppTabBarMetrics.chipWidth : nil,
+                        height: isFloating ? AppTabBarMetrics.chipHeight : nil
                     )
                 // The dot's row collapses to nothing while floating, which is what shrinks the
                 // bar's height as it contracts.
-                if !isScrolling {
+                if !isFloating {
                     indicator(isSelected: isSelected)
                 }
             }

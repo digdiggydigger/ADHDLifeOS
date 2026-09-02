@@ -148,28 +148,50 @@ final class AppTabBarCallSiteTests: XCTestCase {
 
     // MARK: - The morph (F-Tools-2-Morph)
 
-    /// **The failure mode this guards is silent.** `CaptureDiscPanObserver.installOnKeyWindow` is
-    /// idempotent via `guard shared == nil`, and **the FIRST install's callbacks win** — so a
-    /// second consumer calling install again would no-op, `TabBarScrollActivity` would never hear
-    /// a drag, and the bar would simply never move. Nothing would error; nothing would log.
-    ///
-    /// So the assertion is that the ONE install feeds BOTH models from the same callback.
-    func testTheSinglePanObserverInstallFeedsBothScrollModels() throws {
+    /// **The failure mode this guards is silent.** Both window-level observers are idempotent via
+    /// `guard shared == nil`, and **the FIRST install's callbacks win** — a second call no-ops,
+    /// the model never hears anything, and the bar simply never moves. Nothing errors; nothing
+    /// logs. So each is installed exactly once, and each install's callback is asserted.
+    func testEachWindowObserverIsInstalledExactlyOnceAndFeedsItsModel() throws {
         let source = try Self.appSource("RootView.swift")
         XCTAssertEqual(
             source.components(separatedBy: "CaptureDiscPanObserver.installOnKeyWindow").count - 1, 1,
-            "There is more than one install of the pan observer. The second silently no-ops —"
-                + " `guard shared == nil` means the FIRST install's callbacks win."
+            "The disc's pan observer is installed more than once. The second silently no-ops."
+        )
+        XCTAssertEqual(
+            source.components(separatedBy: "AppScrollOffsetObserver.installOnKeyWindow").count - 1, 1,
+            "The scroll-offset observer is installed more than once. The second silently no-ops."
         )
         XCTAssertTrue(
-            source.contains("discScrollActivity.dragMoved(translationY: translationY)"),
-            "The disc's model is no longer fed by the observer, so the capture disc can never"
+            source.contains("onDragMoved: discScrollActivity.dragMoved"),
+            "The disc's model is no longer fed by its observer, so the capture disc can never"
                 + " collapse to its pill."
         )
         XCTAssertTrue(
-            source.contains("tabBarScrollActivity.dragMoved()"),
-            "`TabBarScrollActivity` is not fed by the observer's callback, so the bar never"
-                + " morphs — and nothing errors to tell you."
+            source.contains("tabBarScrollActivity.offsetChanged(distanceFromTop: distance)"),
+            "`TabBarScrollActivity` is not fed any scroll offsets, so the bar never morphs —"
+                + " and nothing errors to tell you."
+        )
+    }
+
+    /// E's rule for the bar is about POSITION, and E's follow-up answer kept the DISC on its own
+    /// gesture rule. Mixing them would quietly re-litigate a decision E has now made twice.
+    func testTheBarReadsPositionAndTheDiscStillReadsTheGesture() throws {
+        let bar = try Self.appSource("Theme/TabBarScrollActivity.swift")
+        XCTAssertTrue(
+            bar.contains("distanceFromTop"),
+            "The bar's model no longer reads scroll position, so \"hold until near the top\""
+                + " cannot be what it implements."
+        )
+        XCTAssertFalse(
+            bar.contains("translationY"),
+            "The bar's model is reading pan translation again. Translation cannot answer"
+                + " \"are we near the top\" — that is why it reads offsets."
+        )
+        XCTAssertTrue(
+            try Self.appSource("Theme/CaptureDiscScrollActivity.swift").contains("translationY"),
+            "The DISC's model stopped reading the gesture. Its rule is E's 2026-08-31 call and"
+                + " was explicitly left alone when the bar's changed."
         )
     }
 
@@ -184,12 +206,12 @@ final class AppTabBarCallSiteTests: XCTestCase {
         )
     }
 
-    /// The bar has to be TOLD the page is moving. Without this the model can be perfectly
+    /// The bar has to be TOLD which shape to be. Without this the model can be perfectly
     /// correct, perfectly tested, and drive nothing — this repo's most repeated defect.
-    func testTheMovingFlagReachesTheBar() throws {
+    func testTheFloatingFlagReachesTheBar() throws {
         XCTAssertTrue(
             try Self.appSource("RootView.swift")
-                .contains("isScrolling: tabBarScrollActivity.isMoving"),
+                .contains("isFloating: tabBarScrollActivity.isFloating"),
             "`TabBarScrollActivity` is never handed to `AppTabBar`, so the bar cannot morph."
         )
     }

@@ -26,9 +26,10 @@ struct RootView: View {
     /// `CaptureDiscPanObserver`. The disc reads it to choose disc vs pill; `@StateObject` so
     /// the one instance outlives auth-state swaps, matching the observer's once-only install.
     @StateObject private var discScrollActivity = CaptureDiscScrollActivity()
-    /// F-Tools-2-Morph: is the page moving RIGHT NOW? A second model, not a flag on the disc's —
-    /// that one is sticky by construction (E's settled "stay in pill form until scrolled
-    /// upwards") and cannot express momentary. Both are fed by the SAME observer install below.
+    /// F-Tools-2-Morph: is the tab bar the floating card right now? A POSITION rule — contract
+    /// on the way down, hold until the page is back near the top — so it reads scroll offsets
+    /// rather than the disc's pan translation. E's device verdict replaced the momentary model
+    /// this started as, and E's follow-up answer kept the DISC on its own 2026-08-31 rule.
     @StateObject private var tabBarScrollActivity = TabBarScrollActivity()
     @State private var selectedTab: AppTab = .today
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
@@ -209,7 +210,7 @@ struct RootView: View {
                     AppTabBar(
                         selection: $selectedTab,
                         captureInboxCount: captureInboxCount,
-                        isScrolling: tabBarScrollActivity.isMoving
+                        isFloating: tabBarScrollActivity.isFloating
                     )
                 }
                 .blur(radius: isFabOpen ? 4 : 0)
@@ -306,16 +307,19 @@ struct RootView: View {
             // outlives every auth-state swap this onAppear can re-fire across.
             //
             // `installOnKeyWindow` is idempotent (`guard shared == nil`) and **the FIRST
-            // install's callbacks win** — so a second consumer cannot simply call it again, it
-            // would silently no-op and its model would never hear a thing. Both models are fed
-            // from this one install for that reason.
+            // install's callbacks win** — a second call silently no-ops, so a consumer that
+            // needed different information could not simply install again.
             CaptureDiscPanObserver.installOnKeyWindow(
                 onDragBegan: discScrollActivity.dragBegan,
-                onDragMoved: { translationY in
-                    discScrollActivity.dragMoved(translationY: translationY)
-                    tabBarScrollActivity.dragMoved()
-                }
+                onDragMoved: discScrollActivity.dragMoved
             )
+            // The bar's rule is about POSITION, not gesture — hold the floating card until the
+            // page is back near the top — so it needs offsets the disc's pan observer does not
+            // carry. Same window-level, zero-per-screen-wiring shape; separate object because
+            // the disc's observer is settled and forwards no touch location.
+            AppScrollOffsetObserver.installOnKeyWindow { distance in
+                tabBarScrollActivity.offsetChanged(distanceFromTop: distance)
+            }
         }
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
         // Apple (or password sign-in) lands on Home gracefully (§5).

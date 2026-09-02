@@ -6,132 +6,116 @@
 import XCTest
 @testable import ADHD_LifeOS
 
-/// The tab bar's MOMENTARY scroll signal (F-Tools-2-Morph).
+/// The tab bar's floating-state rule (F-Tools-2-Morph, revised on E's device verdict).
 ///
-/// It is a second model on purpose. `CaptureDiscScrollActivity` is directional and **sticky by
-/// construction** — E's 2026-08-31 verdict was "stay in pill form until the page is scrolled
-/// upwards again", and nothing in it runs on a timer — so it cannot express "only while the page
-/// is actually moving". Editing it would break a behaviour E has already settled.
+/// **It is a POSITION rule, not a motion rule.** The first cut was momentary — B only while the
+/// page was actually moving — and E's verdict after using it was: *"much rather if the bar
+/// contracts into the floating card while the page is moving in a downwards direction, but also
+/// stays as the floating card until the screen view is manually scrolled upwards past a certain
+/// point"*. Asked what "a certain point" meant, E chose **near the top of the page**.
 ///
-/// **The problem this type exists to solve is momentum.** A `UIPanGestureRecognizer` tracks the
-/// FINGER, not the page, and `CaptureDiscPanObserver` deliberately does not forward `.ended`. So
-/// after the lift the page keeps gliding while nothing reports movement at all, and a naive
-/// signal would snap the bar back to its resting shape mid-glide — precisely the wrong moment.
-/// The answer is a settle timer restarted on every movement, which carries the bar through the
-/// lift and most of the deceleration.
+/// Reading the scroll POSITION rather than the gesture makes the whole momentum problem vanish:
+/// there is no longer any question of what the page is doing after the finger lifts, because the
+/// offset is the truth and it keeps arriving through the deceleration. The settle timer, the
+/// injected scheduler and the generation counter all went with it.
+///
+/// **The capture disc is deliberately NOT changed.** E was asked directly whether one shared rule
+/// should govern both and chose *"only the bar gets the near-top rule"* — the disc keeps
+/// restoring on any small up-scroll (its 2026-08-31 call). The two speak the same grammar and
+/// answer to different numbers.
 @MainActor
 final class TabBarScrollActivityTests: XCTestCase {
 
-    /// Captures the work the model schedules instead of running it, so a 300ms interval costs
-    /// nothing and "did it restart?" is answerable rather than a race.
-    private final class TestScheduler {
-        private(set) var scheduled: [(delay: TimeInterval, work: () -> Void)] = []
-
-        func schedule(after delay: TimeInterval, _ work: @escaping () -> Void) {
-            scheduled.append((delay, work))
-        }
-
-        func fire(_ index: Int) {
-            scheduled[index].work()
-        }
-
-        var count: Int { scheduled.count }
+    func testStartsFullWidth() {
+        let activity = TabBarScrollActivity()
+        XCTAssertFalse(activity.isFloating)
     }
 
-    private func makeActivity() -> (TabBarScrollActivity, TestScheduler) {
-        let scheduler = TestScheduler()
-        let activity = TabBarScrollActivity(scheduleSettle: scheduler.schedule)
-        return (activity, scheduler)
+    func testScrollingDownPastTheThresholdContractsTheBar() {
+        let activity = TabBarScrollActivity()
+        activity.offsetChanged(distanceFromTop: TabBarScrollActivity.contractDistance + 1)
+        XCTAssertTrue(activity.isFloating)
     }
 
-    func testStartsStill() {
-        let (activity, _) = makeActivity()
-        XCTAssertFalse(activity.isMoving)
+    func testASmallScrollLeavesTheBarAlone() {
+        let activity = TabBarScrollActivity()
+        activity.offsetChanged(distanceFromTop: TabBarScrollActivity.contractDistance - 1)
+        XCTAssertFalse(activity.isFloating, "The bar contracted before the page had really moved")
     }
 
-    func testMovementMarksTheBarMoving() {
-        let (activity, _) = makeActivity()
-        activity.dragMoved()
-        XCTAssertTrue(activity.isMoving)
-    }
-
-    func testSettlingAfterTheIntervalReturnsToStill() {
-        let (activity, scheduler) = makeActivity()
-        activity.dragMoved()
-        XCTAssertEqual(scheduler.count, 1)
-        scheduler.fire(0)
-        XCTAssertFalse(activity.isMoving)
-    }
-
-    /// **The momentum guard.** A second movement inside the interval must RESTART the countdown,
-    /// not let the first one fire — otherwise the bar snaps back mid-scroll.
-    func testMovementInsideTheIntervalRestartsItRatherThanFiringEarly() {
-        let (activity, scheduler) = makeActivity()
-        activity.dragMoved()
-        activity.dragMoved()
-        XCTAssertEqual(scheduler.count, 2, "Each movement schedules its own settle")
-
-        scheduler.fire(0)
+    /// **The behaviour E asked for.** Scrolling back up part-way must NOT restore the bar — it
+    /// holds its floating shape for the whole read.
+    func testScrollingBackUpPartWayKeepsTheBarFloating() {
+        let activity = TabBarScrollActivity()
+        activity.offsetChanged(distanceFromTop: 400)
+        activity.offsetChanged(distanceFromTop: 200)
+        activity.offsetChanged(distanceFromTop: TabBarScrollActivity.contractDistance + 1)
         XCTAssertTrue(
-            activity.isMoving,
-            "The FIRST settle fired after a second movement and stopped the bar early"
+            activity.isFloating,
+            "The bar expanded mid-page. It should hold until the page is back near the top."
         )
-        scheduler.fire(1)
-        XCTAssertFalse(activity.isMoving, "The latest settle should be the one that lands")
     }
 
-    /// Ten movements in a row, then only the last settle fires — the shape of a real scroll,
-    /// which delivers `.changed` continuously.
-    func testAStreamOfMovementsOnlySettlesOnTheLast() {
-        let (activity, scheduler) = makeActivity()
-        for _ in 1...10 { activity.dragMoved() }
-        for index in 0..<9 {
-            scheduler.fire(index)
-            XCTAssertTrue(activity.isMoving, "Stale settle \(index) stopped the bar")
-        }
-        scheduler.fire(9)
-        XCTAssertFalse(activity.isMoving)
+    func testReturningNearTheTopRestoresTheFullWidthBar() {
+        let activity = TabBarScrollActivity()
+        activity.offsetChanged(distanceFromTop: 400)
+        activity.offsetChanged(distanceFromTop: TabBarScrollActivity.nearTopDistance)
+        XCTAssertFalse(activity.isFloating)
     }
 
-    /// RootView calls this on a tab change, for the same reason the disc's model has one: a bar
-    /// left mid-morph on a screen the user never scrolled reads as a bug.
-    func testResetReturnsToStillImmediately() {
-        let (activity, _) = makeActivity()
-        activity.dragMoved()
+    func testReturningAllTheWayToTheTopRestoresTheFullWidthBar() {
+        let activity = TabBarScrollActivity()
+        activity.offsetChanged(distanceFromTop: 400)
+        activity.offsetChanged(distanceFromTop: 0)
+        XCTAssertFalse(activity.isFloating)
+    }
+
+    /// Rubber-banding above the top gives a NEGATIVE distance. That is still the top.
+    func testRubberBandingAboveTheTopCountsAsTheTop() {
+        let activity = TabBarScrollActivity()
+        activity.offsetChanged(distanceFromTop: 400)
+        activity.offsetChanged(distanceFromTop: -60)
+        XCTAssertFalse(activity.isFloating)
+    }
+
+    /// **Hysteresis is the point of having two numbers.** Between them the bar holds whatever it
+    /// already was, so a page resting in the band cannot flap between the two shapes as the
+    /// offset jitters by a point.
+    func testTheBandBetweenTheThresholdsHoldsWhicheverStateItWasIn() {
+        let midBand = (TabBarScrollActivity.nearTopDistance
+            + TabBarScrollActivity.contractDistance) / 2
+
+        let rising = TabBarScrollActivity()
+        rising.offsetChanged(distanceFromTop: midBand)
+        XCTAssertFalse(rising.isFloating, "Reached the band from the top — should still be full")
+
+        let falling = TabBarScrollActivity()
+        falling.offsetChanged(distanceFromTop: 400)
+        falling.offsetChanged(distanceFromTop: midBand)
+        XCTAssertTrue(falling.isFloating, "Reached the band from below — should still be floating")
+    }
+
+    func testTheThresholdsLeaveRoomForHysteresis() {
+        XCTAssertLessThan(
+            TabBarScrollActivity.nearTopDistance, TabBarScrollActivity.contractDistance,
+            "Equal thresholds are no hysteresis at all — the bar would flap on a jittery offset."
+        )
+    }
+
+    /// RootView calls this on a tab change: a bar left floating over a screen the user never
+    /// scrolled reads as a bug, and the new tab's offset will not arrive until it is touched.
+    func testResetRestoresTheFullWidthBarImmediately() {
+        let activity = TabBarScrollActivity()
+        activity.offsetChanged(distanceFromTop: 400)
         activity.reset()
-        XCTAssertFalse(activity.isMoving)
+        XCTAssertFalse(activity.isFloating)
     }
 
-    /// A settle scheduled before a reset must not resurrect anything when it lands.
-    func testASettleLandingAfterAResetChangesNothing() {
-        let (activity, scheduler) = makeActivity()
-        activity.dragMoved()
+    func testScrollingAfterAResetStillContracts() {
+        let activity = TabBarScrollActivity()
+        activity.offsetChanged(distanceFromTop: 400)
         activity.reset()
-        scheduler.fire(0)
-        XCTAssertFalse(activity.isMoving)
-    }
-
-    /// Movement after a reset still works — reset is a restore, not a teardown.
-    func testMovementAfterAResetStillMarksMoving() {
-        let (activity, _) = makeActivity()
-        activity.dragMoved()
-        activity.reset()
-        activity.dragMoved()
-        XCTAssertTrue(activity.isMoving)
-    }
-
-    /// The interval is a named, tunable constant — E has not seen it on device yet, so it will
-    /// almost certainly move. It must not be a literal at the scheduling site.
-    func testTheSettleIntervalIsTheNamedConstant() {
-        let (activity, scheduler) = makeActivity()
-        activity.dragMoved()
-        XCTAssertEqual(scheduler.scheduled[0].delay, TabBarScrollActivity.settleInterval)
-    }
-
-    /// The band the spec allows. Retune inside it freely; outside it, the bar either flickers on
-    /// every pause or hangs in its scrolled shape long after the page has stopped.
-    func testTheSettleIntervalStaysInTheBandTheDesignAllows() {
-        XCTAssertGreaterThanOrEqual(TabBarScrollActivity.settleInterval, 0.25)
-        XCTAssertLessThanOrEqual(TabBarScrollActivity.settleInterval, 0.35)
+        activity.offsetChanged(distanceFromTop: 400)
+        XCTAssertTrue(activity.isFloating)
     }
 }

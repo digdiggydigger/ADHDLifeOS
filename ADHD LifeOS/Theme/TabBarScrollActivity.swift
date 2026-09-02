@@ -4,83 +4,59 @@
 //
 
 import Combine
+import CoreGraphics
 import Foundation
 
-/// F-Tools-2-Morph's state: is the page actually moving right now?
+/// F-Tools-2-Morph's state: should the tab bar be the floating card right now?
 ///
-/// E's chosen tab bar is a **two-state morph** — Design F at rest, Design B while scrolling — and
-/// the trigger is **momentary**: B holds only while the page is in motion. That is a different
-/// question from the one `CaptureDiscScrollActivity` answers, which is why this is a second model
-/// rather than a flag on that one.
+/// **A POSITION rule, not a motion rule** — and it started as the other thing. The first cut was
+/// MOMENTARY, B only while the page was actually moving, which is what E chose from the concepts.
+/// Using it changed E's mind: *"much rather if the bar contracts into the floating card while the
+/// page is moving in a downwards direction, but also stays as the floating card until the screen
+/// view is manually scrolled upwards past a certain point"*. Asked what that point was, E chose
+/// **near the top of the page**.
 ///
-/// **`CaptureDiscScrollActivity` could not be reused, and must not be edited.** It is directional
-/// and STICKY by construction — E's 2026-08-31 verdict was *"stay in pill form until the page is
-/// scrolled upwards again"*, and its own comment says nothing in it runs on a timer. Sticky is
-/// exactly what momentary is not. The two are deliberately no longer in lockstep; that is the
-/// trade E accepted in choosing momentary for the bar.
+/// Reading position rather than gesture makes the momentum problem disappear rather than solving
+/// it. The momentary model had to reason about what the page was doing after the finger lifted —
+/// a pan recogniser tracks the finger, not the page — and needed a settle timer, an injected
+/// scheduler and a generation counter to cover the glide. The offset is simply the truth, and it
+/// keeps arriving through the deceleration. All of that machinery is gone.
 ///
-/// **The problem this type exists to solve is momentum.** `CaptureDiscPanObserver` is a pan
-/// recogniser, so it tracks the FINGER, not the page — and it deliberately does not forward
-/// `.ended`/`.cancelled`, because the disc's stickiness depends on not hearing them. After the
-/// lift, the scroll view keeps gliding while **nothing reports movement at all**. A signal that
-/// simply followed the drag would therefore snap the bar back to its resting shape *while the
-/// page is still visibly scrolling* — the one moment it must not.
-///
-/// The fix is a **settle timer restarted on every movement**: the bar stays in B through the lift
-/// and most of the deceleration, and returns to F once the finger has genuinely stopped feeding
-/// it. Cheaper than the alternatives, and it touches no shared component — forwarding terminal
-/// states would edit the observer the disc depends on, and reading real scroll offsets per screen
-/// is the per-screen drift the clearance work spent a block stamping out.
+/// **The capture disc is deliberately NOT governed by this.** E was asked whether one shared rule
+/// should drive both and answered *"only the bar gets the near-top rule"*: the disc keeps its own
+/// 2026-08-31 behaviour, restoring on any small up-scroll. The two speak the same directional
+/// grammar and answer to different numbers, on purpose.
 @MainActor
 final class TabBarScrollActivity: ObservableObject {
-    @Published private(set) var isMoving = false
+    @Published private(set) var isFloating = false
 
-    /// **Tunable, and expected to be tuned.** E has not seen this on device, so the number is a
-    /// judgement rather than a verdict: long enough to carry the bar through a flick's
-    /// deceleration, short enough that the bar does not hang in its scrolled shape after the page
-    /// has stopped. `TabBarScrollActivityTests` pins the band the design allows (0.25–0.35).
-    nonisolated static let settleInterval: TimeInterval = 0.3
+    /// How far down the page you must be before the bar contracts. Small enough that the bar is
+    /// out of the way as soon as you are actually reading, big enough that a rubber-band twitch
+    /// at the top does not trigger it.
+    nonisolated static let contractDistance: CGFloat = 24
 
-    /// Injected so the tests can run the settle without waiting for it. Defaults to the main
-    /// queue, which is where every caller already is.
-    private let scheduleSettle: (TimeInterval, @escaping () -> Void) -> Void
+    /// What counts as "near the top" — E's phrase, and the only thing that brings the bar back.
+    nonisolated static let nearTopDistance: CGFloat = 8
 
-    /// Which settle is the live one. Restarting is expressed by bumping this rather than by
-    /// cancelling: a stale block still fires, looks at the counter, and does nothing. No
-    /// cancellation token to leak, and "did a later movement restart it?" becomes a plain
-    /// integer comparison the tests can drive.
-    private var generation = 0
-
-    init(
-        scheduleSettle: @escaping (TimeInterval, @escaping () -> Void) -> Void = { delay, work in
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+    /// `distanceFromTop` is the scroll view's offset below its own resting position: 0 at the
+    /// top, negative while rubber-banding above it.
+    ///
+    /// The gap between the two thresholds is **hysteresis, and it is the reason there are two
+    /// numbers rather than one**. Inside the band the bar holds whatever it already was, so a
+    /// page left resting near the boundary cannot flap between the two shapes as the offset
+    /// jitters by a point.
+    func offsetChanged(distanceFromTop: CGFloat) {
+        if distanceFromTop > Self.contractDistance {
+            if !isFloating { isFloating = true }
+        } else if distanceFromTop <= Self.nearTopDistance {
+            if isFloating { isFloating = false }
         }
-    ) {
-        self.scheduleSettle = scheduleSettle
     }
 
-    /// A scroll moved. Called from `RootView`'s single `CaptureDiscPanObserver` install, which
-    /// feeds this model and the disc's alongside each other — the observer is idempotent
-    /// (`guard shared == nil`), so a second install would silently no-op and this would never
-    /// hear anything.
-    func dragMoved() {
-        if !isMoving { isMoving = true }
-        restartSettle()
-    }
-
-    /// The one stop that isn't a settle: a tab change. Same reasoning as the disc's `reset()` —
-    /// a bar left mid-morph on a screen the user never scrolled reads as a bug.
+    /// The one restore that isn't a scroll: a tab change. The new tab's offset will not arrive
+    /// until something touches it, and a bar left floating over a screen the user never scrolled
+    /// reads as a bug — the same reasoning as the disc's `reset()`.
     func reset() {
-        generation &+= 1
-        if isMoving { isMoving = false }
-    }
-
-    private func restartSettle() {
-        generation &+= 1
-        let scheduled = generation
-        scheduleSettle(Self.settleInterval) { [weak self] in
-            guard let self, self.generation == scheduled else { return }
-            self.isMoving = false
-        }
+        if isFloating { isFloating = false }
     }
 }

@@ -2330,8 +2330,30 @@ every `dragMoved` (~250–350ms), shipped as one named, tunable constant.
       correctly against the capture disc?** Change NO clearance numbers until E has looked —
       E's standing answer is "show me on device, then decide".
 
-**Settle interval ships at 0.30s**, one named constant (`TabBarScrollActivity.settleInterval`),
-with a test pinning the 0.25–0.35 band. E has not seen it move on device, so expect tuning.
+**⚠ THE TRIGGER CHANGED AFTER E USED IT — momentary is gone.** E's verdict: *"much rather if
+the bar contracts into the floating card while the page is moving in a downwards direction, but
+also stays as the floating card until the screen view is manually scrolled upwards past a certain
+point"*. Asked what that point was, E chose **near the top of the page**; asked whether one rule
+should then govern the capture disc too, E chose **"only the bar gets the near-top rule"** — so
+**the disc keeps its own 2026-08-31 behaviour and was not touched.** The two speak the same
+grammar and answer to different numbers, deliberately, and they are now visibly independent: at
+mid-page the disc is a full circle while the bar is still floating.
+
+`TabBarScrollActivity` is therefore a **POSITION** rule, not a motion one: contract past
+`contractDistance` (24), restore at or under `nearTopDistance` (8), and hold whatever it was in
+between — the gap is hysteresis, so an offset jittering by a point cannot flap the bar.
+
+**This made the block simpler, not harder.** The whole momentum problem *disappeared* rather than
+being solved: reading position means there is no question about what the page is doing after the
+finger lifts, because the offset keeps arriving through the deceleration. The settle timer, the
+injected scheduler and the generation counter are all deleted.
+
+**New file: `Theme/AppScrollOffsetObserver.swift`** — window-level, ZERO per-screen wiring, in the
+`CaptureDiscPanObserver` / `KeyboardTapAway` mould. Its pan recogniser exists only to hit-test
+*which* scroll view to watch (`AppTabContent` keeps every visited tab alive, so walking the window
+would find the hidden tabs' scroll views too); KVO on `contentOffset` then carries it through the
+deceleration. It is a second observer rather than an extra callback on the disc's because that one
+is settled and forwards no touch location.
 
 **The floating card's lift is DERIVED, not chosen.** `AppTabContent` reserves `rowHeight` once
 and never reflows it — content shifting under a morphing bar would be intolerable — so B must fit
