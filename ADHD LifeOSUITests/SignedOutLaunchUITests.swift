@@ -32,7 +32,7 @@ final class SignedOutLaunchUITests: XCTestCase {
         // journey leaves behind, and the state the login tests used to inherit and fail on.
         let app = try UITestSession.launchSignedIn(label: "signedout")
         XCTAssertTrue(
-            app.tabBars.firstMatch.waitForExistence(timeout: UITestSession.timeout),
+            UITestSession.signedInShell(app).waitForExistence(timeout: UITestSession.timeout),
             "Precondition failed: this test has to SIGN IN before it can prove sign-out works"
         )
 

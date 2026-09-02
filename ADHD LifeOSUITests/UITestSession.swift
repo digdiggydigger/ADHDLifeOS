@@ -15,6 +15,29 @@ struct UITestAccount {
 /// Launches the app against the emulator and gets it to a signed-in state, which every journey
 /// below needs before it can begin.
 enum UITestSession {
+    /// One slot on the app's own tab bar.
+    ///
+    /// These journeys used to reach the tabs through `app.tabBars.buttons[name]`. Since
+    /// F-Tools-1-Bar the bar is a SwiftUI stack rather than a `UITabBar` — the app needed a
+    /// sixth station and a system `TabView` folds everything past the fifth into "More" — and
+    /// XCUITest has no `tabBar` element for one, because SwiftUI exposes no `isTabBar`
+    /// accessibility trait to give it. So the journeys address the identifiers
+    /// `AppTabBarPresentation.accessibilityIdentifier(for:)` mints instead.
+    ///
+    /// `isSelected` still works: the bar adds the trait to the selected slot, which is what
+    /// `openTab` waits on.
+    @MainActor
+    static func tabButton(_ name: String, in app: XCUIApplication) -> XCUIElement {
+        app.buttons["tabBar.\(name)"]
+    }
+
+    /// The landmark that says the signed-in shell is up, replacing `app.tabBars.firstMatch`.
+    /// Today's slot exists for exactly as long as the tabs do.
+    @MainActor
+    static func signedInShell(_ app: XCUIApplication) -> XCUIElement {
+        tabButton("Today", in: app)
+    }
+
     /// The file's own convention. Sign-in is the slowest step in any of these tests — it is a
     /// network round trip plus first-login seeding (six life areas, five tags, three tasks and a
     /// journal entry, in one batch) — so the waits around it are generous rather than tight.
@@ -146,7 +169,7 @@ enum UITestSession {
     @MainActor
     private static func signOutIfSignedIn(_ app: XCUIApplication) {
         let loginField = app.textFields["loginEmailField"]
-        let tabBar = app.tabBars.firstMatch
+        let tabBar = signedInShell(app)
 
         // Whichever appears first tells us which state the app restored into.
         let settled = XCTWaiter().wait(
@@ -227,7 +250,7 @@ enum UITestSession {
         // The tab bar is the app's signed-in shell; waiting on it also waits out first-login
         // seeding, since both land after the same auth state change.
         XCTAssertTrue(
-            app.tabBars.firstMatch.waitForExistence(timeout: timeout),
+            signedInShell(app).waitForExistence(timeout: timeout),
             "Sign-in did not reach the signed-in shell — "
                 + (app.staticTexts["loginErrorMessage"].exists
                     ? "the form showed: \(app.staticTexts["loginErrorMessage"].label)"

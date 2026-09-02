@@ -38,7 +38,7 @@ extension SignedInJourneyUITests {
     /// has to know what its destination renders first.
     @MainActor
     func openTab(_ name: String, in app: XCUIApplication) {
-        let tab = app.tabBars.buttons[name]
+        let tab = UITestSession.tabButton(name, in: app)
         XCTAssertTrue(
             tab.waitForExistence(timeout: UITestSession.timeout),
             "The \(name) tab is missing from the tab bar"

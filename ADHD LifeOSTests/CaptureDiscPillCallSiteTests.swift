@@ -37,10 +37,35 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
         // The face lives in its own file (Theme/CaptureDiscLabel.swift, the 400-line split), so
         // the chain observer → model → `showsPill` → label needs this link asserted too — a
         // label nobody renders is the dead-component shape all over again.
+        //
+        // Since F-Tools-1-Bar the chain has one more hop: RootView hit the 400-line ceiling
+        // again when the sixth tab and the custom bar arrived, and the bottom furniture moved to
+        // `RootBottomOverlay`. So BOTH links are asserted — the file that owns the label, and
+        // the RootView call that puts it on screen. Asserting only the second would pass with a
+        // `RootBottomOverlay` that had quietly stopped rendering a disc at all.
         XCTAssertTrue(
-            try Self.appSource("RootView.swift").contains("CaptureDiscLabel("),
-            "RootView no longer renders `CaptureDiscLabel`, so the morphing face is dead code"
-                + " and whatever replaced it is outside every guard in this file."
+            try Self.appSource("RootBottomOverlay.swift").contains("CaptureDiscLabel("),
+            "`RootBottomOverlay` no longer renders `CaptureDiscLabel`, so the morphing face is"
+                + " dead code and whatever replaced it is outside every guard in this file."
+        )
+        XCTAssertTrue(
+            try Self.appSource("RootView.swift").contains("RootBottomOverlay("),
+            "RootView no longer renders `RootBottomOverlay`, so the capture disc, the offline"
+                + " sprint summary and the focus timer bar are all off screen on every tab."
+        )
+    }
+
+    /// `showsPill` is computed in RootView and consumed in `RootBottomOverlay`; the split put a
+    /// file boundary between them, which is exactly where a wiring break hides.
+    func testShowsPillReachesTheDiscFace() throws {
+        XCTAssertTrue(
+            try Self.appSource("RootView.swift").contains("showsPill: showsPill"),
+            "RootView computes `showsPill` and no longer hands it to the overlay — the disc"
+                + " would sit at full size through every scroll, which is F-DiscPill undone."
+        )
+        XCTAssertTrue(
+            try Self.appSource("RootBottomOverlay.swift").contains("showsPill: showsPill"),
+            "`RootBottomOverlay` takes `showsPill` and never passes it to the label."
         )
     }
 
