@@ -2203,3 +2203,142 @@ signed in as a different account than the one being seeded. Nothing here crashes
 verify app behaviour, drive it through the XCUITest harness, which controls account state, rather
 than by hand.
 
+
+---
+---
+
+# ⚠ CLAUDE CODE ADDITIONS — not written by Cowork
+
+**Everything below this line was written by Claude Code, not Cowork.** It crosses this project's
+normal ownership line (Cowork writes FEATURE blocks; Claude Code only ticks their checkboxes), and
+**E authorised it explicitly on 2026-09-02**: *"add the four blocks to TODO-CLAUDE-CODE.md in a
+clearly separated section for Claude Code made additions/edits/etc."*
+
+Keep additions inside this section. If Cowork later writes its own blocks for the same work, the
+Cowork version wins and these should be deleted rather than merged.
+
+---
+
+## Tools tab arc — E's design, settled 2026-09-02 (branch `feature/tools-tab`, off `main` @ `efd72af`)
+
+E asked for a **sixth tab, "Tools"**, holding Places and the Life Areas editor. iOS shows at most
+five tabs before collapsing the overflow into a "More" list, so the system bar is replaced with a
+**custom bar**. E chose its design from six concepts (canvas:
+`https://claude.ai/code/artifact/767eacff-e616-4836-ab3a-ac842ddf42c9`) and picked a **two-state
+morph**: Design F at rest, Design B mid-scroll.
+
+**The full build plan — per-block files, TDD targets, traps — is
+`Momentum-v3-Design-Handoff/SESSION-OPENER-tools-tab-build.md`. Read it before starting.** These
+blocks are the tracked, tickable summary, not the whole spec.
+
+**E's settled decisions, not to be re-litigated:** order is Today, Tasks, Areas, Journal,
+Captures, **Tools last** (`wrench.and.screwdriver`); the morph **replaces**
+`tabBarMinimizeBehavior` rather than joining it; the scroll trigger is **momentary**, not sticky;
+the selected indicator **morphs dot → chip**; the Tools page uses **bento cards**; **Places leaves
+Settings entirely while Life Areas stays in Settings AND gains a Tools card** (two doors,
+deliberate — do not make it symmetrical).
+
+**Conflict to report in every block report (CLAUDE.md §7):** `ui-ux-pro-max` rates "bottom nav ≤5"
+a HIGH-severity rule with "overloaded nav" as an anti-pattern. **E was shown this before choosing
+six.** Report it; never silently comply or silently ignore.
+
+### FEATURE: F-Tools-1-Bar — six slots, resting state only  [ ] UNCHECKED
+
+Add `.tools` to `AppTab` and replace the system tab bar with a custom six-item bar in its RESTING
+state only (Design F: full width, icons only, an accent dot under the selected icon). Keep
+`TabView` for content and hide only its bar, adding the custom one via `.safeAreaInset(edge:
+.bottom)` — a `switch selectedTab` would rebuild the view on every switch and discard each tab's
+scroll position and `NavigationStack` depth. Delete `minimizesTabBarOnScrollDown()` and its
+extension (superseded by block 2's morph — do not build both). Rewrite `AppTab`'s doc comment,
+which still asserts "Five stays five". `ToolsView` is a deliberately empty stub here; block 3
+fills it. No motion in this block.
+
+**Acceptance criteria**
+- [ ] Pure rules TDD-pinned in `AppTabBarPresentation`: the six tabs in order with Tools last and
+      its glyph; `showsBadge(count:)` false at 0 (an empty inbox stays silent, never a zero); and
+      a slot-width test proving six slots clear 44pt on the narrowest supported iPhone (375pt SE
+      → 62.5pt) — the test that stops a seventh tab being added casually.
+- [ ] The system bar is genuinely GONE, not merely covered — verified by tapping where it was and
+      confirming the custom bar receives it. A covered bar still eats touches.
+- [ ] A failed inbox refresh keeps the LAST KNOWN badge count rather than dropping to zero.
+- [ ] Tab haptic still fires (including on a programmatic switch); a place-action `openScreen`
+      door still switches tabs; the capture disc is unchanged and reachable.
+- [ ] Compiles at the iOS 16.0 floor; `RootView.swift` stays under SwiftLint's 400-line ceiling
+      (it is ~397 before this block — plan to split).
+- [ ] Suite green, lint 0, sim + device builds green, red-checked, committed and pushed.
+- [ ] **Stop and ask E whether six slots feel right on device before starting block 2.**
+
+### FEATURE: F-Tools-2-Morph — the bar contracts while you scroll  [ ] UNCHECKED
+
+The bar morphs to Design B while the page is actually moving and back to F when motion settles:
+inset 12pt, lifted ~22pt, 22pt radius, `CardSurface` + 1pt `CardBorder` + soft shadow, icons only.
+The selected indicator morphs with it, dot → tinted chip. Needs a NEW `TabBarScrollActivity` —
+`CaptureDiscScrollActivity` is directional and STICKY by construction (E's 2026-08-31 "stay in
+pill form until scrolled upwards again") and cannot express momentary; never edit the disc's
+model. **`CaptureDiscPanObserver.installOnKeyWindow` is idempotent via `guard shared == nil`, so
+the FIRST install's callbacks win — a second consumer calling install again silently no-ops.**
+RootView owns the single install; its existing callbacks must feed both models.
+
+**THE RISK: momentum.** A pan recogniser tracks the finger, not the page, and terminal states are
+deliberately not forwarded — so after the lift the page keeps gliding while nothing reports
+movement, and a naive signal snaps back to F mid-glide. Solve with a settle timer restarted on
+every `dragMoved` (~250–350ms), shipped as one named, tunable constant.
+
+**Acceptance criteria**
+- [ ] `TabBarScrollActivity` TDD-pinned with an injected clock: movement sets moving; the settle
+      interval clears it; a further move inside the interval RESTARTS rather than firing early;
+      `reset()` clears immediately (RootView calls it on tab change, same reason the disc does).
+- [ ] Bar morphs F ⇄ B on scroll and settle; indicator morphs dot ⇄ chip; badge survives both
+      states.
+- [ ] Animated with the house spring `.spring(response: 0.35, dampingFraction: 0.8,
+      blendDuration: 0)` (§5), Reduce Motion respected.
+- [ ] The capture disc keeps its own sticky disc↔pill behaviour, unchanged — the two are
+      deliberately no longer in lockstep, which is the trade E accepted in choosing momentary.
+- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [ ] **Ask E on device: does the settle timing feel right, and does the floating bar sit
+      correctly against the capture disc?** Change NO clearance numbers until E has looked —
+      E's standing answer is "show me on device, then decide".
+
+### FEATURE: F-Tools-3-Page — the Tools page, and Places leaves Settings  [ ] UNCHECKED
+
+Replace the block-1 stub with the real Tools page: **bento cards** (`.bentoCard()`), E's explicit
+choice over Settings-style grouped rows. It holds Places and the Life Areas editor and nothing
+else — E wants it sparse so Routines has an obvious home later, so do not add filler. Then split
+Settings **asymmetrically**: delete `placesSection` outright, and leave `settingsLifeAreasRow`
+exactly where it is. Life Areas deliberately has two doors; this is knowingly the opposite of the
+Captures de-duplication and must not be "fixed". `placesSection` is `if #available(iOS 17.0, *)`
+and the app floor is 16.0, so Tools must handle Places being absent — it compiles on the 26.5
+simulator and breaks the floor otherwise.
+
+**Acceptance criteria**
+- [ ] `ToolsCatalog` TDD-pinned: `available(placesSupported: true)` returns both entries;
+      `available(placesSupported: false)` returns Life Areas only (the iOS 16 test); every entry
+      carries a non-empty title, caption and glyph.
+- [ ] Tools shows two bento cards on iOS 17+, one on iOS 16, and both open their real
+      destinations (`PlacesListView`, `LifeAreaEditorListView`).
+- [ ] Places is gone from Settings; **Life Areas is still there.**
+- [ ] No test or UI journey breaks — re-grep `settingsPlacesRow` / `settingsLifeAreasRow` rather
+      than trusting the 2026-09-02 check.
+- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [ ] If the Settings backgrounding bug appears to vanish, say so explicitly and **do not claim it
+      fixed** — those screens simply no longer live under the sheet being rebuilt. It stays parked
+      pending E's iOS update.
+
+### FEATURE: F-Tools-4-Headers — one pinned-header treatment, everywhere  [ ] UNCHECKED
+
+Pinned section headers are currently a near-white `.bar` strip with square corners against rounded
+cards, and they read unfinished. Add ONE shared treatment to `Theme.swift` beside `sectionLabel()`
+and `bentoCard()`, and adopt it in `TaskListView`, `PlaceAppPickerView`, and any header Tools
+grew. Sequenced last on purpose: a chrome change tangled into a navigation rewrite is harder to
+judge and harder to revert.
+
+**Acceptance criteria**
+- [ ] One shared header treatment exists in `Theme.swift`; `TaskListView` and `PlaceAppPickerView`
+      both use it and neither hand-rolls a header background.
+- [ ] **Reachability proven by grepping CALL SITES, not the definition** —
+      `grep -rn "background(.bar)" "ADHD LifeOS/" --include="*.swift"` returns only deliberate
+      non-header uses, each named in the report. This is `dead-shared-component-pattern`, the
+      defect this repo has now repeated six times: tests prove correctness, never reachability.
+- [ ] Headers still pin opaquely (rows must not show through the letters) and read correctly in
+      both themes.
+- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
