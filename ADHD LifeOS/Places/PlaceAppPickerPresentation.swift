@@ -50,6 +50,27 @@ enum PlaceAppPickerPresentation {
         }
     }
 
+    /// Row metrics for the directory list. E's 2026-09-02 device verdict: only **10 of a
+    /// category's 22 apps** fitted on screen, so the disc drops 36 → 28 and the row owns a
+    /// tight 8pt vertical padding instead of a list's generous default.
+    ///
+    /// `minimumHeight` holds §3's 44pt touch target regardless — the PADDING got tighter, the
+    /// TARGET did not, and a test pins that the disc plus its padding still fits inside the
+    /// floor so the floor keeps governing.
+    enum RowMetrics {
+        static let discSize: CGFloat = 28
+        static let verticalPadding: CGFloat = 8
+        static let minimumHeight: CGFloat = 44
+    }
+
+    /// Whether a row shows its trailing "more ways in" control. E's 2026-09-02 call: the row
+    /// TAP now always picks the app — every row behaves alike — so deep destinations get their
+    /// own hit area instead of hijacking the whole row and charging an extra tap for the
+    /// ordinary thing.
+    static func showsDestinationControl(for entry: PlaceAppDirectoryEntry) -> Bool {
+        !entry.destinations.isEmpty
+    }
+
     /// **The directory tick is OFF — E's call, 2026-09-02:** "do not display the tick icon …
     /// this means we don't have to deal with this at the minute". The mark is positive-only,
     /// so an unswept scheme can only ever fail as a FALSE negative — a silent row for an app

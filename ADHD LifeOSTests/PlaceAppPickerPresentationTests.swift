@@ -114,6 +114,44 @@ final class PlaceAppPickerPresentationTests: XCTestCase {
         XCTAssertEqual(browsed.count, Set(browsed).count, "No app listed under two categories")
     }
 
+    // MARK: - Row metrics (E's density verdict, 2026-09-02)
+
+    /// §3 is not negotiable: the row got tighter, the TOUCH TARGET did not.
+    func testRowMetrics_keepTheFortyFourPointTouchTarget() {
+        XCTAssertGreaterThanOrEqual(PlaceAppPickerPresentation.RowMetrics.minimumHeight, 44)
+    }
+
+    /// The tightening has to come out of PADDING. If the disc plus its padding ever grew past
+    /// the minimum height, the row would expand again and the change would achieve nothing —
+    /// which is exactly the shape of the bug E photographed (10 of 22 apps on screen).
+    func testRowMetrics_discAndPaddingFitInsideTheMinimumHeight() {
+        let disc = PlaceAppPickerPresentation.RowMetrics.discSize
+        let padding = PlaceAppPickerPresentation.RowMetrics.verticalPadding
+
+        XCTAssertLessThanOrEqual(
+            disc + 2 * padding, PlaceAppPickerPresentation.RowMetrics.minimumHeight,
+            "The row's own content is taller than the 44pt floor, so the floor stopped governing"
+        )
+    }
+
+    // MARK: - Destination control
+
+    /// E's 2026-09-02 call: the row TAP now always picks the app, so deep destinations need
+    /// their own hit area. Only entries that HAVE destinations show the control — a control
+    /// leading to an empty step would be a promise of nothing.
+    func testDestinationControl_showsOnlyForEntriesThatHaveDestinations() {
+        let plain = entry("Gmail", scheme: "googlegmail", rank: 0)
+        let deep = PlaceAppDirectoryEntry(
+            scheme: "maps", name: "Apple Maps",
+            destinations: [
+                PlaceAppDestinationTemplate(name: "Directions", template: "maps://?daddr={value}")
+            ]
+        )
+
+        XCTAssertFalse(PlaceAppPickerPresentation.showsDestinationControl(for: plain))
+        XCTAssertTrue(PlaceAppPickerPresentation.showsDestinationControl(for: deep))
+    }
+
     // MARK: - Kind glyphs
 
     func testEveryKindChoice_carriesAGlyph() {

@@ -43,29 +43,47 @@ struct PlaceAppPickerView: View {
         PlaceAppPickerPresentation.categoryBrowse(entries)
     }
 
+    private var isBrowsing: Bool {
+        query.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     var body: some View {
         NavigationStack {
-            List {
-                if results.isEmpty {
-                    emptySection
-                } else {
-                    resultsSection
+            ScrollView {
+                // `ScrollView` + `LazyVStack` per CLAUDE.md §2, and here it earns its keep
+                // three times over: E asked for STICKY headers (a `List`'s inset-grouped style
+                // will not pin), the row needs TWO independent hit areas which a `List` row's
+                // single tap target fights, and the dense metrics need row padding a `List`
+                // does not hand over.
+                LazyVStack(alignment: .leading, spacing: 24, pinnedViews: [.sectionHeaders]) {
+                    if results.isEmpty {
+                        emptyState
+                    } else if isBrowsing {
+                        Section {
+                            rowsCard(PlaceAppPickerPresentation.popular(results))
+                        } header: {
+                            pinnedHeader("Popular")
+                        }
+                        Section {
+                            categoryCard
+                        } header: {
+                            pinnedHeader("Browse by category")
+                        }
+                    } else {
+                        // One ranked list, no header: searching already says what the list is,
+                        // and a lone pinned header would just eat a row of height.
+                        rowsCard(results)
+                    }
+                    customCard
                 }
-                customSection
+                .padding(16)
             }
+            .background(Color.pageBackground)
             .searchable(text: $query, prompt: "Search apps")
             .navigationTitle("Which app")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: PlaceAppCategory.self) { category in
-                List {
-                    Section {
-                        ForEach(entries(in: category)) { entry in
-                            directoryRow(for: entry)
-                        }
-                    }
-                }
-                .navigationTitle(category.displayName)
-                .navigationBarTitleDisplayMode(.inline)
+                categoryScreen(category)
             }
             .navigationDestination(for: PlaceAppDirectoryEntry.self) { entry in
                 PlaceAppDestinationStep(
@@ -91,103 +109,130 @@ struct PlaceAppPickerView: View {
         }
     }
 
-    /// Browsing reads as a short "Popular" head then a ten-row category map (E's 2026-09-02
-    /// choice over a flat A–Z tail): the whole 152-app directory fits one screen instead of
-    /// scrolling 144 rows. A live search collapses to one ranked section — the map only helps
-    /// an eye that has nothing to search for.
-    @ViewBuilder
-    private var resultsSection: some View {
-        if query.trimmingCharacters(in: .whitespaces).isEmpty {
-            entrySection(PlaceAppPickerPresentation.popular(results), header: "Popular")
-            categoryMapSection
-        } else {
-            entrySection(results, header: nil)
-        }
+    /// Opaque on purpose: a pinned header sits ON TOP of the rows sliding under it, and a
+    /// transparent one lets app names show through its letters.
+    private func pinnedHeader(_ title: String) -> some View {
+        Text(title)
+            .sectionLabel()
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .background(.bar)
     }
 
-    /// One row per non-empty category. The count is the point: it tells the eye how much is
-    /// behind the chevron before spending a tap on it.
-    private var categoryMapSection: some View {
-        Section {
-            ForEach(browseSections) { section in
-                NavigationLink(value: section.category) {
-                    LabeledContent {
-                        Text("\(section.count)")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    } label: {
-                        Text(section.category.displayName)
-                            .font(.callout)
-                            .foregroundStyle(Color("LabelPrimary"))
-                    }
-                    .frame(minHeight: 44)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(
-                        "\(section.category.displayName), \(section.count) apps"
-                    )
+    /// One bordered card holding a run of rows with inset dividers — the house treatment from
+    /// the Tasks board, so the picker and the rest of v3 stay in lockstep.
+    private func rowsCard(_ entries: [PlaceAppDirectoryEntry]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                directoryRow(for: entry)
+                if index != entries.indices.last {
+                    Divider().padding(.leading, 16)
                 }
-                .accessibilityIdentifier("appPickerCategoryRow-\(section.category.rawValue)")
             }
-        } header: {
-            Text("Browse by category").sectionLabel()
         }
+        .cardEdges()
+    }
+
+    /// The row TAP picks the app — every row, alike. Deep destinations moved OFF the row and
+    /// onto their own control (E's 2026-09-02 call): a chevron that swallowed the whole row
+    /// made Apple Maps behave unlike Apple Music for no reason a user could see, and charged
+    /// an extra tap to do the ordinary thing.
+    private func directoryRow(for entry: PlaceAppDirectoryEntry) -> some View {
+        HStack(spacing: 8) {
+            Button {
+                Haptics.play(.selection)
+                onPick(entry)
+                dismiss()
+            } label: {
+                rowLabel(for: entry)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
+
+            if PlaceAppPickerPresentation.showsDestinationControl(for: entry) {
+                destinationControl(for: entry)
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+
+    /// "More ways in", not a bare chevron: the row itself no longer pushes, so an arrow here
+    /// would promise navigation the row does not perform. 44×44 per §3, and its own
+    /// accessibility element so VoiceOver offers picking and exploring as separate actions.
+    private func destinationControl(for entry: PlaceAppDirectoryEntry) -> some View {
+        NavigationLink(value: entry) {
+            Image(systemName: "ellipsis.circle")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("More ways to open \(entry.name)")
+        .accessibilityIdentifier("appPickerDestinations-\(entry.scheme)")
+    }
+
+    /// The ten-row map. The count is the point — it says how much sits behind the chevron
+    /// before a tap is spent finding out.
+    private var categoryCard: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(browseSections.enumerated()), id: \.element.id) { index, section in
+                NavigationLink(value: section.category) {
+                    categoryRow(section)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("appPickerCategoryRow-\(section.category.rawValue)")
+                if index != browseSections.indices.last {
+                    Divider().padding(.leading, 16)
+                }
+            }
+        }
+        .cardEdges()
+    }
+
+    private func categoryRow(_ section: PlaceAppCategoryBrowseSection) -> some View {
+        HStack(spacing: 8) {
+            // LabeledContent, not a hand-rolled HStack + Spacer: it reflows into two lines at
+            // accessibility sizes instead of crushing the name into a narrow column (§7).
+            LabeledContent {
+                Text("\(section.count)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } label: {
+                Text(section.category.displayName)
+                    .font(.callout)
+                    .foregroundStyle(Color("LabelPrimary"))
+            }
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, PlaceAppPickerPresentation.RowMetrics.verticalPadding)
+        .frame(minHeight: PlaceAppPickerPresentation.RowMetrics.minimumHeight)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(section.category.displayName), \(section.count) apps")
+    }
+
+    private func categoryScreen(_ category: PlaceAppCategory) -> some View {
+        ScrollView {
+            rowsCard(entries(in: category))
+                .padding(16)
+        }
+        .background(Color.pageBackground)
+        .navigationTitle(category.displayName)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func entries(in category: PlaceAppCategory) -> [PlaceAppDirectoryEntry] {
         browseSections.first { $0.category == category }?.entries ?? []
     }
 
-    @ViewBuilder
-    private func entrySection(_ entries: [PlaceAppDirectoryEntry], header: String?) -> some View {
-        if !entries.isEmpty {
-            Section {
-                ForEach(entries) { entry in
-                    directoryRow(for: entry)
-                }
-            } header: {
-                if let header {
-                    Text(header).sectionLabel()
-                }
-            }
-        }
-    }
-
-    /// Shared by the Popular head, a search result and a category screen, so an app behaves
-    /// identically wherever it is met.
-    @ViewBuilder
-    private func directoryRow(for entry: PlaceAppDirectoryEntry) -> some View {
-        if entry.destinations.isEmpty {
-            plainRow(for: entry)
-        } else {
-            // A push, not a pick: the destination step owns the choice — and its first row is
-            // the plain open, so the default stays one tap away.
-            NavigationLink(value: entry) {
-                rowLabel(for: entry)
-            }
-            .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
-        }
-    }
-
-    private func plainRow(for entry: PlaceAppDirectoryEntry) -> some View {
-        Button {
-            Haptics.play(.selection)
-            onPick(entry)
-            dismiss()
-        } label: {
-            rowLabel(for: entry)
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
-    }
-
-    /// POSITIVE-ONLY badge (F-AppDirectory-3): a quiet check for "looks installed", and
-    /// nothing otherwise — 150 "doesn't look installed" marks would be noise, and most
-    /// entries have no verification slot at all. VoiceOver reads the badge as one element
-    /// with the row.
-    ///
-    /// **Currently switched OFF** at `PlaceAppPickerPresentation.showsInstalledBadge` (E,
-    /// 2026-09-02), which short-circuits `checkInstalled` too — no row queries UIKit at all
-    /// while the tick is dark.
+    /// The installed tick — positive-only by design (F-AppDirectory-3), and **currently
+    /// switched OFF** at `PlaceAppPickerPresentation.showsInstalledBadge` (E, 2026-09-02),
+    /// which short-circuits `checkInstalled` too: no row queries UIKit while the tick is dark.
     private func rowLabel(for entry: PlaceAppDirectoryEntry) -> some View {
         PlaceAppDirectoryRowLabel(
             entry: entry,
@@ -199,150 +244,60 @@ struct PlaceAppPickerView: View {
 
     /// The honest miss: the directory is curated, not complete — the custom path underneath is
     /// the answer, not a dead end.
-    private var emptySection: some View {
-        Section {
-            ContentUnavailableView(
-                "Not in the list",
-                systemImage: "magnifyingglass",
-                description: Text("The list only holds apps with a reliable way in. "
-                                  + "\u{201C}Something else\u{2026}\u{201D} below works for any app.")
-            )
-        }
+    private var emptyState: some View {
+        ContentUnavailableView(
+            "Not in the list",
+            systemImage: "magnifyingglass",
+            description: Text("The list only holds apps with a reliable way in. "
+                              + "\u{201C}Something else\u{2026}\u{201D} below works for any app.")
+        )
+        .padding(.vertical, 24)
     }
 
-    private var customSection: some View {
-        Section {
-            Button {
-                Haptics.play(.selection)
-                onCustom()
-                dismiss()
-            } label: {
-                HStack(spacing: 8) {
-                    PlaceAppMonogramDisc(name: "", systemImage: "square.dashed")
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Something else\u{2026}")
-                            .font(.callout)
-                            .foregroundStyle(Color("LabelPrimary"))
-                        Text("Paste a link or type a scheme — works for any app.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 0)
+    private var customCard: some View {
+        Button {
+            Haptics.play(.selection)
+            onCustom()
+            dismiss()
+        } label: {
+            HStack(spacing: 8) {
+                PlaceAppMonogramDisc(
+                    name: "", systemImage: "square.dashed",
+                    size: PlaceAppPickerPresentation.RowMetrics.discSize
+                )
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Something else\u{2026}")
+                        .font(.callout)
+                        .foregroundStyle(Color("LabelPrimary"))
+                    Text("Paste a link or type a scheme — works for any app.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("appPickerCustomButton")
+            .frame(minHeight: PlaceAppPickerPresentation.RowMetrics.minimumHeight)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .bentoCard()
+        .accessibilityIdentifier("appPickerCustomButton")
     }
 }
 
-/// One app's destinations: the plain open first (the ADHD-friendly default — skippable in one
-/// tap means the DEFAULT is one tap), then the place-prefilled rows, then the type-a-value
-/// forms.
+/// The rows-card edges: clip FIRST so a row's own background cannot bleed past the corner,
+/// then the surface and its 1pt border. Matches the Tasks board's bucket card; no shadow,
+/// because these cards butt against a pinned header rather than float.
 @available(iOS 17.0, *)
-private struct PlaceAppDestinationStep: View {
-    let entry: PlaceAppDirectoryEntry
-    let placeName: String
-    let placeCoordinate: PlaceCoordinate?
-    let onJustOpen: () -> Void
-    let onPickLink: (PlaceActionDraftLinkPick) -> Void
-
-    @State private var values: [String: String] = [:]
-
-    var body: some View {
-        Form {
-            Section {
-                Button {
-                    Haptics.play(.selection)
-                    onJustOpen()
-                } label: {
-                    Label("Just open \(entry.name)", systemImage: "arrow.up.forward.app")
-                }
-                .contentShape(Rectangle())
-                .accessibilityIdentifier("destinationJustOpenButton")
-            }
-            if placeCoordinate != nil {
-                directionsSection
-            }
-            ForEach(entry.destinations, id: \.self) { destination in
-                destinationSection(for: destination)
-            }
-        }
-        .navigationTitle(entry.name)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    /// The free synergy: this editor already knows where the place IS.
-    @ViewBuilder
-    private var directionsSection: some View {
-        let prefillable = entry.destinations.filter(\.placeCoordinatePrefill)
-        if let destination = prefillable.first, let placeCoordinate {
-            Section {
-                Button {
-                    Haptics.play(.selection)
-                    let value = PlaceAppDestinationPick.coordinateValue(placeCoordinate)
-                    guard let link = destination.resolved(with: value) else { return }
-                    onPickLink(
-                        PlaceActionDraftLinkPick(
-                            displayName: PlaceAppDestinationPick.directionsDisplayName(
-                                entry: entry, placeName: placeName
-                            ),
-                            link: link,
-                            scheme: entry.scheme
-                        )
-                    )
-                } label: {
-                    Label("Directions to \(placeName)", systemImage: "arrow.triangle.turn.up.right.diamond")
-                }
-                .contentShape(Rectangle())
-                .accessibilityIdentifier("destinationDirectionsButton")
-            } footer: {
-                Text("Uses this place's own location — nothing to type.")
-            }
-        }
-    }
-
-    private func destinationSection(for destination: PlaceAppDestinationTemplate) -> some View {
-        Section {
-            TextField(
-                destination.isPassThrough ? "Paste the share link" : "Paste or type it here",
-                text: binding(for: destination)
+private extension View {
+    func cardEdges() -> some View {
+        clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(
+                Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
-            .keyboardType(.URL)
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .accessibilityIdentifier("destinationValueField-\(destination.name)")
-            Button {
-                Haptics.play(.selection)
-                guard let pick = pick(for: destination) else { return }
-                onPickLink(pick)
-            } label: {
-                Text("Add \u{201C}\(destination.name)\u{201D}")
-            }
-            .disabled(pick(for: destination) == nil)
-            .accessibilityIdentifier("destinationAddButton-\(destination.name)")
-        } header: {
-            Text(destination.name).sectionLabel()
-        }
-    }
-
-    private func binding(for destination: PlaceAppDestinationTemplate) -> Binding<String> {
-        Binding(
-            get: { values[destination.name] ?? "" },
-            set: { values[destination.name] = $0 }
-        )
-    }
-
-    private func pick(for destination: PlaceAppDestinationTemplate) -> PlaceActionDraftLinkPick? {
-        guard let link = destination.resolved(with: values[destination.name] ?? ""),
-              URL(string: link) != nil else { return nil }
-        return PlaceActionDraftLinkPick(
-            displayName: PlaceAppDestinationPick.displayName(entry: entry, destination: destination),
-            link: link,
-            scheme: entry.scheme
-        )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.cardBorder, lineWidth: 1)
+            )
     }
 }
 

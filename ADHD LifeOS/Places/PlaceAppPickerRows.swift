@@ -18,6 +18,9 @@ struct PlaceAppMonogramDisc: View {
     /// A glyph instead of the initial — the custom row's dashed square, the chooser's
     /// unchosen state.
     var systemImage: String?
+    /// 36 stays the default so the action editor's identity row is untouched; the picker's
+    /// dense rows pass `RowMetrics.discSize`.
+    var size: CGFloat = 36
 
     var body: some View {
         ZStack {
@@ -31,9 +34,12 @@ struct PlaceAppMonogramDisc: View {
                 Text(PlaceAppPickerPresentation.monogram(for: name))
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(Color("LabelPrimary"))
+                    // The disc is fixed but the type is not: at accessibility sizes the
+                    // initial would otherwise push past its own corners (§1).
+                    .minimumScaleFactor(0.7)
             }
         }
-        .frame(width: 36, height: 36)
+        .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
 }
@@ -52,7 +58,9 @@ struct PlaceAppDirectoryRowLabel: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            PlaceAppMonogramDisc(name: entry.name)
+            PlaceAppMonogramDisc(
+                name: entry.name, size: PlaceAppPickerPresentation.RowMetrics.discSize
+            )
             Text(entry.name)
                 .font(.callout)
                 .foregroundStyle(Color("LabelPrimary"))
@@ -65,7 +73,8 @@ struct PlaceAppDirectoryRowLabel: View {
             }
             Spacer(minLength: 0)
         }
-        .frame(minHeight: 44)
+        .padding(.vertical, PlaceAppPickerPresentation.RowMetrics.verticalPadding)
+        .frame(minHeight: PlaceAppPickerPresentation.RowMetrics.minimumHeight)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
