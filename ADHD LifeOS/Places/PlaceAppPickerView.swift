@@ -127,10 +127,16 @@ struct PlaceAppPickerView: View {
     /// nothing otherwise — 150 "doesn't look installed" marks would be noise, and most
     /// entries have no verification slot at all. VoiceOver reads the badge as one element
     /// with the row.
+    ///
+    /// **Currently switched OFF** at `PlaceAppPickerPresentation.showsInstalledBadge` (E,
+    /// 2026-09-02), which short-circuits `checkInstalled` too — no row queries UIKit at all
+    /// while the tick is dark.
     private func rowLabel(for entry: PlaceAppDirectoryEntry) -> some View {
         PlaceAppDirectoryRowLabel(
             entry: entry,
-            looksInstalled: checkInstalled(entry.scheme) == .looksInstalled
+            looksInstalled: PlaceAppPickerPresentation.showsInstalledCheck(
+                verdict: checkInstalled(entry.scheme)
+            )
         )
     }
 

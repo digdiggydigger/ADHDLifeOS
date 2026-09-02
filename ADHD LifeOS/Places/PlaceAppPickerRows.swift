@@ -40,6 +40,11 @@ struct PlaceAppMonogramDisc: View {
 
 /// One directory row: avatar, name, and the quiet positive-only installed check
 /// (F-AppDirectory-3 — a negative mark on 150 rows would be noise).
+///
+/// A dumb renderer: it draws the tick whenever told to, which is why the previews below still
+/// show one. Its only real caller decides via
+/// `PlaceAppPickerPresentation.showsInstalledCheck`, and that switch is OFF (E, 2026-09-02) —
+/// so in the running app no directory row currently carries a tick.
 @available(iOS 17.0, *)
 struct PlaceAppDirectoryRowLabel: View {
     let entry: PlaceAppDirectoryEntry

@@ -30,6 +30,29 @@ enum PlaceAppPickerPresentation {
         return (popular, rest)
     }
 
+    /// **The directory tick is OFF — E's call, 2026-09-02:** "do not display the tick icon …
+    /// this means we don't have to deal with this at the minute". The mark is positive-only,
+    /// so an unswept scheme can only ever fail as a FALSE negative — a silent row for an app
+    /// E does have — which made the 45-scheme device sweep a blocker on the merge. Silence
+    /// costs nothing and blocks nothing.
+    ///
+    /// Nothing underneath was removed: `PlaceQueryableSchemes`, the three-state verdict,
+    /// `PlaceAppInstallCopy` and the Info.plist parity tripwire are intact and still tested,
+    /// and the action editor's own verdict line is untouched. Flip this to `true` on E's word
+    /// and the tick returns — no other change.
+    static let showsInstalledBadge = false
+
+    /// Whether one directory row draws its installed tick. The verdict is an `@autoclosure`
+    /// so a switched-off badge costs ZERO `canOpenURL` calls rather than 45 discarded ones
+    /// per sheet open — the off state is inert, not merely invisible. Positive-only survives
+    /// the switch: even re-enabled, only `.looksInstalled` ever marks a row.
+    static func showsInstalledCheck(
+        enabled: Bool = showsInstalledBadge,
+        verdict: @autoclosure () -> PlaceAppInstallVerdict
+    ) -> Bool {
+        enabled && verdict() == .looksInstalled
+    }
+
     /// The SF Symbol each action kind wears in the editor's Action picker.
     static func kindGlyph(for choice: PlaceActionDraft.KindChoice) -> String {
         switch choice {

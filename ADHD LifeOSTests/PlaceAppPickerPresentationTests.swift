@@ -68,4 +68,59 @@ final class PlaceAppPickerPresentationTests: XCTestCase {
             )
         }
     }
+
+    // MARK: - Installed tick — E's display switch (2026-09-02)
+
+    /// E: "do not display the tick icon … this means we don't have to deal with this at the
+    /// minute". With the switch off NO verdict draws a tick — including `.looksInstalled`,
+    /// the only one that ever could. These assertions are expected to flip WITH the switch;
+    /// the positive-only rule below is what must survive it.
+    func testInstalledCheck_isSuppressedForEveryVerdict_whileTheSwitchIsOff() {
+        XCTAssertFalse(
+            PlaceAppPickerPresentation.showsInstalledBadge,
+            "E switched the directory tick off on 2026-09-02 — flip it back only on E's word"
+        )
+
+        for verdict in [
+            PlaceAppInstallVerdict.looksInstalled, .doesNotLookInstalled, .cannotCheck
+        ] {
+            XCTAssertFalse(
+                PlaceAppPickerPresentation.showsInstalledCheck(verdict: verdict),
+                "\(verdict) drew a tick with the switch off"
+            )
+        }
+    }
+
+    /// The switch is the ONLY thing holding the tick back — re-enabling must not also bring
+    /// back a negative mark on 150 rows, which is the noise F-AppDirectory-3 set out to
+    /// avoid. Pinned now so turning it on again stays a one-line change, not a redesign.
+    func testInstalledCheck_staysPositiveOnly_whenTheSwitchIsOn() {
+        XCTAssertTrue(
+            PlaceAppPickerPresentation.showsInstalledCheck(
+                enabled: true, verdict: .looksInstalled
+            )
+        )
+        XCTAssertFalse(
+            PlaceAppPickerPresentation.showsInstalledCheck(
+                enabled: true, verdict: .doesNotLookInstalled
+            )
+        )
+        XCTAssertFalse(
+            PlaceAppPickerPresentation.showsInstalledCheck(
+                enabled: true, verdict: .cannotCheck
+            )
+        )
+    }
+
+    /// The verdict is not merely ignored, it is never ASKED for — so a switched-off tick
+    /// costs the picker zero `canOpenURL` calls rather than 45 discarded ones per open.
+    func testInstalledCheck_neverEvaluatesTheVerdict_whileTheSwitchIsOff() {
+        var asked = 0
+
+        _ = PlaceAppPickerPresentation.showsInstalledCheck(
+            verdict: { () -> PlaceAppInstallVerdict in asked += 1; return .looksInstalled }()
+        )
+
+        XCTAssertEqual(asked, 0, "The verdict was computed for a tick that cannot be drawn")
+    }
 }
