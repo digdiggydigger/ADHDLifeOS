@@ -29,7 +29,13 @@ struct RootBottomOverlay: View {
     /// E's 2026-08-31 margin pass lifted the stack a further 8pt off the tab bar (52 → 60),
     /// matching the trailing margin's 16 → 24 so `CaptureDiscMetrics.clearance` stays one number
     /// for both axes.
+    ///
+    /// Since F-Tools-1-Bar this is measured from the top of the bar EXPLICITLY. The bar is an
+    /// overlay rather than a safe-area inset (see `AppTabContent`), so `.bottom` alignment now
+    /// means the bottom of the safe area, not the top of the bar — and without the bar's own
+    /// height added, E's 60pt gap would put the disc ON the bar instead of above it.
     private static let liftAboveBar: CGFloat = 60
+    private static let bottomPadding = liftAboveBar + AppTabBarMetrics.rowHeight
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 8) {
@@ -56,7 +62,7 @@ struct RootBottomOverlay: View {
             FocusTimerBar(service: focusService)
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.bottom, Self.liftAboveBar)
+        .padding(.bottom, Self.bottomPadding)
         .animation(
             reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
             value: focusService.isActive

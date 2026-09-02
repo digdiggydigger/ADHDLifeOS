@@ -52,6 +52,18 @@ struct AppTabVisitLog {
 /// The same probe confirmed all three properties directly: only the starting tab logged a build
 /// at launch; a screen pushed on tab one was still pushed after a round trip through tab six; and
 /// a scroll offset on tab six came back to the point (row 0 at y = −377.33 both times).
+///
+/// **Why the bar's height is reserved here rather than by a `safeAreaInset` on the container.**
+/// It was a `safeAreaInset` first, and E's device screenshot showed the Journal composer sliced
+/// in half by the bar — its caption line gone entirely. A SwiftUI `safeAreaInset` applied OUTSIDE
+/// a view **does not reach into that view's own `NavigationStack`**: every screen here pins its
+/// own bottom furniture with `safeAreaInset` (the Journal composer, the inbox's Sorted bar, the
+/// picker's footer) and each of those sat at the raw screen safe area, under the bar. `TabView`
+/// never had the problem because UIKit sets `additionalSafeAreaInsets` on each tab's view
+/// CONTROLLER, which a nested `UINavigationController` inherits — a SwiftUI modifier has no such
+/// reach. Measured in the probe: composer bottom 822.67 against a bar top of 784, overlapping by
+/// 38pt; with the reserve, 766.67 and clear. Reserving the height in a `VStack` shrinks the
+/// child's frame, so its own inset lands above the bar the way it always did.
 struct AppTabContent<Content: View>: View {
     let selection: AppTab
     @ViewBuilder var content: (AppTab) -> Content
@@ -68,7 +80,16 @@ struct AppTabContent<Content: View>: View {
         ZStack {
             ForEach(AppTab.allCases, id: \.self) { tab in
                 if visitLog.isBuilt(tab) {
-                    content(tab)
+                    VStack(spacing: 0) {
+                        content(tab)
+                        // The bar's height, reserved as REAL layout space rather than as a
+                        // `safeAreaInset` on this container. See the type comment: an outer
+                        // `safeAreaInset` does not reach past a child's own `NavigationStack`,
+                        // and every screen that pins its own bottom bar depends on it doing so.
+                        Color.clear
+                            .frame(height: AppTabBarMetrics.rowHeight)
+                            .allowsHitTesting(false)
+                    }
                         .opacity(tab == selection ? 1 : 0)
                         // Both needed. Without `allowsHitTesting` the invisible tabs still take
                         // taps meant for the visible one; without `accessibilityHidden` VoiceOver

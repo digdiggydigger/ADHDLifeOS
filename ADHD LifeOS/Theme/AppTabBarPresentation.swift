@@ -95,9 +95,14 @@ enum AppTabBarPresentation {
 /// drift apart. Spacing obeys §2's 4/8/16/24 grid; the rest are component DIMENSIONS (like
 /// `CaptureDiscMetrics.pillHeight`), which the grid does not govern.
 enum AppTabBarMetrics {
-    /// The row of slots, matching the system bar's 49pt content height plus room for the dot.
-    /// 56 is on the base-8 grid.
-    static let rowHeight: CGFloat = 56
+    /// The row of slots.
+    ///
+    /// 56 first — the system bar's 49pt content height plus room for the dot. E's device verdict
+    /// (2026-09-02) was *"really cramped, not much spacing/padding"*, and the measurement agreed:
+    /// glyph, gap and dot came to 37pt inside 56, so the content sat high with dead space beneath
+    /// it, and the glyph was 20pt against the 25 the approved concept drew. 72 is the roomiest of
+    /// three variants E was shown, and stays on §2's base-8 grid.
+    static let rowHeight: CGFloat = 72
 
     /// Gap between a slot's glyph and its indicator. The concept drew 7; §2 has no 7.
     static let glyphToIndicatorSpacing: CGFloat = 8

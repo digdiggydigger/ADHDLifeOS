@@ -84,7 +84,11 @@ struct AppTabBar: View {
         _ slot: AppTabBarPresentation.Slot, isSelected: Bool, badgeCount: Int
     ) -> some View {
         Image(systemName: slot.systemImage)
-            .font(.title3)
+            // `.title2` at `.large` scale lands on ~25pt — the size the approved concept drew,
+            // and 5pt up on the `.title3` that shipped first. Semantic, so Dynamic Type still
+            // moves it (§1); the bar clamps the range rather than fixing the size.
+            .font(.title2)
+            .imageScale(.large)
             .foregroundStyle(isSelected ? Color.accentColor : Color.labelSecondary)
             .overlay(alignment: .topTrailing) {
                 if let text = AppTabBarPresentation.badgeText(count: badgeCount) {

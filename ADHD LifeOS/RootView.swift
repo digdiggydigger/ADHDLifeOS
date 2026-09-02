@@ -186,10 +186,11 @@ struct RootView: View {
                 // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
                 // call beyond E's stated rule; E can veto.)
                 .onChange(of: selectedTab) { _ in discScrollActivity.reset() }
-                // Our bar, in the space the system's used to occupy. An INSET rather than an
-                // overlay, so every screen's own bottom safe area accounts for it — which is
-                // what keeps the capture disc, the timer bar and `captureDiscClearance()`
-                // sitting exactly where they sat before, measured from the top of the bar.
+                // Our bar, in the space the system's used to occupy. An OVERLAY, drawn over the
+                // height `AppTabContent` already reserved for it — NOT a `safeAreaInset` on this
+                // container, which is what it was until E's device screenshot showed the Journal
+                // composer sliced in half by it. An outer `safeAreaInset` does not reach into a
+                // child's own `NavigationStack`; see `AppTabContent` for the measurements.
                 //
                 // Placed above `.blur` deliberately: the bar dims with the content when the
                 // capture fan opens, the way the system bar did.
@@ -197,7 +198,7 @@ struct RootView: View {
                 // There is no system bar to hide any more — `AppTabContent` is not a
                 // `UITabBarController`, which is the whole reason a sixth tab is possible at
                 // all. See that file for what `TabView` did to tabs five and six.
-                .safeAreaInset(edge: .bottom, spacing: 0) {
+                .overlay(alignment: .bottom) {
                     AppTabBar(selection: $selectedTab, captureInboxCount: captureInboxCount)
                 }
                 .blur(radius: isFabOpen ? 4 : 0)

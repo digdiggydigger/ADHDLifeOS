@@ -23,16 +23,56 @@ final class AppTabBarCallSiteTests: XCTestCase {
         )
     }
 
-    /// The bar is added as a bottom safe-area INSET, not an overlay. It is what keeps every
-    /// screen's own bottom inset — and therefore the capture disc, the focus timer bar and
-    /// `captureDiscClearance()` — measured from the top of the bar rather than from the screen
-    /// edge. An overlay would put the bar on top of the last row of every scroll.
-    func testTheBarIsASafeAreaInsetRatherThanAnOverlay() throws {
-        let source = try Self.appSource("RootView.swift")
+    /// **The bar's height must be RESERVED as layout space, and the bar drawn over that reserve.**
+    ///
+    /// It was a `safeAreaInset` on the container first, and E's device screenshot showed the
+    /// Journal composer sliced in half by the bar, its caption line gone. A SwiftUI
+    /// `safeAreaInset` applied outside a view does not reach into that view's own
+    /// `NavigationStack` — and the Journal composer, the inbox's Sorted bar and the app picker's
+    /// footer all pin themselves with exactly that modifier, inside exactly such a stack.
+    /// `TabView` never had the problem because UIKit sets `additionalSafeAreaInsets` on each
+    /// tab's view CONTROLLER, which a nested `UINavigationController` inherits.
+    ///
+    /// So the two halves are asserted together: the reserve exists in `AppTabContent`, and
+    /// RootView draws the bar as an overlay rather than an inset. Either one alone is the bug —
+    /// a reserve with an inset double-counts the height, an overlay with no reserve is what E saw.
+    func testTheBarsHeightIsReservedAsLayoutSpaceAndTheBarOverlaysIt() throws {
+        let container = try Self.appSource("AppTabContent.swift")
         XCTAssertTrue(
-            source.contains("safeAreaInset(edge: .bottom, spacing: 0) {"),
-            "The tab bar is no longer a bottom safe-area inset. Whatever replaced it must still"
-                + " reserve its own height, or it covers the bottom row of every screen."
+            container.contains("frame(height: AppTabBarMetrics.rowHeight)"),
+            "`AppTabContent` no longer reserves the bar's height, so the bar covers the bottom of"
+                + " every screen — and every screen that pins its own bottom bar loses it."
+        )
+        let root = try Self.appSource("RootView.swift")
+        // The bar's own call site must sit under a `.bottom` overlay. Matched as two adjacent
+        // lines rather than one blob so re-indenting the file cannot break the guard.
+        let overlayLine = ".overlay(alignment: .bottom) {"
+        let barLine = "AppTabBar(selection: $selectedTab, captureInboxCount: captureInboxCount)"
+        let overlaidBar = root
+            .components(separatedBy: overlayLine)
+            .dropFirst()
+            .contains { $0.prefix(200).contains(barLine) }
+        XCTAssertTrue(
+            overlaidBar,
+            "The bar is no longer drawn as a bottom overlay over the reserved height."
+        )
+        XCTAssertFalse(
+            root.contains("safeAreaInset(edge: .bottom, spacing: 0) {"),
+            "The bar is a `safeAreaInset` again. That is the arrangement that sliced the Journal"
+                + " composer in half — an outer inset does not reach past a child's NavigationStack."
+        )
+    }
+
+    /// The capture disc, the offline sprint card and the focus timer bar all ride one stack, and
+    /// its lift is measured from the top of the BAR. With the bar an overlay rather than an
+    /// inset, `.bottom` means the safe area's bottom — so the bar's own height has to be in the
+    /// sum, or E's 60pt gap puts the disc on the bar instead of above it.
+    func testTheBottomFurnitureClearsTheBarsHeight() throws {
+        XCTAssertTrue(
+            try Self.appSource("RootBottomOverlay.swift")
+                .contains("liftAboveBar + AppTabBarMetrics.rowHeight"),
+            "The bottom furniture no longer adds the bar's height to its lift, so the capture disc"
+                + " and the focus timer bar sit on top of the tab bar."
         )
     }
 
