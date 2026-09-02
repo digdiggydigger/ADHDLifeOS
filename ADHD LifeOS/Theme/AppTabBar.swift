@@ -90,23 +90,27 @@ struct AppTabBar: View {
                 .padding(.horizontal, AppTabBarMetrics.floatingInset)
                 .padding(.bottom, AppTabBarMetrics.floatingLift)
         } else {
-            // Design F: full width, but stopping at the bottom of the SAFE AREA rather than
-            // running on into the home-indicator strip. E's GIF verdict: that strip was "empty
-            // space that is coloured below the tab bar… wasted space", and it measured 53pt.
-            // Without `ignoresSafeArea` the page shows through it instead, which is what E asked
-            // for — the bar is 72pt of chrome, not 106.
+            // Design F: full width, stopping at the bottom of the SAFE AREA rather than running
+            // on into the home-indicator strip. E's GIF verdict: that strip was "empty space
+            // that is coloured below the tab bar… wasted space", and it measured 53pt.
             //
-            // `BarSurface` carries the translucency (6% light / 8% dark) and the material behind
-            // it is what that translucency reveals, so the bar reads as glass over content rather
-            // than as a washed-out white (§5's layer architecture) — and it is the token's first
-            // call site, unused in the catalog since the v3 palette landed.
+            // **And no material.** There was an `.ultraThinMaterial` behind `BarSurface` for
+            // §5's layer architecture, and it did two things, both bad. It BLED into the safe
+            // area — SwiftUI extends a material background to the screen edge even when the view
+            // it backs does not — painting the strip below the bar #272B2B against a bar of
+            // #1F2028, so the thing E photographed and called a bug read as a second, lighter
+            // bar underneath the first. And it was blurring nothing: `AppTabContent` reserves
+            // this band, so no content ever passes beneath the resting bar. `BarSurface`'s own
+            // 8% translucency over the page is the whole effect, and it is honest about it.
             row
                 .frame(height: AppTabBarMetrics.rowHeight)
                 .frame(maxWidth: .infinity)
-                .background {
-                    Color.barSurface
-                        .background(.ultraThinMaterial)
-                }
+                // `in: Rectangle()` is doing real work: a bare `.background(Color…)` EXTENDS
+                // into the safe area — `Color` and shapes do that by design as backgrounds —
+                // which is the same bleed the material had, just a shade that happened to match.
+                // Filling an explicit shape clips the fill to the bar's own 72pt frame, so the
+                // home-indicator strip below it is page, not chrome.
+                .background(Color.barSurface, in: Rectangle())
         }
     }
 
