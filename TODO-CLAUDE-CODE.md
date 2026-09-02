@@ -2298,7 +2298,7 @@ everything at launch), because `AppTabVisitLog` builds a tab on first selection 
 The probe confirmed all three properties directly — lazy first build, `NavigationStack` depth
 survived a round trip, scroll offset came back to the point.
 
-### FEATURE: F-Tools-2-Morph — the bar contracts while you scroll  [ ] UNCHECKED
+### FEATURE: F-Tools-2-Morph — the bar contracts while you scroll  [x] COMPLETED
 
 The bar morphs to Design B while the page is actually moving and back to F when motion settles:
 inset 12pt, lifted ~22pt, 22pt radius, `CardSurface` + 1pt `CardBorder` + soft shadow, icons only.
@@ -2315,19 +2315,28 @@ movement, and a naive signal snaps back to F mid-glide. Solve with a settle time
 every `dragMoved` (~250–350ms), shipped as one named, tunable constant.
 
 **Acceptance criteria**
-- [ ] `TabBarScrollActivity` TDD-pinned with an injected clock: movement sets moving; the settle
-      interval clears it; a further move inside the interval RESTARTS rather than firing early;
-      `reset()` clears immediately (RootView calls it on tab change, same reason the disc does).
-- [ ] Bar morphs F ⇄ B on scroll and settle; indicator morphs dot ⇄ chip; badge survives both
-      states.
-- [ ] Animated with the house spring `.spring(response: 0.35, dampingFraction: 0.8,
-      blendDuration: 0)` (§5), Reduce Motion respected.
-- [ ] The capture disc keeps its own sticky disc↔pill behaviour, unchanged — the two are
-      deliberately no longer in lockstep, which is the trade E accepted in choosing momentary.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] `TabBarScrollActivity` TDD-pinned with an injected scheduler: movement sets moving; the
+      settle interval clears it; a further move inside the interval RESTARTS rather than firing
+      early (asserted directly, and again over a ten-movement stream); `reset()` clears
+      immediately and a settle landing after it changes nothing.
+- [x] Bar morphs F ⇄ B on scroll and settle; indicator morphs dot ⇄ chip (one shared
+      `matchedGeometryEffect` id, so the mark GROWS rather than cross-fades); badge survives both.
+- [x] Animated with the house spring (§5), Reduce Motion respected in both the morph and the
+      slot press style.
+- [x] The capture disc keeps its own sticky disc↔pill behaviour, unchanged — and a test now fails
+      if a timer ever appears in the disc's model.
+- [x] Suite green (2,149 / 0), lint 0 / 617, sim + device builds green, committed and pushed.
 - [ ] **Ask E on device: does the settle timing feel right, and does the floating bar sit
       correctly against the capture disc?** Change NO clearance numbers until E has looked —
       E's standing answer is "show me on device, then decide".
+
+**Settle interval ships at 0.30s**, one named constant (`TabBarScrollActivity.settleInterval`),
+with a test pinning the 0.25–0.35 band. E has not seen it move on device, so expect tuning.
+
+**The floating card's lift is DERIVED, not chosen.** `AppTabContent` reserves `rowHeight` once
+and never reflows it — content shifting under a morphing bar would be intolerable — so B must fit
+inside that reserve exactly: card height + lift == rowHeight. It lands on the concept's 22 as a
+consequence rather than a coincidence, and a test holds the identity.
 
 ### FEATURE: F-Tools-3-Page — the Tools page, and Places leaves Settings  [ ] UNCHECKED
 
