@@ -74,18 +74,38 @@ struct PlaceAppPickerView: View {
         }
     }
 
+    /// Browsing reads as "Popular" then an alphabetical "All apps"; a live search collapses
+    /// to one ranked section — the split only helps an eye that has nothing to search for.
+    @ViewBuilder
     private var resultsSection: some View {
-        Section {
-            ForEach(results) { entry in
-                if entry.destinations.isEmpty {
-                    plainRow(for: entry)
-                } else {
-                    // A push, not a pick: the destination step owns the choice — and its
-                    // first row is the plain open, so the default stays one tap away.
-                    NavigationLink(value: entry) {
-                        rowLabel(for: entry)
+        if query.trimmingCharacters(in: .whitespaces).isEmpty {
+            let split = PlaceAppPickerPresentation.browseSplit(results)
+            entrySection(split.popular, header: "Popular")
+            entrySection(split.rest, header: "All apps")
+        } else {
+            entrySection(results, header: nil)
+        }
+    }
+
+    @ViewBuilder
+    private func entrySection(_ entries: [PlaceAppDirectoryEntry], header: String?) -> some View {
+        if !entries.isEmpty {
+            Section {
+                ForEach(entries) { entry in
+                    if entry.destinations.isEmpty {
+                        plainRow(for: entry)
+                    } else {
+                        // A push, not a pick: the destination step owns the choice — and its
+                        // first row is the plain open, so the default stays one tap away.
+                        NavigationLink(value: entry) {
+                            rowLabel(for: entry)
+                        }
+                        .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
                     }
-                    .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
+                }
+            } header: {
+                if let header {
+                    Text(header).sectionLabel()
                 }
             }
         }
@@ -98,9 +118,8 @@ struct PlaceAppPickerView: View {
             dismiss()
         } label: {
             rowLabel(for: entry)
-                .foregroundStyle(.primary)
         }
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
         .accessibilityIdentifier("appPickerRow-\(entry.scheme)")
     }
 
@@ -109,17 +128,10 @@ struct PlaceAppPickerView: View {
     /// entries have no verification slot at all. VoiceOver reads the badge as one element
     /// with the row.
     private func rowLabel(for entry: PlaceAppDirectoryEntry) -> some View {
-        HStack(spacing: 8) {
-            Text(entry.name)
-            if checkInstalled(entry.scheme) == .looksInstalled {
-                Image(systemName: "checkmark.circle")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel("Installed on this iPhone")
-            }
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        PlaceAppDirectoryRowLabel(
+            entry: entry,
+            looksInstalled: checkInstalled(entry.scheme) == .looksInstalled
+        )
     }
 
     /// The honest miss: the directory is curated, not complete — the custom path underneath is
@@ -142,12 +154,23 @@ struct PlaceAppPickerView: View {
                 onCustom()
                 dismiss()
             } label: {
-                Label("Something else\u{2026}", systemImage: "square.dashed")
+                HStack(spacing: 8) {
+                    PlaceAppMonogramDisc(name: "", systemImage: "square.dashed")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Something else\u{2026}")
+                            .font(.callout)
+                            .foregroundStyle(Color("LabelPrimary"))
+                        Text("Paste a link or type a scheme — works for any app.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
             .accessibilityIdentifier("appPickerCustomButton")
-        } footer: {
-            Text("Any app with a link or URL scheme can open, even if it isn't listed.")
         }
     }
 }
@@ -238,7 +261,7 @@ private struct PlaceAppDestinationStep: View {
             .disabled(pick(for: destination) == nil)
             .accessibilityIdentifier("destinationAddButton-\(destination.name)")
         } header: {
-            Text(destination.name)
+            Text(destination.name).sectionLabel()
         }
     }
 

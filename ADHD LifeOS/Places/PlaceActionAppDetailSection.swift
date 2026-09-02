@@ -39,41 +39,100 @@ struct PlaceActionAppDetailSection: View {
                 isPickingApp = true
                 Task { await PlaceAppDirectoryProvider.shared.refreshIfDue() }
             } label: {
-                LabeledContent("App", value: selectedAppLabel)
+                chooserRowLabel
             }
+            .buttonStyle(.plain)
             .accessibilityIdentifier("actionEditorAppPicker")
             if showsCustomAppFields {
-                TextField("URL scheme (like spotify)", text: $draft.appScheme)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .accessibilityIdentifier("actionEditorSchemeField")
-                TextField("Or paste a link (like open.spotify.com/\u{2026})", text: $draft.appLink)
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .accessibilityIdentifier("actionEditorLinkField")
-                TextField("Shown as (optional)", text: $draft.appName)
-                    .accessibilityIdentifier("actionEditorAppNameField")
+                labeledField("URL scheme") {
+                    TextField("spotify", text: $draft.appScheme)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("actionEditorSchemeField")
+                }
+                labeledField("Or paste a link") {
+                    TextField("open.spotify.com/\u{2026}", text: $draft.appLink)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("actionEditorLinkField")
+                }
+                labeledField("Shown as") {
+                    TextField("Optional", text: $draft.appName)
+                        .accessibilityIdentifier("actionEditorAppNameField")
+                }
             }
         } header: {
-            Text("Which app")
+            Text("Which app").sectionLabel()
         } footer: {
             Text(customAppFooter)
         }
     }
 
+    /// The chooser reads as what it is: the chosen app's identity — avatar, name, and the
+    /// three-state honesty line — with a disclosure chevron saying "tap to change". The old
+    /// `LabeledContent("App", value:)` read as a mystery tab bar on E's device (2026-09-02).
+    private var chooserRowLabel: some View {
+        // Two stacked bands, not one tall HStack: the verdict can run to three lines, and
+        // centring a 36pt disc against that floats it into the middle of the row.
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                PlaceAppMonogramDisc(
+                    name: selectedAppLabel,
+                    systemImage: hasChosenSomething ? nil : "plus.app"
+                )
+                Text(hasChosenSomething ? selectedAppLabel : "Choose an app\u{2026}")
+                    .font(.callout)
+                    .foregroundStyle(hasChosenSomething ? Color("LabelPrimary") : Color.accentColor)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(minHeight: 44)
+            if let verdictLine {
+                // Icon + words, never colour alone — the swiftui-pro Label precedent.
+                Label(verdictLine, systemImage: verdictGlyph)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
+    /// A visible label above each custom field — placeholder-only fields read as bare
+    /// underlines on E's device, with nothing naming them once filled.
+    private func labeledField(
+        _ label: String, @ViewBuilder field: () -> some View
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            field()
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var hasChosenSomething: Bool {
+        draft.destinationPick != nil || selectedDirectoryApp != nil
+            || wantsCustomApp || !draft.appScheme.isEmpty || !draft.appLink.isEmpty
+    }
+
     private var customAppFooter: String {
-        let base = "Arrives as a notification — tapping it opens the app. "
-            + "If the app isn't installed, nothing can open."
-        let explainer = showsCustomAppFields
-            ? "A scheme opens the app directly; a pasted link opens the app if it's "
-              + "installed, or the web page if not. The link wins when both are filled. "
-              + base
-            : base
-        // The verdict line only once something is chosen — an empty editor has nothing to
-        // check, and a premature "can't check" would read as a fault.
-        guard let verdictLine else { return explainer }
-        return verdictLine + "\n\n" + explainer
+        showsCustomAppFields
+            ? "A scheme opens the app directly; a pasted link falls back to the web page. "
+              + "The link wins when both are filled. Arrives as a notification — "
+              + "tapping it opens the app."
+            : "Arrives as a notification — tapping it opens the app."
+    }
+
+    private var verdictGlyph: String {
+        switch chosenScheme.map({ checkInstalled($0.isEmpty ? nil : $0) }) {
+        case .looksInstalled: return "checkmark.circle"
+        case .doesNotLookInstalled: return "info.circle"
+        default: return "questionmark.circle"
+        }
     }
 
     /// The three-state honesty line for the chosen app (F-AppDirectory-3), keyed off the

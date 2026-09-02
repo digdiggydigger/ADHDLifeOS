@@ -104,7 +104,7 @@ struct PlaceActionEditorSheet: View {
     }
 
     private var whenSection: some View {
-        Section("When") {
+        Section {
             Picker("When", selection: $draft.direction) {
                 Text("On arrival").tag(PlaceActionDirection.arrival)
                 Text("When leaving").tag(PlaceActionDirection.departure)
@@ -113,18 +113,23 @@ struct PlaceActionEditorSheet: View {
             .labelsHidden()
             .onChange(of: draft.direction) { _, _ in Haptics.play(.selection) }
             .accessibilityIdentifier("actionEditorDirectionPicker")
+        } header: {
+            Text("When").sectionLabel()
         }
     }
 
     private var whatSection: some View {
-        Section("What") {
+        Section {
             Picker("Action", selection: $draft.kindChoice) {
                 ForEach(PlaceActionDraft.KindChoice.allCases, id: \.self) { choice in
-                    Text(choice.displayName).tag(choice)
+                    Label(choice.displayName, systemImage: PlaceAppPickerPresentation.kindGlyph(for: choice))
+                        .tag(choice)
                 }
             }
             .onChange(of: draft.kindChoice) { _, _ in Haptics.play(.selection) }
             .accessibilityIdentifier("actionEditorKindPicker")
+        } header: {
+            Text("What").sectionLabel()
         }
     }
 
@@ -161,7 +166,7 @@ struct PlaceActionEditorSheet: View {
                 .autocorrectionDisabled()
                 .accessibilityIdentifier("actionEditorURLField")
         } header: {
-            Text("Which address")
+            Text("Which address").sectionLabel()
         } footer: {
             Text("Arrives as a notification — tapping it opens the page.")
         }
@@ -184,7 +189,7 @@ struct PlaceActionEditorSheet: View {
             TextField("Message", text: $draft.messageBody, axis: .vertical)
                 .accessibilityIdentifier("actionEditorMessageField")
         } header: {
-            Text("Who and what")
+            Text("Who and what").sectionLabel()
         } footer: {
             Text("Arrives as a notification — tapping it opens Messages with this filled in. "
                  + "iOS always leaves the final Send to you.")
@@ -197,7 +202,7 @@ struct PlaceActionEditorSheet: View {
                 .keyboardType(.numberPad)
                 .accessibilityIdentifier("actionEditorMinutesField")
         } header: {
-            Text("How long")
+            Text("How long").sectionLabel()
         } footer: {
             Text("Runs by itself when the crossing fires — no tap needed. "
                  + "Between \(MomentumPreferences.sprintMinutesRange.lowerBound) and "
@@ -210,7 +215,7 @@ struct PlaceActionEditorSheet: View {
             TextField("What lands in your inbox", text: $draft.captureText, axis: .vertical)
                 .accessibilityIdentifier("actionEditorCaptureField")
         } header: {
-            Text("The note")
+            Text("The note").sectionLabel()
         } footer: {
             Text("Runs by itself when the crossing fires — no tap needed.")
         }
@@ -221,7 +226,7 @@ struct PlaceActionEditorSheet: View {
             TextField("What gets written", text: $draft.journalBody, axis: .vertical)
                 .accessibilityIdentifier("actionEditorJournalField")
         } header: {
-            Text("The line")
+            Text("The line").sectionLabel()
         } footer: {
             Text("Runs by itself when the crossing fires, stamped with this place.")
         }
@@ -236,7 +241,7 @@ struct PlaceActionEditorSheet: View {
             }
             .accessibilityIdentifier("actionEditorScreenPicker")
         } header: {
-            Text("Which screen")
+            Text("Which screen").sectionLabel()
         } footer: {
             Text("Arrives as a notification — tapping it lands you there.")
         }
