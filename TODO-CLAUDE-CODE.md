@@ -2268,7 +2268,21 @@ fills it. No motion in this block.
       — 350 lines, after splitting out `AppTab` and `RootBottomOverlay`.
 - [x] Suite green (2,131 / 0), lint 0 / 615, sim + device builds green, red-checked (three
       injected regressions → 14 failures), committed and pushed.
-- [ ] **Stop and ask E whether six slots feel right on device before starting block 2.**
+- [x] **Stop and ask E whether six slots feel right on device before starting block 2.**
+      **E approved on device, 2026-09-02**, after one round of tuning: the first cut read
+      *"really cramped, not much spacing/padding"* (row 56 / glyph 20), and at row 72 / glyph 25
+      — the size the approved concept drew — E's verdict was *"spacing is so much better"*.
+      Six slots were never the objection.
+
+**Two device-found defects fixed inside this block, both now guarded:**
+1. **The bar sliced the Journal composer in half.** A SwiftUI `safeAreaInset` applied OUTSIDE a
+   view does not reach into that view's own `NavigationStack`, and every screen here pins its
+   bottom furniture with exactly that modifier inside exactly such a stack. `TabView` was immune
+   because UIKit sets `additionalSafeAreaInsets` on the view CONTROLLER. Fixed by reserving the
+   bar's height as real layout space in `AppTabContent` and drawing the bar as an overlay over
+   the reserve; `RootBottomOverlay` adds the bar's height to its lift explicitly.
+2. **The badge clipped "99+" to "9…"** — it is an overlay on the glyph, so it was offered the
+   glyph's ~20pt. `.fixedSize()` before the frame.
 
 **⚠ ARCHITECTURE CHANGE — the plan's "keep `TabView`, hide its bar" does not work at six.**
 `TabView` is a `UITabBarController`, and past five tabs UIKit folds the overflow into its
