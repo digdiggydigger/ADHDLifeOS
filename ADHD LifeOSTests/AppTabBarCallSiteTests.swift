@@ -36,16 +36,31 @@ final class AppTabBarCallSiteTests: XCTestCase {
         )
     }
 
-    /// **A covered system bar still eats touches**, so "hidden" has to mean hidden. The modifier
-    /// goes on the views INSIDE the `TabView` — a `.toolbar` modifier looks UP for the bar it
-    /// governs, so applied to the container it finds nothing and the system bar survives.
-    func testEveryTabHidesTheSystemBar() throws {
+    /// **The trap this block actually hit.** `TabView` is a `UITabBarController`, and past five
+    /// tabs UIKit folds the overflow into its `moreNavigationController` — which renders tabs
+    /// five and six with a "More" back button and an edge-swipe to a list the app never shows.
+    /// Hiding the bar does not undo it; dropping `.tabItem` does not either. Proven on the
+    /// simulator with a six-tab probe: the sixth tab's accessibility tree still carried
+    /// `AXUniqueId: "BackButton", AXLabel: "More"`.
+    ///
+    /// So the guard is that no `TabView` comes back. `AppTabContent` replaced it, and its own
+    /// laziness and state retention are pinned by `AppTabVisitLogTests`.
+    func testTheSignedInShellIsNotATabView() throws {
         let source = try Self.appSource("RootView.swift")
-        let hides = source.components(separatedBy: ".toolbar(.hidden, for: .tabBar)").count - 1
-        XCTAssertEqual(
-            hides, AppTabBarPresentation.tabs.count,
-            "There are \(AppTabBarPresentation.tabs.count) tabs but \(hides) hide the system bar."
-                + " Any tab that does not gets the system bar back, under ours, still hittable."
+        XCTAssertFalse(
+            source.contains("TabView("),
+            "A `TabView` is back in RootView. With six tabs UIKit folds the last two into its"
+                + " More navigation controller, which puts a \"More\" back button on Captures"
+                + " and Tools — hiding the tab bar does not prevent it."
+        )
+        XCTAssertFalse(
+            source.contains(".tabItem"),
+            "`.tabItem` only means anything to a `TabView`, and this shell no longer has one."
+        )
+        XCTAssertTrue(
+            source.contains("AppTabContent(selection: selectedTab)"),
+            "RootView no longer uses `AppTabContent`, so whatever replaced it owes an answer to"
+                + " the same three questions: laziness, scroll position, navigation depth."
         )
     }
 
@@ -60,17 +75,18 @@ final class AppTabBarCallSiteTests: XCTestCase {
         )
     }
 
-    /// The sixth tab has to be tagged AND rendered. A slot in `AppTabBarPresentation.tabs` with
-    /// no matching `.tag` in the `TabView` is a button that selects a tab that does not exist.
-    func testEverySlotHasATaggedTabInTheTabView() throws {
-        let source = try Self.appSource("RootView.swift")
-        for slot in AppTabBarPresentation.tabs {
-            XCTAssertTrue(
-                source.contains(".tag(AppTab.\(slot.tab))"),
-                "`\(slot.tab)` is a slot on the bar with no tagged tab in the TabView — tapping"
-                    + " it would select a tab that renders nothing."
-            )
-        }
+    /// Every slot on the bar has a screen behind it.
+    ///
+    /// The `switch tab` inside `AppTabContent` is exhaustive over `AppTab`, so the COMPILER
+    /// already refuses a tab with no screen — a stronger guarantee than any grep, and the reason
+    /// the old `.tag(AppTab.…)` check is gone rather than rewritten. What is left to check is the
+    /// other direction: that the bar's slot list and the enum have not come apart.
+    func testEveryTabCaseHasASlotOnTheBar() {
+        XCTAssertEqual(
+            Set(AppTabBarPresentation.tabs.map(\.tab)), Set(AppTab.allCases),
+            "A tab exists that the bar has no slot for. The bar is the only way in now, so that"
+                + " tab is unreachable by any tap."
+        )
     }
 
     func testTheToolsTabRendersToolsView() throws {

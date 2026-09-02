@@ -103,99 +103,79 @@ struct RootView: View {
             case .signedOut, .linkSent:
                 LoginView(authService: authService)
             case .signedIn:
-                TabView(selection: $selectedTab) {
-                    HomeView(
-                        authService: authService,
-                        homeClient: homeClient,
-                        captureClient: captureClient,
-                        journalClient: journalClient,
-                        nudgesClient: nudgesClient,
-                        nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
-                        lifeAreaDetailClient: lifeAreaDetailClient,
-                        taskDetailClient: taskDetailClient,
-                        onStartFocus: startFocus,
-                        focusReloadToken: focusService.completedSprintCount,
-                        activeSprint: focusService.session.map {
-                            ActiveSprintStatus(taskId: $0.taskId, isPaused: $0.isPaused)
-                        },
-                        widgetSprint: focusService.widgetSprint,
-                        onToggleSprintPause: { focusService.togglePause() },
-                        onOpenCaptures: { selectedTab = .captures },
-                        taskCreateClient: taskCreateClient
-                    )
-                        // The system bar is hidden HERE, on the views inside the TabView, not on
-                        // the TabView itself — a `.toolbar` modifier looks UP for the bar it
-                        // governs, so applied to the container it finds nothing and the bar
-                        // survives. `AppTabBar` stands in its place, added below as a bottom
-                        // safe-area inset. `.tabItem` stays: it is what the system bar would have
-                        // rendered, and keeping it means the hiding is the only thing this block
-                        // changed about the TabView's own structure.
-                        // "Today" with v3's trending-up glyph — the Momentum v3 tab identity. The Captures
-                        // slot becomes Areas in the V3-Areas block; the rest keep their glyphs.
-                        .toolbar(.hidden, for: .tabBar)
-                        .tabItem { Label("Today", systemImage: "chart.line.uptrend.xyaxis") }
-                        .tag(AppTab.today)
-                    TaskListView(
-                        tasksClient: tasksClient,
-                        taskCreateClient: taskCreateClient,
-                        taskDetailClient: taskDetailClient,
-                        onStartFocus: startFocus
-                    )
-                        .toolbar(.hidden, for: .tabBar)
-                        .tabItem { Label("Tasks", systemImage: "checklist") }
-                        .tag(AppTab.tasks)
-                    // Areas took the Captures slot in F-V3-Areas; the interim "Handled captures"
-                    // door it carried is gone now that Captures has a slot of its own again.
-                    AreasView(
-                        authService: authService,
-                        homeClient: homeClient,
-                        journalClient: journalClient,
-                        captureClient: captureClient,
-                        lifeAreaDetailClient: lifeAreaDetailClient,
-                        taskDetailClient: taskDetailClient,
-                        onStartFocus: startFocus,
-                        taskCreateClient: taskCreateClient,
-                        onOpenCaptures: { selectedTab = .captures }
-                    )
-                        .toolbar(.hidden, for: .tabBar)
-                        .tabItem { Label("Areas", systemImage: "square.grid.2x2") }
-                        .tag(AppTab.areas)
-                    JournalView(
-                        client: journalClient,
-                        homeClient: homeClient,
-                        captureClient: captureClient,
-                        taskDetailClient: taskDetailClient,
-                        onStartFocus: startFocus
-                    )
-                        .toolbar(.hidden, for: .tabBar)
-                        .tabItem { Label("Journal", systemImage: "book") }
-                        .tag(AppTab.journal)
-                    // Captures, home at last (E's round-2 call, 2026-08-28). Nudges gave up this
-                    // slot and became a section on Today, where a due one is now dismissed inline
-                    // — more than the teaser row it had here could do. `NudgesView` survives,
-                    // pushed from that section, holding everything a section cannot: create,
-                    // edit, reschedule, history.
-                    NavigationStack {
-                        CaptureInboxView(
-                            client: captureClient,
+                AppTabContent(selection: selectedTab) { tab in
+                    // Exhaustive over `AppTab`, so the compiler — not a grep — is what
+                    // guarantees every slot on the bar has a screen behind it.
+                    switch tab {
+                    case .today:
+                        // "Today" with v3's trending-up glyph — the Momentum v3 tab identity.
+                        HomeView(
+                            authService: authService,
+                            homeClient: homeClient,
+                            captureClient: captureClient,
                             journalClient: journalClient,
-                            homeClient: homeClient
+                            nudgesClient: nudgesClient,
+                            nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
+                            lifeAreaDetailClient: lifeAreaDetailClient,
+                            taskDetailClient: taskDetailClient,
+                            onStartFocus: startFocus,
+                            focusReloadToken: focusService.completedSprintCount,
+                            activeSprint: focusService.session.map {
+                                ActiveSprintStatus(taskId: $0.taskId, isPaused: $0.isPaused)
+                            },
+                            widgetSprint: focusService.widgetSprint,
+                            onToggleSprintPause: { focusService.togglePause() },
+                            onOpenCaptures: { selectedTab = .captures },
+                            taskCreateClient: taskCreateClient
                         )
+                    case .tasks:
+                        TaskListView(
+                            tasksClient: tasksClient,
+                            taskCreateClient: taskCreateClient,
+                            taskDetailClient: taskDetailClient,
+                            onStartFocus: startFocus
+                        )
+                    case .areas:
+                        // Areas took the Captures slot in F-V3-Areas; the interim "Handled
+                        // captures" door it carried is gone now that Captures has its own again.
+                        AreasView(
+                            authService: authService,
+                            homeClient: homeClient,
+                            journalClient: journalClient,
+                            captureClient: captureClient,
+                            lifeAreaDetailClient: lifeAreaDetailClient,
+                            taskDetailClient: taskDetailClient,
+                            onStartFocus: startFocus,
+                            taskCreateClient: taskCreateClient,
+                            onOpenCaptures: { selectedTab = .captures }
+                        )
+                    case .journal:
+                        JournalView(
+                            client: journalClient,
+                            homeClient: homeClient,
+                            captureClient: captureClient,
+                            taskDetailClient: taskDetailClient,
+                            onStartFocus: startFocus
+                        )
+                    case .captures:
+                        // Captures, home at last (E's round-2 call, 2026-08-28). Nudges gave up
+                        // this slot and became a section on Today, where a due one is now
+                        // dismissed inline — more than the teaser row it had here could do.
+                        // `NudgesView` survives, pushed from that section, holding everything a
+                        // section cannot: create, edit, reschedule, history. Its count rides the
+                        // bar's badge; `AppTabBarPresentation` keeps `.badge(0)`'s silence.
+                        NavigationStack {
+                            CaptureInboxView(
+                                client: captureClient,
+                                journalClient: journalClient,
+                                homeClient: homeClient
+                            )
+                        }
+                    case .tools:
+                        // The sixth station (F-Tools-1-Bar). Empty on purpose in this block —
+                        // F-Tools-3-Page fills it with Places and the Life Areas editor.
+                        ToolsView()
                     }
-                        .toolbar(.hidden, for: .tabBar)
-                        .tabItem { Label("Captures", systemImage: "tray.full") }
-                        // The count the Areas and Today tray wells used to carry, in the one place
-                        // that outlives them. `.badge(0)` renders nothing, so an empty inbox is
-                        // silent rather than a zero — and a failed refresh keeps the last known
-                        // number instead of claiming zero (never having looked ≠ nothing there).
-                        .badge(captureInboxCount)
-                        .tag(AppTab.captures)
-                    // The sixth station (F-Tools-1-Bar). Empty on purpose in this block —
-                    // F-Tools-3-Page fills it with Places and the Life Areas editor.
-                    ToolsView()
-                        .toolbar(.hidden, for: .tabBar)
-                        .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver") }
-                        .tag(AppTab.tools)
                 }
                 // E's 2026-08-27 call: the tab bar ticks with a light impact rather than the
                 // iOS-conventional selection tick. Fires on the SELECTION, so a programmatic
@@ -213,6 +193,10 @@ struct RootView: View {
                 //
                 // Placed above `.blur` deliberately: the bar dims with the content when the
                 // capture fan opens, the way the system bar did.
+                //
+                // There is no system bar to hide any more — `AppTabContent` is not a
+                // `UITabBarController`, which is the whole reason a sixth tab is possible at
+                // all. See that file for what `TabView` did to tabs five and six.
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     AppTabBar(selection: $selectedTab, captureInboxCount: captureInboxCount)
                 }

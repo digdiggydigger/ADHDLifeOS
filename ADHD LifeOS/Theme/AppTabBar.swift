@@ -126,6 +126,11 @@ private struct AppTabBarBadge: View {
             // here because the count is NOT conveyed by the pill alone: the slot's
             // accessibility label carries it in words (§4's real requirement).
             .foregroundStyle(.white)
+            // `fixedSize` before the frame, and it is load-bearing: the badge is an OVERLAY on
+            // the glyph, so the size it is offered is the GLYPH's ~20pt — which truncated "99+"
+            // to "9…" in the first render. Taking its ideal width first is what lets the pill
+            // grow past the thing it sits on.
+            .fixedSize()
             .padding(.horizontal, 4)
             .frame(minWidth: AppTabBarMetrics.badgeDiameter, minHeight: AppTabBarMetrics.badgeDiameter)
             // `StateRisk`, the app's own "this is overdue / wants you" hue, rather than one of
