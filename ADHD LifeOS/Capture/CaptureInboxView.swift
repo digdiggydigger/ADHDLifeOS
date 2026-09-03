@@ -46,6 +46,8 @@ struct CaptureInboxView: View {
     /// (the `TaskListView` precedent) rather than `NavigationLink` rows, because the rows live in
     /// a `LazyVStack` inside Home's existing stack.
     @State var inspectingCapture: Capture?
+    /// The shared search state, injected by `RootView`. The ROW that opens the surface lives
+    /// beside the capture disc app-level; the SURFACE is presented here, because the captures are.
     @State private var isPresentingQuickCapture = false
     /// The top card's "Task it" — the existing promote sheet over the first waiting capture.
     @State var promotingCapture: Capture?
@@ -132,6 +134,11 @@ struct CaptureInboxView: View {
             }
         }
         .safeAreaInset(edge: .bottom) { bottomBar.appTabBarClearance() }
+        // F-Search-2-Captures. Opened by the shared row above the tab bar; the surface is here
+        // because the captures are, which is what keeps `CaptureInboxService` out of `RootView`.
+        // The modifier reads the shared model from the environment itself, so this view holds no
+        // search state and stays inside its `type_body_length` budget.
+        .captureSearchSurface(service: service, lifeAreas: lifeAreas, allTags: allTags, opening: $inspectingCapture)
         // Triage's failures were being published and rendered NOWHERE on this screen: a Sorted
         // that could not write, or an undo that could not restore, both set `triageErrorMessage`
         // and looked exactly like a button that does nothing. That mattered little while every
@@ -264,7 +271,8 @@ struct CaptureInboxView: View {
         // the Sorted button itself — sat underneath it with nothing below to scroll to (E's
         // screenshots, 2026-08-28). The room to lift it clear, now the shared modifier: this was
         // the only screen that had it, and it was padded INTO the content rather than inset.
-        .captureDiscClearance()
+        // Captures carries the search row, so it reserves the row's height on top of the disc's.
+        .captureDiscClearance(hasSearchRow: true)
         .refreshable {
             await service.refresh()
             allTags = await service.fetchAllTags()

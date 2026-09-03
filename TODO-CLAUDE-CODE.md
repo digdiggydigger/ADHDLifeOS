@@ -2559,7 +2559,7 @@ form of the clearance it calls — the guard working. It was made STRICTER rathe
 table now carries `(file, expected call)` per screen, plus a second test that only screens which
 actually draw the row may reserve its height.
 
-### FEATURE: F-Search-2-Captures — Captures adopts the row  [ ] UNCHECKED
+### FEATURE: F-Search-2-Captures — Captures adopts the row  [x] COMPLETED
 
 New behaviour, not wiring: `CaptureInboxService` has no search state and no capture filter exists
 anywhere (grepped). Add `CaptureSearchRefinement` in `TaskListRefinement`'s shape and a surface;
@@ -2571,12 +2571,30 @@ blank is a bug this repo has already shipped once** (`eddef9b`). Search must go 
 presentation rule rather than re-deriving it, or photo captures become silently unmatchable.
 
 **Acceptance criteria**
-- [ ] Matching goes through `CaptureRowPresentation`, so a capture with neither title nor content
-      is still findable by whatever the row displays for it.
-- [ ] Case- and diacritic-insensitive, trimmed, empty query returns everything — matching
-      `TaskListRefinement` exactly rather than inventing a second convention.
-- [ ] The row and surface are the SHARED ones from block 1; no second copy.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Matching goes through `CaptureRowPresentation`, so a capture with neither title nor content
+      is still findable by whatever the row displays for it. Pinned by a test that asserts the
+      photo placeholder resolves AND that searching "photo" finds it.
+- [x] Trimmed, empty query returns everything, order preserved, no-match returns empty.
+- [x] **Correction to this block's own spec: NOT diacritic-insensitive, deliberately.** The spec
+      asked for both "diacritic-insensitive" and "matching `TaskListRefinement` exactly", and
+      those conflict — `TaskListRefinement` uses `localizedCaseInsensitiveContains`, which folds
+      case but not accents. Matching the sibling won: two search fields in one app that disagree
+      about whether "cafe" finds "café" is worse than either answer alone. A test asserts the two
+      behave IDENTICALLY on an accented fixture, so folding becomes one decision taken in both
+      places rather than a drift.
+- [x] The row and surface are the SHARED ones from block 1; no second copy. The surface reuses
+      `CaptureRowView`, so a result cannot come to look like something other than what it is.
+- [x] Suite green (2,218 / 0, 56 skipped), lint 0 / 634, red-checked, committed and pushed.
+
+**Two things worth knowing before block 3:**
+1. **`CaptureInboxView` is AT SwiftLint's 250-line `type_body_length` ceiling** — adding the
+   presentation inline pushed it to 259. The fix keeps both the `fullScreenCover` AND its
+   `@EnvironmentObject` outside the body: `captureSearchSurface(...)` is a `ViewModifier` living
+   beside the surface, and it reads the shared model from the environment itself, so the inbox
+   holds no search state at all. **Block 3 must not add lines to that struct.**
+2. **Search reads the WHOLE inbox, not the visible filter.** The inbox has its own
+   unprocessed/archived filter; a search that silently obeyed it would answer "no matches" for a
+   capture the user can see they wrote.
 
 ### FEATURE: F-Search-3-Journal — Journal adopts the row  [ ] UNCHECKED
 

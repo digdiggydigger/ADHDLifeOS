@@ -62,7 +62,8 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
         ("Tasks/TaskDetailFormSections.swift", ".captureDiscClearance()"),
         ("Areas/AreasView.swift", ".captureDiscClearance()"),
         ("Nudges/NudgesView.swift", ".captureDiscClearance()"),
-        ("Capture/CaptureInboxView.swift", ".captureDiscClearance()"),
+        // Captures gained the search row in F-Search-2, so it reserves the row too.
+        ("Capture/CaptureInboxView.swift", ".captureDiscClearance(hasSearchRow: true)"),
         ("Capture/CaptureDetailView.swift", ".captureDiscClearance()"),
         ("LifeAreaDetail/LifeAreaDetailView.swift", ".captureDiscClearance()"),
         // The sixth tab root (F-Tools-3-Page). Two cards do not reach the disc today, but the
@@ -93,7 +94,7 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
             .map { $0.path.lastPathComponent }
             .sorted()
         XCTAssertEqual(
-            reserving, ["TaskListView.swift"],
+            reserving, ["CaptureInboxView.swift", "TaskListView.swift"],
             "A screen reserves the search row's height. Only screens that actually show the row"
                 + " may — `AppSearchScope.scope(for:)` is the list, and it is Tasks alone until"
                 + " blocks 2 and 3 land."

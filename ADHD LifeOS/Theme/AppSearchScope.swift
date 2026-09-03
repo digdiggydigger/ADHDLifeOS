@@ -22,6 +22,7 @@ import Foundation
 enum AppSearchScope: Equatable {
     case none
     case tasks
+    case captures
 
     /// Which scope a tab is in.
     ///
@@ -32,15 +33,17 @@ enum AppSearchScope: Equatable {
     /// right and silently leave whichever tab registered last in charge forever. A pure function
     /// of a value that changes on every switch cannot go wrong that way.
     ///
-    /// Captures and Journal arrive in blocks 2 and 3 **with their screens**. Adding their cases
-    /// now would ship two scopes nothing renders — this repo's most repeated defect in its
-    /// gated-off form — and the exhaustive `switch` in each surface is what forces them to be
-    /// handled when they land.
+    /// Each case arrives **with its screen**: `.captures` in F-Search-2, `.journal` in F-Search-3.
+    /// Adding a scope before the surface that renders it would ship a case nothing draws — this
+    /// repo's most repeated defect in its gated-off form — and the exhaustive `switch` here is
+    /// what forces the question each time.
     static func scope(for tab: AppTab) -> AppSearchScope {
         switch tab {
         case .tasks:
             return .tasks
-        case .today, .areas, .journal, .captures, .tools:
+        case .captures:
+            return .captures
+        case .today, .areas, .journal, .tools:
             return .none
         }
     }
@@ -50,6 +53,7 @@ enum AppSearchScope: Equatable {
         switch self {
         case .none: return nil
         case .tasks: return "Search tasks"
+        case .captures: return "Search captures"
         }
     }
 
