@@ -27,7 +27,13 @@ final class PlaceTriggerEventHandler {
     private let recorder: LocationEventRecording
     private let notifier: ImmediateNotifying
     private let store: ArrivalNudgeStateStoring
+    private let runStore: RoutineRunStoring
     private let isEnabled: () -> Bool
+    /// The routine screen is 17-gated but crossings are not, and an account's places can come
+    /// from another device — a 16.x device receiving a qualifying crossing keeps today's
+    /// per-action notifications (never a notification whose tap can do nothing). Injectable
+    /// so both branches are pinned without an iOS 16 simulator.
+    private let routineScreenAvailable: Bool
     /// The auto-run writers, as closures for the `locationStamp` reason: the defaults do the
     /// real Firestore work, a test hands over recorders. `true` means the write landed.
     private let journalWriter: (NormalizedCreateLogInput) async -> Bool
@@ -37,14 +43,21 @@ final class PlaceTriggerEventHandler {
         recorder: LocationEventRecording? = nil,
         notifier: ImmediateNotifying? = nil,
         store: ArrivalNudgeStateStoring? = nil,
+        // Defaulted so the DEBUG test-fire path (which constructs the handler without
+        // injection) exercises the routine branch against the REAL run store for free.
+        runStore: RoutineRunStoring? = nil,
         isEnabled: @escaping () -> Bool = { AppFeedback.arrivalNudgesEnabled() },
+        routineScreenAvailable: Bool = { if #available(iOS 17.0, *) { return true }
+                                         return false }(),
         journalWriter: ((NormalizedCreateLogInput) async -> Bool)? = nil,
         captureWriter: ((NormalizedCreateCaptureInput) async -> Bool)? = nil
     ) {
         self.recorder = recorder ?? FirebaseLocationEventRecorder()
         self.notifier = notifier ?? NotificationCenterImmediateNotifier()
         self.store = store ?? UserDefaultsArrivalNudgeStateStore()
+        self.runStore = runStore ?? UserDefaultsRoutineRunStore()
         self.isEnabled = isEnabled
+        self.routineScreenAvailable = routineScreenAvailable
         self.journalWriter = journalWriter ?? { input in
             (try? await FirebaseJournalClientAdapter().createLog(input)) != nil
         }
@@ -75,10 +88,12 @@ final class PlaceTriggerEventHandler {
             )
         )
 
-        let cooldowns = store.readCooldowns()
-        guard TriggerCooldown.shouldFire(event, state: cooldowns, now: event.occurredAt) else { return }
         let snapshot = store.readSnapshot()
         let entry = snapshot?.entries.first { $0.placeId == event.placeId }
+        let routineRun = applyRunLifecycle(for: event, entry: entry)
+
+        let cooldowns = store.readCooldowns()
+        guard TriggerCooldown.shouldFire(event, state: cooldowns, now: event.occurredAt) else { return }
         let plan = PlaceActionPlan.split(entry?.actions, for: event.kind)
 
         var ranLines: [String] = []
@@ -92,7 +107,74 @@ final class PlaceTriggerEventHandler {
         // Fire-time gate, not just registration-time: a fence iOS delivers moments after the
         // master switch went off must die here, not nudge one last time.
         if isEnabled() {
-            for action in plan.external {
+            postedAnything = await postCrossingNotifications(
+                for: event, snapshot: snapshot,
+                routineRun: routineRun, externals: plan.external, ranLines: ranLines
+            )
+        }
+
+        if postedAnything || !ranLines.isEmpty {
+            store.writeCooldowns(TriggerCooldown.recording(event, in: cooldowns))
+        }
+    }
+
+    /// Run LIFECYCLE (F-Routines-2) — records, like the auto-runs, so it runs OUTSIDE
+    /// `isEnabled()`; and the CALLER places it BEFORE the cooldown guard, because a departure
+    /// swallowed by its own 30-minute cooldown must still end the arrival run — otherwise
+    /// "routine live" haunts Today until the midnight sweep. Creation obeys the same
+    /// placement (newest wins): E standing in the gym again after a bounce must find the
+    /// routine on Today even though the bounce posts nothing.
+    ///
+    /// Returns the minted run when this crossing qualifies as a routine (2+ tap-steps, and
+    /// only where the 17-gated routine screen can honour the tap).
+    private func applyRunLifecycle(
+        for event: PlaceTriggerEvent, entry: AtPlaceSnapshot.PlaceEntry?
+    ) -> RoutineRun? {
+        if let liveRun = runStore.readLiveRun(now: event.occurredAt),
+           RoutineRunLifecycle.ends(liveRun, on: event) {
+            runStore.endLiveRun()
+        }
+        let routinePlan = PlaceRoutinePlan.make(entry?.actions, for: event.kind)
+        guard routineScreenAvailable, routinePlan.qualifiesAsRoutine else { return nil }
+        let run = RoutineRun.make(event: event, entry: entry, plan: routinePlan)
+        runStore.write(run)
+        return run
+    }
+
+    /// The interruption half of one crossing, behind BOTH gates (cooldown and master
+    /// switch). With a routine run minted, ONE routine notification absorbs the message and
+    /// the auto-run report (E's settled call #2) and the task nudge composes tasks alone;
+    /// without one, the shipped per-action fan-out runs byte-identically.
+    private func postCrossingNotifications(
+        for event: PlaceTriggerEvent, snapshot: AtPlaceSnapshot?, routineRun: RoutineRun?,
+        externals: [PlaceAction], ranLines: [String]
+    ) async -> Bool {
+        let entry = snapshot?.entries.first { $0.placeId == event.placeId }
+        var postedAnything = false
+        if let routineRun {
+            let content = PlaceRoutineNotificationContent.notification(
+                for: routineRun, ranLines: ranLines
+            )
+            await notifier.post(
+                title: content.title,
+                body: content.body,
+                identifier: PlaceRoutineNotificationContent.identifier(
+                    placeId: event.placeId, kind: event.kind
+                ),
+                // ONLY the minted run key rides the tap: the screen reads steps from the
+                // store, and a key mismatch IS the stale-tap rule.
+                userInfo: PlaceRoutineNotificationContent.userInfo(for: routineRun),
+                categoryIdentifier: PlaceRoutineNotificationContent.categoryIdentifier
+            )
+            // Tray hygiene: a still-delivered per-action notification from an earlier
+            // crossing must not compete with the routine that replaces it. Removal rides
+            // the post — with the switch off, the tray is not touched at all.
+            await notifier.removeDelivered(identifiers: routineRun.steps
+                .filter { $0.state != .autoDone }
+                .map { PlaceActionNotificationContent.identifier(for: $0.action) })
+            postedAnything = true
+        } else {
+            for action in externals {
                 let content = PlaceActionNotificationContent.external(
                     for: action, placeName: entry?.displayName ?? "", kind: event.kind
                 )
@@ -104,21 +186,19 @@ final class PlaceTriggerEventHandler {
                 )
                 postedAnything = true
             }
-            if let content = ArrivalNudgeContent.notification(
-                for: event, snapshot: snapshot, executedLines: ranLines
-            ) {
-                await notifier.post(
-                    title: content.title,
-                    body: content.body,
-                    identifier: "arrivalNudge-\(event.placeId.uuidString)-\(event.kind.rawValue)"
-                )
-                postedAnything = true
-            }
         }
-
-        if postedAnything || !ranLines.isEmpty {
-            store.writeCooldowns(TriggerCooldown.recording(event, in: cooldowns))
+        if let content = ArrivalNudgeContent.notification(
+            for: event, snapshot: snapshot, executedLines: ranLines,
+            absorbedByRoutine: routineRun != nil
+        ) {
+            await notifier.post(
+                title: content.title,
+                body: content.body,
+                identifier: "arrivalNudge-\(event.placeId.uuidString)-\(event.kind.rawValue)"
+            )
+            postedAnything = true
         }
+        return postedAnything
     }
 
     /// Runs one auto-run action, stamped with the place itself — the crossing is the evidence

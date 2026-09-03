@@ -72,7 +72,7 @@ enum ArrivalNudgeContent {
 
     static func notification(
         for event: PlaceTriggerEvent, snapshot: AtPlaceSnapshot?,
-        executedLines: [String] = []
+        executedLines: [String] = [], absorbedByRoutine: Bool = false
     ) -> (title: String, body: String)? {
         guard let entry = snapshot?.entries.first(where: { $0.placeId == event.placeId }) else {
             return nil
@@ -82,7 +82,7 @@ enum ArrivalNudgeContent {
         case .arrival:
             base = compose(
                 title: "You're at \(entry.displayName)",
-                message: entry.arrivalMessage,
+                message: absorbedByRoutine ? nil : entry.arrivalMessage,
                 tasks: entry.openTaskTitles.isEmpty ? nil : (
                     alone: taskLine(for: entry, joiner: " — "),
                     afterMessage: taskLine(for: entry, joiner: ": ")
@@ -91,7 +91,7 @@ enum ArrivalNudgeContent {
         case .departure:
             base = compose(
                 title: "Leaving \(entry.displayName)",
-                message: entry.departureMessage,
+                message: absorbedByRoutine ? nil : entry.departureMessage,
                 tasks: entry.openTaskTitles.isEmpty ? nil : (
                     alone: departureBody(for: entry), afterMessage: departureBody(for: entry)
                 )
@@ -100,7 +100,10 @@ enum ArrivalNudgeContent {
         // The Place Actions extension of the firing rule: something RAN, so the crossing has
         // content and reports it — the same reasoning that lets a custom message fire alone.
         // With nothing run, the original gate stands untouched.
-        guard !executedLines.isEmpty else { return base }
+        // The fifth path (F-Routines-2): a routine notification for this crossing already
+        // carries the message AND the report — this nudge composes tasks alone, so one
+        // crossing never interrupts twice with the same words.
+        guard !executedLines.isEmpty, !absorbedByRoutine else { return base }
         let report = executedLines.joined(separator: " · ")
         guard let base else {
             let title = event.kind == .arrival

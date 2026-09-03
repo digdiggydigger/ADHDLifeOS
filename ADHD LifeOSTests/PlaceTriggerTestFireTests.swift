@@ -20,6 +20,15 @@ final class PlaceTriggerTestFireTests: XCTestCase {
         func post(title: String, body: String, identifier: String, userInfo: [String: String]) async {
             postedTitles.append(title)
         }
+
+        func post(
+            title: String, body: String, identifier: String,
+            userInfo: [String: String], categoryIdentifier: String
+        ) async {
+            postedTitles.append(title)
+        }
+
+        func removeDelivered(identifiers: [String]) async {}
     }
 
     private final class FakeRecorder: LocationEventRecording {

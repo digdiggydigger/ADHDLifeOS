@@ -29,6 +29,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // 2026-08-20). Registering here, before any scheduling can occur, is the only supported
         // place: the delegate must be set before the app finishes launching.
         UNUserNotificationCenter.current().delegate = ForegroundNotificationPresenter.shared
+        // The app's SINGLE category registry (F-Routines-2). Registration REPLACES the
+        // whole set on every call, so any future category joins this one call — a second
+        // registration site elsewhere would silently erase this one.
+        UNUserNotificationCenter.current().setNotificationCategories([
+            UNNotificationCategory(
+                identifier: PlaceRoutineNotificationContent.categoryIdentifier,
+                actions: [], intentIdentifiers: [], options: []
+            )
+        ])
         // A region crossing can RELAUNCH this app in the background with no UI (block 4b).
         // Touching the trigger service here rebuilds its CLLocationManager delegate before iOS
         // delivers the event it woke us for — a monitor created lazily by the first screen

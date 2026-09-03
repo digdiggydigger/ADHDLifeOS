@@ -2669,7 +2669,7 @@ never magic), and the stale startSprint footer copy fix (`PlaceActionsEditorView
       by themselves.
 - [x] Suite green, lint 0, builds green, red-checked, committed and pushed.
 
-### FEATURE: F-Routines-2-Notify — run store + one notification at 2+  [ ] UNCHECKED
+### FEATURE: F-Routines-2-Notify — run store + one notification at 2+  [x] COMPLETED
 
 `RoutineRunStore` (UserDefaults; create/end/newest-wins/30-min-window/lazy-sweep transitions —
 the future smart-skip sensing seam) and the handler branch: at ≥2 tap-steps (and iOS 17+), write
@@ -2677,16 +2677,21 @@ the run BEFORE posting ONE routine notification (`placeRoutine-` prefix — the 
 prefix is greedy; own `UNNotificationCategory`; userInfo = minted run UUID only).
 
 **Acceptance criteria**
-- [ ] Run lifecycle transitions sit BEFORE the cooldown guard and OUTSIDE `isEnabled()` — pinned
-      by the stacked-cooldown fixture (arrive→leave→return→leave inside 30 min).
-- [ ] Kill-switch OFF still writes the run; only the notification honours it (stated to E).
-- [ ] Below threshold and below iOS 17: existing paths byte-identical (regression-pinned).
-- [ ] Routine body absorbs message + auto-run report (phrasing pinned); `ArrivalNudgeContent`
+- [x] Run lifecycle transitions sit BEFORE the cooldown guard and OUTSIDE `isEnabled()` — pinned
+      by the stacked-cooldown fixture (arrive→leave→return→leave inside 30 min); creation obeys
+      the same placement (newest wins), so a bounce-return inside the cooldown still puts the
+      routine back on Today while posting nothing.
+- [x] Kill-switch OFF still writes the run; only the notification honours it (stated to E at the
+      stop). Cooldown CONSUMPTION unchanged: a silent run write alone does not consume.
+- [x] Below threshold and below iOS 17: existing paths byte-identical (regression-pinned; the
+      per-action tap payload compared by decoded action — JSON key order is nondeterministic).
+- [x] Routine body absorbs message + auto-run report (phrasing pinned); `ArrivalNudgeContent`
       gains the tasks-only fifth path (nil when no tasks).
-- [ ] Tray hygiene: that place's delivered `placeAction-` notifications removed on routine post;
-      `ImmediateNotifying` widened as protocol requirements (all four conformers updated).
-- [ ] Interim inert tap reported to E at the stop.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Tray hygiene: that place's delivered `placeAction-` notifications removed on routine post
+      (removal rides the post — switch off touches no tray); `ImmediateNotifying` widened as
+      protocol requirements (all four conformers updated).
+- [x] Interim inert tap reported to E at the stop.
+- [x] Suite green, lint 0, builds green, red-checked, committed and pushed.
 
 ### FEATURE: F-Routines-3-Screen — the door and the screen  [ ] UNCHECKED
 
