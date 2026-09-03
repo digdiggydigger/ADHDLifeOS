@@ -2360,7 +2360,7 @@ and never reflows it — content shifting under a morphing bar would be intolera
 inside that reserve exactly: card height + lift == rowHeight. It lands on the concept's 22 as a
 consequence rather than a coincidence, and a test holds the identity.
 
-### FEATURE: F-Tools-3-Page — the Tools page, and Places leaves Settings  [ ] UNCHECKED
+### FEATURE: F-Tools-3-Page — the Tools page, and Places leaves Settings  [x] COMPLETED
 
 Replace the block-1 stub with the real Tools page: **bento cards** (`.bentoCard()`), E's explicit
 choice over Settings-style grouped rows. It holds Places and the Life Areas editor and nothing
@@ -2372,18 +2372,45 @@ and the app floor is 16.0, so Tools must handle Places being absent — it compi
 simulator and breaks the floor otherwise.
 
 **Acceptance criteria**
-- [ ] `ToolsCatalog` TDD-pinned: `available(placesSupported: true)` returns both entries;
+- [x] `ToolsCatalog` TDD-pinned (written failing first — `cannot find 'ToolsCatalog' in scope`):
+      `available(placesSupported: true)` returns both entries, Places first;
       `available(placesSupported: false)` returns Life Areas only (the iOS 16 test); every entry
-      carries a non-empty title, caption and glyph.
-- [ ] Tools shows two bento cards on iOS 17+, one on iOS 16, and both open their real
-      destinations (`PlacesListView`, `LifeAreaEditorListView`).
-- [ ] Places is gone from Settings; **Life Areas is still there.**
-- [ ] No test or UI journey breaks — re-grep `settingsPlacesRow` / `settingsLifeAreasRow` rather
-      than trusting the 2026-09-02 check.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
-- [ ] If the Settings backgrounding bug appears to vanish, say so explicitly and **do not claim it
-      fixed** — those screens simply no longer live under the sheet being rebuilt. It stays parked
-      pending E's iOS update.
+      carries a non-empty title, caption and glyph; identifiers are namespaced and unique; and the
+      page is pinned at TWO cards so a third has to be a decision, not a drift.
+- [x] Tools shows two bento cards on iOS 17+, one on iOS 16, and both open their real
+      destinations (`PlacesListView`, `LifeAreaEditorListView`). The 16.0 case is proved by the
+      catalog test plus the 16.0-floor compile — **this machine has no iOS 16 simulator**, so no
+      booted check of it exists or is claimed.
+- [x] Places is gone from Settings (`placesSection`, `settingsPlacesRow`, the `placesClient`
+      property and its init parameter all deleted); **Life Areas is still there.**
+- [x] No test or UI journey breaks — re-grepped: `settingsPlacesRow` / `placesSection` appeared
+      only inside `SettingsView.swift` itself, and `ADHD LifeOSUITests/` references neither those
+      nor `toolsEmptyState` (the block-1 stub identifier this block deleted).
+- [x] Suite green (2,167 / 0, 56 skipped), lint 0 / 621, sim build green, red-checked, committed
+      and pushed.
+- [x] The Settings backgrounding bug: **not touched, not fixed, still parked.** Its screens simply
+      no longer live under the Settings sheet, which can make the symptom appear to vanish. Awaits
+      E's iOS update, exactly as before.
+
+**Two corrections to the handoff, both found by reading the tree:**
+1. **`PlaceAutomationGuideView` does NOT need `appTabBarClearance()`.** `START-HERE-tools-tab-block3.md`
+   flagged it as block 3's likeliest trap on the assumption it is pushed. It is not — it is
+   presented with `.sheet(item: $guideContext)` from `PlaceActionsSection`, carries its own
+   `NavigationStack` and Done button, and a sheet is above the tab bar and the capture disc
+   whether Places lives in Settings or in Tools. `AppTabBarCallSiteTests` stays at two call sites.
+2. **The clients are NOT threaded through `RootView`.** The plan said to pass `placesClient` and
+   `lifeAreaEditorClient` down; `RootView` never held either (`SettingsView` constructed them
+   itself), so `ToolsView` takes them through the same default-param door — which also keeps the
+   bare `ToolsView()` call site that `AppTabBarCallSiteTests` pins.
+
+**What the disc clearance needed, which the plan did not mention.** `PlacesListView` had never
+been under the capture disc before — the Settings sheet covers it — and moving it to a tab put it
+there. Both pushes and the page's own scroll now call `.captureDiscClearance()`, applied at the
+CALL SITE the way `AreasView` already does for its copy of the Life Areas editor, since the
+clearance is a property of the presentation rather than of the screen.
+
+**§7 conflict, reported as standing:** `ui-ux-pro-max` rates "bottom nav ≤5" HIGH severity with
+"overloaded nav" as an anti-pattern. E was shown this and chose six knowingly.
 
 ### FEATURE: F-Tools-4-Headers — one pinned-header treatment, everywhere  [ ] UNCHECKED
 

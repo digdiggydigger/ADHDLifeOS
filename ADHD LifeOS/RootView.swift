@@ -177,8 +177,14 @@ struct RootView: View {
                             )
                         }
                     case .tools:
-                        // The sixth station (F-Tools-1-Bar). Empty on purpose in this block —
-                        // F-Tools-3-Page fills it with Places and the Life Areas editor.
+                        // The sixth station (F-Tools-1-Bar), filled in F-Tools-3-Page: bento
+                        // doors to Places and the Life Areas editor, and nothing else — E wants
+                        // the page sparse so Routines has somewhere obvious to land.
+                        //
+                        // No clients threaded from here on purpose: `RootView` never held these
+                        // two (`SettingsView` constructed them itself), so `ToolsView` takes them
+                        // through the same default-param door rather than adding two properties
+                        // to this file and the App to pass through.
                         ToolsView()
                     }
                 }
