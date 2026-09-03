@@ -37,13 +37,35 @@ final class AppSearchRowMetricsTests: XCTestCase {
         )
     }
 
-    /// E asked for this by name when approving the layout: *"I just wanna make sure that you have
-    /// added spacing between the top of the menu/nav tab bar and the collapsed pill."*
-    func testTheGapAboveTheTabBarIsUnchanged() {
+    /// **Measured off E's own device markings, not chosen.** E marked the target twice on
+    /// 2026-09-03 and asked for the capture button *"comfortably aligned with the One line about
+    /// today button on the Journal Tab"*: that composer field spans y 677.3-723.7 (centre 700.5)
+    /// and E's ring around it centred on 701.5. This gap puts the disc's centre at 698 on an
+    /// iPhone 15 Pro — 2.5pt out, inside the width of the line E drew.
+    ///
+    /// It was 60 for exactly one build, and that was 58pt too generous: the 60 had never meant
+    /// "above the bar" — it was measured from the home indicator while the disc overlapped the
+    /// bar, so restoring the missing bar height made it wrong in the other direction.
+    func testTheGapAboveTheTabBarMatchesEsMarking() {
         XCTAssertEqual(
-            AppSearchRowMetrics.gapAboveTabBar, 60,
-            "The 60pt gap between the top of the tab bar and the capture stack changed. That is"
-                + " E's 2026-08-31 margin pass and E re-confirmed it when approving this row."
+            AppSearchRowMetrics.gapAboveTabBar, 32,
+            "The gap above the tab bar changed. 32 is what centres the capture button on the"
+                + " Journal composer, which is the alignment E marked on device."
+        )
+    }
+
+    /// The gap has to clear the bar and stay clear of it: too small and the disc sits ON the bar
+    /// (the 7pt overlap E photographed), too large and it floats away from the composer it is
+    /// meant to line up with.
+    func testTheGapClearsTheBarWithoutFloatingAway() {
+        XCTAssertGreaterThanOrEqual(
+            AppSearchRowMetrics.gapAboveTabBar, 24,
+            "The capture button is close enough to the tab bar to read as attached to it."
+        )
+        XCTAssertLessThanOrEqual(
+            AppSearchRowMetrics.gapAboveTabBar, 40,
+            "The capture button has floated far enough above the bar to stop lining up with a"
+                + " screen's own bottom furniture — the Journal composer is the reference."
         )
     }
 

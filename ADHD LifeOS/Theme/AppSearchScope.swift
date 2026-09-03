@@ -72,10 +72,31 @@ enum AppSearchRowMetrics {
     /// The field's capsule corner. Matches the chip radius the bar already uses at this size.
     static let fieldCornerRadius: CGFloat = 12
 
-    /// E's 2026-08-31 margin pass, re-confirmed when approving this row: *"I just wanna make sure
-    /// that you have added spacing between the top of the menu/nav tab bar and the collapsed
-    /// pill."* Spelled here so a test can hold it, and read by `RootBottomOverlay`.
-    static let gapAboveTabBar: CGFloat = 60
+    /// The gap between the top of the tab bar and the bottom of the capture stack.
+    ///
+    /// **32, and it is E's number twice over — measured off E's own markings, not chosen.** E
+    /// marked the target on two device screenshots (2026-09-03) and asked for the disc to be
+    /// *"comfortably aligned with the One line about today button on the Journal Tab"*:
+    ///
+    ///     Journal composer field   y 677.3 - 723.7   centre 700.5
+    ///     E's ring around it                         centre 701.5
+    ///     the disc, before                           centre 669.8
+    ///
+    /// With this gap the disc's centre lands at **698** on an iPhone 15 Pro — 2.5pt off the
+    /// composer's centre, which is inside the width of the line E drew. E chose that target over
+    /// the rougher marker on the Home tab (centre 716.7) when told one app-level number has to
+    /// serve every tab.
+    ///
+    /// **It was 60 for one build and that was too much.** 60 came from E's 2026-08-31 margin pass,
+    /// but that number had never actually meant "above the bar" — it was measured from the home
+    /// indicator while the disc overlapped the bar, so restoring the missing bar height (see
+    /// `bottomFurnitureLift`) made it 58pt too generous all at once.
+    ///
+    /// **The pill needs nothing extra.** The capture button's frame is `discDiameter` square in
+    /// both states — only the visual capsule shrinks to 60x48 inside it — so the pill's centre is
+    /// the disc's centre and moving one moves the other. E confirmed centre alignment is what was
+    /// meant.
+    static let gapAboveTabBar: CGFloat = 32
 
     /// What the bottom furniture actually has to be padded by, and **it is not `gapAboveTabBar`
     /// alone — that was a real bug, measured on E's device.**
