@@ -2497,7 +2497,7 @@ the top, which E rejected. And because focus opens a full-screen surface, **the 
 Button styled as a search field and never takes focus** — so no keyboard ever displaces the bar or
 the disc. That is the arc's biggest simplification; do not build a live `TextField` into the row.
 
-### FEATURE: F-Search-1-Row — the row, the surface, and Tasks  [ ] UNCHECKED
+### FEATURE: F-Search-1-Row — the row, the surface, and Tasks  [x] COMPLETED
 
 Build the shared machinery and prove it on one screen. `.searchable` comes OFF `TaskListView`
 (that is the bug fix); a field-shaped Button joins the capture disc in one `HStack` inside
@@ -2534,8 +2534,30 @@ three searchable screens need more room than the other eight. **Extend the exist
 - [ ] The row appears on Tasks and nowhere else in this block.
 - [ ] A call-site guard: `.searchable(` appears in NO tab-root file, permitting only
       `PlaceAppPickerView.swift` (sheet-presented) by name. Strip comment lines before searching.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Suite green (2,201 / 0, 56 skipped), lint 0 / 631, sim + device builds green, red-checked
+      (three regressions → three failures), committed, pushed, installed and launch-verified.
 - [ ] **Stop for E's device verdict on the row's position and spacing before block 2.**
+
+**⚠ THE BUG THE RENDER FOUND, and it is bigger than the feature: THE CAPTURE DISC HAS BEEN SITTING
+ON THE TAB BAR.** `RootBottomOverlay` is an `.overlay(alignment: .bottom)`, and its `.bottom`
+resolves to the screen's **original safe area** — NOT to the top of the bar, even though the bar is
+applied as a `safeAreaInset` above it. The file's own comment asserted the opposite and
+`testTheBottomFurnitureIsLiftedFromTheTopOfTheBar` was written to enforce it, so the 60pt lift was
+measured from the home indicator: on E's iPhone 15 Pro the disc's 60pt frame ended at **758pt**
+against a bar top of **751pt** — a **7pt overlap**.
+
+E reported it in passing while approving this row (*"I just wanna make sure that you have added
+spacing between the top of the menu/nav tab bar and the collapsed pill"*) and **Claude Code
+answered, wrongly, that the 60pt gap was real and deliberate.** It was not. Proven by a controlled
+probe rather than by reading: adding the bar's height moved the disc's frame bottom from 779.8 to
+721.8 against an unchanged bar top of ~772. The lift is now
+`AppSearchRowMetrics.bottomFurnitureLift` (gap + `AppTabBarMetrics.rowHeight`) and the guard is
+inverted, with the measurement recorded as its reason.
+
+**Also worth keeping:** `CaptureDiscClearanceCallSiteTests` failed the moment Tasks changed which
+form of the clearance it calls — the guard working. It was made STRICTER rather than looser: the
+table now carries `(file, expected call)` per screen, plus a second test that only screens which
+actually draw the row may reserve its height.
 
 ### FEATURE: F-Search-2-Captures — Captures adopts the row  [ ] UNCHECKED
 
