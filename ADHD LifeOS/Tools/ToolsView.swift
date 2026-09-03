@@ -78,7 +78,7 @@ struct ToolsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Set up once")
+            Text("Workshop")
                 .sectionLabel()
                 .foregroundStyle(.secondary)
             Text("Tools")

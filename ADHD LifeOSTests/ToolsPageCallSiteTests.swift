@@ -95,17 +95,30 @@ final class ToolsPageCallSiteTests: XCTestCase {
     /// **The half that looks like a bug and is not.** Life Areas is reachable from Settings AND
     /// from Tools, deliberately, because it is genuinely both a setting and a tool. E chose this
     /// knowing it is the opposite of the Captures de-duplication.
+    ///
+    /// **Each assertion here is a whole line of Swift, not a bare name, and that is a scar.** The
+    /// first cut of this test read `source.contains("settingsLifeAreasRow")`, and the red-check
+    /// found it inert twice over: the identifier survives as a PREFIX of anything longer
+    /// (`…RowX` still "contains" it), and this file's own doc comment names it in prose, so the
+    /// assertion held even with the row deleted outright. A guard that passes on a broken tree is
+    /// worse than none — it is the failure mode this whole file exists to prevent.
     func testLifeAreasKeptItsSettingsDoor() throws {
         let source = try Self.appSource("Settings/SettingsView.swift")
         XCTAssertTrue(
-            source.contains("settingsLifeAreasRow"),
-            "The Life Areas row was removed from Settings. That is not the split E asked for:"
-                + " Places left, Life Areas STAYED and gained a second door. Do not make this"
-                + " symmetrical."
+            source.contains(".accessibilityIdentifier(\"settingsLifeAreasRow\")"),
+            "The Life Areas row was removed from Settings, or its identifier changed. That is not"
+                + " the split E asked for: Places left, Life Areas STAYED and gained a second"
+                + " door. Do not make this symmetrical."
         )
         XCTAssertTrue(
             source.contains("LifeAreaEditorListView(client: lifeAreaEditorClient)"),
             "Settings' Life Areas row no longer pushes the editor."
+        )
+        XCTAssertTrue(
+            source.contains("                lifeAreasSection\n"),
+            "`lifeAreasSection` is no longer rendered by Settings' `Form`. The section can be"
+                + " perfectly written and simply not built — the gated-off variant of this"
+                + " repo's most repeated defect."
         )
     }
 
