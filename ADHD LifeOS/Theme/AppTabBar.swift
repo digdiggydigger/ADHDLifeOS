@@ -94,26 +94,38 @@ struct AppTabBar: View {
             // on into the home-indicator strip. E's GIF verdict: that strip was "empty space
             // that is coloured below the tab bar… wasted space", and it measured 53pt.
             //
-            // **Glass, and now it means something.** The material was removed for a round
-            // because it BLED into the safe area — SwiftUI extends a material background to the
-            // screen edge even when the view it backs does not — painting the strip below the bar
-            // #272B2B against a bar of #1F2028, so it read as a second, lighter bar underneath
-            // the first. It was also blurring nothing, because the container reserved that band
-            // and no content could pass beneath.
+            // **Opaque, and that is the concept's own answer.** This ran as `BarSurface` over
+            // an `.ultraThinMaterial` for two rounds — glass, so content read faintly through
+            // it. In DARK that looked fine; in LIGHT it failed outright, because `BarSurface` is
+            // white at 94% over a near-white page, so the bar had almost no surface and the rows
+            // passing underneath stayed fully legible behind the glyphs. E's second GIF:
+            // "the bar is better but definitely needs work".
             //
-            // Both of those are fixed rather than avoided: `in: Rectangle()` clips each fill to
-            // the bar's own frame (a bare `.background(Color…)` extends into the safe area too —
-            // `Color` and shapes do that by design), and content now scrolls behind the bar, so
-            // the blur has something real to blur. `BarSurface`'s 6%/8% translucency over it is
-            // what stops the glyphs having to compete with whatever is passing underneath.
+            // The concept had already answered it — its bar is `#FFFFFF` light / `#1D2027` dark,
+            // which is `CardSurface`, opaque. So the bar is a solid plane with a 1pt `CardBorder`
+            // top edge to separate it from the page, and content passes BEHIND it rather than
+            // through it. E's ask was that the background *surrounding* the bar be transparent,
+            // and that still holds: the strip below it is page, and the floating state shows
+            // content on all four sides of the card.
+            //
+            // `in: Rectangle()` stays load-bearing — a bare `.background(Color…)` extends into
+            // the safe area, `Color` and shapes do that by design, which is how the strip below
+            // got painted twice before.
+            //
+            // NOTE: this leaves `BarSurface` with no call site again. It is the wrong token for
+            // a bar the design wants opaque, and duplicating `CardSurface` under a second name
+            // would be worse than leaving it unused.
             row
                 .frame(height: AppTabBarMetrics.rowHeight)
                 .frame(maxWidth: .infinity)
-                // Chained backwards: `BarSurface` sits closest to the glyphs, the material
-                // behind it. Both clipped to the bar's 72pt frame, so neither reaches the
-                // home-indicator strip — that strip is content now.
-                .background(Color.barSurface, in: Rectangle())
-                .background(.ultraThinMaterial, in: Rectangle())
+                .background(Color.cardSurface, in: Rectangle())
+                // The bar's own edge. Without it an opaque white bar meets a near-white page
+                // with nothing between them, and the plane stops reading as a plane.
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(Color.cardBorder)
+                        .frame(height: 1)
+                }
         }
     }
 
