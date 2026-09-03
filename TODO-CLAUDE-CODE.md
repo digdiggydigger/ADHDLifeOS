@@ -2464,3 +2464,165 @@ colour. A pinned header now looks exactly like every other `sectionLabel()` in t
 `TaskListView` hand-rolls the identical card treatment (clip + `CardSurface` + `CardBorder`, 16pt
 continuous). That is the same dead-shared-component shape one layer over, but it is a CARD, not a
 header, so it is out of this block's scope. E's call whether to promote it to `Theme.swift`.
+
+---
+
+## Bottom search arc — E's design, settled 2026-09-03 (branch `feature/bottom-search`, off `main` @ `8d895d1`)
+
+**Why this exists: the Tools arc created it.** E photographed "a peculiar box below the menu nav
+tab bar" on Tasks. It is **iOS 26's `.searchable` field**, which iOS 26 renders as a capsule pinned
+to the bottom of the screen and docks into a `TabView`'s bar where one exists. **Block 1 of the
+Tools arc deleted the `TabView`** (it folds a sixth tab into "More"), so the capsule stands alone
+and lands UNDER the custom bar. Measured on E's iPhone 15 Pro: bar inset 12 / bottom 809pt; the
+stray outline inset ~30 / bottom 823pt. Reproduced and removed on the simulator, controlled both
+ways. **It was introduced in Tools block 1 and only became VISIBLE in block 2**, because the
+resting bar is a full-width opaque plane that covers the capsule entirely.
+
+**It is not merely cosmetic: Tasks search is currently UNREACHABLE** — the field sits under the bar
+and cannot be tapped.
+
+**The full build plan — per-block files, TDD targets, traps — is
+`Momentum-v3-Design-Handoff/SESSION-OPENER-bottom-search-build.md`. Read it before starting.**
+
+**E's settled decisions (four questions, answered 2026-09-03 — do not re-litigate):** search stays
+at the BOTTOM (E was offered the navigation bar and rejected it) and moves ABOVE the custom tab
+bar into the capture disc's band; **one row, field filling the leading width, disc at the trailing
+end, centres aligned**, with the **60pt gap between the bar top and the capture stack preserved**
+(E asked for this by name); **always visible** where a screen has search; scope is **Tasks,
+Captures AND Journal**; and focus opens a **FULL-SCREEN search surface**, not an in-place filter.
+
+**Two facts that shape the whole build:** the field must be **ours** — iOS 26 owns that capsule's
+placement and will not move it, and `.navigationBarDrawer` (which does clear the box) puts it at
+the top, which E rejected. And because focus opens a full-screen surface, **the row's control is a
+Button styled as a search field and never takes focus** — so no keyboard ever displaces the bar or
+the disc. That is the arc's biggest simplification; do not build a live `TextField` into the row.
+
+### FEATURE: F-Search-1-Row — the row, the surface, and Tasks  [x] COMPLETED
+
+Build the shared machinery and prove it on one screen. `.searchable` comes OFF `TaskListView`
+(that is the bug fix); a field-shaped Button joins the capture disc in one `HStack` inside
+`RootBottomOverlay`, so alignment is by construction rather than two views agreeing on a number.
+Tapping it opens a full-screen surface that `TaskListView` presents itself — **the ROW is
+app-level, the SURFACE is screen-level**, which avoids hoisting `TasksService` up to `RootView`.
+Filtering goes through the EXISTING `TaskListRefinement.apply(tasks:searchText:)`; do not write a
+second filter.
+
+**The trap that will bite first:** `AppTabContent` keeps every visited tab alive, so
+`.onAppear`/`.onDisappear` fire once and then effectively never again — any "register my scope when
+I appear" design is silently broken. **Drive the scope from `selectedTab`,** which `RootView`
+already owns.
+
+**The clearance problem:** `CaptureDiscMetrics.clearance` is 92 and eleven files lean on it. The
+three searchable screens need more room than the other eight. **Extend the existing helper
+(`captureDiscClearance(hasSearchRow:)`) rather than adding a second spelling** —
+`CaptureDiscClearanceCallSiteTests` must keep passing.
+
+**Acceptance criteria**
+- [ ] `AppSearchScope` TDD-pinned: `.tasks` for the Tasks tab and `.none` for every other; every
+      scope carries a non-empty placeholder; every `AppTab` is answered. **Only `.tasks` exists in
+      this block** — `.captures`/`.journal` arrive with their screens, so the surface's exhaustive
+      switch forces each to be handled rather than shipping two cases nothing renders.
+- [ ] `AppSearchModel` TDD-pinned: changing scope CLEARS the query and CLOSES the surface; opening
+      on `.none` is a no-op.
+- [ ] Metrics TDD-pinned: the field is ≥44pt (§3), the search-row clearance is strictly greater
+      than the plain one by exactly the row plus its spacing (derived, not a second typed number),
+      and the disc's 24pt trailing margin is unchanged.
+- [ ] The stray iOS 26 capsule is GONE from Tasks — proven by rendering the bottom band, not by
+      reasoning.
+- [ ] Row above the bar, field leading, disc trailing, centres aligned; the 60pt gap unchanged.
+- [ ] Tapping opens the surface, Cancel returns, the query filters through the existing refinement.
+- [ ] The row appears on Tasks and nowhere else in this block.
+- [ ] A call-site guard: `.searchable(` appears in NO tab-root file, permitting only
+      `PlaceAppPickerView.swift` (sheet-presented) by name. Strip comment lines before searching.
+- [x] Suite green (2,201 / 0, 56 skipped), lint 0 / 631, sim + device builds green, red-checked
+      (three regressions → three failures), committed, pushed, installed and launch-verified.
+- [ ] **Stop for E's device verdict on the row's position and spacing before block 2.**
+
+**⚠ THE BUG THE RENDER FOUND, and it is bigger than the feature: THE CAPTURE DISC HAS BEEN SITTING
+ON THE TAB BAR.** `RootBottomOverlay` is an `.overlay(alignment: .bottom)`, and its `.bottom`
+resolves to the screen's **original safe area** — NOT to the top of the bar, even though the bar is
+applied as a `safeAreaInset` above it. The file's own comment asserted the opposite and
+`testTheBottomFurnitureIsLiftedFromTheTopOfTheBar` was written to enforce it, so the 60pt lift was
+measured from the home indicator: on E's iPhone 15 Pro the disc's 60pt frame ended at **758pt**
+against a bar top of **751pt** — a **7pt overlap**.
+
+E reported it in passing while approving this row (*"I just wanna make sure that you have added
+spacing between the top of the menu/nav tab bar and the collapsed pill"*) and **Claude Code
+answered, wrongly, that the 60pt gap was real and deliberate.** It was not. Proven by a controlled
+probe rather than by reading: adding the bar's height moved the disc's frame bottom from 779.8 to
+721.8 against an unchanged bar top of ~772. The lift is now
+`AppSearchRowMetrics.bottomFurnitureLift` (gap + `AppTabBarMetrics.rowHeight`) and the guard is
+inverted, with the measurement recorded as its reason.
+
+**Also worth keeping:** `CaptureDiscClearanceCallSiteTests` failed the moment Tasks changed which
+form of the clearance it calls — the guard working. It was made STRICTER rather than looser: the
+table now carries `(file, expected call)` per screen, plus a second test that only screens which
+actually draw the row may reserve its height.
+
+### FEATURE: F-Search-2-Captures — Captures adopts the row  [~] BUILT, THEN REVERTED ON E'S CALL
+
+New behaviour, not wiring: `CaptureInboxService` has no search state and no capture filter exists
+anywhere (grepped). Add `CaptureSearchRefinement` in `TaskListRefinement`'s shape and a surface;
+add `.captures` to the scope.
+
+**The test that matters:** a capture has a title OR content and may have neither (photo captures).
+`CaptureRowPresentation.primaryText` already owns that fallback, and **a photo capture rendering
+blank is a bug this repo has already shipped once** (`eddef9b`). Search must go through the same
+presentation rule rather than re-deriving it, or photo captures become silently unmatchable.
+
+**⚠ BUILT AND THEN REVERTED, 2026-09-03. E's call after seeing it on device: *"I dont think it
+works at all. How about remove it from the capture page for now?"* — and E is right for a reason
+that is structural rather than cosmetic.**
+
+**The Captures tab is not a list you scan; it is a one-at-a-time DECISION screen.** Its bottom half
+is where the decisions live — the Task it / Journal it / Skip stack, the Sorted + undo bar, the
+"where does this live?" area picker. E's screenshots show the floating field landing squarely on
+top of them: over the triage card's THEN section in one, over a photo capture's image and its tags
+in another. A persistent field there competes with the exact controls the screen exists for.
+
+Tasks works because Tasks IS a list you scan and its bottom is empty space. That difference is the
+lesson: **the bottom search row suits a scanning surface, not a deciding one.**
+
+Reverted whole (`72e7b77` reverted) rather than left unwired — an unreferenced
+`CaptureSearchRefinement` + `CaptureSearchSurface` is precisely this repo's most repeated defect.
+The work is intact in history and can be restored the moment a placement is agreed.
+
+**What the block proved and is worth keeping when it returns:** matching must go through
+`CaptureRowPresentation`, because a capture may have no title AND no content and would otherwise
+be visible-but-unfindable — the quiet form of the blank photo-capture card from `eddef9b`. The
+red-check confirmed it by name.
+
+**Original acceptance criteria, all met before the revert** (suite 2,218 / 0, lint 0 / 634,
+red-checked with three regressions → seven failures, installed and launch-verified):
+- [x] Matching went through `CaptureRowPresentation`.
+- [x] Trimmed / empty-query / order / no-match behaviour matched `TaskListRefinement`.
+- [x] Shared row and surface, no second copy.
+- [x] Suite green, lint 0, builds green, red-checked, committed and pushed.
+
+### FEATURE: F-Search-3-Journal — Journal adopts the row  [ ] UNCHECKED — ⚠ RECONSIDER FIRST
+
+**Do not start this without asking E.** The Captures revert above applies here with MORE force,
+not less: the Journal tab's bottom furniture is the "One line about today…" composer — a field.
+Putting the search row in that band would place a field immediately above another field, on the
+one screen whose bottom is already spoken for. It is the same objection E raised for Captures,
+and the same reason (a deciding/writing surface, not a scanning one).
+
+The honest reading of E's feedback is that the bottom search row belongs on **Tasks alone** unless
+a different placement is designed for the other two.
+
+Same machinery, plus the wrinkle only this screen has: the Journal timeline interleaves logs,
+tasks and focus sprints, so **what search covers must be decided and stated, not left ambiguous**.
+Log text only is the honest default — it is what a person means by "search my journal" — and the
+surface's empty state should say so.
+
+**Also:** the Journal composer is a `safeAreaInset` inside its own `NavigationStack` and already
+calls `appTabBarClearance()`. It now has to clear the search row too, and
+`AppTabBarCallSiteTests` enumerates that call site — **grow it in the same commit**, or the
+composer's caption line goes back under the furniture, which is exactly what E photographed during
+the Tools arc.
+
+**Acceptance criteria**
+- [ ] Journal search covers log text, and the surface says so where results are empty.
+- [ ] The composer clears the tab bar AND the search row; the call-site test is updated in the
+      same commit.
+- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
