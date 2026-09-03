@@ -40,6 +40,13 @@ final class PlaceRoutineNotificationRouter {
         return true
     }
 
+    /// The second way IN (F-Routines-4): Today's routine card hands its run key here
+    /// directly — no notification involved, but the same pending/replay rules apply, so the
+    /// card cannot open a door the notification tap could not.
+    func open(_ runKey: UUID) {
+        deliver(runKey)
+    }
+
     private func deliver(_ runKey: UUID?) {
         if let openDoor {
             openDoor(runKey)

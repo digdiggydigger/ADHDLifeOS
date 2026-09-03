@@ -256,6 +256,35 @@ final class RoutineRunStoreTests: XCTestCase {
         XCTAssertNil(store.readLiveRun(now: noonUTC))
     }
 
+    /// The EXACT sequence the routine screen performs: open a run, resolve every step through
+    /// `updateMatching`, then end it on leaving. Reproduced against a real store because the
+    /// journey showed a finished routine keeping its Today card, and this isolates whether the
+    /// store half or the view half is at fault.
+    func testStore_theScreensFullSequence_endsTheRun() {
+        let defaults = scratchDefaults()
+        let store = UserDefaultsRoutineRunStore(defaults: defaults, calendar: utcCalendar)
+        var run = makeRun()
+        store.write(run)
+
+        // Three skips, each written through exactly as `apply(_:at:)` does.
+        for index in 1..<run.steps.count {
+            run = PlaceRoutineProgress.marking(run, stepAt: index, as: .skipped)
+            XCTAssertTrue(store.updateMatching(run), "step \(index) did not persist")
+        }
+
+        XCTAssertTrue(
+            PlaceRoutineProgress.isFullyResolved(run),
+            "every step is auto-done or skipped, so the run is finished"
+        )
+        store.end(runId: run.id)
+
+        XCTAssertNil(
+            store.readLiveRun(now: noonUTC),
+            "leaving a finished routine must end it — the Today card is the run's only pull"
+                + " surface, so a run that survives here is a card that never goes away"
+        )
+    }
+
     func testStore_corruptDataDegradesToNoRun() {
         let defaults = scratchDefaults()
         defaults.set(Data("not a run".utf8), forKey: UserDefaultsRoutineRunStore.runKey)

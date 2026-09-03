@@ -2693,7 +2693,7 @@ prefix is greedy; own `UNNotificationCategory`; userInfo = minted run UUID only)
 - [x] Interim inert tap reported to E at the stop.
 - [x] Suite green, lint 0, builds green, red-checked, committed and pushed.
 
-### FEATURE: F-Routines-3-Screen — the door and the screen  [x] COMPLETED (render journey rides with block 4)
+### FEATURE: F-Routines-3-Screen — the door and the screen  [x] COMPLETED
 
 `PlaceRoutineNotificationRouter` (pending-door replay; own delegate branch; signed-out goes
 pending), the `RootView` door (17+ gated fullScreenCover; `RootView+Doors.swift` split with the
@@ -2714,13 +2714,13 @@ progress semantics AS PINNED IN THE PLAN, stale-tap → Today.
       final tap, so Undo lives until then.
 - [x] A11y: rows are combined elements, the step circle is `accessibilityHidden` because the
       SUBTITLE words carry the state (never colour alone), semantic Dynamic Type throughout.
-- [ ] Sim-driven end-to-end via the DEBUG test-fire button — **deliberately carried into block
-      4's combined render journey**: in block 3 the only door to the screen is a notification
-      tap, and the Home card's "Continue" is the in-app door that makes an emulator-backed
-      journey robust. Verified there, over blocks 2+3+4 together.
+- [x] Sim-driven end-to-end via the DEBUG test-fire button — `RoutineJourneyUITests`, an
+      emulator-backed journey covering blocks 2+3+4 together: seed a 4-action place, test-fire
+      the arrival, find the card on Today, Continue into the screen, Skip, Undo, resolve
+      everything, close, and watch the card go. Screenshots attached at six stops.
 - [x] Suite green (2,271/0), lint 0/651, builds green, red-checked, committed and pushed.
 
-### FEATURE: F-Routines-4-HomeCard — the way back in  [ ] UNCHECKED
+### FEATURE: F-Routines-4-HomeCard — the way back in  [x] COMPLETED
 
 Today card while a run is live ("At <place> · routine live", steps left, next step, Continue →
 the screen); gone when no run. `HomeView.swift` is at 391/400 — card content in its own file,
@@ -2728,10 +2728,29 @@ extract in the same commit if needed. While a run is live for a place, its `Arri
 is suppressed (decided; E can veto at the stop).
 
 **Acceptance criteria**
-- [ ] Reachability proven: first-run AND live-run states rendered on the sim; call sites grepped.
-- [ ] Card appears only while live; Continue opens the screen; suppression rule pinned.
-- [ ] Lint stays 0 (file lengths respected).
-- [ ] Suite green, builds green, red-checked, committed and pushed.
+- [x] Reachability proven by a real journey, not just greps: the card is FOUND on Today after a
+      test-fired crossing, Continue opens the screen, and the card is GONE once the routine is
+      finished — plus `HomeRoutineCardCallSiteTests` pins the render site, the refresh site and
+      the router door in source.
+- [x] Card appears only while live; Continue opens the screen through the same router door the
+      notification tap uses (the `PlaceActionNotificationRouter.open` precedent — no new
+      parameter threaded through HomeView); suppression rule pinned.
+- [x] Lint stays 0 (654 files). `HomeView.swift` tipped to 402 and was brought back to 398 by
+      moving the rationale into `HomeRoutineCard.swift`, where the code it explains lives.
+- [x] Suite green (2,289/0), builds green, red-checked, committed and pushed.
+
+**Three real defects the journey caught that unit tests could not**, all fixed here:
+- `onDisappear` did NOT fire reliably for the full-screen cover, so a finished routine kept its
+  Today card. Every deliberate exit now calls `leaveScreen()` itself; the callback is only a net.
+- The card's refresh was sequenced BEHIND `await CurrentPlaceResolution.current()`, so a cheap
+  UserDefaults read waited on a CoreLocation fix. It now runs first.
+- Home had no foreground refresh at all, and a routine of only tap-steps writes nothing to
+  Firestore — so a crossing during backgrounding left the recovery surface stale in exactly the
+  case it exists for. Added, and the handler now announces run lifecycle like every other change.
+
+**A11y defect found while wiring the journey** (fixed): the routine screen's header combined its
+children INCLUDING the close button, which would have left a VoiceOver user inside a full-screen
+cover with no way out. The combine is now scoped to the title and subtitle alone.
 
 ### FEATURE: F-Routines-5-LiveActivity — the display anchor  [ ] UNCHECKED
 

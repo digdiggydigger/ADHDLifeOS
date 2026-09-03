@@ -106,6 +106,26 @@ final class PlaceRoutineHandlerTests: XCTestCase {
         )
     }
 
+    /// Today's card is a PULL surface with exactly one push: this signal. A routine made only
+    /// of tap-steps writes NOTHING to Firestore, so without it a crossing that lands while
+    /// Today is on screen leaves the card invisible, and an ENDED run leaves a stale one.
+    func testAQualifyingCrossing_announcesItselfSoTodayCanPickItUp() async {
+        let harness = RoutineHandlerHarness()
+        harness.installGym(actions: [harness.spotifyAction(), harness.textAction()])
+        var announcements = 0
+        let token = NotificationCenter.default.addObserver(
+            forName: DataChangeSignal.name, object: nil, queue: .main
+        ) { _ in announcements += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        await harness.sut.handle(harness.event(.arrival))
+
+        XCTAssertGreaterThan(
+            announcements, 0,
+            "nothing told Today a routine had started, and no Firestore write would either"
+        )
+    }
+
     func testStackedCooldowns_theRunLifecycleOutrunsTheGuard() async {
         let harness = RoutineHandlerHarness()
         harness.installGym(

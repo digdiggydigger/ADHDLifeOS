@@ -351,6 +351,12 @@ extension HomeView {
     /// tasks Home already holds. Nil at every failure — no permission, no fix, no named place,
     /// nothing open here — and nil simply means no card.
     func refreshArrivalSurface() async {
+        // FIRST, before the location await. The routine card is the other half of the same
+        // "where am I right now" slot and shares every trigger — but it is a synchronous
+        // UserDefaults read, and sequencing it behind a CoreLocation fix made a finished
+        // routine's card linger on Today for as long as that fix took (caught by the routine
+        // journey, which is exactly the class of bug a render loop exists to find).
+        refreshLiveRoutine()
         let place = await CurrentPlaceResolution.current()
         arrivalSurface = ArrivalSurface.make(currentPlace: place, tasks: homeService.allTasks)
     }

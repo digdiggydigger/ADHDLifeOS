@@ -142,6 +142,16 @@ enum UITestEmulator {
     }
 
     static func string(_ value: String) -> [String: Any] { ["stringValue": value] }
+    static func double(_ value: Double) -> [String: Any] { ["doubleValue": value] }
+    /// A nested object — a place action rides the `places` document as one of these.
+    static func map(_ fields: [String: Any]) -> [String: Any] {
+        ["mapValue": ["fields": fields]]
+    }
+    /// An ordered list. ORDER IS THE FEATURE for a place's actions (F-Routines-1), and
+    /// Firestore preserves it, which is what makes a routine's step order need no schema.
+    static func array(_ values: [[String: Any]]) -> [String: Any] {
+        ["arrayValue": ["values": values]]
+    }
     static func bool(_ value: Bool) -> [String: Any] { ["booleanValue": value] }
     static func timestamp(_ date: Date) -> [String: Any] {
         let formatter = ISO8601DateFormatter()

@@ -103,6 +103,12 @@ struct HomeView: View {
     /// Variation B's arrival card (block 4c) — `nil` away from every place, or when the place
     /// has nothing open. Internal for `HomeMomentumSections`, which refreshes it.
     @State var arrivalSurface: ArrivalSurface?
+    /// The one live routine run, re-read wherever `arrivalSurface` is (F-Routines-4).
+    @State var liveRoutineRun: RoutineRun?
+    /// Foregrounding refreshes the routine card — see `refreshLiveRoutine` for why nothing
+    /// else covers that case.
+    @Environment(\.scenePhase) private var homeScenePhase
+    let routineRunStore: RoutineRunStoring = UserDefaultsRoutineRunStore()
 
     init(
         authService: AuthService,
@@ -270,6 +276,10 @@ struct HomeView: View {
                 // so the grid reflects that order rather than the one the backend refused.
                 if message != nil { isArranging = false }
             }
+            .onChange(of: homeScenePhase) { phase in
+                // Cheap and synchronous — one UserDefaults read, no network. See the property.
+                if phase == .active { refreshLiveRoutine() }
+            }
         }
     }
 
@@ -289,12 +299,9 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     todayHeader
-                    // Variation B (block 4c): here, with something to do here — pinned above
-                    // everything because "you are AT the place" beats every other priority signal
-                    // Today has. Absent the moment either half stops being true.
-                    if let arrivalSurface {
-                        ArrivalSurfaceCard(surface: arrivalSurface, onOpenTask: openArrivalTask)
-                    }
+                    // The place-aware slot: a live routine, else the arrival card. Both
+                    // live in HomeRoutineCard.swift, with the suppression rule between them.
+                    arrivalAndRoutineCards
                     // Concept C's scoreboard leads (2026-08-24, Momentum block M1): the closure
                     // ring and streak, then the one task worth doing next. The Active Goal hero's
                     // slot and start-session funnel live on in BestNextMoveCard.

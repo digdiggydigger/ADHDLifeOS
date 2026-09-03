@@ -57,13 +57,17 @@ struct PlaceRoutineScreen: View {
         // A run can end UNDERNEATH this screen (its departure crossing, the window, the
         // sweep) — `updateMatching`/`end(runId:)` keep the store honest while the checklist
         // keeps serving the person holding it.
-        .onDisappear { endIfResolved() }
+        // A SAFETY NET, not the mechanism: `onDisappear` did not fire reliably for this
+        // cover (caught by the routine journey — a finished routine kept its Today card), so
+        // every deliberate exit calls `leaveScreen()` itself. Idempotent, so both firing is
+        // harmless and neither firing is impossible.
+        .onDisappear { leaveScreen() }
         .onChange(of: scenePhase) { _, phase in
             // Leaving the app with everything resolved ends the run (the settled rule: the
             // run ends when you LEAVE the screen, not at the final tap — Undo lives until
             // then).
             if phase == .background, PlaceRoutineProgress.isFullyResolved(run) {
-                store.end(runId: run.id)
+                leaveScreen()
                 dismiss()
             }
         }
@@ -79,6 +83,7 @@ struct PlaceRoutineScreen: View {
                 Spacer()
                 Button {
                     Haptics.play(.light)
+                    leaveScreen()
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
@@ -90,16 +95,22 @@ struct PlaceRoutineScreen: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Close")
             }
-            Text(PlaceRoutineScreenCopy.momentTitle(for: run))
-                .font(.largeTitle).bold()
-                .tracking(-0.5)
-                .minimumScaleFactor(0.8)
-            subline
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(PlaceRoutineScreenCopy.momentTitle(for: run))
+                    .font(.largeTitle).bold()
+                    .tracking(-0.5)
+                    .minimumScaleFactor(0.8)
+                subline
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            // Combined so the moment reads as ONE sentence — and scoped to the text alone.
+            // Combining the row above would swallow the Close button into the header element,
+            // leaving a full-screen cover with no way out for VoiceOver.
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("routineHeader")
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
     }
 
     private var subline: Text {
@@ -121,7 +132,11 @@ struct PlaceRoutineScreen: View {
                 .foregroundStyle(.secondary)
                 .layoutPriority(1)
         }
+        // Combining would otherwise read the bar's raw percentage beside the words; the
+        // label IS the sentence, and the journey asserts on exactly it.
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(PlaceRoutineProgress.progressLabel(run))
+        .accessibilityIdentifier("routineProgress")
     }
 
     // MARK: - Cards
@@ -257,9 +272,15 @@ struct PlaceRoutineScreen: View {
         ).run(PlaceLinkOpenPlan.plan(for: url), failureBody: failureBody)
     }
 
-    private func endIfResolved() {
-        guard PlaceRoutineProgress.isFullyResolved(run) else { return }
-        store.end(runId: run.id)
+    /// Leaving the screen is the moment a finished run ENDS — not the final tap, which is
+    /// what keeps Undo available until then. Idempotent: `end(runId:)` only matches the run
+    /// this screen owns, so calling it twice, or after a newer run replaced this one, is a
+    /// no-op. Always announces, so Today re-reads whether the run ended or merely moved on.
+    private func leaveScreen() {
+        if PlaceRoutineProgress.isFullyResolved(run) {
+            store.end(runId: run.id)
+        }
+        DataChangeSignal.post()
     }
 }
 

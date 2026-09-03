@@ -130,15 +130,27 @@ final class PlaceTriggerEventHandler {
     private func applyRunLifecycle(
         for event: PlaceTriggerEvent, entry: AtPlaceSnapshot.PlaceEntry?
     ) -> RoutineRun? {
+        var changed = false
         if let liveRun = runStore.readLiveRun(now: event.occurredAt),
            RoutineRunLifecycle.ends(liveRun, on: event) {
             runStore.endLiveRun()
+            changed = true
         }
         let routinePlan = PlaceRoutinePlan.make(entry?.actions, for: event.kind)
-        guard routineScreenAvailable, routinePlan.qualifiesAsRoutine else { return nil }
-        let run = RoutineRun.make(event: event, entry: entry, plan: routinePlan)
-        runStore.write(run)
-        return run
+        var created: RoutineRun?
+        if routineScreenAvailable, routinePlan.qualifiesAsRoutine {
+            let run = RoutineRun.make(event: event, entry: entry, plan: routinePlan)
+            runStore.write(run)
+            created = run
+            changed = true
+        }
+        // Announce it like every other change in the app. Today's card is a PULL surface, and
+        // this is the only push it gets: a routine made only of tap-steps writes NOTHING to
+        // Firestore, so without this a crossing that lands while Today is on screen would
+        // leave the card invisible until the user navigated away and back — and an ENDED run
+        // would leave a stale card behind for just as long.
+        if changed { DataChangeSignal.post() }
+        return created
     }
 
     /// The interruption half of one crossing, behind BOTH gates (cooldown and master
