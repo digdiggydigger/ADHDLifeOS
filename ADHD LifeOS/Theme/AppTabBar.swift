@@ -104,13 +104,9 @@ struct AppTabBar: View {
             // The concept had already answered it — its bar is `#FFFFFF` light / `#1D2027` dark,
             // which is `CardSurface`, opaque. So the bar is a solid plane with a 1pt `CardBorder`
             // top edge to separate it from the page, and content passes BEHIND it rather than
-            // through it. E's ask was that the background *surrounding* the bar be transparent,
-            // and that still holds: the strip below it is page, and the floating state shows
-            // content on all four sides of the card.
-            //
-            // `in: Rectangle()` stays load-bearing — a bare `.background(Color…)` extends into
-            // the safe area, `Color` and shapes do that by design, which is how the strip below
-            // got painted twice before.
+            // through it. E's ask that the background *surrounding* the bar be transparent is
+            // carried entirely by the FLOATING state, which shows content on all four sides of
+            // its card — the resting pane runs to the screen edge instead, see below.
             //
             // NOTE: this leaves `BarSurface` with no call site again. It is the wrong token for
             // a bar the design wants opaque, and duplicating `CardSurface` under a second name
@@ -118,7 +114,25 @@ struct AppTabBar: View {
             row
                 .frame(height: AppTabBarMetrics.rowHeight)
                 .frame(maxWidth: .infinity)
-                .background(Color.cardSurface, in: Rectangle())
+                // The fill runs to the SCREEN edge, not to the bar's own frame. E's verdict on
+                // the version that stopped at the safe area: "I am not satisfied with the LARGE
+                // gap that there is below the solid pane view" — 35pt of page between the bar and
+                // the bottom of the screen, which reads as the pane floating above a strip rather
+                // than as the bottom of the app.
+                //
+                // The glyph row does NOT move down with it: the safe area exists because the home
+                // indicator lives there, and controls in that band are both cramped and against
+                // the HIG. So the surface extends and the content stays — which is exactly what
+                // the system tab bar does.
+                //
+                // This is not a return to the thing E called "wasted coloured space" two rounds
+                // ago. That strip was a DIFFERENT, lighter shade (a material bleeding past its
+                // view), so it read as a second bar stuck underneath the first. One continuous
+                // opaque surface has no seam to notice.
+                .background {
+                    Color.cardSurface
+                        .ignoresSafeArea(edges: .bottom)
+                }
                 // The bar's own edge. Without it an opaque white bar meets a near-white page
                 // with nothing between them, and the plane stops reading as a plane.
                 .overlay(alignment: .top) {
