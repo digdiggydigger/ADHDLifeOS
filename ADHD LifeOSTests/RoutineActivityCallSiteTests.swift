@@ -79,9 +79,16 @@ final class RoutineActivityCallSiteTests: XCTestCase {
         let bundle = try Self.source("FocusTimerWidget/FocusTimerWidgetBundle.swift")
 
         XCTAssertTrue(
-            bundle.contains("RoutineLiveActivity()"),
+            // CODE, not prose: commenting the line out left `contains` matching the comment,
+            // which is how this guard slept through its own red-check.
+            Self.code(of: bundle).contains("RoutineLiveActivity()"),
             "an unregistered ActivityConfiguration never renders — the dead-component shape,"
                 + " at the widget layer"
+        )
+        XCTAssertFalse(
+            Self.code(of: bundle).contains("if #available"),
+            "a conditional inside a WidgetBundle body can silently drop the widget from the"
+                + " bundle; the extension's floor is already 16.1, so it buys nothing"
         )
     }
 
