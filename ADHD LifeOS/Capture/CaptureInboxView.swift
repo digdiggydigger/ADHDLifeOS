@@ -131,7 +131,7 @@ struct CaptureInboxView: View {
                 allTags = await service.fetchAllTags()
             }
         }
-        .safeAreaInset(edge: .bottom) { bottomBar }
+        .safeAreaInset(edge: .bottom) { bottomBar.appTabBarClearance() }
         // Triage's failures were being published and rendered NOWHERE on this screen: a Sorted
         // that could not write, or an undo that could not restore, both set `triageErrorMessage`
         // and looked exactly like a button that does nothing. That mattered little while every

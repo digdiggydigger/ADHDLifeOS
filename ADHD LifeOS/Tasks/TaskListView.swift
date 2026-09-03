@@ -157,12 +157,11 @@ struct TaskListView: View {
                     } header: {
                         // v3's coloured bucket voice: warn for due-today, motion-blue for
                         // tomorrow, closure-green for closed-today; everything else secondary.
+                        // The SURFACE is shared (`pinnedSectionHeader()`); only the tone is
+                        // this screen's, because only this screen's buckets speak in colour.
                         Text(group.lifeAreaName)
-                            .sectionLabel()
                             .foregroundStyle(headerTone(for: group))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 8)
-                            .background(.bar)
+                            .pinnedSectionHeader()
                     }
                 }
             }

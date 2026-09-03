@@ -6,17 +6,6 @@
 import SwiftUI
 import UIKit
 
-/// The tab bar's stations under the hybrid v3 IA (E's call, 2026-08-24): five tabs stay, and
-/// selection is state so screens can cross tabs (Today's inbox card → Captures).
-///
-/// The fifth slot changed hands on 2026-08-28 (round 2 of E's captures rethink). Nudges held it
-/// and became a section on Today; **Captures** took it back, having lost it to Areas in
-/// F-V3-Areas and spent the interim as a pushed guest screen behind five separate doors. Five
-/// stays five: iOS gives five slots before a "More" tab, and a sixth would bury one of these.
-enum AppTab: Hashable {
-    case today, tasks, areas, journal, captures
-}
-
 struct RootView: View {
     @ObservedObject var authService: AuthService
     let homeClient: HomeClientAdapting
@@ -37,6 +26,11 @@ struct RootView: View {
     /// `CaptureDiscPanObserver`. The disc reads it to choose disc vs pill; `@StateObject` so
     /// the one instance outlives auth-state swaps, matching the observer's once-only install.
     @StateObject private var discScrollActivity = CaptureDiscScrollActivity()
+    /// F-Tools-2-Morph: is the tab bar the floating card right now? A POSITION rule — contract
+    /// on the way down, hold until the page is back near the top — so it reads scroll offsets
+    /// rather than the disc's pan translation. E's device verdict replaced the momentary model
+    /// this started as, and E's follow-up answer kept the DISC on its own 2026-08-31 rule.
+    @StateObject private var tabBarScrollActivity = TabBarScrollActivity()
     @State private var selectedTab: AppTab = .today
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
@@ -114,81 +108,85 @@ struct RootView: View {
             case .signedOut, .linkSent:
                 LoginView(authService: authService)
             case .signedIn:
-                TabView(selection: $selectedTab) {
-                    HomeView(
-                        authService: authService,
-                        homeClient: homeClient,
-                        captureClient: captureClient,
-                        journalClient: journalClient,
-                        nudgesClient: nudgesClient,
-                        nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
-                        lifeAreaDetailClient: lifeAreaDetailClient,
-                        taskDetailClient: taskDetailClient,
-                        onStartFocus: startFocus,
-                        focusReloadToken: focusService.completedSprintCount,
-                        activeSprint: focusService.session.map {
-                            ActiveSprintStatus(taskId: $0.taskId, isPaused: $0.isPaused)
-                        },
-                        widgetSprint: focusService.widgetSprint,
-                        onToggleSprintPause: { focusService.togglePause() },
-                        onOpenCaptures: { selectedTab = .captures },
-                        taskCreateClient: taskCreateClient
-                    )
-                        // "Today" with v3's trending-up glyph — the Momentum v3 tab identity. The Captures
-                        // slot becomes Areas in the V3-Areas block; the rest keep their glyphs.
-                        .tabItem { Label("Today", systemImage: "chart.line.uptrend.xyaxis") }
-                        .tag(AppTab.today)
-                    TaskListView(
-                        tasksClient: tasksClient,
-                        taskCreateClient: taskCreateClient,
-                        taskDetailClient: taskDetailClient,
-                        onStartFocus: startFocus
-                    )
-                        .tabItem { Label("Tasks", systemImage: "checklist") }
-                        .tag(AppTab.tasks)
-                    // Areas took the Captures slot in F-V3-Areas; the interim "Handled captures"
-                    // door it carried is gone now that Captures has a slot of its own again.
-                    AreasView(
-                        authService: authService,
-                        homeClient: homeClient,
-                        journalClient: journalClient,
-                        captureClient: captureClient,
-                        lifeAreaDetailClient: lifeAreaDetailClient,
-                        taskDetailClient: taskDetailClient,
-                        onStartFocus: startFocus,
-                        taskCreateClient: taskCreateClient,
-                        onOpenCaptures: { selectedTab = .captures }
-                    )
-                        .tabItem { Label("Areas", systemImage: "square.grid.2x2") }
-                        .tag(AppTab.areas)
-                    JournalView(
-                        client: journalClient,
-                        homeClient: homeClient,
-                        captureClient: captureClient,
-                        taskDetailClient: taskDetailClient,
-                        onStartFocus: startFocus
-                    )
-                        .tabItem { Label("Journal", systemImage: "book") }
-                        .tag(AppTab.journal)
-                    // Captures, home at last (E's round-2 call, 2026-08-28). Nudges gave up this
-                    // slot and became a section on Today, where a due one is now dismissed inline
-                    // — more than the teaser row it had here could do. `NudgesView` survives,
-                    // pushed from that section, holding everything a section cannot: create,
-                    // edit, reschedule, history.
-                    NavigationStack {
-                        CaptureInboxView(
-                            client: captureClient,
+                AppTabContent(selection: selectedTab) { tab in
+                    // Exhaustive over `AppTab`, so the compiler — not a grep — is what
+                    // guarantees every slot on the bar has a screen behind it.
+                    switch tab {
+                    case .today:
+                        // "Today" with v3's trending-up glyph — the Momentum v3 tab identity.
+                        HomeView(
+                            authService: authService,
+                            homeClient: homeClient,
+                            captureClient: captureClient,
                             journalClient: journalClient,
-                            homeClient: homeClient
+                            nudgesClient: nudgesClient,
+                            nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
+                            lifeAreaDetailClient: lifeAreaDetailClient,
+                            taskDetailClient: taskDetailClient,
+                            onStartFocus: startFocus,
+                            focusReloadToken: focusService.completedSprintCount,
+                            activeSprint: focusService.session.map {
+                                ActiveSprintStatus(taskId: $0.taskId, isPaused: $0.isPaused)
+                            },
+                            widgetSprint: focusService.widgetSprint,
+                            onToggleSprintPause: { focusService.togglePause() },
+                            onOpenCaptures: { selectedTab = .captures },
+                            taskCreateClient: taskCreateClient
                         )
+                    case .tasks:
+                        TaskListView(
+                            tasksClient: tasksClient,
+                            taskCreateClient: taskCreateClient,
+                            taskDetailClient: taskDetailClient,
+                            onStartFocus: startFocus
+                        )
+                    case .areas:
+                        // Areas took the Captures slot in F-V3-Areas; the interim "Handled
+                        // captures" door it carried is gone now that Captures has its own again.
+                        AreasView(
+                            authService: authService,
+                            homeClient: homeClient,
+                            journalClient: journalClient,
+                            captureClient: captureClient,
+                            lifeAreaDetailClient: lifeAreaDetailClient,
+                            taskDetailClient: taskDetailClient,
+                            onStartFocus: startFocus,
+                            taskCreateClient: taskCreateClient,
+                            onOpenCaptures: { selectedTab = .captures }
+                        )
+                    case .journal:
+                        JournalView(
+                            client: journalClient,
+                            homeClient: homeClient,
+                            captureClient: captureClient,
+                            taskDetailClient: taskDetailClient,
+                            onStartFocus: startFocus
+                        )
+                    case .captures:
+                        // Captures, home at last (E's round-2 call, 2026-08-28). Nudges gave up
+                        // this slot and became a section on Today, where a due one is now
+                        // dismissed inline — more than the teaser row it had here could do.
+                        // `NudgesView` survives, pushed from that section, holding everything a
+                        // section cannot: create, edit, reschedule, history. Its count rides the
+                        // bar's badge; `AppTabBarPresentation` keeps `.badge(0)`'s silence.
+                        NavigationStack {
+                            CaptureInboxView(
+                                client: captureClient,
+                                journalClient: journalClient,
+                                homeClient: homeClient
+                            )
+                        }
+                    case .tools:
+                        // The sixth station (F-Tools-1-Bar), filled in F-Tools-3-Page: bento
+                        // doors to Places and the Life Areas editor, and nothing else — E wants
+                        // the page sparse so Routines has somewhere obvious to land.
+                        //
+                        // No clients threaded from here on purpose: `RootView` never held these
+                        // two (`SettingsView` constructed them itself), so `ToolsView` takes them
+                        // through the same default-param door rather than adding two properties
+                        // to this file and the App to pass through.
+                        ToolsView()
                     }
-                        .tabItem { Label("Captures", systemImage: "tray.full") }
-                        // The count the Areas and Today tray wells used to carry, in the one place
-                        // that outlives them. `.badge(0)` renders nothing, so an empty inbox is
-                        // silent rather than a zero — and a failed refresh keeps the last known
-                        // number instead of claiming zero (never having looked ≠ nothing there).
-                        .badge(captureInboxCount)
-                        .tag(AppTab.captures)
                 }
                 // E's 2026-08-27 call: the tab bar ticks with a light impact rather than the
                 // iOS-conventional selection tick. Fires on the SELECTION, so a programmatic
@@ -198,8 +196,33 @@ struct RootView: View {
                 // F-PillStay's one non-scroll restore: a fresh tab starts with the full disc —
                 // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
                 // call beyond E's stated rule; E can veto.)
-                .onChange(of: selectedTab) { _ in discScrollActivity.reset() }
-                .minimizesTabBarOnScrollDown()
+                .onChange(of: selectedTab) { _ in
+                    discScrollActivity.reset()
+                    tabBarScrollActivity.reset()
+                }
+                // Our bar, in the space the system's used to occupy. A bottom safe-area INSET:
+                // it positions the bar correctly, insets every scroll view so the last row still
+                // clears it, and — the point of E's last verdict — leaves the content itself
+                // full height, so the page scrolls BEHIND the bar rather than stopping at a
+                // reserved strip.
+                //
+                // The two screens that pin their own bottom furniture inside a `NavigationStack`
+                // do not inherit this (a SwiftUI inset does not cross that boundary) and ask for
+                // the room with `appTabBarClearance()` instead.
+                //
+                // Placed above `.blur` deliberately: the bar dims with the content when the
+                // capture fan opens, the way the system bar did.
+                //
+                // There is no system bar to hide any more — `AppTabContent` is not a
+                // `UITabBarController`, which is the whole reason a sixth tab is possible at
+                // all. See that file for what `TabView` did to tabs five and six.
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    AppTabBar(
+                        selection: $selectedTab,
+                        captureInboxCount: captureInboxCount,
+                        isFloating: tabBarScrollActivity.isFloating
+                    )
+                }
                 .blur(radius: isFabOpen ? 4 : 0)
                 .overlay {
                     if isFabOpen {
@@ -213,45 +236,15 @@ struct RootView: View {
                         .transition(.opacity)
                     }
                 }
+                // The app's persistent bottom furniture — the capture disc, an unacknowledged
+                // sprint summary, the running timer — in its own file since F-Tools-1-Bar.
+                // Applied AFTER the tab bar's safe-area inset, so `.bottom` still means "the top
+                // of the bar" and the disc sits exactly where it always has.
                 .overlay(alignment: .bottom) {
-                    // Sits above the tab bar, mirroring the web's `fixed bottom-24` placement.
-                    // The FAB shares this stack so an active sprint pushes it ABOVE the timer
-                    // bar instead of letting it occlude the bar's controls (E, 2026-08-19).
-                    VStack(alignment: .trailing, spacing: 8) {
-                        Button {
-                            withAnimation(
-                                reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)
-                            ) {
-                                isFabOpen.toggle()
-                            }
-                        } label: {
-                            CaptureDiscLabel(isFabOpen: isFabOpen, showsPill: showsPill)
-                        }
-                        .padding(.trailing, CaptureDiscMetrics.edgeMargin)
-                        .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
-                        .accessibilityIdentifier("quickCaptureButton")
-
-                        // A sprint that finished while the app was dead announces itself here —
-                        // above the tab bar on every tab, gone only when acknowledged.
-                        if let summary = focusService.offlineCompletionSummary {
-                            OfflineSprintSummaryCard(record: summary) {
-                                focusService.acknowledgeOfflineCompletion()
-                            }
-                            .padding(.horizontal, 16)
-                        }
-
-                        FocusTimerBar(service: focusService)
-                    }
-                    // Full width with trailing alignment: with no timer bar the stack used to
-                    // shrink to the disc and the .bottom overlay CENTRED it mid-screen (E's
-                    // position review, 2026-08-25). Trailing-pinned; E's 2026-08-31 margin pass
-                    // lifted it a further 8pt off the tab bar (52 → 60), matching the trailing
-                    // margin's 16 → 24 so `clearance` stays one number for both axes.
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.bottom, 60)
-                    .animation(
-                        reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
-                        value: focusService.isActive
+                    RootBottomOverlay(
+                        isFabOpen: $isFabOpen,
+                        showsPill: showsPill,
+                        focusService: focusService
                     )
                 }
                 .fullScreenCover(item: $composerKind) { kind in
@@ -322,10 +315,21 @@ struct RootView: View {
             // The pill's scroll detector: same install site, same lifetime, same window-level
             // pattern. The callbacks capture the `@StateObject` model, the one object that
             // outlives every auth-state swap this onAppear can re-fire across.
+            //
+            // `installOnKeyWindow` is idempotent (`guard shared == nil`) and **the FIRST
+            // install's callbacks win** — a second call silently no-ops, so a consumer that
+            // needed different information could not simply install again.
             CaptureDiscPanObserver.installOnKeyWindow(
                 onDragBegan: discScrollActivity.dragBegan,
                 onDragMoved: discScrollActivity.dragMoved
             )
+            // The bar's rule is about POSITION, not gesture — hold the floating card until the
+            // page is back near the top — so it needs offsets the disc's pan observer does not
+            // carry. Same window-level, zero-per-screen-wiring shape; separate object because
+            // the disc's observer is settled and forwards no touch location.
+            AppScrollOffsetObserver.installOnKeyWindow { distance in
+                tabBarScrollActivity.offsetChanged(distanceFromTop: distance)
+            }
         }
         // Login ↔ tabs swap on a spring instead of a hard cut, so a successful Sign in with
         // Apple (or password sign-in) lands on Home gracefully (§5).
@@ -375,23 +379,6 @@ struct RootView: View {
                 // we were backgrounded) can finally register its fences.
                 Task { await LocationTriggerService.shared.refreshRegistrations() }
             }
-        }
-    }
-}
-
-private extension View {
-    /// E's 2026-08-31 call: the tab bar gets out of the way while you scroll DOWN and comes back
-    /// the moment you scroll up — the same directional grammar the capture pill speaks
-    /// (F-PillStay), delivered by the SYSTEM so the two never fight over gesture semantics. On
-    /// iOS 26 the Liquid Glass bar collapses to the selected tab; earlier systems keep the
-    /// standard bar — the behaviour does not exist there, and hand-rolling transparency against
-    /// a UIKit bar is a fight this app does not need on a floor it will outlive.
-    @ViewBuilder
-    func minimizesTabBarOnScrollDown() -> some View {
-        if #available(iOS 26.0, *) {
-            self.tabBarMinimizeBehavior(.onScrollDown)
-        } else {
-            self
         }
     }
 }

@@ -108,6 +108,63 @@ extension View {
             .tracking(1.1)
             .textCase(.uppercase)
     }
+
+    /// `sectionLabel()` for a header that PINS — one treatment, so a screen with a sticky list
+    /// cannot invent its own (F-Tools-4-Headers).
+    ///
+    /// **The defect this replaces, measured rather than described.** Both pinned headers wore
+    /// `.background(.bar)`. On the iPhone 17 render a row through the header and a row through
+    /// the card below it gave:
+    ///
+    ///     header  x 16.0 → 386.0pt   #F9F9F9   (`.bar`)
+    ///     card    x 16.0 → 386.0pt   #FFFFFF   (`CardSurface`, 16pt continuous corners)
+    ///     page                       #F0F3F6   (`PageBackground`)
+    ///
+    /// So the strip was a THIRD surface — neither page nor card — spanning the card's exact
+    /// width with SQUARE corners, resting on a 16pt-rounded card. Nine units off the page is too
+    /// little to read as a deliberate surface and too much to disappear. E's word was
+    /// "unfinished", and that is what unfinished looks like.
+    ///
+    /// **And `.bar` was never opaque, which both call sites' own comments claimed it was.** Each
+    /// said, in as many words, that the header is "opaque on purpose" because a transparent one
+    /// lets the rows sliding under it show through its letters. `.bar` is a MATERIAL — it blurs
+    /// what is behind it rather than hiding it. Scrolled so a row sits beneath the pinned header,
+    /// and sampling the band to the RIGHT of the label where no header text exists at all:
+    ///
+    ///     before   43–59 distinct colour bands   (the row underneath, showing through)
+    ///     after     1 band, #F0F3F6              (the page)
+    ///
+    /// The comment named the exact defect it was failing to prevent, and nothing checked it —
+    /// `PinnedSectionHeaderTests` now asserts the surface resolves at alpha 1.
+    ///
+    /// **The fix is subtraction.** The header is painted the PAGE: opaque for the first time, and
+    /// the rectangle stops existing, because its fill and the 16pt gutters either side of it are
+    /// now the same colour. A pinned header ends up looking exactly like every other
+    /// `sectionLabel()` in the app, which is the point: sticky is a behaviour, not a costume.
+    ///
+    /// Applied to the header's `Text`; the caller keeps its own `foregroundStyle`, because the
+    /// Tasks board's buckets speak in colour (warn / motion / closure) and the app picker's do
+    /// not. `PinnedSectionHeaderCallSiteTests` enumerates the call sites — a shared treatment
+    /// nothing calls is this repo's most repeated defect.
+    func pinnedSectionHeader() -> some View {
+        sectionLabel()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, PinnedHeaderMetrics.verticalPadding)
+            .background(Color(PinnedHeaderMetrics.surfaceAssetName))
+    }
+}
+
+/// The pinned header's two numbers, spelled once so the treatment and its tests cannot disagree.
+enum PinnedHeaderMetrics {
+    /// §2 spacing, not a component dimension — so unlike `AppTabBarMetrics.rowHeight`, the
+    /// 4/8/16/24 grid governs it. 8 gives the letters room from the card that stops beneath them
+    /// without the header costing a group separation's worth of scroll on every screen.
+    static let verticalPadding: CGFloat = 8
+
+    /// **The page, deliberately, and this is the whole decision.** See `pinnedSectionHeader()`
+    /// for the measurement. Any other fill re-creates the strip: a header is visible as a shape
+    /// only when it disagrees with what surrounds it.
+    static let surfaceAssetName = "PageBackground"
 }
 
 /// Room to keep clear of the global capture disc.

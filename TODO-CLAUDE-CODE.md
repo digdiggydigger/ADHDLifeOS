@@ -2242,7 +2242,7 @@ deliberate — do not make it symmetrical).
 a HIGH-severity rule with "overloaded nav" as an anti-pattern. **E was shown this before choosing
 six.** Report it; never silently comply or silently ignore.
 
-### FEATURE: F-Tools-1-Bar — six slots, resting state only  [ ] UNCHECKED
+### FEATURE: F-Tools-1-Bar — six slots, resting state only  [x] COMPLETED
 
 Add `.tools` to `AppTab` and replace the system tab bar with a custom six-item bar in its RESTING
 state only (Design F: full width, icons only, an accent dot under the selected icon). Keep
@@ -2254,21 +2254,51 @@ which still asserts "Five stays five". `ToolsView` is a deliberately empty stub 
 fills it. No motion in this block.
 
 **Acceptance criteria**
-- [ ] Pure rules TDD-pinned in `AppTabBarPresentation`: the six tabs in order with Tools last and
+- [x] Pure rules TDD-pinned in `AppTabBarPresentation`: the six tabs in order with Tools last and
       its glyph; `showsBadge(count:)` false at 0 (an empty inbox stays silent, never a zero); and
       a slot-width test proving six slots clear 44pt on the narrowest supported iPhone (375pt SE
       → 62.5pt) — the test that stops a seventh tab being added casually.
-- [ ] The system bar is genuinely GONE, not merely covered — verified by tapping where it was and
-      confirming the custom bar receives it. A covered bar still eats touches.
-- [ ] A failed inbox refresh keeps the LAST KNOWN badge count rather than dropping to zero.
-- [ ] Tab haptic still fires (including on a programmatic switch); a place-action `openScreen`
+- [x] The system bar is genuinely GONE, not merely covered. **Stronger than planned: there is no
+      system bar at all.** Hiding it was not enough — see the architecture change below.
+- [x] A failed inbox refresh keeps the LAST KNOWN badge count rather than dropping to zero.
+      (Unchanged: RootView's single writer still returns early on failure.)
+- [x] Tab haptic still fires (including on a programmatic switch); a place-action `openScreen`
       door still switches tabs; the capture disc is unchanged and reachable.
-- [ ] Compiles at the iOS 16.0 floor; `RootView.swift` stays under SwiftLint's 400-line ceiling
-      (it is ~397 before this block — plan to split).
-- [ ] Suite green, lint 0, sim + device builds green, red-checked, committed and pushed.
-- [ ] **Stop and ask E whether six slots feel right on device before starting block 2.**
+- [x] Compiles at the iOS 16.0 floor; `RootView.swift` stays under SwiftLint's 400-line ceiling
+      — 350 lines, after splitting out `AppTab` and `RootBottomOverlay`.
+- [x] Suite green (2,131 / 0), lint 0 / 615, sim + device builds green, red-checked (three
+      injected regressions → 14 failures), committed and pushed.
+- [x] **Stop and ask E whether six slots feel right on device before starting block 2.**
+      **E approved on device, 2026-09-02**, after one round of tuning: the first cut read
+      *"really cramped, not much spacing/padding"* (row 56 / glyph 20), and at row 72 / glyph 25
+      — the size the approved concept drew — E's verdict was *"spacing is so much better"*.
+      Six slots were never the objection.
 
-### FEATURE: F-Tools-2-Morph — the bar contracts while you scroll  [ ] UNCHECKED
+**Two device-found defects fixed inside this block, both now guarded:**
+1. **The bar sliced the Journal composer in half.** A SwiftUI `safeAreaInset` applied OUTSIDE a
+   view does not reach into that view's own `NavigationStack`, and every screen here pins its
+   bottom furniture with exactly that modifier inside exactly such a stack. `TabView` was immune
+   because UIKit sets `additionalSafeAreaInsets` on the view CONTROLLER. Fixed by reserving the
+   bar's height as real layout space in `AppTabContent` and drawing the bar as an overlay over
+   the reserve; `RootBottomOverlay` adds the bar's height to its lift explicitly.
+2. **The badge clipped "99+" to "9…"** — it is an overlay on the glyph, so it was offered the
+   glyph's ~20pt. `.fixedSize()` before the frame.
+
+**⚠ ARCHITECTURE CHANGE — the plan's "keep `TabView`, hide its bar" does not work at six.**
+`TabView` is a `UITabBarController`, and past five tabs UIKit folds the overflow into its
+`moreNavigationController`. Hiding the bar does not undo that: tabs five and six still render
+INSIDE the More navigation controller, which puts a "More" back button on their nav bars and arms
+an edge-swipe to a list the app never shows — so **Captures and Tools would both have carried it.**
+Proven with a standalone six-tab probe on the simulator; with the bar hidden AND
+`.toolbar(.hidden, for: .tabBar)` on every tab, the sixth still reported
+`AXUniqueId: "BackButton", AXLabel: "More"`. Removing `.tabItem` changed nothing — the fold is on
+the controller, not the bar items. `AppTabContent` replaces `TabView`: it is neither the
+`switch selectedTab` the plan rules out (which discards state) nor an eager `ZStack` (which builds
+everything at launch), because `AppTabVisitLog` builds a tab on first selection and then keeps it.
+The probe confirmed all three properties directly — lazy first build, `NavigationStack` depth
+survived a round trip, scroll offset came back to the point.
+
+### FEATURE: F-Tools-2-Morph — the bar contracts while you scroll  [x] COMPLETED
 
 The bar morphs to Design B while the page is actually moving and back to F when motion settles:
 inset 12pt, lifted ~22pt, 22pt radius, `CardSurface` + 1pt `CardBorder` + soft shadow, icons only.
@@ -2285,21 +2315,52 @@ movement, and a naive signal snaps back to F mid-glide. Solve with a settle time
 every `dragMoved` (~250–350ms), shipped as one named, tunable constant.
 
 **Acceptance criteria**
-- [ ] `TabBarScrollActivity` TDD-pinned with an injected clock: movement sets moving; the settle
-      interval clears it; a further move inside the interval RESTARTS rather than firing early;
-      `reset()` clears immediately (RootView calls it on tab change, same reason the disc does).
-- [ ] Bar morphs F ⇄ B on scroll and settle; indicator morphs dot ⇄ chip; badge survives both
-      states.
-- [ ] Animated with the house spring `.spring(response: 0.35, dampingFraction: 0.8,
-      blendDuration: 0)` (§5), Reduce Motion respected.
-- [ ] The capture disc keeps its own sticky disc↔pill behaviour, unchanged — the two are
-      deliberately no longer in lockstep, which is the trade E accepted in choosing momentary.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] `TabBarScrollActivity` TDD-pinned with an injected scheduler: movement sets moving; the
+      settle interval clears it; a further move inside the interval RESTARTS rather than firing
+      early (asserted directly, and again over a ten-movement stream); `reset()` clears
+      immediately and a settle landing after it changes nothing.
+- [x] Bar morphs F ⇄ B on scroll and settle; indicator morphs dot ⇄ chip (one shared
+      `matchedGeometryEffect` id, so the mark GROWS rather than cross-fades); badge survives both.
+- [x] Animated with the house spring (§5), Reduce Motion respected in both the morph and the
+      slot press style.
+- [x] The capture disc keeps its own sticky disc↔pill behaviour, unchanged — and a test now fails
+      if a timer ever appears in the disc's model.
+- [x] Suite green (2,149 / 0), lint 0 / 617, sim + device builds green, committed and pushed.
 - [ ] **Ask E on device: does the settle timing feel right, and does the floating bar sit
       correctly against the capture disc?** Change NO clearance numbers until E has looked —
       E's standing answer is "show me on device, then decide".
 
-### FEATURE: F-Tools-3-Page — the Tools page, and Places leaves Settings  [ ] UNCHECKED
+**⚠ THE TRIGGER CHANGED AFTER E USED IT — momentary is gone.** E's verdict: *"much rather if
+the bar contracts into the floating card while the page is moving in a downwards direction, but
+also stays as the floating card until the screen view is manually scrolled upwards past a certain
+point"*. Asked what that point was, E chose **near the top of the page**; asked whether one rule
+should then govern the capture disc too, E chose **"only the bar gets the near-top rule"** — so
+**the disc keeps its own 2026-08-31 behaviour and was not touched.** The two speak the same
+grammar and answer to different numbers, deliberately, and they are now visibly independent: at
+mid-page the disc is a full circle while the bar is still floating.
+
+`TabBarScrollActivity` is therefore a **POSITION** rule, not a motion one: contract past
+`contractDistance` (24), restore at or under `nearTopDistance` (8), and hold whatever it was in
+between — the gap is hysteresis, so an offset jittering by a point cannot flap the bar.
+
+**This made the block simpler, not harder.** The whole momentum problem *disappeared* rather than
+being solved: reading position means there is no question about what the page is doing after the
+finger lifts, because the offset keeps arriving through the deceleration. The settle timer, the
+injected scheduler and the generation counter are all deleted.
+
+**New file: `Theme/AppScrollOffsetObserver.swift`** — window-level, ZERO per-screen wiring, in the
+`CaptureDiscPanObserver` / `KeyboardTapAway` mould. Its pan recogniser exists only to hit-test
+*which* scroll view to watch (`AppTabContent` keeps every visited tab alive, so walking the window
+would find the hidden tabs' scroll views too); KVO on `contentOffset` then carries it through the
+deceleration. It is a second observer rather than an extra callback on the disc's because that one
+is settled and forwards no touch location.
+
+**The floating card's lift is DERIVED, not chosen.** `AppTabContent` reserves `rowHeight` once
+and never reflows it — content shifting under a morphing bar would be intolerable — so B must fit
+inside that reserve exactly: card height + lift == rowHeight. It lands on the concept's 22 as a
+consequence rather than a coincidence, and a test holds the identity.
+
+### FEATURE: F-Tools-3-Page — the Tools page, and Places leaves Settings  [x] COMPLETED
 
 Replace the block-1 stub with the real Tools page: **bento cards** (`.bentoCard()`), E's explicit
 choice over Settings-style grouped rows. It holds Places and the Life Areas editor and nothing
@@ -2311,20 +2372,47 @@ and the app floor is 16.0, so Tools must handle Places being absent — it compi
 simulator and breaks the floor otherwise.
 
 **Acceptance criteria**
-- [ ] `ToolsCatalog` TDD-pinned: `available(placesSupported: true)` returns both entries;
+- [x] `ToolsCatalog` TDD-pinned (written failing first — `cannot find 'ToolsCatalog' in scope`):
+      `available(placesSupported: true)` returns both entries, Places first;
       `available(placesSupported: false)` returns Life Areas only (the iOS 16 test); every entry
-      carries a non-empty title, caption and glyph.
-- [ ] Tools shows two bento cards on iOS 17+, one on iOS 16, and both open their real
-      destinations (`PlacesListView`, `LifeAreaEditorListView`).
-- [ ] Places is gone from Settings; **Life Areas is still there.**
-- [ ] No test or UI journey breaks — re-grep `settingsPlacesRow` / `settingsLifeAreasRow` rather
-      than trusting the 2026-09-02 check.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
-- [ ] If the Settings backgrounding bug appears to vanish, say so explicitly and **do not claim it
-      fixed** — those screens simply no longer live under the sheet being rebuilt. It stays parked
-      pending E's iOS update.
+      carries a non-empty title, caption and glyph; identifiers are namespaced and unique; and the
+      page is pinned at TWO cards so a third has to be a decision, not a drift.
+- [x] Tools shows two bento cards on iOS 17+, one on iOS 16, and both open their real
+      destinations (`PlacesListView`, `LifeAreaEditorListView`). The 16.0 case is proved by the
+      catalog test plus the 16.0-floor compile — **this machine has no iOS 16 simulator**, so no
+      booted check of it exists or is claimed.
+- [x] Places is gone from Settings (`placesSection`, `settingsPlacesRow`, the `placesClient`
+      property and its init parameter all deleted); **Life Areas is still there.**
+- [x] No test or UI journey breaks — re-grepped: `settingsPlacesRow` / `placesSection` appeared
+      only inside `SettingsView.swift` itself, and `ADHD LifeOSUITests/` references neither those
+      nor `toolsEmptyState` (the block-1 stub identifier this block deleted).
+- [x] Suite green (2,167 / 0, 56 skipped), lint 0 / 621, sim build green, red-checked, committed
+      and pushed.
+- [x] The Settings backgrounding bug: **not touched, not fixed, still parked.** Its screens simply
+      no longer live under the Settings sheet, which can make the symptom appear to vanish. Awaits
+      E's iOS update, exactly as before.
 
-### FEATURE: F-Tools-4-Headers — one pinned-header treatment, everywhere  [ ] UNCHECKED
+**Two corrections to the handoff, both found by reading the tree:**
+1. **`PlaceAutomationGuideView` does NOT need `appTabBarClearance()`.** `START-HERE-tools-tab-block3.md`
+   flagged it as block 3's likeliest trap on the assumption it is pushed. It is not — it is
+   presented with `.sheet(item: $guideContext)` from `PlaceActionsSection`, carries its own
+   `NavigationStack` and Done button, and a sheet is above the tab bar and the capture disc
+   whether Places lives in Settings or in Tools. `AppTabBarCallSiteTests` stays at two call sites.
+2. **The clients are NOT threaded through `RootView`.** The plan said to pass `placesClient` and
+   `lifeAreaEditorClient` down; `RootView` never held either (`SettingsView` constructed them
+   itself), so `ToolsView` takes them through the same default-param door — which also keeps the
+   bare `ToolsView()` call site that `AppTabBarCallSiteTests` pins.
+
+**What the disc clearance needed, which the plan did not mention.** `PlacesListView` had never
+been under the capture disc before — the Settings sheet covers it — and moving it to a tab put it
+there. Both pushes and the page's own scroll now call `.captureDiscClearance()`, applied at the
+CALL SITE the way `AreasView` already does for its copy of the Life Areas editor, since the
+clearance is a property of the presentation rather than of the screen.
+
+**§7 conflict, reported as standing:** `ui-ux-pro-max` rates "bottom nav ≤5" HIGH severity with
+"overloaded nav" as an anti-pattern. E was shown this and chose six knowingly.
+
+### FEATURE: F-Tools-4-Headers — one pinned-header treatment, everywhere  [x] COMPLETED
 
 Pinned section headers are currently a near-white `.bar` strip with square corners against rounded
 cards, and they read unfinished. Add ONE shared treatment to `Theme.swift` beside `sectionLabel()`
@@ -2333,12 +2421,46 @@ grew. Sequenced last on purpose: a chrome change tangled into a navigation rewri
 judge and harder to revert.
 
 **Acceptance criteria**
-- [ ] One shared header treatment exists in `Theme.swift`; `TaskListView` and `PlaceAppPickerView`
-      both use it and neither hand-rolls a header background.
-- [ ] **Reachability proven by grepping CALL SITES, not the definition** —
-      `grep -rn "background(.bar)" "ADHD LifeOS/" --include="*.swift"` returns only deliberate
-      non-header uses, each named in the report. This is `dead-shared-component-pattern`, the
-      defect this repo has now repeated six times: tests prove correctness, never reachability.
-- [ ] Headers still pin opaquely (rows must not show through the letters) and read correctly in
-      both themes.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] One shared header treatment exists in `Theme.swift` — `pinnedSectionHeader()`, beside
+      `sectionLabel()` and `bentoCard()`, with its numbers in `PinnedHeaderMetrics`.
+      `TaskListView` and `PlaceAppPickerView` both use it and neither hand-rolls a background.
+- [x] **Reachability proven by grepping CALL SITES, not the definition.** The only
+      `background(.bar)` left in the app is `ComposerChips.swift`'s `ComposerFooterSurface` —
+      the pinned BOTTOM BAR's surface, a deliberate non-header use whose job is the opposite
+      (E's 2026-08-25 review asked for the boundary between scrolling content and a fixed footer
+      to be VISIBLE). `PinnedSectionHeaderCallSiteTests` pins all of it, and **strips comment
+      lines before searching** — `Theme.swift` quotes `.background(.bar)` while explaining why it
+      is gone, which a raw-text guard would read as the defect still being present. That is the
+      same prose-satisfies-`contains` trap the previous block's red-check caught.
+- [x] Headers still pin, and now do so OPAQUELY **for the first time** — see the finding below.
+      Both themes rendered and measured.
+- [x] Suite green (2,176 / 0, 56 skipped), lint 0 / 623, sim build green, red-checked, committed
+      and pushed.
+
+**⚠ THE FINDING — `.bar` was never opaque, and both call sites' comments claimed it was.** Each
+said, in as many words, that the header is *"opaque on purpose"* because rows slide beneath it and
+a transparent one lets their text show through the letters. `.bar` is a **material**: it blurs what
+is behind it rather than hiding it. Scrolled so a row sat under the pinned header, sampling the
+band to the RIGHT of the label — where no header text exists at all — gave:
+
+```
+before   43-59 distinct colour bands   (the row underneath, showing through)
+after     1 band, #F0F3F6              (the page)
+```
+
+The comment named the exact defect it was failing to prevent, and nothing checked it.
+`PinnedSectionHeaderTests.testTheHeaderSurfaceIsFullyOpaque` now resolves the token in both
+appearances and asserts alpha 1, so the claim is a guard rather than prose.
+
+**The geometry E actually saw.** A row through the header and a row through the card beneath gave
+`header #F9F9F9 / card #FFFFFF / page #F0F3F6`, all spanning x 16.0 → 386.0pt — so the strip was a
+THIRD surface, neither page nor card, with SQUARE corners resting on a 16pt-rounded card. Nine
+units off the page is too little to read as a deliberate surface and too much to disappear. In dark
+it was worse: `#242A30` against a `#181820` page. **The fix is subtraction** — paint it the page,
+and the rectangle stops existing because its fill and the 16pt gutters either side are the same
+colour. A pinned header now looks exactly like every other `sectionLabel()` in the app.
+
+**Raised, not silently fixed:** `cardEdges()` is file-private in `PlaceAppPickerView` while
+`TaskListView` hand-rolls the identical card treatment (clip + `CardSurface` + `CardBorder`, 16pt
+continuous). That is the same dead-shared-component shape one layer over, but it is a CARD, not a
+header, so it is out of this block's scope. E's call whether to promote it to `Theme.swift`.

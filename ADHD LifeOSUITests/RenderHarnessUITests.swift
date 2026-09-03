@@ -193,7 +193,7 @@ final class RenderHarnessUITests: XCTestCase {
         try sweepFanAndNoteComposer(app)
 
         for tab in ["Tasks", "Areas", "Captures"] {
-            let button = app.tabBars.buttons[tab]
+            let button = UITestSession.tabButton(tab, in: app)
             XCTAssertTrue(button.waitForExistence(timeout: UITestSession.timeout), "No \(tab) tab")
             button.tap()
             attach(app, named: "landscape-\(tab.lowercased())")
@@ -236,7 +236,7 @@ final class RenderHarnessUITests: XCTestCase {
 
     @MainActor
     private func sweepJournalPad(_ app: XCUIApplication) throws {
-        let journalTab = app.tabBars.buttons["Journal"]
+        let journalTab = UITestSession.tabButton("Journal", in: app)
         XCTAssertTrue(journalTab.waitForExistence(timeout: UITestSession.timeout), "No Journal tab")
         journalTab.tap()
         attach(app, named: "landscape-5-journal")

@@ -76,7 +76,7 @@ final class JournalJourneyUITests: XCTestCase {
         // Retried taps throughout. A tab tap taken while Today is still settling is a silent
         // no-op, and this journey failed once with "No compose button" for precisely that reason —
         // a true statement about a screen it had never actually left.
-        let journalTab = app.tabBars.buttons["Journal"]
+        let journalTab = UITestSession.tabButton("Journal", in: app)
         let compose = app.buttons["journalComposeButton"]
         XCTAssertTrue(
             UITestSession.tap(journalTab, untilExists: compose),

@@ -12,12 +12,17 @@ import SwiftUI
 /// without hand-rolled spacing. Every section is live as of the 2026-08-25 audit: the last
 /// placeholder (About & Diagnostics) became the real version/build row, and the preference
 /// sections (momentum, focus, feedback) live in `SettingsPreferenceSections.swift`.
+///
+/// **Places is no longer here (F-Tools-3-Page, E's 2026-09-02 call).** It moved to the Tools tab
+/// and has exactly one door now. **Life Areas deliberately did NOT** — it gained a Tools card and
+/// kept `settingsLifeAreasRow`, because it is genuinely both a setting and a tool. The split is
+/// asymmetric on purpose and is knowingly the opposite of the de-duplication the Captures rethink
+/// spent two blocks on; `ToolsPageCallSiteTests` holds both halves so neither drifts back.
 struct SettingsView: View {
     @ObservedObject var authService: AuthService
     private let authorizationReader: NotificationAuthorizationReading
     private let tagEditorClient: TagEditorClientAdapting
     private let lifeAreaEditorClient: LifeAreaEditorClientAdapting
-    private let placesClient: PlacesClientAdapting
     /// Owned here (not by the section) so the flow's phase survives the section's own identity
     /// changes, and previews/tests can inject a fake client through the same default-param door.
     @StateObject private var accountDeletionService: AccountDeletionService
@@ -37,7 +42,6 @@ struct SettingsView: View {
         tagEditorClient: TagEditorClientAdapting? = nil,
         lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
         accountDeletionClient: AccountDeletionClientAdapting? = nil,
-        placesClient: PlacesClientAdapting? = nil,
         momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
         self.authService = authService
@@ -49,7 +53,6 @@ struct SettingsView: View {
         // scoping via `FirebaseManager`, so no auth client gets threaded through anymore.
         self.tagEditorClient = tagEditorClient ?? FirebaseTagEditorClientAdapter()
         self.lifeAreaEditorClient = lifeAreaEditorClient ?? FirebaseLifeAreaEditorClientAdapter()
-        self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
         _accountDeletionService = StateObject(wrappedValue: AccountDeletionService(
             client: accountDeletionClient ?? FirebaseAccountDeletionAdapter()
         ))
@@ -67,7 +70,6 @@ struct SettingsView: View {
                 accountSection
                 aboutSection
                 tagEditorSection
-                placesSection
                 // Destructive actions sit LAST, isolated in their own section, per HIG.
                 AccountDeletionSection(service: accountDeletionService) {
                     authService.completeAccountDeletion()
@@ -283,30 +285,6 @@ struct SettingsView: View {
                 }
             }
             .accessibilityIdentifier("settingsTagEditorRow")
-        }
-    }
-
-    // MARK: - Section 6 — Places (live — pushes the Places editor)
-
-    /// Gated to iOS 17 with the rest of the Places feature (see `PlaceMapPicker` for the §7 note,
-    /// authorised by E on 2026-08-27). On iOS 16 the row is simply absent rather than dead — the
-    /// project target stays 16.0.
-    @ViewBuilder
-    private var placesSection: some View {
-        if #available(iOS 17.0, *) {
-            Section {
-                NavigationLink {
-                    PlacesListView(client: placesClient)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Places")
-                        Text("The spots you keep coming back to — home, the office, the gym.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .accessibilityIdentifier("settingsPlacesRow")
-            }
         }
     }
 

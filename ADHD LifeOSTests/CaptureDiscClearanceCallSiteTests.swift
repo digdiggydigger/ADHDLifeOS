@@ -34,9 +34,16 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
     /// (`JournalView.captureDiscClearance`). Adding the vertical form on top would open a dead
     /// 84pt gap under a screen that has been through six colour and layout passes.
     ///
-    /// `LifeAreaEditor/LifeAreaEditorListView.swift` is absent for a different one: it is pushed
-    /// from Areas (under the disc) AND from Settings (a sheet, above it), so the clearance is a
-    /// property of the PRESENTATION, not of the screen — `AreasView` applies it at its call site.
+    /// `LifeAreaEditor/LifeAreaEditorListView.swift` is absent for a different one: it now has
+    /// THREE presentations — pushed from Areas (under the disc), pushed from the Tools tab (under
+    /// it too, since F-Tools-3-Page) and pushed inside the Settings sheet (above it) — so the
+    /// clearance is a property of the PRESENTATION, not of the screen. `AreasView` and `ToolsView`
+    /// each apply it at their own call site; Settings needs none.
+    ///
+    /// `Places/PlacesListView.swift` is absent for exactly that reason as well, and it is new:
+    /// until F-Tools-3-Page it was reached ONLY from the Settings sheet and needed no clearance at
+    /// all. Moving it to the Tools tab put it under the disc for the first time, and `ToolsView`
+    /// applies the clearance where it pushes — the same shape as its sibling above.
     private static let screensUnderTheDisc = [
         "Home/HomeView.swift",
         "Home/WeekReviewView.swift",
@@ -48,7 +55,11 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
         "Nudges/NudgesView.swift",
         "Capture/CaptureInboxView.swift",
         "Capture/CaptureDetailView.swift",
-        "LifeAreaDetail/LifeAreaDetailView.swift"
+        "LifeAreaDetail/LifeAreaDetailView.swift",
+        // The sixth tab root (F-Tools-3-Page). Two cards do not reach the disc today, but the
+        // page is deliberately the place Routines will land, and the list is what stops that
+        // arrival from being the moment somebody rediscovers this.
+        "Tools/ToolsView.swift"
     ]
 
     func testEveryScreenUnderTheCaptureDiscCallsTheSharedClearance() throws {
