@@ -2626,3 +2626,103 @@ the Tools arc.
 - [ ] The composer clears the tab bar AND the search row; the call-site test is updated in the
       same commit.
 - [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+
+---
+
+## Routines arc — E's design, settled 2026-09-03 (branch `feature/routines`, off `main` @ `218d289`)
+
+E's top-priority feature: a place's tap-actions, run in saved order, become a **routine** — one
+notification per qualifying crossing opens an ordered, tap-through routine screen. **E authorised
+adding these blocks on 2026-09-03** ("yes go ahead and queue the feature blocks into the TODO").
+
+**The full build plan — settled semantics, hard constraints, per-block detail, audited traps — is
+`Momentum-v3-Design-Handoff/SESSION-OPENER-routines-build.md`; a fresh session starts at
+`START-HERE-routines-build.md`. Read them before starting.** These blocks are the tracked,
+tickable summary, not the whole spec.
+
+**E's settled decisions, not to be re-litigated:** place-scoped (Option A; first-class routines +
+time triggers are ARC 2); routine notification at **2+ tap-steps** (one keeps today's direct
+notification; below iOS 17 keeps the per-action spray); run lives **until departure** (departure
+runs: 30-min window; lazy end-of-day sweep, no timers); **autoRun steps pre-ticked**; task nudges
+stay a SEPARATE, visually distinct notification species; Undo over confirm everywhere; **zero
+wire/schema changes and nothing to republish, all arc**; display Live Activity in-arc, its
+buttons are the fast-follow. E's field walk gates the merge.
+
+### FEATURE: F-Routines-1-Order — drag-to-reorder + the pure core  [ ] UNCHECKED
+
+Reorder support on the place actions editor (order = array order, already persisted), the
+`PlaceRoutinePlan` pure type, `RoutineDefaults` (threshold 2, departure window 30 min — named,
+never magic), and the stale startSprint footer copy fix (`PlaceActionsEditorView.swift:207`).
+
+**Acceptance criteria**
+- [ ] Actions ForEach reorders (scoped editMode first; fallback = the forced-editMode List
+      technique from `HomeAccessoryStrips.swift:13-27`); the automation-guide ForEach does NOT move.
+- [ ] Reorder round-trips through the REAL Firestore codec preserving order; `makePlace` still
+      threads actions (strip-risk pinned).
+- [ ] `PlaceRoutinePlan` decides ordered steps + the ≥2 threshold, fully pinned.
+- [ ] Sprint footer copy corrected and pinned.
+- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+
+### FEATURE: F-Routines-2-Notify — run store + one notification at 2+  [ ] UNCHECKED
+
+`RoutineRunStore` (UserDefaults; create/end/newest-wins/30-min-window/lazy-sweep transitions —
+the future smart-skip sensing seam) and the handler branch: at ≥2 tap-steps (and iOS 17+), write
+the run BEFORE posting ONE routine notification (`placeRoutine-` prefix — the `placeAction-`
+prefix is greedy; own `UNNotificationCategory`; userInfo = minted run UUID only).
+
+**Acceptance criteria**
+- [ ] Run lifecycle transitions sit BEFORE the cooldown guard and OUTSIDE `isEnabled()` — pinned
+      by the stacked-cooldown fixture (arrive→leave→return→leave inside 30 min).
+- [ ] Kill-switch OFF still writes the run; only the notification honours it (stated to E).
+- [ ] Below threshold and below iOS 17: existing paths byte-identical (regression-pinned).
+- [ ] Routine body absorbs message + auto-run report (phrasing pinned); `ArrivalNudgeContent`
+      gains the tasks-only fifth path (nil when no tasks).
+- [ ] Tray hygiene: that place's delivered `placeAction-` notifications removed on routine post;
+      `ImmediateNotifying` widened as protocol requirements (all four conformers updated).
+- [ ] Interim inert tap reported to E at the stop.
+- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+
+### FEATURE: F-Routines-3-Screen — the door and the screen  [ ] UNCHECKED
+
+`PlaceRoutineNotificationRouter` (pending-door replay; own delegate branch; signed-out goes
+pending), the `RootView` door (17+ gated fullScreenCover; `RootView+Doors.swift` split with the
+private→internal demotions — `HomeView.arrangeAreas` precedent), and the routine screen per the
+canvas Main board: pre-ticked auto rows, dominant next-step card (48pt), Skip, Undo chips,
+progress semantics AS PINNED IN THE PLAN, stale-tap → Today.
+
+**Acceptance criteria**
+- [ ] Cold-launch and signed-out taps drain correctly; stale run UUID opens Today, pinned.
+- [ ] Step taps run through the EXISTING action plumbing; sprint steps start in foreground.
+- [ ] Progress/Skip/Undo/completion behave exactly as the plan's pinned semantics.
+- [ ] A11y: combined row elements, state never colour-alone, Dynamic Type.
+- [ ] Sim-driven end-to-end via the DEBUG test-fire button.
+- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+
+### FEATURE: F-Routines-4-HomeCard — the way back in  [ ] UNCHECKED
+
+Today card while a run is live ("At <place> · routine live", steps left, next step, Continue →
+the screen); gone when no run. `HomeView.swift` is at 391/400 — card content in its own file,
+extract in the same commit if needed. While a run is live for a place, its `ArrivalSurfaceCard`
+is suppressed (decided; E can veto at the stop).
+
+**Acceptance criteria**
+- [ ] Reachability proven: first-run AND live-run states rendered on the sim; call sites grepped.
+- [ ] Card appears only while live; Continue opens the screen; suppression rule pinned.
+- [ ] Lint stays 0 (file lengths respected).
+- [ ] Suite green, builds green, red-checked, committed and pushed.
+
+### FEATURE: F-Routines-5-LiveActivity — the display anchor  [ ] UNCHECKED
+
+Second `ActivityConfiguration` in the widget extension (16.1 floor): place, done/total, next
+step, progress. STARTS when the routine screen opens (ActivityKit cannot start from background —
+do not "fix"); updates on step changes; ends on run end (verify background end). Tap-to-return
+via `widgetURL`. NO buttons (settled fast-follow).
+
+**Acceptance criteria**
+- [ ] Shared attributes file added to the pbxproj `membershipExceptions` (both targets compile).
+- [ ] `Color("AccentColor")` explicit (the LA ignores the widget's global accent).
+- [ ] Activity lifecycle matches the run store on sim (screen open → live; run end → ended).
+- [ ] Tap returns to the routine screen via the widget-link door.
+- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [ ] Then: E's field walk → full re-run → `--no-ff` merge → re-verify ON main → reinstall
+      `wishwashwacky15` from main → ask E about branch deletion.
