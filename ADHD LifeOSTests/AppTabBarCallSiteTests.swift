@@ -68,17 +68,29 @@ final class AppTabBarCallSiteTests: XCTestCase {
         }
     }
 
-    /// The capture disc, the offline sprint card and the focus timer bar all ride one stack whose
-    /// lift is measured from the top of the BAR. With the bar a safe-area inset, `.bottom`
-    /// alignment already means that — so the lift must NOT also add the bar's height, or the disc
-    /// floats a bar's height too high. (It did add it, for the round the bar was an overlay.)
+    /// **This assertion used to say the opposite, and it was enforcing a bug.**
+    ///
+    /// The claim was: the bar is a `safeAreaInset`, so `.bottom` alignment in the overlay already
+    /// means the top of the bar, and adding the bar's height would double-count. That is not what
+    /// SwiftUI does. An `.overlay(alignment: .bottom)` resolves `.bottom` against the screen's
+    /// ORIGINAL safe area, so the furniture was being lifted 60pt off the home indicator rather
+    /// than 60pt off the bar — and the capture disc overlapped the bar by 7pt on E's iPhone 15 Pro
+    /// (disc frame bottom 758pt, bar top 751pt). E reported it as missing spacing between the bar
+    /// and the collapsed pill.
+    ///
+    /// Proven by a controlled probe, not by reading: adding the bar's height moved the disc's
+    /// frame bottom from 779.8 to 721.8 against an unchanged bar top of ~772.
     func testTheBottomFurnitureIsLiftedFromTheTopOfTheBar() throws {
         let source = try Self.appSource("RootBottomOverlay.swift")
-        XCTAssertFalse(
-            source.contains("AppTabBarMetrics.rowHeight"),
-            "The bottom furniture is adding the bar's height to its lift again. The bar is a"
-                + " safe-area inset, so `.bottom` is already the top of the bar — this"
-                + " double-counts and pushes the capture disc a full bar too high."
+        XCTAssertTrue(
+            source.contains("AppSearchRowMetrics.bottomFurnitureLift"),
+            "The bottom furniture is no longer lifted by the bar's height. `.bottom` in this"
+                + " overlay is the screen's safe area, not the top of the bar, so without it the"
+                + " capture disc sits ON the bar — which is what E photographed."
+        )
+        XCTAssertGreaterThan(
+            AppSearchRowMetrics.bottomFurnitureLift, AppTabBarMetrics.rowHeight,
+            "The lift no longer clears the bar at all, so the furniture overlaps it."
         )
     }
 

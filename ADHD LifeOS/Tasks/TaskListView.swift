@@ -8,6 +8,10 @@ import SwiftUI
 
 struct TaskListView: View {
     @StateObject private var tasksService: TasksService
+    /// The shared search state, injected by `RootView`. The ROW that opens this lives beside the
+    /// capture disc app-level; the SURFACE is presented here, because the tasks are here.
+    /// Defaulted through the environment so previews and the UI journeys need no extra wiring.
+    @EnvironmentObject private var searchModel: AppSearchModel
     private let taskCreateClient: TaskCreateClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
     /// Starts an app-level focus sprint from a resolved plan. Owned by `RootView` (which holds
@@ -81,7 +85,22 @@ struct TaskListView: View {
             }
             .background(Color.pageBackground.ignoresSafeArea())
             .navigationTitle("Tasks")
-            .searchable(text: $tasksService.searchText, prompt: "Search tasks")
+            // `.searchable` is GONE, and its absence is the bug fix (F-Search-1-Row). iOS 26
+            // renders that field as a capsule pinned to the bottom of the screen and docks it into
+            // a `TabView`'s bar; this app has no `TabView` — one folds a sixth tab into "More" —
+            // so the capsule stood alone UNDER the custom tab bar, where E photographed it and
+            // where it could not be tapped. Search is ours now: the row lives beside the capture
+            // disc in `RootBottomOverlay`, and this screen presents the surface it opens.
+            .fullScreenCover(isPresented: searchModel.surfacePresentation) {
+                TaskSearchSurface(
+                    service: tasksService,
+                    searchModel: searchModel,
+                    onInspect: { inspectingTask = $0 }
+                )
+            }
+            // One writer: the shared query drives this screen's filter, which still runs through
+            // `TaskListRefinement` exactly as it did when `.searchable` fed it.
+            .onChange(of: searchModel.query) { tasksService.searchText = $0 }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -167,7 +186,8 @@ struct TaskListView: View {
             }
             .padding(16)
         }
-        .captureDiscClearance()
+        // Tasks carries the search row, so it reserves the row's height on top of the disc's.
+        .captureDiscClearance(hasSearchRow: true)
     }
 
     private func rowCard(for group: LifeAreaTaskGroup) -> some View {
@@ -295,5 +315,8 @@ private struct PreviewTaskDetailClientAdapting: TaskDetailClientAdapting {
         taskCreateClient: PreviewTaskCreateClientAdapting(),
         taskDetailClient: PreviewTaskDetailClientAdapting()
     )
+    // Required, not decoration: an `@EnvironmentObject` with nothing to resolve traps the moment
+    // the body is built, so a preview without this is a preview that cannot render.
+    .environmentObject(AppSearchModel())
 }
 #endif

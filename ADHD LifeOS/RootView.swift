@@ -31,6 +31,10 @@ struct RootView: View {
     /// rather than the disc's pan translation. E's device verdict replaced the momentary model
     /// this started as, and E's follow-up answer kept the DISC on its own 2026-08-31 rule.
     @StateObject private var tabBarScrollActivity = TabBarScrollActivity()
+    /// F-Search-1-Row: which tab is searchable, what has been typed, and whether the full-screen
+    /// surface is open. Owned here because the ROW is app-level — it shares a row with the capture
+    /// disc — while each screen presents its own SURFACE, which is where the data lives.
+    @StateObject private var searchModel = AppSearchModel()
     @State private var selectedTab: AppTab = .today
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
@@ -196,9 +200,14 @@ struct RootView: View {
                 // F-PillStay's one non-scroll restore: a fresh tab starts with the full disc —
                 // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
                 // call beyond E's stated rule; E can veto.)
-                .onChange(of: selectedTab) { _ in
+                .onChange(of: selectedTab) { tab in
                     discScrollActivity.reset()
                     tabBarScrollActivity.reset()
+                    // Driven from the SELECTION, not from each screen's `onAppear`.
+                    // `AppTabContent` keeps every visited tab alive, so appearance callbacks fire
+                    // once and then effectively never again — a screen registering its own scope
+                    // would leave whichever tab registered last in charge forever.
+                    searchModel.activate(AppSearchScope.scope(for: tab))
                 }
                 // Our bar, in the space the system's used to occupy. A bottom safe-area INSET:
                 // it positions the bar correctly, insets every scroll view so the last row still
@@ -244,7 +253,9 @@ struct RootView: View {
                     RootBottomOverlay(
                         isFabOpen: $isFabOpen,
                         showsPill: showsPill,
-                        focusService: focusService
+                        focusService: focusService,
+                        searchScope: searchModel.scope,
+                        onOpenSearch: { searchModel.open() }
                     )
                 }
                 .fullScreenCover(item: $composerKind) { kind in
@@ -262,6 +273,7 @@ struct RootView: View {
                 .task {
                     await focusService.restorePersistedSprint()
                 }
+                .environmentObject(searchModel)
                 .task { await refreshCaptureInboxCount() }
                 // Any capture written, sorted, promoted or binned anywhere in the app moves this
                 // number — the same signal every other screen reloads on.

@@ -44,34 +44,59 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
     /// until F-Tools-3-Page it was reached ONLY from the Settings sheet and needed no clearance at
     /// all. Moving it to the Tools tab put it under the disc for the first time, and `ToolsView`
     /// applies the clearance where it pushes — the same shape as its sibling above.
+    ///
+    /// **The pair is (file, expected call).** Since F-Search-1-Row the clearance has two forms —
+    /// the plain one, and `hasSearchRow: true` for the screens that also carry the bottom search
+    /// row — and which one a screen calls is a claim worth holding, not one to wave through with a
+    /// looser `contains`. This test failed the moment Tasks changed form, which is the guard
+    /// working: relaxing it to match any call would have made it stop noticing.
     private static let screensUnderTheDisc = [
-        "Home/HomeView.swift",
-        "Home/WeekReviewView.swift",
-        "Tasks/TaskListView.swift",
+        ("Home/HomeView.swift", ".captureDiscClearance()"),
+        ("Home/WeekReviewView.swift", ".captureDiscClearance()"),
+        // Tasks carries the bottom search row (F-Search-1-Row), so it reserves the row's height
+        // on top of the disc's. The other ten must NOT — they would grow a dead strip for a
+        // control they never show.
+        ("Tasks/TaskListView.swift", ".captureDiscClearance(hasSearchRow: true)"),
         // The task detail screen's `Form` lives in the sections file, not the primary one — that
         // split happened in this same block, and this test caught the stale entry.
-        "Tasks/TaskDetailFormSections.swift",
-        "Areas/AreasView.swift",
-        "Nudges/NudgesView.swift",
-        "Capture/CaptureInboxView.swift",
-        "Capture/CaptureDetailView.swift",
-        "LifeAreaDetail/LifeAreaDetailView.swift",
+        ("Tasks/TaskDetailFormSections.swift", ".captureDiscClearance()"),
+        ("Areas/AreasView.swift", ".captureDiscClearance()"),
+        ("Nudges/NudgesView.swift", ".captureDiscClearance()"),
+        ("Capture/CaptureInboxView.swift", ".captureDiscClearance()"),
+        ("Capture/CaptureDetailView.swift", ".captureDiscClearance()"),
+        ("LifeAreaDetail/LifeAreaDetailView.swift", ".captureDiscClearance()"),
         // The sixth tab root (F-Tools-3-Page). Two cards do not reach the disc today, but the
         // page is deliberately the place Routines will land, and the list is what stops that
         // arrival from being the moment somebody rediscovers this.
-        "Tools/ToolsView.swift"
+        ("Tools/ToolsView.swift", ".captureDiscClearance()")
     ]
 
     func testEveryScreenUnderTheCaptureDiscCallsTheSharedClearance() throws {
-        let missing = try Self.screensUnderTheDisc.filter { relativePath in
-            try !Self.appSource(relativePath).contains(".captureDiscClearance()")
+        let missing = try Self.screensUnderTheDisc.filter { file, expected in
+            try !Self.appSource(file).contains(expected)
         }
         XCTAssertEqual(
-            missing, [],
-            "These screens render under the capture disc and never call `.captureDiscClearance()`,"
-                + " so their last row sits under an opaque 60pt circle with nothing below it to"
-                + " scroll to. Either add the modifier or move the file out of"
-                + " `screensUnderTheDisc` with the reason."
+            missing.map(\.0), [],
+            "These screens render under the capture disc and do not call the clearance in the form"
+                + " this test expects, so either their last row sits under an opaque 60pt circle"
+                + " with nothing below it to scroll to, or they reserve room for a search row they"
+                + " do not show. Fix the call or update the pair with the reason."
+        )
+    }
+
+    /// The two forms are not interchangeable: only a screen that DRAWS the search row may reserve
+    /// its height. Asserted from the other direction so a stray `hasSearchRow: true` cannot spread.
+    func testOnlySearchScreensReserveTheSearchRow() throws {
+        let reserving = try Self.allAppSources()
+            .filter { $0.path.lastPathComponent != "Theme.swift" }
+            .filter { $0.text.contains("captureDiscClearance(hasSearchRow: true)") }
+            .map { $0.path.lastPathComponent }
+            .sorted()
+        XCTAssertEqual(
+            reserving, ["TaskListView.swift"],
+            "A screen reserves the search row's height. Only screens that actually show the row"
+                + " may — `AppSearchScope.scope(for:)` is the list, and it is Tasks alone until"
+                + " blocks 2 and 3 land."
         )
     }
 

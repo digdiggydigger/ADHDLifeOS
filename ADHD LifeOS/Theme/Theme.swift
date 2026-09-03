@@ -229,12 +229,18 @@ extension View {
     /// Applied OUTSIDE the scroll container, which is what makes it an inset rather than content.
     ///
     /// Not for sheets or full-screen covers: they are presented above the disc and hide it.
-    func captureDiscClearance() -> some View {
+    ///
+    /// **`hasSearchRow` (F-Search-1-Row).** Three screens now also carry the bottom search row,
+    /// which sits in this same band, and they need more room than the eight that do not. The
+    /// parameter defaults to `false` so every existing call site keeps its exact meaning, and the
+    /// extra is DERIVED in `AppSearchRowMetrics.clearance(hasSearchRow:)` rather than typed a
+    /// second time — a second literal is how the two drift the first time the field's height moves.
+    func captureDiscClearance(hasSearchRow: Bool = false) -> some View {
         safeAreaInset(edge: .bottom, spacing: 0) {
             // Non-hit-testable, or this reserved strip would swallow taps on the rows that scroll
             // up through it — the exact reachability problem it exists to fix.
             Color.clear
-                .frame(height: CaptureDiscMetrics.clearance)
+                .frame(height: AppSearchRowMetrics.clearance(hasSearchRow: hasSearchRow))
                 .allowsHitTesting(false)
         }
     }
