@@ -2752,7 +2752,7 @@ is suppressed (decided; E can veto at the stop).
 children INCLUDING the close button, which would have left a VoiceOver user inside a full-screen
 cover with no way out. The combine is now scoped to the title and subtitle alone.
 
-### FEATURE: F-Routines-5-LiveActivity — the display anchor  [ ] UNCHECKED
+### FEATURE: F-Routines-5-LiveActivity — the display anchor  [x] COMPLETED
 
 Second `ActivityConfiguration` in the widget extension (16.1 floor): place, done/total, next
 step, progress. STARTS when the routine screen opens (ActivityKit cannot start from background —
@@ -2760,10 +2760,27 @@ do not "fix"); updates on step changes; ends on run end (verify background end).
 via `widgetURL`. NO buttons (settled fast-follow).
 
 **Acceptance criteria**
-- [ ] Shared attributes file added to the pbxproj `membershipExceptions` (both targets compile).
-- [ ] `Color("AccentColor")` explicit (the LA ignores the widget's global accent).
-- [ ] Activity lifecycle matches the run store on sim (screen open → live; run end → ended).
-- [ ] Tap returns to the routine screen via the widget-link door.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Shared attributes file added to the pbxproj `membershipExceptions` (both targets compile);
+      pinned by `RoutineActivityCallSiteTests` so a "cannot find type" in the extension can never
+      be mistaken for a code problem again.
+- [x] `Color("AccentColor")` explicit, and `Color.accentColor` asserted ABSENT from the code (the
+      LA ignores the widget's global accent).
+- [x] Activity lifecycle matches the run store on sim — proven by an ActivityKit probe run on the
+      simulator: `areActivitiesEnabled=true`, `REQUEST_OK … count=1`, `afterEnd=0`. **The
+      simulator does not composite a Live Activity onto the Home Screen island or a freshly
+      booted lock screen, so there is no sim SCREENSHOT of it — E's field walk on the 15 Pro is
+      the visual gate, exactly as the plan says.** The probe was deleted at close-out (it
+      XCTFails by design) and ended what it started.
+- [x] Tap returns via the widget-link door: `AppDeepLink.routineScreen`, resolved against the
+      STORE like the notification tap, so a stale card lands on Today rather than a blank screen.
+- [x] Suite green (2,304/0), lint 0/662, builds green, red-checked, committed and pushed.
 - [ ] Then: E's field walk → full re-run → `--no-ff` merge → re-verify ON main → reinstall
       `wishwashwacky15` from main → ask E about branch deletion.
+
+**Two things found while wiring it, both fixed:**
+- The presenter was constructed inside a `@ViewBuilder`, so every re-render replaced the object
+  holding the ActivityKit handle — updates and the end would have quietly no-opped, stranding a
+  Lock Screen card nothing could move. It is now a shared instance, pinned by test.
+- The bundle registered the widget behind `if #available(iOS 16.1, *)`. The extension's floor IS
+  16.1, so the gate bought nothing, and a conditional in a `WidgetBundle` body can silently drop
+  the widget from the bundle — it compiles and simply never registers.

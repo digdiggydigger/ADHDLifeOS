@@ -20,6 +20,10 @@ struct PlaceRoutineScreen: View {
     private let store: RoutineRunStoring
     private let onOpenTab: (AppTab) -> Void
     private let onStartSprint: (Int?) -> Void
+    /// ActivityKit cannot START an Activity from the background, and the crossing arrives with
+    /// the app backgrounded — so the routine's Live Activity begins HERE, when the screen
+    /// opens, and ends when the run does. Injected so the screen stays testable and previewable.
+    private let activity: RoutineActivityPresenting
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -28,12 +32,16 @@ struct PlaceRoutineScreen: View {
         run: RoutineRun,
         store: RoutineRunStoring,
         onOpenTab: @escaping (AppTab) -> Void,
-        onStartSprint: @escaping (Int?) -> Void
+        onStartSprint: @escaping (Int?) -> Void,
+        // NOT defaulted: `RoutineActivityPresenting` is `@MainActor`, and a default argument
+        // is evaluated in a nonisolated context. Every call site names its presenter.
+        activity: RoutineActivityPresenting
     ) {
         _run = State(initialValue: run)
         self.store = store
         self.onOpenTab = onOpenTab
         self.onStartSprint = onStartSprint
+        self.activity = activity
     }
 
     var body: some View {
@@ -54,6 +62,7 @@ struct PlaceRoutineScreen: View {
             .padding(16)
         }
         .background(Color.pageBackground)
+        .task { activity.started(run) }
         // A run can end UNDERNEATH this screen (its departure crossing, the window, the
         // sweep) — `updateMatching`/`end(runId:)` keep the store honest while the checklist
         // keeps serving the person holding it.
@@ -226,6 +235,7 @@ struct PlaceRoutineScreen: View {
         // Write-through ONLY while this run is still the live one — a run that ended
         // underneath us must stay gone, and this checklist keeps working locally either way.
         _ = store.updateMatching(updated)
+        activity.updated(updated)
     }
 
     /// Done-on-tap (the settled semantics): tapping the step IS running it — iOS offers no
@@ -280,6 +290,9 @@ struct PlaceRoutineScreen: View {
         if PlaceRoutineProgress.isFullyResolved(run) {
             store.end(runId: run.id)
         }
+        // The Activity is the SCREEN's, not the run's: it cannot be restarted from the
+        // background, so leaving without it would strand a card nothing could ever update.
+        activity.ended()
         DataChangeSignal.post()
     }
 }
@@ -329,13 +342,15 @@ enum PlaceRoutineScreenPreviewFixture {
         PlaceRoutineScreen(
             run: PlaceRoutineScreenPreviewFixture.run,
             store: UserDefaultsRoutineRunStore(defaults: nil),
-            onOpenTab: { _ in }, onStartSprint: { _ in }
+            onOpenTab: { _ in }, onStartSprint: { _ in },
+            activity: InertRoutineActivityPresenter()
         )
         .environment(\.colorScheme, .light)
         PlaceRoutineScreen(
             run: PlaceRoutineScreenPreviewFixture.run,
             store: UserDefaultsRoutineRunStore(defaults: nil),
-            onOpenTab: { _ in }, onStartSprint: { _ in }
+            onOpenTab: { _ in }, onStartSprint: { _ in },
+            activity: InertRoutineActivityPresenter()
         )
         .environment(\.colorScheme, .dark)
     }

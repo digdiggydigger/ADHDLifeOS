@@ -124,6 +124,11 @@ final class RoutineJourneyUITests: XCTestCase {
         )
         attach(app, "2-routine-screen")
 
+        // 3b. The routine follows you out of the app (F-Routines-5). ActivityKit cannot START
+        //     an Activity from the background, which is exactly why it begins here, with the
+        //     screen open — so backgrounding now is the first moment the card can exist.
+        photographTheLiveActivity(app)
+
         // 4. Skip is non-destructive and Undo takes it back — no confirmation anywhere.
         skipThenUndo(app)
 
@@ -181,6 +186,30 @@ final class RoutineJourneyUITests: XCTestCase {
             "Undo did not return the skipped step to pending"
         )
         attach(app, "4-after-undo")
+    }
+
+    /// Sends the app to the background and photographs the Dynamic Island / Lock Screen, then
+    /// brings it back. Deliberately NOT asserted: whether a Live Activity renders depends on
+    /// `areActivitiesEnabled` and on the simulator's island support, and a journey that failed
+    /// on either would be reporting the environment rather than the code. The screenshot is
+    /// the deliverable — the same render-and-look loop the rest of this file uses.
+    @MainActor
+    private func photographTheLiveActivity(_ app: XCUIApplication) {
+        XCUIDevice.shared.press(.home)
+        // Wait for the APP to actually leave the foreground. Screenshotting straight after the
+        // press captured the app still on screen — the press had not landed yet. And capture
+        // the SCREEN rather than springboard's own element tree, which does not include the
+        // Activity's rendering.
+        _ = app.wait(for: .runningBackground, timeout: 10)
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "2b-live-activity"
+        shot.lifetime = .keepAlways
+        add(shot)
+        app.activate()
+        XCTAssertTrue(
+            app.buttons["Open Snapchat"].waitForExistence(timeout: UITestSession.timeout),
+            "the routine screen did not survive a trip to the background"
+        )
     }
 
     /// Taps a tab until it is actually SELECTED. A tab tap taken while the previous screen is

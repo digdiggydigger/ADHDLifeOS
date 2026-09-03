@@ -20,9 +20,27 @@ extension RootView {
         case .captureComposer(let kind):
             isFabOpen = false
             composerKind = kind
+        case .routineScreen:
+            // The Live Activity's tap. Same resolution as the notification's — the STORE is
+            // the truth — so a card left over from an ended run lands on Today, never on a
+            // blank screen.
+            openRoutineDoor(routineRunStore.readLiveRun(now: .now)?.id)
         case .authCallback, .focusWidget:
             break
         }
+    }
+
+    /// ActivityKit is 16.1+ and the routine screen is 17-gated, so in practice this is always
+    /// the real presenter — the inert one keeps the type total rather than guarding at the
+    /// call site.
+    func routineActivityPresenter() -> RoutineActivityPresenting {
+        if #available(iOS 16.1, *) {
+            // The SHARED instance: this factory is called from a `@ViewBuilder`, so a fresh
+            // presenter here would be replaced on every re-render — along with its handle to
+            // the running Activity.
+            return RoutineActivityKitPresenter.shared
+        }
+        return InertRoutineActivityPresenter()
     }
 
     /// The place-action doors (F-PlaceActions-3): a tapped notification's in-app half.
@@ -82,7 +100,8 @@ extension RootView {
                 onStartSprint: { minutes in
                     let fallback = UserDefaultsMomentumPreferencesStore().read().defaultSprintMinutes
                     startFocus(PlaceActionSprint.plan(minutes: minutes, defaultMinutes: fallback))
-                }
+                },
+                activity: routineActivityPresenter()
             )
         }
     }

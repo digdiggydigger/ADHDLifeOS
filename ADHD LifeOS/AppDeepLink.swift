@@ -22,6 +22,8 @@ enum AppDeepLink: Equatable {
     /// the widget target writes those strings by hand because it cannot see the enum, and the
     /// route test locks the contract from this side.
     case captureComposer(CaptureKind)
+    /// A tap on the routine Live Activity — back to the live routine's screen (F-Routines-5).
+    case routineScreen
 
     /// Whether this route opens something inside the signed-in tab hierarchy. On a dead launch
     /// the URL arrives while auth is still restoring — before the tabs (and any handler mounted
@@ -29,7 +31,7 @@ enum AppDeepLink: Equatable {
     /// (E's on-device note, 2026-08-25: widget capture taps landed on plain Today).
     var requiresSignedInUI: Bool {
         switch self {
-        case .areasTab, .captureComposer:
+        case .areasTab, .captureComposer, .routineScreen:
             return true
         case .authCallback, .focusWidget:
             return false
@@ -43,6 +45,7 @@ enum AppDeepLink: Equatable {
         guard url.host == widgetHost else { return .authCallback }
         let path = url.pathComponents.filter { $0 != "/" }
         if path.first == "areas" { return .areasTab }
+        if path == ["routine"] { return .routineScreen }
         if path.count == 2, path[0] == "capture", let kind = CaptureKind(rawValue: path[1]) {
             return .captureComposer(kind)
         }
