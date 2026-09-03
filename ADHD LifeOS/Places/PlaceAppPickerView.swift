@@ -111,13 +111,16 @@ struct PlaceAppPickerView: View {
 
     /// Opaque on purpose: a pinned header sits ON TOP of the rows sliding under it, and a
     /// transparent one lets app names show through its letters.
+    ///
+    /// **That was the requirement all along and `.bar` did not meet it** — it is a material, so
+    /// it blurred the rows rather than hiding them, and this comment asserted the opposite while
+    /// nothing checked. F-Tools-4-Headers moved both pinned headers onto the shared
+    /// `pinnedSectionHeader()`, whose surface is the PAGE: opaque for the first time, and no
+    /// longer a square strip laid over rounded cards. See `Theme.swift` for the measurement.
     private func pinnedHeader(_ title: String) -> some View {
         Text(title)
-            .sectionLabel()
             .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 8)
-            .background(.bar)
+            .pinnedSectionHeader()
     }
 
     /// One bordered card holding a run of rows with inset dividers — the house treatment from

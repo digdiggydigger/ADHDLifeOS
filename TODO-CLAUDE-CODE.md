@@ -2412,7 +2412,7 @@ clearance is a property of the presentation rather than of the screen.
 **§7 conflict, reported as standing:** `ui-ux-pro-max` rates "bottom nav ≤5" HIGH severity with
 "overloaded nav" as an anti-pattern. E was shown this and chose six knowingly.
 
-### FEATURE: F-Tools-4-Headers — one pinned-header treatment, everywhere  [ ] UNCHECKED
+### FEATURE: F-Tools-4-Headers — one pinned-header treatment, everywhere  [x] COMPLETED
 
 Pinned section headers are currently a near-white `.bar` strip with square corners against rounded
 cards, and they read unfinished. Add ONE shared treatment to `Theme.swift` beside `sectionLabel()`
@@ -2421,12 +2421,46 @@ grew. Sequenced last on purpose: a chrome change tangled into a navigation rewri
 judge and harder to revert.
 
 **Acceptance criteria**
-- [ ] One shared header treatment exists in `Theme.swift`; `TaskListView` and `PlaceAppPickerView`
-      both use it and neither hand-rolls a header background.
-- [ ] **Reachability proven by grepping CALL SITES, not the definition** —
-      `grep -rn "background(.bar)" "ADHD LifeOS/" --include="*.swift"` returns only deliberate
-      non-header uses, each named in the report. This is `dead-shared-component-pattern`, the
-      defect this repo has now repeated six times: tests prove correctness, never reachability.
-- [ ] Headers still pin opaquely (rows must not show through the letters) and read correctly in
-      both themes.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] One shared header treatment exists in `Theme.swift` — `pinnedSectionHeader()`, beside
+      `sectionLabel()` and `bentoCard()`, with its numbers in `PinnedHeaderMetrics`.
+      `TaskListView` and `PlaceAppPickerView` both use it and neither hand-rolls a background.
+- [x] **Reachability proven by grepping CALL SITES, not the definition.** The only
+      `background(.bar)` left in the app is `ComposerChips.swift`'s `ComposerFooterSurface` —
+      the pinned BOTTOM BAR's surface, a deliberate non-header use whose job is the opposite
+      (E's 2026-08-25 review asked for the boundary between scrolling content and a fixed footer
+      to be VISIBLE). `PinnedSectionHeaderCallSiteTests` pins all of it, and **strips comment
+      lines before searching** — `Theme.swift` quotes `.background(.bar)` while explaining why it
+      is gone, which a raw-text guard would read as the defect still being present. That is the
+      same prose-satisfies-`contains` trap the previous block's red-check caught.
+- [x] Headers still pin, and now do so OPAQUELY **for the first time** — see the finding below.
+      Both themes rendered and measured.
+- [x] Suite green (2,176 / 0, 56 skipped), lint 0 / 623, sim build green, red-checked, committed
+      and pushed.
+
+**⚠ THE FINDING — `.bar` was never opaque, and both call sites' comments claimed it was.** Each
+said, in as many words, that the header is *"opaque on purpose"* because rows slide beneath it and
+a transparent one lets their text show through the letters. `.bar` is a **material**: it blurs what
+is behind it rather than hiding it. Scrolled so a row sat under the pinned header, sampling the
+band to the RIGHT of the label — where no header text exists at all — gave:
+
+```
+before   43-59 distinct colour bands   (the row underneath, showing through)
+after     1 band, #F0F3F6              (the page)
+```
+
+The comment named the exact defect it was failing to prevent, and nothing checked it.
+`PinnedSectionHeaderTests.testTheHeaderSurfaceIsFullyOpaque` now resolves the token in both
+appearances and asserts alpha 1, so the claim is a guard rather than prose.
+
+**The geometry E actually saw.** A row through the header and a row through the card beneath gave
+`header #F9F9F9 / card #FFFFFF / page #F0F3F6`, all spanning x 16.0 → 386.0pt — so the strip was a
+THIRD surface, neither page nor card, with SQUARE corners resting on a 16pt-rounded card. Nine
+units off the page is too little to read as a deliberate surface and too much to disappear. In dark
+it was worse: `#242A30` against a `#181820` page. **The fix is subtraction** — paint it the page,
+and the rectangle stops existing because its fill and the 16pt gutters either side are the same
+colour. A pinned header now looks exactly like every other `sectionLabel()` in the app.
+
+**Raised, not silently fixed:** `cardEdges()` is file-private in `PlaceAppPickerView` while
+`TaskListView` hand-rolls the identical card treatment (clip + `CardSurface` + `CardBorder`, 16pt
+continuous). That is the same dead-shared-component shape one layer over, but it is a CARD, not a
+header, so it is out of this block's scope. E's call whether to promote it to `Theme.swift`.
