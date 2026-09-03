@@ -2648,20 +2648,26 @@ stay a SEPARATE, visually distinct notification species; Undo over confirm every
 wire/schema changes and nothing to republish, all arc**; display Live Activity in-arc, its
 buttons are the fast-follow. E's field walk gates the merge.
 
-### FEATURE: F-Routines-1-Order — drag-to-reorder + the pure core  [ ] UNCHECKED
+### FEATURE: F-Routines-1-Order — drag-to-reorder + the pure core  [x] COMPLETED
 
 Reorder support on the place actions editor (order = array order, already persisted), the
 `PlaceRoutinePlan` pure type, `RoutineDefaults` (threshold 2, departure window 30 min — named,
 never magic), and the stale startSprint footer copy fix (`PlaceActionsEditorView.swift:207`).
 
 **Acceptance criteria**
-- [ ] Actions ForEach reorders (scoped editMode first; fallback = the forced-editMode List
-      technique from `HomeAccessoryStrips.swift:13-27`); the automation-guide ForEach does NOT move.
-- [ ] Reorder round-trips through the REAL Firestore codec preserving order; `makePlace` still
-      threads actions (strip-risk pinned).
-- [ ] `PlaceRoutinePlan` decides ordered steps + the ≥2 threshold, fully pinned.
-- [ ] Sprint footer copy corrected and pinned.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Actions ForEach reorders — plain `.onMove`, NO editMode: the sim probe showed scoped
+      `.environment(\.editMode, .constant(.active))` renders no grips on iOS 26 (visually
+      inert) while long-press drag reorders fine without it, Button rows included, and
+      swipe-to-delete/taps unaffected; the automation-guide ForEach does NOT move (pinned:
+      exactly one `.onMove` in the file).
+- [x] Reorder round-trips through the REAL Firestore codec preserving order; `makePlace` still
+      threads actions AND their order (strip-risk pinned both ways).
+- [x] `PlaceRoutinePlan` decides ordered steps + the ≥2 threshold, fully pinned (membership
+      reuses `PlaceActionPlan.split`, so the two layers cannot disagree).
+- [x] Sprint footer copy corrected ("Arrives as a notification — tapping it starts the
+      sprint.") and pinned by source: only createCapture and journalLine may claim to run
+      by themselves.
+- [x] Suite green, lint 0, builds green, red-checked, committed and pushed.
 
 ### FEATURE: F-Routines-2-Notify — run store + one notification at 2+  [ ] UNCHECKED
 
