@@ -124,7 +124,15 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
                 }
             )
         }
-        if !handledAsPlaceAction {
+        // The routine species (F-Routines-3): its own prefix, its own branch — the
+        // placeAction prefix is greedy by pinned design, so ordering it first costs nothing
+        // and moving it would. The routine tap carries only the run key; the door resolves it.
+        let handledAsRoutine = !handledAsPlaceAction && MainActor.assumeIsolated {
+            PlaceRoutineNotificationRouter.shared.handle(
+                notificationIdentifier: identifier, userInfo: userInfo
+            )
+        }
+        if !handledAsPlaceAction && !handledAsRoutine {
             FocusNotificationRouter.shared.handle(
                 notificationIdentifier: identifier,
                 actionIdentifier: response.actionIdentifier

@@ -2693,7 +2693,7 @@ prefix is greedy; own `UNNotificationCategory`; userInfo = minted run UUID only)
 - [x] Interim inert tap reported to E at the stop.
 - [x] Suite green, lint 0, builds green, red-checked, committed and pushed.
 
-### FEATURE: F-Routines-3-Screen — the door and the screen  [ ] UNCHECKED
+### FEATURE: F-Routines-3-Screen — the door and the screen  [x] COMPLETED (render journey rides with block 4)
 
 `PlaceRoutineNotificationRouter` (pending-door replay; own delegate branch; signed-out goes
 pending), the `RootView` door (17+ gated fullScreenCover; `RootView+Doors.swift` split with the
@@ -2702,12 +2702,23 @@ canvas Main board: pre-ticked auto rows, dominant next-step card (48pt), Skip, U
 progress semantics AS PINNED IN THE PLAN, stale-tap → Today.
 
 **Acceptance criteria**
-- [ ] Cold-launch and signed-out taps drain correctly; stale run UUID opens Today, pinned.
-- [ ] Step taps run through the EXISTING action plumbing; sprint steps start in foreground.
-- [ ] Progress/Skip/Undo/completion behave exactly as the plan's pinned semantics.
-- [ ] A11y: combined row elements, state never colour-alone, Dynamic Type.
-- [ ] Sim-driven end-to-end via the DEBUG test-fire button.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Cold-launch and signed-out taps drain correctly (`PlaceRoutineNotificationRouter`, the
+      third pending-door replay); a stale/missing/broken run key opens Today, pinned — the door
+      resolves the tapped UUID against the STORE, so a blank routine screen is unreachable.
+- [x] Step taps run through the EXISTING action plumbing (`PlaceActionTapRoute` +
+      `PlaceLinkOpener`); sprint steps start in the foreground, which is why startSprint is a
+      tap-step at all.
+- [x] Progress/Skip/Undo/completion behave exactly as the plan's pinned semantics — "N of M
+      done" excludes skipped, the bar's resolved fraction includes it, auto-done is immutable,
+      and a fully-resolved run ends when the screen LEAVES (dismiss or background), never at the
+      final tap, so Undo lives until then.
+- [x] A11y: rows are combined elements, the step circle is `accessibilityHidden` because the
+      SUBTITLE words carry the state (never colour alone), semantic Dynamic Type throughout.
+- [ ] Sim-driven end-to-end via the DEBUG test-fire button — **deliberately carried into block
+      4's combined render journey**: in block 3 the only door to the screen is a notification
+      tap, and the Home card's "Continue" is the in-app door that makes an emulator-backed
+      journey robust. Verified there, over blocks 2+3+4 together.
+- [x] Suite green (2,271/0), lint 0/651, builds green, red-checked, committed and pushed.
 
 ### FEATURE: F-Routines-4-HomeCard — the way back in  [ ] UNCHECKED
 

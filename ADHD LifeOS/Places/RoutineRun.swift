@@ -29,7 +29,7 @@ enum RoutineStepState: String, Codable, Equatable, Sendable {
 /// tap must be runnable on a cold launch from this record alone, and a mid-run edit of the
 /// place must not mutate a run already underway: the record tells the truth about what THIS
 /// crossing offered.
-struct RoutineRun: Codable, Equatable, Sendable {
+struct RoutineRun: Codable, Equatable, Sendable, Identifiable {
     struct Step: Codable, Equatable, Sendable {
         let action: PlaceAction
         var state: RoutineStepState
@@ -92,6 +92,14 @@ protocol RoutineRunStoring {
     func readLiveRun(now: Date) -> RoutineRun?
     func write(_ run: RoutineRun)
     func endLiveRun()
+    /// Named widening (F-Routines-3): persist the screen's step changes ONLY while this run
+    /// is still the stored one. A run can end underneath an open screen (its departure
+    /// crossing, the window, the sweep, newest-wins) — a blind write would resurrect it.
+    /// Returns whether the update landed.
+    func updateMatching(_ run: RoutineRun) -> Bool
+    /// Named widening (F-Routines-3): end THIS run, and only this run — the screen's
+    /// completion path must never end a newer run that replaced it mid-view.
+    func end(runId: UUID)
 }
 
 /// App-local UserDefaults, the `UserDefaultsArrivalNudgeStateStore` arrangement: every
@@ -125,6 +133,21 @@ struct UserDefaultsRoutineRunStore: RoutineRunStoring {
     }
 
     func endLiveRun() {
+        defaults?.removeObject(forKey: Self.runKey)
+    }
+
+    func updateMatching(_ run: RoutineRun) -> Bool {
+        guard let data = defaults?.data(forKey: Self.runKey),
+              let stored = try? JSONDecoder().decode(RoutineRun.self, from: data),
+              stored.id == run.id else { return false }
+        write(run)
+        return true
+    }
+
+    func end(runId: UUID) {
+        guard let data = defaults?.data(forKey: Self.runKey),
+              let stored = try? JSONDecoder().decode(RoutineRun.self, from: data),
+              stored.id == runId else { return }
         defaults?.removeObject(forKey: Self.runKey)
     }
 }

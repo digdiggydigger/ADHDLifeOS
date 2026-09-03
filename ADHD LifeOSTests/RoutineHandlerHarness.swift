@@ -76,6 +76,20 @@ final class RoutineFakeRunStore: RoutineRunStoring {
         endCount += 1
         log.append("run-end")
     }
+
+    func updateMatching(_ new: RoutineRun) -> Bool {
+        guard run?.id == new.id else { return false }
+        run = new
+        log.append("run-update")
+        return true
+    }
+
+    func end(runId: UUID) {
+        guard run?.id == runId else { return }
+        run = nil
+        endCount += 1
+        log.append("run-end")
+    }
 }
 
 final class RoutineFakeArrivalStore: ArrivalNudgeStateStoring {

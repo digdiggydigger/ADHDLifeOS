@@ -19,9 +19,11 @@ struct RootView: View {
     let lifeAreaDetailClient: LifeAreaDetailClientAdapting
 
     /// The capture fan (F-V3-Capture): open = five discs over a scrim; picking one opens the
-    /// composer with that kind already chosen.
-    @State private var isFabOpen = false
-    @State private var composerKind: CaptureKind?
+    /// composer with that kind already chosen. Internal, not private: RootView+Doors mutates
+    /// these (the HomeView.arrangeAreas precedent — Swift `private` is file-scoped, and the
+    /// door funcs moved out for the 400-line bar).
+    @State var isFabOpen = false
+    @State var composerKind: CaptureKind?
     /// F-DiscPill: whether a drag is live anywhere in the window, fed by
     /// `CaptureDiscPanObserver`. The disc reads it to choose disc vs pill; `@StateObject` so
     /// the one instance outlives auth-state swaps, matching the observer's once-only install.
@@ -35,16 +37,24 @@ struct RootView: View {
     /// surface is open. Owned here because the ROW is app-level — it shares a row with the capture
     /// disc — while each screen presents its own SURFACE, which is where the data lives.
     @StateObject private var searchModel = AppSearchModel()
-    @State private var selectedTab: AppTab = .today
+    @State var selectedTab: AppTab = .today  // Internal, not private: RootView+Doors reaches it.
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
     @State private var captureInboxCount = 0
     /// A widget door that arrived before the signed-in tabs existed (dead launch: the URL is
     /// delivered while auth is still restoring). Held here and drained the moment the tabs mount.
-    @State private var pendingWidgetLink: AppDeepLink?
+    @State var pendingWidgetLink: AppDeepLink?  // Internal: RootView+Doors drains it.
     /// A place-action tap that arrived while signed out or mid-restore — the widget-link
     /// arrangement, for the same cold-launch reason.
-    @State private var pendingActionDoor: PlaceActionDoor?
+    @State var pendingActionDoor: PlaceActionDoor?  // Internal: RootView+Doors drains it.
+    /// The live routine screen (F-Routines-3), presented by run so a stale door can never
+    /// show a blank screen — `openRoutineDoor` resolves the tapped key against the store
+    /// first. Internal: RootView+Doors presents it.
+    @State var presentedRoutineRun: RoutineRun?
+    /// A routine tap that arrived signed-out or mid-restore — the pending-door pattern.
+    @State var pendingRoutineRunKey: UUID?
+    /// The doors' read of the one live run. Internal: RootView+Doors resolves against it.
+    let routineRunStore: RoutineRunStoring = UserDefaultsRoutineRunStore()
     /// The Settings appearance override — same key both ends, so the picker applies live.
     @AppStorage(AppearancePreference.storageKey) private var appearanceRaw = AppearancePreference.system.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -52,7 +62,8 @@ struct RootView: View {
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
     /// for exactly this reason. The factory adds Live Activity mirroring on iOS 16.1+ (§7 gate),
     /// so the countdown also lives on the Lock Screen / Dynamic Island.
-    @StateObject private var focusService = FocusSessionService.withLiveActivityMirroring(
+    /// Internal, not private: RootView+Doors' sprint door starts it.
+    @StateObject var focusService = FocusSessionService.withLiveActivityMirroring(
         logger: FirebaseFocusSessionAdapter()
     )
 
@@ -66,7 +77,7 @@ struct RootView: View {
     /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
     /// success haptic the web fires on start (`triggerHaptic('success')`) happens exactly once
     /// per launch.
-    private func startFocus(_ plan: FocusSprintPlan) {
+    func startFocus(_ plan: FocusSprintPlan) {  // Internal, not private: the sprint door calls it.
         Haptics.play(.success)
         focusService.start(plan: plan)
     }
@@ -76,32 +87,6 @@ struct RootView: View {
     private func refreshCaptureInboxCount() async {
         guard let captures = try? await captureClient.fetchUnprocessedCaptures() else { return }
         captureInboxCount = captures.count
-    }
-
-    /// The widget doors' one entry point — called immediately when the tabs are on screen, and
-    /// as the drain for a link that had to wait out a cold launch.
-    private func openWidgetDoor(_ link: AppDeepLink) {
-        switch link {
-        case .areasTab:
-            selectedTab = .areas
-        case .captureComposer(let kind):
-            isFabOpen = false
-            composerKind = kind
-        case .authCallback, .focusWidget:
-            break
-        }
-    }
-
-    /// The place-action doors (F-PlaceActions-3): a tapped notification's in-app half. External
-    /// URL opens never reach here — the router hands those straight to the system.
-    private func openActionDoor(_ door: PlaceActionDoor) {
-        switch door {
-        case .screen(let screen):
-            selectedTab = screen.appTab
-        case .sprint(let minutes):
-            let fallback = UserDefaultsMomentumPreferencesStore().read().defaultSprintMinutes
-            startFocus(PlaceActionSprint.plan(minutes: minutes, defaultMinutes: fallback))
-        }
     }
 
     var body: some View {
@@ -258,6 +243,9 @@ struct RootView: View {
                         onOpenSearch: { searchModel.open() }
                     )
                 }
+                .fullScreenCover(item: $presentedRoutineRun) { run in
+                    routineCover(run)
+                }
                 .fullScreenCover(item: $composerKind) { kind in
                     QuickCaptureView(
                         client: captureClient,
@@ -283,13 +271,7 @@ struct RootView: View {
                 // Drain a widget door that arrived before these tabs existed. Deliberately a state
                 // change AFTER mount: presenting the composer by pre-set state on first render is
                 // the flaky path; a post-mount change presents reliably.
-                .task {
-                    if let link = pendingWidgetLink {
-                        pendingWidgetLink = nil
-                        openWidgetDoor(link)
-                    }
-                    if let door = pendingActionDoor { pendingActionDoor = nil; openActionDoor(door) }
-                }
+                .task { drainPendingDoors() }
                 .preferredColorScheme(
                     (AppearancePreference(rawValue: appearanceRaw) ?? .system).colorScheme
                 )
@@ -363,6 +345,14 @@ struct RootView: View {
             // Place-action doors: replay-on-connect, pending-while-signed-out (widget-link rules).
             PlaceActionNotificationRouter.shared.connect { door in
                 if case .signedIn = authService.state { openActionDoor(door) } else { pendingActionDoor = door }
+            }
+            PlaceRoutineNotificationRouter.shared.connect { runKey in
+                if case .signedIn = authService.state {
+                    openRoutineDoor(runKey)
+                } else if let runKey {
+                    // A broken tap has nothing to hold — the app is opening onto Today anyway.
+                    pendingRoutineRunKey = runKey
+                }
             }
             if authService.state == .unknown {
                 await authService.restoreSession()

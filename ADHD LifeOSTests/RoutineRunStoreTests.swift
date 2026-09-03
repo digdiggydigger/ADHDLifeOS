@@ -220,6 +220,42 @@ final class RoutineRunStoreTests: XCTestCase {
         XCTAssertNil(store.readLiveRun(now: noonUTC))
     }
 
+    func testStore_updateMatching_refusesToResurrectAReplacedRun() {
+        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar)
+        let original = makeRun()
+        let replacement = makeRun()
+        store.write(original)
+        store.write(replacement)
+
+        var stale = original
+        stale.steps = []
+
+        XCTAssertFalse(
+            store.updateMatching(stale),
+            "a run that ended (or was replaced) under an open screen must STAY gone —"
+                + " a blind write here would resurrect it on Today"
+        )
+        XCTAssertEqual(store.readLiveRun(now: noonUTC), replacement)
+        XCTAssertTrue(store.updateMatching(replacement), "the live run still updates")
+    }
+
+    func testStore_endRunId_endsOnlyThatRun() {
+        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar)
+        let original = makeRun()
+        let replacement = makeRun()
+        store.write(original)
+        store.write(replacement)
+
+        store.end(runId: original.id)
+        XCTAssertEqual(
+            store.readLiveRun(now: noonUTC), replacement,
+            "the screen's completion path must never end a newer run that replaced it mid-view"
+        )
+
+        store.end(runId: replacement.id)
+        XCTAssertNil(store.readLiveRun(now: noonUTC))
+    }
+
     func testStore_corruptDataDegradesToNoRun() {
         let defaults = scratchDefaults()
         defaults.set(Data("not a run".utf8), forKey: UserDefaultsRoutineRunStore.runKey)
