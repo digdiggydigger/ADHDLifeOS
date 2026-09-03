@@ -95,6 +95,18 @@ final class RoutineActivityTests: XCTestCase {
         XCTAssertEqual(state.statusLine, "1 of 3 done")
     }
 
+    /// The island's expanded TRAILING region is narrow — "1 of 2 done" truncated to
+    /// "1 of 2…" on E's 15 Pro (field walk, 2026-09-03). The sentence stays on the Lock
+    /// Screen, where there is room; the island gets the glanceable form.
+    func testShortStatusLine_fitsTheIslandsNarrowTrailingSlot() {
+        let state = RoutineActivityAttributes.ContentState(
+            run: run([(.autoDone, "A"), (.pending, "B")])
+        )
+
+        XCTAssertEqual(state.shortStatusLine, "1/2")
+        XCTAssertEqual(state.statusLine, "1 of 2 done", "the banner keeps the full sentence")
+    }
+
     func testNextLine_readsAsAnInstructionOrACompletion() {
         let running = RoutineActivityAttributes.ContentState(
             run: run([(.autoDone, "A"), (.pending, "Gym")])

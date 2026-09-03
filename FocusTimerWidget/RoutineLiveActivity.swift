@@ -47,7 +47,8 @@ struct RoutineLiveActivity: Widget {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.statusLine)
+                    // The SHORT form: this slot is narrow and clipped the sentence on device.
+                    Text(context.state.shortStatusLine)
                         .font(.footnote.weight(.bold))
                         .foregroundStyle(Color("AccentColor"))
                         .lineLimit(1)
@@ -73,6 +74,10 @@ struct RoutineLiveActivity: Widget {
             } minimal: {
                 Text("🧭")
             }
+            // The island's outline, tinted (E's field-walk ask, 2026-09-03): a black island on
+            // a dark background has no definite edge, and `keylineTint` is the ONLY supported
+            // way to draw one — the island's own shape is not otherwise styleable.
+            .keylineTint(Color("AccentColor"))
             .widgetURL(URL(string: RoutineActivityAttributes.deepLink))
         }
     }

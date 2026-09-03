@@ -119,6 +119,25 @@ final class RoutineActivityCallSiteTests: XCTestCase {
         XCTAssertTrue(doors.contains("RoutineActivityKitPresenter.shared"))
     }
 
+    /// E's field-walk asks (2026-09-03): a definitive border around the island, and no
+    /// truncated count. `keylineTint` is ActivityKit's supported way to draw that border —
+    /// the island's outline is not otherwise styleable — and the trailing slot takes the short
+    /// form because it is the region that clipped.
+    func testTheIslandHasAKeylineAndAnUntruncatedCount() throws {
+        let activity = try Self.source("FocusTimerWidget/RoutineLiveActivity.swift")
+        let code = Self.code(of: activity)
+
+        XCTAssertTrue(
+            code.contains(".keylineTint(Color(\"AccentColor\"))"),
+            "the island needs a definitive outline, tinted from the extension's own catalog"
+        )
+        XCTAssertTrue(
+            code.contains("context.state.shortStatusLine"),
+            "the expanded trailing region must use the short count — the full sentence"
+                + " truncated to \"1 of 2…\" on device"
+        )
+    }
+
     private static func source(_ relativePath: String) throws -> String {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

@@ -32,8 +32,16 @@ nonisolated struct RoutineActivityAttributes: ActivityAttributes {
         /// 0–1 RESOLVED fraction — skipped counts here, matching the screen's bar exactly.
         var progress: Double
 
+        /// The Lock Screen banner's form — it has a full row to itself.
         var statusLine: String {
             "\(doneCount) of \(totalCount) done"
+        }
+
+        /// The Dynamic Island's form. The expanded trailing region is narrow and truncated
+        /// "1 of 2 done" to "1 of 2…" on device (E's field walk, 2026-09-03) — the same slot
+        /// that once ate a leading digit off the sprint's countdown. Glanceable, not chatty.
+        var shortStatusLine: String {
+            "\(doneCount)/\(totalCount)"
         }
 
         var nextLine: String {
