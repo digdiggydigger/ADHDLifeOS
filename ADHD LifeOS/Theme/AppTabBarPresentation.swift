@@ -95,14 +95,28 @@ enum AppTabBarPresentation {
 /// drift apart. Spacing obeys §2's 4/8/16/24 grid; the rest are component DIMENSIONS (like
 /// `CaptureDiscMetrics.pillHeight`), which the grid does not govern.
 enum AppTabBarMetrics {
-    /// The row of slots.
+    /// The row of slots — **derived from the floating card, so the two states occupy exactly the
+    /// same band**.
     ///
-    /// 56 first — the system bar's 49pt content height plus room for the dot. E's device verdict
-    /// (2026-09-02) was *"really cramped, not much spacing/padding"*, and the measurement agreed:
-    /// glyph, gap and dot came to 37pt inside 56, so the content sat high with dead space beneath
-    /// it, and the glyph was 20pt against the 25 the approved concept drew. 72 is the roomiest of
-    /// three variants E was shown, and stays on §2's base-8 grid.
-    static let rowHeight: CGFloat = 72
+    /// The history is worth keeping, because the number moved three times and each move had a
+    /// reason. 56 first (the system bar's 49pt content height plus room for the dot); E's device
+    /// verdict was *"really cramped, not much spacing/padding"*, and the measurement agreed —
+    /// glyph, gap and dot came to 37pt inside 56, so content sat high with dead space beneath it,
+    /// and the glyph was 20pt against the 25 the concept drew. 72 then, the roomiest of three
+    /// rendered variants, which E approved: *"spacing is so much better"*.
+    ///
+    /// Now derived, on E's *"why don't you reduce the size of the solid pane view the same sizing
+    /// as the floating tab bar?"*. It is the floating card's own height plus the gap it floats
+    /// by, so the resting pane is no taller than the floating state needs — 58pt, and the two
+    /// states cover an identical footprint. It is not a chosen number, so §2's grid does not
+    /// govern it; change the chip or the lift and this follows rather than drifting.
+    ///
+    /// The glyph is UNCHANGED at 25pt. E's cramped verdict was about the glyph and the dead space
+    /// under it, not the row, and both of those stay fixed — the slack around the content drops
+    /// from 17pt a side to ~8, which is the floating card's own padding.
+    static var rowHeight: CGFloat {
+        chipHeight + floatingPaddingVertical * 2 + floatingLift
+    }
 
     /// Gap between a slot's glyph and its indicator. The concept drew 7; §2 has no 7.
     static let glyphToIndicatorSpacing: CGFloat = 8
@@ -144,12 +158,12 @@ enum AppTabBarMetrics {
     /// How far the floating card sits off the bottom of the safe area.
     ///
     /// **8, down from the concept's 22**, on E's GIF verdict: *"when scrolling, the icon nav bar
-    /// should move further down the page to create more space"*. It was derived at 22 so the card
-    /// exactly filled the reserved band; that constraint is gone now the slack above the card is
-    /// page-coloured backdrop rather than chrome, and the card only has to FIT the reserve.
+    /// should move further down the page to create more space"*.
     ///
     /// Not smaller than 8: the safe area already excludes the home indicator, so this is the gap
-    /// above it, and at zero the card reads as jammed into the bottom edge.
+    /// above it, and at zero the card reads as jammed into the bottom edge. `rowHeight` is now
+    /// derived FROM this, so the resting pane follows any change here rather than having to be
+    /// re-tuned alongside it.
     static let floatingLift: CGFloat = 8
 
     /// Where the pill sits against the glyph's top-trailing corner. §2 allows 4pt for micro

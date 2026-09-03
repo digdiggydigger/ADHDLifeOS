@@ -89,17 +89,28 @@ final class AppTabBarPresentationTests: XCTestCase {
 
     // MARK: - The morph's geometry (F-Tools-2-Morph)
 
-    /// **The floating state must fit inside the band the resting state reserves.**
-    /// `AppTabContent` reserves `rowHeight` once and never reflows it — content shifting under a
-    /// bar that morphs as you scroll would be intolerable — so Design B has to live within that
-    /// reserve. It no longer has to FILL it: E's GIF verdict was that the card should "move
-    /// further down the page to create more space", so the lift shrank and the slack above the
-    /// card is now page-coloured backdrop rather than chrome.
-    func testTheFloatingCardFitsInsideTheReservedBand() {
+    /// **The two states occupy exactly the same band.** E: *"why don't you reduce the size of the
+    /// solid pane view the same sizing as the floating tab bar?"* — so `rowHeight` is DERIVED
+    /// from the floating card's height plus its lift, and the resting pane is no taller than the
+    /// floating state needs. Equality, not merely "fits": slack would be the solid slab E
+    /// objected to creeping back.
+    func testTheRestingPaneIsExactlyTheFloatingStatesFootprint() {
         let cardHeight = AppTabBarMetrics.chipHeight + AppTabBarMetrics.floatingPaddingVertical * 2
-        XCTAssertLessThanOrEqual(
-            cardHeight + AppTabBarMetrics.floatingLift, AppTabBarMetrics.rowHeight,
-            "The floating card is taller than the space reserved for it, so it covers content."
+        XCTAssertEqual(cardHeight + AppTabBarMetrics.floatingLift, AppTabBarMetrics.rowHeight)
+    }
+
+    /// The glyph and its indicator still have to fit, with room to breathe. E's "really cramped"
+    /// verdict was about a 20pt glyph with dead space beneath it; the glyph is 25 now and the
+    /// slack is the floating card's own 8pt padding. If a future tune squeezes below that, the
+    /// row is too short for what it carries.
+    func testTheRowLeavesTheGlyphStackRoomToBreathe() {
+        let glyphStack: CGFloat = 25
+            + AppTabBarMetrics.glyphToIndicatorSpacing
+            + AppTabBarMetrics.indicatorDotDiameter
+        let slackPerSide = (AppTabBarMetrics.rowHeight - glyphStack) / 2
+        XCTAssertGreaterThanOrEqual(
+            slackPerSide, AppTabBarMetrics.floatingPaddingVertical,
+            "The resting row is tighter around its glyphs than the floating card is around its."
         )
     }
 
