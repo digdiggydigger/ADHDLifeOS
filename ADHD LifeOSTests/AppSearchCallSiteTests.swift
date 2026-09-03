@@ -112,47 +112,6 @@ final class AppSearchCallSiteTests: XCTestCase {
         )
     }
 
-    // MARK: - Captures (F-Search-2)
-
-    func testCapturesPresentsTheSurface() throws {
-        let inbox = try Self.appCode("Capture/CaptureInboxView.swift")
-        XCTAssertTrue(
-            inbox.contains("captureSearchSurface(service: service"),
-            "The capture inbox never presents the search surface, so the row opens nothing there."
-        )
-    }
-
-    /// **The reachability claim that matters for captures.** A capture may have no title and no
-    /// content at all; `CaptureRowPresentation` is what decides the words its row shows. A filter
-    /// that read `title` / `content` directly would leave those captures visible and unfindable —
-    /// the quiet form of the blank photo-capture card this repo shipped in `eddef9b`.
-    func testCaptureSearchMatchesThroughThePresentationRule() throws {
-        let refinement = try Self.appCode("Capture/CaptureSearchRefinement.swift")
-        XCTAssertTrue(
-            refinement.contains("CaptureRowPresentation.primaryText(for: capture)"),
-            "Capture search stopped going through `CaptureRowPresentation.primaryText`, so a"
-                + " capture with no words of its own is no longer findable by the placeholder its"
-                + " row displays."
-        )
-        XCTAssertTrue(
-            refinement.contains("CaptureRowPresentation.secondaryText(for: capture)"),
-            "Capture search no longer reads the row's second line, so a capture's own words are"
-                + " unsearchable whenever it also has a title."
-        )
-    }
-
-    /// The two filters must stay one convention. A second spelling of "matches" is how Tasks and
-    /// Captures come to disagree about the same query.
-    func testCaptureSearchUsesTheSameMatchingCallAsTasks() throws {
-        for file in ["Capture/CaptureSearchRefinement.swift", "Tasks/TaskListRefinement.swift"] {
-            XCTAssertTrue(
-                try Self.appCode(file).contains("localizedCaseInsensitiveContains"),
-                "\(file) matches queries a different way from its sibling, so the app now has two"
-                    + " answers to \"does this query match\"."
-            )
-        }
-    }
-
     // MARK: - Reading the tree
 
     private static func stripComments(_ text: String) -> String {

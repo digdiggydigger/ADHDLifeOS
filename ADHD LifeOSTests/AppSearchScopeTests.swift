@@ -22,23 +22,14 @@ final class AppSearchScopeTests: XCTestCase {
 
     // MARK: - Which tabs have search
 
-    /// **This list grows one block at a time, on purpose.** A scope exists only once the screen
-    /// that renders its surface exists — adding `.journal` before F-Search-3 would ship a case
-    /// nothing draws, which is this repo's most repeated defect in its gated-off form. This test
-    /// failed the moment `.captures` landed in F-Search-2, which is the guard working: it forces
-    /// the list and the shipped surfaces to be reconciled by hand rather than drifting apart.
-    func testOnlyScreensWithASurfaceReportAScope() {
-        let searchable: [AppTab: AppSearchScope] = [
-            .tasks: .tasks,      // F-Search-1
-            .captures: .captures // F-Search-2
-            // .journal arrives with its surface in F-Search-3.
-        ]
-        for tab in AppTab.allCases {
+    func testTasksIsTheOnlySearchableTabInThisBlock() {
+        XCTAssertEqual(AppSearchScope.scope(for: .tasks), .tasks)
+        for tab in AppTab.allCases where tab != .tasks {
             XCTAssertEqual(
-                AppSearchScope.scope(for: tab), searchable[tab] ?? AppSearchScope.none,
-                "\(tab)'s search scope disagrees with the surfaces that actually exist. Either the"
-                    + " screen gained one and this table did not, or a scope was added ahead of"
-                    + " the screen that renders it."
+                AppSearchScope.scope(for: tab), AppSearchScope.none,
+                "\(tab) reports a search scope. Captures and Journal are blocks 2 and 3 — adding"
+                    + " their cases before their screens exist ships a scope nothing renders,"
+                    + " which is this repo's most repeated defect in its gated-off form."
             )
         }
     }
@@ -55,19 +46,7 @@ final class AppSearchScopeTests: XCTestCase {
 
     // MARK: - The copy
 
-    func testEverySearchableScopeCarriesAPlaceholder() {
-        for scope in [AppSearchScope.tasks, .captures] {
-            let placeholder = scope.placeholder
-            XCTAssertNotNil(placeholder, "\(scope) has no placeholder at all.")
-            XCTAssertFalse(
-                placeholder?.isEmpty ?? true,
-                "\(scope)'s placeholder is empty, so its field renders as a blank capsule with"
-                    + " nothing saying what it searches."
-            )
-        }
-    }
-
-    func testTheTasksPlaceholderIsSpecificAndNoneHasNothing() {
+    func testASearchableScopeCarriesAPlaceholderAndNoneDoesNot() {
         let tasks = AppSearchScope.tasks.placeholder
         XCTAssertNotNil(tasks, "The Tasks scope has no placeholder at all.")
         XCTAssertFalse(
@@ -83,7 +62,6 @@ final class AppSearchScopeTests: XCTestCase {
 
     func testTheRowIsShownExactlyWhereThereIsSomethingToSearch() {
         XCTAssertTrue(AppSearchScope.tasks.showsRow)
-        XCTAssertTrue(AppSearchScope.captures.showsRow)
         XCTAssertFalse(
             AppSearchScope.none.showsRow,
             "A search row would render on a screen with nothing to search — it would also steal"
