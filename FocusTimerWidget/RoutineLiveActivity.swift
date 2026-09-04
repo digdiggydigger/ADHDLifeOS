@@ -81,10 +81,14 @@ struct RoutineLiveActivity: Widget {
             } minimal: {
                 Text("🧭")
             }
-            // The island's outline, tinted (E's field-walk ask, 2026-09-03): a black island on
-            // a dark background has no definite edge, and `keylineTint` is the ONLY supported
-            // way to draw one — the island's own shape is not otherwise styleable.
-            .keylineTint(Color("AccentColor"))
+            // The island's outline (E's field-walk asks, 2026-09-03 then 2026-09-04). A black
+            // island on a black background has no definite edge, and `keylineTint` is the ONLY
+            // supported way to draw one — the island's shape is not otherwise styleable.
+            //
+            // AMBER, not the accent: round 2 showed the blue keyline is barely visible in dark
+            // mode, because a mid-blue on true black is low-contrast at hairline width. Amber
+            // sits far from both the black ground and the blue count, so the edge reads.
+            .keylineTint(Color("IslandKeyline"))
             .widgetURL(URL(string: RoutineActivityAttributes.deepLink))
         }
     }

@@ -119,16 +119,19 @@ final class RoutineActivityCallSiteTests: XCTestCase {
         XCTAssertTrue(doors.contains("RoutineActivityKitPresenter.shared"))
     }
 
-    /// E's field-walk asks (2026-09-03): a definitive border around the island, and no
-    /// truncated count. `keylineTint` is ActivityKit's supported way to draw that border —
-    /// the island's outline is not otherwise styleable — and the trailing slot takes the short
-    /// form because it is the region that clipped.
+    /// E's field-walk asks: a definitive border around the island, and no truncated count.
+    /// `keylineTint` is ActivityKit's supported way to draw that border — the island's outline
+    /// is not otherwise styleable — and the trailing slot takes the short form because it is
+    /// the region that clipped.
+    ///
+    /// The tint is AMBER, not the accent (E, 2026-09-04 round 2): a mid-blue hairline on a
+    /// true-black island is barely visible in dark mode.
     func testTheIslandHasAKeylineAndAnUntruncatedCount() throws {
         let activity = try Self.source("FocusTimerWidget/RoutineLiveActivity.swift")
         let code = Self.code(of: activity)
 
         XCTAssertTrue(
-            code.contains(".keylineTint(Color(\"AccentColor\"))"),
+            code.contains(".keylineTint(Color(\"IslandKeyline\"))"),
             "the island needs a definitive outline, tinted from the extension's own catalog"
         )
         XCTAssertTrue(
@@ -136,6 +139,28 @@ final class RoutineActivityCallSiteTests: XCTestCase {
             "the expanded trailing region must use the short count — the full sentence"
                 + " truncated to \"1 of 2…\" on device"
         )
+    }
+
+    /// The half the name-check cannot see. `Color("…")` resolves at RUNTIME: a missing colorset
+    /// does not fail the build and does not fail the assertion above — it renders a fallback,
+    /// so the border E asked for would simply be invisible again, in the one presentation no
+    /// simulator can show. Assert the asset exists, in the EXTENSION's catalog (a Live Activity
+    /// ignores the widget target's global accent and reads its own), with a dark variant, since
+    /// the island is always dark whatever the system theme is doing.
+    func testTheKeylineColourAssetExistsInTheExtensionCatalog() throws {
+        let colorset = try Self.source(
+            "FocusTimerWidget/Assets.xcassets/IslandKeyline.colorset/Contents.json"
+        )
+
+        XCTAssertTrue(
+            colorset.contains("\"luminosity\"") && colorset.contains("\"dark\""),
+            "the keyline needs a dark-appearance variant — the island is always dark"
+        )
+        let components = try XCTUnwrap(
+            try? JSONSerialization.jsonObject(with: Data(colorset.utf8)) as? [String: Any]
+        )
+        let colors = try XCTUnwrap(components["colors"] as? [[String: Any]])
+        XCTAssertEqual(colors.count, 2, "expected a light and a dark entry")
     }
 
     private static func source(_ relativePath: String) throws -> String {
