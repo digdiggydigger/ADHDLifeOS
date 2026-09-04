@@ -27,14 +27,22 @@ struct RoutineLiveActivity: Widget {
                 .widgetURL(URL(string: RoutineActivityAttributes.deepLink))
         } dynamicIsland: { context in
             DynamicIsland {
+                // Every expanded region carries its own inset. The island crops its content to
+                // a rounded shape whose corners cut INWARD, so a view flush to the region edge
+                // is clipped by the curve rather than merely tight — on E's device that ate the
+                // leading edge of "Next:" and pressed the glyph and the count against the rim.
                 DynamicIslandExpandedRegion(.leading) {
                     Text("🧭")
                         .font(.title2)
                         .frame(width: 44, height: 44)
                         .background(.quaternary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(.leading, 8)
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    // Centred (E, round 2). The eyebrow and the place name are one block and
+                    // read as the island's title, so they sit on its axis rather than ragging
+                    // left against a glyph that is a different size on every place.
+                    VStack(alignment: .center, spacing: 4) {
                         Text("ROUTINE")
                             .font(.caption2.weight(.bold))
                             .tracking(0.5)
@@ -44,7 +52,9 @@ struct RoutineLiveActivity: Widget {
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     // The SHORT form: this slot is narrow and clipped the sentence on device.
@@ -53,6 +63,7 @@ struct RoutineLiveActivity: Widget {
                         .foregroundStyle(Color("AccentColor"))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
+                        .padding(.trailing, 8)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -62,6 +73,10 @@ struct RoutineLiveActivity: Widget {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
+                    // Shortens the bar as well as unclipping the copy (E asked for both): the
+                    // track fills its container, so insetting the container IS the length.
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
                 }
             } compactLeading: {
                 // Sized DOWN from the default body size (E's round-2 ask: the pill was taking
@@ -88,6 +103,12 @@ struct RoutineLiveActivity: Widget {
             // AMBER, not the accent: round 2 showed the blue keyline is barely visible in dark
             // mode, because a mid-blue on true black is low-contrast at hairline width. Amber
             // sits far from both the black ground and the blue count, so the edge reads.
+            //
+            // And pushed toward GOLD rather than true amber, deliberately. Measured off E's
+            // device: a specified #FFB32E rendered as roughly #8C6219, a dull bronze — iOS
+            // draws the keyline at about half opacity and does not expose its width or alpha.
+            // Colour is therefore the only lever, and the lever is LUMINANCE, so the token is
+            // the brightest warm value that still reads amber rather than yellow.
             .keylineTint(Color("IslandKeyline"))
             .widgetURL(URL(string: RoutineActivityAttributes.deepLink))
         }
