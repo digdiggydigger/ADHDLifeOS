@@ -104,11 +104,18 @@ struct RoutineLiveActivity: Widget {
             // mode, because a mid-blue on true black is low-contrast at hairline width. Amber
             // sits far from both the black ground and the blue count, so the edge reads.
             //
-            // And pushed toward GOLD rather than true amber, deliberately. Measured off E's
-            // device: a specified #FFB32E rendered as roughly #8C6219, a dull bronze — iOS
-            // draws the keyline at about half opacity and does not expose its width or alpha.
-            // Colour is therefore the only lever, and the lever is LUMINANCE, so the token is
-            // the brightest warm value that still reads amber rather than yellow.
+            // The value is E's, chosen on the device, and the route to it is worth recording
+            // because the obvious theory was WRONG. iOS draws the keyline at roughly half
+            // opacity and exposes neither its width nor its alpha, so colour is the only lever
+            // — but the lever is not luminance. Pushing brighter (#FFB32E → #FFD60A) made the
+            // edge read DULLER, because a desaturated yellow at half strength turns olive
+            // against black. A darker, more saturated burnt orange holds its hue when dimmed.
+            // Judge any future change on the device: the rendered colour is not the specified
+            // one, and the simulator will not composite a Live Activity at all.
+            //
+            // Both appearance variants carry the same value on purpose — the island is always
+            // dark whatever the system theme is doing, so a differing light variant would only
+            // add a variable to the next tuning pass.
             .keylineTint(Color("IslandKeyline"))
             .widgetURL(URL(string: RoutineActivityAttributes.deepLink))
         }
