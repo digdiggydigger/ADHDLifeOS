@@ -64,7 +64,14 @@ struct RoutineLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
+                // Sized DOWN from the default body size (E's round-2 ask: the pill was taking
+                // all the width available to it). The compact island's width is leading +
+                // sensor cutout + trailing, and the cutout is fixed by iOS — so the glyph is
+                // the only real lever, and an emoji at body size is the widest thing here.
+                // The count is deliberately NOT capped to match: clipping it is precisely the
+                // regression `2c46ee7` fixed.
                 Text("🧭")
+                    .font(.caption)
             } compactTrailing: {
                 // The count, not the step name: the compact slot clips trailing-aligned text,
                 // which is how the sprint's island once ate a leading digit.

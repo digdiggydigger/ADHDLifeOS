@@ -305,13 +305,7 @@ struct HomeView: View {
                     // Concept C's scoreboard leads (2026-08-24, Momentum block M1): the closure
                     // ring and streak, then the one task worth doing next. The Active Goal hero's
                     // slot and start-session funnel live on in BestNextMoveCard.
-                    //
-                    // The ring is the one un-carded element in this stack — no `.bentoCard()`
-                    // edge to hold it apart from the cards above and below — so it takes the
-                    // §2 macro separation on BOTH sides: 16 from the stack plus 8 here is 24
-                    // above and below (E's call, round-2 field walk).
                     scoreboardSection
-                        .padding(.vertical, 8)
                     momentumLeadSection
                     // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
                     lifeAreasSection(activeAreas: activeAreas)

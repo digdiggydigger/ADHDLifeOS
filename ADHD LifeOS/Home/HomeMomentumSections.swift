@@ -99,6 +99,9 @@ extension HomeView {
                 seconds: MomentumScoreboard.bestNextMove(in: homeService.openTasks)?.focusDurationSeconds
             )
         )
+        // Un-carded, so nothing holds it apart from the cards above and below: 8 here plus
+        // Today's 16 stack gap is §2's 24pt macro separation on both sides (E, round-2 walk).
+        .padding(.vertical, 8)
     }
 
     /// The Active Goal hero's successor: same top-task slot and the same start-session funnel
