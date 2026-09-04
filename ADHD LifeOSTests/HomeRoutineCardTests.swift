@@ -92,29 +92,35 @@ final class HomeRoutineCardTests: XCTestCase {
         XCTAssertEqual(HomeRoutineCardModel.continueLabel, "Continue routine")
     }
 
-    // MARK: - The ArrivalSurfaceCard collision (decided in the plan; E can veto)
+    // MARK: - The ArrivalSurfaceCard collision — E VETOED the suppression (2026-09-04)
 
-    func testTheArrivalCardIsSuppressed_whileARunIsLiveForTheSamePlace() {
+    /// The build plan had a live routine take Today's slot and stand the arrival card down, on
+    /// the grounds that two cards about one place is noise. E's answer was "i want it shown":
+    /// the two answer different questions — the routine is the sequence you are part-way
+    /// through, the arrival card is the tasks that live here — and hiding one to show the other
+    /// hides work.
+    ///
+    /// A SOURCE pin rather than a value test, because there is no longer a pure function to
+    /// call: deleting `suppressesArrivalCard` and leaving the view untouched would compile, and
+    /// re-introducing any suppression branch is exactly the regression this guards.
+    func testTheArrivalCardIsNotSuppressedByALiveRoutine() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("ADHD LifeOS/Home/HomeRoutineCard.swift")
+        let source = try String(contentsOf: url, encoding: .utf8)
+        let code = source
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+
+        XCTAssertFalse(
+            code.contains("suppressesArrivalCard"),
+            "E vetoed the suppression — both cards show"
+        )
         XCTAssertTrue(
-            HomeRoutineCardModel.suppressesArrivalCard(
-                run: run([step(.pending, "Gym")]), arrivalPlaceId: gymId
-            ),
-            "two stacked cards about one place is noise — the routine takes the slot"
-        )
-    }
-
-    func testTheArrivalCardSurvives_forADifferentPlace() {
-        XCTAssertFalse(
-            HomeRoutineCardModel.suppressesArrivalCard(
-                run: run([step(.pending, "Gym")]), arrivalPlaceId: UUID()
-            ),
-            "a routine at the gym says nothing about the tasks waiting where you now stand"
-        )
-    }
-
-    func testNoRun_suppressesNothing() {
-        XCTAssertFalse(
-            HomeRoutineCardModel.suppressesArrivalCard(run: nil, arrivalPlaceId: gymId)
+            code.contains("if let arrivalSurface {"),
+            "the arrival card's only condition is having a surface at all"
         )
     }
 }

@@ -41,14 +41,6 @@ enum HomeRoutineCardModel {
         return "Next: \(PlaceActionRowLabel.title(for: run.steps[index].action))"
     }
 
-    /// The `ArrivalSurfaceCard` collision, decided in the build plan and stated at this
-    /// block's stop so E can veto: while a run is live for the SAME place, the routine card
-    /// takes the slot and the arrival card stands down. Two stacked cards about one place is
-    /// noise, and tasks are the separate species that keep their own notification. The
-    /// arrival card returns the moment the run ends.
-    static func suppressesArrivalCard(run: RoutineRun?, arrivalPlaceId: UUID) -> Bool {
-        run?.placeId == arrivalPlaceId
-    }
 }
 
 struct HomeRoutineCard: View {
@@ -100,11 +92,14 @@ extension HomeView {
         }
         // Variation B (block 4c): here, with something to do here — pinned above everything
         // because "you are AT the place" beats every other priority signal Today has. Absent
-        // the moment either half stops being true, or while its place's routine is live.
-        if let arrivalSurface,
-           !HomeRoutineCardModel.suppressesArrivalCard(
-               run: liveRoutineRun, arrivalPlaceId: arrivalSurface.place.id
-           ) {
+        // the moment either half stops being true.
+        //
+        // It is NO LONGER suppressed while that place's routine is live (E's veto, 2026-09-04:
+        // "i want it shown"). The build plan had the routine card take the slot on the grounds
+        // that two cards about one place is noise; E's call is that they answer different
+        // questions — the routine is the sequence you are part-way through, the arrival card is
+        // the tasks that live here — and losing the second to show the first hides work.
+        if let arrivalSurface {
             ArrivalSurfaceCard(surface: arrivalSurface, onOpenTask: openArrivalTask)
         }
     }
