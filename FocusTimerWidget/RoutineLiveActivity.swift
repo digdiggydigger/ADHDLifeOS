@@ -104,14 +104,21 @@ struct RoutineLiveActivity: Widget {
             // mode, because a mid-blue on true black is low-contrast at hairline width. Amber
             // sits far from both the black ground and the blue count, so the edge reads.
             //
-            // The value is E's, chosen on the device, and the route to it is worth recording
-            // because the obvious theory was WRONG. iOS draws the keyline at roughly half
-            // opacity and exposes neither its width nor its alpha, so colour is the only lever
-            // — but the lever is not luminance. Pushing brighter (#FFB32E → #FFD60A) made the
-            // edge read DULLER, because a desaturated yellow at half strength turns olive
-            // against black. A darker, more saturated burnt orange holds its hue when dimmed.
-            // Judge any future change on the device: the rendered colour is not the specified
-            // one, and the simulator will not composite a Live Activity at all.
+            // #FF6B00, E's pick, and the rule that produced it is worth keeping because the
+            // obvious theory was WRONG. iOS draws the keyline at roughly 40% of the specified
+            // colour and exposes neither width nor alpha, so colour is the only lever — but the
+            // lever is NOT luminance. Measured off two device screenshots:
+            //
+            //     #FFD60A gold   → rendered #342906, G/R 0.79 → olive, the worst of the three
+            //     #B4520A copper → rendered #442108, G/R 0.49 → orange, but dim
+            //     #FF6B00 vivid  → rendered #662A00, G/R 0.42 → orange, and brighter
+            //
+            // The gold had the HIGHEST rendered luminance and still looked dullest: as red and
+            // green converge the hue collapses to mud. So the rule is push luminance as high as
+            // it will go while keeping the channels far apart, and the number that predicts the
+            // result is the GREEN-TO-RED RATIO, which is scale-invariant and survives a rescaled
+            // screenshot. Judge any future change on the device — the rendered colour is not the
+            // specified one, and the simulator will not composite a Live Activity at all.
             //
             // Both appearance variants carry the same value on purpose — the island is always
             // dark whatever the system theme is doing, so a differing light variant would only
