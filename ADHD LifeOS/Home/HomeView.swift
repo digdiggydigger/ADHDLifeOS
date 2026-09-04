@@ -345,7 +345,7 @@ struct HomeView: View {
             .refreshable { await refreshEverything() }
             // The app-wide write signal (SUGG-b4/b1): any Firestore write — a capture from the
             // global fan, an area recoloured in Settings — refetches Today without a pull.
-            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            .onReceive(DataChangeSignal.changes) { _ in
                 Task { await refreshEverything() }
             }
         }

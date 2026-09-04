@@ -66,7 +66,7 @@ struct PlacesListView: View {
             }
             .task { await service.load() }
             // The house refresh contract: a screen root subscribes so any write anywhere lands here.
-            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            .onReceive(DataChangeSignal.changes) { _ in
                 Task { await service.load() }
             }
     }

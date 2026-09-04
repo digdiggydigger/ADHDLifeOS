@@ -125,7 +125,7 @@ struct CaptureInboxView: View {
         }
         // `refresh()`, not `load()`: the quiet path that never blanks the list mid-read. Tags
         // re-fetch too, so a tag renamed in Settings shows on the triage chips straight away.
-        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+        .onReceive(DataChangeSignal.changes) { _ in
             Task {
                 await service.refresh()
                 allTags = await service.fetchAllTags()

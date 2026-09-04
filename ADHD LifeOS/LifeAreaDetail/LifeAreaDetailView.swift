@@ -81,7 +81,7 @@ struct LifeAreaDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .tint(family.color)
-        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+        .onReceive(DataChangeSignal.changes) { _ in
             Task { await service.load() }
         }
         .task {

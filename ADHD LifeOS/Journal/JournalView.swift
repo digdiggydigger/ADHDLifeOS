@@ -123,7 +123,7 @@ struct JournalView: View {
             .task {
                 await reload()
             }
-            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            .onReceive(DataChangeSignal.changes) { _ in
                 Task { await reload() }
             }
             .navigationDestination(isPresented: Binding(

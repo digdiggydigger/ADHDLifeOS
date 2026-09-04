@@ -265,7 +265,7 @@ struct RootView: View {
                 .task { await refreshCaptureInboxCount() }
                 // Any capture written, sorted, promoted or binned anywhere in the app moves this
                 // number — the same signal every other screen reloads on.
-                .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+                .onReceive(DataChangeSignal.changes) { _ in
                     Task { await refreshCaptureInboxCount() }
                 }
                 // Drain a widget door that arrived before these tabs existed. Deliberately a state
@@ -367,7 +367,7 @@ struct RootView: View {
         // A place edit (or the Settings master switch) lands through the shared write plumbing
         // like every other mutation; the fences follow it without waiting for a relaunch. Cheap
         // when triggering is off or ungranted — the service's gate fails before any fetch.
-        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+        .onReceive(DataChangeSignal.changes) { _ in
             Task { await LocationTriggerService.shared.refreshRegistrations() }
         }
         // Returning to the app settles a sprint whose countdown ran out behind a locked screen: the
