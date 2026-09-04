@@ -12,7 +12,6 @@ import SwiftUI
 @available(iOS 17.0, *)
 struct PlaceRoutineResolvedRow: View {
     let step: RoutineRun.Step
-    let direction: PlaceTriggerEvent.Kind
     let onUndo: () -> Void
 
     var body: some View {
@@ -47,7 +46,7 @@ struct PlaceRoutineResolvedRow: View {
 
     private var subtitle: String {
         switch step.state {
-        case .autoDone: return PlaceRoutineScreenCopy.autoRanSubtitle(for: direction)
+        case .autoDone: return PlaceRoutineScreenCopy.autoRanSubtitle
         case .skipped: return PlaceRoutineScreenCopy.skippedSubtitle
         default: return PlaceRoutineScreenCopy.doneSubtitle
         }

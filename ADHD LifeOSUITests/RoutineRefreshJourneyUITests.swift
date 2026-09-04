@@ -8,14 +8,19 @@
 //  corrected it. An arrival crossing, by contrast, refreshed the card in about 2.5 seconds.
 //
 //  `PlaceRoutineDepartureEndTests` already rules the handler out: the lifecycle is correct, and
-//  `applyRunLifecycle` posts `DataChangeSignal` whenever it changes anything. So the defect is
-//  in DELIVERY, which no unit test can reach — Today's card is a SwiftUI body reading a
-//  UserDefaults store, and only a running app can show whether the refresh lands.
+//  the end posts `DataChangeSignal`. So the defect is in DELIVERY, which no unit test can
+//  reach — Today's card is a SwiftUI body reading a UserDefaults store, and only a running app
+//  can show whether the refresh lands.
 //
-//  The asymmetry is the clue this journey is built to pin. An arrival here also runs a journal
-//  auto-step, which writes to Firestore and therefore posts a SECOND DataChangeSignal through
-//  the manager's write plumbing. The departure is tap-steps only and writes NOTHING, so the
-//  signal from `applyRunLifecycle` is the only one there is — and that is the path under test.
+//  The asymmetry is the clue this journey is built to pin. The departure crossing writes
+//  NOTHING to Firestore, so the signal the run-ending posts is the only one there is — no
+//  second signal from the write plumbing arrives to cover for it. That is the path under test.
+//
+//  Block A (deferred logging) sharpened this rather than removing it. A crossing no longer
+//  creates anything, so the arrival run here is started by TAPPING the notification; the
+//  departure crossing still ends it, at the crossing, with no tap — E settled that a deletion
+//  is not logging. What the departure must produce on Today is therefore the DISAPPEARANCE of
+//  the arrival card, which is the same delivery path and a stricter assertion than a swap.
 //
 
 import XCTest
@@ -93,18 +98,26 @@ final class RoutineRefreshJourneyUITests: XCTestCase {
             "The signed-in tabs never appeared"
         )
 
-        // 1. Arrive. This half is known to work, and it is here as the CONTROL: if it fails the
-        //    journey is reporting a broken fixture rather than the defect.
+        // 1. Arrive, then TAP the notification — under Block A the crossing only offers the
+        //    routine, so this is what brings the run (and the card) into existence. It is here
+        //    as the CONTROL: if it fails the journey is reporting a broken fixture.
         fireCrossing(app, named: "Simulate arrival")
+        UITestSession.dismissSystemAlertIfPresent()
+        fireCrossing(app, named: "Open the routine notification")
+        // The tap presents the routine screen. Close it — this journey is about Today.
+        let close = app.buttons["Close"]
+        if close.waitForExistence(timeout: UITestSession.timeout) {
+            UITestSession.tap(close, untilGone: close)
+        }
         openTab("Today", in: app)
         XCTAssertTrue(
             waitForCard(containing: "AT GYM", in: app),
             "Today never showed the arrival card — the fixture, not the defect, is wrong"
         )
 
-        // 2. Leave. The run store now holds a DEPARTURE run (the arrival run ends, newest wins),
-        //    and the ONLY thing that can tell Today is the signal `applyRunLifecycle` posts:
-        //    a departure of tap-steps writes nothing to Firestore.
+        // 2. Leave. The departure ENDS the arrival run at the crossing, with no tap and no
+        //    Firestore write of any kind — so the signal that ending posts is the only thing
+        //    that can tell Today.
         fireCrossing(app, named: "Simulate departure")
         openTab("Today", in: app)
 
@@ -112,14 +125,14 @@ final class RoutineRefreshJourneyUITests: XCTestCase {
         //    in the foreground throughout, which is the state a person is actually in when a
         //    crossing lands while they are looking at Today.
         XCTAssertTrue(
-            waitForCard(containing: "LEAVING GYM", in: app),
+            waitForGone(containing: "AT GYM", in: app),
             "Today kept the stale arrival card after the departure crossing. The run store is "
                 + "correct (PlaceRoutineDepartureEndTests pins it), so the change signal never "
                 + "reached the card."
         )
         XCTAssertFalse(
-            cardText(containing: "AT GYM", in: app),
-            "both cards on screen at once — the arrival card was not replaced but added to"
+            cardText(containing: "LEAVING GYM", in: app),
+            "the departure card appeared without anyone tapping its notification"
         )
     }
 
@@ -133,6 +146,18 @@ final class RoutineRefreshJourneyUITests: XCTestCase {
         let predicate = NSPredicate(format: "label CONTAINS[c] %@", fragment)
         let element = app.staticTexts.containing(predicate).firstMatch
         return element.waitForExistence(timeout: UITestSession.timeout)
+    }
+
+    /// The mirror of `waitForCard`, and generous for the same reason: the card leaves on the
+    /// same debounced signal it arrives on, so a short wait would call latency a defect.
+    @MainActor
+    private func waitForGone(containing fragment: String, in app: XCUIApplication) -> Bool {
+        let predicate = NSPredicate(format: "label CONTAINS[c] %@", fragment)
+        let element = app.staticTexts.containing(predicate).firstMatch
+        let gone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: element
+        )
+        return XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout) == .completed
     }
 
     @MainActor

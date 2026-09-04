@@ -207,10 +207,12 @@ struct PlacesListView: View {
         ) {
             Button("Simulate arrival") { testFire(place, kind: .arrival) }
             Button("Simulate departure") { testFire(place, kind: .departure) }
+            Button("Open the routine notification") { replayRoutineNotification() }
             Button("Cancel", role: .cancel) { testFirePlace = nil }
         } message: {
             Text("Runs this place's actions and notifications exactly like a real crossing. "
-                 + "Cooldown and the nudge master switch are bypassed.")
+                 + "Cooldown and the nudge master switch are bypassed. A crossing that offers "
+                 + "a routine writes nothing until its notification is opened.")
         }
     }
 
@@ -219,6 +221,17 @@ struct PlacesListView: View {
         Task {
             await PlaceTriggerTestFire.fire(place: place, kind: kind)
             Haptics.play(.success)
+        }
+    }
+
+    /// The other half of a test-fire since Block A: the crossing only OFFERS the routine, and
+    /// this performs the tap that starts it — through the real delivered notification, so it
+    /// exercises the same router the banner would.
+    private func replayRoutineNotification() {
+        Haptics.play(.solid)
+        Task {
+            let opened = await PlaceRoutineNotificationReplay.openLatest()
+            Haptics.play(opened ? .success : .warning)
         }
     }
     #endif

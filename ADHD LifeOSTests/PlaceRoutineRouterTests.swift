@@ -12,8 +12,11 @@ import XCTest
 @MainActor
 final class PlaceRoutineRouterTests: XCTestCase {
 
+    /// A recording activator, not the real one: these tests are about the ROUTING rules —
+    /// prefix greed, pending, replay-once — and a real activator would create runs in the
+    /// process of proving them. What the tap creates lives in `RoutineDeferredLoggingTests`.
     private func makeRouter() -> PlaceRoutineNotificationRouter {
-        PlaceRoutineNotificationRouter()
+        PlaceRoutineNotificationRouter(activator: RecordingRoutineActivator())
     }
 
     private func identifier(_ runId: UUID = UUID(), placeId: UUID = UUID()) -> String {

@@ -164,7 +164,6 @@ struct PlaceRoutineScreen: View {
             ForEach(resolvedIndices, id: \.self) { index in
                 PlaceRoutineResolvedRow(
                     step: run.steps[index],
-                    direction: run.direction,
                     onUndo: {
                         Haptics.play(.light)
                         apply(.pending, at: index)

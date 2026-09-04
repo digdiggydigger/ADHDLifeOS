@@ -78,11 +78,13 @@ enum PlaceRoutineScreenCopy {
         direction == .arrival ? "arrived" : "left"
     }
 
-    /// The pre-ticked auto rows' subtitle, honest about the crossing it ran on.
-    static func autoRanSubtitle(for direction: PlaceTriggerEvent.Kind) -> String {
-        direction == .arrival
-            ? "Ran by itself when you arrived" : "Ran by itself when you left"
-    }
+    /// The pre-ticked auto rows' subtitle.
+    ///
+    /// It used to switch on direction — "when you arrived" / "when you left" — because the
+    /// crossing is when the step ran. Under deferred logging (Block A) nothing runs at the
+    /// crossing: the step runs when the routine STARTS, which is the tap that opened this
+    /// screen. That is the same moment in both directions, so the direction goes with it.
+    static let autoRanSubtitle = "Ran by itself when you started"
 
     static func nextEyebrow(stepNumber: Int, of total: Int) -> String {
         "NEXT — STEP \(stepNumber) OF \(total)"

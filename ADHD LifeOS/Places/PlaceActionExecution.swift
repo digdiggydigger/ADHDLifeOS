@@ -88,6 +88,21 @@ enum PlaceActionNotificationContent {
         }
     }
 
+    /// The same line in the future tense, for a routine that has not started (Block A). A
+    /// crossing that qualifies as a routine writes nothing until the tap, so `ranLine`'s past
+    /// tense would be a straight lie there — and the two must stay adjacent, because the next
+    /// auto-run kind added has to grow BOTH.
+    static func willRunLine(for action: PlaceAction) -> String? {
+        switch action.kind {
+        case .journalLine(let body):
+            return "Will journal \u{201C}\(body)\u{201D}"
+        case .createCapture(let text):
+            return "Will capture \u{201C}\(text)\u{201D} to your inbox"
+        default:
+            return nil
+        }
+    }
+
     // MARK: - The wire between a posted notification and its tap
 
     static let identifierPrefix = "placeAction-"

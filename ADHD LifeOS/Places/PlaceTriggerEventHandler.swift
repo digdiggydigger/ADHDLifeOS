@@ -10,12 +10,19 @@ import Foundation
 /// relaunch where no screen ever mounts.
 ///
 /// The surfacings of one event, in restraint order:
-/// - the silent record (variation C) happens for EVERY crossing — memory costs nothing;
-/// - past the bounce cooldown, the place's AUTO-RUN actions run themselves (journal lines,
-///   captures — pure writes a background wake is allowed to make), regardless of the nudge
-///   master switch: they are records, not interruptions, the location-event precedent;
-/// - the notifications — one per EXTERNAL action, then the crossing nudge (now also reporting
-///   what auto-ran) — fire only with the master switch on, through the same content gate as
+/// - the silent record (variation C) happens for EVERY crossing — memory costs nothing, and E
+///   confirmed in Block A that it is sensing rather than logging, so deferral does not touch it;
+/// - a live arrival run ENDS on its own place's departure, before the cooldown guard and
+///   outside the master switch — a deletion, never a creation;
+/// - past the bounce cooldown, a crossing with no routine to offer runs its AUTO-RUN actions
+///   itself (journal lines, captures — pure writes a background wake is allowed to make),
+///   regardless of the nudge master switch: they are records, not interruptions;
+/// - **a crossing that DOES offer a routine writes nothing at all** (Block A, E's rule): the
+///   run, Today's card and the journal line come into existence only when the notification is
+///   tapped, so swiping the banner away leaves no trace. The routine rides the notification;
+///   `PlaceRoutineActivator` is where it becomes real.
+/// - the notifications — one routine notification, or one per EXTERNAL action, then the
+///   crossing nudge — fire only with the master switch on, through the same content gate as
 ///   ever: an action-less, task-less, message-less place still never nudges.
 /// - the cooldown is consumed only when something actually HAPPENED (a successful auto-run or
 ///   a posted notification) — an empty arrival must not inoculate the place, and a FAILED
@@ -34,10 +41,9 @@ final class PlaceTriggerEventHandler {
     /// per-action notifications (never a notification whose tap can do nothing). Injectable
     /// so both branches are pinned without an iOS 16 simulator.
     private let routineScreenAvailable: Bool
-    /// The auto-run writers, as closures for the `locationStamp` reason: the defaults do the
-    /// real Firestore work, a test hands over recorders. `true` means the write landed.
-    private let journalWriter: (NormalizedCreateLogInput) async -> Bool
-    private let captureWriter: (NormalizedCreateCaptureInput) async -> Bool
+    /// The auto-run writes, shared with the notification-tap path (`PlaceRoutineActivator`) so
+    /// the two can never drift apart on stamping or validation.
+    private let executor: PlaceAutoRunExecutor
 
     init(
         recorder: LocationEventRecording? = nil,
@@ -58,12 +64,11 @@ final class PlaceTriggerEventHandler {
         self.runStore = runStore ?? UserDefaultsRoutineRunStore()
         self.isEnabled = isEnabled
         self.routineScreenAvailable = routineScreenAvailable
-        self.journalWriter = journalWriter ?? { input in
-            (try? await FirebaseJournalClientAdapter().createLog(input)) != nil
-        }
-        self.captureWriter = captureWriter ?? { input in
-            (try? await FirebaseCaptureClientAdapter().createCapture(input)) != nil
-        }
+        let live = PlaceAutoRunExecutor.live()
+        executor = PlaceAutoRunExecutor(
+            journalWriter: journalWriter ?? live.journalWriter,
+            captureWriter: captureWriter ?? live.captureWriter
+        )
     }
 
     /// Crossings currently being handled, keyed place|direction. iOS can deliver one crossing
@@ -90,16 +95,24 @@ final class PlaceTriggerEventHandler {
 
         let snapshot = store.readSnapshot()
         let entry = snapshot?.entries.first { $0.placeId == event.placeId }
-        let routineRun = applyRunLifecycle(for: event, entry: entry)
+        endLiveRunIfThisCrossingEndsIt(event)
 
         let cooldowns = store.readCooldowns()
         guard TriggerCooldown.shouldFire(event, state: cooldowns, now: event.occurredAt) else { return }
         let plan = PlaceActionPlan.split(entry?.actions, for: event.kind)
+        let routineRun = offeredRoutine(for: event, entry: entry)
 
+        // Block A, E's rule: a crossing that OFFERS a routine writes nothing at all — the run,
+        // the card and the journal line come into existence when the notification is tapped,
+        // and swiping the banner away leaves no trace. A crossing with no routine to initiate
+        // has nothing to defer to, so its auto-runs happen here exactly as they always have.
         var ranLines: [String] = []
-        for action in plan.autoRun where await run(action, entry: entry, event: event) {
-            if let line = PlaceActionNotificationContent.ranLine(for: action) {
-                ranLines.append(line)
+        if routineRun == nil {
+            let stamp = PlaceAutoRunStamp.make(entry: entry, placeId: event.placeId)
+            for action in plan.autoRun where await executor.run(action, stamp: stamp) {
+                if let line = PlaceActionNotificationContent.ranLine(for: action) {
+                    ranLines.append(line)
+                }
             }
         }
 
@@ -118,39 +131,41 @@ final class PlaceTriggerEventHandler {
         }
     }
 
-    /// Run LIFECYCLE (F-Routines-2) — records, like the auto-runs, so it runs OUTSIDE
-    /// `isEnabled()`; and the CALLER places it BEFORE the cooldown guard, because a departure
-    /// swallowed by its own 30-minute cooldown must still end the arrival run — otherwise
-    /// "routine live" haunts Today until the midnight sweep. Creation obeys the same
-    /// placement (newest wins): E standing in the gym again after a bounce must find the
-    /// routine on Today even though the bounce posts nothing.
+    /// The one run write a CROSSING still makes, and E settled it explicitly (2026-09-04):
+    /// ending is a deletion, never a creation, so the deferred-logging rule does not reach it.
+    /// Defer this and "ROUTINE LIVE" haunts Today until the midnight sweep — the exact defect
+    /// round 2's check 3 was written to catch.
     ///
-    /// Returns the minted run when this crossing qualifies as a routine (2+ tap-steps, and
-    /// only where the 17-gated routine screen can honour the tap).
-    private func applyRunLifecycle(
+    /// Runs OUTSIDE `isEnabled()` like the silent record, and the CALLER places it BEFORE the
+    /// cooldown guard, because a departure swallowed by its own 30-minute cooldown must still
+    /// end the arrival run.
+    ///
+    /// The `DataChangeSignal` is not optional garnish: Today's card is a PULL surface and this
+    /// is the only push it gets, so without it an ended run leaves a stale card on a screen
+    /// the user is looking at.
+    private func endLiveRunIfThisCrossingEndsIt(_ event: PlaceTriggerEvent) {
+        guard let liveRun = runStore.readLiveRun(now: event.occurredAt),
+              RoutineRunLifecycle.ends(liveRun, on: event) else { return }
+        runStore.endLiveRun()
+        DataChangeSignal.post()
+    }
+
+    /// The routine this crossing OFFERS — minted, frozen, and deliberately never stored. It
+    /// rides the notification instead (`PlaceRoutineNotificationContent.userInfo`), and only
+    /// the tap turns it into a run that exists.
+    ///
+    /// Minting the id here rather than composing one from place + direction + date is load
+    /// bearing: a `Date` serialised two ways would make every tap mismatch.
+    ///
+    /// Gated on the 17-only routine screen for the shipped reason — an account's places sync
+    /// from other devices, and a 16.x device must keep today's per-action notifications rather
+    /// than post one whose tap can do nothing.
+    private func offeredRoutine(
         for event: PlaceTriggerEvent, entry: AtPlaceSnapshot.PlaceEntry?
     ) -> RoutineRun? {
-        var changed = false
-        if let liveRun = runStore.readLiveRun(now: event.occurredAt),
-           RoutineRunLifecycle.ends(liveRun, on: event) {
-            runStore.endLiveRun()
-            changed = true
-        }
         let routinePlan = PlaceRoutinePlan.make(entry?.actions, for: event.kind)
-        var created: RoutineRun?
-        if routineScreenAvailable, routinePlan.qualifiesAsRoutine {
-            let run = RoutineRun.make(event: event, entry: entry, plan: routinePlan)
-            runStore.write(run)
-            created = run
-            changed = true
-        }
-        // Announce it like every other change in the app. Today's card is a PULL surface, and
-        // this is the only push it gets: a routine made only of tap-steps writes NOTHING to
-        // Firestore, so without this a crossing that lands while Today is on screen would
-        // leave the card invisible until the user navigated away and back — and an ENDED run
-        // would leave a stale card behind for just as long.
-        if changed { DataChangeSignal.post() }
-        return created
+        guard routineScreenAvailable, routinePlan.qualifiesAsRoutine else { return nil }
+        return RoutineRun.make(event: event, entry: entry, plan: routinePlan)
     }
 
     /// The interruption half of one crossing, behind BOTH gates (cooldown and master
@@ -164,17 +179,16 @@ final class PlaceTriggerEventHandler {
         let entry = snapshot?.entries.first { $0.placeId == event.placeId }
         var postedAnything = false
         if let routineRun {
-            let content = PlaceRoutineNotificationContent.notification(
-                for: routineRun, ranLines: ranLines
-            )
+            let content = PlaceRoutineNotificationContent.notification(for: routineRun)
             await notifier.post(
                 title: content.title,
                 body: content.body,
                 identifier: PlaceRoutineNotificationContent.identifier(
                     placeId: event.placeId, kind: event.kind
                 ),
-                // ONLY the minted run key rides the tap: the screen reads steps from the
-                // store, and a key mismatch IS the stale-tap rule.
+                // The whole frozen run rides the tap (Block A): with nothing written at the
+                // crossing there is no stored run for a bare key to resolve against, so the
+                // notification has to carry enough to CREATE it.
                 userInfo: PlaceRoutineNotificationContent.userInfo(for: routineRun),
                 categoryIdentifier: PlaceRoutineNotificationContent.categoryIdentifier
             )
@@ -213,34 +227,4 @@ final class PlaceTriggerEventHandler {
         return postedAnything
     }
 
-    /// Runs one auto-run action, stamped with the place itself — the crossing is the evidence
-    /// E is here, so no fix is requested on a background wake. `false` (a failed write, or a
-    /// kind that cannot auto-run) reports nothing and consumes nothing.
-    private func run(
-        _ action: PlaceAction, entry: AtPlaceSnapshot.PlaceEntry?, event: PlaceTriggerEvent
-    ) async -> Bool {
-        let stamp: LocationStamp? = entry.flatMap { entry in
-            guard let latitude = entry.latitude, let longitude = entry.longitude else { return nil }
-            return LocationStamp(
-                coordinate: PlaceCoordinate(latitude: latitude, longitude: longitude),
-                placeId: event.placeId
-            )
-        }
-        switch action.kind {
-        case .journalLine(let body):
-            guard case .success(var input) = LogValidation.normalizeCreateLogInput(
-                body: body, type: .log, lifeAreaId: nil
-            ) else { return false }
-            input.locationStamp = stamp
-            return await journalWriter(input)
-        case .createCapture(let text):
-            guard case .success(var input) = CaptureValidation.normalizeCreateCaptureInput(
-                content: text, kind: .note
-            ) else { return false }
-            input.locationStamp = stamp
-            return await captureWriter(input)
-        default:
-            return false
-        }
-    }
 }

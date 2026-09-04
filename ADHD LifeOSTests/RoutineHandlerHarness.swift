@@ -103,16 +103,26 @@ final class RoutineFakeArrivalStore: ArrivalNudgeStateStoring {
 }
 
 final class RoutineFakeRecorder: LocationEventRecording {
+    private(set) var recorded: [LocationEvent] = []
+
     func record(_ event: LocationEvent) async throws {
         // A real record suspends — keep the handler's suspension windows honest.
         await Task.yield()
+        recorded.append(event)
     }
 }
 
 final class RoutineWriterLog {
     private(set) var journalInputs: [NormalizedCreateLogInput] = []
+    private(set) var captureInputs: [NormalizedCreateCaptureInput] = []
+
     func journal(_ input: NormalizedCreateLogInput) -> Bool {
         journalInputs.append(input)
+        return true
+    }
+
+    func capture(_ input: NormalizedCreateCaptureInput) -> Bool {
+        captureInputs.append(input)
         return true
     }
 }
@@ -128,20 +138,44 @@ final class RoutineHandlerHarness {
     let runStore: RoutineFakeRunStore
     let notifier: RoutineFakeNotifier
     let writers = RoutineWriterLog()
+    let recorder = RoutineFakeRecorder()
     let sut: PlaceTriggerEventHandler
+    /// The TAP half, sharing this harness's stores (Block A). A crossing now only OFFERS a
+    /// routine, so any scenario about a run that EXISTS has to go through the tap — and driving
+    /// both halves against one store is the only way to assert the two agree.
+    let activator: PlaceRoutineActivator
 
     init(enabled: Bool = true, routineScreenAvailable: Bool = true) {
         let log = self.log
         let writers = self.writers
         runStore = RoutineFakeRunStore(log: log)
         notifier = RoutineFakeNotifier(log: log)
+        let executor = PlaceAutoRunExecutor(
+            journalWriter: { input in await Task.yield(); return writers.journal(input) },
+            captureWriter: { input in await Task.yield(); return writers.capture(input) }
+        )
         sut = PlaceTriggerEventHandler(
-            recorder: RoutineFakeRecorder(), notifier: notifier, store: store,
+            recorder: recorder, notifier: notifier, store: store,
             runStore: runStore,
             isEnabled: { enabled }, routineScreenAvailable: routineScreenAvailable,
-            journalWriter: { input in await Task.yield(); return writers.journal(input) },
-            captureWriter: { _ in await Task.yield(); return true }
+            journalWriter: executor.journalWriter,
+            captureWriter: executor.captureWriter
         )
+        activator = PlaceRoutineActivator(
+            runStore: runStore, snapshotStore: store, executor: executor
+        )
+    }
+
+    /// Taps the routine notification this harness last posted — the whole point of Block A is
+    /// that nothing exists until this happens.
+    @discardableResult
+    func tapLatestRoutineNotification(at date: Date? = nil) async -> UUID? {
+        guard let posted = notifier.posted.last(where: {
+            $0.identifier.hasPrefix(PlaceRoutineNotificationContent.identifierPrefix)
+        }) else { return nil }
+        let opened = activator.activate(userInfo: posted.userInfo, now: date ?? noon)
+        await activator.autoRunTask?.value
+        return opened
     }
 
     // MARK: - Fixtures

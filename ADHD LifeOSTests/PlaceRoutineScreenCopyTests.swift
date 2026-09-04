@@ -42,14 +42,16 @@ final class PlaceRoutineScreenCopyTests: XCTestCase {
         XCTAssertEqual(PlaceRoutineScreenCopy.momentPrefix(for: .departure), "left")
     }
 
-    func testAutoRanSubtitle_isHonestAboutItsCrossing() {
+    /// It used to switch on direction — "when you arrived" / "when you left" — because the
+    /// crossing was when the step ran. Under deferred logging (Block A) the step runs when the
+    /// routine STARTS, which is the tap that opened this screen: the same moment either way.
+    func testAutoRanSubtitle_namesTheStart_notTheCrossing() {
         XCTAssertEqual(
-            PlaceRoutineScreenCopy.autoRanSubtitle(for: .arrival),
-            "Ran by itself when you arrived"
+            PlaceRoutineScreenCopy.autoRanSubtitle, "Ran by itself when you started"
         )
-        XCTAssertEqual(
-            PlaceRoutineScreenCopy.autoRanSubtitle(for: .departure),
-            "Ran by itself when you left"
+        XCTAssertFalse(
+            PlaceRoutineScreenCopy.autoRanSubtitle.contains("arrived"),
+            "nothing runs at the crossing any more — this row would be claiming it did"
         )
     }
 

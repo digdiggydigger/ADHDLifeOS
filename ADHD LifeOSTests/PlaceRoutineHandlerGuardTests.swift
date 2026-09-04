@@ -7,21 +7,26 @@ import XCTest
 @testable import ADHD_LifeOS
 
 /// The routine branch's GUARDS (F-Routines-2-Notify): everything that must keep today's
-/// behaviour byte-for-byte — below the 2-step threshold, below iOS 17 — plus the settled
-/// kill-switch split (the run is a record; only the notification honours the switch) and
-/// newest-wins replacement. The branch's own behaviour lives in `PlaceRoutineHandlerTests`;
-/// the shared rig in `RoutineHandlerHarness`.
+/// behaviour byte-for-byte — below the 2-step threshold, below iOS 17 — plus the kill switch
+/// and newest-wins replacement, both of which Block A moved. The branch's own behaviour lives
+/// in `PlaceRoutineHandlerTests`; the shared rig in `RoutineHandlerHarness`.
 @MainActor
 final class PlaceRoutineHandlerGuardTests: XCTestCase {
 
-    func testKillSwitchOff_stillWritesTheRun_andTouchesNoTray() async {
+    /// The kill switch used to leave the run behind — it was classed as a record, like the
+    /// auto-runs, so a crossing with nudges OFF still put a card on Today. E flagged that twice
+    /// and never vetoed it; deferred logging settles it for free. With no notification posted
+    /// there is nothing to tap, and with nothing tapped nothing is created.
+    func testKillSwitchOff_writesNothingAtAll_andTouchesNoTray() async {
         let harness = RoutineHandlerHarness(enabled: false)
-        harness.installGym(actions: [harness.spotifyAction(), harness.textAction()])
+        harness.installGym(
+            actions: [harness.journalAction(), harness.spotifyAction(), harness.textAction()]
+        )
 
         await harness.sut.handle(harness.event(.arrival))
 
-        XCTAssertNotNil(harness.runStore.run, "the run and its Today card are PULL surfaces —"
-            + " records like the auto-runs; only the notification honours the switch")
+        XCTAssertNil(harness.runStore.run, "no notification, nothing to tap, no run")
+        XCTAssertTrue(harness.writers.journalInputs.isEmpty)
         XCTAssertTrue(harness.notifier.posted.isEmpty)
         XCTAssertTrue(
             harness.notifier.removedDelivered.isEmpty,
@@ -80,7 +85,9 @@ final class PlaceRoutineHandlerGuardTests: XCTestCase {
         })
     }
 
-    func testAQualifyingCrossing_replacesTheLiveRun_newestWins() async {
+    /// Newest-wins survives Block A but moves to the tap with everything else: another place's
+    /// live run is untouched by a crossing here, and replaced only once this routine is started.
+    func testNewestWins_movesToTheTap_andTheCrossingLeavesTheLiveRunAlone() async {
         let harness = RoutineHandlerHarness()
         harness.installGym(actions: [harness.spotifyAction(), harness.textAction()])
         let otherPlaceRun = RoutineRun.make(
@@ -93,6 +100,13 @@ final class PlaceRoutineHandlerGuardTests: XCTestCase {
         harness.runStore.run = otherPlaceRun
 
         await harness.sut.handle(harness.event(.arrival))
+
+        XCTAssertEqual(
+            harness.runStore.run?.id, otherPlaceRun.id,
+            "an unopened banner must not evict a routine the user is part-way through"
+        )
+
+        await harness.tapLatestRoutineNotification()
 
         XCTAssertEqual(harness.runStore.endCount, 0, "replacement is a WRITE, not an end")
         XCTAssertEqual(

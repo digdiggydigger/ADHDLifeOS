@@ -97,34 +97,33 @@ final class RoutineJourneyUITests: XCTestCase {
             "The signed-in tabs never appeared"
         )
 
-        // 1. Fire the arrival from the couch — the DEBUG test-fire button drives the REAL
-        //    handler, so this is the same code path a fence crossing takes.
-        fireCrossing(app, named: "Simulate arrival")
-
-        // 2. Today carries the way back in. The notification is deliberately not tapped here:
-        //    the card exists precisely for the person who swiped it away.
-        openTab("Today", in: app)
         let continueButton = app.buttons["homeRoutineContinueButton"]
-        XCTAssertTrue(
-            scrollUntilFound(continueButton, in: app),
-            "Today never showed the live-routine card, so a swiped notification is a dead end"
-        )
-        attach(app, "1-today-routine-card")
 
-        // 3. Continue opens the screen — the same door the notification tap uses.
+        // 1 & 2. Fire the arrival, then prove nothing came of it — the whole of Block A. E's
+        //        rule: a crossing writes NOTHING, so a swiped banner leaves no card, no run
+        //        and no journal line.
+        arriveWithoutStartingAnything(app, continueButton: continueButton)
+
+        // 3. Open the notification. The DEBUG replay hands the DELIVERED notification's
+        //    identifier and userInfo to the same router iOS would, so this is the real tap —
+        //    and it is the moment the routine comes into existence.
+        fireCrossing(app, named: "Open the routine notification")
         let nextButton = app.buttons["Open Snapchat"]
         XCTAssertTrue(
-            UITestSession.tap(continueButton, untilExists: nextButton),
-            "Continue never presented the routine screen"
+            nextButton.waitForExistence(timeout: UITestSession.timeout),
+            "The tapped routine notification never presented the routine screen"
         )
         XCTAssertTrue(named("routineHeader", app).exists, "the screen has no header")
         XCTAssertEqual(
             named("routineProgress", app).label, "1 of 4 done",
-            "the journal step ran itself on the crossing and opens pre-ticked"
+            "the journal step runs when the routine STARTS, so it opens pre-ticked"
         )
         attach(app, "2-routine-screen")
 
-        // 3b. The routine follows you out of the app (F-Routines-5). ActivityKit cannot START
+        // 3b. Today's card is the way back in, and it goes out and comes back through it.
+        leaveAndReturnThroughTodaysCard(app, continueButton: continueButton, nextButton: nextButton)
+
+        // 3c. The routine follows you out of the app (F-Routines-5). ActivityKit cannot START
         //     an Activity from the background, which is exactly why it begins here, with the
         //     screen open — so backgrounding now is the first moment the card can exist.
         photographTheLiveActivity(app)
@@ -163,6 +162,50 @@ final class RoutineJourneyUITests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    /// Fires the arrival and asserts the crossing left NOTHING behind.
+    @MainActor
+    private func arriveWithoutStartingAnything(
+        _ app: XCUIApplication, continueButton: XCUIElement
+    ) {
+        // The DEBUG test-fire button drives the REAL handler, so this is the same code path a
+        // fence crossing takes.
+        fireCrossing(app, named: "Simulate arrival")
+        // The place-trigger path never asks for notification permission (only focus and nudges
+        // do), so the test-fire button asks — and the prompt has to be cleared here.
+        UITestSession.dismissSystemAlertIfPresent()
+        openTab("Today", in: app)
+        XCTAssertFalse(
+            continueButton.waitForExistence(timeout: 6),
+            "the crossing put a routine card on Today before anyone tapped anything"
+        )
+        attach(app, "1-today-before-the-tap")
+    }
+
+    /// Closes the routine screen, finds Today's card, and comes back in through it.
+    ///
+    /// Under Block A that card can only exist because the notification was tapped — a swiped
+    /// banner leaves nothing behind — which is why this check sits AFTER the tap rather than
+    /// having been deleted with the premise it used to carry.
+    @MainActor
+    private func leaveAndReturnThroughTodaysCard(
+        _ app: XCUIApplication, continueButton: XCUIElement, nextButton: XCUIElement
+    ) {
+        XCTAssertTrue(
+            UITestSession.tap(app.buttons["Close"], untilGone: named("routineProgress", app)),
+            "Close did not dismiss the routine screen"
+        )
+        openTab("Today", in: app)
+        XCTAssertTrue(
+            scrollUntilFound(continueButton, in: app),
+            "Today never showed the live-routine card, so a closed routine is a dead end"
+        )
+        attach(app, "2b-today-routine-card")
+        XCTAssertTrue(
+            UITestSession.tap(continueButton, untilExists: nextButton),
+            "Continue never re-presented the routine screen"
+        )
+    }
 
     /// Skip and Undo, the arc's whole recovery vocabulary: both non-destructive, neither
     /// guarded by an "Are you sure?" (E's settled call #6, Undo over confirm).
@@ -249,16 +292,21 @@ final class RoutineJourneyUITests: XCTestCase {
     @MainActor
     private func fireCrossing(_ app: XCUIApplication, named button: String) {
         openTab("Tools", in: app)
-        let placesDoor = app.buttons["toolsCard.places"]
-        XCTAssertTrue(
-            placesDoor.waitForExistence(timeout: UITestSession.timeout),
-            "The Tools tab never showed the Places door"
-        )
         let fire = app.buttons["placeTestFireButton-\(placeId)"]
-        XCTAssertTrue(
-            UITestSession.tap(placesDoor, untilExists: fire),
-            "The seeded place never appeared in the Places list"
-        )
+        // A tab keeps its navigation stack, so the SECOND visit lands back inside Places with
+        // no door to tap. Waiting for the door there hangs to the timeout and reads exactly
+        // like a render failure — the sibling journey's trap, and this journey now fires twice.
+        if !fire.exists {
+            let placesDoor = app.buttons["toolsCard.places"]
+            XCTAssertTrue(
+                placesDoor.waitForExistence(timeout: UITestSession.timeout),
+                "The Tools tab never showed the Places door"
+            )
+            XCTAssertTrue(
+                UITestSession.tap(placesDoor, untilExists: fire),
+                "The seeded place never appeared in the Places list"
+            )
+        }
         let choice = app.buttons[button]
         XCTAssertTrue(
             UITestSession.tap(fire, untilExists: choice),

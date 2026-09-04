@@ -12,6 +12,10 @@ import XCTest
 /// action fires without waiting for a replan), the cooldown is neither consulted nor consumed
 /// (repeat fires work, and a real walk minutes later is not inoculated), and a failed tasks
 /// fetch degrades to an empty task list rather than a dead button.
+///
+/// **Every `fire` here injects a no-op `requestNotificationPermission`, and it is not optional.**
+/// The real one raises a system prompt, and in a test host nothing can answer it: with the bare
+/// call in place this suite hung for nineteen minutes at this class rather than failing.
 @MainActor
 final class PlaceTriggerTestFireTests: XCTestCase {
 
@@ -96,7 +100,8 @@ final class PlaceTriggerTestFireTests: XCTestCase {
                         isEnabled: { true },
                         journalWriter: { _ in false }, captureWriter: { _ in false }
                     )
-                }
+                },
+                requestNotificationPermission: {}
             )
         }
 
@@ -120,7 +125,8 @@ final class PlaceTriggerTestFireTests: XCTestCase {
                     isEnabled: { true },
                     journalWriter: { _ in false }, captureWriter: { _ in false }
                 )
-            }
+            },
+            requestNotificationPermission: {}
         )
 
         XCTAssertEqual(recorder.recorded.map(\.kind), [.departure])
@@ -143,7 +149,8 @@ final class PlaceTriggerTestFireTests: XCTestCase {
                     isEnabled: { true },
                     journalWriter: { _ in false }, captureWriter: { _ in false }
                 )
-            }
+            },
+            requestNotificationPermission: {}
         )
 
         XCTAssertEqual(

@@ -12,6 +12,11 @@
 //  departure = two tap-steps. Both directions qualify as routines, so the departure has to
 //  end the arrival run AND replace it (newest wins), in that order.
 //
+//  Block A rewired WHEN each half happens without changing which has to happen. Ending is
+//  still the crossing's job — E settled that explicitly: it is a deletion, and deferring it
+//  would leave "ROUTINE LIVE" on Today until midnight, which is the very defect this file
+//  exists for. Creating is now the TAP's job, so every run here is started through one.
+//
 
 import XCTest
 @testable import ADHD_LifeOS
@@ -54,36 +59,41 @@ final class PlaceRoutineDepartureEndTests: XCTestCase {
         installBothDirections(harness)
 
         await harness.sut.handle(harness.event(.arrival))
+        await harness.tapLatestRoutineNotification()
         let arrivalRun = harness.runStore.run
         XCTAssertEqual(
             arrivalRun?.direction, .arrival,
-            "the arrival crossing should mint an arrival run"
+            "the tapped arrival notification should start an arrival run"
         )
 
         await harness.sut.handle(
             harness.event(.departure, at: harness.noon.addingTimeInterval(600))
         )
 
-        XCTAssertNotEqual(
-            harness.runStore.run?.id, arrivalRun?.id,
+        XCTAssertNil(
+            harness.runStore.run,
             "the arrival run survived its own place's departure — Today keeps the stale card"
         )
         XCTAssertGreaterThan(
             harness.runStore.endCount, 0,
-            "the departure must END the arrival run before replacing it"
+            "the departure must END the arrival run at the crossing, tap or no tap"
         )
     }
 
     /// Ordering, not just outcome: end-then-create. A create that landed first would be
-    /// wiped by the end, leaving no run at all.
-    func testDepartureEndsBeforeItCreatesTheDepartureRun() async {
+    /// wiped by the end, leaving no run at all. The two are further apart than they were —
+    /// the end rides the crossing, the create rides the tap — which makes the order easier to
+    /// hold, not harder, and the assertion is still on the store's own sequence.
+    func testDepartureEndsBeforeTheDepartureRoutineIsStarted() async {
         let harness = RoutineHandlerHarness()
         installBothDirections(harness)
 
         await harness.sut.handle(harness.event(.arrival))
+        await harness.tapLatestRoutineNotification()
         await harness.sut.handle(
             harness.event(.departure, at: harness.noon.addingTimeInterval(600))
         )
+        await harness.tapLatestRoutineNotification(at: harness.noon.addingTimeInterval(600))
 
         XCTAssertEqual(
             harness.runStore.run?.direction, .departure,
@@ -92,7 +102,7 @@ final class PlaceRoutineDepartureEndTests: XCTestCase {
         let lifecycle = harness.log.events.filter { $0 == "run-end" || $0 == "run-write" }
         XCTAssertEqual(
             lifecycle, ["run-write", "run-end", "run-write"],
-            "expected arrival create, then the departure's end-before-create"
+            "expected the tapped arrival, then the departure's end-before-create"
         )
     }
 }
