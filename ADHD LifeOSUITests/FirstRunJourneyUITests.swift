@@ -45,7 +45,9 @@ final class FirstRunJourneyUITests: XCTestCase {
         let door = app.buttons["homeManageNudgesRow"]
         // One call, and it settles between swipes. The hand-rolled loop this replaces swiped in a
         // tight loop, which does not scroll AT ALL — see `UITestSession.scrollUntilHittable`.
-        let reachable = UITestSession.scrollUntilHittable(door, in: app)
+        let reachable = UITestSession.scrollUntilHittable(
+            door, in: app, tabToSelect: UITestSession.tabButton("Today", in: app)
+        )
         XCTAssertTrue(
             door.exists,
             "A brand-new account cannot see the nudges door, so it can never create a first nudge."

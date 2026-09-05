@@ -33,8 +33,21 @@ extension UITestSession {
     @discardableResult
     @MainActor
     static func scrollUntilHittable(
-        _ element: XCUIElement, in app: XCUIApplication, attempts: Int = 16
+        _ element: XCUIElement,
+        in app: XCUIApplication,
+        attempts: Int = 16,
+        tabToSelect: XCUIElement? = nil
     ) -> Bool {
+        // Select the tab before scrolling it. This is not ceremony: a probe scrolled Today
+        // reliably (row to y≈452–499, hittable, 12 rounds out of 12) while the two tests that
+        // land on Today AT LAUNCH could not move it at all after 16 settled swipes. The only
+        // difference between the two contexts was that the probe tapped the tab first, so the
+        // swipe has something that has actually been selected to land on.
+        if let tab = tabToSelect, tab.exists, tab.isHittable, !tab.isSelected {
+            tab.tap()
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+
         var remaining = attempts
         while !element.exists, remaining > 0 {
             app.swipeUp()

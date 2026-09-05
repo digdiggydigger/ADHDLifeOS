@@ -91,7 +91,7 @@ final class CaptureDiscClearanceUITests: XCTestCase {
         // The hand-rolled version here swiped six times with no settle and then tapped, which is
         // the defect that made this test read as "the row is never hittable" (see the helper).
         XCTAssertTrue(
-            UITestSession.scrollUntilHittable(door, in: app),
+            UITestSession.scrollUntilHittable(door, in: app, tabToSelect: UITestSession.tabButton("Today", in: app)),
             "Today never brought the nudges door into reach, even scrolled to the end"
         )
         // The arrival landmark is the header's add button, NOT the row this journey measures.

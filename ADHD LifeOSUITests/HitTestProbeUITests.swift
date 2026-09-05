@@ -116,8 +116,13 @@ final class HitTestProbeUITests: XCTestCase {
         }
         print("[HITPROBE]   app.frame=\(app.frame)")
 
-        // 2. The element tree — an invisible full-screen view is NAMED here and nowhere else.
-        let tree = XCTAttachment(string: app.debugDescription)
+        // 2. The element tree — printed as well as attached, because an attachment needs a
+        //    result bundle and xcresulttool to read back, and this is the whole point of the run.
+        let description = app.debugDescription
+        print("[HITPROBE-TREE-BEGIN]")
+        print(description)
+        print("[HITPROBE-TREE-END]")
+        let tree = XCTAttachment(string: description)
         tree.name = "element-tree-at-failure"
         tree.lifetime = .keepAlways
         add(tree)
@@ -129,41 +134,51 @@ final class HitTestProbeUITests: XCTestCase {
         add(shot)
     }
 
-    /// Today's nudges door — the identifier that kills three of the five pre-existing failures.
+    /// Today's nudges door, and the question is now narrow: **what do you swipe?**
     ///
-    /// Reproduces the FAILING state precisely, which an earlier version of this probe did not:
-    /// the real tests scroll only until the row EXISTS and then tap. Scrolling further — as the
-    /// first probe did — carries it up to y=452 where it is hittable 12 times out of 12, which
-    /// is how the first pass reached the wrong conclusion that the tests merely under-scroll.
+    /// Settling between swipes fixed one test and left two. In those two, sixteen SETTLED swipes
+    /// leave the week-review row at y=1377 on an 874pt screen — Today does not scroll at all —
+    /// while the same technique scrolls it fine here. So the variable under test is the swipe
+    /// TARGET: `app.swipeUp()` sends the gesture to the application element, which is not
+    /// necessarily the scroll view, and on a screen whose content arrives after launch it may be
+    /// landing somewhere with nothing to scroll.
     ///
-    /// The state worth explaining is the one `FirstRunJourneyUITests` dies in: the row ON SCREEN
-    /// at y 572–628 on an 874pt screen, settled, and still refusing a tap.
+    /// A/B, same account, same settle, one variable — the shape that cracked the last one.
     @MainActor
     private func deadNudgesDoorOnToday(_ app: XCUIApplication) -> String? {
         selectTab("Today", in: app)
         let nudges = app.buttons["homeManageNudgesRow"]
-        var swipes = 12
-        while !nudges.exists, swipes > 0 {
+
+        // A: the application element, which is what every test in the suite uses today.
+        var frames: [String] = []
+        for _ in 0..<8 {
+            if nudges.isHittable { break }
             app.swipeUp()
-            swipes -= 1
+            Thread.sleep(forTimeInterval: 0.5)
+            frames.append(nudges.exists ? "\(Int(nudges.frame.midY))" : "-")
         }
-        guard nudges.exists else { return nil }
-        // Let the scroll stop, so what follows is about hit-testing rather than momentum.
-        Thread.sleep(forTimeInterval: 1.5)
+        print("[HITPROBE]   A app.swipeUp centres: \(frames.joined(separator: ",")) "
+            + "hittable=\(nudges.isHittable)")
+        if nudges.isHittable { return nil }
 
-        let frame = nudges.frame
-        let centre = CGPoint(x: frame.midX, y: frame.midY)
-        let onScreen = app.frame.contains(centre)
-        print("[HITPROBE]   frame=\(frame) centre=\(centre) onScreen=\(onScreen) "
-            + "hittable=\(nudges.isHittable) screen=\(app.frame)")
-        guard !nudges.isHittable, onScreen else { return nil }
-
-        // WHAT IS AT THE CENTRE? The single fact that names the culprit: ask the app which
-        // element actually occupies the point the tap would land on.
-        let hit = app.coordinate(withNormalizedOffset: .zero)
-            .withOffset(CGVector(dx: centre.x, dy: centre.y))
-        print("[HITPROBE]   coordinate at the row's centre: \(hit)")
-        return "homeManageNudgesRow ON SCREEN at \(frame), settled, NOT hittable"
+        // B: the scroll view itself.
+        let scrollView = app.scrollViews.firstMatch
+        print("[HITPROBE]   scrollViews count=\(app.scrollViews.count) "
+            + "exists=\(scrollView.exists) frame=\(scrollView.exists ? String(describing: scrollView.frame) : "n/a")")
+        guard scrollView.exists else { return "no scroll view on Today at all" }
+        frames = []
+        for _ in 0..<8 {
+            if nudges.isHittable { break }
+            scrollView.swipeUp()
+            Thread.sleep(forTimeInterval: 0.5)
+            frames.append(nudges.exists ? "\(Int(nudges.frame.midY))" : "-")
+        }
+        print("[HITPROBE]   B scrollView.swipeUp centres: \(frames.joined(separator: ",")) "
+            + "hittable=\(nudges.isHittable)")
+        guard !nudges.isHittable else {
+            return nil    // B works where A does not — that IS the answer.
+        }
+        return "neither swipe target reached the row; frame=\(nudges.frame) screen=\(app.frame)"
     }
 
     /// Inside Places: checks the third identifier that died in the wild, then pops back.
