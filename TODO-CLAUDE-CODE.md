@@ -2779,10 +2779,13 @@ via `widgetURL`. NO buttons (settled fast-follow).
       push. Merged on the BISECT evidence at E's direction — the UI target's remaining failures
       were re-run at `2c46ee7` and reproduce there, so they predate the arc and sit on main
       either way. Branch KEPT (E's call, asked and answered).
-- [ ] Still outstanding after the merge: E's Block A field walk (checklist at
-      `Momentum-v3-Design-Handoff/ON-DEVICE-CHECKLIST-blockA-2026-09-05.md`; the installed build's
-      app source is byte-identical to main, so that walk counts for main), and reinstalling
-      `wishwashwacky15` from a MAIN build for hygiene.
+- [x] E's Block A field walk — **ALL EIGHT CHECKS PASSED 2026-09-05**, evidence inline in
+      `Momentum-v3-Design-Handoff/ON-DEVICE-CHECKLIST-blockA-2026-09-05.md` (1-2 by E on device,
+      3-8 by Claude Code via mirroring + Firestore-as-ledger + a real simulated fence crossing
+      with an on-control). The light-mode keyline question is CLOSED with photos: iOS suppresses
+      `keylineTint` in light appearance, so no colour change can or need fix it.
+- [x] `wishwashwacky15` carries the current tree — reinstalled 2026-09-05 at `1ab5ff2`, whose
+      tree is byte-identical to main at `511e55b` (`git diff` between them is empty).
 
 **Two things found while wiring it, both fixed:**
 - The presenter was constructed inside a `@ViewBuilder`, so every re-render replaced the object
