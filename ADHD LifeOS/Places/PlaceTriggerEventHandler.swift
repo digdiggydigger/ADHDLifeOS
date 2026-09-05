@@ -10,8 +10,12 @@ import Foundation
 /// relaunch where no screen ever mounts.
 ///
 /// The surfacings of one event, in restraint order:
-/// - the silent record (variation C) happens for EVERY crossing — memory costs nothing, and E
-///   confirmed in Block A that it is sensing rather than logging, so deferral does not touch it;
+/// - the location-event record happens for EVERY crossing, and deferral does NOT touch it —
+///   E ruled on this twice, the second time on device with the facts corrected. It is NOT
+///   silent: `JournalTimeline.locationEventLine` renders it as a Journal row ("Arrived at
+///   routines test"), which is E's own "journal rows only" call from the location arc. Shown
+///   that row surviving a dismissed routine banner, E's verdict was "keep it" — the row says
+///   you were HERE, not that you did something, and it is the only durable record of a visit;
 /// - a live arrival run ENDS on its own place's departure, before the cooldown guard and
 ///   outside the master switch — a deletion, never a creation;
 /// - past the bounce cooldown, a crossing with no routine to offer runs its AUTO-RUN actions
