@@ -42,12 +42,13 @@ valuable half.
 - **`claudecode.md`** is the TDD role definition and stays reference-only. Its instruction to read
   `docs/` is the stale part, not the rest.
 
-**`docs/` IS NOT A LIVE REFERENCE — do not read it for context.** Its seven files were last touched
-2026-08-17 and describe the deleted Supabase and AWS backends: Supabase appears 70 times, AWS 105,
-Cognito 64, and **Firebase and Firestore appear zero times**. `ARCHITECTURE.md` opens by calling the
-app "a second client on the Es_Life_OS Supabase backend". **The architecture that is true lives in
-this file's own "Architecture notes" section**, which is maintained; `docs/` is a period record of
-backends that were cut in `5244650`.
+**`docs/` IS AN ARCHIVE — do not read it for context.** E's 2026-09-06 call ("the seven files in
+docs/ are from a legacy build"): all seven moved to `docs/archive/` behind a `docs/README.md` that
+says so. They were last edited 2026-08-17 and describe the deleted Supabase and AWS backends —
+Supabase 70 mentions, AWS 105, Cognito 64, and **Firebase and Firestore zero**. `ARCHITECTURE.md`
+opens by calling the app "a second client on the Es_Life_OS Supabase backend". **The architecture
+that is true lives in this file's own "Architecture notes" section**, which is maintained. Keep the
+archive for the same reason `TODO-ARCHIVE.md` exists: it is the record of WHY, never of how.
 
 **Start of session checklist:**
 1. Read `claudecode.md` for the TDD role definition.
