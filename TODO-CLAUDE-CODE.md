@@ -2774,8 +2774,15 @@ via `widgetURL`. NO buttons (settled fast-follow).
 - [x] Tap returns via the widget-link door: `AppDeepLink.routineScreen`, resolved against the
       STORE like the notification tap, so a stale card lands on Today rather than a blank screen.
 - [x] Suite green (2,304/0), lint 0/662, builds green, red-checked, committed and pushed.
-- [ ] Then: E's field walk → full re-run → `--no-ff` merge → re-verify ON main → reinstall
-      `wishwashwacky15` from main → ask E about branch deletion.
+- [x] Full re-run → `--no-ff` merge → re-verify ON main → pushed. **MERGED `0cea871`
+      (2026-09-05)**: unit 2,326/0, lint 0/672, both targets build, verified ON main before the
+      push. Merged on the BISECT evidence at E's direction — the UI target's remaining failures
+      were re-run at `2c46ee7` and reproduce there, so they predate the arc and sit on main
+      either way. Branch KEPT (E's call, asked and answered).
+- [ ] Still outstanding after the merge: E's Block A field walk (checklist at
+      `Momentum-v3-Design-Handoff/ON-DEVICE-CHECKLIST-blockA-2026-09-05.md`; the installed build's
+      app source is byte-identical to main, so that walk counts for main), and reinstalling
+      `wishwashwacky15` from a MAIN build for hygiene.
 
 **Two things found while wiring it, both fixed:**
 - The presenter was constructed inside a `@ViewBuilder`, so every re-render replaced the object
