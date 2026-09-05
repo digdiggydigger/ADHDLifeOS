@@ -12,9 +12,10 @@ import SwiftUI
 /// screen rather than the workshop drawer it is meant to be. So it wears Today's and Areas'
 /// language: an eyebrow, a large title, and `.bentoCard()` doors.
 ///
-/// **It holds two things and is meant to look like it holds two things.** E asked for the page
-/// left sparse so Routines — the declared next arc — has an obvious place to land. There is no
-/// filler here on purpose; `ToolsCatalog` pins the count so a third card has to be a decision.
+/// **Two cards and one section.** The page was left sparse so Routines — the declared next arc —
+/// had an obvious place to land, and as of F-Routines-B it has landed: E's call was "its own
+/// Routines section on the Tool list", so it is a headed section below the doors rather than a
+/// third card. `ToolsCatalog` still pins the CARD count, so a third door has to be a decision.
 ///
 /// **The Settings split this completes is ASYMMETRIC, deliberately.** Places left Settings
 /// entirely and is reachable only from here. Life Areas gained a door here and **kept** its
@@ -59,6 +60,14 @@ struct ToolsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     ForEach(ToolsCatalog.available(placesSupported: placesSupported)) { entry in
                         card(entry)
+                    }
+                    // Routines is a SECTION, not a card (E's 2026-09-05 call) — so it is here
+                    // rather than in `ToolsCatalog`, and the catalog still pins two cards.
+                    // The `if #available` is required rather than stylistic: the section is
+                    // iOS 17+ because the editor a row opens is, and `placesSupported` is a
+                    // `Bool`, which cannot narrow a type's availability.
+                    if #available(iOS 17.0, *) {
+                        ToolsRoutinesSection(client: placesClient)
                     }
                 }
                 .padding(16)

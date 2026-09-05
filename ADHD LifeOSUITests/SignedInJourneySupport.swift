@@ -29,41 +29,13 @@ extension SignedInJourneyUITests {
 
     /// Taps a tab until it is actually SELECTED.
     ///
-    /// These tapped once. A tab tap taken while Today is still settling is a silent no-op, and the
-    /// run then dies at whatever the tab was supposed to reveal — `testCreateTask` failed on
-    /// `taskCreateButton` for exactly this, one commit AFTER `tap(_:untilExists:)` was added and
-    /// wired into `signOutIfSignedIn`. The lesson is that a fix for a class of bug has to be
-    /// applied to every member of the class, not to the one that happened to be failing.
-    ///
-    /// `isSelected` rather than a per-tab landmark, so one helper serves every tab and no caller
-    /// has to know what its destination renders first.
+    /// Delegates rather than re-implementing — the `scrollUntilHittable` arrangement. The logic
+    /// moved to `UITestSession` in F-Routines-B so a second journey class could reach it; the
+    /// retry rules it encodes (coordinate taps after the first attempt, a fresh expectation per
+    /// attempt) were each paid for by a failed run and must not be forked.
     @MainActor
     func openTab(_ name: String, in app: XCUIApplication) {
-        let tab = UITestSession.tabButton(name, in: app)
-        XCTAssertTrue(
-            tab.waitForExistence(timeout: UITestSession.timeout),
-            "The \(name) tab is missing from the tab bar"
-        )
-        for attempt in 1...3 {
-            if tab.isSelected { return }
-            // A plain `.tap()` goes through hittability resolution, which a just-dismissed cover
-            // can still interfere with. From the second attempt, tap the COORDINATE, which
-            // bypasses that resolution entirely — `RoutineJourneyUITests.openTab`'s lesson.
-            if attempt == 1 {
-                tab.tap()
-            } else {
-                tab.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-            }
-            // A FRESH expectation per attempt. XCTest allows an expectation to be waited on
-            // exactly ONCE, so the hoisted one this replaces raised "API violation - expectations
-            // can only be waited on once" on the second lap instead of retrying — which failed
-            // three journeys the first time the retry path was ever actually taken.
-            let selected = XCTNSPredicateExpectation(
-                predicate: NSPredicate(format: "isSelected == true"), object: tab
-            )
-            if XCTWaiter().wait(for: [selected], timeout: 4) == .completed { return }
-        }
-        XCTAssertTrue(tab.isSelected, "The \(name) tab never became selected")
+        UITestSession.openTab(name, in: app)
     }
 
     @MainActor

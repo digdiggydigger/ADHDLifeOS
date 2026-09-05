@@ -2791,3 +2791,64 @@ via `widgetURL`. NO buttons (settled fast-follow).
 - The bundle registered the widget behind `if #available(iOS 16.1, *)`. The extension's floor IS
   16.1, so the gate bought nothing, and a conditional in a `WidgetBundle` body can silently drop
   the widget from the bundle — it compiles and simply never registers.
+
+---
+
+### FEATURE: F-Routines-B-ToolsSection — Routines gets its own section on Tools  [x] COMPLETED
+
+**E's ask, 2026-09-05: "the routines section deserves its own 'Routines' section on the Tool
+list."** Placement and naming were settled by that sentence; the DATA MODEL was not, so the scope
+was put to E as a rendered proposal before any Swift, and **E answered "go with your
+recommendations" (2026-09-05)**, taking all four: an inline section rather than a third card, the
+count-only row copy, the always-shown two-flavour empty state, and a branch
+(`feature/routines-tools`, off `main` @ `705fb43`).
+
+**The version that needs no new entity, and that is the point.** A routine still has no
+independent existence — it IS a place's actions for one direction, computed by
+`PlaceRoutinePlan.make` — so the section lists one row per place+direction that clears
+`RoutineDefaults.stepThreshold` tap-steps. **First-class routine records remain Arc 2 and are NOT
+authorised**, and the [[routine-record-gap]] work (offered / accepted / completed history) stays
+parked for E's own session — this block deliberately records nothing.
+
+**Acceptance criteria**
+- [x] `ToolsRoutinesCatalog` is pure and TDD'd first (16 tests, red → green): membership, the
+      count, the two empty states, order, identity and glyph. It **decides nothing** — membership
+      is `plan.qualifiesAsRoutine` and the count is `plan.tapSteps.count`, so the row, the
+      notification and the Today card cannot disagree about one routine.
+- [x] Rows are computed by `PlaceRoutinePlan.make`, never a re-implemented "≥ 2" in the Tools
+      layer, and ordered by `PlacesService.sorted` — the Places list's own comparator, reused not
+      copied — with arrival before departure within a place.
+- [x] Auto-run steps are counted nowhere and cannot carry a place over the threshold;
+      `.unsupported` actions from a newer build neither count nor appear.
+- [x] Two empty states, not one, because they are two problems with two different next actions:
+      no places at all, and places with too few tap-steps. Shown rather than hidden — a section
+      that vanishes when empty can never teach the rule that fills it, and a brand-new account is
+      in exactly this state.
+- [x] A row opens the place editor sheet, whose Actions section with drag-to-reorder IS the
+      routine editor under E's settled Option A. No second editor was invented.
+- [x] The section sits behind the SAME iOS-17 gate as Places, through a real `if #available` —
+      `placesSupported` is a `Bool` and cannot narrow a type's availability.
+- [x] **Reachability is the acceptance test** (this repo's most repeated defect, six instances):
+      six call-site guards in `ToolsPageCallSiteTests` read the comment-stripped source and pin
+      that the page renders the section, the section asks the catalog, neither Tools file reaches
+      for `tapSteps`/`stepThreshold` itself, a row opens the editor, and the empty state's push
+      clears the capture disc.
+- [x] `ToolsCatalog` still pins TWO CARDS — Routines is a section, not a third door — and both
+      its own doc comment and `ToolsView`'s were rewritten, since both described a sparse page
+      waiting for exactly this and would otherwise have become stale the moment it arrived.
+- [x] **`ToolsRoutinesJourneyUITests` is the block's real proof** — three emulator-backed
+      journeys that walk all three states in the REAL app: a fresh account seeing the first-run
+      empty state, a one-step place getting the OTHER empty state (the discriminator — it also
+      asserts the first-run one is absent, so a single generic message cannot pass both), and a
+      qualifying place appearing as a row that reads "Gym · 2 steps" and opens the real place
+      editor. Screenshots attached at four stops.
+- [x] The journey was RED-CHECKED too, not just written: with the section unrendered, both the
+      empty-state and the row journeys fail. A journey that passes on a broken build is this
+      repo's `geometry-journey-vacuity` lesson, and this one is not vacuous.
+- [x] Suite green (2,348 / 0, up 22), lint 0 / 677, both targets build, red-checked with counted
+      injected regressions (3 injected → 4 failures, each the guard aimed at it), committed and
+      pushed.
+
+**Deliberately NOT built, offered and declined by omission:** a permission-banner footer warning
+that a listed routine can still never fire (nudge master switch off, or location not Always). It
+was put to E as an optional extra and is not part of the recommendations E accepted.
