@@ -14,16 +14,17 @@ extension SignedInJourneyUITests {
     // MARK: - Navigation
 
     /// Existing is not reachable — these screens scroll, and an element below the fold is in the
-    /// hierarchy while being untappable. Bounded, so a genuinely absent control still fails fast.
+    /// hierarchy while being untappable.
+    ///
+    /// Delegates rather than re-implementing. This was the FIFTH copy of the same loop, and like
+    /// the other four it swiped without settling, so it read `isHittable` mid-flight. It passed
+    /// where the others failed only by luck of timing — which is exactly the kind of divergence
+    /// two helpers with the same name are guaranteed to produce.
     @MainActor
     func scrollUntilHittable(
         _ element: XCUIElement, in app: XCUIApplication, attempts: Int = 8
     ) {
-        var remaining = attempts
-        while !element.isHittable, remaining > 0 {
-            app.swipeUp()
-            remaining -= 1
-        }
+        UITestSession.scrollUntilHittable(element, in: app, attempts: attempts)
     }
 
     /// Taps a tab until it is actually SELECTED.
