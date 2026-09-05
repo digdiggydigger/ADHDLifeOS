@@ -216,13 +216,14 @@ final class SignedInJourneyUITests: XCTestCase {
         // fold on this device, so the card is in the hierarchy while being untappable — the same
         // trap `UITestSession.signOutIfSignedIn` hits on the sign-out row. Hunt for it the way a
         // user would rather than pinning where the fold happens to fall this release.
-        var scrollsRemaining = 8
-        while !dismiss.isHittable, scrollsRemaining > 0 {
-            app.swipeUp()
-            scrollsRemaining -= 1
-        }
+        // The shared helper, which settles between swipes — a tight loop like the one this
+        // replaces does not scroll at all, because each gesture is issued while the previous is
+        // still in flight. See `UITestSession.scrollUntilHittable`.
         XCTAssertTrue(
-            dismiss.isHittable, "The nudge's dismiss control never scrolled into reach on Today"
+            UITestSession.scrollUntilHittable(
+                dismiss, in: app, tabToSelect: UITestSession.tabButton("Today", in: app)
+            ),
+            "The nudge's dismiss control never scrolled into reach on Today"
         )
         dismiss.tap()
 

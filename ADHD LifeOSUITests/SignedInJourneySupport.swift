@@ -44,12 +44,23 @@ extension SignedInJourneyUITests {
             tab.waitForExistence(timeout: UITestSession.timeout),
             "The \(name) tab is missing from the tab bar"
         )
-        let selected = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "isSelected == true"), object: tab
-        )
-        for _ in 1...3 {
+        for attempt in 1...3 {
             if tab.isSelected { return }
-            tab.tap()
+            // A plain `.tap()` goes through hittability resolution, which a just-dismissed cover
+            // can still interfere with. From the second attempt, tap the COORDINATE, which
+            // bypasses that resolution entirely — `RoutineJourneyUITests.openTab`'s lesson.
+            if attempt == 1 {
+                tab.tap()
+            } else {
+                tab.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            // A FRESH expectation per attempt. XCTest allows an expectation to be waited on
+            // exactly ONCE, so the hoisted one this replaces raised "API violation - expectations
+            // can only be waited on once" on the second lap instead of retrying — which failed
+            // three journeys the first time the retry path was ever actually taken.
+            let selected = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "isSelected == true"), object: tab
+            )
             if XCTWaiter().wait(for: [selected], timeout: 4) == .completed { return }
         }
         XCTAssertTrue(tab.isSelected, "The \(name) tab never became selected")
