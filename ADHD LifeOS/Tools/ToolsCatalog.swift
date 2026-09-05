@@ -17,9 +17,10 @@ import Foundation
 /// the Captures rethink spent two blocks on — Life Areas is genuinely both a setting and a tool —
 /// so it is not a bug to be tidied.
 ///
-/// The page is also deliberately **sparse**: E wants Routines to have an obvious home when it
-/// arrives, and a page already full of cards would not offer one. `ToolsCatalogTests` pins the
-/// count so a third card is a decision rather than a drift.
+/// The page was left deliberately **sparse** so Routines would have an obvious home when it
+/// arrived. It has now arrived (F-Routines-B) — as a headed SECTION below these cards, which is
+/// E's own word for it, so it is `ToolsView`'s concern and not an entry here. `ToolsCatalogTests`
+/// still pins this count, so a third CARD is a decision rather than a drift.
 enum ToolsCatalog {
 
     /// The doors this page can open. `ToolsView` switches on this to build the push, so the case

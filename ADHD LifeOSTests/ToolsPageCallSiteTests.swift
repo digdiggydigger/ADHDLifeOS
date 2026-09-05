@@ -122,7 +122,121 @@ final class ToolsPageCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The Routines section is REACHED (F-Routines-B)
+
+    /// The whole block is a reachability feature, so this is its acceptance test. A perfect
+    /// `ToolsRoutinesCatalog` that no view renders is the seventh instance of this repo's most
+    /// repeated defect, and it would pass all sixteen of its own unit tests while doing it.
+    func testToolsPageRendersTheRoutinesSection() throws {
+        let source = try Self.code("Tools/ToolsView.swift")
+        XCTAssertTrue(
+            source.contains("ToolsRoutinesSection(client: placesClient)"),
+            "The Tools page no longer builds the Routines section. E asked for Routines to have"
+                + " its own section here; a section nothing renders is the feature not existing."
+        )
+    }
+
+    /// The section is iOS 17+ because the editor a row opens is. `placesSupported` is a `Bool`
+    /// and cannot narrow availability, so this needs a real `if #available` — and every
+    /// simulator on this machine is 26.5, so nothing else would ever notice.
+    func testTheRoutinesSectionIsBehindTheSameFloorAsPlaces() throws {
+        let source = try Self.code("Tools/ToolsView.swift")
+        XCTAssertTrue(
+            Self.collapsed(source).contains("if #available(iOS 17.0, *) { ToolsRoutinesSection("),
+            "The Routines section is no longer directly inside an availability check. It pushes"
+                + " `PlaceEditorView`, which is iOS 17+, and the app floor is 16.0 — and every"
+                + " simulator on this machine is 26.5, so nothing else here would ever notice."
+        )
+    }
+
+    func testTheSectionAsksTheCatalogRatherThanBuildingItsOwnList() throws {
+        let source = try Self.code("Tools/ToolsRoutinesSection.swift")
+        XCTAssertTrue(
+            source.contains("ToolsRoutinesCatalog.content("),
+            "`ToolsRoutinesSection` no longer asks `ToolsRoutinesCatalog` what to draw, so the"
+                + " catalog can be correct and tested while the view hand-rolls a drifting copy."
+        )
+    }
+
+    /// **The two-truths guard.** Membership and the step count belong to `PlaceRoutinePlan`;
+    /// a second spelling in the Tools layer is free to drift from the notification's and the
+    /// Today card's, which is how this repo produced its last three counting bugs.
+    func testNeitherToolsFileReimplementsTheRoutineRule() throws {
+        for file in ["Tools/ToolsRoutinesSection.swift", "Tools/ToolsView.swift"] {
+            let source = try Self.code(file)
+            for spelling in ["stepThreshold", "tapSteps", "autoRunSteps"] {
+                XCTAssertFalse(
+                    source.contains(spelling),
+                    "\(file) reaches for `\(spelling)` itself. Membership and the count are"
+                        + " `PlaceRoutinePlan`'s answers, reached only through"
+                        + " `ToolsRoutinesCatalog` — two truths about one routine is the defect"
+                        + " this repo produces most."
+                )
+            }
+        }
+        let catalog = try Self.code("Tools/ToolsRoutinesCatalog.swift")
+        XCTAssertTrue(
+            catalog.contains("plan.qualifiesAsRoutine"),
+            "The catalog no longer asks `PlaceRoutinePlan` whether a crossing is a routine."
+                + " A literal `>= 2` here would be a second copy of E's settled threshold."
+        )
+        XCTAssertTrue(
+            catalog.contains("PlacesService.sorted("),
+            "The catalog no longer reuses the Places list's comparator, so the two screens can"
+                + " list the same places in different orders."
+        )
+    }
+
+    /// A routine's editor IS the place's Actions section — E's settled Option A. There is no
+    /// separate routine object to edit, and inventing a second editor would create one.
+    func testARoutineRowOpensThePlaceEditor() throws {
+        let source = try Self.code("Tools/ToolsRoutinesSection.swift")
+        XCTAssertTrue(
+            source.contains("PlaceEditorView(existing: place"),
+            "A routine row no longer opens the place editor, whose Actions section with its"
+                + " drag-to-reorder is the routine editor under E's Option A call."
+        )
+    }
+
+    /// The empty state's way out pushes Places INSIDE the Tools stack, so it lands under the
+    /// capture disc exactly as the Places card's push does and must ask for the same room.
+    func testTheEmptyStatePushClearsTheCaptureDisc() throws {
+        let source = try Self.code("Tools/ToolsRoutinesSection.swift")
+        XCTAssertTrue(
+            Self.collapsed(source).contains("PlacesListView(client: client) .captureDiscClearance()"),
+            "The Routines empty state pushes `PlacesListView` without the capture-disc"
+                + " clearance, so that screen's last row sits under an opaque 60pt circle."
+        )
+    }
+
     // MARK: - Reading the tree
+
+    /// Source with comments removed — the form every NEGATIVE assertion must read. A bare
+    /// `contains("Foo()")` matches `// Foo()` just as happily, which is how a bundle-registration
+    /// guard in the Routines arc slept through its own red-check.
+    private static func code(_ relativePath: String) throws -> String {
+        let source = try appSource(relativePath)
+        var output = ""
+        var index = source.startIndex
+        while index < source.endIndex {
+            if source[index...].hasPrefix("//") {
+                while index < source.endIndex, source[index] != "\n" {
+                    index = source.index(after: index)
+                }
+            } else {
+                output.append(source[index])
+                index = source.index(after: index)
+            }
+        }
+        return output
+    }
+
+    /// Comment-free source with every whitespace run flattened to one space, so a structural
+    /// claim ("this call sits directly inside that check") can be asserted without pinning the
+    /// indentation a later edit is free to change.
+    private static func collapsed(_ source: String) -> String {
+        source.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
 
     private static func appSource(_ relativePath: String) throws -> String {
         let url = URL(fileURLWithPath: #filePath)
