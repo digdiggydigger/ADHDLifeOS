@@ -2836,8 +2836,18 @@ parked for E's own session — this block deliberately records nothing.
 - [x] `ToolsCatalog` still pins TWO CARDS — Routines is a section, not a third door — and both
       its own doc comment and `ToolsView`'s were rewritten, since both described a sparse page
       waiting for exactly this and would otherwise have become stale the moment it arrived.
-- [x] Suite green (2,348 / 0, up 22), lint 0 / 675, both targets build, red-checked with counted
-      injected regressions, committed and pushed.
+- [x] **`ToolsRoutinesJourneyUITests` is the block's real proof** — three emulator-backed
+      journeys that walk all three states in the REAL app: a fresh account seeing the first-run
+      empty state, a one-step place getting the OTHER empty state (the discriminator — it also
+      asserts the first-run one is absent, so a single generic message cannot pass both), and a
+      qualifying place appearing as a row that reads "Gym · 2 steps" and opens the real place
+      editor. Screenshots attached at four stops.
+- [x] The journey was RED-CHECKED too, not just written: with the section unrendered, both the
+      empty-state and the row journeys fail. A journey that passes on a broken build is this
+      repo's `geometry-journey-vacuity` lesson, and this one is not vacuous.
+- [x] Suite green (2,348 / 0, up 22), lint 0 / 677, both targets build, red-checked with counted
+      injected regressions (3 injected → 4 failures, each the guard aimed at it), committed and
+      pushed.
 
 **Deliberately NOT built, offered and declined by omission:** a permission-banner footer warning
 that a listed routine can still never fire (nudge master switch off, or location not Always). It
