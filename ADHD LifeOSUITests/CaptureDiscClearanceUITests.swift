@@ -87,17 +87,13 @@ final class CaptureDiscClearanceUITests: XCTestCase {
             app.buttons["quickCaptureButton"].waitForExistence(timeout: UITestSession.timeout),
             "The signed-in tabs never appeared"
         )
-        var remaining = 10
-        while !door.exists, remaining > 0 {
-            app.swipeUp()
-            remaining -= 1
-        }
-        XCTAssertTrue(door.exists, "Today never rendered the nudges door, even scrolled to the end")
-        remaining = 6
-        while !door.isHittable, remaining > 0 {
-            app.swipeUp()
-            remaining -= 1
-        }
+        // Into REACH, not merely into existence — `scrollUntilHittable` settles between swipes.
+        // The hand-rolled version here swiped six times with no settle and then tapped, which is
+        // the defect that made this test read as "the row is never hittable" (see the helper).
+        XCTAssertTrue(
+            UITestSession.scrollUntilHittable(door, in: app, tabToSelect: UITestSession.tabButton("Today", in: app)),
+            "Today never brought the nudges door into reach, even scrolled to the end"
+        )
         // The arrival landmark is the header's add button, NOT the row this journey measures.
         // With ten nudges seeded, `nudgesNewNudgeRow` is below the fold on the screen being
         // opened, so it does not exist on arrival — and waiting for it reported "the door never
@@ -179,6 +175,16 @@ final class CaptureDiscClearanceUITests: XCTestCase {
         // it passed against a build with the fix deliberately removed.
         print("[DISC] \(what): element=\(element.frame) disc=\(disc.frame) "
             + "screen=\(app.frame) hittable=\(element.isHittable)")
+        // VACUITY GUARD, and it is not hypothetical: on 2026-09-05 this assertion passed with the
+        // row at y=1377 on an 874pt screen — a row 500pt BELOW the fold cannot intersect a disc
+        // that is on it, so "no overlap" was true and meant nothing. A frame assertion that can
+        // pass by the element being absent from the screen is the [[geometry-journey-vacuity]]
+        // defect, and this file already carried one once.
+        XCTAssertTrue(
+            app.frame.contains(CGPoint(x: element.frame.midX, y: element.frame.midY)),
+            "\(what) is at \(element.frame), off a \(app.frame.height)pt screen — this "
+                + "assertion would pass without proving anything. Scrolling did not reach it."
+        )
         XCTAssertFalse(
             element.frame.intersects(disc.frame),
             "\(what) at \(element.frame) is underneath the capture disc at \(disc.frame)"

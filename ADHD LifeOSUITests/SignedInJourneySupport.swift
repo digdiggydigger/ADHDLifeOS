@@ -14,16 +14,17 @@ extension SignedInJourneyUITests {
     // MARK: - Navigation
 
     /// Existing is not reachable — these screens scroll, and an element below the fold is in the
-    /// hierarchy while being untappable. Bounded, so a genuinely absent control still fails fast.
+    /// hierarchy while being untappable.
+    ///
+    /// Delegates rather than re-implementing. This was the FIFTH copy of the same loop, and like
+    /// the other four it swiped without settling, so it read `isHittable` mid-flight. It passed
+    /// where the others failed only by luck of timing — which is exactly the kind of divergence
+    /// two helpers with the same name are guaranteed to produce.
     @MainActor
     func scrollUntilHittable(
         _ element: XCUIElement, in app: XCUIApplication, attempts: Int = 8
     ) {
-        var remaining = attempts
-        while !element.isHittable, remaining > 0 {
-            app.swipeUp()
-            remaining -= 1
-        }
+        UITestSession.scrollUntilHittable(element, in: app, attempts: attempts)
     }
 
     /// Taps a tab until it is actually SELECTED.
@@ -43,12 +44,23 @@ extension SignedInJourneyUITests {
             tab.waitForExistence(timeout: UITestSession.timeout),
             "The \(name) tab is missing from the tab bar"
         )
-        let selected = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "isSelected == true"), object: tab
-        )
-        for _ in 1...3 {
+        for attempt in 1...3 {
             if tab.isSelected { return }
-            tab.tap()
+            // A plain `.tap()` goes through hittability resolution, which a just-dismissed cover
+            // can still interfere with. From the second attempt, tap the COORDINATE, which
+            // bypasses that resolution entirely — `RoutineJourneyUITests.openTab`'s lesson.
+            if attempt == 1 {
+                tab.tap()
+            } else {
+                tab.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            // A FRESH expectation per attempt. XCTest allows an expectation to be waited on
+            // exactly ONCE, so the hoisted one this replaces raised "API violation - expectations
+            // can only be waited on once" on the second lap instead of retrying — which failed
+            // three journeys the first time the retry path was ever actually taken.
+            let selected = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "isSelected == true"), object: tab
+            )
             if XCTWaiter().wait(for: [selected], timeout: 4) == .completed { return }
         }
         XCTAssertTrue(tab.isSelected, "The \(name) tab never became selected")

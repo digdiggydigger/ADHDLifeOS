@@ -43,22 +43,17 @@ final class FirstRunJourneyUITests: XCTestCase {
         // Today is a LazyVStack: a row below the fold does not exist until it is scrolled into
         // being, so hunt for the door rather than asserting on where the fold happens to fall.
         let door = app.buttons["homeManageNudgesRow"]
-        var remaining = 10
-        while !door.exists, remaining > 0 {
-            app.swipeUp()
-            remaining -= 1
-        }
+        // One call, and it settles between swipes. The hand-rolled loop this replaces swiped in a
+        // tight loop, which does not scroll AT ALL — see `UITestSession.scrollUntilHittable`.
+        let reachable = UITestSession.scrollUntilHittable(
+            door, in: app, tabToSelect: UITestSession.tabButton("Today", in: app)
+        )
         XCTAssertTrue(
             door.exists,
             "A brand-new account cannot see the nudges door, so it can never create a first nudge."
                 + " The section is gated on already having one, and nothing else routes there."
         )
-
-        remaining = 6
-        while !door.isHittable, remaining > 0 {
-            app.swipeUp()
-            remaining -= 1
-        }
+        XCTAssertTrue(reachable, "The nudges door never came into reach on a brand-new account")
         XCTAssertTrue(
             UITestSession.tap(door, untilExists: app.buttons["nudgeAddButton"]),
             "The nudges door did not open the Nudges screen"

@@ -2648,22 +2648,28 @@ stay a SEPARATE, visually distinct notification species; Undo over confirm every
 wire/schema changes and nothing to republish, all arc**; display Live Activity in-arc, its
 buttons are the fast-follow. E's field walk gates the merge.
 
-### FEATURE: F-Routines-1-Order — drag-to-reorder + the pure core  [ ] UNCHECKED
+### FEATURE: F-Routines-1-Order — drag-to-reorder + the pure core  [x] COMPLETED
 
 Reorder support on the place actions editor (order = array order, already persisted), the
 `PlaceRoutinePlan` pure type, `RoutineDefaults` (threshold 2, departure window 30 min — named,
 never magic), and the stale startSprint footer copy fix (`PlaceActionsEditorView.swift:207`).
 
 **Acceptance criteria**
-- [ ] Actions ForEach reorders (scoped editMode first; fallback = the forced-editMode List
-      technique from `HomeAccessoryStrips.swift:13-27`); the automation-guide ForEach does NOT move.
-- [ ] Reorder round-trips through the REAL Firestore codec preserving order; `makePlace` still
-      threads actions (strip-risk pinned).
-- [ ] `PlaceRoutinePlan` decides ordered steps + the ≥2 threshold, fully pinned.
-- [ ] Sprint footer copy corrected and pinned.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Actions ForEach reorders — plain `.onMove`, NO editMode: the sim probe showed scoped
+      `.environment(\.editMode, .constant(.active))` renders no grips on iOS 26 (visually
+      inert) while long-press drag reorders fine without it, Button rows included, and
+      swipe-to-delete/taps unaffected; the automation-guide ForEach does NOT move (pinned:
+      exactly one `.onMove` in the file).
+- [x] Reorder round-trips through the REAL Firestore codec preserving order; `makePlace` still
+      threads actions AND their order (strip-risk pinned both ways).
+- [x] `PlaceRoutinePlan` decides ordered steps + the ≥2 threshold, fully pinned (membership
+      reuses `PlaceActionPlan.split`, so the two layers cannot disagree).
+- [x] Sprint footer copy corrected ("Arrives as a notification — tapping it starts the
+      sprint.") and pinned by source: only createCapture and journalLine may claim to run
+      by themselves.
+- [x] Suite green, lint 0, builds green, red-checked, committed and pushed.
 
-### FEATURE: F-Routines-2-Notify — run store + one notification at 2+  [ ] UNCHECKED
+### FEATURE: F-Routines-2-Notify — run store + one notification at 2+  [x] COMPLETED
 
 `RoutineRunStore` (UserDefaults; create/end/newest-wins/30-min-window/lazy-sweep transitions —
 the future smart-skip sensing seam) and the handler branch: at ≥2 tap-steps (and iOS 17+), write
@@ -2671,18 +2677,23 @@ the run BEFORE posting ONE routine notification (`placeRoutine-` prefix — the 
 prefix is greedy; own `UNNotificationCategory`; userInfo = minted run UUID only).
 
 **Acceptance criteria**
-- [ ] Run lifecycle transitions sit BEFORE the cooldown guard and OUTSIDE `isEnabled()` — pinned
-      by the stacked-cooldown fixture (arrive→leave→return→leave inside 30 min).
-- [ ] Kill-switch OFF still writes the run; only the notification honours it (stated to E).
-- [ ] Below threshold and below iOS 17: existing paths byte-identical (regression-pinned).
-- [ ] Routine body absorbs message + auto-run report (phrasing pinned); `ArrivalNudgeContent`
+- [x] Run lifecycle transitions sit BEFORE the cooldown guard and OUTSIDE `isEnabled()` — pinned
+      by the stacked-cooldown fixture (arrive→leave→return→leave inside 30 min); creation obeys
+      the same placement (newest wins), so a bounce-return inside the cooldown still puts the
+      routine back on Today while posting nothing.
+- [x] Kill-switch OFF still writes the run; only the notification honours it (stated to E at the
+      stop). Cooldown CONSUMPTION unchanged: a silent run write alone does not consume.
+- [x] Below threshold and below iOS 17: existing paths byte-identical (regression-pinned; the
+      per-action tap payload compared by decoded action — JSON key order is nondeterministic).
+- [x] Routine body absorbs message + auto-run report (phrasing pinned); `ArrivalNudgeContent`
       gains the tasks-only fifth path (nil when no tasks).
-- [ ] Tray hygiene: that place's delivered `placeAction-` notifications removed on routine post;
-      `ImmediateNotifying` widened as protocol requirements (all four conformers updated).
-- [ ] Interim inert tap reported to E at the stop.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Tray hygiene: that place's delivered `placeAction-` notifications removed on routine post
+      (removal rides the post — switch off touches no tray); `ImmediateNotifying` widened as
+      protocol requirements (all four conformers updated).
+- [x] Interim inert tap reported to E at the stop.
+- [x] Suite green, lint 0, builds green, red-checked, committed and pushed.
 
-### FEATURE: F-Routines-3-Screen — the door and the screen  [ ] UNCHECKED
+### FEATURE: F-Routines-3-Screen — the door and the screen  [x] COMPLETED
 
 `PlaceRoutineNotificationRouter` (pending-door replay; own delegate branch; signed-out goes
 pending), the `RootView` door (17+ gated fullScreenCover; `RootView+Doors.swift` split with the
@@ -2691,14 +2702,25 @@ canvas Main board: pre-ticked auto rows, dominant next-step card (48pt), Skip, U
 progress semantics AS PINNED IN THE PLAN, stale-tap → Today.
 
 **Acceptance criteria**
-- [ ] Cold-launch and signed-out taps drain correctly; stale run UUID opens Today, pinned.
-- [ ] Step taps run through the EXISTING action plumbing; sprint steps start in foreground.
-- [ ] Progress/Skip/Undo/completion behave exactly as the plan's pinned semantics.
-- [ ] A11y: combined row elements, state never colour-alone, Dynamic Type.
-- [ ] Sim-driven end-to-end via the DEBUG test-fire button.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Cold-launch and signed-out taps drain correctly (`PlaceRoutineNotificationRouter`, the
+      third pending-door replay); a stale/missing/broken run key opens Today, pinned — the door
+      resolves the tapped UUID against the STORE, so a blank routine screen is unreachable.
+- [x] Step taps run through the EXISTING action plumbing (`PlaceActionTapRoute` +
+      `PlaceLinkOpener`); sprint steps start in the foreground, which is why startSprint is a
+      tap-step at all.
+- [x] Progress/Skip/Undo/completion behave exactly as the plan's pinned semantics — "N of M
+      done" excludes skipped, the bar's resolved fraction includes it, auto-done is immutable,
+      and a fully-resolved run ends when the screen LEAVES (dismiss or background), never at the
+      final tap, so Undo lives until then.
+- [x] A11y: rows are combined elements, the step circle is `accessibilityHidden` because the
+      SUBTITLE words carry the state (never colour alone), semantic Dynamic Type throughout.
+- [x] Sim-driven end-to-end via the DEBUG test-fire button — `RoutineJourneyUITests`, an
+      emulator-backed journey covering blocks 2+3+4 together: seed a 4-action place, test-fire
+      the arrival, find the card on Today, Continue into the screen, Skip, Undo, resolve
+      everything, close, and watch the card go. Screenshots attached at six stops.
+- [x] Suite green (2,271/0), lint 0/651, builds green, red-checked, committed and pushed.
 
-### FEATURE: F-Routines-4-HomeCard — the way back in  [ ] UNCHECKED
+### FEATURE: F-Routines-4-HomeCard — the way back in  [x] COMPLETED
 
 Today card while a run is live ("At <place> · routine live", steps left, next step, Continue →
 the screen); gone when no run. `HomeView.swift` is at 391/400 — card content in its own file,
@@ -2706,12 +2728,31 @@ extract in the same commit if needed. While a run is live for a place, its `Arri
 is suppressed (decided; E can veto at the stop).
 
 **Acceptance criteria**
-- [ ] Reachability proven: first-run AND live-run states rendered on the sim; call sites grepped.
-- [ ] Card appears only while live; Continue opens the screen; suppression rule pinned.
-- [ ] Lint stays 0 (file lengths respected).
-- [ ] Suite green, builds green, red-checked, committed and pushed.
+- [x] Reachability proven by a real journey, not just greps: the card is FOUND on Today after a
+      test-fired crossing, Continue opens the screen, and the card is GONE once the routine is
+      finished — plus `HomeRoutineCardCallSiteTests` pins the render site, the refresh site and
+      the router door in source.
+- [x] Card appears only while live; Continue opens the screen through the same router door the
+      notification tap uses (the `PlaceActionNotificationRouter.open` precedent — no new
+      parameter threaded through HomeView); suppression rule pinned.
+- [x] Lint stays 0 (654 files). `HomeView.swift` tipped to 402 and was brought back to 398 by
+      moving the rationale into `HomeRoutineCard.swift`, where the code it explains lives.
+- [x] Suite green (2,289/0), builds green, red-checked, committed and pushed.
 
-### FEATURE: F-Routines-5-LiveActivity — the display anchor  [ ] UNCHECKED
+**Three real defects the journey caught that unit tests could not**, all fixed here:
+- `onDisappear` did NOT fire reliably for the full-screen cover, so a finished routine kept its
+  Today card. Every deliberate exit now calls `leaveScreen()` itself; the callback is only a net.
+- The card's refresh was sequenced BEHIND `await CurrentPlaceResolution.current()`, so a cheap
+  UserDefaults read waited on a CoreLocation fix. It now runs first.
+- Home had no foreground refresh at all, and a routine of only tap-steps writes nothing to
+  Firestore — so a crossing during backgrounding left the recovery surface stale in exactly the
+  case it exists for. Added, and the handler now announces run lifecycle like every other change.
+
+**A11y defect found while wiring the journey** (fixed): the routine screen's header combined its
+children INCLUDING the close button, which would have left a VoiceOver user inside a full-screen
+cover with no way out. The combine is now scoped to the title and subtitle alone.
+
+### FEATURE: F-Routines-5-LiveActivity — the display anchor  [x] COMPLETED
 
 Second `ActivityConfiguration` in the widget extension (16.1 floor): place, done/total, next
 step, progress. STARTS when the routine screen opens (ActivityKit cannot start from background —
@@ -2719,10 +2760,27 @@ do not "fix"); updates on step changes; ends on run end (verify background end).
 via `widgetURL`. NO buttons (settled fast-follow).
 
 **Acceptance criteria**
-- [ ] Shared attributes file added to the pbxproj `membershipExceptions` (both targets compile).
-- [ ] `Color("AccentColor")` explicit (the LA ignores the widget's global accent).
-- [ ] Activity lifecycle matches the run store on sim (screen open → live; run end → ended).
-- [ ] Tap returns to the routine screen via the widget-link door.
-- [ ] Suite green, lint 0, builds green, red-checked, committed and pushed.
+- [x] Shared attributes file added to the pbxproj `membershipExceptions` (both targets compile);
+      pinned by `RoutineActivityCallSiteTests` so a "cannot find type" in the extension can never
+      be mistaken for a code problem again.
+- [x] `Color("AccentColor")` explicit, and `Color.accentColor` asserted ABSENT from the code (the
+      LA ignores the widget's global accent).
+- [x] Activity lifecycle matches the run store on sim — proven by an ActivityKit probe run on the
+      simulator: `areActivitiesEnabled=true`, `REQUEST_OK … count=1`, `afterEnd=0`. **The
+      simulator does not composite a Live Activity onto the Home Screen island or a freshly
+      booted lock screen, so there is no sim SCREENSHOT of it — E's field walk on the 15 Pro is
+      the visual gate, exactly as the plan says.** The probe was deleted at close-out (it
+      XCTFails by design) and ended what it started.
+- [x] Tap returns via the widget-link door: `AppDeepLink.routineScreen`, resolved against the
+      STORE like the notification tap, so a stale card lands on Today rather than a blank screen.
+- [x] Suite green (2,304/0), lint 0/662, builds green, red-checked, committed and pushed.
 - [ ] Then: E's field walk → full re-run → `--no-ff` merge → re-verify ON main → reinstall
       `wishwashwacky15` from main → ask E about branch deletion.
+
+**Two things found while wiring it, both fixed:**
+- The presenter was constructed inside a `@ViewBuilder`, so every re-render replaced the object
+  holding the ActivityKit handle — updates and the end would have quietly no-opped, stranding a
+  Lock Screen card nothing could move. It is now a shared instance, pinned by test.
+- The bundle registered the widget behind `if #available(iOS 16.1, *)`. The extension's floor IS
+  16.1, so the gate bought nothing, and a conditional in a `WidgetBundle` body can silently drop
+  the widget from the bundle — it compiles and simply never registers.

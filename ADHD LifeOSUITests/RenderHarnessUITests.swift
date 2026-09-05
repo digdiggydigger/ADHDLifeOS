@@ -42,17 +42,9 @@ final class RenderHarnessUITests: XCTestCase {
             "The signed-in tabs never appeared"
         )
         let door = app.buttons["homeManageNudgesRow"]
-        var scrolls = 10
-        while !door.exists, scrolls > 0 {
-            app.swipeUp()
-            scrolls -= 1
-        }
+        // Settles between swipes; a tight loop does not scroll at all.
+        UITestSession.scrollUntilHittable(door, in: app)
         XCTAssertTrue(door.exists, "Today never rendered the nudges door, even scrolled to the end")
-        scrolls = 6
-        while !door.isHittable, scrolls > 0 {
-            app.swipeUp()
-            scrolls -= 1
-        }
         XCTAssertTrue(
             UITestSession.tap(door, untilExists: app.buttons["nudgeAddButton"]),
             "The nudges screen never opened"
@@ -121,17 +113,9 @@ final class RenderHarnessUITests: XCTestCase {
             "The signed-in tabs never appeared"
         )
         let door = app.buttons["homeManageNudgesRow"]
-        var remaining = 10
-        while !door.exists, remaining > 0 {
-            app.swipeUp()
-            remaining -= 1
-        }
+        // Settles between swipes; a tight loop does not scroll at all.
+        UITestSession.scrollUntilHittable(door, in: app)
         XCTAssertTrue(door.exists, "No nudges door on a fresh account")
-        remaining = 6
-        while !door.isHittable, remaining > 0 {
-            app.swipeUp()
-            remaining -= 1
-        }
         XCTAssertTrue(
             app.buttons["homeNudgesFirstRunDirective"].waitForExistence(timeout: UITestSession.timeout),
             "The first-run door showed no 'Add your first nudge' direction"

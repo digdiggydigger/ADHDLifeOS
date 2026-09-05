@@ -204,7 +204,7 @@ struct PlaceActionEditorSheet: View {
         } header: {
             Text("How long").sectionLabel()
         } footer: {
-            Text("Runs by itself when the crossing fires — no tap needed. "
+            Text("Arrives as a notification — tapping it starts the sprint. "
                  + "Between \(MomentumPreferences.sprintMinutesRange.lowerBound) and "
                  + "\(MomentumPreferences.sprintMinutesRange.upperBound) minutes.")
         }

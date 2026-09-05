@@ -125,7 +125,7 @@ struct TaskListView: View {
             }
             // BUG-b7's belt-and-braces: the composer's completion already reloads, but ANY write
             // from ANY surface (the fan, Settings, a widget-launched capture) lands here too.
-            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            .onReceive(DataChangeSignal.changes) { _ in
                 Task { await tasksService.load() }
             }
             .navigationDestination(isPresented: Binding(

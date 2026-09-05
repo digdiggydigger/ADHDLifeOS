@@ -56,6 +56,14 @@ struct PlaceActionsSection: View {
                 Haptics.play(.selection)
                 actions.remove(atOffsets: offsets)
             }
+            // Order IS the routine (F-Routines-1-Order): the array order this move writes is
+            // what a qualifying crossing runs top to bottom, and the codec round-trip pins
+            // that it survives the save. Only THIS ForEach moves — the guide rows below answer
+            // to their own, precisely so a row gesture can never land on the wrong index.
+            .onMove { offsets, destination in
+                Haptics.play(.selection)
+                actions.move(fromOffsets: offsets, toOffset: destination)
+            }
             // A separate ForEach, NOT rows inside the one above: sharing the deletable
             // ForEach would give every guide row its own swipe-to-delete on the wrong index.
             ForEach(automatableGuides, id: \.rowID) { entry in
@@ -101,7 +109,8 @@ struct PlaceActionsSection: View {
         } footer: {
             Text("Things this place does when you arrive or leave. An action makes this place "
                  + "watch that crossing (it uses a monitoring slot, like a nudge). Actions that "
-                 + "open apps or send texts arrive as a notification — one tap runs them.")
+                 + "open apps or send texts arrive as a notification — one tap runs them. "
+                 + "Steps run top to bottom on the crossing. Drag to reorder.")
         }
     }
 

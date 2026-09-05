@@ -215,11 +215,8 @@ enum UITestSession {
         // under it and failed three journeys). Hunt for the row the way a user would instead of
         // asserting on where the fold happens to fall this release.
         _ = signOut.waitForExistence(timeout: 2)
-        var scrollsRemaining = 8
-        while !(signOut.exists && signOut.isHittable), scrollsRemaining > 0 {
-            app.swipeUp()
-            scrollsRemaining -= 1
-        }
+        // Settles between swipes; a tight loop does not scroll at all.
+        scrollUntilHittable(signOut, in: app, attempts: 8)
         XCTAssertTrue(signOut.exists, "Settings opened but presented no sign-out control")
         signOut.tap()
         XCTAssertTrue(

@@ -21,11 +21,28 @@ final class PlaceActionHandlerTests: XCTestCase {
 
     private final class FakeNotifier: ImmediateNotifying {
         private(set) var posted: [PostedNotification] = []
+        private(set) var categories: [String] = []
+        private(set) var removedDelivered: [[String]] = []
 
         func post(title: String, body: String, identifier: String, userInfo: [String: String]) async {
             posted.append(PostedNotification(
                 title: title, body: body, identifier: identifier, userInfo: userInfo
             ))
+            categories.append("")
+        }
+
+        func post(
+            title: String, body: String, identifier: String,
+            userInfo: [String: String], categoryIdentifier: String
+        ) async {
+            posted.append(PostedNotification(
+                title: title, body: body, identifier: identifier, userInfo: userInfo
+            ))
+            categories.append(categoryIdentifier)
+        }
+
+        func removeDelivered(identifiers: [String]) async {
+            removedDelivered.append(identifiers)
         }
     }
 

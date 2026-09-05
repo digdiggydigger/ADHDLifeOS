@@ -3,6 +3,7 @@
 //  ADHD LifeOSTests
 //
 
+import SwiftUI
 import XCTest
 @testable import ADHD_LifeOS
 
@@ -85,6 +86,34 @@ final class PlaceEditorValidationTests: XCTestCase {
         )
 
         XCTAssertEqual(place.actions, [spotify])
+    }
+
+    /// F-Routines-1-Order: with actions promoted to ordered routine STEPS, the order itself is
+    /// now data E arranges by hand. `makePlace` rebuilds the place on save, so a save after a
+    /// drag must hand the moved array through untouched — re-sorting or set-shuffling here
+    /// would quietly undo every reorder at the moment it is saved.
+    func testMakePlace_preservesTheOrderOfReorderedActions() throws {
+        let first = PlaceAction(
+            id: UUID(), direction: .arrival,
+            kind: .openApp(scheme: "spotify", displayName: "Spotify")
+        )
+        let second = PlaceAction(
+            id: UUID(), direction: .arrival, kind: .journalLine(body: "Leg day")
+        )
+        let third = PlaceAction(
+            id: UUID(), direction: .arrival, kind: .startSprint(minutes: 25)
+        )
+        var actions = [first, second, third]
+        actions.move(fromOffsets: IndexSet(integer: 2), toOffset: 0)
+
+        let place = try XCTUnwrap(
+            PlaceEditorValidation.makePlace(
+                id: UUID(), name: "Gym", coordinate: coordinate, radiusMetres: 200,
+                emoji: nil, actions: actions
+            )
+        )
+
+        XCTAssertEqual(place.actions, [third, first, second])
     }
 
     func testMakePlace_returnsNilWhenItCannotBeSaved() {

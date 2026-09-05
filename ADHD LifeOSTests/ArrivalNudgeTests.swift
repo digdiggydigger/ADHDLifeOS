@@ -19,6 +19,15 @@ final class ArrivalNudgeTests: XCTestCase {
         func post(title: String, body: String, identifier: String, userInfo: [String: String]) async {
             posted.append((title, body))
         }
+
+        func post(
+            title: String, body: String, identifier: String,
+            userInfo: [String: String], categoryIdentifier: String
+        ) async {
+            posted.append((title, body))
+        }
+
+        func removeDelivered(identifiers: [String]) async {}
     }
 
     private final class FakeStore: ArrivalNudgeStateStoring {

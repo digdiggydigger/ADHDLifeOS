@@ -75,6 +75,7 @@
 			membershipExceptions = (
 				FocusActivityAttributes.swift,
 				FocusSprintIntents.swift,
+				RoutineActivityAttributes.swift,
 				FocusWidgetSnapshot.swift,
 				LifeAreasWidgetSnapshot.swift,
 			);

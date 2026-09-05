@@ -115,7 +115,7 @@ struct AreasView: View {
                 )
             }
             .task { await service.load() }
-            .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+            .onReceive(DataChangeSignal.changes) { _ in
                 Task { await service.load() }
             }
             .onAppear { momentumPreferences = momentumPreferencesStore.read() }

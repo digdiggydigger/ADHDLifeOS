@@ -44,4 +44,46 @@ final class DataChangeSignalTests: XCTestCase {
         settle.isInverted = true
         wait(for: [settle], timeout: 0.3)
     }
+
+    /// The round-2 field-walk defect (2026-09-04), reduced to its mechanism.
+    ///
+    /// `debouncedPublisher` was a FACTORY, so every SwiftUI body evaluation built a brand-new
+    /// debounce chain and `onReceive` resubscribed to it. A body evaluation inside the 600ms
+    /// window — switching tabs is one — tore the pending chain down before it could fire, and
+    /// the change was lost. On device that showed as Today keeping a stale routine card after a
+    /// departure crossing, while an ARRIVAL refreshed fine: the arrival's journal auto-step
+    /// writes to Firestore and posts a SECOND signal after the tab switch has settled, which
+    /// masked the fault.
+    ///
+    /// Subscribing AFTER the post is exactly what a resubscribing view does. The debounce has to
+    /// live in a permanently-retained pipeline, not in the subscriber's own chain, for the value
+    /// to survive that.
+    func testASubscriberJoiningDuringTheWindowStillReceivesTheChange() {
+        let delivered = expectation(description: "change survived a resubscribe")
+
+        DataChangeSignal.post()
+
+        // Inside the debounce window, and deliberately not on the first run-loop turn — a body
+        // evaluation lands somewhere arbitrary within it.
+        DataChangeSignal.changes
+            .sink { delivered.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [delivered], timeout: 3)
+    }
+
+    /// The same stream every time, so a resubscribe rejoins rather than restarts. A factory
+    /// cannot satisfy this, which is what made the defect possible.
+    func testTheSharedStreamSurvivesASubscriberCancelling() {
+        var firstBag = Set<AnyCancellable>()
+        DataChangeSignal.changes.sink { _ in }.store(in: &firstBag)
+        firstBag.removeAll()                       // the "old" view goes away
+
+        let delivered = expectation(description: "stream still live for the next subscriber")
+        DataChangeSignal.changes
+            .sink { delivered.fulfill() }
+            .store(in: &cancellables)
+        DataChangeSignal.post()
+        wait(for: [delivered], timeout: 3)
+    }
 }

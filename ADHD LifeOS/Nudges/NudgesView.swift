@@ -49,7 +49,7 @@ struct NudgesView: View {
             await service.load()
             momentumPreferences = UserDefaultsMomentumPreferencesStore().read()
         }
-        .onReceive(DataChangeSignal.debouncedPublisher()) { _ in
+        .onReceive(DataChangeSignal.changes) { _ in
             Task { await service.load() }
         }
     }
