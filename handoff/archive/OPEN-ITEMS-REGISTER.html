@@ -1,0 +1,647 @@
+<title>Open Items Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+  /* Palette read verbatim from the app's own asset catalog (ADHD LifeOS/Assets.xcassets).
+     The register's severity colours ARE the product's state tokens — StateRisk, StateWarn,
+     AccentColor, PageBackground, CardSurface — so this page and the app it describes agree. */
+  :root {
+    --ground:        #F2F3F7;   /* PageBackground, light */
+    --surface:       #FFFFFF;   /* CardSurface, light */
+    --surface-sunk:  #E9EBF1;
+    --line:          #D6D9E3;
+    --line-soft:     #E4E7EF;
+    --ink:           #14161C;
+    --ink-2:         #4A4F5C;
+    --ink-3:         #737A8A;
+
+    --accent:        #0A7CFF;   /* AccentColor, light */
+    --risk:          #F5102B;   /* StateRisk, light */
+    --warn:          #E07A00;   /* StateWarn, light */
+    --go:            #0AA84E;   /* StateGo, light */
+
+    --risk-wash:     #FDEBEC;
+    --warn-wash:     #FBF0DF;
+    --neutral-wash:  #E9EBF1;
+    --accent-wash:   #E4EEFE;
+
+    --shadow: 0 1px 2px rgba(20, 22, 28, .04), 0 8px 24px rgba(20, 22, 28, .05);
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --cond: "IBM Plex Sans Condensed", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:        #15171C;  /* PageBackground, dark */
+      --surface:       #1D2027;  /* CardSurface, dark */
+      --surface-sunk:  #171A20;
+      --line:          #2E3340;
+      --line-soft:     #262A34;
+      --ink:           #ECEEF4;
+      --ink-2:         #A8AEBE;
+      --ink-3:         #7C8394;
+
+      --accent:        #0A84FF;  /* AccentColor, dark */
+      --risk:          #FF453A;  /* StateRisk, dark */
+      --warn:          #FF9F0A;  /* StateWarn, dark */
+      --go:            #30D158;  /* StateGo, dark */
+
+      --risk-wash:     #33191B;
+      --warn-wash:     #33261099;
+      --neutral-wash:  #262A34;
+      --accent-wash:   #16243A;
+
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .28);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:        #15171C;
+    --surface:       #1D2027;
+    --surface-sunk:  #171A20;
+    --line:          #2E3340;
+    --line-soft:     #262A34;
+    --ink:           #ECEEF4;
+    --ink-2:         #A8AEBE;
+    --ink-3:         #7C8394;
+
+    --accent:        #0A84FF;
+    --risk:          #FF453A;
+    --warn:          #FF9F0A;
+    --go:            #30D158;
+
+    --risk-wash:     #33191B;
+    --warn-wash:     #33261099;
+    --neutral-wash:  #262A34;
+    --accent-wash:   #16243A;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .28);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 40px 20px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+
+  /* ---------- masthead ---------- */
+  .masthead { display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow {
+    font-family: var(--cond); font-weight: 700; font-size: 12px;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .eyebrow .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); flex: none; }
+  h1 {
+    font-size: clamp(30px, 5vw, 42px); font-weight: 700; letter-spacing: -.022em;
+    line-height: 1.1; margin: 0; text-wrap: balance;
+  }
+  .standfirst { font-size: 17px; color: var(--ink-2); margin: 0; max-width: 60ch; text-wrap: pretty; }
+
+  /* ---------- state strip ---------- */
+  .state {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--line-soft);
+    border: 1px solid var(--line-soft); border-radius: 12px; overflow: hidden;
+  }
+  .state div { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 3px; }
+  .state dt {
+    font-family: var(--cond); font-weight: 600; font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .state dd {
+    margin: 0; font-family: var(--mono); font-size: 15px; font-weight: 500;
+    font-variant-numeric: tabular-nums; color: var(--ink);
+  }
+  .state dd.ok { color: var(--go); }
+
+  /* ---------- callout ---------- */
+  .callout {
+    border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    background: var(--surface); border-radius: 4px 12px 12px 4px;
+    padding: 18px 22px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .callout h2 {
+    font-family: var(--cond); font-weight: 700; font-size: 12px; letter-spacing: .11em;
+    text-transform: uppercase; color: var(--accent); margin: 0;
+  }
+  .callout p { margin: 0; color: var(--ink-2); font-size: 15px; }
+  .callout strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- tiers ---------- */
+  .tier { display: flex; flex-direction: column; gap: 16px; }
+  .tier-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+               border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .tier-head h2 {
+    font-size: 20px; font-weight: 700; letter-spacing: -.012em; margin: 0;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .tier-head .bar { width: 4px; height: 19px; border-radius: 2px; flex: none; }
+  .tier-head .note { font-size: 14px; color: var(--ink-3); }
+  .tier-head .count {
+    margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .t-block .bar { background: var(--risk); }
+  .t-verify .bar { background: var(--warn); }
+  .t-debt  .bar { background: var(--ink-3); }
+  .t-park  .bar { background: var(--line); }
+
+  /* ---------- item ---------- */
+  .item {
+    background: var(--surface); border: 1px solid var(--line-soft);
+    border-radius: 12px; box-shadow: var(--shadow);
+    display: grid; grid-template-columns: 52px 1fr; overflow: hidden;
+  }
+  .rank {
+    display: flex; flex-direction: column; align-items: center; padding-top: 18px; gap: 8px;
+    border-right: 1px solid var(--line-soft); background: var(--surface-sunk);
+  }
+  .rank .n {
+    font-family: var(--mono); font-size: 16px; font-weight: 600;
+    font-variant-numeric: tabular-nums; color: var(--ink-2);
+  }
+  .rank .sev { width: 4px; flex: 1; border-radius: 2px; margin-bottom: 18px; min-height: 26px; }
+  .item.block .sev { background: var(--risk); }
+  .item.verify .sev { background: var(--warn); }
+  .item.debt .sev { background: var(--ink-3); opacity: .5; }
+  .item.park .sev { background: repeating-linear-gradient(180deg, var(--line) 0 5px, transparent 5px 10px); }
+
+  .body { padding: 16px 20px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .item h3 { font-size: 17px; font-weight: 600; letter-spacing: -.008em; margin: 0; text-wrap: balance; }
+  .item p { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+  .item p + p { margin-top: -2px; }
+
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-family: var(--cond); font-weight: 600; font-size: 11px; letter-spacing: .07em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 5px; white-space: nowrap;
+  }
+  .tag.risk    { background: var(--risk-wash);    color: var(--risk); }
+  .tag.warn    { background: var(--warn-wash);    color: var(--warn); }
+  .tag.neutral { background: var(--neutral-wash); color: var(--ink-2); }
+  .tag.accent  { background: var(--accent-wash);  color: var(--accent); }
+
+  .ev {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+    background: var(--surface-sunk); border: 1px solid var(--line-soft);
+    border-radius: 8px; padding: 10px 13px; color: var(--ink-2);
+    overflow-x: auto; white-space: pre; font-variant-numeric: tabular-nums;
+  }
+  .clears { font-size: 14px; color: var(--ink-2); display: flex; gap: 8px; align-items: baseline; }
+  .clears b {
+    font-family: var(--cond); font-weight: 700; font-size: 11px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3); flex: none; padding-top: 1px;
+  }
+  code {
+    font-family: var(--mono); font-size: .88em; background: var(--neutral-wash);
+    padding: 1px 5px; border-radius: 4px; color: var(--ink);
+  }
+  .ev code { background: none; padding: 0; }
+
+  /* ---------- sequence ---------- */
+  .seq { display: flex; flex-direction: column; gap: 14px; }
+  .seq ol { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: s; }
+  .seq li {
+    display: flex; gap: 13px; align-items: baseline;
+    background: var(--surface); border: 1px solid var(--line-soft);
+    border-radius: 10px; padding: 13px 17px; font-size: 15px; color: var(--ink-2);
+  }
+  .seq li::before {
+    counter-increment: s; content: counter(s);
+    font-family: var(--mono); font-weight: 600; font-size: 13px; color: var(--accent);
+    background: var(--accent-wash); border-radius: 5px; padding: 2px 8px; flex: none;
+  }
+  .seq li strong { color: var(--ink); font-weight: 600; }
+
+  footer {
+    border-top: 1px solid var(--line); padding-top: 18px;
+    font-size: 13.5px; color: var(--ink-3); display: flex; flex-direction: column; gap: 5px;
+  }
+  footer code { background: none; padding: 0; color: var(--ink-2); }
+
+  @media (max-width: 620px) {
+    body { padding: 28px 14px 72px; }
+    .item { grid-template-columns: 40px 1fr; }
+    .body { padding: 14px 15px 16px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>ADHD LifeOS</span><span class="dot"></span>
+      <span>Claude Code</span><span class="dot"></span>
+      <span>30 August 2026</span>
+    </div>
+    <h1>Open Items Register</h1>
+    <p class="standfirst">
+      Every outstanding, parked and deferred item, ranked. Severity uses the app's own state
+      tokens, read from the asset catalog — so red here means what red means in the product.
+    </p>
+  </header>
+
+  <dl class="state">
+    <div><dt>main</dt><dd>b62aea4</dd></div>
+    <div><dt>Working tree</dt><dd class="ok">clean</dd></div>
+    <div><dt>Unit suite</dt><dd class="ok">1846 / 0</dd></div>
+    <div><dt>SwiftLint</dt><dd class="ok">0 violations</dd></div>
+    <div><dt>Journeys</dt><dd class="ok">9 / 9</dd></div>
+    <div><dt>Sprint queue</dt><dd>empty</dd></div>
+  </dl>
+
+  <div class="callout">
+    <h2>Where things actually stand</h2>
+    <p>
+      The Current Sprint holds <strong>no open blocks</strong> — twelve FEATURE blocks, all
+      completed or superseded — and there are <strong>no known open user-facing defects</strong>.
+      The capture-disc overlap was the last one and it shipped today as F-DiscClearance.
+      Everything below is environment, verification, or debt.
+    </p>
+    <p>
+      <strong>Ranking method:</strong> does it block other work → how soon it bites → impact when
+      it does → effort to clear. Blockers rank above the things they block. Items I could not
+      verify directly this session are marked <span class="tag warn">unverified</span>.
+    </p>
+  </div>
+
+  <!-- ============ TIER 1 ============ -->
+  <section class="tier t-block">
+    <div class="tier-head">
+      <h2><span class="bar"></span>Blocking</h2>
+      <span class="note">will stop work</span>
+      <span class="count">2 items</span>
+    </div>
+
+    <article class="item block">
+      <div class="rank"><span class="n">1</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags">
+          <span class="tag risk">Imminent</span>
+          <span class="tag neutral">Needs your call</span>
+          <span class="tag neutral">Minutes to clear</span>
+        </div>
+        <h3>Disk at 97% — 6.7 GB free of 228 GB</h3>
+        <p>
+          The brief recorded “~185/228 GB even when tidy” and that disk hit 100% during that
+          session. It has grown 5 GB since. This plausibly contributed to today's
+          <code>Cannot allocate memory</code> simulator failure and two wedged builds.
+        </p>
+        <div class="ev">/System/Volumes/Data   228Gi   190Gi used   6.7Gi avail   97%
+
+reclaimable   ~/Library/Developer      13 GB
+              ~/Library/Caches        7.4 GB
+              UITestResults.xcresult   53 MB   (stale, 2026-08-28)
+
+not a factor  DerivedData 7.4 GB — lives on the external SSD</div>
+        <p class="clears"><b>Clears when</b> <span>You decide what goes. I have not deleted anything.</span></p>
+      </div>
+    </article>
+
+    <article class="item block">
+      <div class="rank"><span class="n">2</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags">
+          <span class="tag risk">Recurs every session</span>
+          <span class="tag neutral">Partly mitigable</span>
+        </div>
+        <h3>8 GB RAM, swap 84% full — and the build discipline it forces</h3>
+        <p>
+          Cost several hours today. Three rules now written to memory, each learned from a real
+          failure rather than reasoned out.
+        </p>
+        <div class="ev">Never run two xcodebuilds at once — the second wedges at
+  CreateBuildDescription on the DerivedData lock.
+
+A run that has FINISHED testing can still hang in coverage
+  post-processing; build.db is 426 MB.
+
+`xcodebuild … | tail` MASKS the exit code — a killed build
+  reported "exited with code 0" beside ** BUILD INTERRUPTED **.</div>
+        <p class="clears"><b>Clears when</b> <span>Never fully — discipline plus closing apps before a run. Not a code problem.</span></p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ TIER 2 ============ -->
+  <section class="tier t-verify">
+    <div class="tier-head">
+      <h2><span class="bar"></span>Verification</h2>
+      <span class="note">blocks your judgement on shipped work</span>
+      <span class="count">5 items</span>
+    </div>
+
+    <article class="item verify">
+      <div class="rank"><span class="n">3</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags">
+          <span class="tag warn">Blocks 4, 5 and 7</span>
+          <span class="tag neutral">One command</span>
+        </div>
+        <h3>Your phone is four commits behind — today's fix is not on it</h3>
+        <p>
+          Device <code>wishwashwacky15</code> last installed at <code>a943988</code>. The block
+          fixes a defect <em>you reported from the device</em>, so device confirmation is the
+          natural close — and one install unblocks three other items below.
+        </p>
+        <div class="ev">a943988  device          ← 4 commits behind
+a40364d  WIP F-DiscClearance
+547aa75  F-DiscClearance verified
+7a4fd16  F-DiscClearance red-check
+b62aea4  main            ← HEAD</div>
+        <p class="clears"><b>Clears when</b> <span>A <code>devicectl</code> install, then delete the build directory (~2 GB, see item 1).</span></p>
+      </div>
+    </article>
+
+    <article class="item verify">
+      <div class="rank"><span class="n">4</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags">
+          <span class="tag warn">Only formally open item</span>
+          <span class="tag accent">25% done</span>
+        </div>
+        <h3>F-NudgesDoor — the one unticked acceptance criterion in the whole TODO</h3>
+        <p>
+          <code>TODO-CLAUDE-CODE.md:192</code> reads
+          <code>[ ] OUTSTANDING — E has not seen it.</code> It wants stills of both states in both
+          appearances. Today's render supplied one of the four.
+        </p>
+        <div class="ev">have     dark  ·  "10 due"     (1-today-bottom.png)
+missing  light ·  "10 due"
+missing  dark  ·  "nothing due"
+missing  light ·  "nothing due"</div>
+        <p class="clears"><b>Clears when</b> <span>Three more stills, then your verdict recorded in the block.</span></p>
+      </div>
+    </article>
+
+    <article class="item verify">
+      <div class="rank"><span class="n">5</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags">
+          <span class="tag warn">Corrupts every full UI run</span>
+          <span class="tag accent">Best standalone block</span>
+        </div>
+        <h3>Two login UI tests fail in any full UI-target run</h3>
+        <p>
+          Cause proven, not guessed: Firebase Auth persists its session in the simulator keychain,
+          and these two tests only <code>app.launch()</code> without the
+          <code>signOutIfSignedIn</code> the journeys use — so the app restores signed-in and
+          <code>loginEmailField</code> never appears.
+        </p>
+        <p>
+          Until fixed, every full run reports two failures that must be manually discounted —
+          which is precisely how a real failure gets waved through.
+        </p>
+        <div class="ev">testLoginForm_rendersFieldsAndValidatesInput            failed
+testSignIn_invalidCredentials_showsInlineError…        failed
+
+after `xcrun simctl keychain booted reset`
+testLoginForm_…                                        passed  27.2s
+testSignIn_…                                           passed  25.1s</div>
+        <p class="clears"><b>Clears when</b> <span>Give them the harness's own sign-out path. One cheap block.</span></p>
+      </div>
+    </article>
+
+    <article class="item verify">
+      <div class="rank"><span class="n">6</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags">
+          <span class="tag warn">Unverified</span>
+          <span class="tag neutral">Low probability, high impact</span>
+        </div>
+        <h3>Firestore rules changed after the last live verification</h3>
+        <p>
+          <code>firestore.rules</code> gained <code>location_events</code> and
+          <code>places</code> on 2026-08-27. The last recorded live diff was 2026-08-23 — before
+          both. If unpublished, location writes are denied in production while
+          <strong>the emulator loads repo rules and passes everything</strong>, masking it.
+        </p>
+        <p>
+          <strong>Mitigating evidence is strong:</strong> the 2026-08-28 on-device field test wrote
+          and read back location events against production, which would have failed on unpublished
+          rules, and memory records “rules live”. I could not confirm directly — no Firebase MCP in
+          this session, and the <code>firebaserules</code> API rejected local ADC credentials.
+        </p>
+        <div class="ev">92a13e6  2026-08-27  + match /location_events/{eventId}
+027c1ad  2026-08-27  + places
+         2026-08-23  ← last recorded live diff (before both)</div>
+        <p class="clears"><b>Clears when</b> <span>A glance at the Firebase console. Publishing stays your call.</span></p>
+      </div>
+    </article>
+
+    <article class="item verify">
+      <div class="rank"><span class="n">7</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags">
+          <span class="tag warn">Carried forward</span>
+          <span class="tag neutral">Unblocked by item 3</span>
+        </div>
+        <h3>Three changes shipped but never seen on a real screen</h3>
+        <p>All installed at <code>a943988</code>, none confirmed by you. Unchanged from the last opener.</p>
+        <div class="ev">78053ce   the lifted night surround
+e7c5b7c   the journal row's mood placement
+5cca6a5   the Settings name editor</div>
+        <p class="clears"><b>Clears when</b> <span>You look, once the device is current.</span></p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ TIER 3 ============ -->
+  <section class="tier t-debt">
+    <div class="tier-head">
+      <h2><span class="bar"></span>Debt</h2>
+      <span class="note">real, not yet biting</span>
+      <span class="count">5 items</span>
+    </div>
+
+    <article class="item debt">
+      <div class="rank"><span class="n">8</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags"><span class="tag neutral">Stale by five blocks</span></div>
+        <h3>The coverage number in CLAUDE.md is out of date</h3>
+        <p>
+          Recorded as <strong>25.35%</strong> on 2026-08-23. Five blocks have landed since, and I
+          deliberately ran without <code>-enableCodeCoverage</code> today because it wedged the
+          build twice (item 2). Note the file's own warning: a previous figure was wrong and
+          irreproducible — <strong>re-measure, never estimate</strong>.
+        </p>
+      </div>
+    </article>
+
+    <article class="item debt">
+      <div class="rank"><span class="n">9</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags">
+          <span class="tag neutral">3 lines of headroom</span>
+          <span class="tag accent">One is a new finding</span>
+        </div>
+        <h3>Two files sit at 397 of their 400-line ceiling</h3>
+        <p>
+          The next edit to either trips lint. <code>CaptureInboxService</code> is formally
+          <code>[~] PARTIAL</code> under F-TriageCardTruth, which explains why the easy split
+          fails: <code>state</code> has a <code>private(set)</code> setter, so its writers are
+          pinned to that file and <code>promoteToTask</code> is the candidate to move instead.
+        </p>
+        <div class="ev">397/400  Home/DailySummaryView.swift        ← not flagged anywhere before
+397/400  Capture/CaptureInboxService.swift  ← known, [~] PARTIAL</div>
+      </div>
+    </article>
+
+    <article class="item debt">
+      <div class="rank"><span class="n">10</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags"><span class="tag neutral">Would have caught six passes</span></div>
+        <h3>A contrast unit test is conceivable and still doesn't exist</h3>
+        <p>
+          Colorsets are readable from a test bundle, so the AA arithmetic done by hand could be
+          asserted in CI. Six journal-pad passes were <em>all</em> colour and three were rejected
+          on device; this would have caught most of them.
+        </p>
+      </div>
+    </article>
+
+    <article class="item debt">
+      <div class="rank"><span class="n">11</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags"><span class="tag neutral">Watch list</span></div>
+        <h3>Near-ceiling cluster</h3>
+        <div class="ev">390  Home/HomeMomentumSections.swift
+390  Capture/CaptureInboxSections.swift
+387  Capture/QuickCaptureComponents.swift
+384  Home/HomeView.swift</div>
+      </div>
+    </article>
+
+    <article class="item debt">
+      <div class="rank"><span class="n">12</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags"><span class="tag neutral">Structural — not a task</span></div>
+        <h3>The 70% coverage bar is out of reach by construction</h3>
+        <p>
+          Roughly 7,000 lines of SwiftUI view bodies sit at ~0%. Unit tests are the wrong tool and
+          the UI tests are deliberately skipped in the standard run. This is a standing caveat on
+          the bar itself, not work to schedule.
+        </p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ PARKED ============ -->
+  <section class="tier t-park">
+    <div class="tier-head">
+      <h2><span class="bar"></span>Parked by decision</h2>
+      <span class="note">visible, not work</span>
+      <span class="count">3 items</span>
+    </div>
+
+    <article class="item park">
+      <div class="rank"><span class="n">P1</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags"><span class="tag accent">Awaiting your verdict</span></div>
+        <h3>note ↔ task kind-switching is gone from the composer</h3>
+        <p>
+          F-DropAltButton removed it and nothing replaces it — that block states the loss plainly
+          rather than burying it. Changing your mind mid-composition now means cancelling and
+          reopening from the capture fan. If you miss it, the named replacement is a kind control
+          at the <strong>top</strong> of the composer, not a second button in the footer.
+        </p>
+      </div>
+    </article>
+
+    <article class="item park">
+      <div class="rank"><span class="n">P2</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags"><span class="tag neutral">Deliberate</span></div>
+        <h3><code>weekCounterweightLine</code> goes stale after a triage exit</h3>
+        <p>By design, with the reasoning recorded at <code>CaptureInboxService+Counterweight.swift:65</code>.</p>
+      </div>
+    </article>
+
+    <article class="item park">
+      <div class="rank"><span class="n">P3</span><span class="sev"></span></div>
+      <div class="body">
+        <div class="tags"><span class="tag neutral">Blocked externally</span></div>
+        <h3>Sign in with Apple is built but dormant</h3>
+        <p>Blocked on a paid Apple Developer membership, not on code. The entitlement cannot ship on a free account.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ BOOKKEEPING ============ -->
+  <section class="tier t-park">
+    <div class="tier-head">
+      <h2><span class="bar"></span>Bookkeeping only</h2>
+      <span class="note">no work implied — listed so it isn't mistaken for work</span>
+      <span class="count">3 items</span>
+    </div>
+
+    <article class="item park">
+      <div class="rank"><span class="n">B1</span><span class="sev"></span></div>
+      <div class="body">
+        <h3>Unticked boxes under closed blocks</h3>
+        <p>
+          <code>F-PadNightRender</code> has three unticked boxes but its prose says
+          <strong>CLOSED 2026-08-28</strong> — they were simply never ticked.
+          <code>F-PadWarmNeutral</code>'s four sit under a block marked
+          <strong>SUPERSEDED</strong>, which says in as many words: do not work this block.
+        </p>
+      </div>
+    </article>
+
+    <article class="item park">
+      <div class="rank"><span class="n">B2</span><span class="sev"></span></div>
+      <div class="body">
+        <h3>Stray gitignored artifacts</h3>
+        <div class="ev">UITestResults.xcresult    53 MB   stale, 2026-08-28
+firebase-debug.log      280 KB
+firestore-debug.log      87 KB</div>
+      </div>
+    </article>
+
+    <article class="item park">
+      <div class="rank"><span class="n">B3</span><span class="sev"></span></div>
+      <div class="body">
+        <h3>DerivedData lives on the external SSD</h3>
+        <p>
+          <code>IDECustomDerivedDataLocation</code> points at
+          <code>/Volumes/Es-SSD/…</code>. It disconnected mid-session today and every build failed
+          with a <em>permissions</em> error that really meant <em>the volume is gone</em>. Now
+          documented so the next occurrence costs a minute rather than an hour.
+        </p>
+      </div>
+    </article>
+  </section>
+
+  <section class="seq">
+    <div class="tier-head">
+      <h2><span class="bar" style="background: var(--accent);"></span>Most value for least time</h2>
+    </div>
+    <ol>
+      <li><strong>Clear disk space</strong> — item 1 gates everything else, and it is minutes of work once you decide what goes.</li>
+      <li><strong>Install to your phone</strong> — item 3, which unblocks items 4, 5 and 7 in one move.</li>
+      <li><strong>Do the looking in one sitting</strong> — the nudges door in all four states, the three unseen changes, and today's disc fix.</li>
+      <li><strong>Then take item 5 as the next block</strong> — one cheap fix makes every future UI run honest, which compounds.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <div>Compiled 30 August 2026 from <code>TODO-CLAUDE-CODE.md</code>, the previous session opener, the working tree, and live machine state.</div>
+    <div>Every figure was measured this session unless marked unverified. <code>main b62aea4</code> · working tree clean · <code>origin/main</code> matches.</div>
+  </footer>
+
+</div>

@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics=""><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"><style>
+body{margin:0;background:#101012;font-family:system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;color:#e8e8ea}
+a{color:#4c9dff;text-decoration:none}a:hover{color:#8dc0ff}
+::-webkit-scrollbar{width:0;height:0}
+[data-theme=light]{--bar:rgba(255,255,255,.94)!important;--bg:#f2f3f7!important;--card:#fff!important;--card2:#e9ecf3!important;--lab:#0e0e12!important;--lab2:rgba(60,60,67,.68)!important;--lab3:rgba(60,60,67,.34)!important;--sep:rgba(60,60,67,.14)!important;--go:#0aa84e!important;--warn:#e07a00!important;--risk:#f5102b!important;--work:#0a7cff!important;--health:#0096bd!important;--admin:#c98400!important;--growth:#a835e0!important;--hobby:#f5225c!important;--workV:#0a84ff!important;--healthV:#00b6dd!important;--adminV:#ffc400!important;--growthV:#c04df7!important;--hobbyV:#ff2d55!important;--goV:#1ed15f!important;--warnV:#ffa000!important;--tWork:rgba(10,132,255,.2)!important;--tHealth:rgba(0,182,221,.22)!important;--tAdmin:rgba(255,196,0,.3)!important;--tGrowth:rgba(192,77,247,.19)!important;--tHobby:rgba(255,45,85,.18)!important;--scrim:rgba(8,8,14,.8)!important;--trk:rgba(60,60,67,.19)!important;--trk2:rgba(60,60,67,.26)!important;border-color:rgba(60,60,67,.16)!important;box-shadow:0 24px 70px rgba(17,17,20,.26)!important}
+@keyframes fanIn{from{opacity:0;transform:translate(28px,26px) scale(.4)}to{opacity:1;transform:none}}@keyframes wv{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}@keyframes scrimIn{from{opacity:0}to{opacity:1}}@keyframes sheetUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+</style></helmet>
+
+<div style="display:flex;gap:14px;align-items:baseline;background:#101012;padding:26px 44px 0;font:600 12px system-ui;flex-wrap:wrap"><span style="color:rgba(232,232,234,.35)">ADHD LIFEOS · REBUILT IN CONCEPT C — MOMENTUM</span><span style="padding:4px 9px;border-radius:6px;background:#e8e8ea;color:#111">Concept C × Concept B · Slate · Full spectrum · Scoreboard</span><span style="display:flex;gap:5px;align-items:center"><i style="width:10px;height:10px;border-radius:3px;background:#30d158;display:block"></i><i style="width:10px;height:10px;border-radius:3px;background:#0a84ff;display:block"></i><i style="width:10px;height:10px;border-radius:3px;background:#64d2ff;display:block"></i><i style="width:10px;height:10px;border-radius:3px;background:#ffd60a;display:block"></i><i style="width:10px;height:10px;border-radius:3px;background:#bf5af2;display:block"></i><i style="width:10px;height:10px;border-radius:3px;background:#ff6482;display:block"></i><i style="width:10px;height:10px;border-radius:3px;background:#ff9f0a;display:block"></i><i style="width:10px;height:10px;border-radius:3px;background:#ff453a;display:block"></i></span></div>
+
+<section style="background:#101012;padding:34px 44px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+<div style="display:flex;align-items:baseline;gap:10px;margin:0 0 8px"><span style="font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#30d158;color:#04140a;border-radius:4px">LIVE</span><span style="font:600 14px system-ui">The app — tap through it</span></div>
+<p style="font:400 12.5px/1.65 system-ui;color:rgba(232,232,234,.55);max-width:820px;margin:0 0 26px">Every tab works. Closing an item advances the ring, increments the streak and offers an Undo; Areas → any area opens that area's own screen, tinted its own colour. Content is the repo's seed data — the five life areas, thirteen tasks, four captures, two journal entries, three nudges — read as rates instead of totals. Effort chips are the repo's own <span style="font-family:ui-monospace,Menlo,monospace">focusMinutesTarget</span>.</p>
+
+<div style="display:flex;gap:44px;align-items:flex-start;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:10px;width:390px;flex:none">
+<div data-theme="{{ theme }}" style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;flex:none;--bg:#15171c;--bar:rgba(29,32,39,.92);--card:#1d2027;--card2:#262a33;--lab:#f5f5f7;--lab2:rgba(235,235,245,.58);--lab3:rgba(235,235,245,.28);--sep:rgba(255,255,255,.12);--go:#30d158;--warn:#ff9f0a;--risk:#ff453a;--work:#0a84ff;--health:#64d2ff;--admin:#ffd60a;--growth:#bf5af2;--hobby:#ff6482;--workV:#0a84ff;--healthV:#64d2ff;--adminV:#ffd60a;--growthV:#bf5af2;--hobbyV:#ff6482;--goV:#30d158;--warnV:#ff9f0a;--tWork:rgba(10,132,255,.16);--tHealth:rgba(100,210,255,.16);--tAdmin:rgba(255,214,10,.16);--tGrowth:rgba(191,90,242,.18);--tHobby:rgba(255,100,130,.18);--scrim:rgba(6,6,10,.62);--trk:rgba(255,255,255,.1);--trk2:rgba(255,255,255,.14);background:var(--bg);color:var(--lab);font-size:17px;line-height:1.25;-webkit-font-smoothing:antialiased;box-shadow:0 24px 70px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.09);font-variant-numeric:tabular-nums">
+
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font:600 15px system-ui;letter-spacing:.2px;position:relative;z-index:3"><span>09:41</span><div style="display:flex;align-items:center;gap:5px"><span style="font:400 16px 'Material Symbols Rounded';line-height:1">signal_cellular_alt</span><span style="font:400 16px 'Material Symbols Rounded';line-height:1">wifi</span><span style="font:400 17px 'Material Symbols Rounded';line-height:1">battery_full</span></div></div>
+
+<div style="position:absolute;left:0;right:0;top:54px;bottom:84px;overflow-y:auto;overscroll-behavior:contain;filter:{{ appFx }};transition:filter .24s ease">
+
+<sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Friday 14 Aug</div><div style="font:700 30px/34px system-ui;letter-spacing:-.7px;margin-top:2px">Today</div></div><div style="display:flex;gap:14px;color:var(--lab2)"><span onClick="{{ toggleTheme }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;cursor:pointer">{{ themeIcon }}</span><span onClick="{{ goJournal }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;cursor:pointer">history_edu</span><span onClick="{{ goTasks }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;cursor:pointer">checklist</span><span onClick="{{ goSettings }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;cursor:pointer">settings</span></div></div>
+
+<div style="padding:20px 20px 0;display:flex;gap:20px;align-items:center">
+<div style="width:126px;height:126px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex:none;background:{{ ringGrad }}"><div style="position:absolute;inset:11px;border-radius:50%;background:var(--bg)"></div><div style="position:relative;z-index:1;text-align:center"><div style="font:700 34px/1 system-ui;letter-spacing:-1px;color:{{ ringColor }}">{{ closed }}</div><div style="font:700 9px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2);margin-top:2px">of {{ goal }} closed</div></div></div>
+<div style="flex:1">
+<sc-if value="{{ streaksOn }}" hint-placeholder-val="{{ true }}">
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Streak</div>
+<div style="display:flex;align-items:baseline;gap:6px;margin-top:2px"><span style="font:700 32px/1 system-ui;letter-spacing:-1px;color:{{ ringColor }}">{{ streak }}</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">days</span></div>
+<div style="display:flex;gap:4px;margin-top:8px"><i style="width:9px;height:9px;border-radius:50%;background:var(--goV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--goV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--goV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--goV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--goV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--goV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--goV);display:block"></i></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:10px">{{ streakLine }}</div>
+</sc-if>
+<sc-if value="{{ streaksOff }}">
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Still open</div>
+<div style="display:flex;align-items:baseline;gap:6px;margin-top:2px"><span style="font:700 32px/1 system-ui;letter-spacing:-1px">{{ openToday }}</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">items</span></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:10px">One of them is fifteen minutes.</div>
+</sc-if>
+</div></div>
+
+<sc-if value="{{ celebrate }}">
+<div style="margin:24px 20px 0;padding:20px;border-radius:16px;background:rgba(48,209,88,.14);border:1px solid rgba(48,209,88,.3);text-align:center">
+<div style="font:400 38px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1;color:var(--go)">check_circle</div>
+<div style="font:600 21px/25px system-ui;letter-spacing:-.4px;margin-top:10px">Sort through mail pile — closed</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:6px">Third today. Admin &amp; Home is up to 75% this week.</div>
+<div style="display:flex;gap:10px;margin-top:16px"><div onClick="{{ undo }}" style="flex:1;height:44px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;font:500 15px system-ui;color:var(--lab2);cursor:pointer">Undo</div><div onClick="{{ goTasks }}" style="flex:1;height:44px;border-radius:14px;background:var(--work);color:#fff;display:flex;align-items:center;justify-content:center;font:700 15px system-ui;cursor:pointer">Next: 20 min</div></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ notCelebrating }}" hint-placeholder-val="{{ true }}">
+<div style="padding:24px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Best next move</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:8px">
+<div style="display:flex;gap:8px;align-items:center"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--work);color:#fff;flex:none">15 min</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tAdmin);color:var(--admin);flex:none">📝 Admin &amp; Home</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--warn);flex:none">due today</span></div>
+<div style="font:600 21px/25px system-ui;letter-spacing:-.4px;margin-top:12px">Sort through mail pile on kitchen counter</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:6px">Trash junk mail immediately. Only keep bills to scan.</div>
+<div onClick="{{ closeOne }}" style="height:54px;border-radius:14px;background:var(--go);color:#04140a;display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px system-ui;margin-top:14px;cursor:pointer"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">check_circle</span>Close it</div>
+</div></div>
+</sc-if>
+
+<div style="padding:26px 20px 0">
+<div style="display:flex;align-items:baseline;gap:8px"><div style="flex:1;font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Your five life areas</div><span onClick="{{ goAreas }}" style="font:400 13px/1.35 system-ui;color:var(--growth);cursor:pointer">Open Areas</span></div>
+<div style="font:400 13px/1.45 system-ui;color:var(--lab2);margin-top:6px">How many of each area's tasks you have closed this week. Tap one to work inside it.</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:12px">
+
+<div onClick="{{ goWork }}" style="display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep);cursor:pointer" data-a="work">
+<span style="width:34px;height:34px;border-radius:10px;background:var(--tWork);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">💼</span>
+<div style="flex:1"><div style="font-size:16px">Work &amp; Career</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">2 of 3 tasks closed</div></div>
+<div style="width:52px;height:8px;border-radius:4px;background:var(--trk);flex:none;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--workV);width:67%"></i></div>
+</div>
+
+<div onClick="{{ goHealth }}" style="display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep);cursor:pointer" data-a="health">
+<span style="width:34px;height:34px;border-radius:10px;background:var(--tHealth);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">🏋️</span>
+<div style="flex:1"><div style="font-size:16px">Health &amp; Wellness</div><div style="font:400 13px/1.35 system-ui;color:var(--health);margin-top:2px">3 of 3 closed — all clear</div></div>
+<div style="width:52px;height:8px;border-radius:4px;background:var(--trk);flex:none;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--healthV);width:100%"></i></div>
+</div>
+
+<div onClick="{{ goAdmin }}" style="display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep);cursor:pointer" data-a="admin">
+<span style="width:34px;height:34px;border-radius:10px;background:var(--tAdmin);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">📝</span>
+<div style="flex:1"><div style="font-size:16px">Admin &amp; Home</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">{{ adminLine }}</div></div>
+<div style="width:52px;height:8px;border-radius:4px;background:var(--trk);flex:none;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--adminV);width:{{ adminBar }}"></i></div>
+</div>
+
+<div onClick="{{ goGrowth }}" style="display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep);cursor:pointer" data-a="growth">
+<span style="width:34px;height:34px;border-radius:10px;background:var(--tGrowth);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">🧘</span>
+<div style="flex:1"><div style="font-size:16px">Personal Growth</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">1 of 2 tasks closed</div></div>
+<div style="width:52px;height:8px;border-radius:4px;background:var(--trk);flex:none;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--growthV);width:50%"></i></div>
+</div>
+
+<div onClick="{{ goHobby }}" style="display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;cursor:pointer" data-a="hobby">
+<span style="width:34px;height:34px;border-radius:10px;background:var(--tHobby);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none">🎨</span>
+<div style="flex:1"><div style="font-size:16px">Hobbies &amp; Projects</div><div style="font:400 13px/1.35 system-ui;color:var(--warn);margin-top:2px">1 of 2 closed — quiet since Sunday</div></div>
+<div style="width:52px;height:8px;border-radius:4px;background:var(--trk);flex:none;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--hobbyV);width:50%"></i></div>
+</div>
+
+</div></div>
+
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Due now</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">25 min</span><div style="flex:1"><div style="font-size:16px">Break down Q3 Project Proposal</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">💼 Work &amp; Career · in progress · 15 of 25 min</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">radio_button_unchecked</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--warn);flex:none">2 due</span><div style="flex:1"><div style="font-size:16px">Nudges waiting</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">Inbox triage · hydration reset</div></div><span onClick="{{ goNudges }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab3);cursor:pointer">chevron_right</span></div>
+</div></div>
+
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Closed today</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:10px;font:400 13px/1.35 system-ui;color:var(--lab);padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="color:var(--goV);flex:none">✓</span><span style="flex:1">Drink 500ml water &amp; 10 min morning stretch</span><span style="color:var(--lab2);flex:none">05:41</span></div>
+<sc-if value="{{ celebrate }}"><div style="display:flex;align-items:center;gap:10px;font:400 13px/1.35 system-ui;color:var(--lab);padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="color:var(--goV);flex:none">✓</span><span style="flex:1">Sort through mail pile on kitchen counter</span><span style="color:var(--lab2);flex:none">09:41</span></div></sc-if>
+<div style="display:flex;align-items:center;gap:10px;font:400 13px/1.35 system-ui;color:var(--lab);padding:11px 16px"><span style="color:var(--goV);flex:none">✓</span><span style="flex:1">Hydration &amp; posture reset</span><span style="color:var(--lab2);flex:none">08:20</span></div>
+</div></div>
+
+<sc-if value="{{ chartsOn }}" hint-placeholder-val="{{ true }}">
+<div style="padding:22px 20px 40px"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Closed this week · 8</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px;padding:16px"><div style="display:flex;align-items:flex-end;gap:3px;height:34px"><i style="width:8px;border-radius:2px;background:var(--goV);display:block;opacity:.85;height:35%"></i><i style="width:8px;border-radius:2px;background:var(--goV);display:block;opacity:.85;height:35%"></i><i style="width:8px;border-radius:2px;background:var(--goV);display:block;opacity:.85;height:70%"></i><i style="width:8px;border-radius:2px;background:var(--goV);display:block;opacity:.85;height:35%"></i><i style="width:8px;border-radius:2px;background:var(--goV);display:block;opacity:.85;height:70%"></i><i style="width:8px;border-radius:2px;background:var(--goV);display:block;opacity:.85;height:35%"></i><i style="width:8px;border-radius:2px;background:var(--goV);display:block;opacity:.85;height:{{ todayBar }}"></i></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:10px">Sat–Fri, items closed. 220 focus minutes logged.</div></div></div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isTasks }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">{{ openTotal }} open · 0 overdue</div><div style="font:700 30px/34px system-ui;letter-spacing:-.7px;margin-top:2px">Tasks</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">add</span></div>
+<div style="display:flex;gap:8px;padding:14px 20px 0"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--work);color:#fff;flex:none">Momentum</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">Open</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">Done</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">All</span></div>
+
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)">Due today · {{ dueTodayCount }}</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div onClick="{{ openTask }}" style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep);cursor:pointer"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">25 min</span><div style="flex:1"><div style="font-size:16px">Break down Q3 Project Proposal into 15-min micro-steps</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">💼 Work &amp; Career · P1 · deep-work</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">radio_button_unchecked</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:{{ mailChipBg }};color:{{ mailChipFg }};flex:none">15 min</span><div style="flex:1"><div style="font-size:16px;text-decoration:{{ mailStrike }};color:{{ mailFg }}">Sort through mail pile on kitchen counter</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">📝 Admin &amp; Home · P2 · quick-win</div></div><span onClick="{{ toggleMail }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;color:{{ mailTick }};font-variation-settings:'FILL' 1;cursor:pointer">{{ mailIcon }}</span></div>
+</div></div>
+
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--work)">Tomorrow · 2</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">20 min</span><div style="flex:1"><div style="font-size:16px">Read Chapter 4 of ADHD Executive Function Guide</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">🧘 Personal Growth · P2 · routine</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">radio_button_unchecked</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">30 min</span><div style="flex:1"><div style="font-size:16px">Clean audio equipment &amp; organize cables</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">🎨 Hobbies &amp; Projects · P3 · quick-win</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">radio_button_unchecked</span></div>
+</div></div>
+
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--go)">Closed today · {{ closedTodayCount }}</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">10 min</span><div style="flex:1"><div style="font-size:16px;color:var(--lab2);text-decoration:line-through">Drink 500ml water &amp; 10 min morning stretch</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">🏋️ Health &amp; Wellness · closed 05:41</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--go);font-variation-settings:'FILL' 1">check_circle</span></div>
+</div></div>
+
+<sc-if value="{{ chartsOn }}">
+<div style="padding:22px 20px 40px"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Focus minutes · 7 days</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:8px"><div style="display:flex;align-items:flex-end;gap:3px;height:34px"><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:30%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:25%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:75%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:100%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:45%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:40%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.4;height:35%"></i></div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:10px">220 minutes logged against 265 targeted.</div></div></div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isNudges }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)">2 due · 1 scheduled</div><div style="font:700 30px/34px system-ui;letter-spacing:-.7px;margin-top:2px">Nudges</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">add</span></div>
+
+<div style="padding:18px 20px 0"><div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px">
+<div style="display:flex;align-items:center;gap:12px"><div style="flex:1"><div style="font:600 19px/23px system-ui;letter-spacing:-.3px">Unprocessed Inbox Items</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:4px">When inbox count &gt; 0 · <span style="color:var(--work)">triage</span> · 4 thoughts waiting</div></div><div style="width:51px;height:31px;border-radius:16px;background:var(--goV);position:relative;flex:none"><div style="position:absolute;top:2px;left:22px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<div style="display:flex;gap:10px;margin-top:14px"><div onClick="{{ goInbox }}" style="flex:1;height:44px;border-radius:14px;background:var(--work);color:#fff;display:flex;align-items:center;justify-content:center;font:700 15px system-ui;cursor:pointer">Clear the deck</div><div style="width:56px;height:44px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;color:var(--lab2)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1">snooze</span></div></div>
+</div></div>
+
+<div style="padding:14px 20px 0"><div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px">
+<div style="display:flex;align-items:center;gap:12px"><div style="flex:1"><div style="font:600 19px/23px system-ui;letter-spacing:-.3px">Hydration &amp; Posture Reset</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:4px">Every 90 minutes · <span style="color:var(--health)">hydrate</span></div></div><div style="width:51px;height:31px;border-radius:16px;background:var(--goV);position:relative;flex:none"><div style="position:absolute;top:2px;left:22px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<sc-if value="{{ streaksOn }}">
+<div style="display:flex;gap:4px;margin-top:14px"><i style="width:9px;height:9px;border-radius:50%;background:var(--healthV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--healthV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--healthV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--healthV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--healthV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--trk2);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--healthV);display:block"></i></div>
+<div style="display:flex;align-items:baseline;gap:6px;margin-top:12px"><span style="font:700 26px/1 system-ui;letter-spacing:-.8px;color:var(--health)">6</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">of 7 days · best 12</span></div>
+</sc-if>
+<div style="height:44px;border-radius:14px;background:var(--go);color:#04140a;display:flex;align-items:center;justify-content:center;font:700 15px system-ui;margin-top:14px">Done for now</div>
+</div></div>
+
+<div style="padding:14px 20px 0"><div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;opacity:.72">
+<div style="display:flex;align-items:center;gap:12px"><div style="flex:1"><div style="font:600 19px/23px system-ui;letter-spacing:-.3px">Evening Wind-down &amp; Brain Dump</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:4px">Daily at 9:00 PM · <span style="color:var(--growth)">break</span> · not due yet</div></div><div style="width:51px;height:31px;border-radius:16px;background:rgba(120,120,128,.3);position:relative;flex:none"><div style="position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:12px">Fires in 11 hours. Nothing is counting against you until then.</div>
+</div></div>
+
+<div style="padding:24px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--growth)">Nudge history &amp; focus review</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);width:52px">08:20</span><div style="flex:1"><div style="font-size:16px">Hydration reset</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2)">💼 Q3 Proposal · 12 of 25 min elapsed</div></div><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--go);flex:none">on track</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);width:52px">07:55</span><div style="flex:1"><div style="font-size:16px">Checkpoint 1 of 3</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2)">💼 Q3 Proposal · 6 of 25 min elapsed</div></div><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--work);flex:none">refocused</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);width:52px">Yest.</span><div style="flex:1"><div style="font-size:16px">Evening wind-down</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2)">🧘 Personal Growth</div></div><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--growth);flex:none">needed a break</span></div>
+</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:8px">Reactions are the only judgement in the app, and you write them.</div></div>
+
+<div style="padding:20px 20px 40px"><div style="height:54px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;gap:8px;font:500 16px system-ui;color:var(--lab2)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1">add</span>New nudge — label, schedule, type</div></div>
+</sc-if>
+
+<sc-if value="{{ isJournal }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">8 closed · 2 written this week</div><div style="font:700 30px/34px system-ui;letter-spacing:-.7px;margin-top:2px">Journal</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">edit_note</span></div>
+<div style="display:flex;gap:8px;padding:14px 20px 0"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--work);color:#fff;flex:none">Everything</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">Written</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">Closed</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">All areas</span></div>
+
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Today</div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+<div style="display:flex;gap:12px"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);width:44px;flex:none;padding-top:12px">04:41</span><div style="flex:1;background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:12px 14px"><div style="display:flex;align-items:center;gap:6px"><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">Journal · <span style="color:var(--health)">🏋️ Health &amp; Wellness</span></span><span style="font-size:14px">⚡</span><span style="font:600 12.5px system-ui;padding:4px 8px;border-radius:7px;background:var(--tHealth);color:var(--health)">medium</span></div><div style="font:600 16px/1.3 system-ui;margin-top:8px">Morning Energy Check-in</div><div style="font:400 15px/1.45 system-ui;color:var(--lab2);margin-top:4px">Feeling a bit foggy today. Drank tea, set 15-min timers to keep tasks low-friction.</div></div></div>
+<div style="display:flex;gap:12px;align-items:center"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);width:44px;flex:none">05:41</span><div style="flex:1;display:flex;gap:8px;align-items:center"><span style="color:var(--go)">✓</span><span style="font:400 13px/1.35 system-ui;color:var(--lab)">Drink 500ml water &amp; 10 min stretch</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">task · 🏋️</span></div></div>
+<div style="display:flex;gap:12px;align-items:center"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);width:44px;flex:none">08:20</span><div style="flex:1;display:flex;gap:8px;align-items:center"><span style="color:var(--go)">✓</span><span style="font:400 13px/1.35 system-ui;color:var(--lab)">Hydration &amp; posture reset</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">nudge · 🏋️</span></div></div>
+</div></div>
+
+<div style="padding:24px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Yesterday</div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+<div style="display:flex;gap:12px"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);width:44px;flex:none;padding-top:12px">09:41</span><div style="flex:1;background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:12px 14px"><div style="display:flex;align-items:center;gap:6px"><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">Journal · <span style="color:var(--work)">💼 Work &amp; Career</span></span><span style="font-size:14px">🔥</span><span style="font:600 12.5px system-ui;padding:4px 8px;border-radius:7px;background:var(--tAdmin);color:var(--admin)">high</span></div><div style="font:600 16px/1.3 system-ui;margin-top:8px">Hyperfocus Reflection on Code Refactoring</div><div style="font:400 15px/1.45 system-ui;color:var(--lab2);margin-top:4px">Got into a great flow state after turning off notifications. Solved the state synchronization bug.</div></div></div>
+<div style="display:flex;gap:12px;align-items:center"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);width:44px;flex:none">17:02</span><div style="flex:1;display:flex;gap:8px;align-items:center"><span style="color:var(--go)">✓</span><span style="font:400 13px/1.35 system-ui;color:var(--lab)">Review weekly budget spreadsheet</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">task · 📝</span></div></div>
+</div></div>
+
+<div style="padding:24px 20px 40px"><div style="height:54px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;gap:8px;font:500 16px system-ui;color:var(--lab2)">One line about today…</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:10px;text-align:center">Entries are append-only. Energy and mood are asked once, on save.</div></div>
+</sc-if>
+
+<sc-if value="{{ isInbox }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><span onClick="{{ goToday }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2);cursor:pointer">chevron_left</span><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Capture Inbox</div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">swap_vert</span></div>
+
+<div style="padding:16px 20px 0">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font:700 46px/1 system-ui;letter-spacing:-1.5px;color:var(--warn)">4</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">left · oldest is 18 hours old</span></div>
+<div style="height:8px;border-radius:4px;background:var(--trk);overflow:hidden;margin-top:14px"><i style="display:block;height:100%;border-radius:4px;background:var(--goV);width:0%"></i></div>
+</div>
+
+<div style="padding:24px 20px 0"><div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px">
+<div style="display:flex;gap:8px;align-items:center"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tAdmin);color:var(--admin);flex:none">📝 Note</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">3 hr old</span></div>
+<div style="font:600 21px/25px system-ui;letter-spacing:-.4px;margin-top:12px">Research car insurance rates before month ends</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:8px">Suggested area: 📝 Admin &amp; Home</div>
+<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+<div style="height:54px;border-radius:14px;background:var(--work);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px system-ui"><span style="font:400 20px 'Material Symbols Rounded';line-height:1">playlist_add_check</span>Task it</div>
+<div style="display:flex;gap:10px"><div style="flex:1;height:54px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;font:500 16px system-ui;color:var(--lab2)">Journal it</div><div style="flex:1;height:54px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;font:500 16px system-ui;color:var(--lab2)">Bin</div></div>
+</div>
+</div></div>
+
+<div style="padding:24px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--work)">Then</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--work)">graphic_eq</span><div style="flex:1"><div style="font-size:16px">Idea for modular React component layout</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">voice · 0:14 · transcribed</div></div><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">8 hr</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--growth)">image</span><div style="flex:1"><div style="font-size:16px">Whiteboard sketch of habit architecture</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">photo · note attached</div></div><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">12 hr</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--admin)">notes</span><div style="flex:1"><div style="font-size:16px">Order replacement water filter cartridges</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">note · 📝 Admin &amp; Home</div></div><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">18 hr</span></div>
+</div></div>
+
+<sc-if value="{{ chartsOn }}">
+<div style="padding:24px 20px 40px"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--work)">Inbox health</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:8px">
+<div style="display:flex;align-items:flex-end;gap:3px;height:34px"><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:40%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:70%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:55%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:85%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:45%"></i><i style="width:8px;border-radius:2px;background:var(--workV);display:block;opacity:.85;height:60%"></i><i style="width:8px;border-radius:2px;background:var(--warnV);display:block;opacity:.85;height:100%"></i></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:10px">Captured this week: 11. Cleared: 7.</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--warn);margin-top:4px">Four are still sitting here — decide or bin them.</div>
+</div></div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isSettings }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div style="font:700 30px/34px system-ui;letter-spacing:-.7px">Settings</div><span onClick="{{ goToday }}" style="font:700 15px system-ui;color:var(--go);cursor:pointer">Done</span></div>
+
+<div style="padding:18px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--go)">What counts as momentum</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="flex:1">Daily goal</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">{{ goal }} items</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">chevron_right</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="flex:1">Count cleared captures</span><div style="width:51px;height:31px;border-radius:16px;background:var(--goV);position:relative;flex:none"><div style="position:absolute;top:2px;left:22px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="flex:1">Count nudges</span><div style="width:51px;height:31px;border-radius:16px;background:var(--goV);position:relative;flex:none"><div style="position:absolute;top:2px;left:22px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="flex:1">Show streaks</span><div style="width:51px;height:31px;border-radius:16px;background:{{ streakTglBg }};position:relative;flex:none"><div style="position:absolute;top:2px;left:{{ streakTglX }};width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:8px">Turn streaks off and the app keeps every number but stops counting consecutive days.</div></div>
+
+<div style="padding:20px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Appearance</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px;padding:14px 16px">
+<div style="display:flex;gap:8px">
+<div onClick="{{ setLight }}" style="flex:1;min-height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:7px;font:600 15px system-ui;cursor:pointer;border:1px solid var(--sep);background:{{ lightBg }};color:{{ lightFg }}"><span style="font:400 19px 'Material Symbols Rounded';line-height:1">light_mode</span>Light</div>
+<div onClick="{{ setDark }}" style="flex:1;min-height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:7px;font:600 15px system-ui;cursor:pointer;border:1px solid var(--sep);background:{{ darkBg }};color:{{ darkFg }}"><span style="font:400 19px 'Material Symbols Rounded';line-height:1">dark_mode</span>Dark</div>
+</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:12px">{{ themeLine }}</div>
+</div></div>
+
+<div style="padding:20px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--work)">Library</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="flex:1">Life area domains</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">5 active</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">chevron_right</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="flex:1">Tag registry</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">4</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">chevron_right</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="flex:1">Dismissed captures</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">0</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">chevron_right</span></div>
+</div></div>
+
+<div style="padding:20px 20px 0"><div style="display:flex;gap:8px;flex-wrap:wrap">
+<span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tWork);color:var(--work);flex:none">💼 Work &amp; Career</span>
+<span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tHealth);color:var(--health);flex:none">🏋️ Health &amp; Wellness</span>
+<span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tAdmin);color:var(--admin);flex:none">📝 Admin &amp; Home</span>
+<span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tGrowth);color:var(--growth);flex:none">🧘 Personal Growth</span>
+<span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tHobby);color:var(--hobby);flex:none">🎨 Hobbies &amp; Projects</span>
+</div></div>
+
+<div style="padding:20px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--growth)">Notifications</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="flex:1">System permission</span><span style="font:400 13px/1.35 system-ui;color:var(--go);display:flex;align-items:center;gap:4px"><span style="font:400 15px 'Material Symbols Rounded';line-height:1">check_circle</span>Allowed</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;color:var(--go)"><span style="flex:1">Open iOS Settings</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1">open_in_new</span></div>
+</div></div>
+
+<div style="padding:20px 20px 0"><div style="background:var(--card);border-radius:16px;border:1px solid var(--sep)"><div style="display:flex;align-items:center;min-height:54px;padding:10px 16px;color:var(--risk)"><span style="flex:1">Reset all data</span></div></div></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);padding:16px 20px 40px">LifeOS Engine · local &amp; private · version 1.0 (42)</div>
+</sc-if>
+
+<sc-if value="{{ isAreas }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Friday 14 Aug</div><div style="font:700 30px/34px system-ui;letter-spacing:-.7px;margin-top:2px">Areas</div></div><div style="display:flex;gap:10px"><div onClick="{{ goInbox }}" style="width:40px;height:40px;border-radius:20px;background:var(--card);border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer"><span style="font:400 21px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">inbox</span><span style="position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;border-radius:10px;background:var(--warn);color:#211500;font:700 11px system-ui;display:flex;align-items:center;justify-content:center;padding:0 4px">4</span></div><div onClick="{{ goSettings }}" style="width:40px;height:40px;border-radius:20px;background:var(--card);border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font:400 21px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">settings</span></div></div></div>
+<div style="font:400 13px/1.45 system-ui;color:var(--lab2);padding:6px 20px 0">Every task, note and capture lives in one of these. Tap an area to work inside it.</div>
+
+<div style="padding:14px 20px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div onClick="{{ goWork }}" style="background:rgba(10,132,255,.1);border:1px solid rgba(10,132,255,.22);border-radius:18px;padding:14px;cursor:pointer"><div style="display:flex;align-items:flex-start"><span style="font-size:30px;flex:1">💼</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--work)">chevron_right</span></div><div style="font:600 20px/24px system-ui;letter-spacing:-.3px;margin-top:10px">Work</div><div style="height:8px;border-radius:4px;background:var(--trk);margin-top:10px;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--workV);width:67%"></i></div><div style="font:600 13px/1.35 system-ui;color:var(--work);margin-top:8px">2 of 3 closed</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2)">3 tasks · 1 log</div></div>
+<div onClick="{{ goHealth }}" style="background:rgba(100,210,255,.1);border:1px solid rgba(100,210,255,.22);border-radius:18px;padding:14px;cursor:pointer"><div style="display:flex;align-items:flex-start"><span style="font-size:30px;flex:1">🏋️</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--health)">chevron_right</span></div><div style="font:600 20px/24px system-ui;letter-spacing:-.3px;margin-top:10px">Health</div><div style="height:8px;border-radius:4px;background:var(--trk);margin-top:10px;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--healthV);width:100%"></i></div><div style="font:600 13px/1.35 system-ui;color:var(--health);margin-top:8px">All clear</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2)">2 tasks · 1 log</div></div>
+<div onClick="{{ goAdmin }}" style="background:rgba(255,214,10,.1);border:1px solid rgba(255,214,10,.22);border-radius:18px;padding:14px;cursor:pointer"><div style="display:flex;align-items:flex-start"><span style="font-size:30px;flex:1">📝</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--admin)">chevron_right</span></div><div style="font:600 20px/24px system-ui;letter-spacing:-.3px;margin-top:10px">Admin</div><div style="height:8px;border-radius:4px;background:var(--trk);margin-top:10px;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--adminV);width:{{ adminBar }}"></i></div><div style="font:600 13px/1.35 system-ui;color:var(--admin);margin-top:8px">{{ adminLine }}</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2)">4 tasks · 1 capture</div></div>
+<div onClick="{{ goGrowth }}" style="background:rgba(191,90,242,.1);border:1px solid rgba(191,90,242,.22);border-radius:18px;padding:14px;cursor:pointer"><div style="display:flex;align-items:flex-start"><span style="font-size:30px;flex:1">🧘</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--growth)">chevron_right</span></div><div style="font:600 20px/24px system-ui;letter-spacing:-.3px;margin-top:10px">Growth</div><div style="height:8px;border-radius:4px;background:var(--trk);margin-top:10px;overflow:hidden"><i style="display:block;height:100%;border-radius:4px;background:var(--growthV);width:50%"></i></div><div style="font:600 13px/1.35 system-ui;color:var(--growth);margin-top:8px">1 of 2 closed</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2)">2 tasks · 1 log</div></div>
+<div onClick="{{ goHobby }}" style="grid-column:span 2;background:rgba(255,100,130,.1);border:1px solid rgba(255,100,130,.22);border-radius:18px;padding:14px;display:flex;align-items:center;gap:14px;cursor:pointer"><span style="font-size:30px">🎨</span><div style="flex:1"><div style="font:600 20px/24px system-ui;letter-spacing:-.3px">Hobbies &amp; Projects</div><div style="height:8px;border-radius:4px;background:var(--trk);margin-top:10px;overflow:hidden;max-width:180px"><i style="display:block;height:100%;border-radius:4px;background:var(--hobbyV);width:50%"></i></div><div style="font:400 13px/1.35 system-ui;color:var(--warn);margin-top:8px">1 of 2 closed · quiet since Sunday</div></div><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--hobby)">chevron_right</span></div>
+</div>
+
+<div style="padding:14px 20px 0"><div style="background:var(--card);border:1px solid var(--sep);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px"><span style="font-size:24px">📥</span><div style="flex:1"><div style="font:600 17px system-ui">Unfiled</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">4 captures with no area yet</div></div><span onClick="{{ goInbox }}" style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--lab3);cursor:pointer">chevron_right</span></div></div>
+
+<div style="padding:12px 20px 0"><div style="background:var(--card);border:1px solid var(--sep);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px"><span style="font:400 21px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">drag_handle</span><span style="flex:1;font:500 15px system-ui;color:var(--lab2)">Reorder or add an area</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">chevron_right</span></div></div>
+
+<sc-if value="{{ chartsOn }}">
+<div style="padding:22px 20px 40px"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Where the week went</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:8px">
+<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--trk)"><i style="display:block;background:var(--workV);width:25%"></i><i style="display:block;background:var(--healthV);width:37.5%"></i><i style="display:block;background:var(--adminV);width:25%"></i><i style="display:block;background:var(--growthV);width:12.5%"></i></div>
+<div style="font:400 13px/1.45 system-ui;color:var(--lab2);margin-top:12px">8 items closed: <span style="color:var(--work)">2 Work</span>, <span style="color:var(--health)">3 Health</span>, <span style="color:var(--admin)">2 Admin</span>, <span style="color:var(--growth)">1 Growth</span>. Nothing in Hobbies.</div>
+</div></div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isArea }}">
+<div style="padding-bottom:12px;background:{{ aWash }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><span onClick="{{ goAreas }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;cursor:pointer;color:{{ aTint }}">chevron_left</span><span style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:{{ aTint }}">Life area</span><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:{{ aTint }}">more_horiz</span></div>
+<div style="padding:10px 20px 0;display:flex;align-items:center;gap:14px"><span style="font-size:40px">{{ aEmoji }}</span><div style="flex:1"><div style="font:700 28px/32px system-ui;letter-spacing:-.6px">{{ aName }}</div><div style="font:600 13px/1.35 system-ui;margin-top:2px;color:{{ aTint }}">{{ aStatus }}</div></div></div>
+<div style="display:flex;gap:8px;padding:14px 20px 0;align-items:center">
+<sc-for list="{{ rail }}" as="a" hint-placeholder-count="5"><span onClick="{{ a.tap }}" style="width:46px;height:46px;border-radius:15px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;font-size:21px;background:{{ a.bg }};border:1px solid {{ a.border }};box-shadow:{{ a.ring }}">{{ a.emoji }}</span></sc-for>
+<span onClick="{{ goInbox }}" style="width:46px;height:46px;border-radius:15px;background:var(--card);border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;cursor:pointer">📥</span>
+</div>
+</div>
+
+<div style="display:flex;gap:8px;padding:14px 20px 0"><span style="font:600 12.5px system-ui;padding:8px 13px;border-radius:20px;flex:none;background:{{ aTint }};color:{{ aOn }}">{{ aChipTasks }}</span><span style="font:600 12.5px system-ui;padding:8px 13px;border-radius:20px;background:var(--card2);color:var(--lab2);flex:none">{{ aChipJournal }}</span><span style="font:600 12.5px system-ui;padding:8px 13px;border-radius:20px;background:var(--card2);color:var(--lab2);flex:none">{{ aChipCaptures }}</span><span style="font:600 12.5px system-ui;padding:8px 13px;border-radius:20px;background:var(--card2);color:var(--lab2);flex:none">All</span></div>
+
+<div style="padding:16px 20px 0"><div style="background:var(--card);border-radius:16px;border:1px solid var(--sep)">
+<sc-for list="{{ aTasks }}" as="t" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep);opacity:{{ t.dim }}"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;flex:none;background:{{ t.chipBg }};color:{{ t.chipFg }}">{{ t.effort }}</span><div style="flex:1"><div style="font-size:16px;text-decoration:{{ t.strike }};color:{{ t.fg }}">{{ t.title }}</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">{{ t.meta }}</div></div><span onClick="{{ t.tap }}" style="font:400 22px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1;cursor:pointer;color:{{ t.tickColor }}">{{ t.tick }}</span></div></sc-for>
+</div></div>
+
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Momentum in this area</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:8px">
+<div style="display:flex;align-items:center;gap:16px"><div style="width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;font-size:21px;flex:none;background:{{ aRing }}"><div style="position:absolute;inset:5px;border-radius:50%;background:var(--card)"></div><span style="position:relative;z-index:1">{{ aEmoji }}</span></div><div style="flex:1"><div style="font:600 16px system-ui">{{ aRingLine }}</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:3px">{{ aNote }}</div></div></div>
+<sc-if value="{{ chartsOn }}"><div style="display:flex;align-items:flex-end;gap:3px;height:28px;margin-top:16px"><sc-for list="{{ aBars }}" as="b" hint-placeholder-count="7"><i style="width:8px;border-radius:2px;display:block;opacity:.85;background:{{ b.c }};height:{{ b.h }}"></i></sc-for></div></sc-if>
+</div></div>
+
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Waiting to be filed here</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px"><div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:11px 16px"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:{{ aTint }}">{{ aCapIcon }}</span><div style="flex:1"><div style="font-size:16px">{{ aCapTitle }}</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">{{ aCapMeta }}</div></div><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;flex:none;background:{{ aWash2 }};color:{{ aTint }}">File here</span></div></div></div>
+
+<div style="padding:20px 20px 40px"><div style="height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px system-ui;background:{{ aTint }};color:{{ aOn }}"><span style="font:400 20px 'Material Symbols Rounded';line-height:1">add</span>{{ aCta }}</div>
+<div style="font:400 13px/1.45 system-ui;color:var(--lab2);text-align:center;margin-top:10px">Whatever you add — task, note or capture — is already filed here.</div></div>
+</sc-if>
+
+<sc-if value="{{ isSchedule }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Across every area</div><div style="font:700 30px/34px system-ui;letter-spacing:-.7px;margin-top:2px">Schedule</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">tune</span></div>
+<div style="display:flex;gap:8px;padding:14px 20px 0"><span style="font:600 12.5px system-ui;padding:8px 13px;border-radius:20px;background:var(--health);color:#04222b;flex:none">Today</span><span style="font:600 12.5px system-ui;padding:8px 13px;border-radius:20px;background:var(--card2);color:var(--lab2);flex:none">Week</span><span style="font:600 12.5px system-ui;padding:8px 13px;border-radius:20px;background:var(--card2);color:var(--warn);flex:none">Overdue 0</span><span style="font:600 12.5px system-ui;padding:8px 13px;border-radius:20px;background:var(--card2);color:var(--lab2);flex:none">No date 3</span></div>
+
+<div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:10px">
+<div style="background:var(--card);border:1px solid var(--sep);border-left:4px solid var(--health);border-radius:14px;padding:13px 16px;opacity:.6"><div style="font:600 13px/1.35 system-ui;color:var(--health)">05:41 · 🏋️ Health · ritual</div><div style="margin-top:4px;font-size:16px;text-decoration:line-through">Water &amp; morning stretch</div></div>
+<div style="background:var(--card);border:1px solid var(--sep);border-left:4px solid var(--work);border-radius:14px;padding:13px 16px"><div style="font:600 13px/1.35 system-ui;color:var(--work)">10:00 · 💼 Work · sprint</div><div style="margin-top:4px;font-size:16px">Break down Q3 Project Proposal</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">25 min · 15 already logged</div></div>
+<div style="background:var(--card);border:1px solid var(--sep);border-left:4px solid var(--admin);border-radius:14px;padding:13px 16px"><div style="font:600 13px/1.35 system-ui;color:var(--admin)">13:00 · 📝 Admin · task</div><div style="margin-top:4px;font-size:16px;text-decoration:{{ mailStrike }};color:{{ mailFg }}">Sort through mail pile</div></div>
+<div style="background:var(--card);border:1px solid var(--sep);border-left:4px solid var(--growth);border-radius:14px;padding:13px 16px"><div style="font:600 13px/1.35 system-ui;color:var(--growth)">21:00 · 🧘 Growth · nudge</div><div style="margin-top:4px;font-size:16px">Evening wind-down &amp; brain dump</div></div>
+<div style="background:var(--card);border:1px solid var(--sep);border-left:4px solid rgba(255,255,255,.2);border-radius:14px;padding:13px 16px"><div style="font:600 13px/1.35 system-ui;color:var(--lab2)">No time · 📥 unfiled · capture</div><div style="margin-top:4px;font-size:16px">Research car insurance rates</div></div>
+</div>
+
+<div style="padding:22px 20px 0"><div style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--growth)">Rituals &amp; nudges</span><span onClick="{{ goNudges }}" style="font:400 13px/1.35 system-ui;color:var(--growth);cursor:pointer">History</span></div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font-size:20px">🏋️</span><div style="flex:1"><div style="font-size:16px">Hydration &amp; posture reset</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">Every 90 minutes<sc-if value="{{ streaksOn }}"><span> · <span style="color:var(--health)">6 of 7 days</span></span></sc-if></div></div><div style="width:51px;height:31px;border-radius:16px;background:var(--goV);position:relative;flex:none"><div style="position:absolute;top:2px;left:22px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font-size:20px">📥</span><div style="flex:1"><div style="font-size:16px">Unprocessed inbox items</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">When inbox count &gt; 0 · <span style="color:var(--warn)">4 waiting</span></div></div><div style="width:51px;height:31px;border-radius:16px;background:var(--goV);position:relative;flex:none"><div style="position:absolute;top:2px;left:22px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 16px;box-shadow:inset 0 -1px 0 var(--sep);opacity:.6"><span style="font-size:20px">🧘</span><div style="flex:1"><div style="font-size:16px">Evening wind-down</div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:2px">Daily 21:00 · paused</div></div><div style="width:51px;height:31px;border-radius:16px;background:rgba(120,120,128,.3);position:relative;flex:none"><div style="position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:11px 16px;color:var(--growth)"><span style="font:400 21px 'Material Symbols Rounded';line-height:1">add</span><span style="flex:1;font-size:16px">New ritual</span></div>
+</div>
+<div style="font:400 13px/1.45 system-ui;color:var(--lab2);margin-top:10px;padding-bottom:40px">Reminders and nudges share one timeline, and each entry carries its area's colour.</div></div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ fabOpen }}">
+<div onClick="{{ toggleFab }}" style="position:absolute;inset:0;background:var(--scrim);backdrop-filter:blur(6px);z-index:5;animation:scrimIn .22s both;cursor:pointer"></div>
+<div style="position:absolute;inset:0;z-index:5;pointer-events:none">
+<div style="position:absolute;left:20px;top:120px;font:700 24px/1.2 system-ui;letter-spacing:-.6px;color:#fff;max-width:230px;text-wrap:pretty">What just landed in your head?</div>
+<div style="position:absolute;left:20px;top:196px;font:400 13px/1.45 system-ui;color:rgba(255,255,255,.62);max-width:250px">Pick how it arrived. Everything goes to the inbox — you decide what it is later.</div>
+<div style="pointer-events:auto">
+<div onClick="{{ pickNote }}" style="position:absolute;left:302px;bottom:488px;width:62px;height:62px;cursor:pointer;animation:fanIn .34s cubic-bezier(.2,1.3,.4,1) 160ms both">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--workV);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">edit_note</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Note</span></div></div>
+<div onClick="{{ pickVoice }}" style="position:absolute;left:289px;bottom:410px;width:62px;height:62px;cursor:pointer;animation:fanIn .34s cubic-bezier(.2,1.3,.4,1) 120ms both">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--growthV);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">graphic_eq</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Voice</span></div></div>
+<div onClick="{{ pickPhoto }}" style="position:absolute;left:284px;bottom:332px;width:62px;height:62px;cursor:pointer;animation:fanIn .34s cubic-bezier(.2,1.3,.4,1) 80ms both">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--healthV);color:#04222b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">photo_camera</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Photo</span></div></div>
+<div onClick="{{ pickLink }}" style="position:absolute;left:289px;bottom:254px;width:62px;height:62px;cursor:pointer;animation:fanIn .34s cubic-bezier(.2,1.3,.4,1) 40ms both">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--adminV);color:#211500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">link</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Link</span></div></div>
+<div onClick="{{ pickTask }}" style="position:absolute;left:302px;bottom:176px;width:62px;height:62px;cursor:pointer;animation:fanIn .34s cubic-bezier(.2,1.3,.4,1) 0ms both">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--goV);color:#04140a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">check_circle</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Task</span></div></div>
+</div></div>
+<div onClick="{{ toggleFab }}" style="position:absolute;right:20px;bottom:100px;width:60px;height:60px;border-radius:50%;background:var(--workV);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(10,132,255,.5);cursor:pointer;z-index:6;transition:transform .28s cubic-bezier(.2,1.3,.4,1);transform:rotate(135deg)"><span style="font:400 30px 'Material Symbols Rounded';line-height:1">add</span></div>
+</sc-if>
+<sc-if value="{{ fabClosed }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ toggleFab }}" style="position:absolute;right:20px;bottom:100px;width:60px;height:60px;border-radius:50%;background:var(--workV);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(10,132,255,.5);cursor:pointer;z-index:6;transition:transform .28s cubic-bezier(.2,1.3,.4,1);transform:rotate(0deg)"><span style="font:400 30px 'Material Symbols Rounded';line-height:1">add</span></div>
+</sc-if>
+
+<div style="position:absolute;left:0;right:0;bottom:0;height:84px;background:var(--bar);border-top:1px solid var(--sep);display:flex;align-items:flex-start;padding-top:10px;backdrop-filter:blur(20px)">
+<div onClick="{{ goToday }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font:500 10px system-ui;cursor:pointer;color:{{ cToday }}"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' {{ fToday }}">trending_up</span>Today</div>
+<div onClick="{{ goAreas }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font:500 10px system-ui;cursor:pointer;color:{{ cAreas }}"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' {{ fAreas }}">grid_view</span>Areas</div>
+<div onClick="{{ goInbox }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font:500 10px system-ui;cursor:pointer;color:{{ cInbox }}"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' {{ fInbox }}">inbox</span>Inbox</div>
+<div onClick="{{ goSchedule }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font:500 10px system-ui;cursor:pointer;color:{{ cSchedule }}"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' {{ fSchedule }}">calendar_month</span>Schedule</div>
+</div>
+<sc-if value="{{ isCapture }}">
+<div style="position:absolute;inset:0;background:var(--bg);z-index:7;display:flex;flex-direction:column;animation:sheetUp .26s cubic-bezier(.2,.9,.3,1) both">
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font:600 15px system-ui;letter-spacing:.2px;flex:none"><span>09:41</span><div style="display:flex;align-items:center;gap:5px"><span style="font:400 16px 'Material Symbols Rounded';line-height:1">signal_cellular_alt</span><span style="font:400 16px 'Material Symbols Rounded';line-height:1">wifi</span><span style="font:400 17px 'Material Symbols Rounded';line-height:1">battery_full</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px;flex:none"><span onClick="{{ closeCapture }}" style="font:400 16px system-ui;color:var(--lab2);cursor:pointer">Cancel</span><div style="display:flex;align-items:center;gap:7px;font:600 16px system-ui"><span style="width:22px;height:22px;border-radius:50%;background:{{ capColor }};color:{{ capOn }};display:flex;align-items:center;justify-content:center;flex:none"><span style="font:400 14px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">{{ capIcon }}</span></span>{{ capTitle }}</div><span onClick="{{ saveCapture }}" style="font:700 16px system-ui;color:var(--workV);cursor:pointer">Save</span></div>
+
+<div style="flex:1;overflow-y:auto;overflow-x:hidden">
+<div style="padding:18px 20px 0"><div style="font:400 13px/1.45 system-ui;color:var(--lab2)">{{ capHint }}</div></div>
+
+<sc-if value="{{ isNote }}"><div style="padding:12px 20px 0"><div style="background:var(--card2);border-radius:14px;border:1px solid var(--sep);padding:16px;min-height:104px;font:400 17px/1.4 system-ui">Ask the GP about the referral letter<span style="display:inline-block;width:2px;height:19px;background:var(--workV);vertical-align:-3px;margin-left:2px"></span></div></div></sc-if>
+
+<sc-if value="{{ isVoice }}"><div style="padding:12px 20px 0"><div style="background:var(--card2);border-radius:14px;border:1px solid var(--sep);padding:18px 16px">
+<div style="display:flex;align-items:center;gap:12px"><span style="width:44px;height:44px;border-radius:50%;background:var(--risk);color:#fff;display:flex;align-items:center;justify-content:center;flex:none"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">stop</span></span><div style="display:flex;align-items:flex-end;gap:2px;height:30px;flex:1">{{ wave }}</div><span style="font:600 15px ui-monospace,Menlo,monospace;color:var(--lab2);flex:none">0:08</span></div>
+<div style="font:400 15px/1.45 system-ui;margin-top:14px">“Ask the GP about the referral letter — the one from March.”</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:8px">Transcribed as you speak. Tap the text to correct it.</div></div></div></sc-if>
+
+<sc-if value="{{ isPhoto }}"><div style="padding:12px 20px 0"><div style="background:var(--card2);border-radius:14px;border:1px solid var(--sep);overflow:hidden">
+<div style="height:190px;background:repeating-linear-gradient(135deg,var(--sep) 0 8px,transparent 8px 16px);display:flex;align-items:center;justify-content:center"><span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--lab3)">CAMERA CAPTURE</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:14px 16px"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);flex:1">Text in the photo is read automatically.</span><span style="font:600 13px system-ui;color:var(--workV);flex:none;cursor:pointer">Retake</span></div></div></div></sc-if>
+
+<sc-if value="{{ isLink }}"><div style="padding:12px 20px 0">
+<div style="background:var(--card2);border-radius:14px;border:1px solid var(--sep);padding:14px 16px;font:400 15px ui-monospace,Menlo,monospace;color:var(--healthV);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">nhs.uk/referrals/gp-letter</div>
+<div style="background:var(--card2);border-radius:14px;border:1px solid var(--sep);margin-top:10px;padding:14px 16px"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">From the page</div><div style="font:600 16px/1.3 system-ui;margin-top:6px">How GP referral letters work</div><div style="font:400 13px/1.4 system-ui;color:var(--lab2);margin-top:4px">Read from the clipboard. Saved with the link.</div></div></div></sc-if>
+
+<sc-if value="{{ isTask }}"><div style="padding:12px 20px 0">
+<div style="background:var(--card2);border-radius:14px;border:1px solid var(--sep);padding:16px;font:400 17px/1.4 system-ui">Ask the GP about the referral letter<span style="display:inline-block;width:2px;height:19px;background:var(--goV);vertical-align:-3px;margin-left:2px"></span></div>
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2);margin-top:18px">How long will it take?</div>
+<div style="display:flex;gap:8px;margin-top:10px">
+<span onClick="{{ eff15 }}" style="flex:1;height:46px;border-radius:12px;background:{{ e15b }};color:{{ e15f }};display:flex;align-items:center;justify-content:center;font:700 14px system-ui;cursor:pointer">15 min</span>
+<span onClick="{{ eff30 }}" style="flex:1;height:46px;border-radius:12px;background:{{ e30b }};color:{{ e30f }};display:flex;align-items:center;justify-content:center;font:700 14px system-ui;cursor:pointer">30 min</span>
+<span onClick="{{ eff60 }}" style="flex:1;height:46px;border-radius:12px;background:{{ e60b }};color:{{ e60f }};display:flex;align-items:center;justify-content:center;font:700 14px system-ui;cursor:pointer">1 hr</span></div></div></sc-if>
+
+<div style="padding:22px 20px 0"><div style="display:flex;align-items:center;gap:6px;font:400 13px/1.35 system-ui;color:var(--lab2)"><span style="font:400 15px 'Material Symbols Rounded';line-height:1">lock_clock</span>{{ capFoot }}</div></div>
+
+<div style="padding:22px 20px 0">
+<div style="display:flex;align-items:baseline;gap:6px"><span style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Life area</span><span style="font:400 13px/1.35 system-ui;color:var(--lab3)">optional</span></div>
+<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><span onClick="{{ arealater }}" style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:{{ ablater }};color:{{ aflater }};flex:none;cursor:pointer">Decide later</span><span onClick="{{ areaadmin }}" style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:{{ abadmin }};color:{{ afadmin }};flex:none;cursor:pointer">📝 Admin & Home</span><span onClick="{{ areahealth }}" style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:{{ abhealth }};color:{{ afhealth }};flex:none;cursor:pointer">🏋️ Health</span><span onClick="{{ areawork }}" style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:{{ abwork }};color:{{ afwork }};flex:none;cursor:pointer">💼 Work</span><span onClick="{{ areagrowth }}" style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:{{ abgrowth }};color:{{ afgrowth }};flex:none;cursor:pointer">🧘 Growth</span><span onClick="{{ areahobby }}" style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:{{ abhobby }};color:{{ afhobby }};flex:none;cursor:pointer">🎨 Hobbies</span></div>
+<div style="font:400 13px/1.45 system-ui;color:var(--lab2);margin-top:10px">Health looks likely — it mentions the GP.</div></div>
+<div style="height:210px"></div></div>
+
+<div style="position:absolute;left:0;right:0;bottom:0;padding:16px 20px 40px;background:var(--bg);box-shadow:0 -1px 0 var(--sep)">
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2)">Inbox: <span style="color:var(--warn)">4 waiting</span> · 11 captured this week, 7 cleared</div>
+<div onClick="{{ saveCapture }}" style="height:54px;border-radius:14px;background:{{ capColor }};color:{{ capOn }};display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px system-ui;margin-top:14px;cursor:pointer"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">{{ capCta }}</span>{{ capCtaLabel }}</div>
+<div onClick="{{ closeCapture }}" style="height:48px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;font:500 16px system-ui;color:var(--lab2);margin-top:10px;cursor:pointer">{{ capAlt }}</div></div>
+<div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:140px;height:5px;border-radius:3px;background:var(--lab);opacity:.85"></div>
+</div></sc-if>
+<div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:140px;height:5px;border-radius:3px;background:var(--lab);opacity:.85;z-index:4"></div>
+</div>
+<div style="font:400 10.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(232,232,234,.3);width:390px">Concept C's momentum semantics on Concept B's spine: the tabs are Today, Areas, Inbox and Schedule, so the life area — not the entity type — is the unit you navigate. Tasks and Journal become views inside an area (and stay reachable from Today's header); Inbox and Schedule are the only cross-area surfaces.</div>
+</div>
+
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}"><div style="flex:1;min-width:280px;max-width:420px;padding-top:8px">
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:rgba(232,232,234,.45)">What changed from the repo</div>
+<div style="display:flex;flex-direction:column;gap:14px;margin-top:14px;font:400 12.5px/1.6 system-ui;color:rgba(232,232,234,.6)">
+<div><span style="color:#e8e8ea;font-weight:600">One accent → two palettes.</span> The web app's <span style="font-family:ui-monospace,Menlo,monospace">#FF5B5B</span> coral painted everything. Now colour carries two jobs, and never both at once.</div>
+<div><span style="color:#e8e8ea;font-weight:600">State palette.</span> <span style="color:#30d158;font-weight:600">Green = closed</span>, plus the two places iOS already owns it — a switch that is on, a permission that is granted. <span style="color:#0a84ff;font-weight:600">Blue = in motion</span> — selection, sprints, minutes, capture. <span style="color:#ff9f0a;font-weight:600">Orange = at risk</span>, <span style="color:#ff453a;font-weight:600">red = overdue or destructive</span>.</div>
+<div><span style="color:#e8e8ea;font-weight:600">Identity palette.</span> Each life area owns a hue, straight off the repo's five domains — <span style="color:#0a84ff">Work</span>, <span style="color:#64d2ff">Health</span>, <span style="color:#ffd60a">Admin</span>, <span style="color:#bf5af2">Growth</span>, <span style="color:#ff6482">Hobbies</span>. Rings, chips, journal entries and inbox glyphs all inherit it, so you can read where your week went without reading a word. Each tab takes its own hue too.</div>
+<div><span style="color:#e8e8ea;font-weight:600">Concept B's spine.</span> The life area is now the unit of navigation, not the entity type: Areas is a tab, each area has its own tinted screen with an avatar rail and Tasks / Journal / Captures chips, and only Inbox and Schedule stay global. Concept C's momentum lives inside it — every area screen carries its own ring, and closure is still the thing being counted.</div>
+<div><span style="color:#e8e8ea;font-weight:600">Nudges → Schedule.</span> B's single timeline absorbs the repo's reminders and nudges, each entry edged in its area's colour, with the rituals list and their streaks underneath.</div>
+<div><span style="color:#e8e8ea;font-weight:600">Totals → rates.</span> HomeView's counts per life area become completion rings. Same inputs, read as movement.</div>
+<div><span style="color:#e8e8ea;font-weight:600">Effort is real.</span> The chips are <span style="font-family:ui-monospace,Menlo,monospace">focusMinutesTarget</span>, already on every seeded task — no new field needed.</div>
+<div><span style="color:#e8e8ea;font-weight:600">Space Mono → SF.</span> Mono is kept for system metadata only; tabular numerals carry the instrument-panel feel instead.</div>
+<div><span style="color:#e8e8ea;font-weight:600">Honest counterweight.</span> Nothing counts a miss. Streaks show hits only, and every screen that celebrates also states what is stale.</div>
+</div>
+</div>
+</sc-if>
+</div>
+</section>
+
+<sc-if value="{{ showBoard }}" hint-placeholder-val="{{ true }}"><section style="background:#101012;padding:34px 44px 60px">
+<div style="display:flex;align-items:baseline;gap:10px;margin:0 0 8px"><span style="font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#0a84ff;color:#fff;border-radius:4px">BOARD</span><span style="font:600 14px system-ui">The screens behind the tabs</span></div>
+<p style="font:400 12.5px/1.65 system-ui;color:rgba(232,232,234,.55);max-width:820px;margin:0 0 30px">Modals and detail views, laid out flat so they can be read side by side. Every field the repo's forms hold is still here — the additions are the effort chip and the closure consequence stated on the button.</p>
+
+<div style="display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap">
+
+<div style="display:flex;flex-direction:column;gap:9px;width:390px;flex:none">
+<div style="display:flex;align-items:baseline;gap:8px;font:400 11.5px system-ui;color:rgba(232,232,234,.55)"><span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:2px 6px;background:rgba(255,255,255,.08);border-radius:5px;color:#8ab6ff">S0</span>Capture fan — expanded, live on every tab</div>
+<div data-theme="{{ theme }}" style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;flex:none;--bg:#15171c;--bar:rgba(29,32,39,.92);--card:#1d2027;--card2:#262a33;--lab:#f5f5f7;--lab2:rgba(235,235,245,.58);--lab3:rgba(235,235,245,.28);--sep:rgba(255,255,255,.12);--go:#30d158;--warn:#ff9f0a;--risk:#ff453a;--work:#0a84ff;--health:#64d2ff;--admin:#ffd60a;--growth:#bf5af2;--hobby:#ff6482;--workV:#0a84ff;--healthV:#64d2ff;--adminV:#ffd60a;--growthV:#bf5af2;--hobbyV:#ff6482;--goV:#30d158;--warnV:#ff9f0a;--tWork:rgba(10,132,255,.16);--tHealth:rgba(100,210,255,.16);--tAdmin:rgba(255,214,10,.16);--tGrowth:rgba(191,90,242,.18);--tHobby:rgba(255,100,130,.18);--scrim:rgba(6,6,10,.62);--trk:rgba(255,255,255,.1);--trk2:rgba(255,255,255,.14);background:var(--bg);color:var(--lab);font-size:17px;line-height:1.25;-webkit-font-smoothing:antialiased;box-shadow:0 24px 70px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.09);font-variant-numeric:tabular-nums">
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font:600 15px system-ui;letter-spacing:.2px;filter:blur(3px);opacity:.5"><span>09:41</span><span style="font:400 17px 'Material Symbols Rounded';line-height:1">battery_full</span></div>
+<div style="padding:20px;filter:blur(4px);opacity:.42">
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Monday 24 August</div>
+<div style="font:700 30px/1.1 system-ui;letter-spacing:-1px;margin-top:6px">Three closed today</div>
+<div style="display:flex;flex-direction:column;gap:10px;margin-top:22px">
+<div style="height:76px;border-radius:16px;background:var(--card);border:1px solid var(--sep)"></div>
+<div style="height:120px;border-radius:16px;background:var(--card);border:1px solid var(--sep)"></div>
+<div style="height:200px;border-radius:16px;background:var(--card);border:1px solid var(--sep)"></div>
+</div></div>
+<div style="position:absolute;inset:0;background:var(--scrim);backdrop-filter:blur(6px)"></div>
+<div style="position:absolute;left:20px;top:120px;font:700 24px/1.2 system-ui;letter-spacing:-.6px;color:#fff;max-width:230px;text-wrap:pretty">What just landed in your head?</div>
+<div style="position:absolute;left:20px;top:196px;font:400 13px/1.45 system-ui;color:rgba(255,255,255,.62);max-width:250px">Pick how it arrived. Everything goes to the inbox — you decide what it is later.</div>
+<div style="position:absolute;left:302px;bottom:488px;width:62px;height:62px">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--workV);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">edit_note</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Note</span></div></div>
+<div style="position:absolute;left:289px;bottom:410px;width:62px;height:62px">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--growthV);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">graphic_eq</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Voice</span></div></div>
+<div style="position:absolute;left:284px;bottom:332px;width:62px;height:62px">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--healthV);color:#04222b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">photo_camera</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Photo</span></div></div>
+<div style="position:absolute;left:289px;bottom:254px;width:62px;height:62px">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--adminV);color:#211500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">link</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Link</span></div></div>
+<div style="position:absolute;left:302px;bottom:176px;width:62px;height:62px">
+<div style="width:62px;height:62px;border-radius:50%;background:var(--goV);color:#04140a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">check_circle</span><span style="font:700 8.5px system-ui;letter-spacing:.07em;text-transform:uppercase">Task</span></div></div>
+<div style="position:absolute;right:20px;bottom:100px;width:60px;height:60px;border-radius:50%;background:var(--workV);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(10,132,255,.5);transform:rotate(135deg)"><span style="font:400 30px 'Material Symbols Rounded';line-height:1">add</span></div>
+<div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:140px;height:5px;border-radius:3px;background:#fff;opacity:.85"></div>
+</div>
+<div style="font:400 10.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(232,232,234,.3);width:390px">Five capture types on a bowed fan that leans out of the button, ordered so the thumb reaches Task first and Note last — the reverse of how often they are used, because the fast ones need the least aim. 78px centres keep a clear 16px between discs, and the nearest sits 46px off the button so the first choice is barely a reach. Each type owns its identity hue and routes into S1 with that type already chosen, so the composer opens as a recorder, a camera, a link card or an effort picker rather than an empty text box.</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:9px;width:390px;flex:none">
+<div style="display:flex;align-items:baseline;gap:8px;font:400 11.5px system-ui;color:rgba(232,232,234,.55)"><span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:2px 6px;background:rgba(255,255,255,.08);border-radius:5px;color:#8ab6ff">S1</span>Quick capture — one thought, three taps</div>
+<div data-theme="{{ theme }}" style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;flex:none;--bg:#15171c;--bar:rgba(29,32,39,.92);--card:#1d2027;--card2:#262a33;--lab:#f5f5f7;--lab2:rgba(235,235,245,.58);--lab3:rgba(235,235,245,.28);--sep:rgba(255,255,255,.12);--go:#30d158;--warn:#ff9f0a;--risk:#ff453a;--work:#0a84ff;--health:#64d2ff;--admin:#ffd60a;--growth:#bf5af2;--hobby:#ff6482;--workV:#0a84ff;--healthV:#64d2ff;--adminV:#ffd60a;--growthV:#bf5af2;--hobbyV:#ff6482;--goV:#30d158;--warnV:#ff9f0a;--tWork:rgba(10,132,255,.16);--tHealth:rgba(100,210,255,.16);--tAdmin:rgba(255,214,10,.16);--tGrowth:rgba(191,90,242,.18);--tHobby:rgba(255,100,130,.18);--scrim:rgba(6,6,10,.62);--trk:rgba(255,255,255,.1);--trk2:rgba(255,255,255,.14);background:var(--bg);color:var(--lab);font-size:17px;line-height:1.25;box-shadow:0 24px 70px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.09);font-variant-numeric:tabular-nums">
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font:600 15px system-ui;letter-spacing:.2px"><span>09:41</span><div style="display:flex;align-items:center;gap:5px"><span style="font:400 16px 'Material Symbols Rounded';line-height:1">signal_cellular_alt</span><span style="font:400 16px 'Material Symbols Rounded';line-height:1">wifi</span><span style="font:400 17px 'Material Symbols Rounded';line-height:1">battery_full</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><span style="font:400 16px system-ui;color:var(--lab2)">Cancel</span><div style="font:600 16px system-ui">Quick capture</div><span style="font:700 16px system-ui;color:var(--work)">Save</span></div>
+
+<div style="padding:18px 20px 0">
+<div style="font:400 13px/1.45 system-ui;color:var(--lab2)">Get it out of your head. You can decide what it is later.</div>
+<div style="background:var(--card2);border-radius:14px;border:1px solid var(--sep);padding:16px;margin-top:12px;min-height:104px;font:400 17px/1.4 system-ui">Ask the GP about the referral letter<span style="display:inline-block;width:2px;height:19px;background:var(--work);vertical-align:-3px;margin-left:2px"></span></div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:10px;font:400 13px/1.35 system-ui;color:var(--lab2)"><span style="font:400 15px 'Material Symbols Rounded';line-height:1">lock_clock</span>Saves to your inbox — nothing gets scheduled yet.</div>
+</div>
+
+<div style="padding:22px 20px 0">
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">How do you want to capture it?</div>
+<div style="display:flex;gap:10px;margin-top:10px">
+<div style="flex:1;height:82px;border-radius:14px;background:var(--work);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span style="font:400 24px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">edit_note</span><span style="font:700 13px system-ui">Type it</span></div>
+<div style="flex:1;height:82px;border-radius:14px;background:var(--card2);border:1px solid var(--sep);color:var(--lab);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span style="font:400 24px 'Material Symbols Rounded';line-height:1">mic</span><span style="font:600 13px system-ui">Hold to talk</span></div>
+<div style="flex:1;height:82px;border-radius:14px;background:var(--card2);border:1px solid var(--sep);color:var(--lab);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><span style="font:400 24px 'Material Symbols Rounded';line-height:1">photo_camera</span><span style="font:600 13px system-ui">Take a photo</span></div>
+</div>
+</div>
+
+<div style="padding:22px 20px 0">
+<div style="display:flex;align-items:baseline;gap:6px"><span style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Life area</span><span style="font:400 13px/1.35 system-ui;color:var(--lab3)">optional</span></div>
+<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+<span style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:var(--work);color:#fff;flex:none">Decide later</span>
+<span style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:var(--tAdmin);color:var(--admin);flex:none">📝 Admin &amp; Home</span>
+<span style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:var(--tHealth);color:var(--health);flex:none">🏋️ Health</span>
+<span style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:var(--tWork);color:var(--work);flex:none">💼 Work</span>
+<span style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:var(--tGrowth);color:var(--growth);flex:none">🧘 Growth</span>
+<span style="font:600 12.5px system-ui;padding:8px 12px;border-radius:9px;background:var(--tHobby);color:var(--hobby);flex:none">🎨 Hobbies</span>
+</div>
+<div style="font:400 13px/1.45 system-ui;color:var(--lab2);margin-top:10px">Health looks likely — it mentions the GP.</div>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0;padding:16px 20px 40px;background:var(--bg);box-shadow:0 -1px 0 var(--sep)">
+<div style="display:flex;align-items:center;gap:10px;font:400 13px/1.35 system-ui;color:var(--lab2)"><span style="flex:1">Inbox: <span style="color:var(--warn)">4 waiting</span> · 11 captured this week, 7 cleared</span><div style="display:flex;align-items:flex-end;gap:2px;height:16px"><i style="width:5px;border-radius:1px;background:var(--workV);display:block;opacity:.85;height:40%"></i><i style="width:5px;border-radius:1px;background:var(--workV);display:block;opacity:.85;height:70%"></i><i style="width:5px;border-radius:1px;background:var(--workV);display:block;opacity:.85;height:55%"></i><i style="width:5px;border-radius:1px;background:var(--workV);display:block;opacity:.85;height:85%"></i><i style="width:5px;border-radius:1px;background:var(--workV);display:block;opacity:.85;height:45%"></i><i style="width:5px;border-radius:1px;background:var(--workV);display:block;opacity:.85;height:60%"></i><i style="width:5px;border-radius:1px;background:var(--workV);display:block;opacity:.4;height:35%"></i></div></div>
+<div style="height:54px;border-radius:14px;background:var(--work);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px system-ui;margin-top:14px"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">inbox</span>Save to inbox</div>
+<div style="height:48px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;gap:8px;font:500 16px system-ui;color:var(--lab2);margin-top:10px">Make it a task instead</div>
+</div>
+<div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:140px;height:5px;border-radius:3px;background:var(--lab);opacity:.85"></div>
+</div>
+<div style="font:400 10.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(232,232,234,.3);width:390px">Redesigned around one question at a time: write it, choose how you captured it, name the area only if you want to. QuickCaptureModal's three CaptureTypes become 82px labelled buttons instead of a floating mic, suggestedLifeAreaId becomes a plain-English hint, and the inbox load sits next to the button that adds to it.</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:9px;width:390px;flex:none">
+<div style="display:flex;align-items:baseline;gap:8px;font:400 11.5px system-ui;color:rgba(232,232,234,.55)"><span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:2px 6px;background:rgba(255,255,255,.08);border-radius:5px;color:#8ab6ff">S2</span>Capture detail — promote to task</div>
+<div data-theme="{{ theme }}" style="width:390px;min-height:844px;border-radius:44px;overflow:hidden;position:relative;flex:none;padding-bottom:40px;--bg:#15171c;--bar:rgba(29,32,39,.92);--card:#1d2027;--card2:#262a33;--lab:#f5f5f7;--lab2:rgba(235,235,245,.58);--lab3:rgba(235,235,245,.28);--sep:rgba(255,255,255,.12);--go:#30d158;--warn:#ff9f0a;--risk:#ff453a;--work:#0a84ff;--health:#64d2ff;--admin:#ffd60a;--growth:#bf5af2;--hobby:#ff6482;--workV:#0a84ff;--healthV:#64d2ff;--adminV:#ffd60a;--growthV:#bf5af2;--hobbyV:#ff6482;--goV:#30d158;--warnV:#ff9f0a;--tWork:rgba(10,132,255,.16);--tHealth:rgba(100,210,255,.16);--tAdmin:rgba(255,214,10,.16);--tGrowth:rgba(191,90,242,.18);--tHobby:rgba(255,100,130,.18);--scrim:rgba(6,6,10,.62);--trk:rgba(255,255,255,.1);--trk2:rgba(255,255,255,.14);background:var(--bg);color:var(--lab);font-size:17px;line-height:1.25;box-shadow:0 24px 70px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.09);font-variant-numeric:tabular-nums">
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font:600 15px system-ui;letter-spacing:.2px"><span>09:41</span><div style="display:flex;align-items:center;gap:5px"><span style="font:400 16px 'Material Symbols Rounded';line-height:1">signal_cellular_alt</span><span style="font:400 16px 'Material Symbols Rounded';line-height:1">wifi</span><span style="font:400 17px 'Material Symbols Rounded';line-height:1">battery_full</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">chevron_left</span><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">📸 Photo capture</div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">more_horiz</span></div>
+<div style="padding:12px 20px 0">
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);overflow:hidden">
+<div style="height:150px;background:repeating-linear-gradient(135deg,var(--sep) 0 8px,transparent 8px 16px);display:flex;align-items:center;justify-content:center"><span style="font:400 11px ui-monospace,Menlo,monospace;color:var(--lab3)">whiteboard photo</span></div>
+<div style="padding:16px"><div style="font:400 13px/1.35 system-ui;color:var(--lab2)">Captured 12 hours ago</div><div style="font:600 21px/25px system-ui;letter-spacing:-.4px;margin-top:6px">Whiteboard sketch of habit architecture</div>
+<div style="margin-top:14px;background:var(--card2);border-radius:12px;padding:12px"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Note</div><div style="font:400 16px/1.4 system-ui;margin-top:6px">Drafted 3-part loop: trigger (morning alarm), 30-second micro-action (fill water bottle), dopamine reward (check off item).</div></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:10px">Suggested area: 🧘 Personal Growth</div></div>
+</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:14px">
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Make it a task</div>
+<div style="background:var(--card2);border-radius:12px;padding:14px 16px;font:400 16px system-ui;margin-top:10px">Build the 3-part habit loop into the morning routine</div>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><span style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2);width:100%">Effort</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">10 min</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--work);color:#fff;flex:none">15 min</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">30 min</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">unknown</span></div>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><span style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2);width:100%">When</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">Today</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--work);color:#fff;flex:none">Tomorrow</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">This week</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">Someday</span></div>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tGrowth);color:var(--growth);flex:none">🧘 Personal Growth</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">routine</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">P3</span></div>
+<div style="height:54px;border-radius:14px;background:var(--work);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px system-ui;margin-top:16px">Add to tomorrow · 3 of 4</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);text-align:center;margin-top:10px">Tomorrow already holds two items totalling 50 minutes.</div>
+</div>
+<div style="display:flex;gap:10px;margin-top:14px"><div style="flex:1;height:54px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;font:500 16px system-ui;color:var(--lab2)">Journal it instead</div><div style="width:72px;height:54px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;color:var(--risk)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1">delete</span></div></div>
+</div>
+<div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:140px;height:5px;border-radius:3px;background:var(--lab);opacity:.85"></div>
+</div>
+<div style="font:400 10.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(232,232,234,.3);width:390px">Same triage outcomes as CaptureInboxView — promote to task, promote to journal, delete. Effort maps to focusMinutesTarget, so no new field. The load line is what stops "today" becoming a second backlog.</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:9px;width:390px;flex:none">
+<div style="display:flex;align-items:baseline;gap:8px;font:400 11.5px system-ui;color:rgba(232,232,234,.55)"><span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:2px 6px;background:rgba(255,255,255,.08);border-radius:5px;color:#8ab6ff">S3</span>Task detail &amp; focus plan</div>
+<div data-theme="{{ theme }}" style="width:390px;min-height:844px;border-radius:44px;overflow:hidden;position:relative;flex:none;padding-bottom:40px;--bg:#15171c;--bar:rgba(29,32,39,.92);--card:#1d2027;--card2:#262a33;--lab:#f5f5f7;--lab2:rgba(235,235,245,.58);--lab3:rgba(235,235,245,.28);--sep:rgba(255,255,255,.12);--go:#30d158;--warn:#ff9f0a;--risk:#ff453a;--work:#0a84ff;--health:#64d2ff;--admin:#ffd60a;--growth:#bf5af2;--hobby:#ff6482;--workV:#0a84ff;--healthV:#64d2ff;--adminV:#ffd60a;--growthV:#bf5af2;--hobbyV:#ff6482;--goV:#30d158;--warnV:#ff9f0a;--tWork:rgba(10,132,255,.16);--tHealth:rgba(100,210,255,.16);--tAdmin:rgba(255,214,10,.16);--tGrowth:rgba(191,90,242,.18);--tHobby:rgba(255,100,130,.18);--scrim:rgba(6,6,10,.62);--trk:rgba(255,255,255,.1);--trk2:rgba(255,255,255,.14);background:var(--bg);color:var(--lab);font-size:17px;line-height:1.25;box-shadow:0 24px 70px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.09);font-variant-numeric:tabular-nums">
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font:600 15px system-ui;letter-spacing:.2px"><span>09:41</span><div style="display:flex;align-items:center;gap:5px"><span style="font:400 16px 'Material Symbols Rounded';line-height:1">signal_cellular_alt</span><span style="font:400 16px 'Material Symbols Rounded';line-height:1">wifi</span><span style="font:400 17px 'Material Symbols Rounded';line-height:1">battery_full</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div style="display:flex;align-items:center;gap:2px;color:var(--lab2)"><span style="font:400 22px 'Material Symbols Rounded';line-height:1">chevron_left</span><span style="font:400 16px system-ui">Tasks</span></div><span style="font:700 15px system-ui;color:var(--lab3)">Save</span></div>
+<div style="padding:16px 20px 0">
+<div style="font:600 24px/28px system-ui;letter-spacing:-.5px">Break down Q3 Project Proposal into 15-min micro-steps</div>
+<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--tWork);color:var(--work);flex:none">💼 Work &amp; Career</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--warn);flex:none">P1</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">due today</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--work);color:#fff;flex:none">25 min</span></div>
+<div style="height:54px;border-radius:14px;background:var(--go);color:#04140a;display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px system-ui;margin-top:18px"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">check_circle</span>Close it — keeps a 7-day streak</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);text-align:center;margin-top:8px">Applies immediately — no save needed.</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:20px">
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Momentum here</div>
+<div style="display:flex;align-items:center;gap:16px;margin-top:12px"><div style="width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;font-size:20px;flex:none;background:conic-gradient(var(--work) 0 .67turn,var(--trk) .67turn 1turn)"><div style="position:absolute;inset:4px;border-radius:50%;background:var(--bg)"></div><span style="position:relative;z-index:1">💼</span></div><div style="font:400 13px/1.35 system-ui;color:var(--lab2);flex:1">Work &amp; Career: 2 of 3 closed this week. Last closed two days ago.</div></div>
+</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:14px">
+<div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--work)">Focus plan</div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:10px"><span style="font:700 32px/1 system-ui;letter-spacing:-1px">15</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">of 25 minutes logged</span></div>
+<div style="height:8px;border-radius:4px;background:var(--trk);overflow:hidden;margin-top:12px"><i style="display:block;height:100%;border-radius:4px;background:var(--workV);width:60%"></i></div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:14px"><span style="font:400 13px/1.35 system-ui;color:var(--lab2);flex:1">Checkpoints during the sprint</span><div style="display:flex;gap:4px"><i style="width:9px;height:9px;border-radius:50%;background:var(--workV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--workV);display:block"></i><i style="width:9px;height:9px;border-radius:50%;background:var(--trk2);display:block"></i></div></div>
+<div style="height:44px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;gap:8px;font:500 15px system-ui;color:var(--lab2);margin-top:14px"><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--work)">timer</span>Resume the sprint — 10 min left</div>
+</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:14px">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Notes</span><span style="font-size:16px">Use body-doubling timer. Step 1: Write bullet points for problem statement only.</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="flex:1">Nudge me before it's due</span><div style="width:51px;height:31px;border-radius:16px;background:var(--goV);position:relative;flex:none"><div style="position:absolute;top:2px;left:22px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25)"></div></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="flex:1">Tags</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2)">deep-work</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="flex:1;color:var(--lab2)">Change area, priority or due date</span><span style="font:400 18px 'Material Symbols Rounded';line-height:1;color:var(--lab3)">expand_more</span></div>
+</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:14px">Created 2 days ago · in progress · <span style="color:var(--risk)">Delete</span></div>
+</div>
+<div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:140px;height:5px;border-radius:3px;background:var(--lab);opacity:.85"></div>
+</div>
+<div style="font:400 10.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(232,232,234,.3);width:390px">TaskDetailModal's every field survives — title, area, priority, due date, tags, notes, focus target, nudge cadence. New: the effort chip and the streak consequence written on the button.</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:9px;width:390px;flex:none">
+<div style="display:flex;align-items:baseline;gap:8px;font:400 11.5px system-ui;color:rgba(232,232,234,.55)"><span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:2px 6px;background:rgba(255,255,255,.08);border-radius:5px;color:#8ab6ff">S4</span>Focus sprint — the countdown ring</div>
+<div data-theme="{{ theme }}" style="width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;flex:none;--bg:#15171c;--bar:rgba(29,32,39,.92);--card:#1d2027;--card2:#262a33;--lab:#f5f5f7;--lab2:rgba(235,235,245,.58);--lab3:rgba(235,235,245,.28);--sep:rgba(255,255,255,.12);--go:#30d158;--warn:#ff9f0a;--risk:#ff453a;--work:#0a84ff;--health:#64d2ff;--admin:#ffd60a;--growth:#bf5af2;--hobby:#ff6482;--workV:#0a84ff;--healthV:#64d2ff;--adminV:#ffd60a;--growthV:#bf5af2;--hobbyV:#ff6482;--goV:#30d158;--warnV:#ff9f0a;--tWork:rgba(10,132,255,.16);--tHealth:rgba(100,210,255,.16);--tAdmin:rgba(255,214,10,.16);--tGrowth:rgba(191,90,242,.18);--tHobby:rgba(255,100,130,.18);--scrim:rgba(6,6,10,.62);--trk:rgba(255,255,255,.1);--trk2:rgba(255,255,255,.14);background:var(--bg);color:var(--lab);font-size:17px;line-height:1.25;box-shadow:0 24px 70px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.09);font-variant-numeric:tabular-nums">
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font:600 15px system-ui;letter-spacing:.2px"><span>09:41</span><div style="display:flex;align-items:center;gap:5px"><span style="font:400 16px 'Material Symbols Rounded';line-height:1">signal_cellular_alt</span><span style="font:400 16px 'Material Symbols Rounded';line-height:1">wifi</span><span style="font:400 17px 'Material Symbols Rounded';line-height:1">battery_full</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">expand_more</span><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Focus sprint</div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">tune</span></div>
+<div style="padding:26px 20px 0;display:flex;flex-direction:column;align-items:center">
+<div style="width:236px;height:236px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;background:conic-gradient(var(--work) 0turn .6turn,var(--trk) .6turn 1turn);box-shadow:0 0 0 10px rgba(10,132,255,.12)"><div style="position:absolute;inset:16px;border-radius:50%;background:var(--bg)"></div><div style="position:relative;z-index:1;text-align:center"><div style="font:700 62px/1 system-ui;letter-spacing:-2.5px;color:var(--work)">10:00</div><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2);margin-top:8px">15 of 25 min logged</div></div></div>
+<div style="font:600 21px/25px system-ui;letter-spacing:-.4px;margin-top:26px;text-align:center;padding:0 10px">Break down Q3 Project Proposal into 15-min micro-steps</div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:8px">💼 Work &amp; Career · started 09:26</div>
+</div>
+<div style="padding:26px 20px 0"><div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--work);flex:1">Checkpoints</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">2 of 3 fired</span></div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:14px"><div style="flex:1;height:8px;border-radius:4px;background:var(--trk);position:relative"><i style="display:block;height:100%;border-radius:4px;background:var(--workV);width:60%"></i><i style="position:absolute;top:-3px;left:25%;width:14px;height:14px;border-radius:50%;background:var(--work);border:3px solid var(--bg)"></i><i style="position:absolute;top:-3px;left:50%;width:14px;height:14px;border-radius:50%;background:var(--work);border:3px solid var(--bg)"></i><i style="position:absolute;top:-3px;left:75%;width:14px;height:14px;border-radius:50%;background:var(--trk2);border:3px solid var(--bg)"></i></div></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:14px">Last checkpoint 08:20 — you marked it <span style="color:var(--go)">on track</span>. Next at 18 minutes.</div>
+</div></div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:0 20px 44px">
+<div style="display:flex;gap:8px;margin-bottom:14px"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:1;text-align:center">+1 min</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:1;text-align:center">+5 min</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:1;text-align:center">+10 min</span></div>
+<div style="display:flex;gap:10px"><div style="flex:1;height:54px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;gap:8px;font:500 16px system-ui;color:var(--lab2)"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">pause</span>Pause</div><div style="flex:1;height:54px;border-radius:14px;background:var(--go);color:#04140a;display:flex;align-items:center;justify-content:center;gap:8px;font:700 17px system-ui"><span style="font:400 20px 'Material Symbols Rounded';line-height:1;font-variation-settings:'FILL' 1">check_circle</span>Close it</div></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);text-align:center;margin-top:12px">Stopping early still logs the minutes you did.</div>
+</div>
+<div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:140px;height:5px;border-radius:3px;background:var(--lab);opacity:.85"></div>
+</div>
+<div style="font:400 10.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(232,232,234,.3);width:390px">FocusTimerBar's whole model — durationSeconds, remainingSeconds, nudgeCheckpoints, triggeredNudgeIndices, add-seconds — in the same ring language as the closure ring, so a sprint reads as momentum in progress.</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:9px;width:390px;flex:none">
+<div style="display:flex;align-items:baseline;gap:8px;font:400 11.5px system-ui;color:rgba(232,232,234,.55)"><span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:2px 6px;background:rgba(255,255,255,.08);border-radius:5px;color:#8ab6ff">S5</span>Daily summary — as the week review</div>
+<div data-theme="{{ theme }}" style="width:390px;min-height:844px;border-radius:44px;overflow:hidden;position:relative;flex:none;padding-bottom:40px;--bg:#15171c;--bar:rgba(29,32,39,.92);--card:#1d2027;--card2:#262a33;--lab:#f5f5f7;--lab2:rgba(235,235,245,.58);--lab3:rgba(235,235,245,.28);--sep:rgba(255,255,255,.12);--go:#30d158;--warn:#ff9f0a;--risk:#ff453a;--work:#0a84ff;--health:#64d2ff;--admin:#ffd60a;--growth:#bf5af2;--hobby:#ff6482;--workV:#0a84ff;--healthV:#64d2ff;--adminV:#ffd60a;--growthV:#bf5af2;--hobbyV:#ff6482;--goV:#30d158;--warnV:#ff9f0a;--tWork:rgba(10,132,255,.16);--tHealth:rgba(100,210,255,.16);--tAdmin:rgba(255,214,10,.16);--tGrowth:rgba(191,90,242,.18);--tHobby:rgba(255,100,130,.18);--scrim:rgba(6,6,10,.62);--trk:rgba(255,255,255,.1);--trk2:rgba(255,255,255,.14);background:var(--bg);color:var(--lab);font-size:17px;line-height:1.25;box-shadow:0 24px 70px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.09);font-variant-numeric:tabular-nums">
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 4px;font:600 15px system-ui;letter-spacing:.2px"><span>09:41</span><div style="display:flex;align-items:center;gap:5px"><span style="font:400 16px 'Material Symbols Rounded';line-height:1">signal_cellular_alt</span><span style="font:400 16px 'Material Symbols Rounded';line-height:1">wifi</span><span style="font:400 17px 'Material Symbols Rounded';line-height:1">battery_full</span></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 20px 0;min-height:44px"><div><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Sunday · 8–14 Aug</div><div style="font:700 30px/34px system-ui;letter-spacing:-.7px;margin-top:2px">Week review</div></div><span style="font:400 22px 'Material Symbols Rounded';line-height:1;color:var(--lab2)">refresh</span></div>
+<div style="padding:20px 20px 0">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:700 46px/1 system-ui;letter-spacing:-1.5px;color:var(--go)">8</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">closed · 11 captured · 220 focus minutes</span></div>
+<div style="font:600 21px/26px system-ui;letter-spacing:-.4px;margin-top:16px">Health and Admin stayed clear all week. Hobbies moved once.</div>
+</div>
+<sc-if value="{{ chartsOn }}">
+<div style="padding:20px 20px 0"><div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px">
+<div style="display:flex;align-items:flex-end;gap:6px;height:44px"><i style="flex:1;border-radius:3px;background:var(--goV);display:block;opacity:.85;height:35%"></i><i style="flex:1;border-radius:3px;background:var(--goV);display:block;opacity:.85;height:35%"></i><i style="flex:1;border-radius:3px;background:var(--goV);display:block;opacity:.85;height:70%"></i><i style="flex:1;border-radius:3px;background:var(--goV);display:block;opacity:.85;height:35%"></i><i style="flex:1;border-radius:3px;background:var(--goV);display:block;opacity:.85;height:70%"></i><i style="flex:1;border-radius:3px;background:var(--goV);display:block;opacity:.85;height:35%"></i><i style="flex:1;border-radius:3px;background:var(--goV);display:block;opacity:.85;height:70%"></i></div>
+<div style="display:flex;justify-content:space-between;margin-top:8px;font:400 11px system-ui;color:var(--lab3)"><span>Sat</span><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
+</div></div>
+</sc-if>
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--go)">Dopamine wins</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+<div style="font:400 15px/1.4 system-ui"><span style="color:var(--go)">✓</span> Synthesized the user research interviews in one 30-minute sitting</div>
+<div style="font:400 15px/1.4 system-ui"><span style="color:var(--go)">✓</span> Hydration goal hit two days running</div>
+<div style="font:400 15px/1.4 system-ui"><span style="color:var(--go)">✓</span> Desk and painting corner both cleared</div>
+</div></div>
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">What you wrote</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:14px;margin-top:8px"><div style="font:400 15px/1.45 system-ui;color:var(--lab2)">Two entries, both about attention rather than output — a foggy morning managed with 15-minute timers, and a hyperfocus session that landed the state-sync bug once notifications were off.</div></div></div>
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--work)">Focus stamina</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);padding:16px;margin-top:8px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font:700 32px/1 system-ui;letter-spacing:-1px">83%</span><span style="font:400 13px/1.35 system-ui;color:var(--lab2)">of targeted minutes actually logged</span></div>
+<div style="font:400 13px/1.35 system-ui;color:var(--lab2);margin-top:10px">Sprints under 20 minutes finish. The 45-minute one was the only overrun.</div>
+</div></div>
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)">Quiet this week</div>
+<div style="font:400 15px/1.45 system-ui;color:var(--lab2);margin-top:8px">Nothing closed in Hobbies &amp; Projects since Sunday, and four captures are still unfiled. Neither is a failure — they are just what next week starts with.</div></div>
+<div style="padding:22px 20px 0"><div style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2)">Gentle kickstart</div>
+<div style="background:var(--card);border-radius:16px;border:1px solid var(--sep);margin-top:8px">
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px;box-shadow:inset 0 -1px 0 var(--sep)"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">15 min</span><span style="flex:1;font-size:16px">Sort the mail pile before anything else</span></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 16px"><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">5 min</span><span style="flex:1;font-size:16px">Bin or file the two oldest captures</span></div>
+</div></div>
+<div style="padding:20px"><div style="display:flex;gap:10px"><div style="flex:1;height:54px;border-radius:14px;background:var(--work);color:#fff;display:flex;align-items:center;justify-content:center;font:700 17px system-ui">Write one line</div><div style="flex:1;height:54px;border-radius:14px;border:1px solid var(--sep);display:flex;align-items:center;justify-content:center;font:500 16px system-ui;color:var(--lab2)">Skip</div></div>
+<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><span style="font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--lab2);width:100%">Tone</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--work);color:#fff;flex:none">energizing</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">gentle</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">bulleted</span><span style="font:600 12.5px system-ui;padding:7px 12px;border-radius:9px;background:var(--card2);color:var(--lab2);flex:none">coaching</span></div></div>
+<div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:140px;height:5px;border-radius:3px;background:var(--lab);opacity:.85"></div>
+</div>
+<div style="font:400 10.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(232,232,234,.3);width:390px">DailySummaryData's fields, kept whole — headline, dopamineWins, journalReflections, focusStaminaInsight, gentleTomorrowKickstart, tone — but generated once a week, on Sunday, so the recap is evidence rather than a daily verdict.</div>
+</div>
+
+</div>
+
+<p style="font:400 12.5px/1.65 system-ui;color:rgba(232,232,234,.5);margin:34px 0 0">Try next: "swap the canvas to the near-black" · "give Tasks a Never-moved group using capture age" · "make the closure moment animate the ring".</p>
+</section>
+
+
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;dailyGoal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:12,&quot;min&quot;:3,&quot;max&quot;:12,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Momentum ruleset&quot;},&quot;showStreaks&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Momentum ruleset&quot;},&quot;showCharts&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Momentum ruleset&quot;},&quot;celebrateOnClose&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Momentum ruleset&quot;},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Presentation&quot;},&quot;showBoard&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Presentation&quot;}}">
+class Component extends DCLogic {
+  state = { route: 'today', areaKey: 'admin', mailDone: false, celebrate: false, overlay: null, secs: 600, themeOverride: null, fab: false, capType: 'note', capArea: 'later', capEffort: '15', backTo: 'today' };
+
+  theme() { return this.state.themeOverride ?? ((this.props || {}).theme === 'light' ? 'light' : 'dark'); }
+  track() { return this.theme() === 'light' ? 'rgba(60,60,67,.14)' : 'rgba(255,255,255,.1)'; }
+
+  nav(r) { return () => this.setState({ route: r, overlay: null, fab: false }); }
+
+  CAP = {
+    note:  { t: 'Note',  ic: 'edit_note',     c: '--workV',   on: '#fff',    hint: 'Get it out of your head. You can decide what it is later.', foot: 'Saves to your inbox — nothing gets scheduled yet.', cta: 'inbox', ctaLabel: 'Save to inbox', alt: 'Make it a task instead' },
+    voice: { t: 'Voice note', ic: 'graphic_eq', c: '--growthV', on: '#fff',  hint: 'Still recording. Stop when you have said it all.', foot: 'Audio and transcript both go to your inbox.', cta: 'inbox', ctaLabel: 'Save recording', alt: 'Discard and start again' },
+    photo: { t: 'Photo',  ic: 'photo_camera', c: '--healthV', on: '#04222b', hint: 'A whiteboard, a letter, a shelf you keep meaning to fix.', foot: 'Saves to your inbox — nothing gets scheduled yet.', cta: 'inbox', ctaLabel: 'Save photo', alt: 'Retake the photo' },
+    link:  { t: 'Link',   ic: 'link',         c: '--adminV',  on: '#211500', hint: 'Pasted from your clipboard. The title came with it.', foot: 'Saves to your inbox — nothing gets scheduled yet.', cta: 'inbox', ctaLabel: 'Save link', alt: 'Paste a different link' },
+    task:  { t: 'Task',   ic: 'check_circle', c: '--goV',     on: '#04140a', hint: 'You already know this is a task. Give it an effort and it lands in Today.', foot: 'Skips the inbox — this one goes straight to your list.', cta: 'add_task', ctaLabel: 'Add to Today', alt: 'Send to inbox instead' }
+  };
+
+  pick(k) { return () => this.setState(s => ({ route: 'capture', capType: k, fab: false, capArea: 'later', backTo: s.route === 'capture' ? s.backTo : s.route })); }
+  pickArea(k) { return () => this.setState({ capArea: k }); }
+  pickEffort(k) { return () => this.setState({ capEffort: k }); }
+
+  capVals() {
+    const s = this.state, d = this.CAP[s.capType] || this.CAP.note;
+    const solid = 'var(' + d.c + ')';
+    const tints = { later: [solid, d.on], admin: ['var(--tAdmin)', 'var(--admin)'], health: ['var(--tHealth)', 'var(--health)'], work: ['var(--tWork)', 'var(--work)'], growth: ['var(--tGrowth)', 'var(--growth)'], hobby: ['var(--tHobby)', 'var(--hobby)'] };
+    const o = {};
+    Object.keys(tints).forEach(k => {
+      const sel = s.capArea === k;
+      o['ab' + k] = sel ? (k === 'later' ? solid : tints[k][0]) : 'var(--card2)';
+      o['af' + k] = sel ? (k === 'later' ? d.on : tints[k][1]) : 'var(--lab2)';
+    });
+    ['15', '30', '60'].forEach(e => {
+      const sel = s.capEffort === e;
+      o['e' + e + 'b'] = sel ? solid : 'var(--card2)';
+      o['e' + e + 'f'] = sel ? d.on : 'var(--lab2)';
+    });
+    const hs = [40, 70, 100, 55, 85, 45, 95, 60, 80, 35, 75, 100, 50, 65];
+    return Object.assign(o, {
+      isCapture: s.route === 'capture', notCapture: s.route !== 'capture',
+      capTitle: d.t, capIcon: d.ic, capColor: solid, capOn: d.on, capHint: d.hint,
+      capFoot: d.foot, capCta: d.cta, capCtaLabel: d.ctaLabel, capAlt: d.alt,
+      isNote: s.capType === 'note', isVoice: s.capType === 'voice', isPhoto: s.capType === 'photo',
+      isLink: s.capType === 'link', isTask: s.capType === 'task',
+      wave: hs.map((v, i) => React.createElement('i', { key: i, style: { width: 4, borderRadius: 2, background: 'var(--growthV)', display: 'block', height: v + '%', opacity: .9, animation: 'wv 1s ease-in-out ' + (i * 70) + 'ms infinite' } })),
+      pickNote: this.pick('note'), pickVoice: this.pick('voice'), pickPhoto: this.pick('photo'),
+      pickLink: this.pick('link'), pickTask: this.pick('task'),
+      arealater: this.pickArea('later'), areaadmin: this.pickArea('admin'), areahealth: this.pickArea('health'),
+      areawork: this.pickArea('work'), areagrowth: this.pickArea('growth'), areahobby: this.pickArea('hobby'),
+      eff15: this.pickEffort('15'), eff30: this.pickEffort('30'), eff60: this.pickEffort('60'),
+      fabOpen: s.fab, fabClosed: !s.fab, appFx: s.fab ? 'blur(4px)' : 'none',
+      toggleFab: () => this.setState(x => ({ fab: !x.fab })),
+      closeCapture: () => this.setState({ route: s.backTo || 'today', fab: false }),
+      saveCapture: () => this.setState({ route: s.capType === 'task' ? 'today' : 'inbox', fab: false })
+    });
+  }
+  goto(key) { return () => this.setState({ route: 'area', areaKey: key }); }
+
+  areaMap() {
+    return {
+      work: { emoji: '💼', name: 'Work & Career', short: 'Work', tint: '#0a84ff', on: '#fff', rgb: '10,132,255',
+        pct: 67, status: '2 of 3 closed this week · 1 log', chips: ['Tasks 3', 'Journal 1', 'Captures 0'],
+        note: 'The Q3 proposal sprint is 15 of 25 minutes in.', bars: [35, 0, 70, 105, 45, 35, 35],
+        cap: ['graphic_eq', 'Idea for modular React component layout', 'Voice note · 8 hr ago'],
+        tasks: [['25 min', 'Break down Q3 Project Proposal into 15-min micro-steps', 'Due today · P1 · deep-work', 0],
+                ['45 min', 'Draft the architecture review deck', 'Thu 20 Aug · P2', 0],
+                ['15 min', 'Reply to the recruiter', 'No date · P4', 0],
+                ['30 min', 'Synthesize the user research interviews', 'Closed Wed 11:20', 1]] },
+      health: { emoji: '🏋️', name: 'Health & Wellness', short: 'Health', tint: '#64d2ff', on: '#04222b', rgb: '100,210,255',
+        pct: 100, status: '3 of 3 closed — all clear', chips: ['Tasks 2', 'Journal 1', 'Captures 0'],
+        note: 'Nothing open is late. The hydration ritual has run six days.', bars: [70, 35, 70, 35, 70, 70, 70],
+        cap: ['photo_camera', 'Photo of the new stretch routine', 'Photo · 2 days ago'],
+        tasks: [['20 min', 'Evening walk', 'Daily · P3', 0],
+                ['30 min', 'Book the physio follow-up', 'Mon 18 Aug · P2', 0],
+                ['10 min', 'Drink 500ml water & 10 min morning stretch', 'Closed 05:41', 1]] },
+      admin: { emoji: '📝', name: 'Admin & Home', short: 'Admin', tint: '#ffd60a', on: '#211500', rgb: '255,214,10',
+        pct: 67, status: '2 of 3 closed this week · 1 capture waiting', chips: ['Tasks 4', 'Journal 1', 'Captures 1'],
+        note: 'Nothing here is overdue. The oldest open item is 3 days old.', bars: [35, 0, 70, 35, 0, 35, 35],
+        cap: ['notes', 'Order replacement water filter cartridges', 'Note · 18 hr ago'],
+        tasks: [['15 min', 'Sort through mail pile on kitchen counter', 'Due today · P2 · quick-win', 2],
+                ['20 min', 'Research car insurance rates', 'No date · P3 · from a capture', 0],
+                ['5 min', 'Order replacement water filters', 'Sun 17 Aug · P4', 0],
+                ['15 min', 'Review weekly budget spreadsheet', 'Closed yesterday 17:02', 1]] },
+      growth: { emoji: '🧘', name: 'Personal Growth', short: 'Growth', tint: '#bf5af2', on: '#fff', rgb: '191,90,242',
+        pct: 50, status: '1 of 2 closed this week · 1 log', chips: ['Tasks 2', 'Journal 1', 'Captures 1'],
+        note: 'Reading has slipped twice. The 20-minute version still finishes.', bars: [0, 35, 35, 0, 70, 0, 35],
+        cap: ['image', 'Whiteboard sketch of habit architecture', 'Photo · 12 hr ago'],
+        tasks: [['20 min', 'Read Chapter 4 of the Executive Function guide', 'Tomorrow · P2 · routine', 0],
+                ['15 min', 'Weekly reflection journal', 'Sun 17 Aug · P3', 0],
+                ['25 min', 'Meditation — day 6', 'Closed 07:10', 1]] },
+      hobby: { emoji: '🎨', name: 'Hobbies & Projects', short: 'Hobbies', tint: '#ff6482', on: '#33000c', rgb: '255,100,130',
+        pct: 50, status: '1 of 2 closed — quiet since Sunday', chips: ['Tasks 2', 'Journal 0', 'Captures 1'],
+        note: 'Nothing has closed here in five days. Both open items are under an hour.', bars: [70, 0, 0, 0, 0, 0, 0],
+        cap: ['link', 'Modular synth patch to try', 'Link · 3 days ago'],
+        tasks: [['30 min', 'Clean audio equipment & organize cables', 'Tomorrow · P3 · quick-win', 0],
+                ['60 min', 'Finish the half-painted canvas', 'No date · P4', 0],
+                ['45 min', 'Restring the guitar', 'Closed Sunday 15:40', 1]] }
+    };
+  }
+
+  areaVals() {
+    const map = this.areaMap(), key = this.state.areaKey, a = map[key] || map.admin;
+    const done = this.state.mailDone;
+    const pct = key === 'admin' && done ? 75 : a.pct;
+    const turn = (pct / 100).toFixed(3);
+    const order = ['work', 'health', 'admin', 'growth', 'hobby'];
+    const taps = { work: this.goto('work'), health: this.goto('health'), admin: this.goto('admin'), growth: this.goto('growth'), hobby: this.goto('hobby') };
+    let firstOpen = true;
+    return {
+      aEmoji: a.emoji, aName: a.name, aTint: a.tint, aOn: a.on,
+      aWash: 'rgba(' + a.rgb + ',.09)', aWash2: 'rgba(' + a.rgb + ',.16)',
+      aStatus: key === 'admin' && done ? '3 of 4 closed this week · 1 capture waiting' : a.status,
+      aChipTasks: a.chips[0], aChipJournal: a.chips[1], aChipCaptures: a.chips[2],
+      aRing: 'conic-gradient(' + a.tint + ' 0 ' + turn + 'turn,' + this.track() + ' ' + turn + 'turn 1turn)',
+      aRingLine: pct + '% of this week\u2019s ' + a.short + ' items closed',
+      aNote: a.note, aCta: 'Add to ' + a.name,
+      aCapIcon: a.cap[0], aCapTitle: a.cap[1], aCapMeta: a.cap[2],
+      aBars: a.bars.map(h => ({ c: a.tint, h: h + '%' })),
+      rail: order.map(k => ({
+        emoji: map[k].emoji, tap: taps[k],
+        bg: k === key ? map[k].tint : 'var(--card)',
+        border: k === key ? 'transparent' : 'var(--sep)',
+        ring: k === key ? '0 0 0 3px rgba(' + map[k].rgb + ',.25)' : 'none'
+      })),
+      aTasks: a.tasks.map(t => {
+        const isMail = t[3] === 2;
+        const isDone = t[3] === 1 || (isMail && done);
+        const next = !isDone && firstOpen;
+        if (!isDone && firstOpen) firstOpen = false;
+        return {
+          effort: t[0], title: t[1],
+          meta: isMail && done ? 'Closed 09:41 · P2 · quick-win' : t[2],
+          dim: isDone ? '.6' : '1',
+          strike: isDone ? 'line-through' : 'none',
+          fg: isDone ? 'var(--lab2)' : 'var(--lab)',
+          chipBg: next ? 'rgba(' + a.rgb + ',' + (this.theme()==='light' ? '.2' : '.16') + ')' : 'var(--card2)',
+          chipFg: next ? a.tint : 'var(--lab2)',
+          tick: isDone ? 'check_circle' : 'radio_button_unchecked',
+          tickColor: isDone ? 'var(--go)' : 'var(--lab3)',
+          tap: isMail ? (() => this.setState(s => ({ mailDone: !s.mailDone, celebrate: false }))) : (() => {})
+        };
+      })
+    };
+  }
+
+  renderVals() {
+    const p = this.props || {};
+    const streaksOn = p.showStreaks ?? true;
+    const chartsOn = p.showCharts ?? true;
+    const goal = p.dailyGoal ?? 5;
+    const s = this.state;
+    const closed = 2 + (s.mailDone ? 1 : 0);
+    const turn = Math.min(closed / goal, 1);
+    const light = this.theme() === 'light';
+    const on = light ? '#23c55e' : '#30d158', tint = this.track();
+    const hue = { today: 'var(--go)', areas: 'var(--growth)', inbox: 'var(--work)', schedule: 'var(--health)' };
+    const inAreas = s.route === 'areas' || s.route === 'area';
+    const tab = (r, on) => ({ c: on ? hue[r] : 'var(--lab2)', f: on ? '1' : '0' });
+    const t1 = tab('today', s.route === 'today'), t2 = tab('areas', inAreas),
+          t3 = tab('inbox', s.route === 'inbox'), t4 = tab('schedule', s.route === 'schedule');
+    const adminTurn = s.mailDone ? 0.75 : 0.67;
+    return {
+      isToday: s.route === 'today', isTasks: s.route === 'tasks',
+      isNudges: s.route === 'nudges', isJournal: s.route === 'journal',
+      isInbox: s.route === 'inbox', isSettings: s.route === 'settings',
+      isAreas: s.route === 'areas', isArea: s.route === 'area', isSchedule: s.route === 'schedule',
+      goToday: this.nav('today'), goTasks: this.nav('tasks'), goNudges: this.nav('nudges'),
+      goJournal: this.nav('journal'), goInbox: this.nav('inbox'), goSettings: this.nav('settings'),
+      goAreas: this.nav('areas'), goSchedule: this.nav('schedule'),
+      goWork: this.goto('work'), goHealth: this.goto('health'), goAdmin: this.goto('admin'),
+      goGrowth: this.goto('growth'), goHobby: this.goto('hobby'),
+      ...this.areaVals(),
+      ...this.capVals(),
+      cToday: t1.c, fToday: t1.f, cAreas: t2.c, fAreas: t2.f,
+      cInbox: t3.c, fInbox: t3.f, cSchedule: t4.c, fSchedule: t4.f,
+      theme: this.theme(),
+      themeIcon: light ? 'dark_mode' : 'light_mode',
+      toggleTheme: () => this.setState({ themeOverride: light ? 'dark' : 'light' }),
+      setLight: () => this.setState({ themeOverride: 'light' }),
+      setDark: () => this.setState({ themeOverride: 'dark' }),
+      lightBg: light ? 'var(--lab)' : 'transparent', lightFg: light ? 'var(--bg)' : 'var(--lab2)',
+      darkBg: light ? 'transparent' : 'var(--lab)', darkFg: light ? 'var(--lab2)' : 'var(--bg)',
+      themeLine: light ? 'Light for daylight and screenshots. Area colours darken so labels stay readable.' : 'Dark by default — the closure green reads brightest against it.',
+      streaksOn, streaksOff: !streaksOn, chartsOn, goal,
+      streakTglBg: streaksOn ? 'var(--go)' : 'rgba(120,120,128,.3)',
+      streakTglX: streaksOn ? '22px' : '2px',
+      closed, openToday: Math.max(goal - closed, 0),
+      streak: 7, streakLine: s.mailDone ? 'Streak kept. Best is 9.' : 'Seven days closed in a row.',
+      ringGrad: 'conic-gradient(' + on + ' 0turn ' + turn.toFixed(3) + 'turn,' + tint + ' ' + turn.toFixed(3) + 'turn 1turn)',
+      ringColor: s.mailDone ? 'var(--go)' : 'var(--lab)',
+      adminGrad: 'conic-gradient(var(--admin) 0 ' + adminTurn + 'turn,' + tint + ' ' + adminTurn + 'turn 1turn)',
+      adminPct: Math.round(adminTurn * 100) + '%',
+      adminBar: Math.round(adminTurn * 100) + '%',
+      adminLine: s.mailDone ? '3 of 4 tasks closed' : '2 of 3 tasks closed',
+      todayBar: s.mailDone ? '105%' : '70%',
+      celebrate: s.celebrate, notCelebrating: !s.celebrate,
+      showNotes: p.showNotes ?? true, showBoard: p.showBoard ?? true,
+      closeOne: () => this.setState({ mailDone: true, celebrate: p.celebrateOnClose ?? true }),
+      undo: () => this.setState({ mailDone: false, celebrate: false }),
+      toggleMail: () => this.setState(st => ({ mailDone: !st.mailDone, celebrate: false })),
+      openTask: () => {},
+      mailDone: s.mailDone,
+      mailIcon: s.mailDone ? 'check_circle' : 'radio_button_unchecked',
+      mailTick: s.mailDone ? 'var(--go)' : 'var(--lab3)',
+      mailFg: s.mailDone ? 'var(--lab2)' : 'var(--lab)',
+      mailStrike: s.mailDone ? 'line-through' : 'none',
+      mailChipBg: s.mailDone ? 'var(--card2)' : 'var(--tAdmin)',
+      mailChipFg: s.mailDone ? 'var(--lab2)' : '#ffd60a',
+      openTotal: s.mailDone ? 3 : 4,
+      dueTodayCount: 2, closedTodayCount: s.mailDone ? 2 : 1
+    };
+  }
+}
+
+</script>
+</body>
+</html>

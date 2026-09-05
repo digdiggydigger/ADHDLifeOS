@@ -151,6 +151,39 @@ run stays green on a machine that has never started it.
 The operative rule is unchanged: every piece of NEW pure logic ships with tests written first (TDD
 below), and no block may claim the 70% bar is met.
 
+## Session handoff (`handoff/`)
+
+**E's 2026-09-06 call, prompted by a live trap: `START-HERE-routines-blockB.md` still instructed a
+fresh session to BUILD a block that had already shipped and merged that morning.** Eleven more
+spent pointers were sitting beside it. The folder also lived outside git, so nothing in it was
+versioned and a mistaken delete was permanent — it is now `handoff/` in this repo.
+
+**Three species live here, and the file NAMES do not distinguish them. This is the trap:**
+
+| species | what it is | lifetime |
+|---|---|---|
+| `START-HERE-*`, `PASTE-*` | Disposable pointers — "paste this into a fresh terminal". | **Spent on use.** Archive them. |
+| `SESSION-OPENER-*` | **Design RECORDS**, despite the name — the why behind settled decisions. | **Permanent. Never archive.** |
+| `ON-DEVICE-CHECKLIST-*`, `VISION-*` | Evidence and direction. | **Permanent.** |
+
+`SESSION-OPENER-routines-design.md` opens with "This is the design record and the why". A rule that
+archived everything named "opener" would bury exactly what this file tells you to read before
+assuming a decision was arbitrary.
+
+**The archive rule: exactly ONE live opener at a time.** When a session is asked to write the
+handoff for the next one, it **archives the `START-HERE-*`/`PASTE-*` pair it consumed in the same
+move that writes the successor** — `git mv` into `handoff/archive/`. At the END, with the successor,
+never at the start: a session that dies mid-way must leave its opener live and still usable, and the
+next session must never start blind. If `handoff/` ever holds two live `START-HERE-*` files, one of
+them is a trap; find out which and archive it.
+
+**`OPEN-ITEMS-REGISTER.md` IS the outstanding list.** Rewrite it at every close-out — current SHA,
+suite/lint/UI figures, what shipped, what is outstanding, what is parked, what is known-noise. Do
+NOT improvise that list in chat: the register went unmaintained for six days while two ad-hoc lists
+were produced in conversation, which is how it fell six days out of date in the first place. When E
+asks what is outstanding, update the register and answer from it, so the answer has history rather
+than being re-derived each time.
+
 ## Visual evidence (`screenshots/`)
 
 **E's 2026-09-05 call, after finding this was a practice nobody had written down.** It had been
