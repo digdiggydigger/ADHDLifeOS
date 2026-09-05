@@ -10,34 +10,57 @@ life-area grid + reorder, daily summary, focus analytics), Tasks (swipeable card
 detail with focus-sprint planner), Capture inbox triage, Journal, Nudges, Settings (incl. account
 deletion), auth (email/password live; Sign in with Apple built but dormant — free dev account),
 and the app-wide focus timer with per-task sprint config, plus a design-token layer mirroring the
-prototype palette. Treat direct instructions from E as the work queue until Cowork writes new blocks.
+prototype palette. Direct instructions from E are the work queue — see "Workflow" below; there is
+no second tool writing blocks.
 
 **`TODO-CLAUDE-CODE.md` was split on 2026-08-23 (E's direction).** It is now ~140 lines holding only
 what is genuinely open; the other 8,000+ lines — every shipped block, plus everything written
 against the deleted Supabase / Cognito-AWS / Poke backends — moved verbatim to `TODO-ARCHIVE.md`.
 **Nothing in the archive is a work item**, but it is the record of *why* much of this app is shaped
 the way it is, so read it before assuming a decision was arbitrary. Note this crosses the usual
-ownership line (Cowork writes that file, Claude Code only ticks checkboxes) — E authorised it
+ownership line as it stood then (Cowork wrote that file, Claude Code only ticked checkboxes; that
+split has since ended — see "Workflow" below) — E authorised it
 explicitly.
 
-## Workflow: Cowork ↔ Claude Code
+## Workflow: Claude Code only (E's call, 2026-09-06)
 
-This project is split across two tools with strict ownership boundaries. Full cycle detail (FEATURE block template, file ownership table, anti-patterns) lives in `WORKFLOW.md` — read it alongside this file.
+**Cowork has no part in this project. E works purely from the Claude Code terminal**, and has done
+for some time — this section described a two-tool split with strict ownership boundaries that no
+longer exists, so every boundary it enforced is now fiction. **Claude Code owns every file here**:
+Swift, tests, `TODO-CLAUDE-CODE.md` in full (blocks as well as checkboxes), `CLAUDE.md`, `handoff/`
+and `screenshots/`.
 
-- **Cowork (Desktop app)** — design phase. Writes `/docs/*.md` (architecture, data models, API/Supabase mapping, wireframes) and adds FEATURE blocks to `TODO-CLAUDE-CODE.md`. Never writes Swift.
-- **Claude Code (this CLI)** — build phase. Reads `/docs/` and `TODO-CLAUDE-CODE.md`, implements via TDD, and only updates checkboxes in `TODO-CLAUDE-CODE.md`.
+**E is the design authority, in chat.** Direct instructions from E ARE the work queue — there is no
+second tool writing FEATURE blocks to wait for. The old rule "stop and wait for user review once a
+block is complete" stands and is unchanged: it is E's review, not Cowork's, and it was always the
+valuable half.
 
-Full role definition lives in `claudecode.md` — read it at the start of a session, it is reference-only and should never be edited. Do not write to any file under `/docs/` — those are Cowork-owned.
+**Two artefacts of the old split remain, and neither is a bug:**
+- The **`⚠ CLAUDE CODE ADDITIONS`** section in `TODO-CLAUDE-CODE.md` was fenced off because writing
+  blocks used to cross an ownership line E had to authorise. That line is gone; the section is kept
+  because it is where the recent arcs' history lives, not because the fence still means anything.
+- **`claudecode.md`** is the TDD role definition and stays reference-only. Its instruction to read
+  `docs/` is the stale part, not the rest.
+
+**`docs/` IS NOT A LIVE REFERENCE — do not read it for context.** Its seven files were last touched
+2026-08-17 and describe the deleted Supabase and AWS backends: Supabase appears 70 times, AWS 105,
+Cognito 64, and **Firebase and Firestore appear zero times**. `ARCHITECTURE.md` opens by calling the
+app "a second client on the Es_Life_OS Supabase backend". **The architecture that is true lives in
+this file's own "Architecture notes" section**, which is maintained; `docs/` is a period record of
+backends that were cut in `5244650`.
 
 **Start of session checklist:**
-1. Read `claudecode.md` for role definition.
-2. Read `WORKFLOW.md` if this is a new/unfamiliar session.
-3. Read `/docs/ARCHITECTURE.md` for context.
-4. Read `TODO-CLAUDE-CODE.md` and pick the next `[ ] UNCHECKED` item under "Current Sprint".
+1. Read `claudecode.md` for the TDD role definition.
+2. Read this file's "Architecture notes" — NOT `docs/`.
+3. Read `handoff/OPEN-ITEMS-REGISTER.md`, which is the outstanding list, and the single live
+   `handoff/START-HERE-*.md` if one exists.
+4. Read `TODO-CLAUDE-CODE.md` for the block you are on.
 5. Implement test-first, then mark the item `[x] COMPLETED` when done.
-6. If blocked, add a `[BLOCKED]` comment inline in `TODO-CLAUDE-CODE.md` explaining what's unclear, and stop — don't guess at unspecified acceptance criteria.
+6. If blocked, add a `[BLOCKED]` comment inline in `TODO-CLAUDE-CODE.md` explaining what is
+   unclear, and stop — don't guess at unspecified acceptance criteria.
 
-Once a TODO item (a full FEATURE block) is completed, stop and wait for user review rather than proceeding to the next item unprompted. Unless specifically stated by Ethan to bypass.
+Once a FEATURE block is completed, stop and wait for E's review rather than proceeding to the next
+item unprompted — unless E says to bypass.
 
 ## Commands
 
@@ -249,13 +272,12 @@ land and the block is NOT done** — fix it, don't report it. This rule exists b
 has silently failed to land in this project more than once, and because a commit command was once
 handed to E as text and never verified.
 
-**Sandbox limitation, and the lock files it leaves behind.** Cowork's sandbox has no GitHub
-credentials — it can commit but **cannot push** (`could not read Username for 'https://github.com'`),
-and a failed push there leaves stale `.git/HEAD.lock` / `.git/index.lock` that the sandbox has no
-permission to delete. **If any git command fails with `Unable to create '.git/index.lock'` or
-similar, clear them first** — `rm -f .git/HEAD.lock .git/index.lock` — then re-run. Also check on
-session start whether local is ahead of `origin/main` (a Cowork-side commit may be sitting
-unpushed) and push it as your first action if so.
+**Stale git lock files.** A push that dies part-way can leave `.git/HEAD.lock` / `.git/index.lock`
+behind. **If any git command fails with `Unable to create '.git/index.lock'` or similar, clear them
+first** — `rm -f .git/HEAD.lock .git/index.lock` — then re-run. Still check on session start whether
+local is ahead of `origin/main` and push it as your first action if so; the cause used to be
+Cowork's credential-less sandbox committing without pushing, and is now simply a session that ended
+before its push landed.
 
 ## Architecture notes
 
@@ -316,7 +338,7 @@ unpushed) and push it as your first action if so.
 - Tests live in `ADHD LifeOSTests/` (XCTest), UI tests in `ADHD LifeOSUITests/`.
 - TDD is mandatory: write the failing test before the implementation for every feature, per `claudecode.md`.
 - No placeholder/TODO-comment code — implementations must be complete and production-ready when a feature is marked `[x] COMPLETED`.
-- Cowork's sandbox has no macOS/Xcode — it cannot independently run any build/test/lint command for this project (stricter than the web project, where root `src/` at least ran in-sandbox). All verification depends on Claude Code's pasted terminal output.
+- **Nothing else can run a build, test or lint for this project** — E reads pasted terminal output rather than re-running it, so an unpasted "it passes" is an unverified claim. This was originally about Cowork's macOS-less sandbox; with Cowork gone it is simply E's standing rule.
 
 ## UI/UX & Apple HIG Architecture (ADHD-Focused)
 
