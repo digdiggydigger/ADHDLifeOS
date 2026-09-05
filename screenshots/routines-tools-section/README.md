@@ -1,17 +1,23 @@
-# Routines section on Tools — E's device verification, 2026-09-05
+# Routines section on Tools — device verification (F-Routines-B-ToolsSection)
 
-Light mode on `wishwashwacky15` (iPhone 15 Pro), build `1ab5ff2`, whose tree is byte-identical to
-main at `511e55b`. These close the one gap the UI journey could not: every automated shot is
-simulator DARK, so light had only ever been rendered in the proposal mock.
+Taken by **E on `wishwashwacky15` (iPhone 15 Pro), LIGHT appearance, 2026-09-05**, signed in to E's
+own live Firebase account (project `adhdlifeos-acb49`), build `1ab5ff2` — whose tree is
+byte-identical to main at `511e55b`, so this walk counts for main.
 
-They also capture the LIVE behaviour, which is the stronger evidence — a static render cannot show
-a rule being applied.
+**No throwaway data was created.** These use E's real saved places (`Home`, `routines test`), and
+the only change made was adding a second leaving action to `Home` — which is itself shot 3's
+subject, and was kept.
 
-| file | what it proves |
-|---|---|
-| `1-section-light-two-routines.jpeg` | The section in light: header, caption and rows on the real tokens. Both directions of `routines test` list independently, each judged on its own steps. |
-| `2-row-opens-place-editor.jpeg` | A row opens the real `Edit place` sheet — the Option A promise that a routine's editor IS the place's Actions section, not a second editor. |
-| `3-home-leaving-routine-appears-and-sorts-first.jpeg` | The threshold is live, not cached: adding a SECOND leaving action to `Home` made its routine appear at once. It also sorted ABOVE `routines test`, which is `PlacesService.sorted` reused rather than copied, so this section and the Places list can never disagree about order. |
+**Why the folder exists — what the tests could not reach.** `ToolsRoutinesJourneyUITests` proves
+the section is reachable and correctly populated, but every automated shot in this project is
+simulator DARK; light had only ever been rendered in a mock. Shot 3 goes further than any test
+does, catching the threshold rule being applied to real data in real time rather than its result.
 
-`Home` renders the 📍 fallback because that place has no emoji set. That is correct — it is
-`PlacesListView`'s own fallback — not a defect.
+| # | Screenshot | What it proves |
+|---|---|---|
+| 1 | `1-section-light-two-routines.jpeg` | The section in LIGHT on device: header, caption and rows on the real asset-catalog tokens. Both directions of `routines test` list independently, each judged on its own steps. |
+| 2 | `2-row-opens-place-editor.jpeg` | A row opens the real `Edit place` sheet — E's settled Option A, where a routine's editor IS the place's Actions section and no second editor exists. |
+| 3 | `3-home-leaving-routine-appears-and-sorts-first.jpeg` | The threshold is live, not cached: adding a SECOND leaving action to `Home` made its routine appear at once. It also sorted ABOVE `routines test`, which is `PlacesService.sorted` reused rather than copied — so this section and the Places list can never disagree about order. |
+
+`Home` renders the 📍 fallback because that place has no emoji set. Correct, not a defect — it is
+`PlacesListView`'s own fallback, matched deliberately so one place cannot wear two glyphs.

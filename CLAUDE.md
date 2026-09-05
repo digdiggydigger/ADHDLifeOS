@@ -69,7 +69,9 @@ runnable. If `xcodebuild` reports the destination is unavailable, run
 `xcrun simctl list devices available` and use an installed device rather than guessing.
 
 A feature isn't done until `swiftlint lint`, the full test suite, and the build all pass — and the
-real terminal output has been pasted for review, not just a "done" summary.
+real terminal output has been pasted for review, not just a "done" summary. **If the block was
+settled by LOOKING at it rather than by an assertion, its `screenshots/` folder and that folder's
+README are part of the same bar** — see "Visual evidence" below.
 
 **Coverage reality (2026-08-30, re-measured):** the app target is **23.62% (8,673/36,721)** over
 **1,846 unit tests**, measured with the documented command at `b1f4b6f`.
@@ -148,6 +150,42 @@ run stays green on a machine that has never started it.
 
 The operative rule is unchanged: every piece of NEW pure logic ships with tests written first (TDD
 below), and no block may claim the 70% bar is met.
+
+## Visual evidence (`screenshots/`)
+
+**E's 2026-09-05 call, after finding this was a practice nobody had written down.** It had been
+followed 137 files deep and was quietly decaying: the six folders in the retired
+`Verification Screenshots/` all documented themselves, while only four of the sixteen in
+`screenshots/` did. Both trees are now merged under **`screenshots/`** — one home, lowercase and
+space-free so no command has to quote it.
+
+**What earns a folder: only what a test cannot assert.** Colour, spacing, a live rule being applied
+to real data, device-only behaviour, or a decision E settled by looking. If a unit or UI test could
+have proved it, write the test instead — a screenshot of something a test already covers is weight
+without evidence. Every one of the 22 existing folders passes that filter; keep it that way.
+
+**The README is mandatory, and it is the whole point.** A folder of undated images is not evidence,
+because the thing a later session needs is not the picture but the CLAIM the picture settled.
+`screenshots/tag-editor-ui/README.md` is the standard to copy, and it is better than most of what
+followed it:
+
+- the environment in one line — device or simulator, OS, backend, signed-in account, date;
+- what driving the real screens caught that the tests could not (the reason the folder exists);
+- any throwaway data created, and the proof it was cleaned up;
+- a table, one row per file: **filename → what it proves.** Numeric prefixes so file order is
+  screen order (`00-`, `01-`, …).
+
+**Twelve folders predate this rule and have no README. That is deliberate, not a backlog** — E's
+call, 2026-09-05: the standard applies from here, and reconstructing what a months-old screenshot
+was meant to prove would be guessing dressed as a record. Leave them. `native-port-first-screens/`
+is the one exception, and its README says in its first line that its provenance is reconstructed.
+
+**Keep everything, forever.** These folders answer "why does it look like this?" months later, which
+is exactly when nobody can reconstruct it. Nothing here is pruned when a block merges.
+
+**Prefer JPEG.** A device screenshot is ~230KB as JPEG; a simulator PNG is several MB, and the tree
+is already 44MB. Use PNG only when the point is pixel-exact — a colour comparison, a contrast
+measurement, anything that will be sampled rather than looked at.
 
 ## Version Control
 
