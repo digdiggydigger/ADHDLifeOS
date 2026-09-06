@@ -1,4 +1,4 @@
-# Open items register — 2026-09-06 (routine record MERGED TO MAIN; swipe path proved on device)
+# Open items register — 2026-09-06, true close-out (routine record merged; swipe proved; snapshot fold done; PR flow begins)
 
 **This file is THE outstanding list.** It is rewritten at every session close-out (CLAUDE.md,
 "Session handoff"), so it is the thing to read — and to update — rather than improvising a list
@@ -8,14 +8,17 @@ Every figure below was measured this session unless marked UNVERIFIED.
 
 ## State
 
-Branch **`main` @ `8bee20b`** (the `--no-ff` merge of `feature/routine-record`, pushed, remote
-matches) · re-verified ON main: unit suite **2,454 / 0** with the emulator UP, SwiftLint
-**0 / 704**, both targets build · `RoutineRecordJourneyUITests` PASSED on the finished eye rule
-(206 s, erased sim; the Places door did NOT bite this run — one pass proves nothing for B2
-below) · full UI target **NOT re-run** · **E's phone carries `7ad72ac`** (tree-identical to
-main's merge; re-install from main at this close-out) · **E CONFIRMED the finished eye rule on
-device, dark and light** (`screenshots/routine-record/11-`…`14-`) · `firestore.rules` live =
-repo (E republished; verified byte-identical).
+**`main` @ `8d5f6fe`** (PR #2's merge), local = remote, tree clean, only `main` exists ·
+**`main` is PROTECTED as of this session (E's call): every change lands through a PR** — flow
+in CLAUDE.md's rewritten "Version Control"; approval requirement dropped by E, so
+`gh pr create` + `gh pr merge --merge --delete-branch` lands without a bypass · last full
+verification: unit suite **2,458 / 0** with the emulator UP (at `45f74f7`), SwiftLint
+**0 / 705**, both targets build · `RoutineRecordJourneyUITests` PASSED on the finished eye rule
+(206 s, erased sim; the Places door did NOT bite this run — one pass proves nothing for B1
+below) · full UI target **NOT re-run** · **E's phone: reinstalled from main at this close-out**
+(the fold's app-code change included; E confirmed the eye rule on device earlier at `7ad72ac`,
+`screenshots/routine-record/11-`…`14-`) · `firestore.rules` live = repo (E republished,
+verified byte-identical) · the emulator was left running.
 
 **Shipped and CLOSED this session (the review session):**
 - **The eye-switch change finished**: journey green on the new rule, `00-`/`01-` re-captured,
@@ -52,17 +55,15 @@ repo (E republished; verified byte-identical).
 
 ## B · Real work, ready to start — recommended order
 
-1. **Re-install the phone from main** — done at this close-out if the log below says so;
-   otherwise the first action of the next session.
-2. **The tab-root not-hittable defect (was B3), honestly restated.** The off-screen
-   `AppTabContent` change did NOT hold (an identical failure on a build carrying it, hidden
-   elements still in the dump). This session's journey run passed the door without it biting —
-   consistent with the shuffling set, proof of nothing. Next: in a FAILURE dump, read the
-   hidden elements' FRAMES (x≈10,000 or on-screen?); use or delete `HitTestProbeUITests`.
-   Optionally run the full UI target once on main and record whether the unstable set moved.
-3. **Arc 2 — first-class routines + the "at a time" trigger.** Not authorised. (carried)
-4. **`F-Search-3-Journal`** — recommendation is to kill the block. E's call. (carried)
-5. **The Live Activity design review** E parked. (carried)
+1. **The tab-root not-hittable defect, honestly restated.** The off-screen `AppTabContent`
+   change did NOT hold (an identical failure on a build carrying it, hidden elements still in
+   the dump). This session's journey run passed the door without it biting — consistent with
+   the shuffling set, proof of nothing. Next: in a FAILURE dump, read the hidden elements'
+   FRAMES (x≈10,000 or on-screen?); use or delete `HitTestProbeUITests`. Optionally run the
+   full UI target once on main and record whether the unstable set moved.
+2. **Arc 2 — first-class routines + the "at a time" trigger.** Not authorised. (carried)
+3. **`F-Search-3-Journal`** — recommendation is to kill the block. E's call. (carried)
+4. **The Live Activity design review** E parked. (carried)
 
 ## C · Parked on E's instruction — do not start unprompted
 
