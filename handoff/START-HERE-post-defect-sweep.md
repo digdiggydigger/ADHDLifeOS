@@ -14,10 +14,12 @@ in the same move that writes your successor, at the END of your session, never a
 1. **`CLAUDE.md`** — Version Control (every change lands through a PR), Repo layout, Workflow,
    Session handoff, Visual evidence.
 2. **`claudecode.md`** — the TDD role definition.
-3. **`handoff/OPEN-ITEMS-REGISTER.md`** — THE outstanding list, rewritten at this close-out.
-   Section A holds E's minutes-each decisions (the `DailySummaryStore` sweep call, the phone
-   reinstall — E's device is TWO app-code fixes behind main); section B's first item is the
-   post-fix full-UI-target baseline run.
+3. **`handoff/OPEN-ITEMS-REGISTER.md`** — THE outstanding list, rewritten at this close-out
+   and kept current through the same evening (phone reinstalled from main at `e4fe956` via
+   `devicectl`, E's word — the device TRACKS MAIN; the widget fold is DEVICE-CONFIRMED,
+   evidence in `screenshots/widget-session-fold/`, do not re-verify). Section A holds E's
+   minutes-each decisions (the `DailySummaryStore` sweep call, the widget's stale "Open
+   Momentum once…" copy); section B's first item is the post-fix full-UI-target baseline run.
 4. `handoff/SESSION-OPENER-routine-record-design.md` — still the newest design record.
 
 **Do NOT read `docs/`.** It is an archive of a legacy build and says this app runs on Supabase.
