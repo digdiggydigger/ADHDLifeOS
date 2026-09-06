@@ -2969,10 +2969,19 @@ the rows.
   keychain — so the journey was run on an erased sim from then on.
 
 **Post-walk, 2026-09-06 (end of session) — two corrections to the block above:**
-- **E's call on device: the eye hides EVERY routine row**, not only offers. Implemented and
-  unit-tested (test-first, 2,454 / 0, lint 0) in a `WIP:` commit; the journey, the docs and the
-  phone are owed by the next session. The criteria above that say offered rows are the only
-  hidden ones are superseded.
+- **E's call on device: the eye hides EVERY routine row**, not only offers. Implemented
+  test-first in a `WIP:` commit, then FINISHED by the review session (2026-09-06): the journey
+  passed on the new rule on an erased sim (206 s), `00-`/`01-` re-captured, suite **2,454 / 0**
+  (emulator up), lint **0 / 704**, build green, red-checked (3 injections → 4 + 6 + 1 failing
+  tests, each its guard; restored 19 / 19). The criteria above that say offered rows are the
+  only hidden ones are superseded. Still owed: the phone re-install and E's device confirmation.
+- **The swipe path is PROVED on device (review session, 2026-09-06).** E's walk answer ("a mix
+  of both") plus zero `· cleared` rows looked like a broken dismiss branch; a controlled
+  experiment (test-fire through iPhone Mirroring, E's physical Notification Centre clear, the
+  document read live before and after) flipped run `6EE57B3C…` to `dismissed` / `swipe`.
+  Swiping a PRESENTED banner up reports nothing to iOS — only a Notification Centre clear is a
+  "swipe" — so the walk's `· not opened` rows were honest. Evidence: `screenshots/
+  routine-record/09-`/`10-` and the design record's swipe section.
 - **The tab-root "mechanism found" bullet is WITHDRAWN as a finding**: a later journey run on a
   build carrying the off-screen change failed identically, hidden elements still in the dump.
   Register B3 stays open.

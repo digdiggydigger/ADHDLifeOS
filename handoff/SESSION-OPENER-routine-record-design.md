@@ -215,10 +215,32 @@ test of it.
 
 - **E's call after the device walk: the "All activity" eye hides EVERY routine row** — started
   and finished too, not only the offers. Off, the Journal shows the crossing rows alone. This
-  supersedes "started and finished always visible under Everything" above. Implemented and
-  unit-tested in a `WIP:` commit; journey, docs and phone still owed (see the live opener).
+  supersedes "started and finished always visible under Everything" above. Implemented
+  test-first, then finished by the review session (2026-09-06): journey green on the new rule
+  (206 s, erased sim), suite 2,454 / 0, lint 0 / 704, red-checked 3 → 4 + 6 + 1. The routine's
+  own `journal_line` step rows stay visible with the eye off — they are `logs` rows, not
+  routine rows, which the re-captured `00-` screenshot shows.
 - **Build-record item 2 is withdrawn as a finding.** The off-screen `AppTabContent` change did
   not stop a later identical failure on a build that carried it, and the hidden tab's elements
   were still in that failure's dump. Treat it as a hypothesis with an insufficient fix.
-- E republished `firestore.rules`; live and repo are byte-identical. The swipe path remains
-  unproved on device pending E's answer (did they swipe or leave the banners?).
+- E republished `firestore.rules`; live and repo are byte-identical.
+
+## The swipe path — PROVED WORKING on device (2026-09-06, the review session)
+
+E's answer to the open question was "a mix of both", which made the zero `· cleared` rows look
+like a broken dismiss branch. It is not, and the proof is a controlled experiment on E's real
+phone (build `7430ea7`, live Firebase), driven through iPhone Mirroring with E's hands for the
+one gesture mirroring cannot reach:
+
+1. A test-fired Home arrival at 08:35 wrote run `6EE57B3C…` as `offered` — read live over the
+   Firebase MCP before any gesture.
+2. E cleared its notification in Notification Centre (left swipe → Clear; Notification Centre
+   is not reachable through mirroring, so this step was physical).
+3. The document flipped to `status: dismissed`, `dismissal_method: swipe`,
+   `dismissed_at 07:37:27Z` — the exact moment of the clear, through the live rules.
+
+**Why the walk showed no `cleared` rows:** swiping a PRESENTED banner up only hides it — iOS
+reports nothing for that gesture, the notification stays in the tray, and the next test-fire
+replaces it (stable identifier per place+direction). Every banner in the walk was tapped,
+replaced, or left, so `· not opened` was the honest record. Only a real Notification Centre
+clear is a "swipe" to iOS, and that path works end to end.

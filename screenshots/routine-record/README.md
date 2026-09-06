@@ -28,8 +28,8 @@ in the same block:
 
 | file | what it proves |
 |---|---|
-| `00-journal-all-activity-off.jpg` | Everything, switch OFF: `Arrived at Gym` kept beside `Started routine at Gym` and `Finished routine at Gym · 1 of 4 done` (three skips, one auto step — "done" excludes skipped). `Arrived at Office` shows with NO routine row: the untaken offer is hidden by default. |
-| `01-journal-all-activity-on.jpg` | Switch ON (filled eye, selected): `Routine offered at Office · not opened` appears, muted — tertiary ink and a `bell.slash` glyph with no accent — while started/finished keep the accent glyph. Nothing else moved. |
+| `00-journal-all-activity-off.jpg` | E's post-walk rule (re-captured 2026-09-06): switch OFF hides EVERY routine row — started and finished included. The day reads `Arrived at Office 💼`, the `Leg day` log, `Arrived at Gym 🏋️` and nothing else. `Leg day` stays because it is the routine's `journal_line` STEP — a `logs` row, not a routine row, so the eye rightly leaves it. |
+| `01-journal-all-activity-on.jpg` | Switch ON (filled eye, selected): the whole routine story returns — `Started routine at Gym 🏋️` and `Finished routine at Gym 🏋️ · 1 of 4 done` (three skips, one auto step — "done" excludes skipped) with accent glyphs, and `Routine offered at Office 💼 · not opened` muted — tertiary ink, `bell.slash`, no accent. The crossings never moved. |
 | `02-tools-last-run-line.jpg` | Tools → Routines: the gym row reads `Gym · 3 steps · last run today, 1 of 4`; the office row, never started, is byte-identical to before (`Office · 3 steps`). |
 
 ## E's device walk — 2026-09-06, iPhone 15 Pro (iOS 26.4), live Firebase, E's own account
@@ -48,11 +48,26 @@ nothing to clean up — it is E's journal.
 | `07-device-third-run-switch-off.jpg` | A third run two minutes later: `Arrived` 7:47 → `Started` 7:47 → `Finished … · 1 of 2 done` 7:48 (one skip). The three-lines-per-visit shape E chose, on real data. |
 | `08-device-third-run-switch-on.jpg` | Switch ON again over the same day: the offers return in place, muted. |
 
-**Not proved by these:** the SWIPE path. Both offered rows say `not opened`, i.e. they timed out
-or were replaced; a swiped banner would read `· cleared`. Whether E swiped them is the open
-question at the time of writing.
+## The swipe path — proved on device, 2026-09-06 review session (same phone, live Firebase)
 
-**Superseded after the walk:** E's call is that the eye hides EVERY routine row, started and
-finished included. Files `00-` and `01-` show the earlier rule (started/finished always visible)
-and will be replaced when the journey is re-run on the new rule. Files `03-`…`08-` are E's device
-walk under the earlier rule too.
+The walk left the swipe path open: every offered row said `not opened`, and E's answer to "did
+you swipe?" was *a mix of both* — which looked like a broken dismiss branch. A controlled
+experiment settled it, still on build `7430ea7`: a test-fired Home arrival at 08:35 (driven
+through iPhone Mirroring) wrote run `6EE57B3C…` as `offered` — read live over the Firebase MCP —
+then E cleared its notification in Notification Centre by hand (left swipe → Clear; mirroring
+cannot reach Notification Centre), and the document flipped to `dismissed` / `swipe` /
+`dismissed_at 07:37:27Z`. **Why the walk showed none:** swiping a PRESENTED banner up only
+hides it — iOS reports nothing — and the next fire replaces it; only a real Notification Centre
+clear is a "swipe" to iOS. E took these two screenshots minutes later; what a test cannot
+assert here is precisely the real iOS dismissal delivery and how `· cleared` reads on real data.
+
+| file | what it proves |
+|---|---|
+| `09-device-swipe-cleared-switch-off.jpg` | Dark, switch OFF: the 8:35 slot shows `Arrived at Home 🏠` alone — the cleared offer hides by default. (Started/finished rows from 7:46–7:48 still visible: this build predates the eye-hides-everything change.) |
+| `10-device-swipe-cleared-switch-on.jpg` | Switch ON: `Routine offered at Home 🏠 · cleared` at 8:35 — the first `· cleared` ever rendered, muted with the `bell.slash` glyph, sitting under its arrival row. The whole dismissal pipeline (banner → iOS dismiss action → delegate → Firestore → Journal) on one screen. |
+
+**The rule changed after the walk:** E's call is that the eye hides EVERY routine row, started
+and finished included. Files `00-` and `01-` were re-captured by the journey on that rule.
+Files `03-`…`10-` are E's device under the EARLIER rule (started/finished always visible with
+the eye off) — the phone carried `7430ea7` throughout; what they prove (muting, the three-line
+shape, the swipe pipeline) is unchanged by the eye's wider gate.
