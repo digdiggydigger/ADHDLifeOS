@@ -154,4 +154,21 @@ final class FocusWidgetSnapshotTests: XCTestCase {
 
         XCTAssertEqual(store.read()?.generatedAt, newer.generatedAt)
     }
+
+    func testStore_clearRemovesTheStoredSnapshot() {
+        // The session-end sweep (E's fold call, 2026-09-06): the payload carries no owner field
+        // and its reader is the widget process, which has no auth concept — so unless the store
+        // is actually emptied, the last user's task titles keep rendering after sign-out.
+        let store = FocusWidgetSnapshotStore(defaults: makeDefaults())
+        store.write(sampleSnapshot())
+        XCTAssertNotNil(store.read(), "the write must land for the clear to prove anything")
+
+        store.clear()
+
+        XCTAssertNil(store.read())
+    }
+
+    func testStore_clearWithNoAppGroupContainer_doesNotCrash() {
+        FocusWidgetSnapshotStore(defaults: nil).clear()
+    }
 }

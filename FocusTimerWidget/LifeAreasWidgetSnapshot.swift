@@ -66,4 +66,10 @@ nonisolated struct LifeAreasWidgetStore {
         else { return nil }
         return snapshot
     }
+
+    /// The session-end sweep's half of this store (E's fold call, 2026-09-06) — same reasoning as
+    /// `FocusWidgetSnapshotStore.clear()`: the widget renders whatever the App Group holds.
+    func clear() {
+        defaults?.removeObject(forKey: Self.snapshotKey)
+    }
 }

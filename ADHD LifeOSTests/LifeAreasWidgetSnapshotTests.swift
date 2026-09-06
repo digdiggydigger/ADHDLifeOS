@@ -103,4 +103,22 @@ final class LifeAreasWidgetSnapshotTests: XCTestCase {
 
         XCTAssertNil(store.read())
     }
+
+    func testStore_clearRemovesTheStoredSnapshot() {
+        // The session-end sweep (E's fold call, 2026-09-06): area names keep rendering on the
+        // Home Screen widget after sign-out unless the App Group payload is actually emptied.
+        let suiteName = "LifeAreasWidgetSnapshotTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = LifeAreasWidgetStore(defaults: defaults)
+        store.write(LifeAreasWidgetSnapshot(
+            generatedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            areas: [.init(name: "Work", emoji: "💼", paletteAssetStem: "AreaWork", openCount: 3)]
+        ))
+        XCTAssertNotNil(store.read(), "the write must land for the clear to prove anything")
+
+        store.clear()
+
+        XCTAssertNil(store.read())
+    }
 }

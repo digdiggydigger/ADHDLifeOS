@@ -46,6 +46,7 @@ final class AuthService: ObservableObject {
             UserDefaultsRoutineRunStore().clearEveryUser()
             UserDefaultsArrivalNudgeStateStore().clearEveryUser()
             RoutineNotificationTray.clearDeliveredRoutineBanners()
+            AppGroupFocusWidgetPublisher.clearSnapshotsForSessionEnd()
         }
     }
 

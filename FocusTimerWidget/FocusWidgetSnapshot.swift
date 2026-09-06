@@ -277,4 +277,11 @@ nonisolated struct FocusWidgetSnapshotStore {
         else { return nil }
         return snapshot
     }
+
+    /// The session-end sweep's half of this store (E's fold call, 2026-09-06). The payload carries
+    /// no owner field and its reader is the widget process, which has no auth concept — so unless
+    /// the key is actually removed, the last user's task titles keep rendering after sign-out.
+    func clear() {
+        defaults?.removeObject(forKey: Self.snapshotKey)
+    }
 }
