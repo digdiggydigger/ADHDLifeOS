@@ -96,4 +96,13 @@ struct UserDefaultsDailySummaryStore: DailySummaryStoring {
         guard let defaults, let data = try? JSONEncoder().encode(snapshot) else { return }
         defaults.set(data, forKey: Self.snapshotKey)
     }
+
+    /// The session-end sweep (E's call, 2026-09-06). The snapshot quotes task titles and journal
+    /// reflections; `belongs(to:)` blocks cross-account display, but only clearing stops the
+    /// quoted content sitting at rest on disk after sign-out or the account-deletion hand-off.
+    /// Not on `DailySummaryStoring`: the one caller is `AuthService`'s session-ending hook, which
+    /// names the concrete store the way it names every other member of the leak family.
+    func clear() {
+        defaults?.removeObject(forKey: Self.snapshotKey)
+    }
 }

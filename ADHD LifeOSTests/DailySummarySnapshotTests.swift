@@ -158,4 +158,25 @@ final class DailySummarySnapshotTests: XCTestCase {
         store.write(sampleSnapshot(generatedAt: monday))
         XCTAssertNil(store.read())
     }
+
+    /// The session-end sweep (E's call, 2026-09-06): the snapshot quotes task titles and journal
+    /// reflections, and `belongs(to:)` only blocks cross-account DISPLAY — clearing is what stops
+    /// the quoted content sitting at rest on disk after sign-out or account deletion.
+    func testStoreClearForgetsTheStoredSnapshot() {
+        let defaults = makeDefaults()
+        let store = UserDefaultsDailySummaryStore(defaults: defaults)
+        store.write(sampleSnapshot(generatedAt: monday))
+
+        store.clear()
+
+        XCTAssertNil(
+            defaults.data(forKey: UserDefaultsDailySummaryStore.snapshotKey),
+            "clear must remove the payload itself, not merely make it unreadable"
+        )
+        XCTAssertNil(store.read())
+    }
+
+    func testStoreClearWithNoDefaultsIsAHarmlessNoOp() {
+        UserDefaultsDailySummaryStore(defaults: nil).clear()
+    }
 }
