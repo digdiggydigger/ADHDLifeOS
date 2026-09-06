@@ -4,15 +4,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-**Feature-complete native port (as of 2026-08-19), running on E's physical iPhone.** The React
-prototype (`legacy/src/`, reference-only — see `legacy/README.md`) is fully ported to SwiftUI on
-Firebase: Home (Active Goal hero,
-life-area grid + reorder, daily summary, focus analytics), Tasks (swipeable cards, search/sort,
-detail with focus-sprint planner), Capture inbox triage, Journal, Nudges, Settings (incl. account
-deletion), auth (email/password live; Sign in with Apple built but dormant — free dev account),
-and the app-wide focus timer with per-task sprint config, plus a design-token layer mirroring the
-prototype palette. Direct instructions from E are the work queue — see "Workflow" below; there is
-no second tool writing blocks.
+**Feature-complete native port, on Firebase, running on E's physical iPhone.** The React prototype
+(`legacy/src/`, reference-only — see `legacy/README.md`) was fully ported to SwiftUI by 2026-08-19:
+Home (Active Goal hero, life-area grid + reorder, daily summary, focus analytics), Tasks (swipeable
+cards, search/sort, detail with focus-sprint planner), Capture inbox triage, Journal, Nudges,
+Settings (incl. account deletion), auth (email/password live; Sign in with Apple built but dormant —
+free dev account), the app-wide focus timer, and a design-token layer mirroring the prototype
+palette.
+
+**Much has shipped since that line was first written, and it is not a prototype port any more.**
+Merged arcs, newest first: the **Routines** arc (location-triggered routines — one notification per
+crossing rather than N, an ordered routine screen, a Today recovery card, a display Live Activity;
+then Block A's deferred logging, where a crossing writes NOTHING until its notification is tapped;
+then Block B, the Routines section on Tools); the **Tools tab** and the app's own six-item tab bar,
+replacing `TabView`'s bar entirely; **bottom search** on Tasks; the **app directory**; **place
+actions**; **location services** (places, geofences, arrival/departure nudges); the **Momentum v3**
+redesign; the **captures** rethink; **auth v3**. Direct instructions from E are the work queue — see
+"Workflow" below; there is no second tool writing blocks.
+
+## Repo layout — what is live and what is not
+
+The repo was **cloned** from an earlier project built with a Cowork→Claude Code workflow, and for
+three weeks it carried that project's web app at its root. Sorted 2026-09-06:
+
+| path | status |
+|---|---|
+| `ADHD LifeOS/`, `ADHD LifeOSTests/`, `ADHD LifeOSUITests/`, `FocusTimerWidget/` | **The app.** |
+| `functions/`, `shortcuts/`, `scripts/` | **Live.** Firebase functions (self-contained, own `package.json`), the capture Shortcut, the emulator harness. |
+| `handoff/` | **Live.** Session openers, design records, and `OPEN-ITEMS-REGISTER.md` — the outstanding list. See "Session handoff". |
+| `screenshots/` | **Live.** Visual evidence. See "Visual evidence". |
+| `docs/` | **ARCHIVE.** A legacy build's Supabase/AWS design docs. Never read for context. |
+| `legacy/` | **ARCHIVE.** The React prototype and its web build tooling. Nothing here is built or run. |
+| `TODO-ARCHIVE.md` | **ARCHIVE.** 8,000 lines of shipped and superseded blocks — the record of WHY. |
 
 **`TODO-CLAUDE-CODE.md` was split on 2026-08-23 (E's direction).** It is now ~140 lines holding only
 what is genuinely open; the other 8,000+ lines — every shipped block, plus everything written
@@ -40,8 +63,10 @@ valuable half.
 - The **`⚠ CLAUDE CODE ADDITIONS`** section in `TODO-CLAUDE-CODE.md` was fenced off because writing
   blocks used to cross an ownership line E had to authorise. That line is gone; the section is kept
   because it is where the recent arcs' history lives, not because the fence still means anything.
-- **`claudecode.md`** is the TDD role definition and stays reference-only. Its instruction to read
-  `docs/` is the stale part, not the rest.
+- **`claudecode.md`** is the TDD role definition. It was REWRITTEN on 2026-09-06, not left as
+  inherited: its rule 1 used to send every session to read `docs/` as step one of the checklist,
+  which pointed at an archive describing the deleted Supabase backend. It no longer says
+  "never edit" — that instruction belonged to the Cowork split.
 
 **`docs/` IS AN ARCHIVE — do not read it for context.** E's 2026-09-06 call ("the seven files in
 docs/ are from a legacy build"): all seven moved to `docs/archive/` behind a `docs/README.md` that
@@ -92,6 +117,21 @@ xcodebuild build -project "ADHD LifeOS.xcodeproj" -scheme "ADHD LifeOS" \
 installed — there is no iPhone 15 Pro simulator, so the previously documented destination was not
 runnable. If `xcodebuild` reports the destination is unavailable, run
 `xcrun simctl list devices available` and use an installed device rather than guessing.
+
+**A UI-TARGET RUN POISONS THE SIMULATOR. Erase it in the same breath, before any unit run.**
+A UI journey signs the simulator in; the next unit suite then drags a Firebase client retrying
+against an emulator that is no longer up, and every test takes **60-80 seconds instead of
+milliseconds**. It has two disguises: the run looks merely slow, or the harness KILLS it reporting
+**"the system is running low on memory"** — the retry churn, not compilation, is what exhausts the
+8 GB machine (`grep -c '^Compiling'` returns 0). The tell is `127.0.0.1:9099` in the log tail.
+
+```bash
+xcrun simctl erase <udid>   # not `shutdown`, not a reboot — ERASE
+```
+
+This cost time TWICE on 2026-09-06, the second time four hours after being diagnosed and written
+down. Knowing the cause did not prevent it. **Order the commands so the erase follows the UI run
+unconditionally**, rather than checking whether the next suite seems slow.
 
 A feature isn't done until `swiftlint lint`, the full test suite, and the build all pass — and the
 real terminal output has been pasted for review, not just a "done" summary. **If the block was
