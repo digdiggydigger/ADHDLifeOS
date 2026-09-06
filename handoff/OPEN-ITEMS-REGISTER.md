@@ -34,8 +34,10 @@ repo (E republished; verified byte-identical).
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Delete the merged branches?** Now four: `feature/routine-record` joins the earlier
-      three. All merged, none deleted. (carried, grown)
+- [x] **Delete the merged branches** — DONE on E's word (2026-09-06): `feature/routine-record`,
+      `feature/routines`, `feature/routines-tools` deleted locally and on origin, each verified
+      `--merged main` first. (The previous edition said "four" — three existed; the
+      app-directory and tools-tab branches were already gone.) Only `main` remains.
 - [ ] **Fold the snapshot leak?** `UserDefaultsArrivalNudgeStateStore` — the third member of
       the family (run store fixed, tray fixed, snapshot open). (carried)
 - [ ] **Re-measure coverage?** CLAUDE.md records **23.62% at `b1f4b6f`**, stale — the suite has
