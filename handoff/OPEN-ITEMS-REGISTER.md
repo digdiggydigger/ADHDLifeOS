@@ -1,4 +1,4 @@
-# Open items register — 2026-09-06, close-out (third edition today: the defect-sweep session — widget fold, AutoFill root cause + sweep, clearance bar-band fix, all landed)
+# Open items register — 2026-09-06, FINAL close-out (fourth edition today: the defect-sweep session end to end — widget fold, AutoFill root cause + sweep, clearance bar-band fix, phone on main, fold device-confirmed, next session queued)
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
@@ -8,18 +8,21 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `ae190cc`** (PR #7's merge), local = remote, tree clean, only `main` exists · every
-change lands through a PR (protection unchanged; four landed today, #4–#7, none needed a
-bypass) · last full verification AT `ae190cc`: unit suite **2,462 / 0** with the emulator UP,
-SwiftLint **0 / 705**, both targets build · **the full UI target ran ONCE this session, at
-`c333c55` (pre-fix): 30 tests / 6 failures — and every one of the six is now EXPLAINED** (2×
-AutoFill → fixed #5, 2× clearance → fixed #7, 2× watch-list flakes → section E); it has NOT
-been re-run post-fix, which is section B's first item · **E's phone runs this morning's build
-and is TWO app-code changes behind main** (the widget-store fold and the clearance fix) ·
-`firestore.rules` untouched this session · the emulator was left running · the sim was erased
-after every UI run (five times today — the poison rule held, including through two killed runs).
+**`main` @ `2d0f3ff`** (PR #11's merge; this edition lands as the session's ninth PR on top),
+local = remote, tree clean, only `main` exists · every change lands through a PR (protection
+unchanged; #4–#11 landed this session, none needed a bypass) · last full verification: unit
+suite **2,462 / 0** with the emulator UP and SwiftLint **0 / 705** at the `ae190cc` tree —
+**no Swift has changed since** (PRs #8–#11 touched `handoff/` and `screenshots/` only), and
+lint re-ran 0 / 705 at this close-out · **the full UI target ran ONCE this session, at
+`c333c55` (pre-fix): 30 tests / 6 failures — and every one of the six is EXPLAINED** (2×
+AutoFill → fixed #5, 2× clearance → fixed #7, 2× watch-list flakes → section E); NOT re-run
+post-fix — section B item 3 · **E's phone TRACKS MAIN** (`e4fe956` installed via `devicectl`
+22:05; both app-code fixes on device; the fold DEVICE-CONFIRMED by E's screenshots,
+`screenshots/widget-session-fold/`) · `firestore.rules` untouched this session · the emulator
+was left running · the sim was erased after every UI run, including manually after the two
+watchdog-killed runs (the poison rule held all day).
 
-**Shipped and CLOSED this session (PRs #4–#7):**
+**Shipped and CLOSED this session (PRs #4–#11):**
 - **F-WidgetStoreFold** (#4, `3a831d2`) — register A3's widget half, on E's word: both App
   Group widget snapshots cleared AND both timelines reloaded on session end (sign-out and the
   account-deletion hand-off); without it the last user's task titles and area names kept
@@ -44,7 +47,11 @@ after every UI run (five times today — the poison rule held, including through
   and its +60 deleted (the same missing band wearing the row's name). Acceptance: testNudges
   rests 24pt clear (green twice), testToday rests 40pt clear at the EXACT predicted frame.
   Red-check 2 + 1.
-- The register's mid-session refresh (#6).
+- **E's phone brought onto main** (#9 ticked it; install itself was `devicectl`, E's word) and
+  **the fold's device evidence landed** (#10, `screenshots/widget-session-fold/` + README —
+  which also caught the "Open Momentum once…" stale copy, now queued as B item 2).
+- The handoff chores: mid-session register refresh (#6), the first close-out + opener
+  succession (#8, old opener archived), next session's queue set on E's word (#11).
 
 ## A · Decisions only E can make — minutes each
 
