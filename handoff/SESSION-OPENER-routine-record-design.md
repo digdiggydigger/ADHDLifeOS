@@ -210,3 +210,15 @@ The one iOS integration in the design — `.customDismissAction` — is built bu
 by the journey (XCUITest cannot swipe a banner in the tray); the swipe path is pinned by
 `RoutineDismissRoutingTests` and the delegate-order guard only. E's device is the first real
 test of it.
+
+## Post-walk corrections (2026-09-06, end of session) — read these over the build record
+
+- **E's call after the device walk: the "All activity" eye hides EVERY routine row** — started
+  and finished too, not only the offers. Off, the Journal shows the crossing rows alone. This
+  supersedes "started and finished always visible under Everything" above. Implemented and
+  unit-tested in a `WIP:` commit; journey, docs and phone still owed (see the live opener).
+- **Build-record item 2 is withdrawn as a finding.** The off-screen `AppTabContent` change did
+  not stop a later identical failure on a build that carried it, and the hidden tab's elements
+  were still in that failure's dump. Treat it as a hypothesis with an insufficient fix.
+- E republished `firestore.rules`; live and repo are byte-identical. The swipe path remains
+  unproved on device pending E's answer (did they swipe or leave the banners?).

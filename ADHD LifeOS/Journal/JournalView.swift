@@ -30,8 +30,8 @@ struct JournalView: View {
     let onStartFocus: ((FocusSprintPlan) -> Void)?
     @State private var isPresentingComposer = false
     @State var filter: JournalTimeline.Filter = .everything
-    /// "All activity" (F-RoutineRecord-2, E's call): reveals the routine offers nobody took.
-    /// Off on every launch and deliberately NOT persisted — "hidden by default", read literally.
+    /// "All activity" (F-RoutineRecord-2, E's call): reveals every routine row — offered, started
+    /// and finished. Off on every launch and deliberately NOT persisted — "hidden by default".
     @State var showAllActivity = false
     @State var tasks: [TaskItem] = []
     /// The pushed doors — optional-state + `navigationDestination`, the `CaptureInboxView`

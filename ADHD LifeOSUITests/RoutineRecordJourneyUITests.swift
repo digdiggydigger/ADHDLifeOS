@@ -99,27 +99,32 @@ final class RoutineRecordJourneyUITests: XCTestCase {
         fireCrossing(app, placeId: officeId, named: "Simulate arrival")
         UITestSession.dismissSystemAlertIfPresent()
 
-        // 3. The Journal says what happened, in E's two rows, and NOT what was merely offered.
+        // 3. The Journal, switch OFF (E's device-walk call): the crossings alone — no routine
+        //    row of any kind, started and finished included.
         openTab("Journal", in: app)
         let started = routineRow("started", in: app)
         let ended = routineRow("ended", in: app)
+        let offered = routineRow("offered", in: app)
         XCTAssertTrue(
-            scrollUntilFound(started, in: app),
-            "The Journal never showed the started row — the record is invisible"
+            app.staticTexts["Arrived at Gym 🏋️"].waitForExistence(timeout: UITestSession.timeout),
+            "The Journal never showed the arrival row"
+        )
+        XCTAssertFalse(started.exists, "switch off: no started row")
+        XCTAssertFalse(ended.exists, "switch off: no finished row")
+        XCTAssertFalse(offered.exists, "switch off: no offered row")
+        attach(app, "1-journal-switch-off")
+
+        // 4. The switch reveals the whole story: E's two rows for the taken routine, and the
+        //    untaken offer muted and honest.
+        let allActivity = app.buttons["journalAllActivitySwitch"]
+        XCTAssertTrue(
+            UITestSession.tap(allActivity, untilExists: started),
+            "The All activity switch never revealed the started row"
         )
         XCTAssertTrue(started.label.contains("Started routine at Gym 🏋️"), started.label)
         XCTAssertTrue(ended.exists, "The finished row is missing beside the started one")
         XCTAssertTrue(ended.label.contains("Finished routine at Gym 🏋️ · 1 of 4 done"), ended.label)
-        let offered = routineRow("offered", in: app)
-        XCTAssertFalse(offered.exists, "An offer nobody took must stay hidden until the switch is on")
-        attach(app, "1-journal-switch-off")
-
-        // 4. The switch reveals the offer, muted, and says it was not opened.
-        let allActivity = app.buttons["journalAllActivitySwitch"]
-        XCTAssertTrue(
-            UITestSession.tap(allActivity, untilExists: offered),
-            "The All activity switch never revealed the offered row"
-        )
+        XCTAssertTrue(offered.exists, "The offered row is missing with the switch on")
         XCTAssertTrue(offered.label.contains("Routine offered at Office 💼 · not opened"), offered.label)
         attach(app, "2-journal-switch-on")
 

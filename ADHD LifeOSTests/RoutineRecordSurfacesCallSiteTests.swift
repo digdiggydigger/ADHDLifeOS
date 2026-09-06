@@ -49,6 +49,12 @@ final class RoutineRecordSurfacesCallSiteTests: XCTestCase {
             view.contains("@State var showAllActivity = false"),
             "off on every launch and not persisted — E's 'hidden by default', read literally"
         )
+        let rows = try Self.code("Journal/JournalTimeline+RoutineRows.swift")
+        XCTAssertTrue(
+            rows.contains("guard showAllActivity else { return [] }"),
+            "E's device-walk call: the switch gates EVERY routine row, so the gate is one guard"
+                + " at the top — not a per-phase decision that could let a row through"
+        )
     }
 
     func testTheToolsSectionHandsItsRunsToTheCatalog() throws {

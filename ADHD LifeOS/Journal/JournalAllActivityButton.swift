@@ -2,9 +2,10 @@
 //  JournalAllActivityButton.swift
 //  ADHD LifeOS
 //
-//  The "All activity" switch (F-RoutineRecord-2, E's call): the one way an ignored or swiped
-//  routine offer becomes visible. The compose button's circle, so the header reads as one
-//  family; selected state carried by the fill AND the eye glyph, never colour alone.
+//  The "All activity" switch (F-RoutineRecord-2, E's call): the one way the routine story —
+//  offered, started, finished — becomes visible on the Journal. The compose button's circle,
+//  so the header reads as one family; selected state carried by the fill AND the eye glyph,
+//  never colour alone.
 //
 
 import SwiftUI
@@ -29,7 +30,7 @@ struct JournalAllActivityButton: View {
                 .contentShape(Circle())
         }
         .accessibilityLabel("All activity")
-        .accessibilityHint("Shows routine offers you cleared or did not open")
+        .accessibilityHint("Shows your routines — offered, started and finished")
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

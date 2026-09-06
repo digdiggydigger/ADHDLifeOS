@@ -4,9 +4,14 @@
 //
 //  The routine record on the Journal (F-RoutineRecord-2-Surfaces): which rows one
 //  `routine_runs` document becomes, and every word on them. E's calls: TWO rows per run —
-//  started and finished, each at its own stamp — always visible under Everything; the OFFER
-//  rows only behind the "All activity" switch, muted; an unfinished run read gently ("· 2 of 4
-//  done", never "abandoned" — count up only); "cleared" for a swipe, "not opened" for the rest.
+//  started and finished, each at its own stamp; the OFFER rows muted; an unfinished run read
+//  gently ("· 2 of 4 done", never "abandoned" — count up only); "cleared" for a swipe, "not
+//  opened" for the rest.
+//
+//  E's device-walk call (2026-09-06, on real data): the "All activity" switch gates EVERY
+//  routine row, not only the offers. Off — every launch — the Journal shows the crossing alone;
+//  on, the whole routine story. The design's "started and finished always visible" is
+//  superseded by that call.
 //
 //  Names resolve through the CURRENT place like `locationEventLine`, so a rename updates every
 //  row and a deleted place drops it — the reason the id is stored rather than the name.
@@ -28,7 +33,8 @@ extension JournalTimeline {
     static func routineEntries(
         runs: [RoutineRunRecord], places: [Place], showAllActivity: Bool
     ) -> [Entry] {
-        runs.flatMap { record -> [Entry] in
+        guard showAllActivity else { return [] }
+        return runs.flatMap { record -> [Entry] in
             guard places.contains(where: { $0.id == record.placeId }) else { return [] }
             switch record.phase {
             case .started:
@@ -38,7 +44,7 @@ extension JournalTimeline {
                     ? [.routineEnded(record)]
                     : [.routineStarted(record), .routineEnded(record)]
             case .offered, .dismissed, .expired:
-                return showAllActivity ? [.routineOffered(record)] : []
+                return [.routineOffered(record)]
             }
         }
     }

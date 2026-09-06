@@ -2967,3 +2967,12 @@ the rows.
 - Also: the screen recorded `completed` TWICE (Close and `onDisappear` both end the run);
   recorded once now. And the CLAUDE.md erase rule bit in a new disguise — the tray, not the
   keychain — so the journey was run on an erased sim from then on.
+
+**Post-walk, 2026-09-06 (end of session) — two corrections to the block above:**
+- **E's call on device: the eye hides EVERY routine row**, not only offers. Implemented and
+  unit-tested (test-first, 2,454 / 0, lint 0) in a `WIP:` commit; the journey, the docs and the
+  phone are owed by the next session. The criteria above that say offered rows are the only
+  hidden ones are superseded.
+- **The tab-root "mechanism found" bullet is WITHDRAWN as a finding**: a later journey run on a
+  build carrying the off-screen change failed identically, hidden elements still in the dump.
+  Register B3 stays open.

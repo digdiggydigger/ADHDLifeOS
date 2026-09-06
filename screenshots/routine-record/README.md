@@ -51,3 +51,8 @@ nothing to clean up — it is E's journal.
 **Not proved by these:** the SWIPE path. Both offered rows say `not opened`, i.e. they timed out
 or were replaced; a swiped banner would read `· cleared`. Whether E swiped them is the open
 question at the time of writing.
+
+**Superseded after the walk:** E's call is that the eye hides EVERY routine row, started and
+finished included. Files `00-` and `01-` show the earlier rule (started/finished always visible)
+and will be replaced when the journey is re-run on the new rule. Files `03-`…`08-` are E's device
+walk under the earlier rule too.

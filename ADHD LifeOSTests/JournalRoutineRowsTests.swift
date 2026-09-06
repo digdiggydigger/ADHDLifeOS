@@ -3,10 +3,14 @@
 //  ADHD LifeOSTests
 //
 //  The routine record on the Journal (F-RoutineRecord-2-Surfaces): E's calls, verbatim in
-//  substance — TWO rows per run (started, finished) always visible under Everything; the OFFER
-//  rows only behind the "All activity" switch, muted; an unfinished run read gently, never
-//  "abandoned"; a swiped offer says "cleared", a timed-out one "not opened". Names resolve
-//  through the CURRENT place like `locationEventLine`, so a rename updates every row.
+//  substance — TWO rows per run (started, finished) and the OFFER rows, muted; an unfinished
+//  run read gently, never "abandoned"; a swiped offer says "cleared", a timed-out one "not
+//  opened". Names resolve through the CURRENT place like `locationEventLine`, so a rename
+//  updates every row.
+//
+//  E's device-walk call (2026-09-06, after seeing real data): the "All activity" switch hides
+//  EVERY routine row, not only the offers. Off — the default on every launch — the Journal
+//  shows the arrival rows alone; on, it shows the whole routine story.
 //
 
 import XCTest
@@ -23,7 +27,7 @@ final class JournalRoutineRowsTests: XCTestCase {
         run.started(at: noon.addingTimeInterval(60))
 
         let entries = JournalTimeline.days(
-            logs: [], tasks: [], routineRuns: [run], places: [gym], asOf: noon
+            logs: [], tasks: [], routineRuns: [run], places: [gym], showAllActivity: true, asOf: noon
         ).flatMap(\.entries)
 
         XCTAssertEqual(entries.count, 1)
@@ -39,7 +43,7 @@ final class JournalRoutineRowsTests: XCTestCase {
         run.ended(at: noon.addingTimeInterval(600), reason: .completed)
 
         let entries = JournalTimeline.days(
-            logs: [], tasks: [], routineRuns: [run], places: [gym], asOf: noon
+            logs: [], tasks: [], routineRuns: [run], places: [gym], showAllActivity: true, asOf: noon
         ).flatMap(\.entries)
 
         XCTAssertEqual(entries.count, 2, "E's call: two rows per run, not one that updates")
@@ -48,6 +52,29 @@ final class JournalRoutineRowsTests: XCTestCase {
         guard case .routineEnded = entries[0], case .routineStarted = entries[1] else {
             return XCTFail("expected the finished row above the started row, newest first")
         }
+    }
+
+    /// E's device-walk call: the switch hides EVERY routine row. Off, the Journal shows the
+    /// crossing alone; nothing about the routine — offered, started or finished — is a line.
+    func testEveryRoutineRow_isHiddenUntilTheSwitchIsOn() {
+        let gym = place()
+        let offer = record(placeId: gym.id)
+        var finished = record(placeId: gym.id)
+        finished.started(at: noon.addingTimeInterval(60))
+        finished.ended(at: noon.addingTimeInterval(600), reason: .completed)
+        let arrival = LocationEvent(id: UUID(), placeId: gym.id, kind: .arrival, occurredAt: noon)
+
+        let hidden = JournalTimeline.days(
+            logs: [], tasks: [], locationEvents: [arrival], routineRuns: [offer, finished], places: [gym], asOf: noon
+        ).flatMap(\.entries)
+        let shown = JournalTimeline.days(
+            logs: [], tasks: [], locationEvents: [arrival], routineRuns: [offer, finished], places: [gym],
+            showAllActivity: true, asOf: noon
+        ).flatMap(\.entries)
+
+        XCTAssertEqual(hidden.count, 1, "off: the arrival row alone")
+        guard case .locationEvent = hidden[0] else { return XCTFail("the surviving row must be the arrival") }
+        XCTAssertEqual(shown.count, 4, "on: arrival + offered + started + finished")
     }
 
     func testAnOffer_isHiddenUntilTheSwitchIsOn() {
@@ -105,10 +132,12 @@ final class JournalRoutineRowsTests: XCTestCase {
         run.started(at: noon.addingTimeInterval(60))
 
         let underWritten = JournalTimeline.days(
-            logs: [], tasks: [], routineRuns: [run], places: [gym], filter: .written, asOf: noon
+            logs: [], tasks: [], routineRuns: [run], places: [gym], showAllActivity: true,
+            filter: .written, asOf: noon
         ).flatMap(\.entries)
         let underAnArea = JournalTimeline.days(
-            logs: [], tasks: [], routineRuns: [run], places: [gym], lifeAreaId: UUID(), asOf: noon
+            logs: [], tasks: [], routineRuns: [run], places: [gym], showAllActivity: true,
+            lifeAreaId: UUID(), asOf: noon
         ).flatMap(\.entries)
 
         XCTAssertTrue(underWritten.isEmpty)
@@ -120,7 +149,7 @@ final class JournalRoutineRowsTests: XCTestCase {
         run.started(at: noon.addingTimeInterval(60))
 
         let days = JournalTimeline.days(
-            logs: [], tasks: [], routineRuns: [run], places: [place()], asOf: noon
+            logs: [], tasks: [], routineRuns: [run], places: [place()], showAllActivity: true, asOf: noon
         )
 
         XCTAssertTrue(days.isEmpty, "a deleted place must not leave an empty day header either")
@@ -133,7 +162,8 @@ final class JournalRoutineRowsTests: XCTestCase {
         let arrival = LocationEvent(id: UUID(), placeId: gym.id, kind: .arrival, occurredAt: noon)
 
         let entries = JournalTimeline.days(
-            logs: [], tasks: [], locationEvents: [arrival], routineRuns: [run], places: [gym], asOf: noon
+            logs: [], tasks: [], locationEvents: [arrival], routineRuns: [run], places: [gym],
+            showAllActivity: true, asOf: noon
         ).flatMap(\.entries)
 
         XCTAssertEqual(entries.count, 2, "E's call: the arrival is the fact of the crossing and it stays")
