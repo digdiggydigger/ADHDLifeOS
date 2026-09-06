@@ -1,4 +1,4 @@
-# Open items register — 2026-09-06
+# Open items register — 2026-09-06 (end of session)
 
 **This file is THE outstanding list.** It is rewritten at every session close-out (CLAUDE.md,
 "Session handoff"), so it is the thing to read — and to update — rather than improvising a list in
@@ -9,13 +9,23 @@ Every figure below was measured this session unless marked UNVERIFIED.
 
 ## State
 
-`main ab86362` · working tree clean · `origin/main` matches · unit suite **2,348 / 0** ·
+`main 4c7227d` · working tree clean · `origin/main` matches · unit suite **2,348 / 0** ·
 SwiftLint **0 violations in 677 files** · both targets build · **full UI target 23 / 6** ·
-E's phone carries `1ab5ff2`, whose tree is byte-identical to main.
+E's phone carries `1ab5ff2`, whose tree is byte-identical to main's app source.
+
+**The live opener is `handoff/START-HERE-post-foundations.md`** — the only one. Archive it into
+`handoff/archive/` in the same move that writes its successor.
 
 **Shipped this session:** `F-Routines-B-ToolsSection` — Routines has its own section on the Tools
-tab, merged `511e55b`, device-verified by E in light and dark. Plus the `screenshots/` convention
-written into CLAUDE.md, and the two screenshot trees folded into one.
+tab, merged `511e55b`, device-verified by E in light and dark (`screenshots/routines-tools-section/`).
+
+**Then the foundations were reset**, after E confirmed this repo was CLONED from a Cowork→Claude
+Code project and never adapted. Six documentation commits, no code: Cowork removed from CLAUDE.md
+as a governing workflow; `docs/` archived (it was in the start-of-session checklist telling every
+session this app runs on Supabase); `WORKFLOW.md` archived and `claudecode.md` rewritten; `legacy/`
+created for the React prototype and web tooling; `aws-backend/` deleted; and two conventions
+written down — `screenshots/` and `handoff/`, the latter including the one-live-opener rule and
+this register's own job.
 
 **Branches:** `feature/routines` and `feature/routines-tools` both merged into main, both KEPT on
 E's word. Deletion is an open decision.
