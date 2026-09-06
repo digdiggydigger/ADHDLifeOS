@@ -124,6 +124,12 @@ final class RoutineRecordCallSiteTests: XCTestCase {
             "the hook's DEFAULT must clear the run store — an injected hook nobody injects in"
                 + " production is the dead-shared-component pattern again"
         )
+        XCTAssertTrue(
+            auth.contains("RoutineNotificationTray.clearDeliveredRoutineBanners()"),
+            "and the tray: a routine banner outlives the session, and tapped under the next"
+                + " account it starts that account's day with somebody else's place (found by"
+                + " the routine-record journey, 2026-09-06)"
+        )
     }
 
     // MARK: - The rules admit the collection

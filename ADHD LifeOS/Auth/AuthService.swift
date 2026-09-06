@@ -42,7 +42,10 @@ final class AuthService: ObservableObject {
     ) {
         self.client = client
         self.redirectURL = redirectURL
-        self.onSessionEnding = onSessionEnding ?? { UserDefaultsRoutineRunStore().clearEveryUser() }
+        self.onSessionEnding = onSessionEnding ?? {
+            UserDefaultsRoutineRunStore().clearEveryUser()
+            RoutineNotificationTray.clearDeliveredRoutineBanners()
+        }
     }
 
     func restoreSession() async {

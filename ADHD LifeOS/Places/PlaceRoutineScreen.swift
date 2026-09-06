@@ -27,6 +27,10 @@ struct PlaceRoutineScreen: View {
     /// The routine RECORD (F-RoutineRecord-1): every step change and the completion go to
     /// Firestore from here, on a Task nothing on screen waits for.
     private let recorder: RoutineRunRecording
+    /// Every deliberate exit ends the run itself and `onDisappear` does it again as a net,
+    /// which is right for the idempotent local end and wrong for the record: the journey found
+    /// the completion written TWICE. Recorded once.
+    @State private var hasRecordedEnd = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -300,7 +304,8 @@ struct PlaceRoutineScreen: View {
     /// this screen owns, so calling it twice, or after a newer run replaced this one, is a
     /// no-op. Always announces, so Today re-reads whether the run ended or merely moved on.
     private func leaveScreen() {
-        if PlaceRoutineProgress.isFullyResolved(run) {
+        if PlaceRoutineProgress.isFullyResolved(run), !hasRecordedEnd {
+            hasRecordedEnd = true
             store.end(runId: run.id)
             record { try await recorder.ended(runId: run.id, reason: .completed, at: .now) }
         }

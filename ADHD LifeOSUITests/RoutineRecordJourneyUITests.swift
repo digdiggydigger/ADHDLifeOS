@@ -93,23 +93,7 @@ final class RoutineRecordJourneyUITests: XCTestCase {
         )
 
         // 1. Take the gym routine and finish it — the record's started and ended moments.
-        fireCrossing(app, placeId: gymId, named: "Simulate arrival")
-        UITestSession.dismissSystemAlertIfPresent()
-        fireCrossing(app, placeId: gymId, named: "Open the routine notification")
-        XCTAssertTrue(
-            app.buttons["Open Snapchat"].waitForExistence(timeout: UITestSession.timeout),
-            "The tapped routine notification never presented the routine screen"
-        )
-        let skip = app.buttons["Skip this step"]
-        for _ in 0..<3 where skip.exists {
-            skip.tap()
-            _ = app.buttons["Open Spotify"].waitForExistence(timeout: 2)
-        }
-        XCTAssertFalse(skip.exists, "every step should be resolved")
-        XCTAssertTrue(
-            UITestSession.tap(app.buttons["Close"], untilGone: named("routineProgress", app)),
-            "Close did not dismiss the routine screen"
-        )
+        takeAndFinishTheGymRoutine(app)
 
         // 2. Offer the office routine and take nothing — the record's offered-only moment.
         fireCrossing(app, placeId: officeId, named: "Simulate arrival")
@@ -139,10 +123,17 @@ final class RoutineRecordJourneyUITests: XCTestCase {
         XCTAssertTrue(offered.label.contains("Routine offered at Office 💼 · not opened"), offered.label)
         attach(app, "2-journal-switch-on")
 
-        // 5. Tools remembers the last run on the routine's own row.
+        // 5. Tools remembers the last run on the routine's own row. The tab kept its stack, so
+        //    it is still inside Places from the test-fire; the Routines section is on the root.
         openTab("Tools", in: app)
         let gymRow = app.descendants(matching: .any)
             .matching(identifier: "toolsRoutineRow-\(gymId.uuidString)-arrival").firstMatch
+        if !gymRow.waitForExistence(timeout: 2) {
+            let back = app.navigationBars.buttons.firstMatch
+            if back.waitForExistence(timeout: UITestSession.timeout) {
+                back.tap()
+            }
+        }
         XCTAssertTrue(
             scrollUntilFound(gymRow, in: app),
             "The Tools Routines row for the gym never appeared"
@@ -152,6 +143,29 @@ final class RoutineRecordJourneyUITests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    /// Fires the gym arrival, opens its banner, skips every tap-step and closes — the run ends
+    /// `completed` with "1 of 4 done" (the auto step), which is what the Journal row must say.
+    @MainActor
+    private func takeAndFinishTheGymRoutine(_ app: XCUIApplication) {
+        fireCrossing(app, placeId: gymId, named: "Simulate arrival")
+        UITestSession.dismissSystemAlertIfPresent()
+        fireCrossing(app, placeId: gymId, named: "Open the routine notification")
+        XCTAssertTrue(
+            app.buttons["Open Snapchat"].waitForExistence(timeout: UITestSession.timeout),
+            "The tapped routine notification never presented the routine screen"
+        )
+        let skip = app.buttons["Skip this step"]
+        for _ in 0..<3 where skip.exists {
+            skip.tap()
+            _ = app.buttons["Open Spotify"].waitForExistence(timeout: 2)
+        }
+        XCTAssertFalse(skip.exists, "every step should be resolved")
+        XCTAssertTrue(
+            UITestSession.tap(app.buttons["Close"], untilGone: named("routineProgress", app)),
+            "Close did not dismiss the routine screen"
+        )
+    }
 
     @MainActor
     private func routineRow(_ kind: String, in app: XCUIApplication) -> XCUIElement {
@@ -193,8 +207,17 @@ final class RoutineRecordJourneyUITests: XCTestCase {
                 placesDoor.waitForExistence(timeout: UITestSession.timeout),
                 "The Tools tab never showed the Places door"
             )
+            // The tab-root not-hittable defect (register B3): a settled, ON-screen card that
+            // XCUITest still calls not hittable. `element.tap()` on such a card FAILS THE TEST
+            // outright, so the check has to come first — a coordinate tap bypasses hittability
+            // resolution entirely, the same fallback `openTab` uses from its second attempt.
+            if placesDoor.isHittable {
+                _ = UITestSession.tap(placesDoor, untilExists: fire)
+            } else {
+                placesDoor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
             XCTAssertTrue(
-                UITestSession.tap(placesDoor, untilExists: fire),
+                fire.waitForExistence(timeout: UITestSession.timeout),
                 "The seeded place never appeared in the Places list"
             )
         }
