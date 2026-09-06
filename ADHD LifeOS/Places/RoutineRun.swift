@@ -33,6 +33,16 @@ struct RoutineRun: Codable, Equatable, Sendable, Identifiable {
     struct Step: Codable, Equatable, Sendable {
         let action: PlaceAction
         var state: RoutineStepState
+        /// When the screen last marked this step done or skipped; `nil` while pending, and
+        /// cleared again by Undo (F-RoutineRecord-1). Optional so a banner minted by an older
+        /// build still decodes.
+        var resolvedAt: Date?
+
+        init(action: PlaceAction, state: RoutineStepState, resolvedAt: Date? = nil) {
+            self.action = action
+            self.state = state
+            self.resolvedAt = resolvedAt
+        }
     }
 
     /// The minted run key. It rides the notification's userInfo AND this record — a tap whose
@@ -40,7 +50,13 @@ struct RoutineRun: Codable, Equatable, Sendable, Identifiable {
     let id: UUID
     let placeId: UUID
     let direction: PlaceTriggerEvent.Kind
+    /// The CROSSING's moment — the run is minted at the crossing and rides the banner. The tap
+    /// that makes it real is `activatedAt`.
     let startedAt: Date
+    /// The TAP (F-RoutineRecord-1): set by the activator when the routine starts existing, so
+    /// the screen can say how long the routine has been worked without asking Firestore.
+    /// `nil` on the banner and on a run written by an older build.
+    var activatedAt: Date?
     /// Frozen from the snapshot entry so the screen renders on a cold launch with no network
     /// and no second store: the place moment ("Gym 🏋️") and E's own words for this crossing.
     let displayName: String
