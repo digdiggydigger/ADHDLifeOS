@@ -109,8 +109,8 @@ final class RoutineRecordCallSiteTests: XCTestCase {
         let service = try Self.code("Journal/JournalService.swift")
 
         XCTAssertTrue(
-            service.contains("RoutineRunReconciliation.updates("),
-            "the passive endings are DERIVED on the Journal load; nothing else in the arc looks"
+            service.contains("reconciler.reconcile("),
+            "the passive endings are DERIVED on the Journal load, through the shared reconciler"
         )
     }
 

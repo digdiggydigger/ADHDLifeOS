@@ -97,8 +97,8 @@ final class LocationEventTimelineTests: XCTestCase {
         XCTAssertEqual(days.count, 1)
         XCTAssertEqual(days.first?.entries.count, 2)
         // Newest first within the day: the entry written after the arrival leads.
-        XCTAssertEqual(days.first?.entries.first?.id, log.id)
-        XCTAssertEqual(days.first?.entries.last?.id, arrival.id)
+        XCTAssertEqual(days.first?.entries.first?.id, "log-\(log.id.uuidString)")
+        XCTAssertEqual(days.first?.entries.last?.id, "event-\(arrival.id.uuidString)")
     }
 
     /// Events are ambient garnish, not a category: they appear in the Everything view only, and

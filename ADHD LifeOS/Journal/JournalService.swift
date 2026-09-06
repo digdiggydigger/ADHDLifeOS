@@ -72,14 +72,11 @@ final class JournalService: ObservableObject {
     private var hasLoadedOnce = false
 
     /// Site 6 of the routine record: the passive endings are derived on THIS load and written
-    /// through here. All four are injectable so the rule is pinned without Firestore, a live
-    /// run store, or the wall clock; the defaults are the production wiring.
-    private let routineRecorder: RoutineRunRecording
-    private let liveRoutineRunId: () -> UUID?
-    private let now: () -> Date
-    private let calendar: Calendar
+    /// through the reconciler the Tools section shares. Its parts are injectable so the rule is
+    /// pinned without Firestore, a live run store, or the wall clock.
+    private let reconciler: RoutineRunReconciler
     /// The in-flight reconciliation writes, held so a test can await them.
-    private(set) var reconcileTask: Task<Void, Never>?
+    var reconcileTask: Task<Void, Never>? { reconciler.writeTask }
 
     init(
         client: JournalClientAdapting,
@@ -89,11 +86,9 @@ final class JournalService: ObservableObject {
         now: @escaping () -> Date = { .now },
         calendar: Calendar = .current
     ) {
-        self.routineRecorder = routineRecorder ?? FirebaseRoutineRunRecorder()
-        self.liveRoutineRunId = liveRoutineRunId
-            ?? { UserDefaultsRoutineRunStore().readLiveRun(now: .now)?.id }
-        self.now = now
-        self.calendar = calendar
+        reconciler = RoutineRunReconciler(
+            recorder: routineRecorder, liveRunId: liveRoutineRunId, now: now, calendar: calendar
+        )
         self.client = client
         self.locationStamp = locationStamp ?? { await CaptureLocationStamp.current() }
     }
@@ -158,25 +153,10 @@ final class JournalService: ObservableObject {
         }
     }
 
-    /// Derives which runs lapsed since anyone last looked, shows them lapsed NOW, and writes
-    /// each ending once. The live run is the store's to end, never this method's.
+    /// Shows lapsed runs lapsed NOW and writes each ending once — the reconciler's job, shared
+    /// with the Tools section so the two loads cannot drift.
     private func reconcileRoutineRuns(_ fetched: [RoutineRunRecord]) {
-        let updates = RoutineRunReconciliation.updates(
-            records: fetched, liveRunId: liveRoutineRunId(), now: now(), calendar: calendar
-        )
-        routineRuns = RoutineRunReconciliation.applying(updates, to: fetched)
-        guard !updates.isEmpty else { return }
-        let recorder = routineRecorder
-        reconcileTask = Task {
-            for update in updates {
-                switch update {
-                case .expired(let runId, let lapsedAt):
-                    try? await recorder.expired(runId: runId, at: lapsedAt)
-                case .ended(let runId, let reason, let lapsedAt):
-                    try? await recorder.ended(runId: runId, reason: reason, at: lapsedAt)
-                }
-            }
-        }
+        routineRuns = reconciler.reconcile(fetched)
     }
 
     @discardableResult
