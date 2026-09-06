@@ -68,6 +68,10 @@ extension UITestSession {
         // bounds the cost; a stationary frame is not evidence of anything.
         for _ in 0..<attempts {
             if element.isHittable { return true }
+            // The overlay case, not the scroll case: while the system password prompt is up,
+            // `isHittable` is false for EVERYTHING in the app at any frame, and sixteen swipes
+            // change nothing. Sweep it and re-check before spending a swipe.
+            if dismissSystemPasswordPromptIfPresent(), element.isHittable { return true }
             app.swipeUp()
             Thread.sleep(forTimeInterval: 0.5)
         }

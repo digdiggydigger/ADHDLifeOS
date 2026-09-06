@@ -33,6 +33,7 @@ extension UITestSession {
         )
         for attempt in 1...3 {
             if tab.isSelected { return }
+            dismissSystemPasswordPromptIfPresent()
             if attempt == 1 {
                 tab.tap()
             } else {
