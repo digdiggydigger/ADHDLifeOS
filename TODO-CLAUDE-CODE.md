@@ -2874,7 +2874,7 @@ swiped vs timed-out offers share a row with different subtitles ("· cleared" / 
 the Tools Routines row gains a last-run line; the run-store sign-out leak is folded in. Rules
 change → **E republishes**.
 
-### FEATURE: F-RoutineRecord-1-Ledger — the collection, the seam, the six write points  [ ]
+### FEATURE: F-RoutineRecord-1-Ledger — the collection, the seam, the six write points  [x] COMPLETED
 
 `RoutineRunRecord` (Codable, snake_cased, `FirestoreDocumentCoder` round-trip pinned, wrong
 spellings asserted ABSENT), `FirebaseManager+RoutineRuns` behind a `RoutineRunsBackingStore`
@@ -2884,36 +2884,47 @@ the six write sites, `routine_runs` in `firestore.rules` and `Collection`, and t
 store key.
 
 **Acceptance criteria**
-- [ ] `RoutineRunRecord` round-trips through the REAL codec with every field in the design
+- [x] `RoutineRunRecord` round-trips through the REAL codec with every field in the design
       record's table; the payload tests assert `place_id`/`offered_at`/`dismissal_method` present
       and `placeId`/`offeredAt` absent.
-- [ ] Phase is DERIVED from the stamps (`RoutineRunRecord.phase`), pinned for every combination
+- [x] Phase is DERIVED from the stamps (`RoutineRunRecord.phase`), pinned for every combination
       including a stray `dismissed_at` beside a `started_at` (reads started).
-- [ ] `completed_steps_count` equals `PlaceRoutineProgress.doneCount` for the same run — one
+- [x] `completed_steps_count` equals `PlaceRoutineProgress.doneCount` for the same run — one
       truth, pinned by a test that feeds both the same fixture; `time_spent_seconds` runs to the
       last step interaction, not the end stamp (pinned with a departure an hour later).
-- [ ] Site 1: a POSTED routine banner writes `offered`; a crossing suppressed by cooldown, the
+- [x] Site 1: a POSTED routine banner writes `offered`; a crossing suppressed by cooldown, the
       kill-switch, threshold or the 17-gate writes nothing. `RoutineDeferredLoggingTests` say in
       words that the offer record is the sanctioned exception.
-- [ ] Site 2: the tap writes `started` + `dismissal_method: tap`; a second tap (`.open`) writes
+- [x] Site 2: the tap writes `started` + `dismissal_method: tap`; a second tap (`.open`) writes
       nothing; a replaced live run gets `ended(replaced)` first (ordering pinned via the log).
-- [ ] Site 3: the routine category carries `.customDismissAction` (call-site guard on the ONE
+- [x] Site 3: the routine category carries `.customDismissAction` (call-site guard on the ONE
       registration); the delegate's dismiss branch writes `dismissed` + `swipe`, never starts a
       routine, never touches the tap router (pinned by a pure `RoutineDismissRouting` test and a
       source guard).
-- [ ] Site 4: every `apply` on the screen writes `progressed`; site 5: leaving a fully resolved
+- [x] Site 4: every `apply` on the screen writes `progressed`; site 5: leaving a fully resolved
       screen writes `ended(completed)`, the departure crossing writes `ended(left_place)`.
-- [ ] Site 6: `RoutineRunReconciliation.updates(records:liveRunId:now:)` is pure and pinned —
+- [x] Site 6: `RoutineRunReconciliation.updates(records:liveRunId:now:)` is pure and pinned —
       unopened offers past their lifetime → `expired`; started runs past it → `window_lapsed` or
       `day_ended`; the live run and already-terminal documents are never touched; called after
       the Journal load (Tools load joins in block 2).
-- [ ] Sign-out leak: the run-store key is per-user; signed out reads nil and drops writes;
+- [x] Sign-out leak: the run-store key is per-user; signed out reads nil and drops writes;
       `AuthService.signOut()` and `completeAccountDeletion()` clear it (pinned).
-- [ ] `firestore.rules` lists `routine_runs` in the generic CRUD match; an emulator test proves
-      create + update are ALLOWED for the owner and denied for another user. Reported to E as
-      "not live until republished".
-- [ ] Suite green, lint 0, both targets build, red-checked with counted injected regressions,
-      committed and pushed.
+- [x] `firestore.rules` lists `routine_runs` in the generic CRUD match; an emulator test proves
+      create + update + fetch are ALLOWED for the owner through the REAL rules
+      (`FirebaseManagerRoutineRunsTests`, 2 tests, run with the emulator up). The "denied for
+      another user" half was NOT built: the manager only ever addresses `users/{currentUid}`, so
+      proving denial would mean adding a raw-path method to production for a test's sake.
+      **Not live until E republishes `firestore.rules`.**
+- [x] Suite green (**2,424 / 0**, up 76, emulator up so nothing skipped), lint **0 / 693**, both
+      targets build, red-checked (3 injected → 11 distinct failing tests, each the guard aimed at
+      its regression; restored tree 37 / 37), committed and pushed.
+
+**Two things found while building, neither fixed here:**
+- `UserDefaultsArrivalNudgeStateStore` — the at-place SNAPSHOT (place names, custom messages) —
+  has the same app-local, unscoped shape the run store had. Same leak class; on the register.
+- The screen's `record { }` writes and the activator's `recordTask` are best-effort by design
+  (a lost write is a gap in history, never a broken routine), so an OFFLINE run's progress reaches
+  Firestore only through the SDK's own offline queue. Not verified on device.
 
 ### FEATURE: F-RoutineRecord-2-Surfaces — Journal rows + switch, Tools last-run line  [ ]
 
