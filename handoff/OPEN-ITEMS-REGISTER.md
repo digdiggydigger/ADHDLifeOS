@@ -38,8 +38,14 @@ repo (E republished; verified byte-identical).
       `feature/routines`, `feature/routines-tools` deleted locally and on origin, each verified
       `--merged main` first. (The previous edition said "four" — three existed; the
       app-directory and tools-tab branches were already gone.) Only `main` remains.
-- [ ] **Fold the snapshot leak?** `UserDefaultsArrivalNudgeStateStore` — the third member of
-      the family (run store fixed, tray fixed, snapshot open). (carried)
+- [x] **Fold the snapshot leak** — DONE on E's word (2026-09-06, `45f74f7`): snapshot AND
+      cooldowns keyed per user (scope read at call time, the run-store pattern), signed-out
+      reads empty and drops writes, the session-end hook sweeps every user's keys plus the
+      legacy unscoped ones. Test-first; suite 2,458 / 0; red-checked 3 → 3 + 1 + 1.
+- [ ] **Three MORE possible family members, found while folding — E's call whether they are
+      leaks:** `DailySummaryStore`, `FocusWidgetSnapshotStore` and `LifeAreasWidgetStore` all
+      write unscoped app-local keys. UNVERIFIED whether any carries user content that survives
+      a sign-out (the widget stores may be cleared elsewhere); check before folding.
 - [ ] **Re-measure coverage?** CLAUDE.md records **23.62% at `b1f4b6f`**, stale — the suite has
       since grown to 2,454 tests. (carried)
 - [ ] **The permission-banner footer** on the Routines section. (carried)
