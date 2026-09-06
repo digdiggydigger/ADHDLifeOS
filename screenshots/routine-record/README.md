@@ -31,3 +31,23 @@ in the same block:
 | `00-journal-all-activity-off.jpg` | Everything, switch OFF: `Arrived at Gym` kept beside `Started routine at Gym` and `Finished routine at Gym · 1 of 4 done` (three skips, one auto step — "done" excludes skipped). `Arrived at Office` shows with NO routine row: the untaken offer is hidden by default. |
 | `01-journal-all-activity-on.jpg` | Switch ON (filled eye, selected): `Routine offered at Office · not opened` appears, muted — tertiary ink and a `bell.slash` glyph with no accent — while started/finished keep the accent glyph. Nothing else moved. |
 | `02-tools-last-run-line.jpg` | Tools → Routines: the gym row reads `Gym · 3 steps · last run today, 1 of 4`; the office row, never started, is byte-identical to before (`Office · 3 steps`). |
+
+## E's device walk — 2026-09-06, iPhone 15 Pro (iOS 26.4), live Firebase, E's own account
+
+Branch `7430ea7` installed over `devicectl` after E republished `firestore.rules`. E signed out
+and back in (no stale banner in Notification Centre), then test-fired arrivals at `Home` and
+worked the eye switch in both appearances. Every row below is REAL data on the live project;
+nothing to clean up — it is E's journal.
+
+| file | what it proves |
+|---|---|
+| `03-device-dark-switch-on.jpg` | Dark, switch ON: two `Routine offered at Home 🏠 · not opened` rows (7:45) muted between accent-glyph rows; a REPLACED run reads gently as `Routine at Home 🏠 · 0 of 2 done` (its `Started` row is the 7:23 one — newest-wins ended it when the 7:46 tap started a new run); the new run's `Started` + `Finished … · 2 of 2 done`. |
+| `04-device-light-switch-on.jpg` | The same moment in light. Muted rows still read; the filled eye reads as selected. |
+| `05-device-light-switch-off.jpg` | Switch OFF: both offered rows gone, every other row unmoved — the switch touches offers alone. |
+| `06-device-dark-switch-off.jpg` | Same in dark. |
+| `07-device-third-run-switch-off.jpg` | A third run two minutes later: `Arrived` 7:47 → `Started` 7:47 → `Finished … · 1 of 2 done` 7:48 (one skip). The three-lines-per-visit shape E chose, on real data. |
+| `08-device-third-run-switch-on.jpg` | Switch ON again over the same day: the offers return in place, muted. |
+
+**Not proved by these:** the SWIPE path. Both offered rows say `not opened`, i.e. they timed out
+or were replaced; a swiped banner would read `· cleared`. Whether E swiped them is the open
+question at the time of writing.
