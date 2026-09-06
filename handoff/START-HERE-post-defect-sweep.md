@@ -17,9 +17,11 @@ in the same move that writes your successor, at the END of your session, never a
 3. **`handoff/OPEN-ITEMS-REGISTER.md`** — THE outstanding list, rewritten at this close-out
    and kept current through the same evening (phone reinstalled from main at `e4fe956` via
    `devicectl`, E's word — the device TRACKS MAIN; the widget fold is DEVICE-CONFIRMED,
-   evidence in `screenshots/widget-session-fold/`, do not re-verify). Section A holds E's
-   minutes-each decisions (the `DailySummaryStore` sweep call, the widget's stale "Open
-   Momentum once…" copy); section B's first item is the post-fix full-UI-target baseline run.
+   evidence in `screenshots/widget-session-fold/`, do not re-verify). **Section B's items 1
+   and 2 are E's queued instruction for THIS session** — the `DailySummaryStore` sweep
+   (authorised: sweep it) and the "Open Momentum once…" widget copy (the replacement word is
+   still E's to pick — propose "LifeOS" and wait for the nod). The post-fix full-UI-target
+   baseline run follows them.
 4. `handoff/SESSION-OPENER-routine-record-design.md` — still the newest design record.
 
 **Do NOT read `docs/`.** It is an archive of a legacy build and says this app runs on Supabase.
