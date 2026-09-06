@@ -299,6 +299,7 @@ enum UITestSession {
         let perAttempt = max(2.0, timeout / Double(attempts))
         for attempt in 1...attempts {
             if expected.exists { return true }
+            dismissSystemPasswordPromptIfPresent()
             element.tap()
             if expected.waitForExistence(timeout: perAttempt) { return true }
             // Re-check the tap target: a swallowed tap can also mean the screen moved under us.
@@ -319,6 +320,7 @@ enum UITestSession {
         for _ in 1...attempts {
             if !doomed.exists { return true }
             guard element.exists else { return !doomed.exists }
+            dismissSystemPasswordPromptIfPresent()
             element.tap()
             let gone = XCTNSPredicateExpectation(
                 predicate: NSPredicate(format: "exists == false"), object: doomed
@@ -339,6 +341,7 @@ enum UITestSession {
     @MainActor
     static func focusAndType(_ element: XCUIElement, text: String, in app: XCUIApplication) {
         XCTAssertTrue(element.waitForExistence(timeout: timeout))
+        dismissSystemPasswordPromptIfPresent()
         let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: element)
         XCTAssertEqual(
             XCTWaiter().wait(for: [hittable], timeout: timeout), .completed,
@@ -360,6 +363,7 @@ enum UITestSession {
             return app.keyboards.element.exists
         }
         for _ in 1...3 {
+            dismissSystemPasswordPromptIfPresent()
             element.tap()
             let deadline = Date().addingTimeInterval(3)
             while Date() < deadline, !isFocused() { Thread.sleep(forTimeInterval: 0.2) }
