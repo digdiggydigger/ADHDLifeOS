@@ -289,28 +289,40 @@ measurement, anything that will be sampled rather than looked at.
 
 Repo: https://github.com/digdiggydigger/ADHDLifeOS (private, branch `main`).
 
+**`main` is PROTECTED since 2026-09-06 (E's call, made mid-session and confirmed in chat):
+GitHub rejects direct pushes (`GH006: Changes must be made through a pull request`). Every
+change lands through a PR now.** The four direct-push bullets that used to sit here described
+the pre-protection flow; their spirit — no work ever lost, nothing unverified — is unchanged.
+
 To guarantee no work is ever lost:
-- Commit after every completed FEATURE block (the same moment you mark it `[x] COMPLETED` in `TODO-CLAUDE-CODE.md`), before waiting for review.
-- Push to `origin/main` immediately after each commit — don't batch multiple features into one push.
-- Never end a session with uncommitted or unpushed changes. If a session ends mid-feature, commit what exists with a `WIP:` prefix rather than leaving it unstaged.
+- Work on a short-lived branch (`feature/<arc>` for blocks, `chore/<thing>` for the rest).
+  Commit at the same moments as before: every completed FEATURE block the moment it is marked
+  `[x] COMPLETED`, before waiting for review.
+- Push the BRANCH immediately after each commit — don't batch.
+- Land via `gh pr create` then `gh pr merge --merge --delete-branch`. If the merge is refused
+  (a review requirement, a failed check), hand E the PR link and stop — never force.
+- Never end a session with uncommitted or unpushed changes. Mid-feature, commit what exists
+  with a `WIP:` prefix to the branch and push the branch.
 - Commit message format: `<FEATURE-ID>: <short description>` (e.g. `F2-AuthPersistence: add token refresh on launch`).
 
-### Commit + push is Claude Code's job, and it is not done until it is VERIFIED (E's standing rule, 2026-07-30)
+### Landing is Claude Code's job, and it is not done until it is VERIFIED (E's standing rule, 2026-07-30; PR flow since 2026-09-06)
 
 **Claude Code owns git for this repo. Every block ends with a real, landed commit AND a real,
-landed push — performed by Claude Code, in the same session, without being asked.** Never hand E a
-git command to run. Never report "committed and pushed" from the fact that you typed the command.
+landed merge to `main` — performed by Claude Code, in the same session, without being asked.**
+Never hand E a git command to run. Never report "landed" from the fact that you typed the command.
 
 **Mandatory close-out, run at the end of every block before you write your report:**
 
 ```
+git checkout main && git pull --ff-only
 git status --short          # must be empty
-git log --oneline -1        # local HEAD
-git log --oneline -1 origin/main   # must be the SAME SHA
+git log --oneline -1        # local main
+git log --oneline -1 origin/main   # must be the SAME SHA, and contain the work
 ```
 
-Paste that real output in the report. **If local HEAD and `origin/main` differ, the push did not
-land and the block is NOT done** — fix it, don't report it. This rule exists because a "Pushed"
+Paste that real output in the report. **If the work is not reachable from `origin/main`, it has
+not landed and the block is NOT done** — fix it, don't report it (a PR left open awaiting E is
+the one sanctioned exception, and the report must say so). This rule exists because a "Pushed"
 has silently failed to land in this project more than once, and because a commit command was once
 handed to E as text and never verified.
 
