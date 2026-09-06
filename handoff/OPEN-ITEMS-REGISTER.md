@@ -1,68 +1,66 @@
-# Open items register — 2026-09-06 (F-RoutineRecord-1 at E's review)
+# Open items register — 2026-09-06 (end of session: routine record built, unmerged)
 
 **This file is THE outstanding list.** It is rewritten at every session close-out (CLAUDE.md,
 "Session handoff"), so it is the thing to read — and to update — rather than improvising a list in
-chat. Supersedes the 2026-09-06 end-of-session edition written before the routine-record work
-began.
+chat. Supersedes the mid-session edition written at F-RoutineRecord-1's review stop.
 
 Every figure below was measured this session unless marked UNVERIFIED.
 
 ## State
 
-Branch **`feature/routine-record`** (off `main` @ `ebc5865`) · working tree clean · pushed ·
-unit suite **2,424 / 0** with the emulator UP (nothing skipped) · SwiftLint **0 violations in
-693 files** · both targets build · full UI target **NOT re-run this session** (last known 23 / 6
-on main at `ebc5865`) · E's phone still carries `1ab5ff2` (= main's app source at `ebc5865`),
-which does NOT include any of this branch.
+Branch **`feature/routine-record`** (off `main` @ `ebc5865`) · working tree clean at the close-out
+commit · pushed, `origin/feature/routine-record` matches · unit suite **2,453 / 0** with the
+emulator UP (nothing skipped) · SwiftLint **0 violations in 704 files** · both targets build ·
+`RoutineRecordJourneyUITests` **PASSED** on an erased simulator · full UI target **NOT re-run**
+(last known 23 / 6 on main at `ebc5865`) · E's phone carries `1ab5ff2` (= main's app source),
+which has NONE of this branch.
 
-**The live opener is `handoff/START-HERE-post-foundations.md`** — the only one. It said "ask E";
-E picked the routine record gap. Archive it into `handoff/archive/` in the same move that writes
-its successor.
+**The live opener is `handoff/START-HERE-routine-record-review.md`** — the only one.
+`START-HERE-post-foundations.md` was consumed and is archived.
 
-**Shipped this session, on the branch, awaiting E's review:** `F-RoutineRecord-1-Ledger` — the
-`routine_runs` collection, the recorder seam, all six write points (offer at the crossing — E's
-explicit exception to Block A; started/replaced at the tap; swiped through a new dismiss branch;
-progressed and completed from the screen; left_place at the departure; passive endings derived on
-the Journal load), and the run-store sign-out leak fix (register B2, now closed). Design record:
-`handoff/SESSION-OPENER-routine-record-design.md`. Block in `TODO-CLAUDE-CODE.md`.
+**Shipped this session, on the branch, unmerged:** both blocks of the routine record —
+`F-RoutineRecord-1-Ledger` (the `routine_runs` collection, the recorder seam, six write sites,
+the sign-out leak fix) and `F-RoutineRecord-2-Surfaces` (Journal rows, the "All activity" eye
+switch, the Tools last-run line, the journey). Design record and build record:
+`handoff/SESSION-OPENER-routine-record-design.md`. Evidence: `screenshots/routine-record/`.
+Plus two defects the journey caught and this session fixed: a routine banner outliving a
+sign-out, and the mechanism of the tab-root "not hittable" defect (see E below).
 
-**Branches:** `feature/routines` and `feature/routines-tools` both merged into main, both KEPT on
-E's word. `feature/routine-record` is live and unmerged.
+**Branches:** `feature/routines` and `feature/routines-tools` merged and KEPT on E's word;
+`feature/routine-record` live and unmerged.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Republish `firestore.rules`.** `routine_runs` joined the generic owner-CRUD list on the
-      branch. Until published, every `routine_runs` write from a device on this branch fails
-      permission-denied (silently — the sites are best-effort). Publish when the branch merges,
-      or before installing the branch on the phone.
-- [ ] **Review F-RoutineRecord-1** (this stop). Nothing of it is visible yet — block 2 is the
-      Journal rows, the header switch and the Tools last-run line. Firestore console is the only
-      place to see a run document today.
-- [ ] **Fold the snapshot leak?** `UserDefaultsArrivalNudgeStateStore` holds the at-place
-      snapshot (place names, custom messages) under an app-local unscoped key — the same shape
-      the run store had. Offered during design, not chosen; found again while building.
+- [ ] **Republish `firestore.rules`** — `routine_runs` is in the generic CRUD list on the branch
+      and NOT live. Until published, every record write from a device on this branch fails
+      permission-denied, silently. Do this before the branch reaches the phone.
+- [ ] **Review the routine record on device**, then `--no-ff` merge — the opener has the walk.
+      The SWIPE path (`.customDismissAction`) has never run outside unit tests; the phone is its
+      first real test.
+- [ ] **Fold the snapshot leak?** `UserDefaultsArrivalNudgeStateStore` holds place names and
+      custom messages under an app-local unscoped key — the third member of the family (run
+      store: fixed; tray: fixed; snapshot: open).
 - [ ] **Delete the two merged branches?** (carried)
-- [ ] **Re-measure coverage?** CLAUDE.md still records **23.62% at `b1f4b6f`**, now stale by
-      several arcs plus this one. (carried)
+- [ ] **Re-measure coverage?** CLAUDE.md records **23.62% at `b1f4b6f`**, now stale by several
+      arcs plus this one. (carried)
 - [ ] **The permission-banner footer** on the Routines section. (carried)
 - [ ] **Give the `Home` place an emoji.** (carried)
 
 ## B · Real work, ready to start — recommended order
 
-1. **`F-RoutineRecord-2-Surfaces`** — the visible half of E's ask, fully designed and queued in
-   `TODO-CLAUDE-CODE.md`: three Journal entry kinds (started / finished always visible under
-   Everything; offered rows only behind a new "All activity" header switch, muted), the arrival
-   row kept beside them, the Tools row's last-run line, the reconciler joining the Tools load, and
-   `RoutineRecordJourneyUITests` with a `screenshots/routine-record/` folder. Needs the emulator
-   (`scripts/emulators.sh`) and — after the journey — **`xcrun simctl erase 9181EBF9-0F54-4A4D-A19C-19945D1BF155`
-   before any unit run.**
-2. **Arc 2 — first-class routines + the "at a time" trigger.** Designed in outline, NOT
-   authorised. The record now exists, so the shape question this used to wait on is answered.
-3. **The tab-root not-hittable defect — new angle, 2026-09-05.** Vary run ORDER against a fixed
-   tree. (carried)
-4. **`F-Search-3-Journal`** — UNCHECKED with "⚠ RECONSIDER FIRST"; recommendation is to kill
+1. **Merge the routine record** (after A's first two). Re-verify on main, re-install the phone
+   from main, update this register.
+2. **Re-run the full UI target once on main** after the merge. The tab-root defect's fix is on
+   this branch; if the unstable failure set shrinks, register item 4 below closes. UNVERIFIED.
+3. **Arc 2 — first-class routines + the "at a time" trigger.** Designed in outline, NOT
+   authorised. The record exists now, so its data question is answered.
+4. **The tab-root not-hittable defect** — mechanism found this session (hidden tabs' UIKit
+   subtrees remain in the accessibility tree; `AppTabContent` now parks them off-screen). What
+   is left is confirming it on the full UI target (item 2), then deleting `HitTestProbeUITests`
+   or turning it into an assertion, as its own header asks.
+5. **`F-Search-3-Journal`** — UNCHECKED with "⚠ RECONSIDER FIRST"; recommendation is to kill
    the block. E's call. (carried)
-5. **The Live Activity design review** E parked. (carried)
+6. **The Live Activity design review** E parked. (carried)
 
 ## C · Parked on E's instruction — do not start unprompted
 
@@ -78,12 +76,13 @@ E's word. `feature/routine-record` is live and unmerged.
 
 ## E · Known, not work
 
-- **Six UI-target failures**, unstable set. Not re-run this session. (carried)
+- **Six UI-target failures**, unstable set — possibly explained and fixed by this session's
+  `AppTabContent` change; not re-run. (carried, now with a candidate cause)
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
-- **The 107-second failing test.** In the red-check run only, with a regression injected,
-  `JournalServiceRoutineRunsTests.testLoad_writesEachLapsedRunOnce…` took 107 s to FAIL; on the
-  green tree it takes 1 ms, and no `127.0.0.1:9099` tell was in the log. Failure-path only;
-  unexplained; noted so nobody bisects it.
-- **The emulator is still running** in the background from this session (`scripts/emulators.sh`,
-  log at the scratchpad). Block 2's journey wants it; kill it if the machine needs the memory.
+- **The 107-second failing test** in block 1's red-check — failure-path only, unexplained,
+  1 ms on the green tree. Noted so nobody bisects it.
+- **The emulator was left running** from this session (`scripts/emulators.sh`); its two log
+  files sit in the repo root, gitignored. Kill it if the machine needs the memory.
+- **`firestore-debug.log` is where a silently failed write shows up** — the lesson of this
+  session, recorded in the opener's traps.

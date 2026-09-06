@@ -2926,7 +2926,7 @@ store key.
   (a lost write is a gap in history, never a broken routine), so an OFFLINE run's progress reaches
   Firestore only through the SDK's own offline queue. Not verified on device.
 
-### FEATURE: F-RoutineRecord-2-Surfaces — Journal rows + switch, Tools last-run line  [ ]
+### FEATURE: F-RoutineRecord-2-Surfaces — Journal rows + switch, Tools last-run line  [x] COMPLETED
 
 `JournalTimeline.Entry` gains `.routineOffered` / `.routineStarted` / `.routineEnded` with a
 composite `String` id; `JournalTimeline.routineLine(...)` holds every word; the "All activity"
@@ -2935,19 +2935,35 @@ reconciler joins the Tools load; a UI journey that fires a crossing, walks the r
 the rows.
 
 **Acceptance criteria**
-- [ ] Every row's words pinned: started, finished (completed), unfinished (gentle), offered
+- [x] Every row's words pinned: started, finished (completed), unfinished (gentle), offered
       cleared / not opened; names resolve through the CURRENT place; dangling places drop the row;
       never under a life-area filter or a non-Everything chip.
-- [ ] Offered rows appear ONLY with the switch on (pinned both ways); the switch is off on
+- [x] Offered rows appear ONLY with the switch on (pinned both ways); the switch is off on
       launch and not persisted; muted styling uses tokens, never opacity.
-- [ ] One document → started + ended rows with distinct ids; a live run shows started only.
-- [ ] Tools rows: last-run subtitle from the newest STARTED record for that place+direction;
+- [x] One document → started + ended rows with distinct ids; a live run shows started only.
+- [x] Tools rows: last-run subtitle from the newest STARTED record for that place+direction;
       rows without history byte-identical; the catalog still decides nothing about membership.
-- [ ] Reachability: call-site guards pin that the Journal renders all three kinds, the header
+- [x] Reachability: call-site guards pin that the Journal renders all three kinds, the header
       renders the switch, the Tools section passes runs to the catalog.
-- [ ] `RoutineRecordJourneyUITests`: seed a qualifying place, test-fire the arrival, tap the
-      routine, resolve it, close, open Journal, find the started and finished rows; flip the
-      switch and find an offered row from a second, untapped fire. Red-checked. Screenshots
-      in `screenshots/routine-record/` with a README.
-- [ ] Suite green, lint 0, both targets build, red-checked, committed and pushed; then E's
-      device review, `--no-ff` merge, re-verify on main.
+- [x] `RoutineRecordJourneyUITests`: seeds two places, fires and finishes the gym routine,
+      fires the office arrival untouched, finds `Started` + `Finished … · 1 of 4 done` on the
+      Journal with the offer ABSENT, flips the switch and finds `Routine offered at Office 💼 ·
+      not opened`, then reads `last run today, 1 of 4` on the Tools row. PASSED (264 s) on an
+      erased simulator. Screenshots + README in `screenshots/routine-record/`.
+- [x] Suite green (**2,453 / 0**, emulator up), lint **0 / 704**, both targets build,
+      red-checked (3 injected → 5 failing tests, each its guard; restored 37 / 37), committed
+      and pushed. **Still owed: E's device review, `--no-ff` merge, re-verify on main.**
+
+**Two defects the journey caught, both fixed in this block — neither was in the design:**
+- **A routine banner outlives a sign-out.** The third journey run tapped the PREVIOUS account's
+  untouched Office banner and started that routine under the new account; every record write
+  then failed server-side ("no entity to update", the emulator log). `RoutineNotificationTray`
+  clears the routine species as a session ends; the default `onSessionEnding` calls it.
+- **The tab-root "not hittable" defect (register B3) — mechanism found.** The failure dump had
+  the HIDDEN Today tab's elements in the accessibility tree, its momentum ring over the Places
+  card's centre. `accessibilityHidden` stops at each tab's UIKit navigation controller. Hidden
+  tabs are now parked off-screen (`AppTabContentLayout.hiddenTabOffset`, pinned). Whether this
+  also settles the UI target's unstable set is UNVERIFIED — the full UI target was not re-run.
+- Also: the screen recorded `completed` TWICE (Close and `onDisappear` both end the run);
+  recorded once now. And the CLAUDE.md erase rule bit in a new disguise — the tray, not the
+  keychain — so the journey was run on an erased sim from then on.

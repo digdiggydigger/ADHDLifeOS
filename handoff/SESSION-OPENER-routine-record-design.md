@@ -186,3 +186,27 @@ Two FEATURE blocks on one branch, each ending at E's review:
   (a started run still inside its lifetime), and must never write twice for one document.
 - The unit-test sim must stay signed out (standing rule). The journey signs in through the
   emulator like `RoutineJourneyUITests`; erase the sim before any unit run after it.
+
+## Build record — both blocks shipped 2026-09-06 (same session as the design)
+
+Block 1 (`0022a37`) and block 2 (`13e8f0e` + close-out) landed on `feature/routine-record`,
+unmerged, awaiting E's device review. Everything above was built as designed, with three things
+the build added that the design did not foresee:
+
+1. **The offer's own partial updates raced nothing — but a banner from ANOTHER account did.**
+   The simulator's tray outlives a sign-out. Tapped under the next account, a stale routine
+   banner starts the previous account's routine (its place, its steps) and every record write
+   fails server-side. Real for a phone that changes hands or an account switch. Fixed:
+   `RoutineNotificationTray.clearDeliveredRoutineBanners()` runs as a session ends.
+2. **The tab-root "not hittable" defect (register B3) has a mechanism now.** Each tab is a
+   `NavigationStack`, i.e. a UIKit navigation controller; `accessibilityHidden` on the SwiftUI
+   wrapper does not reach that subtree, so hidden tabs' elements stay in the accessibility tree
+   at their on-screen frames and hit-tests resolve to them. Which tabs were visited decides
+   which targets die — hence the shuffling set. Hidden tabs are now parked 10,000pt off-screen.
+3. **`completed` was recorded twice** (the Close button and `onDisappear` both run the exit).
+   Guarded with a once-flag on the screen.
+
+The one iOS integration in the design — `.customDismissAction` — is built but was NOT exercised
+by the journey (XCUITest cannot swipe a banner in the tray); the swipe path is pinned by
+`RoutineDismissRoutingTests` and the delegate-order guard only. E's device is the first real
+test of it.
