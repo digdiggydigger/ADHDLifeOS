@@ -23,7 +23,10 @@ after every UI run (five times today — the poison rule held, including through
 - **F-WidgetStoreFold** (#4, `3a831d2`) — register A3's widget half, on E's word: both App
   Group widget snapshots cleared AND both timelines reloaded on session end (sign-out and the
   account-deletion hand-off); without it the last user's task titles and area names kept
-  rendering on the Home Screen. TDD staged; red-check 1 + 1 + 2.
+  rendering on the Home Screen. TDD staged; red-check 1 + 1 + 2. **DEVICE-CONFIRMED by E's own
+  screenshots the same evening** (22:46–22:49, after the 22:05 reinstall): all four widget
+  types empty signed out, repopulated signed in — `screenshots/widget-session-fold/`. Do not
+  re-verify.
 - **The tab-root not-hittable defect: SOLVED, fix landed** (#5, `db32a55`). Root cause from
   the failure dump: **iOS's own AutoFill "Save Password?" sheet** interposing on its own late
   schedule after fresh-credential sign-ins — while it is up, hit-tests die across the WHOLE
@@ -54,6 +57,10 @@ after every UI run (five times today — the poison rule held, including through
       `e4fe956` (`-allowProvisioningUpdates`, zero "No Accounts"), binary stamped 22:04,
       `devicectl` install + `--terminate-existing` launch verified on `wishwashwacky15`.
       The widget fold and the clearance fix are on device.
+- [ ] **The Life Areas widget's signed-out copy says "Open Momentum once and your areas will
+      appear here."** — "Momentum" is the Home-redesign codename, not the app's name; every
+      other surface says LifeOS. Found in E's device screenshots
+      (`screenshots/widget-session-fold/01-…`). One-line copy fix once E picks the word.
 - [ ] **Re-measure coverage?** CLAUDE.md records 23.62% at `b1f4b6f`, stale — the suite is now
       2,462. (carried)
 - [ ] **The permission-banner footer** on the Routines section. (carried)
