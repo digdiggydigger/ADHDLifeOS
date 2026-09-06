@@ -170,10 +170,10 @@ final class JournalService: ObservableObject {
         reconcileTask = Task {
             for update in updates {
                 switch update {
-                case .expired(let runId, let at):
-                    try? await recorder.expired(runId: runId, at: at)
-                case .ended(let runId, let reason, let at):
-                    try? await recorder.ended(runId: runId, reason: reason, at: at)
+                case .expired(let runId, let lapsedAt):
+                    try? await recorder.expired(runId: runId, at: lapsedAt)
+                case .ended(let runId, let reason, let lapsedAt):
+                    try? await recorder.ended(runId: runId, reason: reason, at: lapsedAt)
                 }
             }
         }

@@ -136,7 +136,7 @@ final class RoutineRecordSiteTests: XCTestCase {
 
         XCTAssertEqual(harness.routineRecorder.events, ["offered", "started", "ended:left_place"])
         XCTAssertEqual(harness.routineRecorder.ended.first?.runId, liveId)
-        XCTAssertEqual(harness.routineRecorder.ended.first?.at, harness.noon.addingTimeInterval(600))
+        XCTAssertEqual(harness.routineRecorder.ended.first?.endedAt, harness.noon.addingTimeInterval(600))
     }
 
     func testDepartureWithNoLiveRun_recordsNoEnd() async {

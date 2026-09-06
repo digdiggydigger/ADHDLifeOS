@@ -189,7 +189,9 @@ final class RoutineRunStoreTests: XCTestCase {
     }
 
     func testStore_writeThenRead_roundTrips() {
-        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" })
+        let store = UserDefaultsRoutineRunStore(
+            defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" }
+        )
         let run = makeRun()
 
         store.write(run)
@@ -212,7 +214,9 @@ final class RoutineRunStoreTests: XCTestCase {
     }
 
     func testStore_endLiveRunClears() {
-        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" })
+        let store = UserDefaultsRoutineRunStore(
+            defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" }
+        )
         store.write(makeRun())
 
         store.endLiveRun()
@@ -221,7 +225,9 @@ final class RoutineRunStoreTests: XCTestCase {
     }
 
     func testStore_updateMatching_refusesToResurrectAReplacedRun() {
-        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" })
+        let store = UserDefaultsRoutineRunStore(
+            defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" }
+        )
         let original = makeRun()
         let replacement = makeRun()
         store.write(original)
@@ -240,7 +246,9 @@ final class RoutineRunStoreTests: XCTestCase {
     }
 
     func testStore_endRunId_endsOnlyThatRun() {
-        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" })
+        let store = UserDefaultsRoutineRunStore(
+            defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" }
+        )
         let original = makeRun()
         let replacement = makeRun()
         store.write(original)

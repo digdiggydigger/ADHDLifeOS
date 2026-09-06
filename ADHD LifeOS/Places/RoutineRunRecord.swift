@@ -41,23 +41,25 @@ enum RoutineRunEndReason: String, Codable, Equatable, Sendable {
     case replaced
 }
 
-struct RoutineRunRecord: Codable, Identifiable, Equatable, Sendable {
-    struct Step: Codable, Equatable, Sendable {
-        let actionId: UUID
-        let title: String
-        /// The action's own wire kind name (`open_app`, `journal_line`), so a step can be
-        /// joined back to its kind without a table.
-        let kind: String
-        var state: RoutineStepState
-        var resolvedAt: Date?
+/// One step as the record stores it. Top-level rather than nested so its `CodingKeys` sit one
+/// level deep, like every other wire type here.
+struct RoutineRunStepRecord: Codable, Equatable, Sendable {
+    let actionId: UUID
+    let title: String
+    /// The action's own wire kind name (`open_app`, `journal_line`), so a step can be joined
+    /// back to its kind without a table.
+    let kind: String
+    var state: RoutineStepState
+    var resolvedAt: Date?
 
-        enum CodingKeys: String, CodingKey {
-            case title, kind, state
-            case actionId = "action_id"
-            case resolvedAt = "resolved_at"
-        }
+    enum CodingKeys: String, CodingKey {
+        case title, kind, state
+        case actionId = "action_id"
+        case resolvedAt = "resolved_at"
     }
+}
 
+struct RoutineRunRecord: Codable, Identifiable, Equatable, Sendable {
     /// The minted run key: the banner payload, the local live-run cache and this document
     /// share it, which is what lets each transition address the document without a lookup.
     let id: UUID
@@ -72,7 +74,7 @@ struct RoutineRunRecord: Codable, Identifiable, Equatable, Sendable {
     var dismissedAt: Date?
     var expiredAt: Date?
     var dismissalMethod: RoutineRunDismissalMethod?
-    var steps: [Step]
+    var steps: [RoutineRunStepRecord]
     var totalStepsCount: Int
     var autoStepsCount: Int
     var completedStepsCount: Int
@@ -128,7 +130,7 @@ struct RoutineRunRecord: Codable, Identifiable, Equatable, Sendable {
             status: .offered,
             offeredAt: run.startedAt,
             steps: run.steps.map { step in
-                Step(
+                RoutineRunStepRecord(
                     actionId: step.action.id,
                     title: PlaceActionRowLabel.title(for: step.action),
                     kind: step.action.wireKindName,

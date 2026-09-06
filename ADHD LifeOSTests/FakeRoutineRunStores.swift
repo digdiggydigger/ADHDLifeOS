@@ -45,7 +45,13 @@ final class FakeRoutineRunRecorder: RoutineRunRecording, @unchecked Sendable {
     private(set) var dismissed: [(runId: UUID, at: Date)] = []
     private(set) var expired: [(runId: UUID, at: Date)] = []
     private(set) var progressed: [(run: RoutineRun, at: Date)] = []
-    private(set) var ended: [(runId: UUID, reason: RoutineRunEndReason, at: Date)] = []
+    struct Ended: Equatable {
+        let runId: UUID
+        let reason: RoutineRunEndReason
+        let endedAt: Date
+    }
+
+    private(set) var ended: [Ended] = []
     var error: Error?
 
     func offered(_ record: RoutineRunRecord) async throws {
@@ -80,7 +86,7 @@ final class FakeRoutineRunRecorder: RoutineRunRecording, @unchecked Sendable {
 
     func ended(runId: UUID, reason: RoutineRunEndReason, at now: Date) async throws {
         events.append("ended:\(reason.rawValue)")
-        ended.append((runId: runId, reason: reason, at: now))
+        ended.append(Ended(runId: runId, reason: reason, endedAt: now))
         if let error { throw error }
     }
 }

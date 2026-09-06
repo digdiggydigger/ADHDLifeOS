@@ -79,6 +79,18 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         completionHandler(base.union(sound))
     }
 
+    private func claimRoutineDismissal(
+        _ response: UNNotificationResponse, identifier: String, userInfo: [AnyHashable: Any]
+    ) -> Bool {
+        MainActor.assumeIsolated {
+            RoutineDismissRecorder.shared.handle(
+                notificationIdentifier: identifier,
+                actionIdentifier: response.actionIdentifier,
+                userInfo: userInfo
+            )
+        }
+    }
+
     /// A tap on a delivered notification. For a focus sprint this is the deliberate way out of a
     /// Live Activity that iOS won't let a suspended app dismiss on time: the tap settles the sprint,
     /// and settling ends the Activity. `FocusNotificationResponse` holds the rule, including why
@@ -94,14 +106,7 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         // A SWIPE on the routine banner (F-RoutineRecord-1), claimed FIRST: the routine router
         // below reads a response on its prefix as a tap and would START the routine the user
         // just cleared. iOS delivers it only because the category asks (`.customDismissAction`).
-        let dismissedRoutine = MainActor.assumeIsolated {
-            RoutineDismissRecorder.shared.handle(
-                notificationIdentifier: identifier,
-                actionIdentifier: response.actionIdentifier,
-                userInfo: userInfo
-            )
-        }
-        if dismissedRoutine {
+        if claimRoutineDismissal(response, identifier: identifier, userInfo: userInfo) {
             completionHandler()
             return
         }

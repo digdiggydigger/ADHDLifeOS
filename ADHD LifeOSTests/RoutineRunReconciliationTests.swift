@@ -56,7 +56,7 @@ final class RoutineRunReconciliationTests: XCTestCase {
             records: [offer], liveRunId: nil, now: midnightAfter.addingTimeInterval(3_600), calendar: utc
         )
 
-        XCTAssertEqual(updates, [.expired(runId: offer.id, at: midnightAfter)])
+        XCTAssertEqual(updates, [.expired(runId: offer.id, lapsedAt: midnightAfter)])
     }
 
     func testFreshOffer_isLeftAlone() {
@@ -76,9 +76,9 @@ final class RoutineRunReconciliationTests: XCTestCase {
             records: [offer], liveRunId: nil, now: noon.addingTimeInterval(3_600), calendar: utc
         )
 
-        XCTAssertEqual(
-            updates, [.expired(runId: offer.id, at: noon.addingTimeInterval(RoutineDefaults.departureRunWindow))]
-        )
+        XCTAssertEqual(updates, [
+            .expired(runId: offer.id, lapsedAt: noon.addingTimeInterval(RoutineDefaults.departureRunWindow))
+        ])
     }
 
     // MARK: - Started runs lapse with a reason
@@ -91,7 +91,7 @@ final class RoutineRunReconciliationTests: XCTestCase {
             records: [run], liveRunId: nil, now: midnightAfter.addingTimeInterval(60), calendar: utc
         )
 
-        XCTAssertEqual(updates, [.ended(runId: run.id, reason: .dayEnded, at: midnightAfter)])
+        XCTAssertEqual(updates, [.ended(runId: run.id, reason: .dayEnded, lapsedAt: midnightAfter)])
     }
 
     func testStaleStartedDepartureRun_endsAsWindowLapsed() {
@@ -102,9 +102,8 @@ final class RoutineRunReconciliationTests: XCTestCase {
             records: [run], liveRunId: nil, now: noon.addingTimeInterval(3_600), calendar: utc
         )
 
-        XCTAssertEqual(updates, [
-            .ended(runId: run.id, reason: .windowLapsed, at: noon.addingTimeInterval(RoutineDefaults.departureRunWindow))
-        ])
+        let window = noon.addingTimeInterval(RoutineDefaults.departureRunWindow)
+        XCTAssertEqual(updates, [.ended(runId: run.id, reason: .windowLapsed, lapsedAt: window)])
     }
 
     func testLateDepartureRunCutOffByMidnight_endsAsDayEnded() {
@@ -115,7 +114,7 @@ final class RoutineRunReconciliationTests: XCTestCase {
             records: [run], liveRunId: nil, now: midnightAfter.addingTimeInterval(3_600), calendar: utc
         )
 
-        XCTAssertEqual(updates, [.ended(runId: run.id, reason: .dayEnded, at: midnightAfter)])
+        XCTAssertEqual(updates, [.ended(runId: run.id, reason: .dayEnded, lapsedAt: midnightAfter)])
     }
 
     // MARK: - What is never touched

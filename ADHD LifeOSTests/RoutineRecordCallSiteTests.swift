@@ -49,7 +49,9 @@ final class RoutineRecordCallSiteTests: XCTestCase {
         let screen = try Self.code("Places/PlaceRoutineScreen.swift")
 
         XCTAssertTrue(
-            Self.collapsed(screen).contains("_ = store.updateMatching(updated) record { try await recorder.progressed(updated"),
+            Self.collapsed(screen).contains(
+                "_ = store.updateMatching(updated) record { try await recorder.progressed(updated"
+            ),
             "the step write-through and the record must be the SAME moment: a step the local"
                 + " store knows and Firestore does not is a run whose Journal row lies"
         )
@@ -59,7 +61,9 @@ final class RoutineRecordCallSiteTests: XCTestCase {
         let screen = try Self.code("Places/PlaceRoutineScreen.swift")
 
         XCTAssertTrue(
-            Self.collapsed(screen).contains("store.end(runId: run.id) record { try await recorder.ended(runId: run.id, reason: .completed"),
+            Self.collapsed(screen).contains(
+                "store.end(runId: run.id) record { try await recorder.ended(runId: run.id, reason: .completed"
+            ),
             "ending the local run and recording `completed` must sit together, inside the"
                 + " fully-resolved branch — leaving an unfinished screen is not completion"
         )
@@ -81,7 +85,10 @@ final class RoutineRecordCallSiteTests: XCTestCase {
         let handler = try Self.code("Places/PlaceTriggerEventHandler.swift")
 
         XCTAssertTrue(
-            Self.collapsed(handler).contains("categoryIdentifier: PlaceRoutineNotificationContent.categoryIdentifier ) await recordOffer(routineRun"),
+            Self.collapsed(handler).contains(
+                "categoryIdentifier: PlaceRoutineNotificationContent.categoryIdentifier )"
+                    + " await recordOffer(routineRun"
+            ),
             "the offer is recorded right after the routine banner POSTS — a suppressed crossing"
                 + " (cooldown, kill-switch, threshold) offered nothing and must record nothing"
         )

@@ -14,9 +14,9 @@ import Foundation
 enum RoutineRunReconciliation {
     enum Update: Equatable {
         /// An offer nobody opened, past its lifetime.
-        case expired(runId: UUID, at: Date)
+        case expired(runId: UUID, lapsedAt: Date)
         /// A started run that outlived its window or its day without being ended by anything.
-        case ended(runId: UUID, reason: RoutineRunEndReason, at: Date)
+        case ended(runId: UUID, reason: RoutineRunEndReason, lapsedAt: Date)
     }
 
     /// Everything in `records` that has lapsed and not yet been told so. The LIVE run — the one
@@ -34,12 +34,12 @@ enum RoutineRunReconciliation {
             guard now >= lapse else { return nil }
             switch record.phase {
             case .offered:
-                return .expired(runId: record.id, at: lapse)
+                return .expired(runId: record.id, lapsedAt: lapse)
             case .started:
                 let window = record.offeredAt.addingTimeInterval(RoutineDefaults.departureRunWindow)
                 let reason: RoutineRunEndReason =
                     record.direction == .departure && lapse == window ? .windowLapsed : .dayEnded
-                return .ended(runId: record.id, reason: reason, at: lapse)
+                return .ended(runId: record.id, reason: reason, lapsedAt: lapse)
             case .dismissed, .expired, .ended:
                 return nil
             }
@@ -53,10 +53,10 @@ enum RoutineRunReconciliation {
             var updated = record
             for update in updates {
                 switch update {
-                case .expired(let runId, let at) where runId == record.id:
-                    updated.expired(at: at)
-                case .ended(let runId, let reason, let at) where runId == record.id:
-                    updated.ended(at: at, reason: reason)
+                case .expired(let runId, let lapsedAt) where runId == record.id:
+                    updated.expired(at: lapsedAt)
+                case .ended(let runId, let reason, let lapsedAt) where runId == record.id:
+                    updated.ended(at: lapsedAt, reason: reason)
                 default:
                     continue
                 }
