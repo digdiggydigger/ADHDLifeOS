@@ -71,3 +71,18 @@ and finished included. Files `00-` and `01-` were re-captured by the journey on 
 Files `03-`…`10-` are E's device under the EARLIER rule (started/finished always visible with
 the eye off) — the phone carried `7430ea7` throughout; what they prove (muting, the three-line
 shape, the swipe pipeline) is unchanged by the eye's wider gate.
+
+## E's device confirmation of the finished rule — 2026-09-06 09:07, build `7ad72ac`, live Firebase
+
+The review session installed `7ad72ac` (the finished eye change) over `devicectl`; E force-quit,
+relaunched, and took these four before authorising the merge. Real data, E's own journal,
+nothing to clean up. What a test cannot assert: the rule on a REAL day's density (six Home
+arrivals), in both appearances, and the `· cleared` row from the morning's swipe proof sitting
+in the story.
+
+| file | what it proves |
+|---|---|
+| `11-device-new-rule-dark-switch-off.jpg` | Dark, eye OFF: the whole day is crossings and a Focus sprint — six `Arrived at Home 🏠` rows and NOT ONE routine row. E's rule, live. |
+| `12-device-new-rule-dark-switch-on.jpg` | Dark, eye ON: the story returns — `Routine offered at Home 🏠 · cleared` (8:35, muted), two Started/Finished pairs, and the replaced run reading gently as `Routine at Home 🏠 · 0 of 2 done`. |
+| `13-device-new-rule-light-switch-on.jpg` | The same moment in light: muted rows still read, accent glyphs hold. |
+| `14-device-new-rule-light-switch-off.jpg` | Light, eye OFF: crossings alone again — the switch is symmetric across appearances. |
