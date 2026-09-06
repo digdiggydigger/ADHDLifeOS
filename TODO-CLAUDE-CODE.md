@@ -2855,3 +2855,133 @@ parked for E's own session — this block deliberately records nothing.
 **Deliberately NOT built, offered and declined by omission:** a permission-banner footer warning
 that a listed routine can still never fire (nudge master switch off, or location not Always). It
 was put to E as an optional extra and is not part of the recommendations E accepted.
+
+---
+
+## The routine record — E's design, settled 2026-09-06 (branch `feature/routine-record`, off `main` @ `ebc5865`)
+
+**E's ask (2026-09-05): "clearly differentiating between a Routines Arrival, a Routines Accepted
+and when a Routine is completed."** Verified: no routine path writes anything durable. E picked the
+real `routine_runs` collection over journal rows, then answered eleven questions in three rounds;
+the record and the why is `handoff/SESSION-OPENER-routine-record-design.md`. **Read it first.**
+
+**E's settled decisions, not to be re-litigated:** ignored/swiped OFFERS ARE recorded — an
+explicit exception to Block A's "no trace" (Block A's other half, no auto-step and no journal line
+until the tap, stands); a Journal header switch "All activity", off by default, reveals offered
+rows muted; started and finished rows are always visible under Everything, TWO rows per run, the
+arrival row kept beside them; unfinished runs read gently ("· 2 of 4 done", never "abandoned");
+swiped vs timed-out offers share a row with different subtitles ("· cleared" / "· not opened");
+the Tools Routines row gains a last-run line; the run-store sign-out leak is folded in. Rules
+change → **E republishes**.
+
+### FEATURE: F-RoutineRecord-1-Ledger — the collection, the seam, the six write points  [x] COMPLETED
+
+`RoutineRunRecord` (Codable, snake_cased, `FirestoreDocumentCoder` round-trip pinned, wrong
+spellings asserted ABSENT), `FirebaseManager+RoutineRuns` behind a `RoutineRunsBackingStore`
+protocol, the `RoutineRunRecording` seam with `FirebaseRoutineRunRecorder` and a recording fake,
+`FirestoreFieldPayloads.routineRun*` for every partial update, `RoutineRunReconciliation` (pure),
+the six write sites, `routine_runs` in `firestore.rules` and `Collection`, and the per-user run
+store key.
+
+**Acceptance criteria**
+- [x] `RoutineRunRecord` round-trips through the REAL codec with every field in the design
+      record's table; the payload tests assert `place_id`/`offered_at`/`dismissal_method` present
+      and `placeId`/`offeredAt` absent.
+- [x] Phase is DERIVED from the stamps (`RoutineRunRecord.phase`), pinned for every combination
+      including a stray `dismissed_at` beside a `started_at` (reads started).
+- [x] `completed_steps_count` equals `PlaceRoutineProgress.doneCount` for the same run — one
+      truth, pinned by a test that feeds both the same fixture; `time_spent_seconds` runs to the
+      last step interaction, not the end stamp (pinned with a departure an hour later).
+- [x] Site 1: a POSTED routine banner writes `offered`; a crossing suppressed by cooldown, the
+      kill-switch, threshold or the 17-gate writes nothing. `RoutineDeferredLoggingTests` say in
+      words that the offer record is the sanctioned exception.
+- [x] Site 2: the tap writes `started` + `dismissal_method: tap`; a second tap (`.open`) writes
+      nothing; a replaced live run gets `ended(replaced)` first (ordering pinned via the log).
+- [x] Site 3: the routine category carries `.customDismissAction` (call-site guard on the ONE
+      registration); the delegate's dismiss branch writes `dismissed` + `swipe`, never starts a
+      routine, never touches the tap router (pinned by a pure `RoutineDismissRouting` test and a
+      source guard).
+- [x] Site 4: every `apply` on the screen writes `progressed`; site 5: leaving a fully resolved
+      screen writes `ended(completed)`, the departure crossing writes `ended(left_place)`.
+- [x] Site 6: `RoutineRunReconciliation.updates(records:liveRunId:now:)` is pure and pinned —
+      unopened offers past their lifetime → `expired`; started runs past it → `window_lapsed` or
+      `day_ended`; the live run and already-terminal documents are never touched; called after
+      the Journal load (Tools load joins in block 2).
+- [x] Sign-out leak: the run-store key is per-user; signed out reads nil and drops writes;
+      `AuthService.signOut()` and `completeAccountDeletion()` clear it (pinned).
+- [x] `firestore.rules` lists `routine_runs` in the generic CRUD match; an emulator test proves
+      create + update + fetch are ALLOWED for the owner through the REAL rules
+      (`FirebaseManagerRoutineRunsTests`, 2 tests, run with the emulator up). The "denied for
+      another user" half was NOT built: the manager only ever addresses `users/{currentUid}`, so
+      proving denial would mean adding a raw-path method to production for a test's sake.
+      **Not live until E republishes `firestore.rules`.**
+- [x] Suite green (**2,424 / 0**, up 76, emulator up so nothing skipped), lint **0 / 693**, both
+      targets build, red-checked (3 injected → 11 distinct failing tests, each the guard aimed at
+      its regression; restored tree 37 / 37), committed and pushed.
+
+**Two things found while building, neither fixed here:**
+- `UserDefaultsArrivalNudgeStateStore` — the at-place SNAPSHOT (place names, custom messages) —
+  has the same app-local, unscoped shape the run store had. Same leak class; on the register.
+- The screen's `record { }` writes and the activator's `recordTask` are best-effort by design
+  (a lost write is a gap in history, never a broken routine), so an OFFLINE run's progress reaches
+  Firestore only through the SDK's own offline queue. Not verified on device.
+
+### FEATURE: F-RoutineRecord-2-Surfaces — Journal rows + switch, Tools last-run line  [x] COMPLETED
+
+`JournalTimeline.Entry` gains `.routineOffered` / `.routineStarted` / `.routineEnded` with a
+composite `String` id; `JournalTimeline.routineLine(...)` holds every word; the "All activity"
+header switch; `ToolsRoutinesCatalog.rows(from:runs:)` with the last-run subtitle; the
+reconciler joins the Tools load; a UI journey that fires a crossing, walks the routine and finds
+the rows.
+
+**Acceptance criteria**
+- [x] Every row's words pinned: started, finished (completed), unfinished (gentle), offered
+      cleared / not opened; names resolve through the CURRENT place; dangling places drop the row;
+      never under a life-area filter or a non-Everything chip.
+- [x] Offered rows appear ONLY with the switch on (pinned both ways); the switch is off on
+      launch and not persisted; muted styling uses tokens, never opacity.
+- [x] One document → started + ended rows with distinct ids; a live run shows started only.
+- [x] Tools rows: last-run subtitle from the newest STARTED record for that place+direction;
+      rows without history byte-identical; the catalog still decides nothing about membership.
+- [x] Reachability: call-site guards pin that the Journal renders all three kinds, the header
+      renders the switch, the Tools section passes runs to the catalog.
+- [x] `RoutineRecordJourneyUITests`: seeds two places, fires and finishes the gym routine,
+      fires the office arrival untouched, finds `Started` + `Finished … · 1 of 4 done` on the
+      Journal with the offer ABSENT, flips the switch and finds `Routine offered at Office 💼 ·
+      not opened`, then reads `last run today, 1 of 4` on the Tools row. PASSED (264 s) on an
+      erased simulator. Screenshots + README in `screenshots/routine-record/`.
+- [x] Suite green (**2,453 / 0**, emulator up), lint **0 / 704**, both targets build,
+      red-checked (3 injected → 5 failing tests, each its guard; restored 37 / 37), committed
+      and pushed. **Still owed: E's device review, `--no-ff` merge, re-verify on main.**
+
+**Two defects the journey caught, both fixed in this block — neither was in the design:**
+- **A routine banner outlives a sign-out.** The third journey run tapped the PREVIOUS account's
+  untouched Office banner and started that routine under the new account; every record write
+  then failed server-side ("no entity to update", the emulator log). `RoutineNotificationTray`
+  clears the routine species as a session ends; the default `onSessionEnding` calls it.
+- **The tab-root "not hittable" defect (register B3) — mechanism found.** The failure dump had
+  the HIDDEN Today tab's elements in the accessibility tree, its momentum ring over the Places
+  card's centre. `accessibilityHidden` stops at each tab's UIKit navigation controller. Hidden
+  tabs are now parked off-screen (`AppTabContentLayout.hiddenTabOffset`, pinned). Whether this
+  also settles the UI target's unstable set is UNVERIFIED — the full UI target was not re-run.
+- Also: the screen recorded `completed` TWICE (Close and `onDisappear` both end the run);
+  recorded once now. And the CLAUDE.md erase rule bit in a new disguise — the tray, not the
+  keychain — so the journey was run on an erased sim from then on.
+
+**Post-walk, 2026-09-06 (end of session) — two corrections to the block above:**
+- **E's call on device: the eye hides EVERY routine row**, not only offers. Implemented
+  test-first in a `WIP:` commit, then FINISHED by the review session (2026-09-06): the journey
+  passed on the new rule on an erased sim (206 s), `00-`/`01-` re-captured, suite **2,454 / 0**
+  (emulator up), lint **0 / 704**, build green, red-checked (3 injections → 4 + 6 + 1 failing
+  tests, each its guard; restored 19 / 19). The criteria above that say offered rows are the
+  only hidden ones are superseded. Still owed: the phone re-install and E's device confirmation.
+- **The swipe path is PROVED on device (review session, 2026-09-06).** E's walk answer ("a mix
+  of both") plus zero `· cleared` rows looked like a broken dismiss branch; a controlled
+  experiment (test-fire through iPhone Mirroring, E's physical Notification Centre clear, the
+  document read live before and after) flipped run `6EE57B3C…` to `dismissed` / `swipe`.
+  Swiping a PRESENTED banner up reports nothing to iOS — only a Notification Centre clear is a
+  "swipe" — so the walk's `· not opened` rows were honest. Evidence: `screenshots/
+  routine-record/09-`/`10-` and the design record's swipe section.
+- **The tab-root "mechanism found" bullet is WITHDRAWN as a finding**: a later journey run on a
+  build carrying the off-screen change failed identically, hidden elements still in the dump.
+  Register B3 stays open.

@@ -65,6 +65,14 @@ struct AppTabVisitLog {
 /// bottom furniture inside a `NavigationStack` — and therefore never see the outer inset — ask
 /// for the room explicitly with `appTabBarClearance()`, which `AppTabBarCallSiteTests` enumerates
 /// so a third cannot be added without noticing.
+/// The one number the container needs. Named so a test can pin that it clears any screen.
+enum AppTabContentLayout {
+    /// Where a hidden tab is parked. Wider than any device in either orientation: a hidden
+    /// tab's content must not intersect the screen at any point, or an accessibility hit-test
+    /// can resolve to it (see the modifier comment in `AppTabContent.body`).
+    static let hiddenTabOffset: CGFloat = 10_000
+}
+
 struct AppTabContent<Content: View>: View {
     let selection: AppTab
     @ViewBuilder var content: (AppTab) -> Content
@@ -88,6 +96,16 @@ struct AppTabContent<Content: View>: View {
                         // reads all six screens as one page.
                         .allowsHitTesting(tab == selection)
                         .accessibilityHidden(tab != selection)
+                        // And a third, found on 2026-09-06 after 60+ probe rounds: the two flags
+                        // above stop at the UIKit boundary inside each tab's `NavigationStack`,
+                        // so a hidden tab's elements STAY in the accessibility tree at their
+                        // on-screen frames and an accessibility hit-test (XCUITest's, and any
+                        // assistive client's) can resolve a point to them instead of the visible
+                        // tab — the tab-root "not hittable" defect, whose failing set shuffled
+                        // with which tabs had been visited. Geometry is the fix no flag can be
+                        // argued past: a hidden tab is parked clear off the screen. Identity,
+                        // scroll offset and navigation depth are untouched by an offset.
+                        .offset(x: tab == selection ? 0 : AppTabContentLayout.hiddenTabOffset)
                         .zIndex(tab == selection ? 1 : 0)
                 }
             }

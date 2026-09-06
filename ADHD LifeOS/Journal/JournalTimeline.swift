@@ -20,17 +20,27 @@ enum JournalTimeline {
         /// A fence crossing (block 4c) — the quietest kind here: a plain fact row, visually
         /// lighter than everything above it, never a door.
         case locationEvent(LocationEvent)
+        /// The routine record (F-RoutineRecord-2): an offer nobody took — muted, and only
+        /// behind the "All activity" switch.
+        case routineOffered(RoutineRunRecord)
+        /// The tap that started a routine, at the tap's own stamp.
+        case routineStarted(RoutineRunRecord)
+        /// How it ended — finished, or gently "N of M done" — at the end's own stamp.
+        case routineEnded(RoutineRunRecord)
 
-        /// Safe as a bare UUID across all five kinds: each wraps its own document's id, and a
-        /// promoted task mints a fresh UUID rather than reusing its capture's — no two entries in
-        /// one ForEach can collide (the sibling-identity trap the nudge journey once caught).
-        var id: UUID {
+        /// A kind-prefixed string rather than a bare UUID: one `routine_runs` document yields
+        /// TWO rows (started, ended), so a document id alone would collide inside one ForEach —
+        /// the sibling-identity trap the nudge journey once caught, now by construction.
+        var id: String {
             switch self {
-            case .log(let log): return log.id
-            case .closedTask(let task): return task.id
-            case .focusSprint(let sprint): return sprint.id
-            case .capture(let capture): return capture.id
-            case .locationEvent(let event): return event.id
+            case .log(let log): return "log-\(log.id.uuidString)"
+            case .closedTask(let task): return "task-\(task.id.uuidString)"
+            case .focusSprint(let sprint): return "sprint-\(sprint.id.uuidString)"
+            case .capture(let capture): return "capture-\(capture.id.uuidString)"
+            case .locationEvent(let event): return "event-\(event.id.uuidString)"
+            case .routineOffered(let record): return "routine-offered-\(record.id.uuidString)"
+            case .routineStarted(let record): return "routine-started-\(record.id.uuidString)"
+            case .routineEnded(let record): return "routine-ended-\(record.id.uuidString)"
             }
         }
 
@@ -41,7 +51,17 @@ enum JournalTimeline {
             case .focusSprint(let sprint): return sprint.endedAt
             case .capture(let capture): return capture.createdAt
             case .locationEvent(let event): return event.occurredAt
+            case .routineOffered(let record): return record.offeredAt
+            case .routineStarted(let record): return record.startedAt ?? record.offeredAt
+            case .routineEnded(let record): return record.endedAt ?? record.offeredAt
             }
+        }
+
+        /// Faded, not hidden (E's call #3): an offer nobody took is accurate history that must
+        /// not read as loudly as something that happened.
+        var isMuted: Bool {
+            if case .routineOffered = self { return true }
+            return false
         }
     }
 
@@ -98,7 +118,9 @@ enum JournalTimeline {
         sprints: [CompletedFocusSession] = [],
         captures: [Capture] = [],
         locationEvents: [LocationEvent] = [],
+        routineRuns: [RoutineRunRecord] = [],
         places: [Place] = [],
+        showAllActivity: Bool = false,
         filter: Filter = .everything,
         lifeAreaId: UUID? = nil,
         asOf now: Date = .now,
@@ -113,6 +135,9 @@ enum JournalTimeline {
             entries += locationEvents
                 .filter { event in places.contains { $0.id == event.placeId } }
                 .map(Entry.locationEvent)
+            // The routine rows (F-RoutineRecord-2) sit BESIDE the arrival row, not in place of
+            // it — E's call: the crossing is a fact and the routine is what was made of it.
+            entries += routineEntries(runs: routineRuns, places: places, showAllActivity: showAllActivity)
         }
         if filter == .everything || filter == .written {
             entries += logs

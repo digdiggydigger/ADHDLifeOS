@@ -29,9 +29,23 @@ final class AuthService: ObservableObject {
     /// client through the whole view tree. Same instance that scopes every AWS request to the user.
     var authClient: AuthClientAdapting { client }
     private let redirectURL: URL?
-    init(client: AuthClientAdapting, redirectURL: URL? = nil) {
+    /// Runs as a session ENDS — sign-out, and the hand-off from account deletion — while the
+    /// account is still known. The default clears the app-local caches that carry one user's
+    /// places (the run-store leak, register B2, fixed in F-RoutineRecord-1); a test injects a
+    /// counter. Called before the client signs out, never after.
+    private let onSessionEnding: () -> Void
+
+    init(
+        client: AuthClientAdapting,
+        redirectURL: URL? = nil,
+        onSessionEnding: (() -> Void)? = nil
+    ) {
         self.client = client
         self.redirectURL = redirectURL
+        self.onSessionEnding = onSessionEnding ?? {
+            UserDefaultsRoutineRunStore().clearEveryUser()
+            RoutineNotificationTray.clearDeliveredRoutineBanners()
+        }
     }
 
     func restoreSession() async {
@@ -176,11 +190,13 @@ final class AuthService: ObservableObject {
     /// dead session) — it only resets local state, which `RootView` animates back to `LoginView`.
     func completeAccountDeletion() {
         errorMessage = nil
+        onSessionEnding()
         state = .signedOut
     }
 
     func signOut() async {
         errorMessage = nil
+        onSessionEnding()
         do {
             try await client.signOut()
             state = .signedOut

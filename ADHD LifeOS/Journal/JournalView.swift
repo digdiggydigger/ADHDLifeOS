@@ -30,6 +30,9 @@ struct JournalView: View {
     let onStartFocus: ((FocusSprintPlan) -> Void)?
     @State private var isPresentingComposer = false
     @State var filter: JournalTimeline.Filter = .everything
+    /// "All activity" (F-RoutineRecord-2, E's call): reveals every routine row — offered, started
+    /// and finished. Off on every launch and deliberately NOT persisted — "hidden by default".
+    @State var showAllActivity = false
     @State var tasks: [TaskItem] = []
     /// The pushed doors — optional-state + `navigationDestination`, the `CaptureInboxView`
     /// pattern, because the rows live in a `LazyVStack`.
@@ -178,6 +181,10 @@ struct JournalView: View {
                     .tracking(-0.5)
             }
             Spacer()
+            JournalAllActivityButton(isOn: $showAllActivity)
+                // Safe on the container: the button is the ONLY element inside, so inheritance
+                // renames nothing out from under itself.
+                .accessibilityIdentifier("journalAllActivitySwitch")
             Button {
                 isPresentingComposer = true
             } label: {

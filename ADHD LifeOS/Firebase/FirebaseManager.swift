@@ -260,6 +260,7 @@ final class FirebaseManager {
         case focusSessions = "focus_sessions"
         case places
         case locationEvents = "location_events"
+        case routineRuns = "routine_runs"
     }
 
     func requireUID() throws -> String {

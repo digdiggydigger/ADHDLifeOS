@@ -47,10 +47,15 @@ final class FakeJournalBackingStore: JournalBackingStore {
     }
 
     var locationEvents: [LocationEvent] = []
+    var routineRuns: [RoutineRunRecord] = []
     var places: [Place] = []
 
     func fetchLocationEvents() async throws -> [LocationEvent] {
         locationEvents
+    }
+
+    func fetchRoutineRuns() async throws -> [RoutineRunRecord] {
+        routineRuns
     }
 
     func fetchPlaces() async throws -> [Place] {

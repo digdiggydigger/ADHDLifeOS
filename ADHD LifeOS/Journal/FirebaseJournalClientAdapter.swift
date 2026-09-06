@@ -57,6 +57,14 @@ struct FirebaseJournalClientAdapter: JournalClientAdapting {
         }
     }
 
+    func fetchRoutineRuns() async throws -> [RoutineRunRecord] {
+        do {
+            return try await store.fetchRoutineRuns()
+        } catch {
+            throw JournalServiceError.fetchFailed(Self.message(for: error))
+        }
+    }
+
     func fetchPlaces() async throws -> [Place] {
         do {
             return try await store.fetchPlaces()

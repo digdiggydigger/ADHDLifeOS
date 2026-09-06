@@ -8,7 +8,13 @@
 //
 //  The consequence E was asked about directly and confirmed: **swiping the banner away leaves
 //  NO trace** — no run, no card, no journal line. That is intended, not an oversight, and it is
-//  what the first half of this file pins. The second half pins the other side of the bargain:
+//  what the first half of this file pins.
+//
+//  **One exception, carved by E on 2026-09-06 (F-RoutineRecord-1):** the OFFER itself is now
+//  recorded in `routine_runs`, whether or not the banner is ever tapped, so a swiped or ignored
+//  routine is visible in the Journal's "All activity" overlay. Everything pinned here still
+//  holds — no run in the local store, no card, no journal line, no auto-step until the tap.
+//  The offer record's own tests are `RoutineRecordSiteTests`. The second half pins the other side of the bargain:
 //  the tap has to be able to CREATE what the crossing declined to write, which is why the
 //  notification's userInfo widened from a bare run UUID to the whole frozen run.
 //

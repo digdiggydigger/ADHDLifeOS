@@ -102,9 +102,12 @@ enum ToolsRoutinesCatalog {
         case empty(EmptyReason)
     }
 
-    /// What the section should draw for this place list.
-    static func content(from places: [Place]) -> Content {
-        let rows = rows(from: places)
+    /// What the section should draw for this place list. `runs` (F-RoutineRecord-2) only ever
+    /// adds a last-run line — membership is never decided by history.
+    static func content(
+        from places: [Place], runs: [RoutineRunRecord] = [], now: Date = .now, calendar: Calendar = .current
+    ) -> Content {
+        let rows = rows(from: places, runs: runs, now: now, calendar: calendar)
         guard rows.isEmpty else { return .rows(rows) }
         return .empty(places.isEmpty ? .noPlaces : .noQualifyingPlaces)
     }
@@ -114,26 +117,73 @@ enum ToolsRoutinesCatalog {
     /// `PlacesService.sorted` is REUSED rather than copied: two screens listing the same places
     /// in different orders is a small lie that costs a real re-scan. Arrival leads within a
     /// place — it is the crossing you meet first in the day and first in the editor.
-    static func rows(from places: [Place]) -> [Row] {
+    static func rows(
+        from places: [Place], runs: [RoutineRunRecord] = [], now: Date = .now, calendar: Calendar = .current
+    ) -> [Row] {
         PlacesService.sorted(places).flatMap { place in
-            [PlaceTriggerEvent.Kind.arrival, .departure].compactMap { row(for: place, kind: $0) }
+            [PlaceTriggerEvent.Kind.arrival, .departure].compactMap {
+                row(for: place, kind: $0, runs: runs, now: now, calendar: calendar)
+            }
         }
     }
 
-    private static func row(for place: Place, kind: PlaceTriggerEvent.Kind) -> Row? {
+    private static func row(
+        for place: Place, kind: PlaceTriggerEvent.Kind, runs: [RoutineRunRecord], now: Date, calendar: Calendar
+    ) -> Row? {
         let plan = PlaceRoutinePlan.make(place.actions, for: kind)
         // The ≥ threshold decision, asked of the type that owns it. A literal comparison here
         // would be a second spelling of E's settled call, free to drift from the notification's.
         guard plan.qualifiesAsRoutine else { return nil }
+        // TAP-steps, the same count the banner and the Today card use. An auto step runs
+        // itself and is never "ready", so it is named nowhere in this number.
+        var subtitle = "\(place.name) · \(stepsPhrase(plan.tapSteps.count))"
+        if let last = lastStartedRun(for: place.id, kind: kind, in: runs) {
+            subtitle += " · \(lastRunPhrase(for: last, now: now, calendar: calendar))"
+        }
         return Row(
             placeId: place.id,
             kind: kind,
             glyph: place.emoji ?? glyphFallback,
             title: title(for: kind),
-            // TAP-steps, the same count the banner and the Today card use. An auto step runs
-            // itself and is never "ready", so it is named nowhere in this number.
-            subtitle: "\(place.name) · \(stepsPhrase(plan.tapSteps.count))"
+            subtitle: subtitle
         )
+    }
+
+    // MARK: - Last run (F-RoutineRecord-2)
+
+    /// The newest STARTED record for this place and direction. An offer nobody took is not a
+    /// run and never counts; "last run" means the last time you actually began it.
+    static func lastStartedRun(
+        for placeId: UUID, kind: PlaceTriggerEvent.Kind, in runs: [RoutineRunRecord]
+    ) -> RoutineRunRecord? {
+        runs
+            .filter { $0.placeId == placeId && $0.direction == kind && $0.startedAt != nil }
+            .max { ($0.startedAt ?? .distantPast) < ($1.startedAt ?? .distantPast) }
+    }
+
+    /// "last run today, 3 of 4" — the day word steps back from today through yesterday, the
+    /// weekday for the rest of the week, then a date. The count is the record's own
+    /// `completed_steps_count`, which is the screen's "done" rule, so this row and that screen
+    /// cannot disagree about one run.
+    static func lastRunPhrase(for record: RoutineRunRecord, now: Date, calendar: Calendar) -> String {
+        let started = record.startedAt ?? record.offeredAt
+        let day: String
+        let dayGap = calendar.dateComponents(
+            [.day], from: calendar.startOfDay(for: started), to: calendar.startOfDay(for: now)
+        ).day ?? .max
+        if dayGap <= 0 {
+            day = "today"
+        } else if dayGap == 1 {
+            day = "yesterday"
+        } else {
+            let formatter = DateFormatter()
+            formatter.calendar = calendar
+            formatter.timeZone = calendar.timeZone
+            formatter.locale = calendar.locale ?? .current
+            formatter.setLocalizedDateFormatFromTemplate(dayGap < 7 ? "EEE" : "MMMd")
+            day = formatter.string(from: started)
+        }
+        return "last run \(day), \(record.completedStepsCount) of \(record.totalStepsCount)"
     }
 
     /// Second person, matching the notification ("You're at Home" / "Leaving Home") rather than

@@ -78,28 +78,36 @@ final class PlaceRoutineActivator: RoutineActivating {
     private let snapshotStore: ArrivalNudgeStateStoring
     private let executor: PlaceAutoRunExecutor
     private let calendar: Calendar
+    /// The routine RECORD's seam (F-RoutineRecord-1): the tap is where a run STARTS, and where
+    /// a run it replaces is ENDED — recorded in that order.
+    private let recorder: RoutineRunRecording
 
     /// The in-flight auto-step writes. Nothing in the app waits on this — the screen is already
     /// up and the writes announce themselves — but a test can, and must.
     private(set) var autoRunTask: Task<Void, Never>?
+    /// The in-flight record writes, held for the same reason.
+    private(set) var recordTask: Task<Void, Never>?
 
     init(
         runStore: RoutineRunStoring = UserDefaultsRoutineRunStore(),
         snapshotStore: ArrivalNudgeStateStoring = UserDefaultsArrivalNudgeStateStore(),
         executor: PlaceAutoRunExecutor = .live(),
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        recorder: RoutineRunRecording? = nil
     ) {
         self.runStore = runStore
         self.snapshotStore = snapshotStore
         self.executor = executor
         self.calendar = calendar
+        self.recorder = recorder ?? FirebaseRoutineRunRecorder()
     }
 
     func activate(userInfo: [AnyHashable: Any], now: Date) -> UUID? {
+        let stored = runStore.readLiveRun(now: now)
         let decision = RoutineActivation.decide(
             payload: PlaceRoutineNotificationContent.run(fromUserInfo: userInfo),
             carriedKey: PlaceRoutineNotificationContent.runKey(fromUserInfo: userInfo),
-            stored: runStore.readLiveRun(now: now),
+            stored: stored,
             now: now,
             calendar: calendar
         )
@@ -108,18 +116,22 @@ final class PlaceRoutineActivator: RoutineActivating {
             return runKey
         case .stale:
             return nil
-        case .start(let run):
-            start(run)
+        case .start(var run):
+            // The TAP's moment, distinct from `startedAt` (the crossing's): the screen measures
+            // time spent from here, and the record stamps `started_at` with it.
+            run.activatedAt = now
+            start(run, replacing: stored?.id, now: now)
             return run.id
         }
     }
 
-    private func start(_ run: RoutineRun) {
+    private func start(_ run: RoutineRun, replacing replaced: UUID?, now: Date) {
         runStore.write(run)
         // Today's card is a PULL surface and this is the only push it gets — a routine of
         // tap-steps writes nothing to Firestore, so without this the card would not appear
         // until the user navigated away and back.
         DataChangeSignal.post()
+        recordStart(of: run.id, replacing: replaced, now: now)
 
         let entry = snapshotStore.readSnapshot()?.entries.first { $0.placeId == run.placeId }
         let stamp = PlaceAutoRunStamp.make(entry: entry, placeId: run.placeId)
@@ -130,6 +142,20 @@ final class PlaceRoutineActivator: RoutineActivating {
             for action in autoActions {
                 _ = await executor.run(action, stamp: stamp)
             }
+        }
+    }
+
+    /// Site 2 (and the `replaced` half of site 5) of the routine record. Newest-wins is the
+    /// store's rule; the record says what it cost: the run this tap wrote over is ended as
+    /// `replaced` BEFORE the new one is started. Best-effort — the routine is already real in
+    /// the store, and a lost write must never take the screen with it.
+    private func recordStart(of runId: UUID, replacing replaced: UUID?, now: Date) {
+        let recorder = self.recorder
+        recordTask = Task {
+            if let replaced, replaced != runId {
+                try? await recorder.ended(runId: replaced, reason: .replaced, at: now)
+            }
+            try? await recorder.started(runId: runId, at: now)
         }
     }
 }

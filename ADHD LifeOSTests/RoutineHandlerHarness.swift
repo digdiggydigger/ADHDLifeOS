@@ -139,6 +139,9 @@ final class RoutineHandlerHarness {
     let notifier: RoutineFakeNotifier
     let writers = RoutineWriterLog()
     let recorder = RoutineFakeRecorder()
+    /// The routine RECORD's seam (F-RoutineRecord-1), shared by both halves so the crossing's
+    /// offer and the tap's start land on one log in the order they happened.
+    let routineRecorder = FakeRoutineRunRecorder()
     let sut: PlaceTriggerEventHandler
     /// The TAP half, sharing this harness's stores (Block A). A crossing now only OFFERS a
     /// routine, so any scenario about a run that EXISTS has to go through the tap — and driving
@@ -159,10 +162,12 @@ final class RoutineHandlerHarness {
             runStore: runStore,
             isEnabled: { enabled }, routineScreenAvailable: routineScreenAvailable,
             journalWriter: executor.journalWriter,
-            captureWriter: executor.captureWriter
+            captureWriter: executor.captureWriter,
+            routineRecorder: routineRecorder
         )
         activator = PlaceRoutineActivator(
-            runStore: runStore, snapshotStore: store, executor: executor
+            runStore: runStore, snapshotStore: store, executor: executor,
+            recorder: routineRecorder
         )
     }
 
@@ -175,6 +180,7 @@ final class RoutineHandlerHarness {
         }) else { return nil }
         let opened = activator.activate(userInfo: posted.userInfo, now: date ?? noon)
         await activator.autoRunTask?.value
+        await activator.recordTask?.value
         return opened
     }
 

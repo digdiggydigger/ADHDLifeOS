@@ -42,7 +42,7 @@ enum PlaceRoutineProgress {
     /// done/skipped → pending (Undo). Everything else — auto-done above all — is immutable,
     /// and an invalid ask returns the run unchanged rather than trapping.
     static func marking(
-        _ run: RoutineRun, stepAt index: Int, as newState: RoutineStepState
+        _ run: RoutineRun, stepAt index: Int, as newState: RoutineStepState, at now: Date = .now
     ) -> RoutineRun {
         guard run.steps.indices.contains(index) else { return run }
         let allowed: Bool
@@ -56,6 +56,9 @@ enum PlaceRoutineProgress {
         guard allowed else { return run }
         var updated = run
         updated.steps[index].state = newState
+        // The stamp the durable record reads (F-RoutineRecord-1): resolving sets it, Undo
+        // clears it — an undone step has not been resolved.
+        updated.steps[index].resolvedAt = newState == .pending ? nil : now
         return updated
     }
 }

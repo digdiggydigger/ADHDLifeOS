@@ -39,6 +39,9 @@ final class JournalService: ObservableObject {
     @Published private(set) var focusSessions: [CompletedFocusSession] = []
     @Published private(set) var captures: [Capture] = []
     @Published private(set) var locationEvents: [LocationEvent] = []
+    /// The routine record's runs (F-RoutineRecord-1), already reconciled: a run that lapsed
+    /// reads as lapsed here the moment the load decides so, not after the write lands.
+    @Published private(set) var routineRuns: [RoutineRunRecord] = []
     /// For the event rows' names — a dangling id reads as no row, never a raw UUID.
     @Published private(set) var places: [Place] = []
     /// The composer's tag selection (E's 2026-08-25 note) — sent with the create, because logs
@@ -68,10 +71,24 @@ final class JournalService: ObservableObject {
     private var logs: [Log] = []
     private var hasLoadedOnce = false
 
+    /// Site 6 of the routine record: the passive endings are derived on THIS load and written
+    /// through the reconciler the Tools section shares. Its parts are injectable so the rule is
+    /// pinned without Firestore, a live run store, or the wall clock.
+    private let reconciler: RoutineRunReconciler
+    /// The in-flight reconciliation writes, held so a test can await them.
+    var reconcileTask: Task<Void, Never>? { reconciler.writeTask }
+
     init(
         client: JournalClientAdapting,
-        locationStamp: (@MainActor () async -> LocationStamp?)? = nil
+        locationStamp: (@MainActor () async -> LocationStamp?)? = nil,
+        routineRecorder: RoutineRunRecording? = nil,
+        liveRoutineRunId: (() -> UUID?)? = nil,
+        now: @escaping () -> Date = { .now },
+        calendar: Calendar = .current
     ) {
+        reconciler = RoutineRunReconciler(
+            recorder: routineRecorder, liveRunId: liveRoutineRunId, now: now, calendar: calendar
+        )
         self.client = client
         self.locationStamp = locationStamp ?? { await CaptureLocationStamp.current() }
     }
@@ -116,6 +133,7 @@ final class JournalService: ObservableObject {
             async let sprintsResult = client.fetchFocusSessions()
             async let capturesResult = client.fetchCaptures()
             async let eventsResult = client.fetchLocationEvents()
+            async let runsResult = client.fetchRoutineRuns()
             async let placesResult = client.fetchPlaces()
             async let tagsResult = client.fetchAllTags()
             lifeAreas = try await lifeAreasResult
@@ -123,6 +141,7 @@ final class JournalService: ObservableObject {
             focusSessions = (try? await sprintsResult) ?? []
             captures = (try? await capturesResult) ?? []
             locationEvents = (try? await eventsResult) ?? []
+            reconcileRoutineRuns((try? await runsResult) ?? [])
             places = (try? await placesResult) ?? []
             availableTags = (try? await tagsResult) ?? []
             hasLoadedOnce = true
@@ -132,6 +151,12 @@ final class JournalService: ObservableObject {
             hasLoadedOnce = false
             state = .failed(Self.message(for: error))
         }
+    }
+
+    /// Shows lapsed runs lapsed NOW and writes each ending once — the reconciler's job, shared
+    /// with the Tools section so the two loads cannot drift.
+    private func reconcileRoutineRuns(_ fetched: [RoutineRunRecord]) {
+        routineRuns = reconciler.reconcile(fetched)
     }
 
     @discardableResult

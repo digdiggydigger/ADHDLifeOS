@@ -50,11 +50,13 @@ service cloud.firestore {
 
       // Every other app collection gets full owner CRUD. Enumerated rather than a bare
       // wildcard so an unexpected collection name is denied by default ('logs' deliberately
-      // absent — see header).
+      // absent — see header). 'routine_runs' (F-RoutineRecord-1, 2026-09-06) belongs HERE and
+      // not beside the append-only pair above: a run moves offered → started → ended in
+      // place, so it must be updatable.
       match /{collection}/{docId} {
         allow read, write: if isOwner(uid)
           && collection in ['tasks', 'life_areas', 'tags', 'captures', 'nudges', 'reminders',
-                            'focus_sessions', 'places'];
+                            'focus_sessions', 'places', 'routine_runs'];
       }
     }
   }

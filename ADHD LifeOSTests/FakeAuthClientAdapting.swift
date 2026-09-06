@@ -93,8 +93,12 @@ final class FakeAuthClientAdapting: AuthClientAdapting, @unchecked Sendable {
         return try completeSessionResult.get()
     }
 
+    /// Fires as the client signs out, so a test can assert what ran BEFORE it.
+    var onSignOut: (() -> Void)?
+
     func signOut() async throws {
         signOutCallCount += 1
+        onSignOut?()
         try signOutResult.get()
     }
 

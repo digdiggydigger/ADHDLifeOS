@@ -48,6 +48,9 @@ final class PlaceTriggerEventHandler {
     /// The auto-run writes, shared with the notification-tap path (`PlaceRoutineActivator`) so
     /// the two can never drift apart on stamping or validation.
     private let executor: PlaceAutoRunExecutor
+    /// The routine RECORD (F-RoutineRecord-1): the crossing writes the OFFER — E's one
+    /// exception to Block A — and the departure crossing records WHY it ended a run.
+    private let routineRecorder: RoutineRunRecording
 
     init(
         recorder: LocationEventRecording? = nil,
@@ -60,9 +63,11 @@ final class PlaceTriggerEventHandler {
         routineScreenAvailable: Bool = { if #available(iOS 17.0, *) { return true }
                                          return false }(),
         journalWriter: ((NormalizedCreateLogInput) async -> Bool)? = nil,
-        captureWriter: ((NormalizedCreateCaptureInput) async -> Bool)? = nil
+        captureWriter: ((NormalizedCreateCaptureInput) async -> Bool)? = nil,
+        routineRecorder: RoutineRunRecording? = nil
     ) {
         self.recorder = recorder ?? FirebaseLocationEventRecorder()
+        self.routineRecorder = routineRecorder ?? FirebaseRoutineRunRecorder()
         self.notifier = notifier ?? NotificationCenterImmediateNotifier()
         self.store = store ?? UserDefaultsArrivalNudgeStateStore()
         self.runStore = runStore ?? UserDefaultsRoutineRunStore()
@@ -99,7 +104,7 @@ final class PlaceTriggerEventHandler {
 
         let snapshot = store.readSnapshot()
         let entry = snapshot?.entries.first { $0.placeId == event.placeId }
-        endLiveRunIfThisCrossingEndsIt(event)
+        await endLiveRunIfThisCrossingEndsIt(event)
 
         let cooldowns = store.readCooldowns()
         guard TriggerCooldown.shouldFire(event, state: cooldowns, now: event.occurredAt) else { return }
@@ -147,11 +152,25 @@ final class PlaceTriggerEventHandler {
     /// The `DataChangeSignal` is not optional garnish: Today's card is a PULL surface and this
     /// is the only push it gets, so without it an ended run leaves a stale card on a screen
     /// the user is looking at.
-    private func endLiveRunIfThisCrossingEndsIt(_ event: PlaceTriggerEvent) {
+    private func endLiveRunIfThisCrossingEndsIt(_ event: PlaceTriggerEvent) async {
         guard let liveRun = runStore.readLiveRun(now: event.occurredAt),
               RoutineRunLifecycle.ends(liveRun, on: event) else { return }
         runStore.endLiveRun()
+        await recordEnd(liveRun.id, reason: .leftPlace, at: event.occurredAt)
         DataChangeSignal.post()
+    }
+
+    /// Site 1 of the routine record (F-RoutineRecord-1, E's 2026-09-06 exception to Block A):
+    /// the OFFER is recorded, and it is recorded HERE — right after its banner posts — so a
+    /// crossing the cooldown, the kill-switch or the threshold suppressed offered nothing and
+    /// records nothing. Best-effort like the timeline record: a background wake has no screen
+    /// to surface an error on, and a lost offer is a gap in history, not a broken routine.
+    private func recordOffer(_ run: RoutineRun, at now: Date) async {
+        try? await routineRecorder.offered(RoutineRunRecord.offered(run, now: now))
+    }
+
+    private func recordEnd(_ runId: UUID, reason: RoutineRunEndReason, at now: Date) async {
+        try? await routineRecorder.ended(runId: runId, reason: reason, at: now)
     }
 
     /// The routine this crossing OFFERS — minted, frozen, and deliberately never stored. It
@@ -196,6 +215,7 @@ final class PlaceTriggerEventHandler {
                 userInfo: PlaceRoutineNotificationContent.userInfo(for: routineRun),
                 categoryIdentifier: PlaceRoutineNotificationContent.categoryIdentifier
             )
+            await recordOffer(routineRun, at: event.occurredAt)
             // Tray hygiene: a still-delivered per-action notification from an earlier
             // crossing must not compete with the routine that replaces it. Removal rides
             // the post — with the switch off, the tray is not touched at all.

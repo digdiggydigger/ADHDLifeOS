@@ -166,6 +166,60 @@ enum FirestoreFieldPayloads {
         ]
     }
 
+    // MARK: - Routine runs (F-RoutineRecord-1): every moment after the offer is PARTIAL
+
+    /// The tap. `dismissal_method` says how the OFFER was resolved, and a tap resolves it.
+    static func routineRunStarted(at now: Date) -> [String: Any] {
+        routineRunTransition(status: .started, method: .tap, stampKey: "started_at", at: now)
+    }
+
+    static func routineRunDismissed(at now: Date) -> [String: Any] {
+        routineRunTransition(status: .dismissed, method: .swipe, stampKey: "dismissed_at", at: now)
+    }
+
+    static func routineRunExpired(at now: Date) -> [String: Any] {
+        routineRunTransition(status: .expired, method: .timeout, stampKey: "expired_at", at: now)
+    }
+
+    static func routineRunEnded(reason: RoutineRunEndReason, at now: Date) -> [String: Any] {
+        let stamp = Timestamp(date: now)
+        return [
+            "status": RoutineRunPhase.ended.rawValue,
+            "end_reason": reason.rawValue,
+            "ended_at": stamp,
+            "updated_at": stamp
+        ]
+    }
+
+    /// The screen's step changes: the steps array and every count, encoded through the SAME
+    /// codec the offer used and then narrowed to the progress keys — so the spelling of a step
+    /// is typed once, on `RoutineRunRecord`, and this write can never drift from the create.
+    /// Never the phase, never the tap stamp: progress moves nothing but progress.
+    static func routineRunProgressed(_ run: RoutineRun, at now: Date) throws -> [String: Any] {
+        var record = RoutineRunRecord.offered(run, now: now)
+        record.progressed(to: run)
+        let document = try FirestoreDocumentCoder.encode(record)
+        let progressKeys = [
+            "steps", "total_steps_count", "auto_steps_count", "completed_steps_count",
+            "skipped_steps_count", "time_spent_seconds", "last_interaction_at"
+        ]
+        var fields = document.filter { progressKeys.contains($0.key) }
+        fields["updated_at"] = Timestamp(date: now)
+        return fields
+    }
+
+    private static func routineRunTransition(
+        status: RoutineRunPhase, method: RoutineRunDismissalMethod, stampKey: String, at now: Date
+    ) -> [String: Any] {
+        let stamp = Timestamp(date: now)
+        return [
+            "status": status.rawValue,
+            "dismissal_method": method.rawValue,
+            stampKey: stamp,
+            "updated_at": stamp
+        ]
+    }
+
     /// The delta convention shared by `TaskUpdatePayload`/`CaptureUpdate`: outer `nil` = field
     /// untouched (no write), `.some(nil)` = explicitly cleared, which Firestore expresses as
     /// `FieldValue.delete()`.

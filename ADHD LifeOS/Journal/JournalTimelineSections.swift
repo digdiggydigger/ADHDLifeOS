@@ -16,7 +16,10 @@ extension JournalView {
         let days = JournalTimeline.days(
             logs: logs, tasks: filteredTasks,
             sprints: filteredSprints, captures: filteredCaptures,
-            locationEvents: journalService.locationEvents, places: journalService.places,
+            locationEvents: journalService.locationEvents,
+            routineRuns: journalService.routineRuns,
+            places: journalService.places,
+            showAllActivity: showAllActivity,
             filter: filter
         )
         return ScrollView {
@@ -85,6 +88,12 @@ extension JournalView {
                     captureRow(capture)
                 case .locationEvent(let event):
                     locationEventRow(event)
+                case .routineOffered(let record):
+                    routineRow(record, kind: .offered, at: entry.timestamp)
+                case .routineStarted(let record):
+                    routineRow(record, kind: .started, at: entry.timestamp)
+                case .routineEnded(let record):
+                    routineRow(record, kind: .ended, at: entry.timestamp)
                 }
             }
         }
@@ -106,6 +115,38 @@ extension JournalView {
         }
         .frame(minHeight: 32)
         .accessibilityElement(children: .combine)
+    }
+
+    /// A routine's moments (F-RoutineRecord-2) — the location row's shape. Started and finished
+    /// carry the accent glyph; an OFFER is muted (tertiary ink, tertiary glyph) so it reads as
+    /// what it is, a thing that was put in front of you, and never as loudly as a thing done.
+    /// Words carry the state, never colour alone.
+    private func routineRow(
+        _ record: RoutineRunRecord, kind: JournalTimeline.RoutineRowKind, at timestamp: Date
+    ) -> some View {
+        let muted = kind == .offered
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            timeGutter(timestamp)
+            Image(systemName: routineGlyph(kind, for: record))
+                .font(.footnote.bold())
+                .foregroundStyle(muted ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Color.accentColor))
+            Text(JournalTimeline.routineLine(kind, for: record, places: journalService.places) ?? "")
+                .font(.footnote)
+                .foregroundStyle(muted ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.secondary))
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .frame(minHeight: 32)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("journalRoutineRow-\(kind.rawValue)-\(record.id.uuidString)")
+    }
+
+    private func routineGlyph(_ kind: JournalTimeline.RoutineRowKind, for record: RoutineRunRecord) -> String {
+        switch kind {
+        case .offered: return "bell.slash"
+        case .started: return "play.circle"
+        case .ended: return record.endReason == .completed ? "checkmark.circle" : "stop.circle"
+        }
     }
 
     private func logRow(_ log: Log) -> some View {

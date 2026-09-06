@@ -24,14 +24,18 @@ import SwiftUI
 @available(iOS 17.0, *)
 struct ToolsRoutinesSection: View {
     @StateObject private var service: PlacesService
+    /// The routine record (F-RoutineRecord-2): the rows' last-run line. Reconciled on load by
+    /// the same reconciler the Journal uses.
+    @StateObject private var history: RoutineRunHistoryService
     private let client: PlacesClientAdapting
     /// The place whose editor is open. A routine's editor IS the place's Actions section
     /// (E's settled Option A) — there is no separate routine to edit.
     @State private var editingPlace: Place?
 
-    init(client: PlacesClientAdapting) {
+    init(client: PlacesClientAdapting, history: RoutineRunHistoryService? = nil) {
         self.client = client
         _service = StateObject(wrappedValue: PlacesService(client: client))
+        _history = StateObject(wrappedValue: history ?? RoutineRunHistoryService.live())
     }
 
     var body: some View {
@@ -42,11 +46,18 @@ struct ToolsRoutinesSection: View {
         // 8 on top of the page's own 16 makes 24 — a §2 macro separation, so the section reads
         // as its own group rather than a third door in the same stack.
         .padding(.top, 8)
-        .task { await service.load() }
+        .task {
+            await service.load()
+            await history.load()
+        }
         // The house refresh contract: editing a place's actions anywhere re-derives these rows,
-        // because whether a place IS a routine is decided by the actions that edit changes.
+        // because whether a place IS a routine is decided by the actions that edit changes —
+        // and a routine finishing anywhere re-derives the last-run line.
         .onReceive(DataChangeSignal.changes) { _ in
-            Task { await service.load() }
+            Task {
+                await service.load()
+                await history.load()
+            }
         }
         .sheet(item: $editingPlace) { place in
             PlaceEditorView(existing: place, onSave: save, isSaving: service.isMutating)
@@ -93,7 +104,7 @@ struct ToolsRoutinesSection: View {
 
     @ViewBuilder
     private var loaded: some View {
-        switch ToolsRoutinesCatalog.content(from: service.places) {
+        switch ToolsRoutinesCatalog.content(from: service.places, runs: history.runs) {
         case .rows(let rows):
             VStack(spacing: 8) {
                 ForEach(rows) { row($0) }
@@ -192,7 +203,7 @@ struct ToolsRoutinesSection: View {
 #Preview("Routines section — Light") {
     NavigationStack {
         ScrollView {
-            ToolsRoutinesSection(client: PreviewToolsRoutinesClient.populated)
+            ToolsRoutinesSection(client: PreviewToolsRoutinesClient.populated, history: .inert())
                 .padding(16)
         }
         .background(Color.pageBackground)
@@ -204,7 +215,7 @@ struct ToolsRoutinesSection: View {
 #Preview("Routines section — Dark") {
     NavigationStack {
         ScrollView {
-            ToolsRoutinesSection(client: PreviewToolsRoutinesClient.empty)
+            ToolsRoutinesSection(client: PreviewToolsRoutinesClient.empty, history: .inert())
                 .padding(16)
         }
         .background(Color.pageBackground)
