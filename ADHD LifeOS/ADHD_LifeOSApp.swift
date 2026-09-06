@@ -35,7 +35,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         UNUserNotificationCenter.current().setNotificationCategories([
             UNNotificationCategory(
                 identifier: PlaceRoutineNotificationContent.categoryIdentifier,
-                actions: [], intentIdentifiers: [], options: []
+                actions: [], intentIdentifiers: [],
+                // iOS reports a SWIPE on a banner only when asked (F-RoutineRecord-1): with
+                // this, clearing the routine banner reaches `didReceive` as a dismiss action
+                // and the offer is recorded as swiped rather than left to time out.
+                options: [.customDismissAction]
             )
         ])
         // A region crossing can RELAUNCH this app in the background with no UI (block 4b).
@@ -87,6 +91,20 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
     ) {
         let identifier = response.notification.request.identifier
         let userInfo = response.notification.request.content.userInfo
+        // A SWIPE on the routine banner (F-RoutineRecord-1), claimed FIRST: the routine router
+        // below reads a response on its prefix as a tap and would START the routine the user
+        // just cleared. iOS delivers it only because the category asks (`.customDismissAction`).
+        let dismissedRoutine = MainActor.assumeIsolated {
+            RoutineDismissRecorder.shared.handle(
+                notificationIdentifier: identifier,
+                actionIdentifier: response.actionIdentifier,
+                userInfo: userInfo
+            )
+        }
+        if dismissedRoutine {
+            completionHandler()
+            return
+        }
         // Place-action taps first (F-PlaceActions-3) — their identifiers carry a prefix, so
         // everything else still falls through to the focus router untouched. SYNCHRONOUSLY on
         // the delegate callback (documented main-thread), never through an async hop: E's

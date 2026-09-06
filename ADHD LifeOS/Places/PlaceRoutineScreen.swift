@@ -24,6 +24,9 @@ struct PlaceRoutineScreen: View {
     /// the app backgrounded — so the routine's Live Activity begins HERE, when the screen
     /// opens, and ends when the run does. Injected so the screen stays testable and previewable.
     private let activity: RoutineActivityPresenting
+    /// The routine RECORD (F-RoutineRecord-1): every step change and the completion go to
+    /// Firestore from here, on a Task nothing on screen waits for.
+    private let recorder: RoutineRunRecording
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -35,13 +38,17 @@ struct PlaceRoutineScreen: View {
         onStartSprint: @escaping (Int?) -> Void,
         // NOT defaulted: `RoutineActivityPresenting` is `@MainActor`, and a default argument
         // is evaluated in a nonisolated context. Every call site names its presenter.
-        activity: RoutineActivityPresenting
+        activity: RoutineActivityPresenting,
+        // NOT defaulted either: the default would be `FirebaseRoutineRunRecorder()`, which
+        // reaches `FirebaseManager.shared` inside every preview. The door passes the real one.
+        recorder: RoutineRunRecording
     ) {
         _run = State(initialValue: run)
         self.store = store
         self.onOpenTab = onOpenTab
         self.onStartSprint = onStartSprint
         self.activity = activity
+        self.recorder = recorder
     }
 
     var body: some View {
@@ -234,7 +241,14 @@ struct PlaceRoutineScreen: View {
         // Write-through ONLY while this run is still the live one — a run that ended
         // underneath us must stay gone, and this checklist keeps working locally either way.
         _ = store.updateMatching(updated)
+        record { try await recorder.progressed(updated, at: .now) }
         activity.updated(updated)
+    }
+
+    /// The record writes ride a Task nothing on screen waits for, and a failure is dropped:
+    /// the checklist keeps serving the person holding it whether or not Firestore answered.
+    private func record(_ write: @escaping @Sendable () async throws -> Void) {
+        Task { try? await write() }
     }
 
     /// Done-on-tap (the settled semantics): tapping the step IS running it — iOS offers no
@@ -288,6 +302,7 @@ struct PlaceRoutineScreen: View {
     private func leaveScreen() {
         if PlaceRoutineProgress.isFullyResolved(run) {
             store.end(runId: run.id)
+            record { try await recorder.ended(runId: run.id, reason: .completed, at: .now) }
         }
         // The Activity is the SCREEN's, not the run's: it cannot be restarted from the
         // background, so leaving without it would strand a card nothing could ever update.
@@ -342,14 +357,16 @@ enum PlaceRoutineScreenPreviewFixture {
             run: PlaceRoutineScreenPreviewFixture.run,
             store: UserDefaultsRoutineRunStore(defaults: nil),
             onOpenTab: { _ in }, onStartSprint: { _ in },
-            activity: InertRoutineActivityPresenter()
+            activity: InertRoutineActivityPresenter(),
+            recorder: InertRoutineRunRecorder()
         )
         .environment(\.colorScheme, .light)
         PlaceRoutineScreen(
             run: PlaceRoutineScreenPreviewFixture.run,
             store: UserDefaultsRoutineRunStore(defaults: nil),
             onOpenTab: { _ in }, onStartSprint: { _ in },
-            activity: InertRoutineActivityPresenter()
+            activity: InertRoutineActivityPresenter(),
+            recorder: InertRoutineRunRecorder()
         )
         .environment(\.colorScheme, .dark)
     }

@@ -34,6 +34,9 @@ protocol JournalClientAdapting: Sendable {
     /// The recorded fence crossings the timeline interleaves as quiet event rows (block 4c),
     /// and the places that give them names. Read-only garnish, like the streams above.
     func fetchLocationEvents() async throws -> [LocationEvent]
+    /// The routine record (F-RoutineRecord-1): offered, started and finished runs, for the
+    /// timeline's routine rows and for the passive-ending reconciliation the load performs.
+    func fetchRoutineRuns() async throws -> [RoutineRunRecord]
     func fetchPlaces() async throws -> [Place]
     /// The shared tag registry, for the composer's chips and the rows' resolution — the same
     /// list tasks and captures use.

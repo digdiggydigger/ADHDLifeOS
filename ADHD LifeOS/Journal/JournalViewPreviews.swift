@@ -36,6 +36,7 @@ private struct PreviewJournalClientAdapting: JournalClientAdapting {
     }
 
     func fetchLocationEvents() async throws -> [LocationEvent] { [] }
+    func fetchRoutineRuns() async throws -> [RoutineRunRecord] { [] }
 
     func fetchPlaces() async throws -> [Place] { [] }
 

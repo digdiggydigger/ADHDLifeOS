@@ -39,6 +39,9 @@ final class JournalService: ObservableObject {
     @Published private(set) var focusSessions: [CompletedFocusSession] = []
     @Published private(set) var captures: [Capture] = []
     @Published private(set) var locationEvents: [LocationEvent] = []
+    /// The routine record's runs (F-RoutineRecord-1), already reconciled: a run that lapsed
+    /// reads as lapsed here the moment the load decides so, not after the write lands.
+    @Published private(set) var routineRuns: [RoutineRunRecord] = []
     /// For the event rows' names — a dangling id reads as no row, never a raw UUID.
     @Published private(set) var places: [Place] = []
     /// The composer's tag selection (E's 2026-08-25 note) — sent with the create, because logs
@@ -68,10 +71,29 @@ final class JournalService: ObservableObject {
     private var logs: [Log] = []
     private var hasLoadedOnce = false
 
+    /// Site 6 of the routine record: the passive endings are derived on THIS load and written
+    /// through here. All four are injectable so the rule is pinned without Firestore, a live
+    /// run store, or the wall clock; the defaults are the production wiring.
+    private let routineRecorder: RoutineRunRecording
+    private let liveRoutineRunId: () -> UUID?
+    private let now: () -> Date
+    private let calendar: Calendar
+    /// The in-flight reconciliation writes, held so a test can await them.
+    private(set) var reconcileTask: Task<Void, Never>?
+
     init(
         client: JournalClientAdapting,
-        locationStamp: (@MainActor () async -> LocationStamp?)? = nil
+        locationStamp: (@MainActor () async -> LocationStamp?)? = nil,
+        routineRecorder: RoutineRunRecording? = nil,
+        liveRoutineRunId: (() -> UUID?)? = nil,
+        now: @escaping () -> Date = { .now },
+        calendar: Calendar = .current
     ) {
+        self.routineRecorder = routineRecorder ?? FirebaseRoutineRunRecorder()
+        self.liveRoutineRunId = liveRoutineRunId
+            ?? { UserDefaultsRoutineRunStore().readLiveRun(now: .now)?.id }
+        self.now = now
+        self.calendar = calendar
         self.client = client
         self.locationStamp = locationStamp ?? { await CaptureLocationStamp.current() }
     }
@@ -116,6 +138,7 @@ final class JournalService: ObservableObject {
             async let sprintsResult = client.fetchFocusSessions()
             async let capturesResult = client.fetchCaptures()
             async let eventsResult = client.fetchLocationEvents()
+            async let runsResult = client.fetchRoutineRuns()
             async let placesResult = client.fetchPlaces()
             async let tagsResult = client.fetchAllTags()
             lifeAreas = try await lifeAreasResult
@@ -123,6 +146,7 @@ final class JournalService: ObservableObject {
             focusSessions = (try? await sprintsResult) ?? []
             captures = (try? await capturesResult) ?? []
             locationEvents = (try? await eventsResult) ?? []
+            reconcileRoutineRuns((try? await runsResult) ?? [])
             places = (try? await placesResult) ?? []
             availableTags = (try? await tagsResult) ?? []
             hasLoadedOnce = true
@@ -131,6 +155,27 @@ final class JournalService: ObservableObject {
         } catch {
             hasLoadedOnce = false
             state = .failed(Self.message(for: error))
+        }
+    }
+
+    /// Derives which runs lapsed since anyone last looked, shows them lapsed NOW, and writes
+    /// each ending once. The live run is the store's to end, never this method's.
+    private func reconcileRoutineRuns(_ fetched: [RoutineRunRecord]) {
+        let updates = RoutineRunReconciliation.updates(
+            records: fetched, liveRunId: liveRoutineRunId(), now: now(), calendar: calendar
+        )
+        routineRuns = RoutineRunReconciliation.applying(updates, to: fetched)
+        guard !updates.isEmpty else { return }
+        let recorder = routineRecorder
+        reconcileTask = Task {
+            for update in updates {
+                switch update {
+                case .expired(let runId, let at):
+                    try? await recorder.expired(runId: runId, at: at)
+                case .ended(let runId, let reason, let at):
+                    try? await recorder.ended(runId: runId, reason: reason, at: at)
+                }
+            }
         }
     }
 

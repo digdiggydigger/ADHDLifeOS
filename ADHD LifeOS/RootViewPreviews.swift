@@ -115,6 +115,7 @@ import SwiftUI
         func fetchFocusSessions() async throws -> [CompletedFocusSession] { [] }
         func fetchCaptures() async throws -> [Capture] { [] }
         func fetchLocationEvents() async throws -> [LocationEvent] { [] }
+        func fetchRoutineRuns() async throws -> [RoutineRunRecord] { [] }
         func fetchPlaces() async throws -> [Place] { [] }
         func fetchAllTags() async throws -> [Tag] { [] }
         func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }

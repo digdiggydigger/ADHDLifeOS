@@ -17,6 +17,7 @@ protocol JournalBackingStore {
     func fetchFocusSessions() async throws -> [CompletedFocusSession]
     func fetchCaptures() async throws -> [Capture]
     func fetchLocationEvents() async throws -> [LocationEvent]
+    func fetchRoutineRuns() async throws -> [RoutineRunRecord]
     func fetchPlaces() async throws -> [Place]
     func fetchTags() async throws -> [Tag]
     func createTagDeduplicating(name: String) async throws -> Tag

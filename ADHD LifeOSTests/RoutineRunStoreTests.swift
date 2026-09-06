@@ -189,7 +189,7 @@ final class RoutineRunStoreTests: XCTestCase {
     }
 
     func testStore_writeThenRead_roundTrips() {
-        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar)
+        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" })
         let run = makeRun()
 
         store.write(run)
@@ -199,20 +199,20 @@ final class RoutineRunStoreTests: XCTestCase {
 
     func testStore_readSweepsADeadRunOut() {
         let defaults = scratchDefaults()
-        let store = UserDefaultsRoutineRunStore(defaults: defaults, calendar: utcCalendar)
+        let store = UserDefaultsRoutineRunStore(defaults: defaults, calendar: utcCalendar, userScope: { "tester" })
         store.write(makeRun())
 
         let tomorrow = noonUTC.addingTimeInterval(24 * 3600)
 
         XCTAssertNil(store.readLiveRun(now: tomorrow))
         XCTAssertNil(
-            defaults.data(forKey: UserDefaultsRoutineRunStore.runKey),
+            defaults.data(forKey: UserDefaultsRoutineRunStore.runKey(forUser: "tester")),
             "the lazy sweep CLEARS the dead run — reading is the arc's only expiry mechanism"
         )
     }
 
     func testStore_endLiveRunClears() {
-        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar)
+        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" })
         store.write(makeRun())
 
         store.endLiveRun()
@@ -221,7 +221,7 @@ final class RoutineRunStoreTests: XCTestCase {
     }
 
     func testStore_updateMatching_refusesToResurrectAReplacedRun() {
-        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar)
+        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" })
         let original = makeRun()
         let replacement = makeRun()
         store.write(original)
@@ -240,7 +240,7 @@ final class RoutineRunStoreTests: XCTestCase {
     }
 
     func testStore_endRunId_endsOnlyThatRun() {
-        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar)
+        let store = UserDefaultsRoutineRunStore(defaults: scratchDefaults(), calendar: utcCalendar, userScope: { "tester" })
         let original = makeRun()
         let replacement = makeRun()
         store.write(original)
@@ -262,7 +262,7 @@ final class RoutineRunStoreTests: XCTestCase {
     /// store half or the view half is at fault.
     func testStore_theScreensFullSequence_endsTheRun() {
         let defaults = scratchDefaults()
-        let store = UserDefaultsRoutineRunStore(defaults: defaults, calendar: utcCalendar)
+        let store = UserDefaultsRoutineRunStore(defaults: defaults, calendar: utcCalendar, userScope: { "tester" })
         var run = makeRun()
         store.write(run)
 
@@ -287,8 +287,8 @@ final class RoutineRunStoreTests: XCTestCase {
 
     func testStore_corruptDataDegradesToNoRun() {
         let defaults = scratchDefaults()
-        defaults.set(Data("not a run".utf8), forKey: UserDefaultsRoutineRunStore.runKey)
-        let store = UserDefaultsRoutineRunStore(defaults: defaults, calendar: utcCalendar)
+        defaults.set(Data("not a run".utf8), forKey: UserDefaultsRoutineRunStore.runKey(forUser: "tester"))
+        let store = UserDefaultsRoutineRunStore(defaults: defaults, calendar: utcCalendar, userScope: { "tester" })
 
         XCTAssertNil(store.readLiveRun(now: noonUTC))
     }

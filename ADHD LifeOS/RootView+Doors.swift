@@ -101,7 +101,8 @@ extension RootView {
                     let fallback = UserDefaultsMomentumPreferencesStore().read().defaultSprintMinutes
                     startFocus(PlaceActionSprint.plan(minutes: minutes, defaultMinutes: fallback))
                 },
-                activity: routineActivityPresenter()
+                activity: routineActivityPresenter(),
+                recorder: FirebaseRoutineRunRecorder()
             )
         }
     }

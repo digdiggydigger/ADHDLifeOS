@@ -25,6 +25,7 @@ final class ActivationRig {
     let runStore: RoutineFakeRunStore
     let snapshotStore = RoutineFakeArrivalStore()
     let writers = RoutineWriterLog()
+    let recorder = FakeRoutineRunRecorder()
     let sut: PlaceRoutineActivator
 
     init() {
@@ -43,7 +44,8 @@ final class ActivationRig {
             executor: PlaceAutoRunExecutor(
                 journalWriter: { input in await Task.yield(); return writers.journal(input) },
                 captureWriter: { input in await Task.yield(); return writers.capture(input) }
-            )
+            ),
+            recorder: recorder
         )
     }
 

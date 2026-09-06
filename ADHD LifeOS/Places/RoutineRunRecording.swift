@@ -34,6 +34,16 @@ protocol RoutineRunsBackingStore {
     func fetchRoutineRuns() async throws -> [RoutineRunRecord]
 }
 
+/// Previews and the sim-only rigs: records nothing, throws nothing.
+struct InertRoutineRunRecorder: RoutineRunRecording {
+    func offered(_ record: RoutineRunRecord) async throws {}
+    func started(runId: UUID, at now: Date) async throws {}
+    func dismissed(runId: UUID, at now: Date) async throws {}
+    func expired(runId: UUID, at now: Date) async throws {}
+    func progressed(_ run: RoutineRun, at now: Date) async throws {}
+    func ended(runId: UUID, reason: RoutineRunEndReason, at now: Date) async throws {}
+}
+
 struct FirebaseRoutineRunRecorder: RoutineRunRecording {
     private let store: RoutineRunsBackingStore
 
