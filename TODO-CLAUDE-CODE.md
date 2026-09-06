@@ -2855,3 +2855,88 @@ parked for E's own session — this block deliberately records nothing.
 **Deliberately NOT built, offered and declined by omission:** a permission-banner footer warning
 that a listed routine can still never fire (nudge master switch off, or location not Always). It
 was put to E as an optional extra and is not part of the recommendations E accepted.
+
+---
+
+## The routine record — E's design, settled 2026-09-06 (branch `feature/routine-record`, off `main` @ `ebc5865`)
+
+**E's ask (2026-09-05): "clearly differentiating between a Routines Arrival, a Routines Accepted
+and when a Routine is completed."** Verified: no routine path writes anything durable. E picked the
+real `routine_runs` collection over journal rows, then answered eleven questions in three rounds;
+the record and the why is `handoff/SESSION-OPENER-routine-record-design.md`. **Read it first.**
+
+**E's settled decisions, not to be re-litigated:** ignored/swiped OFFERS ARE recorded — an
+explicit exception to Block A's "no trace" (Block A's other half, no auto-step and no journal line
+until the tap, stands); a Journal header switch "All activity", off by default, reveals offered
+rows muted; started and finished rows are always visible under Everything, TWO rows per run, the
+arrival row kept beside them; unfinished runs read gently ("· 2 of 4 done", never "abandoned");
+swiped vs timed-out offers share a row with different subtitles ("· cleared" / "· not opened");
+the Tools Routines row gains a last-run line; the run-store sign-out leak is folded in. Rules
+change → **E republishes**.
+
+### FEATURE: F-RoutineRecord-1-Ledger — the collection, the seam, the six write points  [ ]
+
+`RoutineRunRecord` (Codable, snake_cased, `FirestoreDocumentCoder` round-trip pinned, wrong
+spellings asserted ABSENT), `FirebaseManager+RoutineRuns` behind a `RoutineRunsBackingStore`
+protocol, the `RoutineRunRecording` seam with `FirebaseRoutineRunRecorder` and a recording fake,
+`FirestoreFieldPayloads.routineRun*` for every partial update, `RoutineRunReconciliation` (pure),
+the six write sites, `routine_runs` in `firestore.rules` and `Collection`, and the per-user run
+store key.
+
+**Acceptance criteria**
+- [ ] `RoutineRunRecord` round-trips through the REAL codec with every field in the design
+      record's table; the payload tests assert `place_id`/`offered_at`/`dismissal_method` present
+      and `placeId`/`offeredAt` absent.
+- [ ] Phase is DERIVED from the stamps (`RoutineRunRecord.phase`), pinned for every combination
+      including a stray `dismissed_at` beside a `started_at` (reads started).
+- [ ] `completed_steps_count` equals `PlaceRoutineProgress.doneCount` for the same run — one
+      truth, pinned by a test that feeds both the same fixture; `time_spent_seconds` runs to the
+      last step interaction, not the end stamp (pinned with a departure an hour later).
+- [ ] Site 1: a POSTED routine banner writes `offered`; a crossing suppressed by cooldown, the
+      kill-switch, threshold or the 17-gate writes nothing. `RoutineDeferredLoggingTests` say in
+      words that the offer record is the sanctioned exception.
+- [ ] Site 2: the tap writes `started` + `dismissal_method: tap`; a second tap (`.open`) writes
+      nothing; a replaced live run gets `ended(replaced)` first (ordering pinned via the log).
+- [ ] Site 3: the routine category carries `.customDismissAction` (call-site guard on the ONE
+      registration); the delegate's dismiss branch writes `dismissed` + `swipe`, never starts a
+      routine, never touches the tap router (pinned by a pure `RoutineDismissRouting` test and a
+      source guard).
+- [ ] Site 4: every `apply` on the screen writes `progressed`; site 5: leaving a fully resolved
+      screen writes `ended(completed)`, the departure crossing writes `ended(left_place)`.
+- [ ] Site 6: `RoutineRunReconciliation.updates(records:liveRunId:now:)` is pure and pinned —
+      unopened offers past their lifetime → `expired`; started runs past it → `window_lapsed` or
+      `day_ended`; the live run and already-terminal documents are never touched; called after
+      the Journal load (Tools load joins in block 2).
+- [ ] Sign-out leak: the run-store key is per-user; signed out reads nil and drops writes;
+      `AuthService.signOut()` and `completeAccountDeletion()` clear it (pinned).
+- [ ] `firestore.rules` lists `routine_runs` in the generic CRUD match; an emulator test proves
+      create + update are ALLOWED for the owner and denied for another user. Reported to E as
+      "not live until republished".
+- [ ] Suite green, lint 0, both targets build, red-checked with counted injected regressions,
+      committed and pushed.
+
+### FEATURE: F-RoutineRecord-2-Surfaces — Journal rows + switch, Tools last-run line  [ ]
+
+`JournalTimeline.Entry` gains `.routineOffered` / `.routineStarted` / `.routineEnded` with a
+composite `String` id; `JournalTimeline.routineLine(...)` holds every word; the "All activity"
+header switch; `ToolsRoutinesCatalog.rows(from:runs:)` with the last-run subtitle; the
+reconciler joins the Tools load; a UI journey that fires a crossing, walks the routine and finds
+the rows.
+
+**Acceptance criteria**
+- [ ] Every row's words pinned: started, finished (completed), unfinished (gentle), offered
+      cleared / not opened; names resolve through the CURRENT place; dangling places drop the row;
+      never under a life-area filter or a non-Everything chip.
+- [ ] Offered rows appear ONLY with the switch on (pinned both ways); the switch is off on
+      launch and not persisted; muted styling uses tokens, never opacity.
+- [ ] One document → started + ended rows with distinct ids; a live run shows started only.
+- [ ] Tools rows: last-run subtitle from the newest STARTED record for that place+direction;
+      rows without history byte-identical; the catalog still decides nothing about membership.
+- [ ] Reachability: call-site guards pin that the Journal renders all three kinds, the header
+      renders the switch, the Tools section passes runs to the catalog.
+- [ ] `RoutineRecordJourneyUITests`: seed a qualifying place, test-fire the arrival, tap the
+      routine, resolve it, close, open Journal, find the started and finished rows; flip the
+      switch and find an offered row from a second, untapped fire. Red-checked. Screenshots
+      in `screenshots/routine-record/` with a README.
+- [ ] Suite green, lint 0, both targets build, red-checked, committed and pushed; then E's
+      device review, `--no-ff` merge, re-verify on main.
