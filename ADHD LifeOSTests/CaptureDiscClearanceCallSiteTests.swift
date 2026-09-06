@@ -56,7 +56,7 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
         // Tasks carries the bottom search row (F-Search-1-Row), so it reserves the row's height
         // on top of the disc's. The other ten must NOT — they would grow a dead strip for a
         // control they never show.
-        ("Tasks/TaskListView.swift", ".captureDiscClearance(hasSearchRow: true)"),
+        ("Tasks/TaskListView.swift", ".captureDiscClearance()"),
         // The task detail screen's `Form` lives in the sections file, not the primary one — that
         // split happened in this same block, and this test caught the stale entry.
         ("Tasks/TaskDetailFormSections.swift", ".captureDiscClearance()"),
@@ -84,19 +84,21 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
         )
     }
 
-    /// The two forms are not interchangeable: only a screen that DRAWS the search row may reserve
-    /// its height. Asserted from the other direction so a stray `hasSearchRow: true` cannot spread.
-    func testOnlySearchScreensReserveTheSearchRow() throws {
+    /// `hasSearchRow` is GONE, and this pins the deletion. The search field shares the disc's
+    /// band (one `HStack`, centres aligned, field 44 inside the disc's 60), so it never needed
+    /// its own height — the shipped +60 was the missing bar band wearing the row's name, sized
+    /// close enough (152 vs the true 158) that it LOOKED right on the one screen that had it
+    /// while the other nine sat 58pt into the disc. One base clears the band for everyone.
+    func testNoScreenReservesExtraForTheSearchRow() throws {
         let reserving = try Self.allAppSources()
-            .filter { $0.path.lastPathComponent != "Theme.swift" }
-            .filter { $0.text.contains("captureDiscClearance(hasSearchRow: true)") }
+            .filter { $0.text.contains("captureDiscClearance(hasSearchRow") }
             .map { $0.path.lastPathComponent }
             .sorted()
         XCTAssertEqual(
-            reserving, ["TaskListView.swift"],
-            "A screen reserves the search row's height. Only screens that actually show the row"
-                + " may — `AppSearchScope.scope(for:)` is the list, and it is Tasks alone until"
-                + " blocks 2 and 3 land."
+            reserving, [],
+            "The search row shares the capture disc's band and costs no extra bottom room —"
+                + " a hasSearchRow argument has come back, and with the corrected base it is a"
+                + " ~60pt dead strip above the field."
         )
     }
 

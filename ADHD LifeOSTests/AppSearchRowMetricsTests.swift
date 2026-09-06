@@ -69,38 +69,47 @@ final class AppSearchRowMetricsTests: XCTestCase {
         )
     }
 
-    // MARK: - The clearance
+    // MARK: - The clearance, one number per AXIS
 
-    func testASearchScreenNeedsStrictlyMoreBottomRoom() {
-        XCTAssertGreaterThan(
-            AppSearchRowMetrics.clearance(hasSearchRow: true),
-            AppSearchRowMetrics.clearance(hasSearchRow: false),
-            "A screen with a search row asks for the same bottom room as one without, so its last"
-                + " row sits under the field."
-        )
-    }
-
-    func testAScreenWithoutTheRowPaysNothingForIt() {
+    /// The bottom inset must clear the disc's TOP measured from the safe-area bottom — which is
+    /// `bottomFurnitureLift` (the bar band the container deliberately does not reserve) plus the
+    /// disc, plus breathing room. The old base was `CaptureDiscMetrics.clearance` (92), a number
+    /// derived when `TabView` still reserved the bar's band for free: with the custom bar the
+    /// content floor sat 58pt — exactly `AppTabBarMetrics.rowHeight` — inside the disc, and both
+    /// `CaptureDiscClearanceUITests` measured rows RESTING under it (3/3 on 2026-09-06).
+    func testTheBottomClearanceClearsTheWholeBottomFurniture() {
         XCTAssertEqual(
-            AppSearchRowMetrics.clearance(hasSearchRow: false),
-            CaptureDiscMetrics.clearance,
-            "A screen with no search row is being padded as though it had one — eight screens"
-                + " would grow a dead strip at the bottom for a control they never show."
-        )
-    }
-
-    /// Derived, not typed. Change the field height or the spacing and the clearance follows; type
-    /// a second number and it drifts the first time either moves.
-    func testTheExtraRoomIsExactlyTheRowAndItsSpacing() {
-        let difference = AppSearchRowMetrics.clearance(hasSearchRow: true)
-            - AppSearchRowMetrics.clearance(hasSearchRow: false)
-
-        XCTAssertEqual(
-            difference,
-            AppSearchRowMetrics.fieldHeight + AppSearchRowMetrics.rowSpacing,
+            CaptureDiscMetrics.bottomClearance,
+            AppSearchRowMetrics.bottomFurnitureLift + CaptureDiscMetrics.discDiameter + 8,
             accuracy: 0.001,
-            "The search-row clearance is no longer derived from the row it clears. It is a second"
-                + " number now, and it will drift the first time the field's height changes."
+            "The bottom clearance no longer derives from the furniture it exists to clear — the"
+                + " lift (gap + bar) plus the disc plus 8. A typed number here is how the content"
+                + " floor drifted into the disc the first time."
+        )
+    }
+
+    /// The trailing axis keeps E's settled geometry untouched: margin + disc + 8 = 92. It is a
+    /// DIFFERENT measurement from the bottom one now — the bar band sits under the disc, not
+    /// beside it — so the two must never collapse into one number again.
+    func testTheTrailingClearanceKeepsTheSettledTrailingGeometry() {
+        XCTAssertEqual(
+            CaptureDiscMetrics.clearance,
+            CaptureDiscMetrics.edgeMargin + CaptureDiscMetrics.discDiameter + 8,
+            accuracy: 0.001,
+            "The trailing clearance moved off E's settled disc geometry (24 + 60 + 8)."
+        )
+    }
+
+    /// The difference between the two axes IS the bar band. Under `TabView` this was zero —
+    /// the system reserved the band — which is exactly how one number served both axes and
+    /// exactly why it stopped being true when the custom bar shipped reserving nothing.
+    func testTheAxesDifferByExactlyTheBarBand() {
+        XCTAssertEqual(
+            CaptureDiscMetrics.bottomClearance - CaptureDiscMetrics.clearance,
+            AppSearchRowMetrics.bottomFurnitureLift - CaptureDiscMetrics.edgeMargin,
+            accuracy: 0.001,
+            "The bottom and trailing clearances no longer differ by the bottom furniture the"
+                + " trailing axis never meets — one of the derivations has been retyped."
         )
     }
 

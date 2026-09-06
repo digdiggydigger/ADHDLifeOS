@@ -187,7 +187,7 @@ struct TaskListView: View {
             .padding(16)
         }
         // Tasks carries the search row, so it reserves the row's height on top of the disc's.
-        .captureDiscClearance(hasSearchRow: true)
+        .captureDiscClearance()
     }
 
     private func rowCard(for group: LifeAreaTaskGroup) -> some View {

@@ -210,9 +210,22 @@ enum CaptureDiscMetrics {
     /// clearance sum true on BOTH axes at once.
     static let edgeMargin: CGFloat = 24
 
-    /// Derived from the REST state deliberately: the pill is transient, and the last row of
-    /// every scroll still has to clear the full disc it settles back into.
+    /// The TRAILING axis only: margin + disc + 8. It was both axes' number until F-Tools-1-Bar —
+    /// under `TabView` the system bar reserved its own band, so the space under the disc really
+    /// was `edgeMargin`-sized. The custom bar deliberately reserves nothing, which put the whole
+    /// bar band under the disc and made this number 58pt short vertically; `bottomClearance`
+    /// below is the bottom axis now. Derived from the REST state deliberately: the pill is
+    /// transient, and a row that settles beside the disc must clear the full disc.
     static let clearance: CGFloat = discDiameter + edgeMargin + 8
+
+    /// The BOTTOM axis: everything between the safe-area bottom and the disc's top, plus 8pt of
+    /// breathing room — `bottomFurnitureLift` is the gap-plus-bar the container does not reserve
+    /// (the same term whose absence once sat the disc ON the bar, fixed in F-Search-1-Row; this
+    /// is the same correction reaching the content inset). Both `CaptureDiscClearanceUITests`
+    /// measured rows RESTING inside the disc's band under the old 92 — 3/3 on 2026-09-06.
+    static var bottomClearance: CGFloat {
+        AppSearchRowMetrics.bottomFurnitureLift + discDiameter + 8
+    }
 }
 
 extension View {
@@ -230,17 +243,18 @@ extension View {
     ///
     /// Not for sheets or full-screen covers: they are presented above the disc and hide it.
     ///
-    /// **`hasSearchRow` (F-Search-1-Row).** Three screens now also carry the bottom search row,
-    /// which sits in this same band, and they need more room than the eight that do not. The
-    /// parameter defaults to `false` so every existing call site keeps its exact meaning, and the
-    /// extra is DERIVED in `AppSearchRowMetrics.clearance(hasSearchRow:)` rather than typed a
-    /// second time — a second literal is how the two drift the first time the field's height moves.
-    func captureDiscClearance(hasSearchRow: Bool = false) -> some View {
+    /// **`hasSearchRow` is gone (2026-09-06).** The search field shares the disc's band — one
+    /// `HStack`, centres aligned, the 44pt field inside the disc's 60pt frame — so it never
+    /// needed room of its own: the shipped +60 was the missing bar band wearing the row's name,
+    /// close enough to the true correction (152 vs 158) that the one search screen LOOKED right
+    /// while the other nine rested 58pt inside the disc. `bottomClearance` clears the band for
+    /// every screen alike.
+    func captureDiscClearance() -> some View {
         safeAreaInset(edge: .bottom, spacing: 0) {
             // Non-hit-testable, or this reserved strip would swallow taps on the rows that scroll
             // up through it — the exact reachability problem it exists to fix.
             Color.clear
-                .frame(height: AppSearchRowMetrics.clearance(hasSearchRow: hasSearchRow))
+                .frame(height: CaptureDiscMetrics.bottomClearance)
                 .allowsHitTesting(false)
         }
     }
