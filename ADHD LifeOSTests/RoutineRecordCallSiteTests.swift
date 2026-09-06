@@ -143,6 +143,14 @@ final class RoutineRecordCallSiteTests: XCTestCase {
                 + " is the widget process, which has no auth concept, so the last user's task"
                 + " titles and area names keep rendering on the Home Screen until swept"
         )
+        XCTAssertTrue(
+            auth.contains("UserDefaultsDailySummaryStore().clear()"),
+            "and the daily-summary snapshot — the family's last member (E's sweep call,"
+                + " 2026-09-06): the blob quotes task titles and journal reflections into"
+                + " app-local defaults and survives sign-out AND account deletion;"
+                + " belongs(to:) blocks cross-account display, this closes the at-rest half."
+                + " No widget reload — nothing else reads this store"
+        )
     }
 
     func testTheWidgetSweepClearsBothStoresAndReloadsBothTimelines() throws {
