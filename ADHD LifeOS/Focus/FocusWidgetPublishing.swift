@@ -126,4 +126,16 @@ struct AppGroupFocusWidgetPublisher: FocusWidgetPublishing {
         LifeAreasWidgetStore().write(snapshot)
         WidgetCenter.shared.reloadTimelines(ofKind: LifeAreasWidgetStore.widgetKind)
     }
+
+    /// The session-end sweep (E's fold call, 2026-09-06), called from `AuthService`'s default
+    /// session-ending hook. Clearing alone is not enough: WidgetKit keeps rendering the timeline
+    /// it already has, so without the reloads the signed-out Home Screen shows the last user's
+    /// task titles and area names for hours. It lives here rather than in the hook because this
+    /// file is the one place the app talks WidgetKit.
+    static func clearSnapshotsForSessionEnd() {
+        FocusWidgetSnapshotStore().clear()
+        LifeAreasWidgetStore().clear()
+        WidgetCenter.shared.reloadTimelines(ofKind: FocusWidgetSnapshotStore.widgetKind)
+        WidgetCenter.shared.reloadTimelines(ofKind: LifeAreasWidgetStore.widgetKind)
+    }
 }

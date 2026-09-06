@@ -136,6 +136,30 @@ final class RoutineRecordCallSiteTests: XCTestCase {
                 + " 2026-09-06): place names and custom messages under app-local keys outlive"
                 + " the session exactly the way the run store's did"
         )
+        XCTAssertTrue(
+            auth.contains("AppGroupFocusWidgetPublisher.clearSnapshotsForSessionEnd()"),
+            "and the widget snapshots — the family's fourth and fifth members (E's fold call,"
+                + " 2026-09-06): the App Group payloads carry no owner field and their reader"
+                + " is the widget process, which has no auth concept, so the last user's task"
+                + " titles and area names keep rendering on the Home Screen until swept"
+        )
+    }
+
+    func testTheWidgetSweepClearsBothStoresAndReloadsBothTimelines() throws {
+        let publisher = try Self.code("Focus/FocusWidgetPublishing.swift")
+
+        XCTAssertTrue(
+            Self.collapsed(publisher).contains(
+                "static func clearSnapshotsForSessionEnd() {"
+                    + " FocusWidgetSnapshotStore().clear()"
+                    + " LifeAreasWidgetStore().clear()"
+                    + " WidgetCenter.shared.reloadTimelines(ofKind: FocusWidgetSnapshotStore.widgetKind)"
+                    + " WidgetCenter.shared.reloadTimelines(ofKind: LifeAreasWidgetStore.widgetKind) }"
+            ),
+            "clearing without reloading leaves WidgetKit rendering the old user's timeline for"
+                + " hours — the sweep must both empty the stores and reload the timelines, for"
+                + " both widgets, in the one named place the session-end hook calls"
+        )
     }
 
     // MARK: - The rules admit the collection
