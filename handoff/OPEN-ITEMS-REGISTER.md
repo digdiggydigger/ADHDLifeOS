@@ -48,31 +48,37 @@ after every UI run (five times today — the poison rule held, including through
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **`DailySummaryStore` — sweep it too, or accept at-rest?** E's fold call covered the two
-      widget stores; this one was left. Verified: the blob (it QUOTES task titles and journal
-      reflections) survives sign-out AND account deletion on disk, but `belongs(to:)` refuses
-      foreign reads — content-at-rest only, never displayed cross-account. Finishing the
-      family is one line in the session-end hook plus a pin.
 - [x] **Reinstall E's phone from main** — DONE on E's word (2026-09-06 22:05): built at
       `e4fe956` (`-allowProvisioningUpdates`, zero "No Accounts"), binary stamped 22:04,
       `devicectl` install + `--terminate-existing` launch verified on `wishwashwacky15`.
       The widget fold and the clearance fix are on device.
-- [ ] **The Life Areas widget's signed-out copy says "Open Momentum once and your areas will
-      appear here."** — "Momentum" is the Home-redesign codename, not the app's name; every
-      other surface says LifeOS. Found in E's device screenshots
-      (`screenshots/widget-session-fold/01-…`). One-line copy fix once E picks the word.
 - [ ] **Re-measure coverage?** CLAUDE.md records 23.62% at `b1f4b6f`, stale — the suite is now
       2,462. (carried)
 - [ ] **The permission-banner footer** on the Routines section. (carried)
 
 ## B · Real work, ready to start — recommended order
 
-1. **Full UI target once on main, post-fix — the new baseline.** Expectation: green except
+**Items 1 and 2 are E's queued instruction, verbatim (2026-09-06): "lets handle the 'sweep of
+DailySummaryStore' and the 'Open Momentum' items in the next session." They go first.**
+
+1. **`F-DailySummarySweep` — finish the leak family.** E's call: sweep it. The blob
+   (`home.dailySummary.snapshot`, app-local defaults) QUOTES task titles and journal
+   reflections and survives sign-out AND account deletion; `belongs(to:)` already blocks
+   cross-account display, so this closes the at-rest half. Shape is the fold's, smaller:
+   `clear()` on `UserDefaultsDailySummaryStore` (nil-safe), one line in `AuthService`'s
+   default session-ending hook, the source pin extended, behavior test first. No widget
+   reload — nothing else reads this store.
+2. **The "Open Momentum once…" widget copy.** E's call: fix it. THE WORD IS STILL E's TO PICK
+   at session start — every other surface says LifeOS, so propose that and wait for the nod.
+   The copy is the Life Areas widget's signed-out empty state
+   (`screenshots/widget-session-fold/01-…` shows it); it lives in the widget target, and the
+   copy is test-pinnable once chosen.
+3. **Full UI target once on main, post-fix — the new baseline.** Expectation: green except
    possibly the two watch-list flakes (section E). Run it FOREGROUND, or one class at a time —
    the memory watchdog killed two BACKGROUND UI runs today (section E).
-2. **Arc 2 — first-class routines + the "at a time" trigger.** Not authorised. (carried)
-3. **`F-Search-3-Journal`** — recommendation is to kill the block. E's call. (carried)
-4. **The Live Activity design review** E parked. (carried)
+4. **Arc 2 — first-class routines + the "at a time" trigger.** Not authorised. (carried)
+5. **`F-Search-3-Journal`** — recommendation is to kill the block. E's call. (carried)
+6. **The Live Activity design review** E parked. (carried)
 
 ## C · Parked on E's instruction — do not start unprompted
 
