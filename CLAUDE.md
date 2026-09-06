@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project status
 
 **Feature-complete native port (as of 2026-08-19), running on E's physical iPhone.** The React
-prototype (`src/`, reference-only) is fully ported to SwiftUI on Firebase: Home (Active Goal hero,
+prototype (`legacy/src/`, reference-only — see `legacy/README.md`) is fully ported to SwiftUI on
+Firebase: Home (Active Goal hero,
 life-area grid + reorder, daily summary, focus analytics), Tasks (swipeable cards, search/sort,
 detail with focus-sprint planner), Capture inbox triage, Journal, Nudges, Settings (incl. account
 deletion), auth (email/password live; Sign in with Apple built but dormant — free dev account),
