@@ -44,6 +44,7 @@ final class AuthService: ObservableObject {
         self.redirectURL = redirectURL
         self.onSessionEnding = onSessionEnding ?? {
             UserDefaultsRoutineRunStore().clearEveryUser()
+            UserDefaultsArrivalNudgeStateStore().clearEveryUser()
             RoutineNotificationTray.clearDeliveredRoutineBanners()
         }
     }

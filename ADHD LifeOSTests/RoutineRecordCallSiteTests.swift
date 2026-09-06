@@ -130,6 +130,12 @@ final class RoutineRecordCallSiteTests: XCTestCase {
                 + " account it starts that account's day with somebody else's place (found by"
                 + " the routine-record journey, 2026-09-06)"
         )
+        XCTAssertTrue(
+            auth.contains("UserDefaultsArrivalNudgeStateStore().clearEveryUser()"),
+            "and the arrival snapshot — the leak family's third member (E's fold call,"
+                + " 2026-09-06): place names and custom messages under app-local keys outlive"
+                + " the session exactly the way the run store's did"
+        )
     }
 
     // MARK: - The rules admit the collection

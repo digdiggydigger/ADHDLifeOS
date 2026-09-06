@@ -241,7 +241,9 @@ final class ArrivalNudgeTests: XCTestCase {
     func testSnapshotStore_roundTrips() throws {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: "arrival-nudge-tests"))
         defaults.removePersistentDomain(forName: "arrival-nudge-tests")
-        let store = UserDefaultsArrivalNudgeStateStore(defaults: defaults)
+        // Scoped per user since the snapshot fold; the unit sim is signed out by standing
+        // rule, so the round-trip needs an injected scope like every store test.
+        let store = UserDefaultsArrivalNudgeStateStore(defaults: defaults, userScope: { "round-trip" })
 
         store.writeSnapshot(snapshot())
         var cooldowns = TriggerCooldownState()

@@ -17,37 +17,80 @@ protocol ArrivalNudgeStateStoring {
 
 /// App-local UserDefaults, the `UserDefaultsMomentumPreferencesStore` arrangement: every failure
 /// path — unavailable defaults, corrupt data — degrades to empty instead of trapping.
+///
+/// Keyed PER USER since the snapshot fold (E's call, 2026-09-06; the run store led the family
+/// in F-RoutineRecord-1): app-local defaults outlive a sign-out, and under one shared key the
+/// next account's background wake could nudge with the previous account's place names and
+/// custom messages. The cooldowns are scoped with the snapshot — they are that account's
+/// bounce history. The scope is read at CALL time, so the stores the trigger service and the
+/// handler build at launch follow the session; signed out, reads are empty and writes drop.
 struct UserDefaultsArrivalNudgeStateStore: ArrivalNudgeStateStoring {
-    static let snapshotKey = "places.arrivalNudge.snapshot"
-    static let cooldownsKey = "places.arrivalNudge.cooldowns"
+    /// The unscoped keys every build before the fold wrote — the leak itself. Kept as the
+    /// scoped keys' prefixes, and so that `clearEveryUser` removes what those builds left.
+    static let legacySnapshotKey = "places.arrivalNudge.snapshot"
+    static let legacyCooldownsKey = "places.arrivalNudge.cooldowns"
 
     private let defaults: UserDefaults?
+    private let userScope: () -> String?
 
-    init(defaults: UserDefaults? = .standard) {
+    init(
+        defaults: UserDefaults? = .standard,
+        userScope: @escaping () -> String? = { FirebaseManager.shared.currentUser?.uid }
+    ) {
         self.defaults = defaults
+        self.userScope = userScope
+    }
+
+    /// The scoped keys for one user — internal so a test can look at the raw defaults.
+    static func snapshotKey(forUser uid: String) -> String {
+        "\(legacySnapshotKey).\(uid)"
+    }
+
+    static func cooldownsKey(forUser uid: String) -> String {
+        "\(legacyCooldownsKey).\(uid)"
+    }
+
+    private var snapshotKey: String? {
+        userScope().map(Self.snapshotKey(forUser:))
+    }
+
+    private var cooldownsKey: String? {
+        userScope().map(Self.cooldownsKey(forUser:))
     }
 
     func readSnapshot() -> AtPlaceSnapshot? {
-        guard let data = defaults?.data(forKey: Self.snapshotKey) else { return nil }
+        guard let key = snapshotKey, let data = defaults?.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(AtPlaceSnapshot.self, from: data)
     }
 
     func writeSnapshot(_ snapshot: AtPlaceSnapshot) {
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
-        defaults?.set(data, forKey: Self.snapshotKey)
+        guard let key = snapshotKey, let data = try? JSONEncoder().encode(snapshot) else { return }
+        defaults?.set(data, forKey: key)
     }
 
     func readCooldowns() -> TriggerCooldownState {
         guard
-            let data = defaults?.data(forKey: Self.cooldownsKey),
+            let key = cooldownsKey,
+            let data = defaults?.data(forKey: key),
             let state = try? JSONDecoder().decode(TriggerCooldownState.self, from: data)
         else { return TriggerCooldownState() }
         return state
     }
 
     func writeCooldowns(_ state: TriggerCooldownState) {
-        guard let data = try? JSONEncoder().encode(state) else { return }
-        defaults?.set(data, forKey: Self.cooldownsKey)
+        guard let key = cooldownsKey, let data = try? JSONEncoder().encode(state) else { return }
+        defaults?.set(data, forKey: key)
+    }
+
+    /// A session ending: every user's snapshot and cooldowns go, and so do the legacy unscoped
+    /// keys an older build may have left. Needs no scope, which is the point — after an account
+    /// deletion there is no user left to name.
+    func clearEveryUser() {
+        guard let defaults else { return }
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix(Self.legacySnapshotKey) || key.hasPrefix(Self.legacyCooldownsKey) {
+            defaults.removeObject(forKey: key)
+        }
     }
 }
 
