@@ -1,9 +1,11 @@
 # Start here — the defect sweep is done; the queue is the register
 
 *Paste into a fresh Claude Code terminal. Written 2026-09-06 at the close of the defect-sweep
-session (PRs #4–#7): the widget-store session-end fold, the tab-root not-hittable defect's
+session (PRs #4–#11): the widget-store session-end fold, the tab-root not-hittable defect's
 root cause AND its harness fix, and the capture-disc clearance bar-band fix all landed on
-`main`. Nothing is half-done; the queue is the register.*
+`main`; E's phone was then brought onto main and the fold device-confirmed
+(`screenshots/widget-session-fold/`). Nothing is half-done; the queue is the register, and
+its section B items 1 and 2 are E's own queued instruction.*
 
 **This is the ONE live opener.** If you find a second `START-HERE-*` in `handoff/`, one of
 them is a trap — see CLAUDE.md, "Session handoff". Archive this file into `handoff/archive/`
