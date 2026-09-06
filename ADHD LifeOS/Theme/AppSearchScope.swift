@@ -116,13 +116,4 @@ enum AppSearchRowMetrics {
         gapAboveTabBar + AppTabBarMetrics.rowHeight
     }
 
-    /// Bottom room for a scrolling screen, with or without the search row.
-    ///
-    /// **Derived from `CaptureDiscMetrics.clearance`, never typed twice.** Eleven files reserve
-    /// the disc's 92pt through `.captureDiscClearance()`; three of them now also carry a search
-    /// row and need the extra. A second literal somewhere is how the two drift the first time the
-    /// field's height moves — the failure `CaptureDiscClearanceCallSiteTests` was written for.
-    static func clearance(hasSearchRow: Bool) -> CGFloat {
-        CaptureDiscMetrics.clearance + (hasSearchRow ? fieldHeight + rowSpacing : 0)
-    }
 }

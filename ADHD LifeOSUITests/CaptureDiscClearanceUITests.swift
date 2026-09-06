@@ -69,6 +69,18 @@ final class CaptureDiscClearanceUITests: XCTestCase {
             weekReview.waitForExistence(timeout: UITestSession.timeout),
             "Today never rendered its week-review row"
         )
+        // Into REACH through the shared helper FIRST (2026-09-06): `scrollToRest` returns on an
+        // unmoved frame, which is only sound from an already-scrolled state — at launch, before
+        // Today's Firestore content arrives, the page is not yet scrollable, the frame reads
+        // unmoved at y=1377, and "rest" is declared three swipes in. That is the exact early-bail
+        // `scrollUntilHittable`'s own comment documents removing; measured biting here once the
+        // run before this line existed.
+        XCTAssertTrue(
+            UITestSession.scrollUntilHittable(
+                weekReview, in: app, tabToSelect: UITestSession.tabButton("Today", in: app)
+            ),
+            "Today never brought the week-review row into reach, even scrolled to the end"
+        )
         scrollToRest(weekReview, in: app)
         assertClearOfCaptureDisc(weekReview, "Today's week-review row", in: app)
     }
@@ -143,11 +155,18 @@ final class CaptureDiscClearanceUITests: XCTestCase {
 
     /// Swipes up until `element` stops moving, so it is measured where the scroll actually leaves
     /// it rather than mid-flight. A bounce settles back to the same frame, which is the signal.
+    ///
+    /// Only sound from an already-scrolled state: an unmoved frame also describes a page whose
+    /// content has not arrived yet, so callers bring the element into reach with
+    /// `scrollUntilHittable` first and this measures the settle alone.
     @MainActor
     private func scrollToRest(_ element: XCUIElement, in app: XCUIApplication, attempts: Int = 10) {
         var previous = CGRect.null
         for _ in 1...attempts {
             guard element.exists else { return }
+            // A standing system password prompt eats swipes silently, so an unmoved frame proves
+            // nothing while one is up — sweep it and drop the reading it may have corrupted.
+            if UITestSession.dismissSystemPasswordPromptIfPresent() { previous = .null }
             let frame = element.frame
             if frame.equalTo(previous) { return }
             previous = frame
