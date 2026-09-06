@@ -50,10 +50,10 @@ after every UI run (five times today — the poison rule held, including through
       reflections) survives sign-out AND account deletion on disk, but `belongs(to:)` refuses
       foreign reads — content-at-rest only, never displayed cross-account. Finishing the
       family is one line in the session-end hook plus a pin.
-- [ ] **Reinstall E's phone from main** — now TWO app-code fixes behind (widget fold,
-      clearance); a signed-out phone still shows the old widget data, and every scrolling
-      screen's last row still rests under the disc on device. E via Xcode, or authorise a
-      `devicectl` install.
+- [x] **Reinstall E's phone from main** — DONE on E's word (2026-09-06 22:05): built at
+      `e4fe956` (`-allowProvisioningUpdates`, zero "No Accounts"), binary stamped 22:04,
+      `devicectl` install + `--terminate-existing` launch verified on `wishwashwacky15`.
+      The widget fold and the clearance fix are on device.
 - [ ] **Re-measure coverage?** CLAUDE.md records 23.62% at `b1f4b6f`, stale — the suite is now
       2,462. (carried)
 - [ ] **The permission-banner footer** on the Routines section. (carried)
