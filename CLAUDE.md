@@ -138,10 +138,11 @@ real terminal output has been pasted for review, not just a "done" summary. **If
 settled by LOOKING at it rather than by an assertion, its `screenshots/` folder and that folder's
 README are part of the same bar** — see "Visual evidence" below.
 
-**Coverage reality (2026-09-07, re-measured):** the app target is **24.68% (11,095/44,961)** over
-**2,488 unit tests**, measured with the documented command at `9f6381e`, emulator UP. (It was
-24.58% (11,050/44,961) over 2,469 tests earlier the same day, at `f0b7c5c`, before F-AdapterDrift
-closed the four adapters below.)
+**Coverage reality (2026-09-07, re-measured):** the app target is **24.72% (11,114/44,961)** over
+**2,497 unit tests**, measured with the documented command at `93beff2`, emulator UP. (It was
+24.68% (11,095/44,961) over 2,488 tests at `9f6381e`, before F-WidgetCoverage closed the widget
+target's testable surface below; and 24.58% (11,050/44,961) over 2,469 tests at `f0b7c5c`, before
+F-AdapterDrift closed the four adapters below. All three are the same day.)
 
 **These figures ARE comparable to the 23.62% (8,673/36,721) recorded on 2026-08-30 — and the note
 that stood here would have told you they are not. Read why: the rule needed sharpening, not
@@ -156,10 +157,12 @@ repeating.** A moved denominator is not itself disqualifying. What decides it is
   measurement had), so both percentages mean the same thing and the difference between them is
   real.
 
-- **`f0b7c5c` → `9f6381e` (44,961 → 44,961): trivially comparable.** F-AdapterDrift added only
-  TESTS, so the denominator did not move at all and the whole delta is numerator — 11,050 →
-  11,095, the +45 lines the four adapters were missing. This is the easy case, and it is worth
-  keeping in view as the contrast that makes the other two legible.
+- **`f0b7c5c` → `9f6381e` → `93beff2` (44,961 throughout): trivially comparable.** F-AdapterDrift
+  and F-WidgetCoverage both added only TESTS, so the denominator did not move at all and the whole
+  delta is numerator — 11,050 → 11,095 (the +45 lines the four adapters were missing) → 11,114
+  (the +19 the widget's five shared files were missing; those files are members of the app target
+  too, so widget work moves this figure as well). This is the easy case, and it is worth keeping
+  in view as the contrast that makes the other two legible.
 
 The honest reading of the first pair is that coverage grew slightly FASTER than the code: the
 numerator went **8,673 → 11,050 (+27.4%)** against a denominator that grew **+22.4%**.
@@ -168,18 +171,49 @@ numerator went **8,673 → 11,050 (+27.4%)** against a denominator that grew **+
 establish WHY before you either compare the ratios or refuse to.** "Different denominators" is the
 start of that question, not the answer to it.
 
-Full target breakdown at `9f6381e`:
+Full target breakdown at `93beff2`:
 
 ```
-ADHD LifeOS.app              24.68%  (11095/44961)
-ADHD LifeOSTests.xctest      96.02%  (38925/40539)
+ADHD LifeOS.app              24.72%  (11114/44961)
+ADHD LifeOSTests.xctest      96.02%  (39057/40678)
 ADHD LifeOSUITests.xctest     0.00%  (0/2751)     ← skipped in the standard run by design
-FocusTimerWidgetExtension     9.43%  (209/2216)
+FocusTimerWidgetExtension    10.29%  (228/2216)
 ```
 
-**The widget extension went BACKWARDS, and it is the one figure here that should sting:**
-193/1,759 → 209/2,216. Sixteen newly covered lines against 457 new executable ones — widget code
-shipped faster than its tests, and the ratio fell 10.97% → 9.43%.
+**The widget extension's percentage is the most misleading number in this file, and the note that
+stood here read it wrong.** It said the target "went BACKWARDS" — 193/1,759 → 209/2,216, the ratio
+falling 10.97% → 9.43% — and concluded "widget code shipped faster than its tests". The arithmetic
+was right and the diagnosis was wrong. **Only FIVE of the fourteen widget files are compiled into
+the app target**, via the `membershipExceptions` list in `project.pbxproj`:
+
+```
+FocusActivityAttributes.swift   FocusSprintIntents.swift   RoutineActivityAttributes.swift
+FocusWidgetSnapshot.swift       LifeAreasWidgetSnapshot.swift
+```
+
+Those five are **exactly** the five that have ever had non-zero coverage, and the match is not a
+coincidence: the unit-test target hosts the APP, so it compiles and runs those five and never
+compiles the other nine at all. **The widget target's testable surface is 233 lines, not 2,216.**
+The remaining 1,983 are widget-only view bodies — `FocusTimerWidgetLiveActivity` (0/518),
+`FocusStatsWidget` (0/472), `RoutineLiveActivity` (0/436), `FocusActivityComponents` (0/164),
+`FocusSprintWidgetSection` (0/133), `LifeAreasWidget` (0/127), `QuickCaptureWidget` (0/105),
+`FocusStatsTimeline` (0/17), `FocusTimerWidgetBundle` (0/11) — structurally out of a unit test's
+reach, the same fact this section already records for the app target's own view bodies.
+
+So the fall was DENOMINATOR, not decay: `RoutineLiveActivity` (436) and `RoutineActivityAttributes`
+(10) arrived with the routines arc on **2026-09-03** (`534265e`), ~446 of the 457 new executable
+lines. Read the testable surface instead and the trend inverts — it was **209/233 (89.7%)**, and
+F-WidgetCoverage took it to **228/233 (97.9%)**.
+
+**The five lines still uncovered are `endAllActivities`' loop body** (`FocusSprintIntents.swift`
+32–36): ending a real `Activity` needs an entitled process, the same exclusion
+`FocusActivityContentStateTests` records for the mirror's own ActivityKit calls. They are the
+honest floor, not a backlog.
+
+**The lesson generalises past the widget: a percentage over a denominator that includes code the
+test target never compiles is not a coverage figure, it is two numbers divided.** Before reading
+any target's ratio as effort, check what the test host actually links — `--files-for-target` on
+both targets, and the file lists' intersection is the surface that can move.
 
 **The Firebase adapter seam DECAYED and was closed again the same day (F-AdapterDrift,
 2026-09-07).** The claim that stood here — "all ... covered (92–100% each)" — had gone false: four

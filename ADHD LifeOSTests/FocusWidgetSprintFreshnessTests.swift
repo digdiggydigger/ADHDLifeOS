@@ -69,6 +69,28 @@ final class FocusWidgetSprintFreshnessTests: XCTestCase {
         )
     }
 
+    /// The sprint with NEITHER clock anchor — no deadline and no frozen remainder — which the
+    /// `?? 0` under `pausedRemainingSeconds` exists to absorb.
+    ///
+    /// It is reachable, not merely defensive: `widgetSprint` publishes
+    /// `deadline: session.isPaused ? nil : sprintDeadline`, and `sprintDeadline` is itself
+    /// optional, so a session that exists before its deadline is set publishes both as nil. The
+    /// snapshot is also `Codable` and decoded from the App Group, where any older writer's shape
+    /// arrives unvalidated. Reading it as a FULL bar is the safe answer — the section retires
+    /// rather than claiming a sprint is still at the start line.
+    func testElapsed_withNeitherADeadlineNorAFrozenRemainder_readsAsTheFullDuration() {
+        let sprint = FocusWidgetSnapshot.ActiveSprint(
+            taskTitle: "Draft the review", emoji: "💼", durationSeconds: 900,
+            deadline: nil, pausedRemainingSeconds: nil, checkpointSeconds: [300, 600]
+        )
+
+        XCTAssertEqual(sprint.elapsedSeconds(asOf: now), 900)
+        XCTAssertEqual(
+            sprint.checkpointsReached(asOf: now), 2,
+            "every mark sits behind a playhead at the finish"
+        )
+    }
+
     // MARK: - Checkpoints reached
 
     func testCheckpointsReached_countsTheMarksThePlayheadHasPassed() {
