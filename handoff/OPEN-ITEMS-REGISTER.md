@@ -1,4 +1,7 @@
-# Open items register — 2026-09-07, F-AdapterDrift close-out (fifth edition today; the previous four covered the queue-clear, the UI baseline, the permission footer, and the coverage re-measure)
+# Open items register — 2026-09-07, SESSION close-out (fifth edition today; the previous four covered the queue-clear, the UI baseline, the permission footer, and the coverage re-measure)
+
+*This edition also carries the handoff: `START-HERE-post-footer.md` archived,
+`START-HERE-post-adapter-drift.md` written in the same commit.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
@@ -70,8 +73,9 @@ FirebaseHomeClientAdapter           80.00% (12/15)   → 100.00% (15/15)
 
 ## D · Launch blockers — no conversation opened yet
 
-- **Free dev account** → 7-day profiles; the clock restarted with the 2026-09-07 04:28 build,
-  so roughly valid to **2026-09-14**. (carried)
+- **Free dev account** → 7-day profiles; the clock restarted with the build of
+  **2026-09-07 04:28**, so the profile is roughly valid to **2026-09-14**. (carried — this is an
+  absolute date deliberately; it was written the same day and would read as "today" otherwise.)
 - **Sign in with Apple** built but dormant. (carried)
 
 ## E · Known, not work
@@ -100,9 +104,9 @@ FirebaseHomeClientAdapter           80.00% (12/15)   → 100.00% (15/15)
 - **The strong-password pane is environmental** — full story in `UITestAutofill.swift`. (carried)
 - **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN** — its dialog says so;
   `screenshots/routines-permission-footer/README.md` has the worked example. (carried)
-- **`START-HERE-post-footer.md` is still the ONE live opener**, deliberately NOT archived: no
-  successor has been written, because E has not asked for the handoff. Its header carries a note
-  that its section-A summary is spent and points here.
+- **The live opener is `START-HERE-post-adapter-drift.md`**, written at this close-out on E's
+  word. `START-HERE-post-footer.md` was archived into `handoff/archive/` in the SAME commit that
+  wrote it, per the rule — exactly one `START-HERE-*` is live in `handoff/`.
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
 - **The emulator was left running** (`scripts/emulators.sh`); `firestore-debug.log` in the repo
