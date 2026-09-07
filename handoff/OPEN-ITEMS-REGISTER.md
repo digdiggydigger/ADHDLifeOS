@@ -61,8 +61,10 @@ untouched this session · the emulator was left running.
       Arrival-nudges card (inline fix mirroring the Settings toggle — store write + haptic +
       immediate fence refresh) plus the existing `LocationPermissionBanner(wantsTriggering:
       true)` reused, under LISTED routines only. TDD staged, red-check 2, journeys 3/0.
-      **On device at `a3e4bde` — E's device look is the one open check**: flip Settings →
-      Arrival nudges off, visit Tools with a routine listed.
+      **DEVICE-CONFIRMED by E (2026-09-07 ~04:31): "the footer works"** — evidence with the
+      test-fire × switch clarification in `screenshots/routines-permission-footer/`. The item
+      is fully CLOSED. (The notifications E saw with the switch off were the DEBUG test-fire's
+      designed bypass — `isEnabled: { true }`, said by its own dialog — not the gate failing.)
 
 ## B · Real work, ready to start — recommended order
 
