@@ -190,6 +190,104 @@ final class FirebaseJournalClientAdapterTests: XCTestCase {
         }
     }
 
+    // MARK: - The four methods the 2026-09-07 coverage sweep found untouched
+    //
+    // `fetchLocationEvents`, `fetchRoutineRuns`, `fetchPlaces` and `deleteLog` were the adapter's
+    // 28 uncovered lines — four whole methods, happy path and catch branch alike. The three
+    // fetches are the Journal timeline's side streams; `deleteLog` is capture triage's undo.
+
+    func testFetchLocationEvents_passesTheStoreListThrough() async throws {
+        let arrival = LocationEvent(
+            id: UUID(), placeId: UUID(), kind: .arrival, occurredAt: Date(timeIntervalSince1970: 1_756_296_000)
+        )
+        store.locationEvents = [arrival]
+
+        let events = try await adapter.fetchLocationEvents()
+
+        XCTAssertEqual(events, [arrival])
+    }
+
+    func testFetchLocationEvents_wrapsFailureAsAJournalError() async {
+        store.fetchLocationEventsError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchLocationEvents()) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
+    func testFetchRoutineRuns_passesTheStoreListThrough() async throws {
+        let run = Self.routineRun(offeredAt: Date(timeIntervalSince1970: 1_756_296_000))
+        store.routineRuns = [run]
+
+        let runs = try await adapter.fetchRoutineRuns()
+
+        XCTAssertEqual(runs, [run])
+    }
+
+    func testFetchRoutineRuns_wrapsFailureAsAJournalError() async {
+        store.fetchRoutineRunsError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchRoutineRuns()) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
+    func testFetchPlaces_passesTheStoreListThrough() async throws {
+        let gym = Place(
+            id: UUID(), name: "Gym",
+            coordinate: PlaceCoordinate(latitude: 51.5, longitude: -0.12), radiusMetres: 200
+        )
+        store.places = [gym]
+
+        let places = try await adapter.fetchPlaces()
+
+        XCTAssertEqual(places, [gym])
+    }
+
+    func testFetchPlaces_wrapsFailureAsAJournalError() async {
+        store.fetchPlacesError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchPlaces()) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
+    /// `deleteLog` exists for ONE caller: capture triage's "Journal it" undo. The rules genuinely
+    /// allow it — `logs` denies update but permits owner delete — so this is a real path, not a
+    /// vestigial one, and its failure must surface or the undo bar would report a success that
+    /// left the log standing.
+    func testDeleteLog_passesTheIdThrough() async throws {
+        let id = UUID()
+
+        try await adapter.deleteLog(id: id)
+
+        XCTAssertEqual(store.deletedLogIds, [id])
+    }
+
+    func testDeleteLog_wrapsFailureAsAJournalError() async {
+        store.deleteError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.deleteLog(id: UUID())) { error in
+            XCTAssertEqual(error as? JournalServiceError, .fetchFailed(Self.notSignedInMessage))
+        }
+    }
+
+    private static func routineRun(offeredAt: Date) -> RoutineRunRecord {
+        let placeId = UUID()
+        let actions = [
+            PlaceAction(id: UUID(), direction: .arrival, kind: .openApp(scheme: "spotify", displayName: "Spotify"))
+        ]
+        let run = RoutineRun.make(
+            event: PlaceTriggerEvent(placeId: placeId, kind: .arrival, occurredAt: offeredAt),
+            entry: AtPlaceSnapshot.PlaceEntry(
+                placeId: placeId, displayName: "Gym", openTaskTitles: [],
+                arrivalMessage: nil, actions: actions, latitude: nil, longitude: nil
+            ),
+            plan: PlaceRoutinePlan.make(actions, for: .arrival)
+        )
+        return RoutineRunRecord.offered(run, now: offeredAt)
+    }
+
     private static let notSignedInMessage = FirebaseManagerError.notSignedIn.errorDescription ?? ""
 
     private static func input(body: String = "Quick log") -> NormalizedCreateLogInput {
