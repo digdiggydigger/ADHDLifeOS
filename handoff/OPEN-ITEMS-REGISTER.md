@@ -1,68 +1,86 @@
-# Open items register — 2026-09-07, SESSION close-out (fifth edition today; the previous four covered the queue-clear, the UI baseline, the permission footer, and the coverage re-measure)
+# Open items register — 2026-09-07, SESSION close-out (sixth edition today; the previous five covered the queue-clear, the UI baseline, the permission footer, the coverage re-measure, and the adapter drift)
 
-*This edition also carries the handoff: `START-HERE-post-footer.md` archived,
-`START-HERE-post-adapter-drift.md` written in the same commit.*
+*This edition covers **F-WidgetCoverage (PR #25)**, B4 from the fifth edition's section B — E's
+pick, taken directly rather than waiting.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
-to update, rather than improvising a list in chat. Supersedes the four earlier editions.
+to update, rather than improvising a list in chat. Supersedes the five earlier editions.
 
 Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `e2e75dc`** at the start of this block (PR #22, the coverage re-measure); F-AdapterDrift
-lands on top as PR #23 · local = remote, tree clean, only `main` exists · every change lands
-through a PR · **unit suite 2,488 / 0** and **SwiftLint 0 / 710**, both at `9f6381e` with the
-emulator UP · **app target 24.68% (11,095/44,961)** · no `127.0.0.1:9099` in any run log — the sim
-stayed clean all session · **E's phone TRACKS MAIN at `a3e4bde`**; F-AdapterDrift changed only
-TEST files, so **no reinstall is owed** · `firestore.rules` untouched · the emulator was left
-running.
+**`main` @ `f39092c`** (PR #25) · local = remote, tree clean, **only `main` exists** (the feature
+branch was merged and deleted) · every change lands through a PR · **unit suite 2,497 / 0** and
+**SwiftLint 0 / 711**, both at `93beff2` with the emulator UP · **app target 24.72%
+(11,114/44,961)** · **widget extension 10.29% (228/2,216) — and 97.9% (228/233) of the surface a
+unit test can actually reach**, which is the figure that means something (see below) · no
+`127.0.0.1:9099` in any run log; no UI target was run · **E's phone TRACKS MAIN at `a3e4bde`**, and
+**no Swift under `ADHD LifeOS/` changed, so no reinstall is owed** · `firestore.rules` untouched ·
+the emulator was left running.
 
-**Shipped and CLOSED this session (PRs #22–#23):**
+**Shipped and CLOSED this session (PR #25):**
 
-- **The coverage re-measure** (PR #22, `e2e75dc`) — the register's oldest carried A-item, answered
-  with a number instead of an estimate. It also disproved four CLAUDE.md claims (adapter coverage,
-  two counts, the subcollection list, the view-body figure), all corrected in the same PR.
-- **F-AdapterDrift** (PR #23) — the drift that re-measure found, closed the same day. **All four
-  adapters are now at 100%**, and none was dead code: every one had live production call sites,
-  so these were shipped, reachable, unexercised paths.
+- **F-WidgetCoverage** — B4, the widget extension, closed.
 
 ```
-FirebaseAppDirectoryClientAdapter    0.00% (0/6)     → 100.00% (6/6)
-FirebasePlacesClientAdapter         41.67% (5/12)    → 100.00% (12/12)
-FirebaseJournalClientAdapter        71.57% (73/102)  → 100.00% (102/102)
-FirebaseHomeClientAdapter           80.00% (12/15)   → 100.00% (15/15)
+FocusWidgetSnapshot        101/102 (99.02%)  →  102/102  (100%)
+FocusActivityAttributes     71/73  (97.26%)  →   73/73   (100%)
+FocusSprintIntents           4/25  (16.00%)  →   20/25   ( 80%)
 ```
 
-  **+19 tests** (2,469 → 2,488), two new recording fakes, **+45 covered lines on an UNCHANGED
-  denominator** — 24.58% → 24.68%. Red-checked in two passes, both predicted before running and
-  both exact: four deliberate regressions → **exactly 7 failing test cases** (AppDirectory 3,
-  Places 2, Home 1, Journal 1), then the `message(for:)` fallback broken → **exactly 1**. Both
-  restored with `git checkout --` and proven by a full green rebuild, per the standing rule; no
+  **+9 tests** (2,488 → 2,497), one new test file, **+19 covered lines on an UNCHANGED
+  denominator** — widget 9.43% → 10.29%, app target 24.68% → 24.72% (the five files are members of
+  BOTH targets, so widget work moves the app figure too). Red-checked in one pass: committed first,
+  five deliberate regressions, **exactly 7 failing test cases predicted before running and exactly
+  those 7 by name**. Restored with `git checkout --` and proven by a full green rebuild; no
   `RED-CHECK` marker survives anywhere in the tree.
+
+**The finding is worth more than the +19 lines, and it corrected this register as well as
+CLAUDE.md.** Both said the widget target "went BACKWARDS — widget code shipping faster than its
+tests". The arithmetic was right and the diagnosis was wrong:
+
+- **Only FIVE of the fourteen widget files are compiled into the app target** (the
+  `membershipExceptions` list in `project.pbxproj`), and they are **exactly** the five that have
+  ever had non-zero coverage. The unit-test target hosts the APP, so it never compiles the other
+  nine at all.
+- **The testable surface is 233 lines, not 2,216.** The other 1,983 are widget-only view bodies.
+- **The fall was DENOMINATOR, not decay:** `RoutineLiveActivity` (436) + `RoutineActivityAttributes`
+  (10) arrived with the routines arc on 2026-09-03 (`534265e`) — ~446 of the 457 new lines. On the
+  surface that can actually move, the target was at **89.7%** before this block, not 9.43%.
+- **Five lines stay uncovered and that is the floor, not a backlog:** `endAllActivities`' loop body
+  needs a real `Activity`, so an entitled process.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Delete the spent `.xcresult` bundles?** Now **eighteen** sit in the repo root (all
-      gitignored): `UIFullRun` (retention condition met), `UIBaseline-1..9`, `GreenLandscape`,
-      `SweepLandscape`, `RoutineJourneyEye`, `TestResults`, `UITestResults`, plus this session's
-      `Coverage-2026-09-07`, `AdapterDrift`, `CoverageAfterDrift`, `CoverageFinal`. The boot disk
-      is at **~17 GB free**. Related trap, and the reason this is worth a minute: **CLAUDE.md's
-      documented test command still writes to `TestResults.xcresult`, which already exists**, so
-      the next session running it verbatim fails *after* paying for the whole build. Deleting the
-      bundles fixes that; so would dating the documented path. I used a dated path rather than
-      change the documented command unasked.
+- [ ] **Delete the spent `.xcresult` bundles?** Now **twenty-two** in the repo root (all
+      gitignored), **859 MB** together; boot disk **~19 GB free**. This session added three
+      (`WidgetCoverage-2026-09-07`, `RedCheck-widget`, `GreenAfterRedCheck-widget`). Related trap,
+      and the reason this is worth a minute: **CLAUDE.md's documented test command still writes to
+      `TestResults.xcresult`, which already exists**, so a session running it verbatim fails
+      *after* paying for the whole build. Deleting the bundles fixes that; so would dating the
+      documented path. I again used a dated path rather than change the documented command unasked.
+      (carried, now with a bigger number)
+
+- [ ] **Should the widget's view-only files be made testable at all?** Not started, and
+      deliberately not started — it is a design change, not a coverage chore, so it is E's call.
+      Two shapes, both real: (a) **extract the pure logic** currently embedded in widget-only view
+      files into a file that is a member of both targets — `FocusActivityCopy.status(for:isComplete:)`
+      (4 lines), `markerCentre(fraction:width:)` (5), `FocusStatsProvider`'s timeline maths (~13,
+      and its `context` parameter is already unused); (b) **UI/snapshot tests**, which is the same
+      answer the app target's 108 zero-percent files are waiting on. Shape (a) buys ~1.5% of the
+      widget target for a refactor of shipped view code — **my recommendation is to leave it**, and
+      to treat 97.9% of the testable surface as done.
 
 ## B · Real work, ready to start — recommended order
 
 1. **Arc 2 — first-class routines + the "at a time" trigger.** Not authorised. (carried)
 2. **`F-Search-3-Journal`** — recommendation is to kill the block. E's call. (carried)
 3. **The Live Activity design review** E parked. (carried)
-4. **The widget extension went backwards** — 10.97% → 9.43% (209/2,216): sixteen newly covered
-   lines against 457 new executable ones, widget code shipping faster than its tests. It is now
-   the worst-covered target in the tree and the only one whose ratio has FALLEN. Smaller and
-   lower-value than the adapter work just done, but the same shape, and the same fix.
+
+*B4 (the widget extension) is CLOSED — see above. Nothing has replaced it; section B is three
+carried items and none is authorised.*
 
 ## C · Parked on E's instruction — do not start unprompted
 
@@ -80,33 +98,57 @@ FirebaseHomeClientAdapter           80.00% (12/15)   → 100.00% (15/15)
 
 ## E · Known, not work
 
-- **Two coverage lessons that will recur, both now in CLAUDE.md.** (1) *A fake with no error hook
-  makes a `catch` branch untestable, and the report blames the adapter* — `FakeJournalBackingStore`
-  had no error property for its three side streams, so the gap was in the double, not the code
-  under test. (2) *The last unit in a file is often a partial REGION, not a whole line* — Journal
-  sat at 99.02% with ZERO fully-uncovered lines. Read regions with
-  `xcrun xccov view --archive --file <path> <bundle>`; **without `--archive` it reports
-  "unrecognized file format"**, which reads like a corrupt bundle rather than a missing flag.
-- **The "failing tests are slow" oddity is CORROBORATED, no longer a one-off.** The register has
-  carried "the 107-second failing test, failure-path only, unexplained" since routine-record block
-  1. Both red-checks this session reproduced it: a FAILING assertion took **35s** in one and
-  **43s** in the other, while the same suites pass in well under a second. It is the failure path
-  specifically, it is not the poisoned-sim symptom (no `9099` in either log), and it is still
-  unexplained — but it is now a known, repeatable trait rather than a single sighting. **Budget
-  for it when planning a red-check; do not read it as a hang.**
+- **A percentage over a denominator that includes code the test target never compiles is not a
+  coverage figure, it is two numbers divided.** This is the session's lesson and it generalises
+  past the widget. Before reading any target's ratio as effort, check what the test host actually
+  links: `xcrun xccov view --report --files-for-target <target> <bundle>` on both targets, and the
+  intersection of the file lists is the surface that can move. Now in CLAUDE.md.
+- **A `??` autoclosure is a REGION, and three of them were the whole gap in two "finished" files.**
+  `FocusWidgetSnapshot` sat at 99.02% and `FocusActivityAttributes` at 97.26% with **zero**
+  fully-uncovered lines between them. Same lesson the Journal adapter taught yesterday, now with a
+  second instance — read regions with `xcrun xccov view --archive --file <path> <bundle>`;
+  **without `--archive` it reports "unrecognized file format"**, which reads like a corrupt bundle
+  rather than a missing flag. (extended)
+- **A symmetric swap can be invisible to a "these are wired separately" test.** The red-check
+  broke BOTH intents' action lookups at once; `testTheTwoIntents_areWiredToSeparateActions` passed
+  anyway, because each recorder still saw one call. Predicted before the run and confirmed — the
+  two single-intent tests are what actually carry that load. Worth remembering when writing a
+  pairwise assertion.
+- **Two coverage lessons from F-AdapterDrift, both in CLAUDE.md.** A fake with no error hook makes
+  a `catch` branch untestable and the report blames the adapter; the last unit in a file is often a
+  partial region. (carried)
+- **The "failing tests are slow" oddity is EXPLAINED, and it is a one-off warm-up on the FIRST
+  failure — not a per-failure penalty.** This item has been carried as unexplained since
+  routine-record block 1 ("the 107-second failing test"), and yesterday's two red-checks
+  corroborated it at 35 s and 43 s. Seven failures in one run settle it. In log order their
+  durations were:
+
+  ```
+  9.391  1.558  0.039  0.002  0.002  0.001  0.006
+  ```
+
+  A monotonic decay from the first, not a constant. The whole suite ran **49.8 s** with seven
+  failures against **48.3 s** all green — a 1.5 s difference, because the cost is paid ONCE.
+  Yesterday's 35–43 s runs were few-failure runs, so that single warm-up WAS the whole measurement,
+  which is exactly why it read as a per-failure trait.
+
+  **What this changes:** a red-check with many failures costs barely more than a green run, so
+  there is no reason to scope one down to keep it fast. Budget one slow first failure — and do not
+  read it as a hang. (RESOLVED)
 - **The 70% coverage bar is arithmetically out of reach without UI tests.** 108 of the app
   target's 342 measured files sit at exactly 0% — **29,513 lines, 66% of the entire denominator**.
   The largest are `NudgesView` (0/884), `HomeAccessoryStrips` (0/752), `LogComposerView` (0/718),
-  `TaskListView` (0/711), `QuickCaptureComponents` (0/677).
+  `TaskListView` (0/711), `QuickCaptureComponents` (0/677). (carried)
 - **The emulator harness held its ground**: `+Tags` 97.67%, `+Seed` 98.31%, `+Storage` 95.83%,
-  `+AccountDeletion` 90.20% — identical to 2026-08-30, no drift.
+  `+AccountDeletion` 90.20%. (carried)
 - **The watch-list is EMPTY.** (carried)
 - **The strong-password pane is environmental** — full story in `UITestAutofill.swift`. (carried)
-- **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN** — its dialog says so;
-  `screenshots/routines-permission-footer/README.md` has the worked example. (carried)
-- **The live opener is `START-HERE-post-adapter-drift.md`**, written at this close-out on E's
-  word. `START-HERE-post-footer.md` was archived into `handoff/archive/` in the SAME commit that
-  wrote it, per the rule — exactly one `START-HERE-*` is live in `handoff/`.
+- **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN.** (carried)
+- **`START-HERE-post-adapter-drift.md` is still the one live opener, and it is now SPENT** — its
+  "what is actually next" recommended B4, which this session did. It was deliberately NOT archived:
+  the rule archives an opener only in the same move that writes its successor, and E has not asked
+  for a handoff. **If E wants one, that is the move that retires this file.** Until then it stays
+  live so no session starts blind — but read its "what is actually next" as done. (updated)
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
 - **The emulator was left running** (`scripts/emulators.sh`); `firestore-debug.log` in the repo
