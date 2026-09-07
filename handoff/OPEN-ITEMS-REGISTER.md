@@ -1,81 +1,65 @@
-# Open items register — 2026-09-07, coverage re-measure close-out (fourth edition today; the previous three covered the queue-clear, the UI baseline, and the permission footer)
+# Open items register — 2026-09-07, F-AdapterDrift close-out (fifth edition today; the previous four covered the queue-clear, the UI baseline, the permission footer, and the coverage re-measure)
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
-to update, rather than improvising a list in chat. Supersedes the three earlier editions.
+to update, rather than improvising a list in chat. Supersedes the four earlier editions.
 
 Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `f0b7c5c`** at session start; this edition lands on top as PR #22, the session's
-first · local = remote, tree clean, only `main` exists · every change lands through a PR ·
-**unit suite 2,469 / 0** and **SwiftLint 0 / 706**, both re-run this session at `f0b7c5c` ·
-the coverage run took **33.6 seconds** with no `127.0.0.1:9099` in the log — the sim was
-clean, the poison rule held · the **emulator was UP** for the measurement, so the four
-`FirebaseManager+*` integration tests RAN rather than skipped · **E's phone TRACKS MAIN at
-`a3e4bde`**; the merges since touched no Swift, so no reinstall is owed · `firestore.rules`
-untouched · the emulator was left running.
+**`main` @ `e2e75dc`** at the start of this block (PR #22, the coverage re-measure); F-AdapterDrift
+lands on top as PR #23 · local = remote, tree clean, only `main` exists · every change lands
+through a PR · **unit suite 2,488 / 0** and **SwiftLint 0 / 710**, both at `9f6381e` with the
+emulator UP · **app target 24.68% (11,095/44,961)** · no `127.0.0.1:9099` in any run log — the sim
+stayed clean all session · **E's phone TRACKS MAIN at `a3e4bde`**; F-AdapterDrift changed only
+TEST files, so **no reinstall is owed** · `firestore.rules` untouched · the emulator was left
+running.
 
-**Shipped and CLOSED this session:**
-- **The coverage re-measure** (PR #22) — the register's last section-A item, carried since the
-  first edition, now answered with a number instead of an estimate. Bundle:
-  `Coverage-2026-09-07.xcresult` (repo root, gitignored).
+**Shipped and CLOSED this session (PRs #22–#23):**
+
+- **The coverage re-measure** (PR #22, `e2e75dc`) — the register's oldest carried A-item, answered
+  with a number instead of an estimate. It also disproved four CLAUDE.md claims (adapter coverage,
+  two counts, the subcollection list, the view-body figure), all corrected in the same PR.
+- **F-AdapterDrift** (PR #23) — the drift that re-measure found, closed the same day. **All four
+  adapters are now at 100%**, and none was dead code: every one had live production call sites,
+  so these were shipped, reachable, unexercised paths.
 
 ```
-ADHD LifeOS.app              24.58%  (11050/44961)     was 23.62%  (8673/36721)
-ADHD LifeOSTests.xctest      95.97%  (38570/40191)     was 97.21%  (27728/28523)
-ADHD LifeOSUITests.xctest     0.00%  (0/2751)          skipped in the standard run by design
-FocusTimerWidgetExtension     9.43%  (209/2216)        was 10.97%  (193/1759)
+FirebaseAppDirectoryClientAdapter    0.00% (0/6)     → 100.00% (6/6)
+FirebasePlacesClientAdapter         41.67% (5/12)    → 100.00% (12/12)
+FirebaseJournalClientAdapter        71.57% (73/102)  → 100.00% (102/102)
+FirebaseHomeClientAdapter           80.00% (12/15)   → 100.00% (15/15)
 ```
 
-  **These two app-target ratios ARE comparable, and the old note in CLAUDE.md would have said
-  they are not.** The denominator moved 36,721 → 44,961 because the *tree grew* (310 → 380
-  Swift files), not because the *measurement extent* changed as it had on 2026-08-30. Both
-  runs measured 100% of the app target. Covered lines rose **+27.4%** against a denominator up
-  **+22.4%** — coverage grew slightly faster than the code. CLAUDE.md's rule is now sharpened
-  rather than repeated: establish WHY a denominator moved before either comparing the ratios
-  or refusing to.
-
-- **Four stale CLAUDE.md claims the sweep disproved**, all corrected in the same PR: the
-  adapter coverage claim (below), adapters thirteen → **fourteen**, `FirebaseManager+` files
-  fourteen → **sixteen**, subcollections ten → **eleven** (`routine_runs` was missing, and
-  `catalog/{docId}` — the one non-per-user path — was unrecorded), and the SwiftUI view-body
-  figure ~7,000 → the measured **14,993 lines at 3.21%**.
+  **+19 tests** (2,469 → 2,488), two new recording fakes, **+45 covered lines on an UNCHANGED
+  denominator** — 24.58% → 24.68%. Red-checked in two passes, both predicted before running and
+  both exact: four deliberate regressions → **exactly 7 failing test cases** (AppDirectory 3,
+  Places 2, Home 1, Journal 1), then the `message(for:)` fallback broken → **exactly 1**. Both
+  restored with `git checkout --` and proven by a full green rebuild, per the standing rule; no
+  `RED-CHECK` marker survives anywhere in the tree.
 
 ## A · Decisions only E can make — minutes each
 
-- [x] **Re-measure coverage.** DONE this session — figures above, CLAUDE.md updated.
-- [ ] **Close the Firebase adapter drift?** See B4. It is ~45 lines and half a block's work;
-      the question is only whether it jumps the queue ahead of Arc 2.
-- [ ] **Delete the spent `.xcresult` bundles?** Fifteen sit in the repo root (all gitignored):
-      `UIFullRun` (retention condition met), `UIBaseline-1..9`, `GreenLandscape`,
-      `SweepLandscape`, `RoutineJourneyEye`, `TestResults`, `UITestResults`. The boot disk is
-      down to **17 GB free**. Say the word and they go; `Coverage-2026-09-07.xcresult` stays.
+- [ ] **Delete the spent `.xcresult` bundles?** Now **eighteen** sit in the repo root (all
+      gitignored): `UIFullRun` (retention condition met), `UIBaseline-1..9`, `GreenLandscape`,
+      `SweepLandscape`, `RoutineJourneyEye`, `TestResults`, `UITestResults`, plus this session's
+      `Coverage-2026-09-07`, `AdapterDrift`, `CoverageAfterDrift`, `CoverageFinal`. The boot disk
+      is at **~17 GB free**. Related trap, and the reason this is worth a minute: **CLAUDE.md's
+      documented test command still writes to `TestResults.xcresult`, which already exists**, so
+      the next session running it verbatim fails *after* paying for the whole build. Deleting the
+      bundles fixes that; so would dating the documented path. I used a dated path rather than
+      change the documented command unasked.
 
 ## B · Real work, ready to start — recommended order
 
 1. **Arc 2 — first-class routines + the "at a time" trigger.** Not authorised. (carried)
 2. **`F-Search-3-Journal`** — recommendation is to kill the block. E's call. (carried)
 3. **The Live Activity design review** E parked. (carried)
-4. **NEW — close the Firebase adapter drift.** Four adapters fell below the 92–100% bar that
-   held on 2026-08-30, and all four arrived with arcs that shipped after it:
-
-```
-FirebaseAppDirectoryClientAdapter    0.00%  (0/6)      ← never instantiated in any test
-FirebasePlacesClientAdapter         41.67%  (5/12)
-FirebaseJournalClientAdapter        71.57%  (73/102)
-FirebaseHomeClientAdapter           80.00%  (12/15)
-```
-
-   The other twelve hold at 91.89–100%. **The architectural seam is intact** —
-   `grep "private let manager: FirebaseManager"` still returns nothing — so this is test
-   REACH, not design, and the whole shortfall is ~45 lines against existing recording fakes.
-   `FirebaseAppDirectoryClientAdapter` at 0/6 is the one that matters: it is the pattern in
-   `dead-shared-component`'s family — a type nothing exercises.
-5. **NEW — the widget extension went backwards.** 10.97% → 9.43%: sixteen newly covered lines
-   against 457 new executable ones. Widget code shipped faster than its tests. Smaller than B4
-   and lower value, but it is the only target whose ratio actually FELL.
+4. **The widget extension went backwards** — 10.97% → 9.43% (209/2,216): sixteen newly covered
+   lines against 457 new executable ones, widget code shipping faster than its tests. It is now
+   the worst-covered target in the tree and the only one whose ratio has FALLEN. Smaller and
+   lower-value than the adapter work just done, but the same shape, and the same fix.
 
 ## C · Parked on E's instruction — do not start unprompted
 
@@ -92,26 +76,34 @@ FirebaseHomeClientAdapter           80.00%  (12/15)
 
 ## E · Known, not work
 
-- **The 70% coverage bar is arithmetically out of reach without UI tests, and now there is a
-  number for why.** 108 of the app target's 342 measured files sit at exactly 0% — **29,513
-  lines, 66% of the entire denominator**. The largest are `NudgesView` (0/884),
-  `HomeAccessoryStrips` (0/752), `LogComposerView` (0/718), `TaskListView` (0/711),
-  `QuickCaptureComponents` (0/677). Unit tests are the wrong tool; the UI tests that would
-  reach them are skipped in the standard run by design.
+- **Two coverage lessons that will recur, both now in CLAUDE.md.** (1) *A fake with no error hook
+  makes a `catch` branch untestable, and the report blames the adapter* — `FakeJournalBackingStore`
+  had no error property for its three side streams, so the gap was in the double, not the code
+  under test. (2) *The last unit in a file is often a partial REGION, not a whole line* — Journal
+  sat at 99.02% with ZERO fully-uncovered lines. Read regions with
+  `xcrun xccov view --archive --file <path> <bundle>`; **without `--archive` it reports
+  "unrecognized file format"**, which reads like a corrupt bundle rather than a missing flag.
+- **The "failing tests are slow" oddity is CORROBORATED, no longer a one-off.** The register has
+  carried "the 107-second failing test, failure-path only, unexplained" since routine-record block
+  1. Both red-checks this session reproduced it: a FAILING assertion took **35s** in one and
+  **43s** in the other, while the same suites pass in well under a second. It is the failure path
+  specifically, it is not the poisoned-sim symptom (no `9099` in either log), and it is still
+  unexplained — but it is now a known, repeatable trait rather than a single sighting. **Budget
+  for it when planning a red-check; do not read it as a hang.**
+- **The 70% coverage bar is arithmetically out of reach without UI tests.** 108 of the app
+  target's 342 measured files sit at exactly 0% — **29,513 lines, 66% of the entire denominator**.
+  The largest are `NudgesView` (0/884), `HomeAccessoryStrips` (0/752), `LogComposerView` (0/718),
+  `TaskListView` (0/711), `QuickCaptureComponents` (0/677).
 - **The emulator harness held its ground**: `+Tags` 97.67%, `+Seed` 98.31%, `+Storage` 95.83%,
   `+AccountDeletion` 90.20% — identical to 2026-08-30, no drift.
 - **The watch-list is EMPTY.** (carried)
-- **The strong-password pane is environmental** — full story in `UITestAutofill.swift`.
-  (carried)
-- **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN** — its dialog says
-  so; `screenshots/routines-permission-footer/README.md` has the worked example. (carried)
-- **`START-HERE-post-footer.md` is still the ONE live opener**, and it is deliberately NOT
-  archived: no successor has been written, because E has not asked for the handoff. Its
-  section-A line ("the only pending decision is the coverage re-measure") is now spent — a
-  note at its head says so and points here.
+- **The strong-password pane is environmental** — full story in `UITestAutofill.swift`. (carried)
+- **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN** — its dialog says so;
+  `screenshots/routines-permission-footer/README.md` has the worked example. (carried)
+- **`START-HERE-post-footer.md` is still the ONE live opener**, deliberately NOT archived: no
+  successor has been written, because E has not asked for the handoff. Its header carries a note
+  that its section-A summary is spent and points here.
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
-- **The 107-second failing test** in routine-record block 1's red-check — failure-path only,
-  unexplained. (carried)
-- **The emulator was left running** (`scripts/emulators.sh`); `firestore-debug.log` in the
-  repo root is the truth for a silently failed write. (carried)
+- **The emulator was left running** (`scripts/emulators.sh`); `firestore-debug.log` in the repo
+  root is the truth for a silently failed write. (carried)

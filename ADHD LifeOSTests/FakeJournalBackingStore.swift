@@ -50,16 +50,25 @@ final class FakeJournalBackingStore: JournalBackingStore {
     var routineRuns: [RoutineRunRecord] = []
     var places: [Place] = []
 
+    // The three side streams had no error hooks until 2026-09-07, which is precisely why the
+    // adapter's catch branches for them measured 0%: a test could not make them fail.
+    var fetchLocationEventsError: Error?
+    var fetchRoutineRunsError: Error?
+    var fetchPlacesError: Error?
+
     func fetchLocationEvents() async throws -> [LocationEvent] {
-        locationEvents
+        if let fetchLocationEventsError { throw fetchLocationEventsError }
+        return locationEvents
     }
 
     func fetchRoutineRuns() async throws -> [RoutineRunRecord] {
-        routineRuns
+        if let fetchRoutineRunsError { throw fetchRoutineRunsError }
+        return routineRuns
     }
 
     func fetchPlaces() async throws -> [Place] {
-        places
+        if let fetchPlacesError { throw fetchPlacesError }
+        return places
     }
 
     func fetchCaptures() async throws -> [Capture] {

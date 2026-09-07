@@ -138,8 +138,10 @@ real terminal output has been pasted for review, not just a "done" summary. **If
 settled by LOOKING at it rather than by an assertion, its `screenshots/` folder and that folder's
 README are part of the same bar** — see "Visual evidence" below.
 
-**Coverage reality (2026-09-07, re-measured):** the app target is **24.58% (11,050/44,961)** over
-**2,469 unit tests**, measured with the documented command at `f0b7c5c`, emulator UP.
+**Coverage reality (2026-09-07, re-measured):** the app target is **24.68% (11,095/44,961)** over
+**2,488 unit tests**, measured with the documented command at `9f6381e`, emulator UP. (It was
+24.58% (11,050/44,961) over 2,469 tests earlier the same day, at `f0b7c5c`, before F-AdapterDrift
+closed the four adapters below.)
 
 **These figures ARE comparable to the 23.62% (8,673/36,721) recorded on 2026-08-30 — and the note
 that stood here would have told you they are not. Read why: the rule needed sharpening, not
@@ -154,18 +156,23 @@ repeating.** A moved denominator is not itself disqualifying. What decides it is
   measurement had), so both percentages mean the same thing and the difference between them is
   real.
 
-The honest reading is that coverage grew slightly FASTER than the code: the numerator went
-**8,673 → 11,050 (+27.4%)** against a denominator that grew **+22.4%**.
+- **`f0b7c5c` → `9f6381e` (44,961 → 44,961): trivially comparable.** F-AdapterDrift added only
+  TESTS, so the denominator did not move at all and the whole delta is numerator — 11,050 →
+  11,095, the +45 lines the four adapters were missing. This is the easy case, and it is worth
+  keeping in view as the contrast that makes the other two legible.
+
+The honest reading of the first pair is that coverage grew slightly FASTER than the code: the
+numerator went **8,673 → 11,050 (+27.4%)** against a denominator that grew **+22.4%**.
 
 **The standing rule, corrected: re-measure, never estimate — and when the denominator has moved,
 establish WHY before you either compare the ratios or refuse to.** "Different denominators" is the
 start of that question, not the answer to it.
 
-Full target breakdown at `f0b7c5c`:
+Full target breakdown at `9f6381e`:
 
 ```
-ADHD LifeOS.app              24.58%  (11050/44961)
-ADHD LifeOSTests.xctest      95.97%  (38570/40191)
+ADHD LifeOS.app              24.68%  (11095/44961)
+ADHD LifeOSTests.xctest      96.02%  (38925/40539)
 ADHD LifeOSUITests.xctest     0.00%  (0/2751)     ← skipped in the standard run by design
 FocusTimerWidgetExtension     9.43%  (209/2216)
 ```
@@ -174,24 +181,37 @@ FocusTimerWidgetExtension     9.43%  (209/2216)
 193/1,759 → 209/2,216. Sixteen newly covered lines against 457 new executable ones — widget code
 shipped faster than its tests, and the ratio fell 10.97% → 9.43%.
 
-**The Firebase adapter seam has DECAYED since 2026-08-30, and the claim that used to sit here —
-"all ... covered (92-100% each)" — is now false.** There are **fourteen** `Firebase*ClientAdapter`
-files (not thirteen), plus `FirebaseAccountDeletionAdapter` and `FirebaseFocusSessionAdapter` as
-their own files, and `FirebaseDailySummaryDataAdapter` declared *inside*
-`DailySummaryDataBackingStore.swift` — so it has no file row of its own in the report at all.
-Four adapters now sit below the old bar:
+**The Firebase adapter seam DECAYED and was closed again the same day (F-AdapterDrift,
+2026-09-07).** The claim that stood here — "all ... covered (92–100% each)" — had gone false: four
+adapters had fallen below the bar, and all four arrived with arcs that shipped after 2026-08-30.
+**All four are now at 100%**, and every one of them was reachable in production the whole time —
+none was dead code, so these were live, shipped, unexercised paths:
 
 ```
-FirebaseAppDirectoryClientAdapter    0.00%  (0/6)      ← never instantiated in any test
-FirebasePlacesClientAdapter         41.67%  (5/12)
-FirebaseJournalClientAdapter        71.57%  (73/102)
-FirebaseHomeClientAdapter           80.00%  (12/15)
+FirebaseAppDirectoryClientAdapter    0.00% (0/6)     → 100.00% (6/6)
+FirebasePlacesClientAdapter         41.67% (5/12)    → 100.00% (12/12)
+FirebaseJournalClientAdapter        71.57% (73/102)  → 100.00% (102/102)
+FirebaseHomeClientAdapter           80.00% (12/15)   → 100.00% (15/15)
 ```
 
-The other twelve hold at 91.89-100%. The absolute shortfall is small — ~45 lines — so this is
-cheap to close, but it is real drift, and it arrived with the arcs that shipped after 2026-08-30.
-`grep "private let manager: FirebaseManager"` still returns NOTHING, so the architectural seam is
-intact; what lapsed is test REACH, not design.
+There are **fourteen** `Firebase*ClientAdapter` files (not thirteen), plus
+`FirebaseAccountDeletionAdapter` and `FirebaseFocusSessionAdapter` as their own files, and
+`FirebaseDailySummaryDataAdapter` declared *inside* `DailySummaryDataBackingStore.swift` — so it
+has no file row of its own in the report at all. `grep "private let manager: FirebaseManager"`
+returning NOTHING remains the check that the architectural seam is intact; it never broke here,
+and what had lapsed was test REACH, not design.
+
+**Two lessons worth more than the percentages, because both will recur:**
+- **A fake with no error hook makes a `catch` branch untestable, and the coverage report blames
+  the adapter.** `FakeJournalBackingStore` had no error property for its three side streams, so
+  those catch branches *could not* be reached by any test — they read as adapter drift but the
+  gap was in the double. Check the fake before concluding the adapter is under-tested.
+- **The last unit in a file is often a partial REGION, not a whole line.** Journal sat at 99.02%
+  with zero fully-uncovered lines; the missing piece was the `?? error.localizedDescription`
+  branch of `message(for:)`, invisible to a line-level sweep. Use
+  `xcrun xccov view --archive --file <path> <bundle>` — note `--archive`, without which it
+  reports "unrecognized file format" — and read the `(col, x, 0)` region rows, not just the
+  zero-hit lines.
 
 The four extensions the emulator harness covers (of the **sixteen** that exist) are UNCHANGED at
 2026-09-07: `+Tags` **97.67%**, `+Seed` **98.31%**, `+Storage` 95.83%, `+AccountDeletion` 90.20%

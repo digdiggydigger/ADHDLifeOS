@@ -56,6 +56,25 @@ final class FirebaseHomeClientAdapterTests: XCTestCase {
         XCTAssertEqual(store.reorderCalls.first, order, "the complete ordering is passed through unchanged")
     }
 
+    /// `fetchAllTasks` was the Home adapter's 3 uncovered lines (12/15 on 2026-09-07) — the only
+    /// method here with no test. Unlike `fetchOpenTasks` it is deliberately UNFILTERED: the daily
+    /// summary and the momentum scoreboard both count done work, so a status filter creeping in
+    /// here would silently empty them.
+    func testFetchAllTasks_returnsEveryTaskIncludingCompletedOnes() async throws {
+        let open = TaskItem(
+            id: UUID(), lifeAreaId: nil, title: "Draft the brief", status: .open, priority: .p2, dueDate: nil
+        )
+        let done = TaskItem(
+            id: UUID(), lifeAreaId: nil, title: "Ship it", status: .done, priority: .p1, dueDate: nil
+        )
+        store.allTasks = [open, done]
+
+        let tasks = try await adapter.fetchAllTasks()
+
+        XCTAssertEqual(tasks, [open, done], "unfiltered — a done task must survive the hop")
+        XCTAssertEqual(tasks.filter { $0.status == .done }.count, 1)
+    }
+
     func testReorder_propagatesFailure() async {
         store.reorderError = FirebaseManagerError.notSignedIn
 
