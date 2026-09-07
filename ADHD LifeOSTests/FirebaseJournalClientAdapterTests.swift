@@ -272,6 +272,26 @@ final class FirebaseJournalClientAdapterTests: XCTestCase {
         }
     }
 
+    /// The last uncovered unit in this adapter (99.02% after the four methods above): the `??`
+    /// fallback in `message(for:)`. Every error the other tests throw is a `LocalizedError`, so
+    /// the non-localized branch never ran — yet it is the REAL-WORLD case, because a Firestore
+    /// permission denial arrives as a raw `NSError` that does not conform to `LocalizedError`.
+    /// Without the fallback that message would be empty and the journal would show a blank error.
+    func testWrappedFailure_fallsBackToLocalizedDescriptionWhenTheErrorIsNotLocalizedError() async {
+        store.fetchLogsError = NSError(
+            domain: "FIRFirestoreErrorDomain", code: 7,
+            userInfo: [NSLocalizedDescriptionKey: "Missing or insufficient permissions."]
+        )
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchLogs()) { error in
+            XCTAssertEqual(
+                error as? JournalServiceError,
+                .fetchFailed("Missing or insufficient permissions."),
+                "a raw NSError must still carry a message through, never an empty string"
+            )
+        }
+    }
+
     private static func routineRun(offeredAt: Date) -> RoutineRunRecord {
         let placeId = UUID()
         let actions = [
