@@ -20,10 +20,23 @@ So your first move is **not** to open `TODO-CLAUDE-CODE.md` and build the next t
 next thing queued, deliberately. **E is the design authority and designs in chat** (CLAUDE.md,
 "Workflow"), and this session exists to have that conversation and turn it into a spec.
 
+**E IS BRINGING THEIR OWN IDEAS. Open by listening, not by presenting.** E's words closing the
+previous session: *"i want to talk through my new ideas in a fresh claude code terminal session."*
+So your first message should invite them and then get out of the way — **do not open by reciting
+the candidate list below at E.** That list is there for when the conversation needs a reference
+point, or if E asks what is already on the table. Leading with it would answer a question E has
+not asked and quietly reframe their ideas as a menu selection.
+
 **Do NOT pick the features for E.** Every arc in this repo — routines, the Tools tab, bottom
 search, the app directory, place actions, captures, auth v3 — was settled by E in conversation
 first and written down second. Bring the raw material to that conversation, not a roadmap you
 invented.
+
+**Your job in the conversation is to make the idea BUILDABLE, not to approve or improve it.** The
+useful questions are the ones that turn an idea into something testable: what does the user see
+first, what is the empty/first-run state, what happens on a bad day, what does it write to
+Firestore, and how would we know it worked. Ask them as they become relevant — not as an upfront
+interrogation.
 
 ### The shape that has worked, five arcs running
 
@@ -61,7 +74,9 @@ invented.
 
 ## The material already on the table
 
-Bring these to E; let E choose. Do not rank them as if the ranking were settled.
+**Reference only — do not lead with this.** It is here so you can connect E's idea to what already
+exists, or answer "what was already queued?" if E asks. Do not rank these as if the ranking were
+settled, and do not present them as options unless E wants them.
 
 **From the vision map** (`VISION-adaptive-lifeos.md`) — the largest unbuilt ideas in the project:
 - **The Island state machine** — ANCHOR > NEXT > CATCHER, one Activity with three faces rather
