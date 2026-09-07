@@ -1,67 +1,81 @@
-# Open items register — 2026-09-07, FINAL close-out (third edition today: the whole session end to end — E's queue cleared, the baseline green, the AutoFill family's second costume killed, the phone twice reinstalled, and the permission footer ruled on, built, and device-confirmed)
+# Open items register — 2026-09-07, coverage re-measure close-out (fourth edition today; the previous three covered the queue-clear, the UI baseline, and the permission footer)
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
-to update, rather than improvising a list in chat. Supersedes today's two earlier editions.
+to update, rather than improvising a list in chat. Supersedes the three earlier editions.
 
 Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `dfb1d10`** (PR #20's merge; this edition lands as the session's ninth PR on top),
-local = remote, tree clean, only `main` exists · every change lands through a PR (#13–#20 this
-session, none needed a bypass) · last full verification: unit suite **2,469 / 0** with the
-emulator UP and SwiftLint **0 / 706** at the `5acc054` tree — no Swift has changed since
-(PRs #19–#20 touched `handoff/` and `screenshots/` only) · **the full UI target is effectively
-GREEN**: 28/29 in the class-batched baseline at `fe980d4` + the 29th root-caused and fixed
-(#15, three consecutive greens), and `ToolsRoutinesJourneyUITests` re-ran 3 / 0 after the
-footer change · the sim was erased after every UI sequence (the poison rule held all day) ·
-**E's phone TRACKS MAIN at `a3e4bde`** (2026-09-07 04:28, `devicectl`; the two merges since
-touched no Swift, so the device build is functionally current — no reinstall owed) ·
-`firestore.rules` untouched · the emulator was left running.
+**`main` @ `f0b7c5c`** at session start; this edition lands on top as PR #22, the session's
+first · local = remote, tree clean, only `main` exists · every change lands through a PR ·
+**unit suite 2,469 / 0** and **SwiftLint 0 / 706**, both re-run this session at `f0b7c5c` ·
+the coverage run took **33.6 seconds** with no `127.0.0.1:9099` in the log — the sim was
+clean, the poison rule held · the **emulator was UP** for the measurement, so the four
+`FirebaseManager+*` integration tests RAN rather than skipped · **E's phone TRACKS MAIN at
+`a3e4bde`**; the merges since touched no Swift, so no reinstall is owed · `firestore.rules`
+untouched · the emulator was left running.
 
-**Shipped and CLOSED this session (PRs #13–#20):**
-- **F-DailySummarySweep** (#13, `f3673e7`) — the daily-summary blob (quotes task titles and
-  journal reflections) cleared by the session-ending hook; the leak family's LAST member,
-  at-rest half closed. TDD staged, red-check 2 + 1.
-- **F-WidgetCopyLifeOS** (#14, `98f2dce`) — E's word: "Open LifeOS once and your areas will
-  appear here." The last surface calling the app Momentum; copy source-pinned.
-- **The post-fix full-UI-target baseline** — six class batches, one xcodebuild at a time (the
-  memory watchdog never struck): both clearance tests green on main, `LandscapeLoginUITests`
-  did NOT recur, the Save-Password `[AUTOFILL]` sweep fired 8× live. 30 → 29 tests because
-  `HitTestProbeUITests` was deleted with #5. Evidence: `UIBaseline-*.xcresult`, repo root,
-  gitignored.
-- **F-SignupRenderInputSurface** (#15, `bb70144`) — the baseline's one failure, hardened to
-  3/3 and root-caused from its own hierarchy attachments: **iOS 26.5 deterministically
-  interposes its Automatic Strong Password pane** over a Create-account password field — no
-  Keyboard element exists while it is up (the AutoFill family's SECOND costume). Three routes
-  back to the visible keyboard falsified (re-tap; the pane's ✕ drops focus; typing latches
-  no-software-keyboard); the test now asserts the INPUT SURFACE. Three consecutive greens.
-- **E's phone reinstalled from main TWICE on E's word** (#17 ticked the first; 03:24 from
-  `d700646`, then 04:28 from `a3e4bde`) — the `-allowProvisioningUpdates` builds restart the
-  7-day profile clock from today.
-- **F-RoutinesPermissionFooter** (#18, `5acc054`) — E ruled "build it" on the item carried
-  since the register's FIRST edition. Two independent footer cards under LISTED routines:
-  the Arrival-nudges card with an inline fix mirroring the Settings toggle exactly (store
-  write + haptic + immediate fence refresh), and the existing self-hiding
-  `LocationPermissionBanner(wantsTriggering: true)` reused for the Always grant. TDD staged,
-  red-check 2, journeys 3/0. **DEVICE-CONFIRMED by E: "the footer works"** — evidence + the
-  test-fire clarification in `screenshots/routines-permission-footer/` (#20). The
-  notifications E saw with the switch off were the DEBUG test-fire's designed bypass
-  (`isEnabled: { true }`, stated by its own dialog), NOT the gate failing.
-- The handoff chores: #16 (queue-clear close-out + opener succession), #19 (footer landed),
-  #20 (device evidence), and this edition.
+**Shipped and CLOSED this session:**
+- **The coverage re-measure** (PR #22) — the register's last section-A item, carried since the
+  first edition, now answered with a number instead of an estimate. Bundle:
+  `Coverage-2026-09-07.xcresult` (repo root, gitignored).
+
+```
+ADHD LifeOS.app              24.58%  (11050/44961)     was 23.62%  (8673/36721)
+ADHD LifeOSTests.xctest      95.97%  (38570/40191)     was 97.21%  (27728/28523)
+ADHD LifeOSUITests.xctest     0.00%  (0/2751)          skipped in the standard run by design
+FocusTimerWidgetExtension     9.43%  (209/2216)        was 10.97%  (193/1759)
+```
+
+  **These two app-target ratios ARE comparable, and the old note in CLAUDE.md would have said
+  they are not.** The denominator moved 36,721 → 44,961 because the *tree grew* (310 → 380
+  Swift files), not because the *measurement extent* changed as it had on 2026-08-30. Both
+  runs measured 100% of the app target. Covered lines rose **+27.4%** against a denominator up
+  **+22.4%** — coverage grew slightly faster than the code. CLAUDE.md's rule is now sharpened
+  rather than repeated: establish WHY a denominator moved before either comparing the ratios
+  or refusing to.
+
+- **Four stale CLAUDE.md claims the sweep disproved**, all corrected in the same PR: the
+  adapter coverage claim (below), adapters thirteen → **fourteen**, `FirebaseManager+` files
+  fourteen → **sixteen**, subcollections ten → **eleven** (`routine_runs` was missing, and
+  `catalog/{docId}` — the one non-per-user path — was unrecorded), and the SwiftUI view-body
+  figure ~7,000 → the measured **14,993 lines at 3.21%**.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Re-measure coverage?** CLAUDE.md records 23.62% at `b1f4b6f`, stale — the suite is
-      now 2,469. (carried; the last A-item standing)
+- [x] **Re-measure coverage.** DONE this session — figures above, CLAUDE.md updated.
+- [ ] **Close the Firebase adapter drift?** See B4. It is ~45 lines and half a block's work;
+      the question is only whether it jumps the queue ahead of Arc 2.
+- [ ] **Delete the spent `.xcresult` bundles?** Fifteen sit in the repo root (all gitignored):
+      `UIFullRun` (retention condition met), `UIBaseline-1..9`, `GreenLandscape`,
+      `SweepLandscape`, `RoutineJourneyEye`, `TestResults`, `UITestResults`. The boot disk is
+      down to **17 GB free**. Say the word and they go; `Coverage-2026-09-07.xcresult` stays.
 
 ## B · Real work, ready to start — recommended order
 
 1. **Arc 2 — first-class routines + the "at a time" trigger.** Not authorised. (carried)
 2. **`F-Search-3-Journal`** — recommendation is to kill the block. E's call. (carried)
 3. **The Live Activity design review** E parked. (carried)
+4. **NEW — close the Firebase adapter drift.** Four adapters fell below the 92–100% bar that
+   held on 2026-08-30, and all four arrived with arcs that shipped after it:
+
+```
+FirebaseAppDirectoryClientAdapter    0.00%  (0/6)      ← never instantiated in any test
+FirebasePlacesClientAdapter         41.67%  (5/12)
+FirebaseJournalClientAdapter        71.57%  (73/102)
+FirebaseHomeClientAdapter           80.00%  (12/15)
+```
+
+   The other twelve hold at 91.89–100%. **The architectural seam is intact** —
+   `grep "private let manager: FirebaseManager"` still returns nothing — so this is test
+   REACH, not design, and the whole shortfall is ~45 lines against existing recording fakes.
+   `FirebaseAppDirectoryClientAdapter` at 0/6 is the one that matters: it is the pattern in
+   `dead-shared-component`'s family — a type nothing exercises.
+5. **NEW — the widget extension went backwards.** 10.97% → 9.43%: sixteen newly covered lines
+   against 457 new executable ones. Widget code shipped faster than its tests. Smaller than B4
+   and lower value, but it is the only target whose ratio actually FELL.
 
 ## C · Parked on E's instruction — do not start unprompted
 
@@ -72,31 +86,32 @@ touched no Swift, so the device build is functionally current — no reinstall o
 
 ## D · Launch blockers — no conversation opened yet
 
-- **Free dev account** → 7-day profiles; the clock restarted with today's 04:28 build, so
-  roughly valid to **2026-09-14**. (carried)
+- **Free dev account** → 7-day profiles; the clock restarted with the 2026-09-07 04:28 build,
+  so roughly valid to **2026-09-14**. (carried)
 - **Sign in with Apple** built but dormant. (carried)
 
 ## E · Known, not work
 
-- **The watch-list is EMPTY.** `testRenderSignUpForm` was never a flake — root-caused and
-  fixed (#15). `LandscapeLoginUITests` passed in the baseline — one lifetime sighting, closed.
-- **The strong-password pane is environmental**: first interposed 2026-09-06, reproduces on a
-  freshly erased sim — the runtime/host changed, not this repo. #15's invariant assertion
-  passes in both worlds. If any other test ever waits on `app.keyboards` after focusing a
-  password field, it has met this pane — the full story is in `UITestAutofill.swift`.
-- **`UIFullRun.xcresult`'s retention condition is met** (the baseline confirmed #5 and #7
-  hold) — deletable at E's word; `UIBaseline-1..9-*.xcresult` are this session's evidence,
-  all gitignored in the repo root.
+- **The 70% coverage bar is arithmetically out of reach without UI tests, and now there is a
+  number for why.** 108 of the app target's 342 measured files sit at exactly 0% — **29,513
+  lines, 66% of the entire denominator**. The largest are `NudgesView` (0/884),
+  `HomeAccessoryStrips` (0/752), `LogComposerView` (0/718), `TaskListView` (0/711),
+  `QuickCaptureComponents` (0/677). Unit tests are the wrong tool; the UI tests that would
+  reach them are skipped in the standard run by design.
+- **The emulator harness held its ground**: `+Tags` 97.67%, `+Seed` 98.31%, `+Storage` 95.83%,
+  `+AccountDeletion` 90.20% — identical to 2026-08-30, no drift.
+- **The watch-list is EMPTY.** (carried)
+- **The strong-password pane is environmental** — full story in `UITestAutofill.swift`.
+  (carried)
 - **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN** — its dialog says
-  so, and `screenshots/routines-permission-footer/README.md` records the confusion it can
-  cause so nobody re-investigates the gate for it.
-- **The memory watchdog never struck today** — six class-batched UI runs, one xcodebuild at a
-  time; the 2026-09-06 rule (foreground/scoped, erase chained) stands.
+  so; `screenshots/routines-permission-footer/README.md` has the worked example. (carried)
+- **`START-HERE-post-footer.md` is still the ONE live opener**, and it is deliberately NOT
+  archived: no successor has been written, because E has not asked for the handoff. Its
+  section-A line ("the only pending decision is the coverage re-measure") is now spent — a
+  note at its head says so and points here.
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
 - **The 107-second failing test** in routine-record block 1's red-check — failure-path only,
   unexplained. (carried)
 - **The emulator was left running** (`scripts/emulators.sh`); `firestore-debug.log` in the
   repo root is the truth for a silently failed write. (carried)
-- **The review-session journal rows** and today's 3:43–4:30 test rows — E's own data,
-  deliberate, nothing to clean up.

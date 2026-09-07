@@ -138,46 +138,72 @@ real terminal output has been pasted for review, not just a "done" summary. **If
 settled by LOOKING at it rather than by an assertion, its `screenshots/` folder and that folder's
 README are part of the same bar** — see "Visual evidence" below.
 
-**Coverage reality (2026-08-30, re-measured):** the app target is **23.62% (8,673/36,721)** over
-**1,846 unit tests**, measured with the documented command at `b1f4b6f`.
+**Coverage reality (2026-09-07, re-measured):** the app target is **24.58% (11,050/44,961)** over
+**2,469 unit tests**, measured with the documented command at `f0b7c5c`, emulator UP.
 
-**Do NOT read that as a fall from the 25.35% recorded on 2026-08-23 (5,272/20,794).** The
-denominators are different — 20,794 against 36,721 — so the two ratios are not measuring the same
-extent and cannot be subtracted. This is the very trap the previous note in this slot described,
-and it catches you from the other direction: there, two runs *shared* a denominator and so were
-comparable; here they do not. The number that IS comparable is the numerator, and covered lines
-went **5,272 → 8,673, up 64%**.
+**These figures ARE comparable to the 23.62% (8,673/36,721) recorded on 2026-08-30 — and the note
+that stood here would have told you they are not. Read why: the rule needed sharpening, not
+repeating.** A moved denominator is not itself disqualifying. What decides it is WHY it moved:
 
-The current denominator is the trustworthy one: 36,721 executable lines against 36,742 raw lines
-of Swift across 310 files in `ADHD LifeOS/` + `FocusTimerWidget/`. The old 20,794 was ~57% of the
-tree, so that measurement covered a subset of what it claimed to.
+- **2026-08-23 → 2026-08-30 (20,794 → 36,721): NOT comparable.** The denominator moved because the
+  *measurement extent* changed — the old 20,794 was only ~57% of the tree, so that run measured a
+  subset of what it claimed to. Two different fractions of two different wholes.
+- **2026-08-30 → 2026-09-07 (36,721 → 44,961): comparable.** The denominator moved because the
+  *tree grew* — 310 → 380 Swift files, 36,742 → 46,978 raw lines. Both runs measured 100% of the
+  app target (44,961 executable against 44,871 raw app-target lines is the same ~1:1 the previous
+  measurement had), so both percentages mean the same thing and the difference between them is
+  real.
 
-Full target breakdown at `b1f4b6f`:
+The honest reading is that coverage grew slightly FASTER than the code: the numerator went
+**8,673 → 11,050 (+27.4%)** against a denominator that grew **+22.4%**.
+
+**The standing rule, corrected: re-measure, never estimate — and when the denominator has moved,
+establish WHY before you either compare the ratios or refuse to.** "Different denominators" is the
+start of that question, not the answer to it.
+
+Full target breakdown at `f0b7c5c`:
 
 ```
-ADHD LifeOS.app              23.62%  (8673/36721)
-ADHD LifeOSTests.xctest      97.21%  (27728/28523)
-ADHD LifeOSUITests.xctest     0.00%  (0/1281)    ← skipped in the standard run by design
-FocusTimerWidgetExtension    10.97%  (193/1759)
+ADHD LifeOS.app              24.58%  (11050/44961)
+ADHD LifeOSTests.xctest      95.97%  (38570/40191)
+ADHD LifeOSUITests.xctest     0.00%  (0/2751)     ← skipped in the standard run by design
+FocusTimerWidgetExtension     9.43%  (209/2216)
 ```
 
-**The standing rule is unchanged and now doubly earned: re-measure, never estimate, and check the
-DENOMINATOR before comparing two coverage figures.**
+**The widget extension went BACKWARDS, and it is the one figure here that should sting:**
+193/1,759 → 209/2,216. Sixteen newly covered lines against 457 new executable ones — widget code
+shipped faster than its tests, and the ratio fell 10.97% → 9.43%.
 
-The Firebase layer is now the best-covered part of the app, not the worst. Every Firebase-backed
-type sits behind a per-feature `*BackingStore` protocol with a recording fake, and all twelve
-`Firebase*ClientAdapter` structs plus `FirebaseAccountDeletionAdapter`, `FirebaseFocusSessionAdapter`
-and `FirebaseDailySummaryDataAdapter` are covered (92–100% each). `grep "private let manager:
-FirebaseManager"` returning nothing is the check that the seam is still complete — the last three
-types above do NOT carry the `*ClientAdapter` suffix, so a name-based sweep misses them.
+**The Firebase adapter seam has DECAYED since 2026-08-30, and the claim that used to sit here —
+"all ... covered (92-100% each)" — is now false.** There are **fourteen** `Firebase*ClientAdapter`
+files (not thirteen), plus `FirebaseAccountDeletionAdapter` and `FirebaseFocusSessionAdapter` as
+their own files, and `FirebaseDailySummaryDataAdapter` declared *inside*
+`DailySummaryDataBackingStore.swift` — so it has no file row of its own in the report at all.
+Four adapters now sit below the old bar:
 
-The four extensions the emulator harness covers (of the fourteen that exist) were re-measured
-2026-08-30: `+Tags` **97.67%**, `+Seed` **98.31%**, `+Storage` 95.83%, `+AccountDeletion` 90.20%
-— each previously ~0%. The first two had drifted from the figures recorded on 2026-08-23.
+```
+FirebaseAppDirectoryClientAdapter    0.00%  (0/6)      ← never instantiated in any test
+FirebasePlacesClientAdapter         41.67%  (5/12)
+FirebaseJournalClientAdapter        71.57%  (73/102)
+FirebaseHomeClientAdapter           80.00%  (12/15)
+```
 
-What is still uncovered, and why the 70% bar stays out of reach for now:
-- **SwiftUI view bodies (~7,000 lines at ~0%)** — `TaskDetailView`, `FocusTimerBar`,
-  `TaskListView`, `CaptureInboxView` and peers. Unit tests are the wrong tool; this is UI-test
+The other twelve hold at 91.89-100%. The absolute shortfall is small — ~45 lines — so this is
+cheap to close, but it is real drift, and it arrived with the arcs that shipped after 2026-08-30.
+`grep "private let manager: FirebaseManager"` still returns NOTHING, so the architectural seam is
+intact; what lapsed is test REACH, not design.
+
+The four extensions the emulator harness covers (of the **sixteen** that exist) are UNCHANGED at
+2026-09-07: `+Tags` **97.67%**, `+Seed` **98.31%**, `+Storage` 95.83%, `+AccountDeletion` 90.20%
+— identical to the 2026-08-30 figures, which is the emulator harness holding its ground.
+
+What is still uncovered, and why the 70% bar stays out of reach:
+- **SwiftUI view bodies — the real figure is ~15,000 lines, not the ~7,000 recorded here until
+  2026-09-07.** The 37 files whose names contain `View` hold **14,993 executable lines at 3.21%**.
+  Zoom out and **108 of the app target's 342 measured files sit at exactly 0%, together 29,513
+  lines — 66% of the entire denominator.** The largest are `NudgesView` (0/884),
+  `HomeAccessoryStrips` (0/752), `LogComposerView` (0/718), `TaskListView` (0/711) and
+  `QuickCaptureComponents` (0/677). Unit tests are the wrong tool for these; this is UI-test
   territory, and the UI tests are deliberately skipped in the standard run.
 
 ## Firebase emulator (integration tests for `FirebaseManager`'s own extensions)
@@ -346,11 +372,13 @@ before its push landed.
   truth. Everything goes through per-feature `Firebase*ClientAdapter` structs over the shared
   `FirebaseManager`. **Those adapters live beside the feature they serve — `Auth/`, `Capture/`,
   `Home/`, `Journal/`, `Nudges/`, `Tasks/` and so on — NOT in `ADHD LifeOS/Firebase/`**, and there
-  are **thirteen** of them (counted 2026-08-30; an earlier "twelve, in `ADHD LifeOS/Firebase/`"
-  was wrong on both the count and the location).
-  `ADHD LifeOS/Firebase/` holds the manager, its **fourteen** `FirebaseManager+<Domain>` files,
-  and the codec/mapping types. `FirebaseManager.swift` itself holds only the class, auth, and the
-  Firestore plumbing every extension builds on; per-collection storage lives in
+  are **fourteen** of them (re-counted 2026-09-07 with the coverage sweep; was thirteen on
+  2026-08-30, and an earlier "twelve, in `ADHD LifeOS/Firebase/`" was wrong on both count and
+  location).
+  `ADHD LifeOS/Firebase/` holds the manager, its **sixteen** `FirebaseManager+<Domain>` files
+  (re-counted 2026-09-07 — `+AppDirectory` and `+RoutineRuns` joined after the "fourteen" here was
+  written), and the codec/mapping types. `FirebaseManager.swift` itself holds only the class, auth,
+  and the Firestore plumbing every extension builds on; per-collection storage lives in
   `FirebaseManager+<Domain>.swift` alongside `+Seed`/`+Storage`/`+AccountDeletion`/`+Emulator`.
   Add a new collection's methods to its own such file, not to the core one.
 - **Adapters depend on a per-feature `*BackingStore` protocol, never on `FirebaseManager` directly**
@@ -370,12 +398,16 @@ before its push landed.
   does not link the Firebase SDK** — these are static products, and linking one into both the app and
   its hosted test bundle realises every Objective-C class twice. `FirestoreDocumentCoder` is the
   codec seam for the same reason.
-- Schema: **ten** per-user subcollections under `users/{uid}` — tasks, life_areas, tags, logs,
-  captures, nudges, reminders, focus_sessions, **places, location_events**. Document IDs are
-  UPPERCASE `uuidString`. The last two were added by the location-services work and were missing
-  from this list until 2026-08-30; `firestore.rules` is the authoritative enumeration, and note
+- Schema: **eleven** per-user subcollections under `users/{uid}` — tasks, life_areas, tags, logs,
+  captures, nudges, reminders, focus_sessions, places, location_events, **routine_runs**. Document
+  IDs are UPPERCASE `uuidString`. `firestore.rules` is the authoritative enumeration, and note
   `logs` and `location_events` each have their OWN match block (append-only, update denied) while
-  the other eight sit in the generic `collection in [...]` allow.
+  the other **nine** sit in the generic `collection in [...]` allow — `routine_runs` belongs there
+  deliberately, because a run moves offered → started → ended in place and so must be updatable.
+  This list was corrected twice: `places`/`location_events` were missing until 2026-08-30, and
+  `routine_runs` (shipped 2026-09-06) until the 2026-09-07 coverage sweep. **There is also one
+  path that is NOT per-user — `catalog/{docId}`, the app-directory catalogue: read-only to any
+  signed-in user, writable by no client at all.**
 - Security rules live in-repo (`firestore.rules`, `storage.rules`). **Publishing stays E's call**
   — a rules change is not live until E republishes, so say so in the block report. But
   **verifying is no longer manual: the Firebase CLI IS authenticated** (`firebase login:list` →

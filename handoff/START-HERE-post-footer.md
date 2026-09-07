@@ -7,6 +7,12 @@ and closed the register's oldest carried item — the Routines permission footer
 built TDD-first (#18), and device-confirmed ("the footer works", evidence #20). Nothing is
 half-done. The queue is the register; the only pending decision is the coverage re-measure.*
 
+> **UPDATE 2026-09-07, later the same day — the coverage re-measure below is DONE** (PR #22:
+> app target **24.58% (11,050/44,961)** over 2,469 tests, CLAUDE.md updated, four stale doc
+> claims corrected). Section A of the register has moved on; **read
+> `handoff/OPEN-ITEMS-REGISTER.md` for the current list**, not the summary in this file's
+> header. Everything else here — the traps, the state gate — still holds.
+
 **This is the ONE live opener.** If you find a second `START-HERE-*` in `handoff/`, one of
 them is a trap — see CLAUDE.md, "Session handoff". Archive this file into `handoff/archive/`
 in the same move that writes your successor, at the END of your session, never at the start.
