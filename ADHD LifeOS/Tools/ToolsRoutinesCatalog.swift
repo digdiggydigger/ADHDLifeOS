@@ -35,6 +35,26 @@ enum ToolsRoutinesCatalog {
 
     private static var thresholdPhrase: String { "\(RoutineDefaults.stepThreshold) or more" }
 
+    // MARK: - The permission footer (E's 2026-09-07 ruling on the carried register item)
+
+    /// Shown under LISTED routines when the Arrival nudges master switch is off. "Can't start"
+    /// is literally true: the switch OFF empties `LocationTriggerService`'s region plan, so no
+    /// fence registers, no crossing is noticed, no notification posts — and under deferred
+    /// logging the notification tap is the only way a routine starts. The location-permission
+    /// half of the same honesty is `LocationPermissionBanner(wantsTriggering: true)`, which
+    /// carries its own words and its own decision.
+    enum NudgesOffFooter {
+        static let headline = "Arrival nudges are off"
+        static let body = "Routines start from the notification a crossing sends, and Arrival"
+            + " nudges is the master switch over all of them — while it's off, none of these"
+            + " can start."
+        static let actionTitle = "Turn arrival nudges back on"
+    }
+
+    static func showsNudgesOffFooter(arrivalNudgesEnabled: Bool) -> Bool {
+        !arrivalNudgesEnabled
+    }
+
     // MARK: - Nothing to show, and WHY there is nothing
 
     /// Two different problems with two different next actions, so they never share a sentence.

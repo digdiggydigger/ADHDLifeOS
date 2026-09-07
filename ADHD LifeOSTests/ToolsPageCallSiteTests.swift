@@ -209,6 +209,35 @@ final class ToolsPageCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The permission footer reaches the section (E's 2026-09-07 ruling)
+
+    func testTheSectionRendersTheLocationBannerForTheAlwaysGrant() throws {
+        let source = try Self.code("Tools/ToolsRoutinesSection.swift")
+        XCTAssertTrue(
+            source.contains("LocationPermissionBanner(wantsTriggering: true)"),
+            "the exact spelling matters: `wantsTriggering: false` would render happily and"
+                + " teach the WEAKER grant, and routines fire only on Always — a listed routine"
+                + " with no banner and no Always is the silent dormancy this footer exists to end"
+        )
+    }
+
+    func testTheNudgesOffButtonMirrorsTheSettingsToggleExactly() throws {
+        let source = try Self.code("Tools/ToolsRoutinesSection.swift")
+        XCTAssertTrue(
+            Self.collapsed(source).contains(
+                "preferences.arrivalNudgesEnabled = true preferencesStore.write(preferences)"
+            ),
+            "the fix must go through MomentumPreferencesStoring — the same truth the wake path"
+                + " reads via AppFeedback.arrivalNudgesEnabled() — never a raw defaults key"
+        )
+        XCTAssertTrue(
+            source.contains("LocationTriggerService.shared.refreshRegistrations()"),
+            "the fences must follow the switch NOW (the Settings toggle's own rule): without"
+                + " the refresh the switch reads on but nothing is registered until the next"
+                + " app lifecycle event, and the banner's promise is a lie for that whole window"
+        )
+    }
+
     // MARK: - Reading the tree
 
     /// Source with comments removed — the form every NEGATIVE assertion must read. A bare

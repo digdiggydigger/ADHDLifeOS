@@ -261,4 +261,28 @@ final class ToolsRoutinesCatalogTests: XCTestCase {
         XCTAssertEqual(ToolsRoutinesCatalog.stepsPhrase(2), "2 steps")
         XCTAssertEqual(ToolsRoutinesCatalog.stepsPhrase(7), "7 steps")
     }
+
+    // MARK: - The permission footer (E's 2026-09-07 ruling on the carried register item)
+
+    /// The switch OFF empties the region plan — no fence registers, so no crossing, no
+    /// notification, and under deferred logging the tap IS how a routine starts. "Can't start"
+    /// is literally true (verified in `LocationTriggerService.refreshRegistrations`), and the
+    /// copy must stay exactly that strong and no stronger.
+    func testTheNudgesOffFooterShowsExactlyWhenTheArrivalNudgesSwitchIsOff() {
+        XCTAssertTrue(ToolsRoutinesCatalog.showsNudgesOffFooter(arrivalNudgesEnabled: false))
+        XCTAssertFalse(ToolsRoutinesCatalog.showsNudgesOffFooter(arrivalNudgesEnabled: true))
+    }
+
+    func testTheNudgesOffFooterWords() {
+        XCTAssertEqual(ToolsRoutinesCatalog.NudgesOffFooter.headline, "Arrival nudges are off")
+        XCTAssertEqual(
+            ToolsRoutinesCatalog.NudgesOffFooter.body,
+            "Routines start from the notification a crossing sends, and Arrival nudges is the"
+                + " master switch over all of them — while it's off, none of these can start."
+        )
+        XCTAssertEqual(
+            ToolsRoutinesCatalog.NudgesOffFooter.actionTitle,
+            "Turn arrival nudges back on"
+        )
+    }
 }
