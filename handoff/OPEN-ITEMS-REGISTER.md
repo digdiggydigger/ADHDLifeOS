@@ -1,4 +1,4 @@
-# Open items register — 2026-09-07, session close-out (E's queue cleared: DailySummary sweep, widget copy, the post-fix UI baseline — which found and killed one more AutoFill costume)
+# Open items register — 2026-09-07, second edition (the queue-clear close-out, then E ruled on and got the Routines permission footer: built, landed #18, on device awaiting E's look)
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
@@ -8,19 +8,17 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `b44bac8`** (PR #15's merge; this edition lands as the session's fourth PR on top),
-local = remote, tree clean, only `main` exists · every change lands through a PR (#13–#15 this
-session, none needed a bypass) · last full verification: unit suite **2,465 / 0** with the
-emulator UP and SwiftLint **0 / 706** at the `fe980d4` tree — #15 touched `ADHD LifeOSUITests/`
-only, and lint re-ran 0 / 706 there · **the full UI target ran class-batched on main
+**`main` @ `a3e4bde`** (PR #18's merge; this edition lands on top), local = remote, tree
+clean, only `main` exists · every change lands through a PR (#13–#18 this session, none needed
+a bypass) · last full verification: unit suite **2,469 / 0** with the emulator UP and
+SwiftLint **0 / 706** at the `5acc054` tree, `ToolsRoutinesJourneyUITests` 3 / 0 post-change · **the full UI target ran class-batched on main
 (`fe980d4`), all 29 tests: 28 green + `testRenderSignUpForm`, which the run HARDENED to 3/3
 reproducible, root-caused, and #15 fixed with three consecutive greens (78.6s / 79.9s / 79.6s)**
 — 30 → 29 because `HitTestProbeUITests` was deleted with #5 · the sim was erased after every UI
-sequence (three erases; the poison rule held) · **E's phone TRACKS MAIN again**: reinstalled
-from `d700646` on E's word (2026-09-07 03:24 build, binary-mtime-verified; `devicectl` install
-+ `--terminate-existing` launch 03:24:54; zero "No Accounts" — the `-allowProvisioningUpdates`
-build renews the 7-day profile) · `firestore.rules` untouched this session · the emulator was
-left running.
+sequence (three erases; the poison rule held) · **E's phone TRACKS MAIN**: reinstalled twice on E's word
+(2026-09-07 03:24 from `d700646`, then 04:28 from `a3e4bde` so the permission footer is on
+device; both `devicectl` + `--terminate-existing`, zero "No Accounts") · `firestore.rules`
+untouched this session · the emulator was left running.
 
 **Shipped and CLOSED this session (PRs #13–#15):**
 - **F-DailySummarySweep** (#13, `f3673e7`) — register B1, E's queued instruction: the
@@ -58,7 +56,13 @@ left running.
       device; the profile clock restarts from today's build.
 - [ ] **Re-measure coverage?** CLAUDE.md records 23.62% at `b1f4b6f`, stale — the suite is now
       2,465. (carried)
-- [ ] **The permission-banner footer** on the Routines section. (carried)
+- [x] **The permission-banner footer** on the Routines section — E ruled "build it"
+      (2026-09-07) and **F-RoutinesPermissionFooter shipped, PR #18 (`5acc054`)**: the
+      Arrival-nudges card (inline fix mirroring the Settings toggle — store write + haptic +
+      immediate fence refresh) plus the existing `LocationPermissionBanner(wantsTriggering:
+      true)` reused, under LISTED routines only. TDD staged, red-check 2, journeys 3/0.
+      **On device at `a3e4bde` — E's device look is the one open check**: flip Settings →
+      Arrival nudges off, visit Tools with a routine listed.
 
 ## B · Real work, ready to start — recommended order
 
