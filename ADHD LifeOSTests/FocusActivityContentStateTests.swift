@@ -84,6 +84,21 @@ final class FocusActivityContentStateTests: XCTestCase {
         XCTAssertEqual(state.frozenProgress, 1)
     }
 
+    /// The `?? 0` default under `pausedAt`. Both frozen readouts are only ever DRAWN inside an
+    /// `isPaused` branch (`FocusActivityComponents`), so this is a defensive default rather than a
+    /// production path — but it is a shipped one, and an unasserted default is a default nobody
+    /// has checked. A running state carries no pause instant, so the remainder reads as zero and
+    /// the fill lands full rather than empty.
+    func testFrozenProgress_onARunningStateWithNoPauseInstant_isFull() {
+        let state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(durationSeconds: 900, deadline: now.addingTimeInterval(600)), now: now
+        )
+
+        XCTAssertNil(state.pausedAt)
+        XCTAssertFalse(state.isCompleted)
+        XCTAssertEqual(state.frozenProgress, 1, accuracy: 0.0001)
+    }
+
     // MARK: - frozenRemainingText (the paused frame's static readout)
 
     // `Text(timerInterval:pauseTime:)` does not actually freeze inside Live Activity
@@ -121,6 +136,18 @@ final class FocusActivityContentStateTests: XCTestCase {
         )
         state.deadline = now.addingTimeInterval(-30)
 
+        XCTAssertEqual(state.frozenRemainingText, "0:00")
+    }
+
+    /// The matching `?? 0` default, on the text side. Same standing as `frozenProgress` above:
+    /// only rendered while paused, so a running state's readout is a fallback nothing displays —
+    /// and it must still be a well-formed clock string, not an empty or negative one.
+    func testFrozenRemainingText_onARunningStateWithNoPauseInstant_isZero() {
+        let state = FocusActivityAttributes.ContentState(
+            snapshot: snapshot(durationSeconds: 900, deadline: now.addingTimeInterval(600)), now: now
+        )
+
+        XCTAssertNil(state.pausedAt)
         XCTAssertEqual(state.frozenRemainingText, "0:00")
     }
 
