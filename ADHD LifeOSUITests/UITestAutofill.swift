@@ -53,4 +53,19 @@ extension UITestSession {
         print("[AUTOFILL] dismissed the system password prompt")
         return true
     }
+
+    /// The AutoFill family's SECOND costume (2026-09-07, found by the post-fix baseline run):
+    /// tapping a Create-account password field, iOS 26.5 replaces the keyboard's input area with
+    /// its Automatic Strong Password pane (`PMSafariStreamlinedStrongPasswordViewController`
+    /// inside `UIRemoteKeyboardWindow` — "Use Strong Password?" / "Fill Strong Password"), so
+    /// `app.keyboards` matches NOTHING while it is up — deterministically, six taps out of six
+    /// across erased sims. Unlike the Save-Password sheet it does NOT block hit-tests and needs
+    /// no sweep: journeys that TYPE pass straight through (the keystroke lands, the pane
+    /// yields). There is no reliable route back to the VISIBLE keyboard, three falsified in
+    /// runs with the hierarchy dump read each time: re-tapping the field leaves the pane
+    /// standing; the pane's own ✕ (identifier `xmark`, verified tapped at its true screen
+    /// point) drops field focus with it; and typing dismisses the pane but latches the
+    /// no-software-keyboard state, presumably iOS's hardware-keyboard heuristic. So
+    /// `testRenderSignUpForm` asserts the INPUT SURFACE — keyboard or pane — not the keyboard;
+    /// a dismissal helper built here during the chase was deleted with the falsifications.
 }
