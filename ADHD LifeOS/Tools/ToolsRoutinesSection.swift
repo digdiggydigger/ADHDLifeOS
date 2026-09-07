@@ -31,9 +31,20 @@ struct ToolsRoutinesSection: View {
     /// The place whose editor is open. A routine's editor IS the place's Actions section
     /// (E's settled Option A) — there is no separate routine to edit.
     @State private var editingPlace: Place?
+    /// The master switch, re-read wherever the section already refreshes (`.task` on every tab
+    /// switch, plus `DataChangeSignal`). Settings' own toggle posts no signal, so a flip made
+    /// there reaches this banner on the next tab visit — the house behavior for preference
+    /// reads, and Settings sits on another tab so the two are never stale on one screen.
+    @State private var arrivalNudgesEnabled = true
+    private let preferencesStore: MomentumPreferencesStoring
 
-    init(client: PlacesClientAdapting, history: RoutineRunHistoryService? = nil) {
+    init(
+        client: PlacesClientAdapting,
+        history: RoutineRunHistoryService? = nil,
+        preferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+    ) {
         self.client = client
+        self.preferencesStore = preferencesStore
         _service = StateObject(wrappedValue: PlacesService(client: client))
         _history = StateObject(wrappedValue: history ?? RoutineRunHistoryService.live())
     }
@@ -47,6 +58,7 @@ struct ToolsRoutinesSection: View {
         // as its own group rather than a third door in the same stack.
         .padding(.top, 8)
         .task {
+            arrivalNudgesEnabled = preferencesStore.read().arrivalNudgesEnabled
             await service.load()
             await history.load()
         }
@@ -54,6 +66,7 @@ struct ToolsRoutinesSection: View {
         // because whether a place IS a routine is decided by the actions that edit changes —
         // and a routine finishing anywhere re-derives the last-run line.
         .onReceive(DataChangeSignal.changes) { _ in
+            arrivalNudgesEnabled = preferencesStore.read().arrivalNudgesEnabled
             Task {
                 await service.load()
                 await history.load()
@@ -108,10 +121,61 @@ struct ToolsRoutinesSection: View {
         case .rows(let rows):
             VStack(spacing: 8) {
                 ForEach(rows) { row($0) }
+                permissionFooter
             }
         case .empty(let reason):
             emptyCard(reason)
         }
+    }
+
+    // MARK: - The permission footer (E's 2026-09-07 ruling)
+
+    /// Only under LISTED routines: the empty card already teaches its own rule, and a warning
+    /// about routines that don't exist is noise. Two independent cards, deliberately not one
+    /// container — both gates can be down at once, and `LocationPermissionBanner` carries its
+    /// own combined accessibility element that a shared wrapper's identifier would rename.
+    @ViewBuilder
+    private var permissionFooter: some View {
+        if ToolsRoutinesCatalog.showsNudgesOffFooter(arrivalNudgesEnabled: arrivalNudgesEnabled) {
+            nudgesOffCard
+        }
+        LocationPermissionBanner(wantsTriggering: true)
+            .bentoCard()
+    }
+
+    private var nudgesOffCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label {
+                Text(ToolsRoutinesCatalog.NudgesOffFooter.headline)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color("LabelPrimary"))
+                    // On the headline, NOT the card — the emptyCard's inheritance lesson: an
+                    // identifier on the container renames the button out from under itself.
+                    .accessibilityIdentifier("toolsRoutinesNudgesOffBanner")
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Color("StateWarn"))
+            }
+            Text(ToolsRoutinesCatalog.NudgesOffFooter.body)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(ToolsRoutinesCatalog.NudgesOffFooter.actionTitle) {
+                Haptics.play(.light)
+                var preferences = preferencesStore.read()
+                preferences.arrivalNudgesEnabled = true
+                preferencesStore.write(preferences)
+                arrivalNudgesEnabled = true
+                // The fences must follow the switch NOW — the Settings toggle's own rule:
+                // without this the switch reads on, but nothing is registered until the next
+                // app lifecycle event, and this banner's promise is a lie for that window.
+                Task { await LocationTriggerService.shared.refreshRegistrations() }
+            }
+            .buttonStyle(MomentumBorderedButtonStyle(minHeight: 44))
+            .accessibilityIdentifier("toolsRoutinesNudgesOnButton")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .bentoCard()
     }
 
     // MARK: - Rows
@@ -212,6 +276,22 @@ struct ToolsRoutinesSection: View {
 }
 
 @available(iOS 17.0, *)
+#Preview("Routines section — Nudges off") {
+    NavigationStack {
+        ScrollView {
+            ToolsRoutinesSection(
+                client: PreviewToolsRoutinesClient.populated,
+                history: .inert(),
+                preferencesStore: PreviewNudgesOffStore()
+            )
+            .padding(16)
+        }
+        .background(Color.pageBackground)
+    }
+    .preferredColorScheme(.light)
+}
+
+@available(iOS 17.0, *)
 #Preview("Routines section — Dark") {
     NavigationStack {
         ScrollView {
@@ -257,4 +337,14 @@ private struct PreviewToolsRoutinesClient: PlacesClientAdapting {
     func fetchPlaces() async throws -> [Place] { places }
     func savePlace(_ place: Place) async throws {}
     func deletePlace(id: UUID) async throws {}
+}
+
+/// Preview-only: the master switch off, so the permission footer's card renders in the canvas.
+private struct PreviewNudgesOffStore: MomentumPreferencesStoring {
+    func read() -> MomentumPreferences {
+        var preferences = MomentumPreferences.default
+        preferences.arrivalNudgesEnabled = false
+        return preferences
+    }
+    func write(_ preferences: MomentumPreferences) {}
 }
