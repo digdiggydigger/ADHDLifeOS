@@ -16,9 +16,11 @@ only, and lint re-ran 0 / 706 there · **the full UI target ran class-batched on
 (`fe980d4`), all 29 tests: 28 green + `testRenderSignUpForm`, which the run HARDENED to 3/3
 reproducible, root-caused, and #15 fixed with three consecutive greens (78.6s / 79.9s / 79.6s)**
 — 30 → 29 because `HitTestProbeUITests` was deleted with #5 · the sim was erased after every UI
-sequence (three erases; the poison rule held) · **E's phone is now BEHIND main**: it carries
-`e4fe956` (2026-09-06 22:05) and PRs #13–#15 are not on it — reinstall is section A's first
-item · `firestore.rules` untouched this session · the emulator was left running.
+sequence (three erases; the poison rule held) · **E's phone TRACKS MAIN again**: reinstalled
+from `d700646` on E's word (2026-09-07 03:24 build, binary-mtime-verified; `devicectl` install
++ `--terminate-existing` launch 03:24:54; zero "No Accounts" — the `-allowProvisioningUpdates`
+build renews the 7-day profile) · `firestore.rules` untouched this session · the emulator was
+left running.
 
 **Shipped and CLOSED this session (PRs #13–#15):**
 - **F-DailySummarySweep** (#13, `f3673e7`) — register B1, E's queued instruction: the
@@ -50,9 +52,10 @@ item · `firestore.rules` untouched this session · the emulator was left runnin
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Reinstall E's phone from main** — the phone carries `e4fe956`; #13's privacy sweep,
-      #14's LifeOS widget copy and #15 are not on device. Same `devicectl` flow as 2026-09-06.
-      **Free-account profile expires 2026-09-10** — a reinstall before then renews it.
+- [x] **Reinstall E's phone from main** — DONE on E's word (2026-09-07 03:24): built at
+      `d700646`, binary stamped 03:24, `devicectl` install + `--terminate-existing` launch
+      verified on `wishwashwacky15`. #13's privacy sweep and #14's LifeOS widget copy are on
+      device; the profile clock restarts from today's build.
 - [ ] **Re-measure coverage?** CLAUDE.md records 23.62% at `b1f4b6f`, stale — the suite is now
       2,465. (carried)
 - [ ] **The permission-banner footer** on the Routines section. (carried)
