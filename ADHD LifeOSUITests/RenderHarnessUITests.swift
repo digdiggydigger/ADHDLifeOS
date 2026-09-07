@@ -146,14 +146,27 @@ final class RenderHarnessUITests: XCTestCase {
             "Create account did not reveal the sign-up fields"
         )
 
-        // Focus the PASSWORD field: the keyboard has to be up for the Done bar to be visible at
-        // all, so a shot with it dismissed would prove nothing about the thing being fixed.
+        // Focus the PASSWORD field: an input surface has to be up for the Done bar to be visible
+        // at all, so a shot with it dismissed would prove nothing about the thing being fixed.
         let password = app.secureTextFields["loginPasswordField"]
         XCTAssertTrue(password.waitForExistence(timeout: UITestSession.timeout), "No password field")
         password.tap()
-        XCTAssertTrue(app.keyboards.element.waitForExistence(timeout: 10), "Keyboard never appeared")
+        // The assertion is the INVARIANT — focusing the password field raises an input surface
+        // and the form renders above it — not the mechanism, because iOS 26.5 (since the
+        // 2026-09-06 sim state) deterministically interposes its Automatic Strong Password pane
+        // where the keyboard would be, and no Keyboard element exists while it is up. Three
+        // routes to the plain keyboard were falsified in runs before settling here (hierarchy
+        // dumps read each time): re-tapping the field leaves the pane standing; the pane's ✕
+        // drops field focus with it; typing dismisses the pane but latches the no-software-
+        // keyboard state. Either surface proves the Done bar's absence — a regressed bar would
+        // ride the input window above whichever content it holds. See `UITestAutofill.swift`.
+        let strongPasswordPane = app.descendants(matching: .any)
+            .matching(identifier: "GenerateStrongPasswordButton").firstMatch
+        let surfaced = app.keyboards.element.waitForExistence(timeout: 5)
+            || strongPasswordPane.waitForExistence(timeout: 10)
+        XCTAssertTrue(surfaced, "No input surface — neither the keyboard nor the strong-password pane")
 
-        attach(app, named: "5-signup-keyboard-up")
+        attach(app, named: "5-signup-input-surface-up")
     }
 
     /// F-LandscapeFix's scout: every tab plus both composers, photographed in landscape, so the
