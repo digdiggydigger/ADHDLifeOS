@@ -112,7 +112,7 @@ struct LifeAreasWidgetView: View {
             Text("LIFE AREAS")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(.secondary)
-            Text("Open Momentum once and your areas will appear here.")
+            Text("Open LifeOS once and your areas will appear here.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)
