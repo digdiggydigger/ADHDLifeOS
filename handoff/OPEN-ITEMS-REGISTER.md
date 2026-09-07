@@ -1,7 +1,10 @@
 # Open items register — 2026-09-07, SESSION close-out (sixth edition today; the previous five covered the queue-clear, the UI baseline, the permission footer, the coverage re-measure, and the adapter drift)
 
 *This edition covers **F-WidgetCoverage (PR #25)**, B4 from the fifth edition's section B — E's
-pick, taken directly rather than waiting.*
+pick, taken directly rather than waiting. It also carries the handoff:
+`START-HERE-post-adapter-drift.md` archived, `START-HERE-new-features.md` written in the same
+commit, on E's word — and the successor points at a DESIGN conversation, not a block, because
+E has shifted focus to new features.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
@@ -144,11 +147,13 @@ carried items and none is authorised.*
 - **The watch-list is EMPTY.** (carried)
 - **The strong-password pane is environmental** — full story in `UITestAutofill.swift`. (carried)
 - **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN.** (carried)
-- **`START-HERE-post-adapter-drift.md` is still the one live opener, and it is now SPENT** — its
-  "what is actually next" recommended B4, which this session did. It was deliberately NOT archived:
-  the rule archives an opener only in the same move that writes its successor, and E has not asked
-  for a handoff. **If E wants one, that is the move that retires this file.** Until then it stays
-  live so no session starts blind — but read its "what is actually next" as done. (updated)
+- **The live opener is `START-HERE-new-features.md`**, written at this close-out on E's word.
+  `START-HERE-post-adapter-drift.md` was archived into `handoff/archive/` in the SAME commit that
+  wrote it, per the rule — exactly one `START-HERE-*` is live in `handoff/`. **The successor is
+  deliberately not a build opener:** E's direction, 2026-09-07, is to shift focus to NEW features,
+  so its first instruction is to have the design conversation rather than open
+  `TODO-CLAUDE-CODE.md`. It carries the vision map and section C as raw material and says
+  explicitly not to pick for E. (updated)
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
 - **The emulator was left running** (`scripts/emulators.sh`); `firestore-debug.log` in the repo
