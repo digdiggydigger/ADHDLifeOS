@@ -3320,7 +3320,7 @@ the bar has restored, the disc is STILL the pill; it expands only at ~5 s when a
 
 ## Home keeps what it knows — register item B-2, E's call 2026-09-08 (branch `fix/home-alltasks-keep-last-known`, off `main` @ `bd03bf5`)
 
-### FEATURE: F-HomeTasksLastKnown — a failed task fetch keeps the last-known set instead of emptying it  [ ] IN PROGRESS
+### FEATURE: F-HomeTasksLastKnown — a failed task fetch keeps the last-known set instead of emptying it  [x] COMPLETED
 
 Carried on the register since the arrival-card arc (`OPEN-ITEMS-REGISTER.md`, B-2), deferred out
 of PR #32 on purpose and picked up on E's word: *"First do B-2."*
@@ -3348,19 +3348,25 @@ of PR #32 on purpose and picked up on E's word: *"First do B-2."*
   inside the signed-in tree, so a last-known set cannot outlive an account switch.
 
 **Acceptance criteria**
-- [ ] Test first, watched red — and it had to be a **two-load** test to discriminate. The existing
+- [x] Test first, watched red — and it had to be a **two-load** test to discriminate. The existing
       `testLoad_scoreboardFetchFailure_stillLoadsTheScreen` fails the fetch on a FIRST load, where
       `allTasks` is `[]` before and after, so it passes either way and pins nothing; a new
       single-load test would have been vacuous the same way. The new test lands `[done]`, flips
       the fake to `.failure`, loads again, and asserts the set survived.
-- [ ] Scoped red: `Executed 14 tests, with 1 failure` — the final assertion, `("[]") is not equal
+- [x] Scoped red: `Executed 14 tests, with 1 failure` — the final assertion, `("[]") is not equal
       to ("[…Closed…]")`. The precondition assertion passed, proving the first load did land the
       history; the existing first-load test passed alongside, confirming it never pinned the bug.
-- [ ] Scoped green after the fix: 38 / 0 across `HomeServiceTests`, `ArrivalSurfaceRefreshTests`,
+- [x] Scoped green after the fix: 38 / 0 across `HomeServiceTests`, `ArrivalSurfaceRefreshTests`,
       `ArrivalSurfaceTests`.
-- [ ] Full suite, full lint, sim build, coverage.
-- [ ] Committed, THEN red-checked one at a time; restore proven by re-running.
-- [ ] Landed through a PR with the close-out output pasted.
+- [x] Full suite **2,547 / 0** (emulator up, 0 `9099` hits, 0 skipped) — +1 over `a6b8021`'s
+      2,546, the new test. Full lint **0 / 720**, sim build **BUILD SUCCEEDED**, app target
+      **24.76% (11,191/45,205)** — denominator −1 against `a6b8021`'s 45,206 (the `?? []` swapped
+      for an `if let`), so the two ratios are measuring the same extent and are comparable.
+      `HomeService.swift` itself 92.47% (86/93).
+- [x] Committed `8b5f740`, THEN red-checked: defect reinstated → **predicted 1 failure / actual
+      1**, and exactly the named test, with the other 13 green. Restore proven 14 / 0.
+- [x] Landed: PR #39 (`https://github.com/digdiggydigger/ADHDLifeOS/pull/39`) merged to `main`
+      @ `39228d8`, branch deleted both sides, `origin/main` verified to contain `8b5f740`.
 
 **Evidence is the unit test, not a device verdict, and not a screenshot.** Firestore's default
 persistence serves offline reads from cache, so a failed `fetchAllTasks()` cannot practically be
