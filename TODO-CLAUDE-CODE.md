@@ -2985,3 +2985,51 @@ the rows.
 - **The tab-root "mechanism found" bullet is WITHDRAWN as a finding**: a later journey run on a
   build carrying the off-screen change failed identically, hidden elements still in the dump.
   Register B3 stays open.
+
+---
+
+## The tab bar, reopened — E's call, 2026-09-08 (branch `feature/tabbar-select-pill`, off `main` @ `e5a572f`)
+
+E reopened the bar against the ORIGINAL canvas
+(`https://claude.ai/code/artifact/767eacff-e616-4836-ab3a-ac842ddf42c9`, page "All six
+options") and chose to **combine B and C**: *"I want C to be the resting state when the user is
+at the top of the page. When they scroll I want to stay as B."* Confirmed "Yes, exactly that"
+against the reading below. **This supersedes the Tools-tab arc's "F at rest, dot → chip"
+decision**; B, the trigger, the band and the pane are unchanged. Design record:
+`handoff/SESSION-OPENER-tabbar-select-pill-design.md`.
+
+**Conflicts reported (CLAUDE.md §7):** `ui-ux-pro-max` "bottom nav ≤ 5" — still six, still E's
+knowing call; C's 10pt/6pt spacing is off-grid → 8/8 under §2.
+
+### FEATURE: F-TabBar-SelectPill — C "Select Pill" at rest, B "Bento Bar" scrolled  [~] BUILT — awaiting E's device verdict
+
+At rest the bar is Design C: flat, full width, icons only — except the selected tab, which is a
+tinted pill holding its glyph AND its label; the other five share the width it leaves. Scrolled,
+Design B is unchanged. Design F's dot is retired and the morph is the pill contracting into the
+chip (one `indicatorMark`, sized by what it sits behind). `TabBarScrollActivity` already decides
+"near the top" with hysteresis, so the trigger is untouched. Files: `Theme/AppTabBar.swift`,
+`Theme/AppTabBarPresentation.swift`, `AppTabBarPresentationTests.swift`.
+
+**Acceptance criteria**
+- [x] Pure rules TDD-pinned (12 "no member" errors on the red run, then green):
+      `showsLabel(isSelected:isFloating:)` is true only for the selected slot at rest;
+      `restingSlotWidth(barWidth:pillWidth:count:)` beside the widest pill on the SE is
+      **46.2 ≥ 44** — the resting state's "stops a seventh tab" test (seven → 38.5); the guard
+      returns 0 below two slots; the pill cap is never narrower than the chip; the pill's three
+      spacings are on the 4/8/16/24 grid.
+- [x] `rowHeight` still 58 and still derived — the search row lift, `bottomClearance`, and
+      `appTabBarClearance()` untouched; `testTheRestingPaneIsExactlyTheFloatingStatesFootprint`
+      still passes.
+- [x] Identifiers `tabBar.<Label>` and `.isSelected` unchanged — no UI journey edited.
+- [x] Label hidden from VoiceOver (the button carries the name); one line, `minimumScaleFactor`
+      before any clip (§1); house spring, nil under Reduce Motion.
+- [x] Suite **2,502 / 0** (emulator up), SwiftLint **0 / 711**, sim build green. Red-checked
+      after the commit: four regressions → exactly the four predicted test cases (five
+      assertions), restored with `git checkout --`, no marker left, full suite green again.
+- [x] Device build with `-allowProvisioningUpdates` (no account/profile trouble), installed on
+      `wishwashwacky15` at `96681a3`; launch refused only because the phone was locked.
+- [ ] **E's device verdict** — the labelled pill at rest, the morph into B, and the three
+      tunables (pill height 34 vs 44, radius 11 vs capsule, 8/8 spacing). Change nothing before
+      E has looked.
+- [ ] `screenshots/tabbar-select-pill/` + README (mirroring was not running this session).
+- [ ] PR merged to `main` after the verdict; phone reinstalled from `main`.
