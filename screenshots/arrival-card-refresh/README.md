@@ -21,5 +21,7 @@ the real geometry files put Home's share at **50% at 10 m jitter, 31% at 40 m** 
 | 02 | `02-task-detail-at-place-home-open.jpeg` | `test quick`'s detail: **At Place = 🏠 Home**, P4, due 8 Sep 6:00 pm, open — the task the card was built from, with its place set. **Also shows the next item:** the Tasks tab's bottom "Search tasks" row is still on screen with a task detail pushed (E, 06:20: *"remove the 'search tasks' search bar from a full view task screen"*). |
 | 03 | `03-tasks-list-test-quick-open.jpeg` | Tasks list: **1 open · 0 overdue**, `test quick` due today and open, `september` closed 4:53 am — the account state at the moment of 00/01, so the vanish cannot be the closed-task case. |
 
-**After the fix (owed as `04-`…):** E pulls repeatedly on the reinstalled build and the card
-stays — a claim only the device can settle, since the coin flip lives in CoreLocation's fixes.
+**After the fix:** the branch build (`4d8de11`) was installed and relaunched on the phone at
+06:38, and E's verdict came back in words rather than a picture — *"the card does stay across
+repeated pulls."* No `04-` exists; the verdict is the record. It is the only verification that
+reaches the coin flip, since it lives in CoreLocation's fixes and no test can toss it.

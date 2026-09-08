@@ -1,31 +1,33 @@
-# Open items register — 2026-09-08, mid-morning (ninth edition; F-ArrivalCardRefresh built, in PR #32, awaiting E's device verdict)
+# Open items register — 2026-09-08, session close-out (tenth edition; F-ArrivalCardRefresh MERGED on E's device verdict)
 
-*This edition covers the session that took E's authorised item — the "You're at home" card
-vanishing on drag-reload — from "investigate first, then ask" to a fix on E's phone. E's one
-answer (**"Still open"**, 06:12) and four screenshots settled which case; the investigation found
-a THIRD mechanism the opener had not listed and it was the main one. The eighth edition's tab-bar
-narrative is in git history (`2672be6`); this one carries only what is still true.*
+*This edition closes the session that took E's authorised item — the "You're at home" card
+vanishing on drag-reload — from "investigate first, then ask" to merged. E's one answer
+(**"Still open"**, 06:12) and four screenshots settled which case; the investigation found a
+THIRD mechanism the opener had not listed and it was the main one; E's verdict on the phone
+(**"the card does stay across repeated pulls"**) landed PR #32. The ninth edition, minutes
+earlier, is in git history (`e225564`); this one carries only what is still true.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
-to update, rather than improvising a list in chat. Supersedes the eight earlier editions.
+to update, rather than improvising a list in chat. Supersedes the nine earlier editions.
 
 Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `e8d1605`** (docs-only since the code at `76a4f47`) · **branch
-`feature/arrival-card-refresh` @ `4d8de11` + this docs commit, pushed, PR #32 OPEN** ·
-every change lands through a PR · verified ON THE BRANCH: **unit suite 2,526 / 0** (emulator
-UP, 0 `127.0.0.1:9099` hits, 3 skips as designed), **SwiftLint 0 / 712**, sim build green,
-device build green · **app target 24.82% (11,162/44,965)** — denominator +25 (the new rules),
-numerator +29 over `76a4f47`'s 24.77% (11,133/44,940); both measured the whole target, so the
-ratios are comparable · **E's phone is on the BRANCH at `4d8de11`**, installed and relaunched
-06:38 (binary mtime 06:37) — NOT on main until PR #32 merges · `firestore.rules` untouched · the
-emulator was left running · the one `TestResults.xcresult` this session wrote was deleted after
-its figures were read (E's standing word) · sim `9181EBF9…` is SIGNED OUT.
+**`main` @ `99d9211`** (PR #32, merge commit) · local = remote, tree clean, **only `main`
+exists** (the feature branch was deleted by the merge; `git fetch --prune` cleared the ref) ·
+every change lands through a PR · re-verified ON MAIN: **unit suite 2,526 / 0** (emulator UP,
+0 `127.0.0.1:9099` hits, 3 skips as designed), **SwiftLint 0 / 712**, sim + device builds green
+(on the branch at the same Swift) · **app target 24.82% (11,162/44,965)** — denominator +25 (the
+new rules), numerator +29 over `76a4f47`'s 24.77% (11,133/44,940); both measured the whole
+target, so the ratios are comparable and the change is real · **E's phone runs the `4d8de11`
+build** (installed and relaunched 06:38); the merge touched no further Swift, so it is
+functionally main — the NEXT Swift merge needs a reinstall · `firestore.rules` untouched · the
+emulator was left running · both `TestResults.xcresult` bundles this session wrote were deleted
+after their figures were read (E's standing word) · sim `9181EBF9…` is SIGNED OUT.
 
-**Built this session — F-ArrivalCardRefresh (PR #32, one code commit `4d8de11`):**
+**Shipped and CLOSED this session — F-ArrivalCardRefresh (PR #32 → `99d9211`, one code commit `4d8de11`):**
 
 - **What E saw:** card *"YOU'RE AT HOME 🏠 · test quick"* at 06:14, one drag-reload, no card,
   `test quick` still open (`screenshots/arrival-card-refresh/00–03`, README rows).
@@ -43,15 +45,15 @@ its figures were read (E's standing word) · sim `9181EBF9…` is SIGNED OUT.
   tasks:)`; the fix provider is injectable.
 - **Evidence:** tests first, watched red (the missing members by name); +3 / +4 / 15-new tests;
   red-checked ONE regression at a time after the commit — predicted 2 / actual 2, predicted 1 /
-  actual 1 (three assertions); restore proven 39 / 0. Design record:
-  `handoff/SESSION-OPENER-arrival-card-refresh-design.md`.
+  actual 1 (three assertions); restore proven 39 / 0. **E's device verdict, in words: *"the
+  card does stay across repeated pulls."*** Design record:
+  `handoff/SESSION-OPENER-arrival-card-refresh-design.md`; evidence
+  `screenshots/arrival-card-refresh/` (00–03 + README; no after-shot, the verdict is the record).
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Does the card stay now?** Pull Today repeatedly on the phone (it is on the branch build,
-      relaunched 06:38; an open task At Place = Home is needed — `test quick` is one). "Yes" →
-      merge PR #32, file the after-shot as `04-`, close out. "Still goes sometimes" → the
-      deferred accuracy lever in B is next, and the register says so. **NEW, blocking the merge.**
+- [x] **Does the card stay now?** — **E: *"the card does stay across repeated pulls."*** PR #32
+      merged on that verdict. RESOLVED the same morning it was raised.
 - [ ] **Keep or delete the two test places at home?** `Action Test 01/09/2026` and `routines
       test` are left over from the place-actions and routines arcs. The code now handles
       overlapping places properly (a public-launch user will have them legitimately), so this
@@ -61,13 +63,16 @@ its figures were read (E's standing word) · sim `9181EBF9…` is SIGNED OUT.
 
 ## B · Real work, ready to start — recommended order
 
-1. **Remove the Tasks tab's bottom "Search tasks" row from a pushed task detail** — E, 06:20:
+1. **Remove the Tasks tab's bottom "Search tasks" row from a pushed task detail — NEXT, opener written** — E, 06:20:
    *"we need to remove the 'search tasks' search bar from a full view task screen such as the
    one shown in one of the screenshots."* `screenshots/arrival-card-refresh/02-` shows it: the
    bottom-search arc's row is a `safeAreaInset` on the Tasks tab and stays on screen with a
-   task's detail pushed on the `NavigationStack`. Untouched this session — E's rule is one block,
-   then review. Start at `TaskListView.swift` and the bottom-search design record. **NEW,
-   E's ask.**
+   task's detail pushed on the `NavigationStack`. Read at this close-out: the row is mounted
+   ONCE in `RootBottomOverlay`, its scope derived in `RootView` from `selectedTab` alone, so the
+   root never learns the tab has left its root screen — the fix is a depth SIGNAL from
+   `TaskListView` (`inspectingTask != nil`) and a pure `AppSearchScope` rule, not a layout
+   change. Untouched this session — E's rule is one block, then review. **E's ask; opener
+   `START-HERE-tasks-search-row.md`.**
 2. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops after #32.**
    A fix that ARRIVES but lands outside every radius still clears the card (the app ignores
    `horizontalAccuracy`; the probe puts it at ~3% of pulls at 40 m jitter with Home alone, 27%
@@ -119,10 +124,10 @@ its figures were read (E's standing word) · sim `9181EBF9…` is SIGNED OUT.
 - **The watch-list is EMPTY.** (carried)
 - **The strong-password pane is environmental.** (carried)
 - **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN.** (carried)
-- **The live opener is STILL `START-HERE-home-arrival-card.md`** — consumed but NOT yet
-  archived, because the block it opened is awaiting E's verdict. The close-out that merges
-  PR #32 archives it in the same move that writes its successor (CLAUDE.md, "Session handoff").
-  Exactly one is live. (updated)
+- **The live opener is `START-HERE-tasks-search-row.md`** (E's search-row ask, B1, with the
+  seam read first-hand: the row is root-mounted and its scope follows `selectedTab` alone).
+  `START-HERE-home-arrival-card.md` was consumed and archived in the same commit that wrote the
+  successor, at this close-out. Exactly one is live. (updated)
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
 - **The emulator was left running.** (carried)
