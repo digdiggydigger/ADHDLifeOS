@@ -69,6 +69,14 @@ struct RootView: View {
         logger: FirebaseFocusSessionAdapter()
     )
 
+    /// What the bottom row searches RIGHT NOW: the selected tab's scope, masked to `.none` while
+    /// that tab is deeper than its top-level page (F-TabDepth-2 — E's screenshot of a pushed
+    /// task detail with "Search tasks" still beside the disc). The depth is what every tab root
+    /// reports into the coordinator, so this file never learns how each tab pushes.
+    private var searchScope: AppSearchScope {
+        AppSearchScope.scope(for: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))
+    }
+
     /// The pill is a STICKY scrolled-down state (F-PillStay, E's call 2026-08-31: "stay in
     /// pill form until the page is scrolled upwards again"). An open fan forces the full disc:
     /// its scrim blocks scrolling anyway, and the ✕ rotation reads as a disc, not a sliver.
@@ -187,15 +195,15 @@ struct RootView: View {
                 // F-PillStay's one non-scroll restore: a fresh tab starts with the full disc —
                 // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
                 // call beyond E's stated rule; E can veto.)
-                .onChange(of: selectedTab) { tab in
+                .onChange(of: selectedTab) { _ in
                     discScrollActivity.reset()
                     tabBarScrollActivity.reset()
-                    // Driven from the SELECTION, not from each screen's `onAppear`.
-                    // `AppTabContent` keeps every visited tab alive, so appearance callbacks fire
-                    // once and then effectively never again — a screen registering its own scope
-                    // would leave whichever tab registered last in charge forever.
-                    searchModel.activate(AppSearchScope.scope(for: tab))
                 }
+                // Driven from the SELECTION and the tab's DEPTH, never from a screen's `onAppear`:
+                // `AppTabContent` keeps every visited tab alive, so appearance callbacks fire once
+                // and then effectively never again — a screen registering its own scope would
+                // leave whichever tab registered last in charge forever.
+                .onChange(of: searchScope) { searchModel.activate($0) }
                 // Our bar, in the space the system's used to occupy. A bottom safe-area INSET:
                 // it positions the bar correctly, insets every scroll view so the last row still
                 // clears it, and — the point of E's last verdict — leaves the content itself

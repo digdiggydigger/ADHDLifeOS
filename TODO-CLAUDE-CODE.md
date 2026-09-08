@@ -3223,10 +3223,46 @@ itself — and Tools, whose top-level pushes were closure links, had to change h
 - [x] PR #35 open (`https://github.com/digdiggydigger/ADHDLifeOS/pull/35`), awaiting E's device
       verdict. Register + opener at close-out.
 
-### FEATURE: F-TabDepth-2-SearchRowAtRoot — the bottom "Search tasks" row hides while a task detail is pushed  [ ] QUEUED
+### FEATURE: F-TabDepth-2-SearchRowAtRoot — the bottom "Search tasks" row hides while a task detail is pushed  [ ] IN PROGRESS
 
-`RootView` derives `AppSearchScope` from `selectedTab` alone; block 1's coordinator now knows
-each tab's depth, so the scope becomes `scope(for: tab, isAtRoot:)` and the row leaves with the
-same spring the overlay already uses. Pure rule in `AppSearchScopeTests`; call-site test that
-`RootView` reads `tabNavigation.isAtRoot`; E's screenshot
-`screenshots/arrival-card-refresh/02-` is the before.
+E, 2026-09-08 06:20, with `screenshots/arrival-card-refresh/02-task-detail-at-place-home-open.jpeg`:
+*"we need to remove the 'search tasks' search bar from a full view task screen such as the one
+shown in one of the screenshots."* The row is mounted once at the root (`RootBottomOverlay`) and
+`RootView` derived its scope from `selectedTab` ALONE, so the root never learned the tab had gone
+deeper. Block 1's coordinator already carries each tab's depth; this block reads it.
+
+- `AppSearchScope.scope(for:isAtRoot:)` — `.none` for any tab below its top-level page, **no
+  default** for `isAtRoot` (a caller that forgot it would put the row back under the pushed
+  screen). The one-argument form is gone; every caller states the depth.
+- `RootView.searchScope` — the selected tab's scope masked by `tabNavigation.isAtRoot(selectedTab)`;
+  `.onChange(of: searchScope)` feeds the model, so a tab switch AND a push/pop both move it — and
+  switching back to Tasks with its detail still pushed keeps the row hidden, which the old wiring
+  would have got wrong from the other side.
+- `RootBottomOverlay` gains a second `.animation(value: searchScope)` on the house spring: the row
+  leaves and returns on it. **Judgment call E can veto:** the same spring now fades the row on a
+  tab switch too (it used to pop with the hard-cut tab content).
+- Built on `feature/tab-depth` on top of block 1 (E, 2026-09-08 late morning: the three block-1
+  checks are deferred to the same phone sitting as block 2), so PR #35 carries the whole arc.
+
+**Acceptance criteria**
+- [x] Tests first, watched red: `AppSearchScopeTests` (6, was 4 — `extra argument 'isAtRoot'`
+      ×5 at compile), then with the rule in and the root still feeding `isAtRoot: true`,
+      `AppSearchCallSiteTests` red on its own assertions (3 failures across 2 tests: the root
+      derives from tab AND depth; the overlay animates on the scope), then
+      `SearchRowDepthJourneyUITests` red against that build at *"E's screenshot, unchanged"*
+      (162 s, the row still in the tree with the detail pushed). `seedTask` hoisted to
+      `UITestSession` (`UITestFixtures.swift`); `SignedInJourneySupport`'s copy delegates.
+- [x] Scoped unit run GREEN: 34 / 0 across `AppSearchScopeTests`, `AppSearchCallSiteTests`,
+      `AppSearchModelTests`, `TabNavigationTests`, `TabNavigationCallSiteTests`.
+- [x] **The UI journey GREEN — 1 / 0 (132 s)**, sim ERASED after both runs: the row is on the
+      list, gone once the seeded task's detail is pushed, and back once block 1's Tasks re-tap
+      pops it (the detail's title field gone). Its two attachments show exactly that.
+- [x] Full suite **2,543 / 0** (emulator up, 0 `9099` hits, 0 skipped), lint **0 / 719**, sim
+      build green, app target **24.76% (11,189/45,196)** — denominator +7 over block 1's 45,189
+      (the guard, the computed scope, the animation), numerator +1.
+- [ ] Red-checked one at a time after the commit: the rule ignores the depth; the root feeds
+      `isAtRoot: true`. Restore proven by a green scoped run.
+- [ ] Device: built and installed on E's phone from the branch tip (both blocks).
+- [ ] **E's verdict on the phone** — the row gone over a pushed task detail, back on the list;
+      plus block 1's three checks, deferred to the same sitting. Then merge PR #35 and reinstall
+      from main.

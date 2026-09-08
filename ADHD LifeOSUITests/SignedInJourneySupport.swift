@@ -50,22 +50,12 @@ extension SignedInJourneyUITests {
 
     // MARK: - Firestore fixtures
 
-    /// Task documents are fully snake_cased (`life_area_id`, `created_at`) — see CLAUDE.md, where
-    /// the tasks/captures casing split is spelled out. Document IDs are UPPERCASE `uuidString`.
-    /// Due now, so the row renders on the Momentum board (F-V3-Tasks-rebuild: undated tasks
-    /// appear only under the Open filter).
+    /// Delegates rather than re-implementing — the `openTab` arrangement. The document's field
+    /// spelling lives in `UITestFixtures.swift` on `UITestSession` since F-TabDepth-2, whose
+    /// journey needed the same task from its own class; a fork here would be a second place for
+    /// the snake_case/camelCase split to go wrong.
     func seedTask(id: UUID, title: String, uid: String) throws {
-        try UITestEmulator.writeDocument(
-            path: "users/\(uid)/tasks/\(id.uuidString)",
-            fields: [
-                "id": UITestEmulator.string(id.uuidString),
-                "title": UITestEmulator.string(title),
-                "status": UITestEmulator.string("open"),
-                "priority": UITestEmulator.string("p3"),
-                "due_date": UITestEmulator.timestamp(Date()),
-                "created_at": UITestEmulator.timestamp(Date())
-            ]
-        )
+        try UITestSession.seedTask(id: id, title: title, uid: uid)
     }
 
     /// One capture sitting in the inbox, written straight to Firestore.

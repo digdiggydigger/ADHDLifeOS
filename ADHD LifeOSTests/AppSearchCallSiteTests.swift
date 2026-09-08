@@ -57,13 +57,26 @@ final class AppSearchCallSiteTests: XCTestCase {
     // MARK: - The row reaches the screen
 
     /// The model can be perfectly correct and drive nothing — this repo's most repeated defect.
-    func testRootViewDrivesTheScopeFromTheSelectedTab() throws {
+    ///
+    /// Both halves of the derivation are read (F-TabDepth-2). From the tab alone the rule is
+    /// right and the row still sits under a pushed task detail — E's screenshot of 2026-09-08 —
+    /// because the root never learns the tab has gone deeper. The depth is what every tab root
+    /// reports into `tabNavigation`, the coordinator block 1 built.
+    func testRootViewDrivesTheScopeFromTheSelectedTabAndItsDepth() throws {
         let root = try Self.appCode("RootView.swift")
         XCTAssertTrue(
-            root.contains("searchModel.activate(AppSearchScope.scope(for: tab))"),
-            "The search scope is no longer driven from `selectedTab`. Registering it from a"
-                + " screen's `onAppear` looks equivalent and is not: `AppTabContent` keeps every"
-                + " visited tab alive, so appearance callbacks fire once and then never again."
+            root.contains(
+                "AppSearchScope.scope(for: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))"
+            ),
+            "The search scope is not derived from BOTH the selected tab and that tab's depth."
+                + " From the tab alone, the row stays on screen under a pushed task detail (E's"
+                + " screenshot, 2026-09-08): the root never learns the tab has gone deeper."
+        )
+        XCTAssertTrue(
+            root.contains(".onChange(of: searchScope) { searchModel.activate($0) }"),
+            "The derived scope never reaches the model. Registering it from a screen's"
+                + " `onAppear` looks equivalent and is not: `AppTabContent` keeps every visited"
+                + " tab alive, so appearance callbacks fire once and then never again."
         )
         XCTAssertTrue(
             root.contains("searchScope: searchModel.scope"),
@@ -73,6 +86,17 @@ final class AppSearchCallSiteTests: XCTestCase {
             root.contains("environmentObject(searchModel)"),
             "The search model is not injected, so any screen reading it traps the moment its body"
                 + " is built."
+        )
+    }
+
+    /// A hard pop beside the disc reads as a glitch (E's block-2 brief): the row leaves and
+    /// returns on the spring the overlay already uses for the timer bar.
+    func testTheOverlayAnimatesTheRowOnItsScope() throws {
+        let overlay = try Self.appCode("RootBottomOverlay.swift")
+        XCTAssertTrue(
+            overlay.contains("value: searchScope"),
+            "`RootBottomOverlay` has no animation keyed on `searchScope`, so the row pops in and"
+                + " out beside the disc — its only animation is keyed on the timer."
         )
     }
 
