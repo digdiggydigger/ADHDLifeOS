@@ -350,9 +350,9 @@ extension HomeView {
         capturesClearedToday = momentumPreferences.countClearedCaptures ? handledToday : 0
     }
 
-    /// Variation B's resolution (block 4c): one When-In-Use fix, then the card content from the
-    /// tasks Home already holds. Nil at every failure — no permission, no fix, no named place,
-    /// nothing open here — and nil simply means no card.
+    /// Variation B's resolution (block 4c): one When-In-Use fix, applied to the card ALREADY
+    /// showing rather than rebuilt from nothing (E's 2026-09-08 bug — a pull threw the card
+    /// away). `ArrivalSurface.refreshed` holds the rule; see its doc comment.
     func refreshArrivalSurface() async {
         // FIRST, before the location await. The routine card is the other half of the same
         // "where am I right now" slot and shares every trigger — but it is a synchronous
@@ -360,8 +360,8 @@ extension HomeView {
         // routine's card linger on Today for as long as that fix took (caught by the routine
         // journey, which is exactly the class of bug a render loop exists to find).
         refreshLiveRoutine()
-        let place = await CurrentPlaceResolution.current()
-        arrivalSurface = ArrivalSurface.make(currentPlace: place, tasks: homeService.allTasks)
+        let fix = await CurrentPlaceResolution.current()
+        arrivalSurface = ArrivalSurface.refreshed(previous: arrivalSurface, fix: fix, tasks: homeService.allTasks)
     }
 
     /// An arrival-card row is a door into its task, through the same pushed detail the Due-now
