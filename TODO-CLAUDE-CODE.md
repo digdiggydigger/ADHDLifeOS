@@ -3260,9 +3260,13 @@ deeper. Block 1's coordinator already carries each tab's depth; this block reads
 - [x] Full suite **2,543 / 0** (emulator up, 0 `9099` hits, 0 skipped), lint **0 / 719**, sim
       build green, app target **24.76% (11,189/45,196)** — denominator +7 over block 1's 45,189
       (the guard, the computed scope, the animation), numerator +1.
-- [ ] Red-checked one at a time after the commit: the rule ignores the depth; the root feeds
-      `isAtRoot: true`. Restore proven by a green scoped run.
-- [ ] Device: built and installed on E's phone from the branch tip (both blocks).
+- [x] Committed `c4fba78`, THEN red-checked one at a time: the rule ignores the depth —
+      predicted 2 / actual 2 (the two depth tests); the root feeds `isAtRoot: true` — predicted
+      1 / actual 1 (the call-site derivation guard). Restore proven 13 / 0.
+- [x] Device: built green at `c4fba78` (binary 12:06, `-allowProvisioningUpdates`, no
+      provisioning trouble) and `App installed` at 12:07 on E's phone — BOTH blocks. The launch
+      was refused because the phone was LOCKED (`NSLocalizedFailureReason … Locked`); E opens
+      it by hand, force-quit first.
 - [ ] **E's verdict on the phone** — the row gone over a pushed task detail, back on the list;
       plus block 1's three checks, deferred to the same sitting. Then merge PR #35 and reinstall
       from main.
