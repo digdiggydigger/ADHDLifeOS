@@ -28,10 +28,7 @@ final class TabReselectionJourneyUITests: XCTestCase {
         let account = try UITestSession.createAccount(label: "retap-nudges")
         let app = try UITestSession.launchSignedIn(as: account)
 
-        let door = app.buttons["homeNudgesFirstRunDirective"]
-        UITestSession.scrollUntilHittable(door, in: app)
-        let nudges = app.staticTexts["nudgesEmptyState"]
-        XCTAssertTrue(UITestSession.tap(door, untilExists: nudges), "Nudges did not push from Today's door")
+        let (door, nudges) = openNudgesFromToday(app)
         attach(app, "1-nudges-pushed-from-today")
 
         XCTAssertTrue(
@@ -49,19 +46,14 @@ final class TabReselectionJourneyUITests: XCTestCase {
         let account = try UITestSession.createAccount(label: "retap-nudges-back")
         let app = try UITestSession.launchSignedIn(as: account)
 
-        let door = app.buttons["homeNudgesFirstRunDirective"]
-        UITestSession.scrollUntilHittable(door, in: app)
-        let nudges = app.staticTexts["nudgesEmptyState"]
-        XCTAssertTrue(UITestSession.tap(door, untilExists: nudges), "Nudges did not push from Today's door")
+        let (door, _) = openNudgesFromToday(app)
 
         let back = app.buttons["nudgesBackButton"]
         XCTAssertTrue(
             back.waitForExistence(timeout: UITestSession.timeout),
             "Nudges draws no back control; the edge swipe is the only way out."
         )
-        // Through the retrying helper: a tap synthesised while the pushed screen is still
-        // settling — or while iOS's late "Save Password?" sheet is up after a fresh sign-in — is
-        // a silent no-op, and this test failed exactly that way once (the acceptance run).
+        settleSystemSurfaces(until: back)
         XCTAssertTrue(UITestSession.tap(back, untilExists: door), "Back from Nudges did not return to Today")
     }
 
@@ -81,15 +73,22 @@ final class TabReselectionJourneyUITests: XCTestCase {
         // Today loads its sections after the title; on a fresh account the page is too short
         // to scroll until they land. The nudges door is the last card, so its existence is the
         // "content is here" landmark.
+        let door = app.buttons["homeNudgesFirstRunDirective"]
         XCTAssertTrue(
-            app.buttons["homeNudgesFirstRunDirective"].waitForExistence(timeout: UITestSession.timeout),
+            door.waitForExistence(timeout: UITestSession.timeout),
             "Today's content never loaded, so there is nothing to scroll."
         )
+        // The late "Save Password?" sheet swallows a swipe as silently as a tap (one class run
+        // saw both swipes move nothing), so settle first and swipe until the title has moved.
+        settleSystemSurfaces(until: door)
         let restingY = title.frame.minY
-
-        app.swipeUp()
-        app.swipeUp()
-        let scrolledY = title.exists ? title.frame.minY : -1_000
+        var scrolledY = restingY
+        for _ in 1...3 where scrolledY >= restingY - 100 {
+            UITestSession.dismissSystemPasswordPromptIfPresent()
+            app.swipeUp()
+            app.swipeUp()
+            scrolledY = title.exists ? title.frame.minY : -1_000
+        }
         XCTAssertLessThan(scrolledY, restingY - 100, "The swipes did not move Today; nothing to scroll back from.")
 
         reTapToday(app, untilExists: nil)
@@ -106,6 +105,39 @@ final class TabReselectionJourneyUITests: XCTestCase {
     /// A tap on the tab that is ALREADY selected. `UITestSession.openTab` returns early when the
     /// slot reports `isSelected`, which is the right behaviour for every other journey and the
     /// exact thing this one must not do — the first run of this file passed nothing through it.
+    /// Today's Nudges door, tapped when it is genuinely hittable, and the pushed Nudges screen.
+    ///
+    /// Two system surfaces can steal every hit-test in this window and both are known to this
+    /// harness: iOS's late "Save Password?" sheet after a fresh-credential sign-in (a remote view
+    /// in the app's own tree) and a springboard permission alert. Waiting for the door to EXIST
+    /// is not enough — the acceptance run raised "not hittable" on a door that existed at y = 542
+    /// — so this waits for it to be HITTABLE, sweeping both surfaces on each poll, before the
+    /// retrying tap.
+    @MainActor
+    private func openNudgesFromToday(_ app: XCUIApplication) -> (door: XCUIElement, nudges: XCUIElement) {
+        let door = app.buttons["homeNudgesFirstRunDirective"]
+        UITestSession.scrollUntilHittable(door, in: app)
+        XCTAssertTrue(door.waitForExistence(timeout: UITestSession.timeout), "Today's Nudges door never appeared")
+        settleSystemSurfaces(until: door)
+        let nudges = app.staticTexts["nudgesEmptyState"]
+        XCTAssertTrue(UITestSession.tap(door, untilExists: nudges), "Nudges did not push from Today's door")
+        return (door, nudges)
+    }
+
+    /// Sweeps the password sheet and any springboard alert until `element` reports hittable,
+    /// or the harness timeout passes.
+    @MainActor
+    @discardableResult
+    private func settleSystemSurfaces(until element: XCUIElement) -> Bool {
+        let deadline = Date().addingTimeInterval(UITestSession.timeout)
+        while Date() < deadline {
+            UITestSession.dismissSystemPasswordPromptIfPresent()
+            if element.exists, element.isHittable { return true }
+            UITestSession.dismissSystemAlertIfPresent(timeout: 1)
+        }
+        return element.exists && element.isHittable
+    }
+
     /// With `untilExists`, the tap goes through `UITestSession.tap(_:untilExists:)` — retried,
     /// with the system password prompt dismissed first. Without it (the scroll test, whose
     /// target already exists) the prompt is dismissed and the slot tapped once.

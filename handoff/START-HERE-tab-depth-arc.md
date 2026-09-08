@@ -1,8 +1,8 @@
-# Start here — E's next item: the bottom "Search tasks" row must not stay on screen over a pushed task detail
+# Start here — the tab depth arc: block 1 (the tab re-tap) is in PR #35 on E's device verdict; block 2 (the search row over a pushed task detail) is next
 
-*Paste into a fresh Claude Code terminal. Written 2026-09-08 at the close of the session that
-shipped `F-ArrivalCardRefresh` (PR #32, merged; `main` @ `99d9211`). E's phone is on the
-`4d8de11` branch build, which is the same Swift as main. The emulator was left running.*
+*Paste into a fresh Claude Code terminal. Rewritten 2026-09-08 mid-morning, after the same
+session built `F-TabDepth-1-PopToRoot` on `feature/tab-depth` (PR #35 OPEN) and installed it
+on E's phone at 09:22. `main` @ `38b309c`. The emulator was left running.*
 
 **This is the ONE live opener.** If you find a second `START-HERE-*` in `handoff/`, one of them
 is a trap — see CLAUDE.md, "Session handoff". Archive this file into `handoff/archive/` in the
@@ -10,7 +10,21 @@ same move that writes your successor, at the END of your session, never at the s
 
 ---
 
-## The one instruction that matters
+## Where the arc stands — read this before the ask below
+
+**Block 1 is BUILT and on E's phone, awaiting E's verdict.** If E has said the re-tap behaves,
+merge PR #35 (`gh pr merge 35 --merge --delete-branch`), reinstall the phone from main, tick the
+last criterion in `TODO-CLAUDE-CODE.md`, and start block 2 below. If E has not, ask — do not
+merge on your own judgment. Design record: `handoff/SESSION-OPENER-tab-depth-design.md` (the
+probe table in it is what settled the mechanism; read it before touching any push).
+
+**Block 2 uses the seam block 1 built:** `TabNavigationCoordinator.isAtRoot(tab)` is already
+injected at the root as `tabNavigation`. `RootView` derives `searchModel.scope` from
+`selectedTab` alone; make it `AppSearchScope.scope(for: tab, isAtRoot:)` (pure rule, TDD in
+`AppSearchScopeTests`), have `RootView` read `tabNavigation.isAtRoot(selectedTab)`, and add a
+call-site test that it does. The row leaves with `RootBottomOverlay`'s existing spring.
+
+## The one instruction that matters (block 2)
 
 **E, 2026-09-08 06:20, mid-session, with a screenshot:** *"please note that we need to remove the
 'search tasks' search bar from a full view task screen such as the one shown in one of the
@@ -54,12 +68,12 @@ will read as a glitch.
 1. **`CLAUDE.md`** — Workflow, Version Control (every change lands through a PR; `main` is
    protected), Session handoff, Visual evidence, UI/UX §1–§7.
 2. **`claudecode.md`** — the TDD role definition.
-3. **`handoff/OPEN-ITEMS-REGISTER.md`** — THE outstanding list, **tenth edition** (this item is
-   B1; B2 and B3 are the two small follow-ups the arrival-card fix deferred on purpose).
+3. **`handoff/OPEN-ITEMS-REGISTER.md`** — THE outstanding list, **eleventh edition** (A1 is
+   E's verdict on block 1; B1 is block 2; B2 and B3 are the arrival-card follow-ups).
 4. **`handoff/SESSION-OPENER-bottom-search-build.md`** — the search row's build record: why
    `.searchable` was killed, why the row lives at the root, E's layout call.
-5. **`handoff/SESSION-OPENER-arrival-card-refresh-design.md`** — the newest design record and
-   the house style for one; its "investigate the real data first" lesson generalises.
+5. **`handoff/SESSION-OPENER-tab-depth-design.md`** — the arc's design record: E's four
+   answers, the probe table, and what the UI journey caught (all harness, no app defects).
 
 **Do NOT read `docs/`.** It is an archive of a legacy build and says this app runs on Supabase.
 
@@ -68,14 +82,14 @@ will read as a glitch.
 ```bash
 git branch --show-current            # expect main
 git status --short                   # must be empty
-git log --oneline -1                 # expect 99d9211 or later
+git log --oneline -1                 # expect 38b309c or later (main); PR #35 may still be open
 git log --oneline -1 origin/main     # same SHA
 swiftlint lint                       # expect 0 violations, 712 files
 ls -d *.xcresult                     # expect NONE — deleted after each read, E's standing word
 ```
 
-Last verified ON MAIN at `99d9211`: lint **0 / 712**; suite and coverage figures are in the
-register's tenth edition. Free-dev-account profile roughly valid to **2026-09-15**.
+Last verified ON THE BRANCH at `639cf24`+: suite 2,540 / 0, lint 0 / 717, journey class 3 / 0;
+figures in the register's eleventh edition. Free-dev-account profile roughly valid to **2026-09-15**.
 
 ## Traps that matter right now
 
@@ -87,6 +101,9 @@ register's tenth edition. Free-dev-account profile roughly valid to **2026-09-15
 - **The device verdict is E's, in words or a screenshot** — E's own screenshots, filed with
   README rows, are the working evidence route; iPhone Mirroring cannot be started from the
   terminal.
+- **E's phone ran out of storage once this morning** (`No space left on device` from the
+  installer; a launch after a failed install wakes the OLD build). If an install fails, read the
+  installer's `NSLocalizedFailureReason` before suspecting the build.
 - **After the merge, the phone tracks main only if the merge touched Swift** — this one will, so
   rebuild from main and reinstall (`xcodebuild build -destination 'platform=iOS,id=3DBC979A-
   3255-5456-8C30-172DB19B99B3' -allowProvisioningUpdates`, then `xcrun devicectl device install

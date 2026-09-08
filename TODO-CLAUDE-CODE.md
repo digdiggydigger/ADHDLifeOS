@@ -3197,13 +3197,31 @@ itself — and Tools, whose top-level pushes were closure links, had to change h
       Nudges Back control, and the top-level re-tap scrolling by FRAME).
 - [x] Scoped unit run GREEN: 50 / 0 across the two new classes plus `AppSearchCallSiteTests`
       and `AppTabBarPresentationTests`. Touched-file and full lint **0 / 717**.
-- [ ] The UI journey green on the simulator against the emulator; sim ERASED after each run.
-      First run found the HARNESS, not the app: `UITestSession.openTab` returns early on an
-      already-selected slot, so the journey had never re-tapped; and `staticTexts["Today"]`
-      matched the tab bar's pill label. Both fixed in the journey (`reTapToday`, `homeTitle`).
-- [ ] Full suite green, sim build green, committed, red-checked one regression at a time.
-- [ ] Device: rebuilt and installed; **E's verdict on the phone**.
-- [ ] PR; register + opener.
+- [x] **The UI journey GREEN as one class run — 3 / 0 (452 s), the tenth run; sim ERASED after
+      every one of the ten.** Everything the journey caught was in the HARNESS or the journey,
+      never the app: `UITestSession.openTab` returns early on an already-selected slot, so it had
+      never re-tapped (`reTapToday`); `staticTexts["Today"]` matched the tab bar's pill label
+      (`homeTitle`); the first anchor overshot by 16 pt AND added 16 pt of dead space at the top
+      of every tab (`.tabRootScrollAnchor()` on the padded root); a fresh account's Today is too
+      short to scroll until its sections load; and the late "Save Password?" sheet swallowed a
+      Back tap, then a door tap ("not hittable" on a door that existed at y = 542), then two
+      swipes — the journey now waits for HITTABLE, sweeping the sheet and any springboard alert
+      before every tap and swipe it depends on (`openNudgesFromToday`, `settleSystemSurfaces`).
+- [x] Full suite **2,540 / 0** (emulator up, 0 `9099` hits), lint **0 / 717**, sim build green,
+      app target **24.76% (11,188/45,189)** — denominator +224 (the new view code; the two new
+      files are view state the journey reaches, not a unit test). Committed `639cf24`, THEN
+      red-checked one at a time: rule-always-scrolls predicted 1 / actual 1; Tools-forgets-the-
+      modifier predicted 1 / actual 1; restore proven 14 / 0. One earlier full-suite failure was
+      `ToolsPageCallSiteTests.testTheEmptyStatePushClearsTheCaptureDisc` reading the OLD Tools
+      push; rewritten to follow the new three-link chain (section → `onOpenPlaces` → ToolsView's
+      `.places` destination with the clearance).
+- [x] Device: built green at `96aa629` (09:00); the first install FAILED — **E's phone was out
+      of storage** (`No space left on device`) — E freed space and it installed and relaunched
+      **09:22**. The phone is on the branch build.
+- [ ] **E's verdict on the phone** (Today → Nudges → re-tap; the Nudges Back chevron; a re-tap
+      at the top level scrolling up on every tab).
+- [x] PR #35 open (`https://github.com/digdiggydigger/ADHDLifeOS/pull/35`), awaiting E's device
+      verdict. Register + opener at close-out.
 
 ### FEATURE: F-TabDepth-2-SearchRowAtRoot — the bottom "Search tasks" row hides while a task detail is pushed  [ ] QUEUED
 
