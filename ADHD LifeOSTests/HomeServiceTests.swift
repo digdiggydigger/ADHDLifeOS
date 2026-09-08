@@ -48,7 +48,9 @@ final class HomeServiceTests: XCTestCase {
     }
 
     /// The scoreboard is derived decoration over history — its fetch failing must not take the
-    /// whole screen down. The ring just reads zero until the next successful load.
+    /// whole screen down. This is the FIRST-load case, where there is genuinely nothing known
+    /// yet, so the ring reads zero; once a load has landed, a later failure keeps what it landed
+    /// (`testLoad_scoreboardFetchFailure_keepsTheLastKnownTasks`).
     func testLoad_scoreboardFetchFailure_stillLoadsTheScreen() async {
         let fake = FakeHomeClientAdapting()
         let work = LifeArea(id: UUID(), name: "Work", colour: "#123456", sortOrder: 0)
@@ -61,6 +63,35 @@ final class HomeServiceTests: XCTestCase {
 
         XCTAssertEqual(sut.state, .loaded([LifeAreaTaskCount(lifeArea: work, openTaskCount: 0)]))
         XCTAssertEqual(sut.allTasks, [])
+    }
+
+    /// A failed scoreboard fetch is "don't know", never "nothing" — the last-known set stays.
+    ///
+    /// The arrival card is the loudest consumer and the reason this matters: Home refreshes it
+    /// deliberately AFTER `load()` (`HomeView.refreshEverything`), and `ArrivalSurface.refreshed`
+    /// re-checks the card it is already holding against these tasks. That rule cannot tell "the
+    /// work here closed" from "the fetch failed" — and it should not have to — so an emptied
+    /// `allTasks` silently destroys a card the user is looking at, on a pull that only hiccuped.
+    /// The Momentum ring, streaks, week charts and the week review read the same property and
+    /// would all read zero.
+    func testLoad_scoreboardFetchFailure_keepsTheLastKnownTasks() async {
+        let fake = FakeHomeClientAdapting()
+        let work = LifeArea(id: UUID(), name: "Work", colour: "#123456", sortOrder: 0)
+        fake.lifeAreasResult = .success([work])
+        fake.openTasksResult = .success([])
+        let done = TaskItem(
+            id: UUID(), lifeAreaId: work.id, title: "Closed", status: .done,
+            priority: .p3, dueDate: nil, completedAt: Date()
+        )
+        fake.allTasksResult = .success([done])
+        let sut = HomeService(client: fake)
+        await sut.load()
+        XCTAssertEqual(sut.allTasks, [done], "precondition: the first load lands the history")
+
+        fake.allTasksResult = .failure(HomeServiceError.fetchFailed("offline"))
+        await sut.load()
+
+        XCTAssertEqual(sut.allTasks, [done])
     }
 
     func testLoad_emptyData_setsLoadedStateWithZeroCounts() async {
