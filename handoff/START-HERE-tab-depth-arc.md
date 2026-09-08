@@ -36,7 +36,7 @@ row still sitting above the tab bar beside the capture disc. E wants it gone the
 the Tasks LIST is settled and approved (bottom-search arc, E's own layout call of 2026-09-03) —
 do not touch its position, spacing or behaviour on the list.
 
-## What the code says (read first-hand at this close-out, `main` @ `99d9211`)
+## What the code says (read first-hand 2026-09-08, still true at `bab1681`)
 
 The row does not live in the Tasks screen at all. **It is mounted once, at the root, in
 `ADHD LifeOS/RootBottomOverlay.swift`** beside the capture disc, and shows when `searchScope !=
@@ -47,17 +47,25 @@ is its own `NavigationStack`, and a task detail is pushed inside it via
 **The root never learns that the tab is no longer at its root screen**, so the scope stays
 `.tasks` and the row stays. That is the whole bug.
 
-So the fix is a SIGNAL, not a layout change: the Tasks tab tells the root whether it is at its
-root screen, and the scope resolves to `.none` while a detail is pushed. Shapes that fit the
-house style, pick after reading:
+So the fix is a SIGNAL, not a layout change — **and block 1 already built the signal. Do not
+build a second one.** `TaskListView` reports its depth through
+`.tabRoot(.tasks, isAtRoot: inspectingTask == nil, …)` into `TabNavigationCoordinator`, which
+`RootView` owns as `tabNavigation` and injects. Block 2 is therefore small:
 
-- A `PreferenceKey` (or an `@Environment` binding handed down from RootView) that
-  `TaskListView` sets from `inspectingTask != nil`; `AppSearchScope` gains a pure rule
-  `scope(for: tab, atTabRoot: Bool)` and `RootView` feeds it. The pure rule is the TDD target —
-  extend `AppSearchScopeTests`; `AppSearchCallSiteTests` is the file that greps the call sites
-  and should gain a test that the Tasks screen REPORTS its depth.
-- Check the same seam for the task CREATE sheet (`TaskCreateView` is a sheet — sheets cover the
-  overlay, so probably fine) and the search SURFACE itself (`fullScreenCover`, covers it too).
+- `AppSearchScope` gains the pure rule `scope(for: tab, isAtRoot: Bool)` — `.none` whenever
+  `isAtRoot` is false — TDD in `AppSearchScopeTests` (watch it fail first).
+- `RootView` feeds it `tabNavigation.isAtRoot(selectedTab)` instead of the tab alone; extend
+  `AppSearchCallSiteTests` (`testRootViewDrivesTheScopeFromTheSelectedTab`) so the call site
+  is read: the scope must be derived from BOTH the tab and the depth.
+- The row leaves with `RootBottomOverlay`'s existing spring; sheets and covers are untouched
+  (the task composer and the search surface already cover the overlay).
+- Red-check it; then a UI proof if cheap: push a task detail, assert the search row's element is
+  gone; re-tap Tasks, assert it is back. `TabReselectionJourneyUITests` shows the settle
+  helpers a journey needs after a fresh sign-in.
+
+**E's instruction, 2026-09-08 ~09:40: *"complete block two in a new fresh Claude Code terminal
+session."*** That session is you. E was performing the three block-1 checks on the phone when
+this was written; the register's A1 records whether the verdict has landed.
   E's ask is the pushed detail; do not widen it unasked.
 
 Animate the row out with the same spring the overlay already uses; a hard pop beside the disc
