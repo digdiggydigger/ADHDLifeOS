@@ -3101,7 +3101,7 @@ jitter, 40% at 20 m, 31% at 40 m** (100% / 100% / 96% with Home alone). Every fi
 card still goes on most pulls. Secondary: a fix that never arrives (8 s timeout, a request
 already pending, airplane mode) also overwrote the card with nil.
 
-### FEATURE: F-ArrivalCardRefresh — the card considers every containing place, and a refresh replaces it only when a fix says otherwise  [ ] IN PROGRESS
+### FEATURE: F-ArrivalCardRefresh — the card considers every containing place, and a refresh replaces it only when a fix says otherwise  [x] COMPLETED
 
 Two pure rules, TDD-pinned, no visual change:
 
@@ -3133,10 +3133,12 @@ Two pure rules, TDD-pinned, no visual change:
       first-place-only predicted 1 / actual 1 (its three assertions); restore proven 39 / 0.
 - [x] Device: built from the branch at `4d8de11`, installed and relaunched on `wishwashwacky15`
       06:38 (binary mtime 06:37).
-- [ ] **E pulls repeatedly and the card stays** — the only verification that reaches the coin
-      flip; file the after-shot as `screenshots/arrival-card-refresh/04-`.
-- [ ] PR #32 open (`https://github.com/digdiggydigger/ADHDLifeOS/pull/32`); merge after E's
-      device verdict; register + opener close-out.
+- [x] **E's device verdict, 06:5x: *"the card does stay across repeated pulls."*** The only
+      verification that reaches the coin flip, and it passed. No after-shot was supplied; the
+      verdict is the record (README says so).
+- [x] PR #32 merged to `main` @ `99d9211`; branch deleted by the merge; re-verified ON MAIN
+      (lint 0 / 712; suite figures in the register's tenth edition). Phone stays on the `4d8de11`
+      build — the merge touched no Swift, so it is functionally main.
 
 **Deferred, on record (not this block):** a fix that ARRIVES but lands outside every radius
 (a poor-accuracy cell fix; the app ignores `horizontalAccuracy`) still clears the card — the
