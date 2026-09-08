@@ -3173,7 +3173,7 @@ push counts and a reset pops it; and a closure push NESTED above a value or flag
 collapses with it. So the root cannot pop anyone's stack from outside — each root must pop
 itself — and Tools, whose top-level pushes were closure links, had to change how it pushes.
 
-### FEATURE: F-TabDepth-1-PopToRoot — a re-tap returns to the tab's top-level page, or scrolls to the top there; Nudges gets a Back control  [ ] IN PROGRESS
+### FEATURE: F-TabDepth-1-PopToRoot — a re-tap returns to the tab's top-level page, or scrolls to the top there; Nudges gets a Back control  [x] COMPLETED
 
 - `TabNavigation.swift`: `TabReselectionResponse.response(isAtRoot:)` (the rule),
   `TabNavigationCoordinator` (re-tap counts DOWN, depth UP; `isAtRoot` defaults true),
@@ -3218,12 +3218,14 @@ itself — and Tools, whose top-level pushes were closure links, had to change h
 - [x] Device: built green at `96aa629` (09:00); the first install FAILED — **E's phone was out
       of storage** (`No space left on device`) — E freed space and it installed and relaunched
       **09:22**. The phone is on the branch build.
-- [ ] **E's verdict on the phone** (Today → Nudges → re-tap; the Nudges Back chevron; a re-tap
-      at the top level scrolling up on every tab).
+- [x] **E's verdict on the phone, 2026-09-08 evening: *"All 4 checks were successful."*** (Today
+      → Nudges → re-tap; the Nudges Back chevron; a re-tap at the top level scrolling up) —
+      deferred by E to the same sitting as block 2, with E's screenshot of the chevron filed at
+      `screenshots/tab-depth/00-`.
 - [x] PR #35 open (`https://github.com/digdiggydigger/ADHDLifeOS/pull/35`), awaiting E's device
       verdict. Register + opener at close-out.
 
-### FEATURE: F-TabDepth-2-SearchRowAtRoot — the bottom "Search tasks" row hides while a task detail is pushed  [ ] IN PROGRESS
+### FEATURE: F-TabDepth-2-SearchRowAtRoot — the bottom "Search tasks" row hides while a task detail is pushed  [x] COMPLETED
 
 E, 2026-09-08 06:20, with `screenshots/arrival-card-refresh/02-task-detail-at-place-home-open.jpeg`:
 *"we need to remove the 'search tasks' search bar from a full view task screen such as the one
@@ -3267,6 +3269,7 @@ deeper. Block 1's coordinator already carries each tab's depth; this block reads
       provisioning trouble) and `App installed` at 12:07 on E's phone — BOTH blocks. The launch
       was refused because the phone was LOCKED (`NSLocalizedFailureReason … Locked`); E opens
       it by hand, force-quit first.
-- [ ] **E's verdict on the phone** — the row gone over a pushed task detail, back on the list;
-      plus block 1's three checks, deferred to the same sitting. Then merge PR #35 and reinstall
-      from main.
+- [x] **E's verdict on the phone, 2026-09-08 evening: *"All 4 checks were successful."*** — the
+      row gone over a pushed task detail (E's screenshot, `screenshots/tab-depth/01-`), back on
+      the list; block 1's three checks passed in the same sitting. PR #35 merged on that verdict;
+      phone reinstalled from main.
