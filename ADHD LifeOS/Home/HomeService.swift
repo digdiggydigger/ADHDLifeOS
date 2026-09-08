@@ -44,6 +44,14 @@ final class HomeService: ObservableObject {
     /// Every task, closed ones included — the Momentum scoreboard's raw material. Failure-
     /// tolerant on load: the scoreboard is derived decoration over history, and its fetch failing
     /// must never take the screen down with it.
+    ///
+    /// A failure KEEPS the last-known set rather than emptying it, matching the inbox's
+    /// `CaptureInboxService.refresh()`. An emptied list is not "don't know", it is the positive
+    /// claim "there are no tasks", and every consumer downstream believes it — the Momentum ring,
+    /// the streaks, the week charts, and loudest of all the Home arrival card, which Home
+    /// refreshes deliberately AFTER this load. `ArrivalSurface.refreshed` re-checks the card it
+    /// is holding against these tasks and cannot tell "the work here closed" from "the fetch
+    /// failed", so a wiped list silently destroyed a card the user was looking at.
     @Published private(set) var allTasks: [TaskItem] = []
 
     /// Serialisation state for TRAP 6 — exactly one reorder in flight at a time.
@@ -82,7 +90,7 @@ final class HomeService: ObservableObject {
             async let allTasksResult = client.fetchAllTasks()
             lifeAreas = try await lifeAreasResult
             openTasks = try await openTasksResult
-            allTasks = (try? await allTasksResult) ?? []
+            if let fetchedAllTasks = try? await allTasksResult { allTasks = fetchedAllTasks }
             // The grid excludes archived areas — the filter is applied HERE, at the view/service
             // layer, not in the adapter.
             let counts = LifeAreaTaskCounts.countOpenTasksByLifeArea(

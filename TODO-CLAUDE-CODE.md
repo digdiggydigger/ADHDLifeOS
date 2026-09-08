@@ -3317,3 +3317,52 @@ the bar has restored, the disc is STILL the pill; it expands only at ~5 s when a
       scrolls to the top AND the disc is the full disc again. No UI journey can see this one
       (the disc's outer frame is 60×60 in both states by design); the verdict is the record.
       PR #37 merged on it; phone reinstalled from main.
+
+## Home keeps what it knows — register item B-2, E's call 2026-09-08 (branch `fix/home-alltasks-keep-last-known`, off `main` @ `bd03bf5`)
+
+### FEATURE: F-HomeTasksLastKnown — a failed task fetch keeps the last-known set instead of emptying it  [ ] IN PROGRESS
+
+Carried on the register since the arrival-card arc (`OPEN-ITEMS-REGISTER.md`, B-2), deferred out
+of PR #32 on purpose and picked up on E's word: *"First do B-2."*
+
+- **Defect:** `HomeService.load()` read `allTasks = (try? await allTasksResult) ?? []`. A failed
+  `fetchAllTasks()` therefore published the positive claim **"there are no tasks"**, not "don't
+  know" — and every consumer downstream believed it. `lifeAreas` and `openTasks` never had this
+  problem: they throw into the `catch`, which leaves both holding their last-known values.
+- **Why it reaches the arrival card, which is what the register flagged:** Home refreshes the card
+  deliberately AFTER the load — `HomeView.refreshEverything()` awaits the parallel block, then
+  `refreshArrivalSurface()`, commented *"so the card is built from the tasks that just landed"*.
+  `ArrivalSurface.refreshed` re-checks the card it is already holding against those tasks and
+  drops it when its work is gone (`testRefreshed_noFix_dropsTheCardWhenItsWorkClosed` is that rule
+  working as designed). The rule cannot tell **"the work here closed"** from **"the fetch
+  failed"**, and it should not have to — so the fix belongs upstream in the service, not in
+  `ArrivalSurface`. On a pull that only hiccuped, the card the user was looking at vanished.
+- **Blast radius is wider than the card**, and worth saying because it was never the stated
+  symptom: `MomentumScoreboard.streak`/`bestStreak`, `trailingWeekClosureFlags`,
+  `MomentumWeekCharts.closedPerDay`, `TaskCompletionStamp.completedTasks`, the week-review row and
+  `MomentumTaskContext.build` all read `homeService.allTasks`. A failed fetch zeroed E's streak.
+- **Fix, one line, following the inbox precedent** (`CaptureInboxService.refresh()`, which keeps
+  the captures on screen when a refresh fetch fails): `if let fetchedAllTasks = try? await
+  allTasksResult { allTasks = fetchedAllTasks }`. Success still overwrites the set wholesale, so
+  nothing goes stale while the network works. `HomeService` is a `@StateObject` on `HomeView`,
+  inside the signed-in tree, so a last-known set cannot outlive an account switch.
+
+**Acceptance criteria**
+- [ ] Test first, watched red — and it had to be a **two-load** test to discriminate. The existing
+      `testLoad_scoreboardFetchFailure_stillLoadsTheScreen` fails the fetch on a FIRST load, where
+      `allTasks` is `[]` before and after, so it passes either way and pins nothing; a new
+      single-load test would have been vacuous the same way. The new test lands `[done]`, flips
+      the fake to `.failure`, loads again, and asserts the set survived.
+- [ ] Scoped red: `Executed 14 tests, with 1 failure` — the final assertion, `("[]") is not equal
+      to ("[…Closed…]")`. The precondition assertion passed, proving the first load did land the
+      history; the existing first-load test passed alongside, confirming it never pinned the bug.
+- [ ] Scoped green after the fix: 38 / 0 across `HomeServiceTests`, `ArrivalSurfaceRefreshTests`,
+      `ArrivalSurfaceTests`.
+- [ ] Full suite, full lint, sim build, coverage.
+- [ ] Committed, THEN red-checked one at a time; restore proven by re-running.
+- [ ] Landed through a PR with the close-out output pasted.
+
+**Evidence is the unit test, not a device verdict, and not a screenshot.** Firestore's default
+persistence serves offline reads from cache, so a failed `fetchAllTasks()` cannot practically be
+induced on E's phone; and per CLAUDE.md "Visual evidence", a folder is earned only by what a test
+cannot assert — this is asserted, so no folder.
