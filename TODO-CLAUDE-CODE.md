@@ -3001,14 +3001,19 @@ decision**; B, the trigger, the band and the pane are unchanged. Design record:
 **Conflicts reported (CLAUDE.md §7):** `ui-ux-pro-max` "bottom nav ≤ 5" — still six, still E's
 knowing call; C's 10pt/6pt spacing is off-grid → 8/8 under §2.
 
-### FEATURE: F-TabBar-SelectPill — C "Select Pill" at rest, B "Bento Bar" scrolled  [~] BUILT — awaiting E's device verdict
+### FEATURE: F-TabBar-SelectPill — C's labelled pill at rest, B's chip scrolled, ONE floating card  [~] ROUND 2 BUILT — awaiting E's device verdict
 
-At rest the bar is Design C: flat, full width, icons only — except the selected tab, which is a
-tinted pill holding its glyph AND its label; the other five share the width it leaves. Scrolled,
-Design B is unchanged. Design F's dot is retired and the morph is the pill contracting into the
-chip (one `indicatorMark`, sized by what it sits behind). `TabBarScrollActivity` already decides
-"near the top" with hysteresis, so the trigger is untouched. Files: `Theme/AppTabBar.swift`,
-`Theme/AppTabBarPresentation.swift`, `AppTabBarPresentationTests.swift`.
+**Round 1** put C on the flat full-width pane; E's device verdict the same night: *"the nav bar
+shouldn't extend down to the bottom of the screen… must stay floating as it is in the scrolling
+screenshot BUT MUST still display the labelled pill."* **Round 2 (what is built):** one floating
+card in BOTH states — the opaque pane is gone for good. At rest the card sits **wider and
+higher** (inset 8, lift 16) and the selected tab is a **capsule pill** holding glyph AND label;
+scrolled, the card **contracts inward and drops** (inset 12, lift 8 — B, unchanged) and the mark
+is B's chip. The other five slots share the width the pill leaves. `rowHeight` is now the card
+plus the LARGER lift (66) so the `safeAreaInset` never moves with the morph.
+`TabBarScrollActivity` already decides "near the top" with hysteresis, so the trigger is
+untouched. Files: `Theme/AppTabBar.swift`, `Theme/AppTabBarPresentation.swift`,
+`AppTabBarPresentationTests.swift`. E's five round-2 answers are verbatim in the design record.
 
 **Acceptance criteria**
 - [x] Pure rules TDD-pinned (12 "no member" errors on the red run, then green):
@@ -3028,8 +3033,28 @@ chip (one `indicatorMark`, sized by what it sits behind). `TabBarScrollActivity`
       assertions), restored with `git checkout --`, no marker left, full suite green again.
 - [x] Device build with `-allowProvisioningUpdates` (no account/profile trouble), installed on
       `wishwashwacky15` at `96681a3`; launch refused only because the phone was locked.
-- [ ] **E's device verdict** — the labelled pill at rest, the morph into B, and the three
-      tunables (pill height 34 vs 44, radius 11 vs capsule, 8/8 spacing). Change nothing before
-      E has looked.
-- [ ] `screenshots/tabbar-select-pill/` + README (mirroring was not running this session).
-- [ ] PR merged to `main` after the verdict; phone reinstalled from `main`.
+- [x] **E's round-1 device verdict** — *"I like what you've done"*; the pane must go, the bar
+      must float in both states with the pill. Answered with five questions; capsule corners
+      chosen, height/label/gap kept, B's 4pt card padding kept, "wider, lower AND drops".
+
+**Round 2 acceptance**
+- [x] Pure rules TDD-pinned (7 "no member" errors on the red run): the band is the card plus the
+      larger lift (`cardHeight` 50 + 16 = 66); the card is wider AND higher at rest
+      (`restingInset` 8 < 12, `restingLift` 16 > 8); the pill is a capsule
+      (`pillCornerRadius` = chipHeight / 2); the resting spacing is on the grid; the SE floor is
+      measured inside the resting card, (375 − 16 − 8 − 120) / 5 = **46.2 ≥ 44**.
+- [x] The flat pane, its 40-line history and `restingPaddingHorizontal` deleted; one card,
+      inset and lift picked by `isFloating`, bottom-aligned in the band; the chip keeps radius 11
+      so B is unchanged and the mark animates capsule → 11.
+- [x] Suite **2,504 / 0**, SwiftLint **0 / 711**, sim build green. Red-checked after the commit;
+      **three regressions together produced only two of three predicted failures — two of them
+      cancelled** (`restingLift` 8 made `max(8, 8)` equal `floatingLift`); re-run with the band
+      regression alone → exactly one predicted, one actual. Restored, no marker, green again.
+- [x] Device: rebuilt and reinstalled on `wishwashwacky15` at `e9cd764`, launch verified.
+- [ ] **E's round-2 device verdict** — the two positions (8/16 rest, 12/8 scrolled; E: *"I may
+      want to tweak this once I've actually seen it"*), the capsule → chip corner morph, and the
+      disc / search row sitting 8pt higher because the band grew. Change nothing before E has
+      looked.
+- [ ] `screenshots/tabbar-select-pill/` — holds E's round-1 screenshots (the rejected pane);
+      round-2 device shots still owed (mirroring was not running this session).
+- [ ] PR #29 merged to `main` after the verdict; phone reinstalled from `main`.

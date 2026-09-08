@@ -5,9 +5,12 @@ This is the design record and the why — the sibling of `SESSION-OPENER-tools-t
 partly supersedes. It is a `SESSION-OPENER-*` file: permanent, never archived (CLAUDE.md,
 "Session handoff").*
 
-**Status: BUILT, on the branch, awaiting E's device verdict.** Block `F-TabBar-SelectPill` in
-`TODO-CLAUDE-CODE.md` (⚠ CLAUDE CODE ADDITIONS) is the tickable summary. The PR merges only after
-E has looked at it on the phone — the sanctioned open-PR exception in CLAUDE.md's "Landing".
+**Status: ROUND 2 BUILT, on the branch, awaiting E's second device verdict.** Round 1 (C on the
+flat pane) was judged on the phone and corrected the same night — see "Round 2" at the bottom,
+which supersedes the pane wherever the sections below still mention it. Block
+`F-TabBar-SelectPill` in `TODO-CLAUDE-CODE.md` (⚠ CLAUDE CODE ADDITIONS) is the tickable
+summary. The PR (#29) merges only after E has looked — the sanctioned open-PR exception in
+CLAUDE.md's "Landing".
 
 **The canvas E judged from, again:**
 `https://claude.ai/code/artifact/767eacff-e616-4836-ab3a-ac842ddf42c9` — page **"All six
@@ -122,3 +125,91 @@ Reduce Motion) animates the whole reflow.
 
 `screenshots/tabbar-select-pill/` is owed once the phone can be captured (mirroring was not
 running this session; E connects it or sends the shots).
+
+---
+
+## Round 2 — E's first device verdict, and the answers (2026-09-08, same night)
+
+E judged round 1 on the phone from two screenshots and a GIF
+(`../Ethan's Screenshot Folder/non_scrolling-nav-tab-bar-test.jpeg`,
+`scrolling-nav-tab-bar-test.jpeg`, `nav-tab-bar-in-action.gif`). Verbatim:
+
+> *"I like what you've done but the main change this needs is that the nav bar shouldn't
+> extend down to the bottom of the screen like is shown in the screenshot
+> 'non_scrolling-nav-tab-bar-test'. The nav bar must stay floating as it is in screenshot
+> 'scrolling-nav-tab-bar-test' BUT MUST still display the labelled pill."*
+
+**So the opaque full-width pane — F's pane, which C's artboard had inherited — is gone for
+good.** E was asked five questions; the answers, verbatim where they matter:
+
+| question | E's answer |
+|---|---|
+| Same floating card at rest as scrolling, pane deleted? | *"Option 2 [floating, but positioned differently] but ALSO with 'the flat pane' gone for good."* |
+| What does scrolling change now? | *"Only the label (for now..)"* — the pill collapses to the chip; the card itself also moves, see the next two rows. |
+| Room for an end pill inside the card? | *"Keep B's 4pt"* — the card's inner padding is unchanged. |
+| The pill itself? | **Capsule corners.** Height, label and gap as shipped. |
+| How does the resting position differ? | *"Go with option 3, 'Both: wider, lower AND drops', but I may want to tweak this once I've actually seen it."* |
+
+### What it is now
+
+**One floating card, always.** Opaque `CardSurface`, 1pt `CardBorder`, soft shadow, 22pt
+corners, B's 8/4 inner padding — in BOTH states. What morphs:
+
+| | at rest (page near its top) | scrolled |
+|---|---|---|
+| inset from the sides | **8** (`restingInset`) | 12 (`floatingInset`, B's) |
+| lift off the bottom | **16** (`restingLift`) | 8 (`floatingLift`, B's, E-tuned) |
+| the selected mark | **capsule pill**, glyph + label | chip, 44×34, radius 11, glyph only |
+
+So the card is wider and higher at rest, and contracts inward and drops as you scroll while
+the label collapses. All four position numbers are named constants on the grid, because E
+said they may want to tweak them once seen.
+
+### The structural consequence — the band
+
+The card is the bar's `safeAreaInset`. If the inset's HEIGHT changed with the morph, every
+page's content would jump by the difference each time the morph fired — a scroll-driven
+change to the thing that insets the scroll view, which is a feedback loop waiting to happen.
+So **`rowHeight` is now the card plus the LARGER lift** — `cardHeight` (50, derived) + 16 =
+**66pt** — and the card is bottom-aligned inside that band, moving within it while the band
+does not. This is pinned by `testTheBandIsTheCardPlusTheLargerLiftSoTheInsetNeverMoves`.
+
+**Knock-on, all derived and all deliberate:** the band grew 58 → 66, so the search row's
+lift is now 98 (32 + 66), the disc's `bottomClearance` 166, and `appTabBarClearance()` 66.
+At rest the card's top edge sits at the band's top, so the disc still clears it by E's
+measured 32; while scrolling the card drops 8 and the gap reads 40.
+
+### Numbers that changed from round 1
+
+| constant | round 1 | round 2 | why |
+|---|---|---|---|
+| `restingPaddingHorizontal` | 8 (pane side padding) | **deleted** | no pane |
+| `restingInset` / `restingLift` | — | **8 / 16** | E's "wider, lower AND drops" |
+| `maximumRestingPillWidth` | 128 | **120** | the floor is now measured inside the resting card: (375 − 2·8 − 2·4 − 120) / 5 = **46.2 ≥ 44** |
+| pill corner radius | 11 (chip's) | **capsule** (`pillCornerRadius` = chipHeight / 2 = 17) | E's pick; the chip keeps 11 so B is unchanged, and the mark animates between the two |
+| `rowHeight` | 58 | **66** | the band, see above |
+
+### Verification (round 2, tree @ `e9cd764`)
+
+- RED: 7 "no member" errors on exactly the four new names. GREEN: 29 / 0 in the class, the
+  suite at **2,504 / 0**, SwiftLint **0 / 711**, sim build green.
+- Red-check, after the commit. **A lesson worth keeping:** three regressions injected together
+  produced only TWO of the three predicted failures — flattening `restingLift` to 8 made
+  `max(8, 8)` equal `floatingLift`, so the broken band formula gave the right answer by
+  coincidence and the band test passed. Two regressions cancelled. Re-run with the band
+  regression ALONE: exactly one predicted, exactly one actual. The register's "a symmetric
+  swap can be invisible" note has a second instance: **inject interacting regressions one at
+  a time, or predict the interaction.** Restored with `git checkout --`, no marker left, green
+  again at 2,504 / 0.
+- Device: rebuilt with `-allowProvisioningUpdates`, reinstalled on `wishwashwacky15`.
+
+### Open, for E on the phone (round 2)
+
+1. The two positions — 8/16 at rest, 12/8 scrolled. E: *"I may want to tweak this once I've
+   actually seen it."* Four named constants; change nothing before E has looked.
+2. The capsule pill against the 11pt chip — does the corner morph read as one shape?
+3. The disc and search row sit 8pt higher than before (the band grew). Acceptable?
+
+`screenshots/tabbar-select-pill/` is still owed; E's round-1 screenshots are the record of
+the pane E rejected and belong in it (E's GIF is 7.8 MB and stays in E's folder unless E
+wants it in the tree).
