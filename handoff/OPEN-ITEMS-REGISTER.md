@@ -54,10 +54,10 @@ after their figures were read (E's standing word) · sim `9181EBF9…` is SIGNED
 
 - [x] **Does the card stay now?** — **E: *"the card does stay across repeated pulls."*** PR #32
       merged on that verdict. RESOLVED the same morning it was raised.
-- [ ] **Keep or delete the two test places at home?** `Action Test 01/09/2026` and `routines
-      test` are left over from the place-actions and routines arcs. The code now handles
-      overlapping places properly (a public-launch user will have them legitimately), so this
-      is hygiene, not a fix. Deleting them from the Places screen is E's call. **NEW.**
+- [x] **Keep or delete the two test places at home?** — **E: *"leave them, I'll deal with
+      those two test places."*** `Action Test 01/09/2026` and `routines test` stay; E handles
+      them from the Places screen. **Claude Code must not delete them** — and the code no longer
+      needs them gone. RESOLVED.
 - [ ] **Should the widget's view-only files be made testable at all?** Recommendation is still
       to leave it. (carried)
 
