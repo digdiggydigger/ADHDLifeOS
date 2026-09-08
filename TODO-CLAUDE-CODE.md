@@ -3001,7 +3001,7 @@ decision**; B, the trigger, the band and the pane are unchanged. Design record:
 **Conflicts reported (CLAUDE.md §7):** `ui-ux-pro-max` "bottom nav ≤ 5" — still six, still E's
 knowing call; C's 10pt/6pt spacing is off-grid → 8/8 under §2.
 
-### FEATURE: F-TabBar-SelectPill — C's labelled pill at rest, B's chip scrolled, ONE floating card  [~] ROUND 2 BUILT — awaiting E's device verdict
+### FEATURE: F-TabBar-SelectPill — C's labelled pill at rest, B's chip scrolled, ONE floating card  [~] ROUND 3 BUILT — awaiting E's device verdict
 
 **Round 1** put C on the flat full-width pane; E's device verdict the same night: *"the nav bar
 shouldn't extend down to the bottom of the screen… must stay floating as it is in the scrolling
@@ -3051,10 +3051,28 @@ untouched. Files: `Theme/AppTabBar.swift`, `Theme/AppTabBarPresentation.swift`,
       cancelled** (`restingLift` 8 made `max(8, 8)` equal `floatingLift`); re-run with the band
       regression alone → exactly one predicted, one actual. Restored, no marker, green again.
 - [x] Device: rebuilt and reinstalled on `wishwashwacky15` at `e9cd764`, launch verified.
-- [ ] **E's round-2 device verdict** — the two positions (8/16 rest, 12/8 scrolled; E: *"I may
-      want to tweak this once I've actually seen it"*), the capsule → chip corner morph, and the
-      disc / search row sitting 8pt higher because the band grew. Change nothing before E has
-      looked.
-- [ ] `screenshots/tabbar-select-pill/` — holds E's round-1 screenshots (the rejected pane);
-      round-2 device shots still owed (mirroring was not running this session).
+- [x] **E's round-2 device verdict** — *"I like what you've done… some obvious spacing and
+      positioning things"*, then three asks with two annotated shots: move the whole bar down a
+      little, WIDEN it (marks ~6pt from the edges), more inner padding around the icon in the
+      highlight. Measuring first found the card was **60pt on the device while the metrics said
+      50** (the slot's 44 `minHeight` leaked into the row) — reproduced in a simulator probe.
+
+**Round 3 acceptance** (`8578a23`)
+- [x] Insets 8/12 → **4/8**, lifts 16/8 → **8/4**, highlight **44** tall in both states, pill
+      inner padding **16**; `slotHitOverflow` carries §3's target without growing the card, so
+      `cardHeight` 60 and `rowHeight` 68 are TRUE. SE floor (375 − 8 − 8 − 120) / 5 = **47.8**.
+- [x] Probe-verified right side up: card 59.0 both states; bottom +8.7 rest / +4.7 scrolled;
+      inset 4 / 8; glyph 9.3 above and 9.0 below inside the highlight (was 4.3 / 4.0).
+- [x] Tests: one new (hit overflow), two updated (47.8; lift floor 4). Red first: 2 "no member"
+      errors. Suite **2,505 / 0**, SwiftLint **0 / 711**, sim build green.
+- [x] Red-checked ONE regression at a time (the round-2 cancelling lesson): overflow negative,
+      scrolled lift 2, resting inset 12 — predicted 1 / 1 / 3, see the session report for actual.
+- [ ] Device reinstall at `8578a23` and **E's round-3 verdict** — the three asks as built, and
+      whether the chip growing to 44 tall reads right while scrolling (one constant if not).
+- [ ] `screenshots/tabbar-select-pill/` — rounds 1 and 2 filed (00–07, incl. E's two annotated
+      shots); round-3 device shots still owed as `08-`….
 - [ ] PR #29 merged to `main` after the verdict; phone reinstalled from `main`.
+
+**Logged from E's aside, NOT this block:** *"the 'YOU'RE AT HOME' notification box at the top of
+the Today page does not stay there when the user drag-reloads the Today page. Which is kind of
+pointless."* → register section B as a candidate; needs its own look at the Today refresh path.

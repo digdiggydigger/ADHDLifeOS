@@ -213,3 +213,65 @@ measured 32; while scrolling the card drops 8 and the gap reads 40.
 `screenshots/tabbar-select-pill/` is still owed; E's round-1 screenshots are the record of
 the pane E rejected and belong in it (E's GIF is 7.8 MB and stays in E's folder unless E
 wants it in the tree).
+
+---
+
+## Round 3 — E's second device verdict (2026-09-08, 04:41–05:18)
+
+Four device shots (both modes × both states) and E's word: *"I like what you've done… there are
+some obvious spacing and positioning things that need to be sorted out"*, then two annotated
+shots and three asks, verbatim:
+
+1. *"I want the whole nav bar moved down the screen a little bit to create more space."*
+2. *"I also want to WIDEN the horizontal width of the nav-tab menu bar"* — red marks drawn
+   about 6pt in from each screen edge.
+3. *"ALSO increase the inner-padding of the icon inside the blue highlight as shown in the
+   screenshot."*
+
+Also E's aside, logged as its own item and NOT part of this block: *"the 'YOU'RE AT HOME'
+notification box at the top of the Today page does not stay there when the user drag-reloads
+the Today page. Which is kind of pointless."*
+
+### What measuring found first (and the lesson)
+
+E's shots were measured pixel by pixel, then the real bar files were compiled into a
+standalone simulator probe with a ruler drawn every 8pt. **Position was exactly as designed**
+(bottom +16 at rest, +8 scrolled; every slot within 0.3pt of the arithmetic). **Height was
+not: the card was 60pt while `cardHeight` said 50.** The slot's 44pt `minHeight` — §3's touch
+target — leaked into the row: 44 + 2·8 = 60. So the metrics were lying by 10pt, and everything
+derived from the band (the disc's 32pt gap, `appTabBarClearance`) was 10pt out.
+
+**The measuring lesson:** my first pixel reader had the image upside-down (a `CGContext`
+bitmap is top-down; I flipped it), which made the card appear to move the WRONG way with the
+lift. Two hours of theory followed before the probe's painted bounds exposed the reader. A
+probe that draws its own ruler, and a reader checked against something whose position is
+KNOWN, before any conclusion — that is the rule now.
+
+### What changed (round 3, `8578a23`)
+
+| constant | round 2 | round 3 | why |
+|---|---|---|---|
+| `restingInset` / `floatingInset` | 8 / 12 | **4 / 8** | E's "WIDEN"; marks at ~6pt; halved onto the grid, the scrolled pair moved with them so the morph keeps its 4pt contraction |
+| `restingLift` / `floatingLift` | 16 / 8 | **8 / 4** | E's "moved down a little"; the lift floor drops from 8 to 4 (test updated), zero stays out |
+| `chipHeight` (pill and chip) | 34 | **44** | E's "inner-padding of the icon inside the blue highlight": ~10pt above and below the glyph instead of ~4; shared by both states so the morph stays width-only; at 44 the highlight IS the touch target |
+| `pillPaddingHorizontal` | 8 | **16** | same ask, horizontal |
+| `slotHitOverflow` | — | **max(0, (44 − chipHeight) / 2)** | the touch target is carried by negative vertical padding around the slot's `contentShape`, never by the card growing; zero at 44 |
+| `cardHeight` / `rowHeight` | 50 / 66 (false) | **60 / 68 (true)** | derived; verified on the probe at 59.0 (stroke inside) |
+| SE floor | 46.2 | **47.8** | (375 − 8 − 8 − 120) / 5 |
+
+Probe after the change, measured right side up: card 59.0 tall in both states; bottom +8.7
+above the safe edge at rest, +4.7 scrolled; inset 4 / 8; highlight 43.7 tall, glyph 9.3 above
+and 9.0 below; pill 112 wide with the glyph 19.7 in from its edge.
+
+### Verification (round 3)
+
+RED: 2 "no member" errors on `slotHitOverflow`. GREEN: suite **2,505 / 0**, SwiftLint
+**0 / 711**, sim build green. Red-check ONE regression at a time (the round-2 lesson): the
+overflow made negative, the scrolled lift 2, the resting inset 12 — see the TODO block for the
+predicted-versus-actual per run. Device reinstall follows.
+
+### Open, for E on the phone (round 3)
+
+The three asks, as built. The scrolled card is now 8pt from each edge and 4pt above the home
+indicator's safe line; E may want either back up a notch. And whether the chip growing to 44
+tall reads right while scrolling — it was B's 34, and it is one constant if not.
