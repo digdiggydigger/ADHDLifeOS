@@ -42,3 +42,14 @@ measured 32. Reproduced in a standalone simulator probe of the real bar files; f
 
 Round 3 (`8578a23`): insets 4 / 8, lifts 8 / 4, highlight 44 tall, pill padding 16, card
 60 = 44 + 16 by design. Device shots still owed as `08-`….
+
+## Round 3 on the phone — APPROVED (E's screenshots, 2026-09-08 05:41–05:43, branch @ `8578a23`)
+
+E: *"I have added three new screenshots… showing your most recent changes. I think it looks
+good."* This is the verdict the PR was waiting for. Same environment as round 2.
+
+| # | file | what it proves |
+|---|---|---|
+| 08 | `08-round3-light-rest-today-APPROVED.jpeg` | Rest: the card 4pt in from each edge and 8pt above the safe line, the "Today" capsule pill 44 tall with 16pt inner padding, the disc clearing the card. **Approved.** |
+| 09 | `09-round3-light-scrolled-APPROVED.jpeg` | Scrolled: the card contracted to 8pt in and dropped to 4pt up, the chip now 44 tall — B's chip grown with the pill so the morph stays width-only. **Approved as is.** |
+| 10 | `10-round3-captures-pill-closeup-APPROVED.jpeg` | The Captures pill up close: the tray glyph with ~9pt of air above and below, the badge sitting on the glyph's corner rather than the pill's, the label clear of the badge. The thing E's round-2 annotation (`07-`) asked for. |

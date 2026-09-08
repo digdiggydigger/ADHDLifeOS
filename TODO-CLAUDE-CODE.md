@@ -3001,7 +3001,7 @@ decision**; B, the trigger, the band and the pane are unchanged. Design record:
 **Conflicts reported (CLAUDE.md §7):** `ui-ux-pro-max` "bottom nav ≤ 5" — still six, still E's
 knowing call; C's 10pt/6pt spacing is off-grid → 8/8 under §2.
 
-### FEATURE: F-TabBar-SelectPill — C's labelled pill at rest, B's chip scrolled, ONE floating card  [~] ROUND 3 BUILT — awaiting E's device verdict
+### FEATURE: F-TabBar-SelectPill — C's labelled pill at rest, B's chip scrolled, ONE floating card  [x] COMPLETED
 
 **Round 1** put C on the flat full-width pane; E's device verdict the same night: *"the nav bar
 shouldn't extend down to the bottom of the screen… must stay floating as it is in the scrolling
@@ -3067,11 +3067,12 @@ untouched. Files: `Theme/AppTabBar.swift`, `Theme/AppTabBarPresentation.swift`,
       errors. Suite **2,505 / 0**, SwiftLint **0 / 711**, sim build green.
 - [x] Red-checked ONE regression at a time (the round-2 cancelling lesson): overflow negative,
       scrolled lift 2, resting inset 12 — predicted 1 / 1 / 3, see the session report for actual.
-- [ ] Device reinstall at `8578a23` and **E's round-3 verdict** — the three asks as built, and
-      whether the chip growing to 44 tall reads right while scrolling (one constant if not).
-- [ ] `screenshots/tabbar-select-pill/` — rounds 1 and 2 filed (00–07, incl. E's two annotated
-      shots); round-3 device shots still owed as `08-`….
-- [ ] PR #29 merged to `main` after the verdict; phone reinstalled from `main`.
+- [x] Device reinstalled at `8578a23` (05:35, launched) and **E's round-3 verdict, 05:43:
+      *"I think it looks good."*** Three approval screenshots; the 44-tall chip while scrolling
+      was accepted as is.
+- [x] `screenshots/tabbar-select-pill/` — rounds 1–3 filed (00–10): the rejected pane, E's two
+      annotated round-2 shots, and the three round-3 approvals, each row saying what it settled.
+- [ ] PR #29 merged to `main`; phone reinstalled from `main`. (Ticked in the close-out PR.)
 
 **Logged from E's aside, NOT this block:** *"the 'YOU'RE AT HOME' notification box at the top of
 the Today page does not stay there when the user drag-reloads the Today page. Which is kind of

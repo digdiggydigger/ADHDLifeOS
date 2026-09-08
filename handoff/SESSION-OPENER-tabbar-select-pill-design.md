@@ -5,12 +5,12 @@ This is the design record and the why — the sibling of `SESSION-OPENER-tools-t
 partly supersedes. It is a `SESSION-OPENER-*` file: permanent, never archived (CLAUDE.md,
 "Session handoff").*
 
-**Status: ROUND 2 BUILT, on the branch, awaiting E's second device verdict.** Round 1 (C on the
-flat pane) was judged on the phone and corrected the same night — see "Round 2" at the bottom,
-which supersedes the pane wherever the sections below still mention it. Block
-`F-TabBar-SelectPill` in `TODO-CLAUDE-CODE.md` (⚠ CLAUDE CODE ADDITIONS) is the tickable
-summary. The PR (#29) merges only after E has looked — the sanctioned open-PR exception in
-CLAUDE.md's "Landing".
+**Status: SETTLED — E approved round 3 on the phone, 2026-09-08 05:43: *"I think it looks
+good."*** Three device rounds in one night, each judged from E's own screenshots: round 1 (C on
+the flat pane) rejected, round 2 (one floating card) liked with three spacing asks, round 3
+approved. Read the rounds bottom-up for the current numbers; the sections directly below
+describe round 1 and are kept as the record of why. Block `F-TabBar-SelectPill` in
+`TODO-CLAUDE-CODE.md` (⚠ CLAUDE CODE ADDITIONS) is `[x] COMPLETED`; landed via PR #29.
 
 **The canvas E judged from, again:**
 `https://claude.ai/code/artifact/767eacff-e616-4836-ab3a-ac842ddf42c9` — page **"All six
