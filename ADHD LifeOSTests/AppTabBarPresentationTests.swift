@@ -99,19 +99,66 @@ final class AppTabBarPresentationTests: XCTestCase {
         XCTAssertEqual(cardHeight + AppTabBarMetrics.floatingLift, AppTabBarMetrics.rowHeight)
     }
 
-    /// The glyph and its indicator still have to fit, with room to breathe. E's "really cramped"
-    /// verdict was about a 20pt glyph with dead space beneath it; the glyph is 25 now and the
-    /// slack is the floating card's own 8pt padding. If a future tune squeezes below that, the
-    /// row is too short for what it carries.
-    func testTheRowLeavesTheGlyphStackRoomToBreathe() {
-        let glyphStack: CGFloat = 25
-            + AppTabBarMetrics.glyphToIndicatorSpacing
-            + AppTabBarMetrics.indicatorDotDiameter
-        let slackPerSide = (AppTabBarMetrics.rowHeight - glyphStack) / 2
+    /// The resting pill still has to fit, with room to breathe. E's "really cramped" verdict was
+    /// about a 20pt glyph with dead space beneath it; the pill is the chip's 34pt now and the
+    /// slack around it is at least the floating card's own 8pt padding. If a future tune
+    /// squeezes below that, the row is too short for what it carries.
+    func testTheRowLeavesThePillRoomToBreathe() {
+        let slackPerSide = (AppTabBarMetrics.rowHeight - AppTabBarMetrics.chipHeight) / 2
         XCTAssertGreaterThanOrEqual(
             slackPerSide, AppTabBarMetrics.floatingPaddingVertical,
-            "The resting row is tighter around its glyphs than the floating card is around its."
+            "The resting row is tighter around its pill than the floating card is around its chip."
         )
+    }
+
+    // MARK: - The resting pill (F-TabBar-SelectPill)
+
+    /// Design C's rule: the label belongs to the SELECTED slot AT REST, and nowhere else. Floating,
+    /// the selection is the icon-only chip (Design B, unchanged); unselected slots never carry a
+    /// label in either state.
+    func testShowsLabel_onlyForTheSelectedSlotAtRest() {
+        XCTAssertTrue(AppTabBarPresentation.showsLabel(isSelected: true, isFloating: false))
+        XCTAssertFalse(AppTabBarPresentation.showsLabel(isSelected: true, isFloating: true))
+        XCTAssertFalse(AppTabBarPresentation.showsLabel(isSelected: false, isFloating: false))
+        XCTAssertFalse(AppTabBarPresentation.showsLabel(isSelected: false, isFloating: true))
+    }
+
+    /// **The resting state's own "stops a seventh tab" test.** The selected pill takes what it
+    /// needs (capped) and the other five share the rest, so the floor to prove is the width of an
+    /// UNSELECTED slot beside the WIDEST pill the bar allows, on the narrowest supported iPhone:
+    /// (375 − 2·8 − 128) / 5 = 46.2, clear of §3's 44. A seventh tab would be 38.5 and fail.
+    func testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE() {
+        let width = AppTabBarPresentation.restingSlotWidth(
+            barWidth: AppTabBarPresentation.narrowestSupportedScreenWidth,
+            pillWidth: AppTabBarMetrics.maximumRestingPillWidth,
+            count: AppTabBarPresentation.tabs.count
+        )
+        XCTAssertEqual(width, 46.2, accuracy: 0.001)
+        XCTAssertGreaterThanOrEqual(width, AppTabBarPresentation.minimumTouchTarget)
+    }
+
+    /// With one slot there is nothing beside the pill to share the leftover; with none there is
+    /// no pill. Neither may divide by zero.
+    func testRestingSlotWidth_isZeroBelowTwoSlotsRatherThanDividingByZero() {
+        XCTAssertEqual(AppTabBarPresentation.restingSlotWidth(barWidth: 375, pillWidth: 100, count: 1), 0)
+        XCTAssertEqual(AppTabBarPresentation.restingSlotWidth(barWidth: 375, pillWidth: 100, count: 0), 0)
+    }
+
+    /// The pill morphs INTO the chip when the bar floats. A cap narrower than the chip would have
+    /// the mark grow as the bar contracts, which is the morph running backwards.
+    func testTheRestingPillIsNeverNarrowerThanTheChipItMorphsInto() {
+        XCTAssertGreaterThanOrEqual(
+            AppTabBarMetrics.maximumRestingPillWidth, AppTabBarMetrics.chipWidth
+        )
+    }
+
+    /// Design C drew 10pt inner padding and a 6pt icon-to-label gap; §2 has neither. Every spacing
+    /// the pill introduces sits on the 4/8/16/24 grid.
+    func testThePillsSpacingIsOnTheGrid() {
+        let grid: Set<CGFloat> = [4, 8, 16, 24]
+        XCTAssertTrue(grid.contains(AppTabBarMetrics.restingPaddingHorizontal))
+        XCTAssertTrue(grid.contains(AppTabBarMetrics.pillPaddingHorizontal))
+        XCTAssertTrue(grid.contains(AppTabBarMetrics.pillGlyphToLabelSpacing))
     }
 
     /// It must not sit flush on the home indicator either. The safe area already excludes the

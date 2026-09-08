@@ -66,11 +66,31 @@ enum AppTabBarPresentation {
     /// reads as a claim about hardware rather than a magic 375.
     static let narrowestSupportedScreenWidth: CGFloat = 375
 
-    /// Slots divide the bar evenly. `0` for an empty bar rather than a division by zero — the
-    /// list is a constant today, but the arithmetic is what the floor test leans on.
+    /// Slots divide the bar evenly — **the floating state's arithmetic** (Design B: six equal
+    /// slots in the card). `0` for an empty bar rather than a division by zero — the list is a
+    /// constant today, but the arithmetic is what the floor test leans on.
     static func slotWidth(barWidth: CGFloat, count: Int) -> CGFloat {
         guard count > 0 else { return 0 }
         return barWidth / CGFloat(count)
+    }
+
+    /// **The resting state's arithmetic** (Design C: the selected pill takes what it needs, the
+    /// others share the rest). The width of ONE unselected slot when the pill is `pillWidth`
+    /// wide, after the bar's own side padding. `0` below two slots: with one there is nothing
+    /// beside the pill to share the leftover, with none there is no pill.
+    static func restingSlotWidth(barWidth: CGFloat, pillWidth: CGFloat, count: Int) -> CGFloat {
+        guard count > 1 else { return 0 }
+        let leftover = barWidth - AppTabBarMetrics.restingPaddingHorizontal * 2 - pillWidth
+        return leftover / CGFloat(count - 1)
+    }
+
+    // MARK: - The label
+
+    /// Design C's rule, E's 2026-09-08 pick: the selected tab alone grows a label, and only
+    /// while the bar is at rest. Floating (Design B, unchanged) the selection is the icon-only
+    /// chip, and an unselected slot never carries a label in either state.
+    static func showsLabel(isSelected: Bool, isFloating: Bool) -> Bool {
+        isSelected && !isFloating
     }
 
     // MARK: - Accessibility
@@ -118,15 +138,9 @@ enum AppTabBarMetrics {
         chipHeight + floatingPaddingVertical * 2 + floatingLift
     }
 
-    /// Gap between a slot's glyph and its indicator. The concept drew 7; §2 has no 7.
-    static let glyphToIndicatorSpacing: CGFloat = 8
-
-    /// Design F's position mark: a 5pt accent dot under the selected glyph.
-    static let indicatorDotDiameter: CGFloat = 5
-
     /// One `matchedGeometryEffect` id, so the mark TRAVELS between slots instead of blinking out
-    /// and back. Block 2's chip inherits it, which is what lets the dot grow into the chip rather
-    /// than cross-fade.
+    /// and back. There is exactly one mark now — the resting pill and the floating chip are the
+    /// same view at two sizes — so this is purely the slot-to-slot slide on a tab change.
     static let indicatorID = "appTabBarIndicator"
 
     /// The count pill: 16pt round for a single digit, a capsule beyond that.
@@ -143,9 +157,10 @@ enum AppTabBarMetrics {
     static let floatingPaddingVertical: CGFloat = 8
     static let floatingPaddingHorizontal: CGFloat = 4
 
-    /// The selected indicator's OTHER form: the dot grows into a tinted chip behind the glyph.
-    /// 44×34 is the concept's, and the 44 is not a coincidence — it keeps §3's touch target
-    /// satisfied by the chip itself, not merely by the slot around it.
+    /// The selected indicator's floating form: the resting pill contracts into a tinted chip
+    /// behind the glyph. 44×34 is the concept's, and the 44 is not a coincidence — it keeps §3's
+    /// touch target satisfied by the chip itself, not merely by the slot around it. The pill
+    /// borrows the height and the corner radius, so the two are one shape at two widths.
     static let chipWidth: CGFloat = 44
     static let chipHeight: CGFloat = 34
     static let chipCornerRadius: CGFloat = 11
@@ -154,6 +169,28 @@ enum AppTabBarMetrics {
     /// more body to register against `CardSurface`'s near-black.
     static let chipTintLight: CGFloat = 0.12
     static let chipTintDark: CGFloat = 0.20
+
+    // MARK: - Design C, the resting state (F-TabBar-SelectPill)
+
+    /// At rest the selected slot is a tinted PILL holding glyph and label — E's 2026-09-08 call,
+    /// combining B and C from the original six: C at the top of the page, B once scrolled. The
+    /// pill is the chip's own height and corner radius, so the morph into it is the label
+    /// collapsing and nothing else.
+    ///
+    /// C drew a 10pt inner padding and a 6pt icon-to-label gap; neither is on §2's grid, and §2
+    /// beats the concept (CLAUDE.md §7) — both round to 8. The bar's own side padding is C's 8,
+    /// so an end tab's pill is never flush to the screen edge.
+    static let restingPaddingHorizontal: CGFloat = 8
+    static let pillPaddingHorizontal: CGFloat = 8
+    static let pillGlyphToLabelSpacing: CGFloat = 8
+
+    /// The widest a resting pill may be. This is what turns §3's floor into a GUARANTEE rather
+    /// than a font-metrics estimate: the five unselected slots share what the pill leaves, so
+    /// the floor test is (375 − 2·8 − 128) / 5 = 46.2 on the SE, whatever the label measures.
+    /// "Captures" — the longest label — needs ~99pt at the default size and ~122 at the bar's
+    /// largest clamped size (xxxLarge), so the cap only ever bites at the top of the range, where
+    /// the label's `minimumScaleFactor` absorbs it (§1: never clip, never truncate).
+    static let maximumRestingPillWidth: CGFloat = 128
 
     /// How far the floating card sits off the bottom of the safe area.
     ///
