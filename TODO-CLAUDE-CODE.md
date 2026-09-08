@@ -3306,8 +3306,12 @@ the bar has restored, the disc is STILL the pill; it expands only at ~5 s when a
 - [x] Full suite **2,546 / 0** (emulator up, 0 `9099` hits, 0 skipped), sim build green, app
       target **24.76% (11,192/45,206)** — denominator +10 over `1100a01`'s 45,196 (the rule and
       the reselect method), numerator +3.
-- [ ] Committed, THEN red-checked one at a time; restore proven.
-- [ ] Device: built and installed on E's phone from the branch.
+- [x] Committed `9a919a8`, THEN red-checked one at a time: the rule restores the disc on a POP
+      too — predicted 1 / actual 1; the root forgets the reset — predicted 1 test / actual 1
+      test (both wiring assertions). Restore proven 17 / 0.
+- [x] Device: built green at `9a919a8` (binary 20:50, no provisioning trouble), `App installed`
+      and `Launched` on E's phone. PR #37 open
+      (`https://github.com/digdiggydigger/ADHDLifeOS/pull/37`), awaiting E's device verdict.
 - [ ] **E's verdict on the phone:** scroll a tab down until the disc is the pill, re-tap the tab
       — the page scrolls to the top AND the disc is the full disc again. No UI journey can see
       this one: the disc's outer frame is 60×60 in both states by design.

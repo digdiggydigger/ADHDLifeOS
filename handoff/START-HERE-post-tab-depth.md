@@ -12,7 +12,15 @@ same move that writes your successor, at the END of your session, never at the s
 
 ## Where things stand
 
-**Nothing is in flight.** The tab depth arc (a re-tap pops to the tab's top-level page or scrolls
+**ONE thing is in flight — F-PillReTap, PR #37, on E's device verdict.** E's GIF (evening) showed
+the capture disc staying a pill after a re-tap scrolled the page to the top; the pill's inputs
+are the pan gesture and the tab-change reset, and a programmatic scroll is neither. The fix
+(`TabReselectionResponse.restoresCaptureDisc` + `RootView.reselectTab` in `RootView+Reselect.swift`)
+is on E's phone at `9a919a8`. "Yes" → `gh pr merge 37 --merge --delete-branch`, reinstall from
+main, tick the last box in the `F-PillReTap` TODO block, and write the register's fourteenth
+edition. Do not merge on your own judgment.
+
+Before that: the tab depth arc (a re-tap pops to the tab's top-level page or scrolls
 to the top; Nudges has a Back chevron; the "Search tasks" row hides over a pushed task detail)
 shipped in one PR on E's verdict, with E's two screenshots filed at `screenshots/tab-depth/`.
 The branch is deleted. **E's phone runs `main` @ `1100a01`**, so device behaviour is main's
@@ -49,7 +57,7 @@ build that has it.
 ## State gate — run before anything
 
 ```bash
-git branch --show-current            # expect main
+git branch --show-current            # fix/pill-retap until PR #37 merges, then main
 git status --short                   # must be empty
 git log --oneline -1                 # expect 1100a01 or later
 git log --oneline -1 origin/main     # same SHA
