@@ -89,14 +89,25 @@ final class AppTabBarPresentationTests: XCTestCase {
 
     // MARK: - The morph's geometry (F-Tools-2-Morph)
 
-    /// **The two states occupy exactly the same band.** E: *"why don't you reduce the size of the
-    /// solid pane view the same sizing as the floating tab bar?"* — so `rowHeight` is DERIVED
-    /// from the floating card's height plus its lift, and the resting pane is no taller than the
-    /// floating state needs. Equality, not merely "fits": slack would be the solid slab E
-    /// objected to creeping back.
-    func testTheRestingPaneIsExactlyTheFloatingStatesFootprint() {
+    /// **The band is ONE height, and both positions of the card fit inside it.** The card is the
+    /// bar's `safeAreaInset`; if its height changed between the two states, every page's content
+    /// would jump by the difference each time the morph fired. So `rowHeight` is DERIVED from the
+    /// card plus the LARGER of the two lifts, and the card moves inside a band that does not.
+    /// Equality, not merely "fits": slack would be the solid slab E objected to creeping back.
+    func testTheBandIsTheCardPlusTheLargerLiftSoTheInsetNeverMoves() {
         let cardHeight = AppTabBarMetrics.chipHeight + AppTabBarMetrics.floatingPaddingVertical * 2
-        XCTAssertEqual(cardHeight + AppTabBarMetrics.floatingLift, AppTabBarMetrics.rowHeight)
+        XCTAssertEqual(cardHeight, AppTabBarMetrics.cardHeight)
+        let largerLift = max(AppTabBarMetrics.restingLift, AppTabBarMetrics.floatingLift)
+        XCTAssertEqual(cardHeight + largerLift, AppTabBarMetrics.rowHeight)
+    }
+
+    /// E's 2026-09-08 pick for the two positions — "wider, lower AND drops": at rest the card is
+    /// wider (a smaller inset) and higher (a larger lift); scrolling it contracts inward and
+    /// settles down. Both inequalities are the design; a tune that flattened either would make
+    /// the two states the same card, which E did not choose.
+    func testTheCardIsWiderAndHigherAtRestAndContractsAndDropsOnScroll() {
+        XCTAssertLessThan(AppTabBarMetrics.restingInset, AppTabBarMetrics.floatingInset)
+        XCTAssertGreaterThan(AppTabBarMetrics.restingLift, AppTabBarMetrics.floatingLift)
     }
 
     /// The resting pill still has to fit, with room to breathe. E's "really cramped" verdict was
@@ -125,8 +136,9 @@ final class AppTabBarPresentationTests: XCTestCase {
 
     /// **The resting state's own "stops a seventh tab" test.** The selected pill takes what it
     /// needs (capped) and the other five share the rest, so the floor to prove is the width of an
-    /// UNSELECTED slot beside the WIDEST pill the bar allows, on the narrowest supported iPhone:
-    /// (375 − 2·8 − 128) / 5 = 46.2, clear of §3's 44. A seventh tab would be 38.5 and fail.
+    /// UNSELECTED slot beside the WIDEST pill the bar allows, on the narrowest supported iPhone,
+    /// inside the RESTING card: (375 − 2·8 inset − 2·4 card padding − 120) / 5 = 46.2, clear of
+    /// §3's 44. A seventh tab would be 38.5 and fail.
     func testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE() {
         let width = AppTabBarPresentation.restingSlotWidth(
             barWidth: AppTabBarPresentation.narrowestSupportedScreenWidth,
@@ -153,12 +165,20 @@ final class AppTabBarPresentationTests: XCTestCase {
     }
 
     /// Design C drew 10pt inner padding and a 6pt icon-to-label gap; §2 has neither. Every spacing
-    /// the pill introduces sits on the 4/8/16/24 grid.
-    func testThePillsSpacingIsOnTheGrid() {
+    /// the resting state introduces — the pill's own and the card's resting position — sits on
+    /// the 4/8/16/24 grid.
+    func testTheRestingStatesSpacingIsOnTheGrid() {
         let grid: Set<CGFloat> = [4, 8, 16, 24]
-        XCTAssertTrue(grid.contains(AppTabBarMetrics.restingPaddingHorizontal))
+        XCTAssertTrue(grid.contains(AppTabBarMetrics.restingInset))
+        XCTAssertTrue(grid.contains(AppTabBarMetrics.restingLift))
         XCTAssertTrue(grid.contains(AppTabBarMetrics.pillPaddingHorizontal))
         XCTAssertTrue(grid.contains(AppTabBarMetrics.pillGlyphToLabelSpacing))
+    }
+
+    /// E's 2026-09-08 pick: the pill has CAPSULE ends. Derived from the chip's height, so it stays
+    /// a capsule if the chip is ever re-tuned rather than drifting into a rounded rectangle.
+    func testThePillIsACapsule() {
+        XCTAssertEqual(AppTabBarMetrics.pillCornerRadius, AppTabBarMetrics.chipHeight / 2)
     }
 
     /// It must not sit flush on the home indicator either. The safe area already excludes the
