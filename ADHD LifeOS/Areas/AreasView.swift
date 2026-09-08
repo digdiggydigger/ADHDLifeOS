@@ -35,6 +35,8 @@ struct AreasView: View {
     @State var momentumPreferences: MomentumPreferences = .default
     @State private var showSettings = false
     @State private var isPresentingEditor = false
+    /// The grid's rows push by value; the re-tap resets this to pop them (E, 2026-09-08).
+    @State private var areasPath = NavigationPath()
 
     init(
         authService: AuthService,
@@ -67,7 +69,7 @@ struct AreasView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $areasPath) {
             Group {
                 switch service.state {
                 case .loading:
@@ -122,6 +124,10 @@ struct AreasView: View {
             .onChange(of: isPresentingEditor) { presented in
                 if !presented { Task { await service.load() } }
             }
+            .tabRoot(.areas, isAtRoot: !isPresentingEditor && areasPath.isEmpty) {
+                isPresentingEditor = false
+                areasPath = NavigationPath()
+            }
         }
     }
 
@@ -141,6 +147,7 @@ struct AreasView: View {
                 weekShareSection
             }
             .padding(16)
+            .tabRootScrollAnchor()
         }
         .captureDiscClearance()
         .refreshable { await service.load() }

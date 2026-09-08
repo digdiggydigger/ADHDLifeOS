@@ -85,6 +85,9 @@ struct TaskListView: View {
             }
             .background(Color.pageBackground.ignoresSafeArea())
             .navigationTitle("Tasks")
+            // The tab re-tap (E, 2026-09-08): the pushed detail is Tasks' only depth; the
+            // composer is a sheet and keeps its own dismissal.
+            .tabRoot(.tasks, isAtRoot: inspectingTask == nil, onPopToRoot: { inspectingTask = nil })
             // `.searchable` is GONE, and its absence is the bug fix (F-Search-1-Row). iOS 26
             // renders that field as a capsule pinned to the bottom of the screen and docks it into
             // a `TabView`'s bar; this app has no `TabView` — one folds a sixth tab into "More" —
@@ -185,6 +188,7 @@ struct TaskListView: View {
                 }
             }
             .padding(16)
+            .tabRootScrollAnchor()
         }
         // Tasks carries the search row, so it reserves the row's height on top of the disc's.
         .captureDiscClearance()

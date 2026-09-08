@@ -369,6 +369,7 @@ extension HomeView {
                     .sectionLabel()
                     .foregroundStyle(.secondary)
                 Text("Today")
+                    .accessibilityIdentifier("homeTitle")
                     .font(.largeTitle.bold())
                     .tracking(-0.5)
             }

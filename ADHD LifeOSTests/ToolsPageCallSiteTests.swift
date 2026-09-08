@@ -200,12 +200,26 @@ final class ToolsPageCallSiteTests: XCTestCase {
 
     /// The empty state's way out pushes Places INSIDE the Tools stack, so it lands under the
     /// capture disc exactly as the Places card's push does and must ask for the same room.
+    ///
+    /// Since F-TabDepth-1 (2026-09-08) the section no longer pushes anything itself: its button
+    /// calls `onOpenPlaces`, `ToolsView` turns that into its one flag push, and the clearance
+    /// lives on `ToolsView`'s `.places` destination — so all three links of that chain are read,
+    /// because any one of them broken puts the last row back under the disc.
     func testTheEmptyStatePushClearsTheCaptureDisc() throws {
-        let source = try Self.code("Tools/ToolsRoutinesSection.swift")
+        let section = try Self.code("Tools/ToolsRoutinesSection.swift")
+        let tools = Self.collapsed(try Self.code("Tools/ToolsView.swift"))
         XCTAssertTrue(
-            Self.collapsed(source).contains("PlacesListView(client: client) .captureDiscClearance()"),
-            "The Routines empty state pushes `PlacesListView` without the capture-disc"
-                + " clearance, so that screen's last row sits under an opaque 60pt circle."
+            section.contains("onOpenPlaces()"),
+            "The Routines empty state no longer routes its push through `onOpenPlaces`."
+        )
+        XCTAssertTrue(
+            tools.contains("ToolsRoutinesSection(client: placesClient) { pushedDestination = .places }"),
+            "`ToolsView` no longer turns the empty state's `onOpenPlaces` into its Places push."
+        )
+        XCTAssertTrue(
+            tools.contains("PlacesListView(client: placesClient) .captureDiscClearance()"),
+            "`ToolsView` pushes `PlacesListView` without the capture-disc clearance, so that"
+                + " screen's last row sits under an opaque 60pt circle."
         )
     }
 

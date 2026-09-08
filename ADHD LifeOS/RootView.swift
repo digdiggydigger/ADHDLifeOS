@@ -37,6 +37,8 @@ struct RootView: View {
     /// surface is open. Owned here because the ROW is app-level — it shares a row with the capture
     /// disc — while each screen presents its own SURFACE, which is where the data lives.
     @StateObject private var searchModel = AppSearchModel()
+    /// The tab re-tap rule's meeting point (E, 2026-09-08) — see `TabNavigation.swift`.
+    @StateObject private var tabNavigation = TabNavigationCoordinator()
     @State var selectedTab: AppTab = .today  // Internal, not private: RootView+Doors reaches it.
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
@@ -66,6 +68,14 @@ struct RootView: View {
     @StateObject var focusService = FocusSessionService.withLiveActivityMirroring(
         logger: FirebaseFocusSessionAdapter()
     )
+
+    /// What the bottom row searches RIGHT NOW: the selected tab's scope, masked to `.none` while
+    /// that tab is deeper than its top-level page (F-TabDepth-2 — E's screenshot of a pushed
+    /// task detail with "Search tasks" still beside the disc). The depth is what every tab root
+    /// reports into the coordinator, so this file never learns how each tab pushes.
+    private var searchScope: AppSearchScope {
+        AppSearchScope.scope(for: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))
+    }
 
     /// The pill is a STICKY scrolled-down state (F-PillStay, E's call 2026-08-31: "stay in
     /// pill form until the page is scrolled upwards again"). An open fan forces the full disc:
@@ -185,15 +195,15 @@ struct RootView: View {
                 // F-PillStay's one non-scroll restore: a fresh tab starts with the full disc —
                 // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
                 // call beyond E's stated rule; E can veto.)
-                .onChange(of: selectedTab) { tab in
+                .onChange(of: selectedTab) { _ in
                     discScrollActivity.reset()
                     tabBarScrollActivity.reset()
-                    // Driven from the SELECTION, not from each screen's `onAppear`.
-                    // `AppTabContent` keeps every visited tab alive, so appearance callbacks fire
-                    // once and then effectively never again — a screen registering its own scope
-                    // would leave whichever tab registered last in charge forever.
-                    searchModel.activate(AppSearchScope.scope(for: tab))
                 }
+                // Driven from the SELECTION and the tab's DEPTH, never from a screen's `onAppear`:
+                // `AppTabContent` keeps every visited tab alive, so appearance callbacks fire once
+                // and then effectively never again — a screen registering its own scope would
+                // leave whichever tab registered last in charge forever.
+                .onChange(of: searchScope) { searchModel.activate($0) }
                 // Our bar, in the space the system's used to occupy. A bottom safe-area INSET:
                 // it positions the bar correctly, insets every scroll view so the last row still
                 // clears it, and — the point of E's last verdict — leaves the content itself
@@ -214,7 +224,8 @@ struct RootView: View {
                     AppTabBar(
                         selection: $selectedTab,
                         captureInboxCount: captureInboxCount,
-                        isFloating: tabBarScrollActivity.isFloating
+                        isFloating: tabBarScrollActivity.isFloating,
+                        onReselect: { tabNavigation.reselect($0) }
                     )
                 }
                 .blur(radius: isFabOpen ? 4 : 0)
@@ -262,6 +273,7 @@ struct RootView: View {
                     await focusService.restorePersistedSprint()
                 }
                 .environmentObject(searchModel)
+                .environmentObject(tabNavigation)
                 .task { await refreshCaptureInboxCount() }
                 // Any capture written, sorted, promoted or binned anywhere in the app moves this
                 // number — the same signal every other screen reloads on.

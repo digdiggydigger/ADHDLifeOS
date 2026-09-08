@@ -100,6 +100,7 @@ struct HomeView: View {
     /// TaskListView pattern, since the rows live in a LazyVStack inside this stack.
     @State var inspectingTask: TaskSummary?
     @State var isPresentingWeekReview = false
+    @State var homePath = NavigationPath()  // The life-area rows push by value; see +TabRoot.
     /// Variation B's arrival card (block 4c) — `nil` away from every place, or when the place
     /// has nothing open. Internal for `HomeMomentumSections`, which refreshes it.
     @State var arrivalSurface: ArrivalSurface?
@@ -152,7 +153,7 @@ struct HomeView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $homePath) {
             Group {
                 switch homeService.state {
                 case .loading:
@@ -176,6 +177,7 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .tabRoot(.today, isAtRoot: isAtTabRoot, onPopToRoot: popToTabRoot)
             .sheet(isPresented: $showSettings) {
                 SettingsView(authService: authService)
                     .keyboardDismissal()
@@ -243,9 +245,7 @@ struct HomeView: View {
             // `nil` to the Home Screen at the exact moment a sprint started (caught in-simulator by
             // reading the App Group container, 2026-08-20). `@State`/`@StateObject` reads below are
             // unaffected: those go through storage that is always current.
-            .onChange(of: widgetSprint) { sprint in
-                publishWidgetSnapshot(sprint: sprint)
-            }
+            .onChange(of: widgetSprint) { publishWidgetSnapshot(sprint: $0) }
             .task {
                 await homeService.load()
                 // The Active Goal may have changed (a task closed, a new one topping the list),
@@ -335,6 +335,7 @@ struct HomeView: View {
                     }
                 }
                 .padding()
+                .tabRootScrollAnchor()
             }
             // Today's last card — the week-review door — ended flush against the tab bar, which
             // is where the capture disc floats (E, 2026-08-29).

@@ -95,5 +95,12 @@ struct RootBottomOverlay: View {
             reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
             value: focusService.isActive
         )
+        // F-TabDepth-2: the row leaves and returns on the same spring — a pushed task detail
+        // sees it slide away rather than pop beside the disc. Keyed on the scope, so the timer
+        // bar's own trigger above is untouched.
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+            value: searchScope
+        )
     }
 }

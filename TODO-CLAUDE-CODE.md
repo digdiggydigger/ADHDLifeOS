@@ -3150,3 +3150,126 @@ through the re-check; the inbox precedent keeps last-known on failure, and this 
 **Logged from E's aside at 06:20, NOT this block:** *"we need to remove the 'search tasks'
 search bar from a full view task screen"* — `02-task-detail-at-place-home-open.jpeg` shows the
 Tasks tab's bottom search row still on screen with a task detail pushed. → register section B.
+
+---
+
+## Tab depth arc — E's two navigation asks, 2026-09-08 (branch `feature/tab-depth`, off `main` @ `38b309c`)
+
+E, 06:20: *"remove the 'search tasks' search bar from a full view task screen."* E, ~07:00:
+*"The nav bar tab items need to direct the user back to that tab item's top-level page. Example:
+when on the Today tab, if the user navigates into 'Nudges', there is no way to get back to the
+Today main page. If the user taps the tab they are already on, BUT THEY ARE NOT AT THE TOP-LEVEL
+PAGE then that tab needs to return to the top-level page."* Asked four questions; E took the
+recommended answer to each: **scroll to top on a re-tap at the top level; Nudges gets a visible
+Back control; sheets are untouched; one arc, pop-to-root first.**
+
+**What the investigation found:** the bar's button only sets the selection, so a re-tap is a
+no-op by construction. No tab holds a navigation path the root could reset. Today's Nudges
+screen hides the navigation bar and draws no back control, so the edge swipe was the only way
+out. And a simulator probe (`scratchpad/navprobe`, iOS 26.5, photographed) settled what CAN pop
+what: a closure-link push and a flag push are invisible to the stack's `NavigationPath`
+(`count` stays 0) and **a path reset pops neither**; clearing a flag pops its screen; a value
+push counts and a reset pops it; and a closure push NESTED above a value or flag screen
+collapses with it. So the root cannot pop anyone's stack from outside — each root must pop
+itself — and Tools, whose top-level pushes were closure links, had to change how it pushes.
+
+### FEATURE: F-TabDepth-1-PopToRoot — a re-tap returns to the tab's top-level page, or scrolls to the top there; Nudges gets a Back control  [x] COMPLETED
+
+- `TabNavigation.swift`: `TabReselectionResponse.response(isAtRoot:)` (the rule),
+  `TabNavigationCoordinator` (re-tap counts DOWN, depth UP; `isAtRoot` defaults true),
+  `TabRootScrollAnchor`, and `.tabRoot(_:isAtRoot:onPopToRoot:)` — a `ScrollViewReader`
+  modifier every tab root applies INSIDE its stack.
+- `AppTabBarPresentation.tapOutcome(current:tapped:)` — select vs reselect; `AppTabBar` routes
+  through it and calls `onReselect`; `RootView` owns the coordinator and injects it.
+- Six roots wired: Today (four flags + a `homePath` for the value pushes, in `HomeView+TabRoot`),
+  Tasks (one flag), Areas (a flag + `areasPath`), Journal (two flags), Captures (one flag),
+  Tools (ONE flag — its two closure links became a `pushedDestination` flag push; the closure
+  links deeper in that stack collapse with it, per the probe).
+- `NudgesView` shows the bar with only `TaskDetailView`'s Back chevron on it (empty inline
+  title, hidden background).
+
+**Acceptance criteria**
+- [x] Tests first, watched red (`cannot find 'TabReselectionResponse'`, `'TabNavigationCoordinator'`,
+      `no member 'tapOutcome'`): `TabNavigationTests` (8), `TabNavigationCallSiteTests` (6 —
+      every root calls the modifier and carries the anchor, the bar routes through the rule,
+      RootView injects, no pushed screen hides the bar without a back control, Tools pushes by
+      flag), and `TabReselectionJourneyUITests` (3 — E's Today → Nudges → re-tap journey, the
+      Nudges Back control, and the top-level re-tap scrolling by FRAME).
+- [x] Scoped unit run GREEN: 50 / 0 across the two new classes plus `AppSearchCallSiteTests`
+      and `AppTabBarPresentationTests`. Touched-file and full lint **0 / 717**.
+- [x] **The UI journey GREEN as one class run — 3 / 0 (452 s), the tenth run; sim ERASED after
+      every one of the ten.** Everything the journey caught was in the HARNESS or the journey,
+      never the app: `UITestSession.openTab` returns early on an already-selected slot, so it had
+      never re-tapped (`reTapToday`); `staticTexts["Today"]` matched the tab bar's pill label
+      (`homeTitle`); the first anchor overshot by 16 pt AND added 16 pt of dead space at the top
+      of every tab (`.tabRootScrollAnchor()` on the padded root); a fresh account's Today is too
+      short to scroll until its sections load; and the late "Save Password?" sheet swallowed a
+      Back tap, then a door tap ("not hittable" on a door that existed at y = 542), then two
+      swipes — the journey now waits for HITTABLE, sweeping the sheet and any springboard alert
+      before every tap and swipe it depends on (`openNudgesFromToday`, `settleSystemSurfaces`).
+- [x] Full suite **2,540 / 0** (emulator up, 0 `9099` hits), lint **0 / 717**, sim build green,
+      app target **24.76% (11,188/45,189)** — denominator +224 (the new view code; the two new
+      files are view state the journey reaches, not a unit test). Committed `639cf24`, THEN
+      red-checked one at a time: rule-always-scrolls predicted 1 / actual 1; Tools-forgets-the-
+      modifier predicted 1 / actual 1; restore proven 14 / 0. One earlier full-suite failure was
+      `ToolsPageCallSiteTests.testTheEmptyStatePushClearsTheCaptureDisc` reading the OLD Tools
+      push; rewritten to follow the new three-link chain (section → `onOpenPlaces` → ToolsView's
+      `.places` destination with the clearance).
+- [x] Device: built green at `96aa629` (09:00); the first install FAILED — **E's phone was out
+      of storage** (`No space left on device`) — E freed space and it installed and relaunched
+      **09:22**. The phone is on the branch build.
+- [x] **E's verdict on the phone, 2026-09-08 evening: *"All 4 checks were successful."*** (Today
+      → Nudges → re-tap; the Nudges Back chevron; a re-tap at the top level scrolling up) —
+      deferred by E to the same sitting as block 2, with E's screenshot of the chevron filed at
+      `screenshots/tab-depth/00-`.
+- [x] PR #35 open (`https://github.com/digdiggydigger/ADHDLifeOS/pull/35`), awaiting E's device
+      verdict. Register + opener at close-out.
+
+### FEATURE: F-TabDepth-2-SearchRowAtRoot — the bottom "Search tasks" row hides while a task detail is pushed  [x] COMPLETED
+
+E, 2026-09-08 06:20, with `screenshots/arrival-card-refresh/02-task-detail-at-place-home-open.jpeg`:
+*"we need to remove the 'search tasks' search bar from a full view task screen such as the one
+shown in one of the screenshots."* The row is mounted once at the root (`RootBottomOverlay`) and
+`RootView` derived its scope from `selectedTab` ALONE, so the root never learned the tab had gone
+deeper. Block 1's coordinator already carries each tab's depth; this block reads it.
+
+- `AppSearchScope.scope(for:isAtRoot:)` — `.none` for any tab below its top-level page, **no
+  default** for `isAtRoot` (a caller that forgot it would put the row back under the pushed
+  screen). The one-argument form is gone; every caller states the depth.
+- `RootView.searchScope` — the selected tab's scope masked by `tabNavigation.isAtRoot(selectedTab)`;
+  `.onChange(of: searchScope)` feeds the model, so a tab switch AND a push/pop both move it — and
+  switching back to Tasks with its detail still pushed keeps the row hidden, which the old wiring
+  would have got wrong from the other side.
+- `RootBottomOverlay` gains a second `.animation(value: searchScope)` on the house spring: the row
+  leaves and returns on it. **Judgment call E can veto:** the same spring now fades the row on a
+  tab switch too (it used to pop with the hard-cut tab content).
+- Built on `feature/tab-depth` on top of block 1 (E, 2026-09-08 late morning: the three block-1
+  checks are deferred to the same phone sitting as block 2), so PR #35 carries the whole arc.
+
+**Acceptance criteria**
+- [x] Tests first, watched red: `AppSearchScopeTests` (6, was 4 — `extra argument 'isAtRoot'`
+      ×5 at compile), then with the rule in and the root still feeding `isAtRoot: true`,
+      `AppSearchCallSiteTests` red on its own assertions (3 failures across 2 tests: the root
+      derives from tab AND depth; the overlay animates on the scope), then
+      `SearchRowDepthJourneyUITests` red against that build at *"E's screenshot, unchanged"*
+      (162 s, the row still in the tree with the detail pushed). `seedTask` hoisted to
+      `UITestSession` (`UITestFixtures.swift`); `SignedInJourneySupport`'s copy delegates.
+- [x] Scoped unit run GREEN: 34 / 0 across `AppSearchScopeTests`, `AppSearchCallSiteTests`,
+      `AppSearchModelTests`, `TabNavigationTests`, `TabNavigationCallSiteTests`.
+- [x] **The UI journey GREEN — 1 / 0 (132 s)**, sim ERASED after both runs: the row is on the
+      list, gone once the seeded task's detail is pushed, and back once block 1's Tasks re-tap
+      pops it (the detail's title field gone). Its two attachments show exactly that.
+- [x] Full suite **2,543 / 0** (emulator up, 0 `9099` hits, 0 skipped), lint **0 / 719**, sim
+      build green, app target **24.76% (11,189/45,196)** — denominator +7 over block 1's 45,189
+      (the guard, the computed scope, the animation), numerator +1.
+- [x] Committed `c4fba78`, THEN red-checked one at a time: the rule ignores the depth —
+      predicted 2 / actual 2 (the two depth tests); the root feeds `isAtRoot: true` — predicted
+      1 / actual 1 (the call-site derivation guard). Restore proven 13 / 0.
+- [x] Device: built green at `c4fba78` (binary 12:06, `-allowProvisioningUpdates`, no
+      provisioning trouble) and `App installed` at 12:07 on E's phone — BOTH blocks. The launch
+      was refused because the phone was LOCKED (`NSLocalizedFailureReason … Locked`); E opens
+      it by hand, force-quit first.
+- [x] **E's verdict on the phone, 2026-09-08 evening: *"All 4 checks were successful."*** — the
+      row gone over a pushed task detail (E's screenshot, `screenshots/tab-depth/01-`), back on
+      the list; block 1's three checks passed in the same sitting. PR #35 merged on that verdict;
+      phone reinstalled from main.

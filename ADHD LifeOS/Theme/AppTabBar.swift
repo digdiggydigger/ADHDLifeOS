@@ -42,6 +42,8 @@ struct AppTabBar: View {
     /// so the resting bar can still be built (previews, and any caller with no scroll to speak
     /// of) without pretending to know where the page is.
     var isFloating: Bool = false
+    /// A tap on the already-selected tab. Defaulted so previews and probes need not wire it.
+    var onReselect: (AppTab) -> Void = { _ in }
 
     @Namespace private var indicatorNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -126,7 +128,12 @@ struct AppTabBar: View {
         let badgeCount = slot.tab == .captures ? captureInboxCount : 0
         let showsLabel = AppTabBarPresentation.showsLabel(isSelected: isSelected, isFloating: isFloating)
         return Button {
-            selection = slot.tab
+            switch AppTabBarPresentation.tapOutcome(current: selection, tapped: slot.tab) {
+            case .select(let tab):
+                selection = tab
+            case .reselect(let tab):
+                onReselect(tab)
+            }
         } label: {
             HStack(spacing: AppTabBarMetrics.pillGlyphToLabelSpacing) {
                 glyph(slot, isSelected: isSelected, badgeCount: badgeCount)

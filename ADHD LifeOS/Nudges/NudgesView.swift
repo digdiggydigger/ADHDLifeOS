@@ -19,6 +19,7 @@ struct NudgesView: View {
     /// The add sheet's height. Starts medium and grows to large when the Custom day row opens.
     @State private var addDetent: PresentationDetent = .medium
     @State private var momentumPreferences: MomentumPreferences = .default
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         Group {
@@ -43,7 +44,17 @@ struct NudgesView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.pageBackground.ignoresSafeArea())
-        .toolbar(.hidden, for: .navigationBar)
+        // The bar stays, with only a back control on it — E's report (2026-09-08): with it
+        // hidden "there is no way to get back to the Today main page", the edge swipe being the
+        // one way out. The header below is the title, so the bar's own title is empty and its
+        // background hidden; the control is `TaskDetailView`'s chevron, the house pattern.
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) { backButton }
+        }
         .sheet(isPresented: $isPresentingAdd) { addSheet.keyboardDismissal() }
         .task {
             await service.load()
@@ -118,6 +129,18 @@ struct NudgesView: View {
         // it to scroll to the disc sat on it permanently — E's report, 2026-08-29.
         .captureDiscClearance()
         .refreshable { await service.load() }
+    }
+
+    /// Mirrors the system back button (chevron + label), as `TaskDetailView` does.
+    private var backButton: some View {
+        Button {
+            dismiss()
+        } label: {
+            Label("Back", systemImage: "chevron.backward")
+                .labelStyle(.titleAndIcon)
+        }
+        .accessibilityIdentifier("nudgesBackButton")
+        .accessibilityLabel("Back")
     }
 
     private func header(dueCount: Int) -> some View {

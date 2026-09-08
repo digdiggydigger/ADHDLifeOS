@@ -23,7 +23,7 @@ enum AppSearchScope: Equatable {
     case none
     case tasks
 
-    /// Which scope a tab is in.
+    /// Which scope a tab is in, given whether that tab is at its top-level page.
     ///
     /// **Driven by `selectedTab`, deliberately, and this is the trap of the arc.**
     /// `AppTabContent` keeps every visited tab alive so scroll position and `NavigationStack`
@@ -32,11 +32,21 @@ enum AppSearchScope: Equatable {
     /// right and silently leave whichever tab registered last in charge forever. A pure function
     /// of a value that changes on every switch cannot go wrong that way.
     ///
+    /// **And by the tab's depth (F-TabDepth-2), with no default.** E's screenshot of 2026-09-08:
+    /// a task's detail pushed from the list and *"Search tasks"* still beside the capture disc,
+    /// searching a list the user could not see. The row is mounted once at the root, and the
+    /// root learned the tab but never the depth. The depth is what every tab root reports into
+    /// `TabNavigationCoordinator` (block 1), and a tab below its top-level page has no scope —
+    /// whatever tab it is, so Captures and Journal inherit the rule the day they gain a case.
+    /// `isAtRoot` has no default on purpose: a caller that forgets it would put the row back
+    /// under the pushed screen, which is the bug this parameter exists to end.
+    ///
     /// Captures and Journal arrive in blocks 2 and 3 **with their screens**. Adding their cases
     /// now would ship two scopes nothing renders — this repo's most repeated defect in its
     /// gated-off form — and the exhaustive `switch` in each surface is what forces them to be
     /// handled when they land.
-    static func scope(for tab: AppTab) -> AppSearchScope {
+    static func scope(for tab: AppTab, isAtRoot: Bool) -> AppSearchScope {
+        guard isAtRoot else { return .none }
         switch tab {
         case .tasks:
             return .tasks
