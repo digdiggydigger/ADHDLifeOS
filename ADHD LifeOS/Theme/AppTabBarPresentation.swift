@@ -167,19 +167,35 @@ enum AppTabBarMetrics {
     /// was already on it and rounded onto it where it was not (the concept drew a 6/4 inner
     /// padding; 8/4 is the nearest grid pair and reads identically at this size). Since
     /// 2026-09-08 the card is the bar in BOTH states; `floatingInset` / `floatingLift` are its
-    /// SCROLLED position, `restingInset` / `restingLift` its resting one.
-    static let floatingInset: CGFloat = 12
+    /// SCROLLED position, `restingInset` / `restingLift` its resting one. **The inset is 8, down
+    /// from the concept's 12**, on E's second device verdict — *"WIDEN the horizontal width"* —
+    /// so the scrolled card still contracts from the resting 4, by the same 4pt as before.
+    static let floatingInset: CGFloat = 8
     static let floatingCornerRadius: CGFloat = 22
     static let floatingPaddingVertical: CGFloat = 8
     static let floatingPaddingHorizontal: CGFloat = 4
 
     /// The selected indicator's floating form: the resting pill contracts into a tinted chip
-    /// behind the glyph. 44×34 is the concept's, and the 44 is not a coincidence — it keeps §3's
-    /// touch target satisfied by the chip itself, not merely by the slot around it. The pill
-    /// borrows the height and the corner radius, so the two are one shape at two widths.
+    /// behind the glyph. 44 wide is the concept's, and not a coincidence — it keeps §3's touch
+    /// target satisfied by the chip itself, not merely by the slot around it.
+    ///
+    /// **44 tall since E's 2026-09-08 device verdict** (*"increase the inner-padding of the icon
+    /// inside the blue highlight"*), up from the concept's 34: the ~25pt glyph now has ~10pt
+    /// above and below it instead of ~4. The height is shared by the pill, so the morph between
+    /// them stays width-only — and at 44 the highlight IS the touch target, so `slotHitOverflow`
+    /// is zero and the card is exactly what the metrics say.
     static let chipWidth: CGFloat = 44
-    static let chipHeight: CGFloat = 34
+    static let chipHeight: CGFloat = 44
     static let chipCornerRadius: CGFloat = 11
+
+    /// How far each slot's HIT AREA may extend above and below the highlight to reach §3's 44pt,
+    /// without the card growing to hold it. Round 2 shipped a 60pt card that the metrics called
+    /// 50: the slot's `minHeight` leaked into the row. The overflow is applied as negative
+    /// vertical padding around the slot's `contentShape`, so the layout stays the chip's height
+    /// while taps a little above or below the highlight still land.
+    static var slotHitOverflow: CGFloat {
+        max(0, (AppTabBarPresentation.minimumTouchTarget - chipHeight) / 2)
+    }
 
     /// Accent at 12% in light and 20% in dark: the same tint reads as a wash on white and needs
     /// more body to register against `CardSurface`'s near-black.
@@ -194,10 +210,11 @@ enum AppTabBarMetrics {
     /// and the corners squaring off; nothing else about the mark changes.
     ///
     /// C drew a 10pt inner padding and a 6pt icon-to-label gap; neither is on §2's grid, and §2
-    /// beats the concept (CLAUDE.md §7) — both round to 8. The card's own inner padding stays
-    /// B's 4 in both states (E: *"Keep B's 4pt"*), so an end tab's pill sits 4pt inside the
-    /// card's edge, exactly where the chip does.
-    static let pillPaddingHorizontal: CGFloat = 8
+    /// beats the concept (CLAUDE.md §7). The gap rounds to 8. **The inner padding is 16 since
+    /// E's 2026-09-08 device verdict** (*"increase the inner-padding of the icon inside the blue
+    /// highlight"*), up from the 8 that shipped in round 2. The card's own inner padding stays
+    /// B's 4 in both states (E: *"Keep B's 4pt"*).
+    static let pillPaddingHorizontal: CGFloat = 16
     static let pillGlyphToLabelSpacing: CGFloat = 8
 
     /// E's pick: **capsule ends** on the pill. Derived from the chip's height so it stays a
@@ -211,32 +228,37 @@ enum AppTabBarMetrics {
     /// pane that ran to the bottom of the screen is gone on E's first device verdict (*"the nav
     /// bar shouldn't extend down to the bottom of the screen"*): the card floats in BOTH states,
     /// and the two positions differ in both axes so the morph is legible. At rest it is wider
-    /// (inset 8 against B's 12) and higher (lift 16 against B's 8); scrolling, it contracts
-    /// inward and settles down. E: *"I may want to tweak this once I've actually seen it"* — so
-    /// these are the tunables, both on §2's grid.
-    static let restingInset: CGFloat = 8
-    static let restingLift: CGFloat = 16
+    /// (inset 4 against the scrolled 8) and higher (lift 8 against the scrolled 4); scrolling,
+    /// it contracts inward and settles down.
+    ///
+    /// Round 2 shipped 8 / 16; E's second device verdict tuned both — *"the whole nav bar moved
+    /// down the screen a little bit to create more space"* and *"WIDEN the horizontal width"*,
+    /// with red marks about 6pt in from each screen edge. Both halved onto the grid, and the
+    /// scrolled pair moved with them so the morph keeps its shape. Still the tunables.
+    static let restingInset: CGFloat = 4
+    static let restingLift: CGFloat = 8
 
     /// The widest a resting pill may be. This is what turns §3's floor into a GUARANTEE rather
     /// than a font-metrics estimate: the five unselected slots share what the pill leaves inside
-    /// the resting card, so the floor test is (375 − 2·8 − 2·4 − 120) / 5 = 46.2 on the SE,
-    /// whatever the label measures. "Captures" — the longest label — needs ~99pt at the default
-    /// size and ~122 at the bar's largest clamped size (xxxLarge), so the cap only bites at the
-    /// very top of the range, where the label's `minimumScaleFactor` absorbs the last 2pt
-    /// (§1: never clip, never truncate).
+    /// the resting card, so the floor test is (375 − 2·4 − 2·4 − 120) / 5 = 47.8 on the SE,
+    /// whatever the label measures. "Captures" — the longest label — needs ~115pt at the default
+    /// size with the 16pt inner padding and ~138 at the bar's largest clamped size (xxxLarge),
+    /// so the cap bites only towards the top of the range, where the label's
+    /// `minimumScaleFactor` (0.8, so down to ~110) absorbs it (§1: never clip, never truncate).
     static let maximumRestingPillWidth: CGFloat = 120
 
     /// How far the card sits off the bottom of the safe area WHILE SCROLLING.
     ///
     /// **8, down from the concept's 22**, on E's GIF verdict: *"when scrolling, the icon nav bar
-    /// should move further down the page to create more space"*. That verdict is now the morph's
-    /// vertical half: the card rests at `restingLift` and drops to this.
+    /// should move further down the page to create more space"*; **then 4**, on E's 2026-09-08
+    /// device verdict, *"the whole nav bar moved down the screen a little bit"*. That verdict is
+    /// the morph's vertical half: the card rests at `restingLift` and drops to this.
     ///
-    /// Not smaller than 8: the safe area already excludes the home indicator, so this is the gap
-    /// above it, and at zero the card reads as jammed into the bottom edge. `rowHeight` is
-    /// derived from the larger of the two lifts, so the band follows any change here or to
-    /// `restingLift` rather than having to be re-tuned alongside it.
-    static let floatingLift: CGFloat = 8
+    /// Not zero: the safe area already excludes the home indicator, so this is the gap above it,
+    /// and at zero the card reads as jammed into the bottom edge. `rowHeight` is derived from
+    /// the larger of the two lifts, so the band follows any change here or to `restingLift`
+    /// rather than having to be re-tuned alongside it.
+    static let floatingLift: CGFloat = 4
 
     /// Where the pill sits against the glyph's top-trailing corner. §2 allows 4pt for micro
     /// positioning; the concept's 9/-5 is rounded onto that grid.

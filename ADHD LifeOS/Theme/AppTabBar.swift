@@ -166,6 +166,10 @@ struct AppTabBar: View {
             // The whole slot is the target, not just the glyph — every point of a slot should
             // answer a thumb (§3).
             .contentShape(Rectangle())
+            // …but the target must not GROW the card. The 44pt minimum above is what the hit
+            // shape measures; this hands the layout back the chip's height, so the row is the
+            // highlight and the card is exactly `cardHeight`. Zero while the chip is 44 tall.
+            .padding(.vertical, -AppTabBarMetrics.slotHitOverflow)
         }
         .buttonStyle(AppTabBarSlotStyle())
         .accessibilityLabel(

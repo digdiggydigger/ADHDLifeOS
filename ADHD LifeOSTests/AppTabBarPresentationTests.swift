@@ -137,16 +137,27 @@ final class AppTabBarPresentationTests: XCTestCase {
     /// **The resting state's own "stops a seventh tab" test.** The selected pill takes what it
     /// needs (capped) and the other five share the rest, so the floor to prove is the width of an
     /// UNSELECTED slot beside the WIDEST pill the bar allows, on the narrowest supported iPhone,
-    /// inside the RESTING card: (375 − 2·8 inset − 2·4 card padding − 120) / 5 = 46.2, clear of
-    /// §3's 44. A seventh tab would be 38.5 and fail.
+    /// inside the RESTING card: (375 − 2·4 inset − 2·4 card padding − 120) / 5 = 47.8, clear of
+    /// §3's 44. A seventh tab would be 39.8 and fail.
     func testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE() {
         let width = AppTabBarPresentation.restingSlotWidth(
             barWidth: AppTabBarPresentation.narrowestSupportedScreenWidth,
             pillWidth: AppTabBarMetrics.maximumRestingPillWidth,
             count: AppTabBarPresentation.tabs.count
         )
-        XCTAssertEqual(width, 46.2, accuracy: 0.001)
+        XCTAssertEqual(width, 47.8, accuracy: 0.001)
         XCTAssertGreaterThanOrEqual(width, AppTabBarPresentation.minimumTouchTarget)
+    }
+
+    /// §3's 44pt target is carried by the slot's HIT AREA, which may overflow the card, never by
+    /// the card growing to hold it. Round 2 shipped a 60pt card that the metrics called 50,
+    /// because the slot's `minHeight` leaked into the row; the overflow is what stops that.
+    func testTheTouchTargetIsCarriedByTheHitOverflowNotTheCard() {
+        XCTAssertGreaterThanOrEqual(AppTabBarMetrics.slotHitOverflow, 0)
+        XCTAssertGreaterThanOrEqual(
+            AppTabBarMetrics.chipHeight + AppTabBarMetrics.slotHitOverflow * 2,
+            AppTabBarPresentation.minimumTouchTarget
+        )
     }
 
     /// With one slot there is nothing beside the pill to share the leftover; with none there is
@@ -183,9 +194,11 @@ final class AppTabBarPresentationTests: XCTestCase {
 
     /// It must not sit flush on the home indicator either. The safe area already excludes the
     /// indicator, so the lift is the gap between the card and it — at zero the card reads as
-    /// jammed into the bottom edge, and the system gesture area crowds it.
+    /// jammed into the bottom edge, and the system gesture area crowds it. The floor was 8 until
+    /// E's 2026-09-08 device verdict, *"the whole nav bar moved down the screen a little bit"*;
+    /// it is the grid's 4 now, and zero stays out.
     func testTheFloatingCardKeepsAGapAboveTheHomeIndicator() {
-        XCTAssertGreaterThanOrEqual(AppTabBarMetrics.floatingLift, 8)
+        XCTAssertGreaterThanOrEqual(AppTabBarMetrics.floatingLift, 4)
     }
 
     /// The chip is the touch target while floating, not merely a decoration inside one.
