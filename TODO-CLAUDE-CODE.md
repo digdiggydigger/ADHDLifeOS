@@ -2985,3 +2985,95 @@ the rows.
 - **The tab-root "mechanism found" bullet is WITHDRAWN as a finding**: a later journey run on a
   build carrying the off-screen change failed identically, hidden elements still in the dump.
   Register B3 stays open.
+
+---
+
+## The tab bar, reopened — E's call, 2026-09-08 (branch `feature/tabbar-select-pill`, off `main` @ `e5a572f`)
+
+E reopened the bar against the ORIGINAL canvas
+(`https://claude.ai/code/artifact/767eacff-e616-4836-ab3a-ac842ddf42c9`, page "All six
+options") and chose to **combine B and C**: *"I want C to be the resting state when the user is
+at the top of the page. When they scroll I want to stay as B."* Confirmed "Yes, exactly that"
+against the reading below. **This supersedes the Tools-tab arc's "F at rest, dot → chip"
+decision**; B, the trigger, the band and the pane are unchanged. Design record:
+`handoff/SESSION-OPENER-tabbar-select-pill-design.md`.
+
+**Conflicts reported (CLAUDE.md §7):** `ui-ux-pro-max` "bottom nav ≤ 5" — still six, still E's
+knowing call; C's 10pt/6pt spacing is off-grid → 8/8 under §2.
+
+### FEATURE: F-TabBar-SelectPill — C's labelled pill at rest, B's chip scrolled, ONE floating card  [x] COMPLETED
+
+**Round 1** put C on the flat full-width pane; E's device verdict the same night: *"the nav bar
+shouldn't extend down to the bottom of the screen… must stay floating as it is in the scrolling
+screenshot BUT MUST still display the labelled pill."* **Round 2 (what is built):** one floating
+card in BOTH states — the opaque pane is gone for good. At rest the card sits **wider and
+higher** (inset 8, lift 16) and the selected tab is a **capsule pill** holding glyph AND label;
+scrolled, the card **contracts inward and drops** (inset 12, lift 8 — B, unchanged) and the mark
+is B's chip. The other five slots share the width the pill leaves. `rowHeight` is now the card
+plus the LARGER lift (66) so the `safeAreaInset` never moves with the morph.
+`TabBarScrollActivity` already decides "near the top" with hysteresis, so the trigger is
+untouched. Files: `Theme/AppTabBar.swift`, `Theme/AppTabBarPresentation.swift`,
+`AppTabBarPresentationTests.swift`. E's five round-2 answers are verbatim in the design record.
+
+**Acceptance criteria**
+- [x] Pure rules TDD-pinned (12 "no member" errors on the red run, then green):
+      `showsLabel(isSelected:isFloating:)` is true only for the selected slot at rest;
+      `restingSlotWidth(barWidth:pillWidth:count:)` beside the widest pill on the SE is
+      **46.2 ≥ 44** — the resting state's "stops a seventh tab" test (seven → 38.5); the guard
+      returns 0 below two slots; the pill cap is never narrower than the chip; the pill's three
+      spacings are on the 4/8/16/24 grid.
+- [x] `rowHeight` still 58 and still derived — the search row lift, `bottomClearance`, and
+      `appTabBarClearance()` untouched; `testTheRestingPaneIsExactlyTheFloatingStatesFootprint`
+      still passes.
+- [x] Identifiers `tabBar.<Label>` and `.isSelected` unchanged — no UI journey edited.
+- [x] Label hidden from VoiceOver (the button carries the name); one line, `minimumScaleFactor`
+      before any clip (§1); house spring, nil under Reduce Motion.
+- [x] Suite **2,502 / 0** (emulator up), SwiftLint **0 / 711**, sim build green. Red-checked
+      after the commit: four regressions → exactly the four predicted test cases (five
+      assertions), restored with `git checkout --`, no marker left, full suite green again.
+- [x] Device build with `-allowProvisioningUpdates` (no account/profile trouble), installed on
+      `wishwashwacky15` at `96681a3`; launch refused only because the phone was locked.
+- [x] **E's round-1 device verdict** — *"I like what you've done"*; the pane must go, the bar
+      must float in both states with the pill. Answered with five questions; capsule corners
+      chosen, height/label/gap kept, B's 4pt card padding kept, "wider, lower AND drops".
+
+**Round 2 acceptance**
+- [x] Pure rules TDD-pinned (7 "no member" errors on the red run): the band is the card plus the
+      larger lift (`cardHeight` 50 + 16 = 66); the card is wider AND higher at rest
+      (`restingInset` 8 < 12, `restingLift` 16 > 8); the pill is a capsule
+      (`pillCornerRadius` = chipHeight / 2); the resting spacing is on the grid; the SE floor is
+      measured inside the resting card, (375 − 16 − 8 − 120) / 5 = **46.2 ≥ 44**.
+- [x] The flat pane, its 40-line history and `restingPaddingHorizontal` deleted; one card,
+      inset and lift picked by `isFloating`, bottom-aligned in the band; the chip keeps radius 11
+      so B is unchanged and the mark animates capsule → 11.
+- [x] Suite **2,504 / 0**, SwiftLint **0 / 711**, sim build green. Red-checked after the commit;
+      **three regressions together produced only two of three predicted failures — two of them
+      cancelled** (`restingLift` 8 made `max(8, 8)` equal `floatingLift`); re-run with the band
+      regression alone → exactly one predicted, one actual. Restored, no marker, green again.
+- [x] Device: rebuilt and reinstalled on `wishwashwacky15` at `e9cd764`, launch verified.
+- [x] **E's round-2 device verdict** — *"I like what you've done… some obvious spacing and
+      positioning things"*, then three asks with two annotated shots: move the whole bar down a
+      little, WIDEN it (marks ~6pt from the edges), more inner padding around the icon in the
+      highlight. Measuring first found the card was **60pt on the device while the metrics said
+      50** (the slot's 44 `minHeight` leaked into the row) — reproduced in a simulator probe.
+
+**Round 3 acceptance** (`8578a23`)
+- [x] Insets 8/12 → **4/8**, lifts 16/8 → **8/4**, highlight **44** tall in both states, pill
+      inner padding **16**; `slotHitOverflow` carries §3's target without growing the card, so
+      `cardHeight` 60 and `rowHeight` 68 are TRUE. SE floor (375 − 8 − 8 − 120) / 5 = **47.8**.
+- [x] Probe-verified right side up: card 59.0 both states; bottom +8.7 rest / +4.7 scrolled;
+      inset 4 / 8; glyph 9.3 above and 9.0 below inside the highlight (was 4.3 / 4.0).
+- [x] Tests: one new (hit overflow), two updated (47.8; lift floor 4). Red first: 2 "no member"
+      errors. Suite **2,505 / 0**, SwiftLint **0 / 711**, sim build green.
+- [x] Red-checked ONE regression at a time (the round-2 cancelling lesson): overflow negative,
+      scrolled lift 2, resting inset 12 — predicted 1 / 1 / 3, see the session report for actual.
+- [x] Device reinstalled at `8578a23` (05:35, launched) and **E's round-3 verdict, 05:43:
+      *"I think it looks good."*** Three approval screenshots; the 44-tall chip while scrolling
+      was accepted as is.
+- [x] `screenshots/tabbar-select-pill/` — rounds 1–3 filed (00–10): the rejected pane, E's two
+      annotated round-2 shots, and the three round-3 approvals, each row saying what it settled.
+- [ ] PR #29 merged to `main`; phone reinstalled from `main`. (Ticked in the close-out PR.)
+
+**Logged from E's aside, NOT this block:** *"the 'YOU'RE AT HOME' notification box at the top of
+the Today page does not stay there when the user drag-reloads the Today page. Which is kind of
+pointless."* → register section B as a candidate; needs its own look at the Today refresh path.

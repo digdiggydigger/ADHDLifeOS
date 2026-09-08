@@ -14,10 +14,21 @@ import SwiftUI
 /// tab's scroll position and `NavigationStack` depth alive (a `switch selection` would throw
 /// both away on every switch).
 ///
-/// **This is Design F, "Minimal Dot"** — E's pick from six concepts, for the resting state: full
-/// width, icons only, one accent dot marking position. F-Tools-2-Morph adds the second state (a
-/// floating card while the page is moving) and morphs this dot into a chip; the indicator's
-/// `matchedGeometryEffect` namespace is here already so that morph has something to travel with.
+/// **One floating card, two positions, two marks — E's 2026-09-08 calls, combining B and C from
+/// the original six:**
+/// - **At rest (the page near its top): the card sits wider and higher** (`restingInset` /
+///   `restingLift`) and the selected tab is **Design C's "Select Pill"** — a tinted capsule
+///   holding its glyph AND its label. The other five give up width to it, which is C's own
+///   stated trade-off ("the label shifts as you move"), accepted by choosing it.
+/// - **Scrolled: the card contracts inward and drops** (`floatingInset` / `floatingLift`) and
+///   the selection is **Design B's chip** — icons only. Unchanged from F-Tools-2-Morph.
+///
+/// This replaces Design F "Minimal Dot", E's 2026-09-02 resting pick — the dot is gone — AND the
+/// opaque full-width pane F stood on. The first device verdict on the pill was *"the nav bar
+/// shouldn't extend down to the bottom of the screen… must stay floating"*, so the pane is gone
+/// for good and the card is the bar in both states. `TabBarScrollActivity` still decides which
+/// state applies — it was already a "near the top of the page" rule, which is exactly what E
+/// asked for.
 ///
 /// §7 conflict, reported knowingly: `ui-ux-pro-max` rates "bottom nav ≤ 5" a HIGH-severity rule
 /// and calls six "overloaded nav". **E was shown that before choosing six.**
@@ -58,118 +69,107 @@ struct AppTabBar: View {
             .animation(morphAnimation, value: isFloating)
     }
 
-    /// The one row of slots, in whichever container the current state calls for. Deliberately
-    /// ONE `ForEach` across both states: the slots keep their view identity through the morph,
-    /// which is what lets the indicator travel rather than cross-fade.
-    @ViewBuilder
+    /// The one row of slots, in the one floating card. Deliberately ONE `ForEach` and ONE card
+    /// across both states: the slots keep their view identity through the morph, which is what
+    /// lets the indicator travel rather than cross-fade, and the card keeps its own, which is
+    /// what lets it slide between its two positions rather than being rebuilt.
+    ///
+    /// **The card is the bar in both states** — E's 2026-09-08 verdict on the opaque full-width
+    /// pane Design F stood on: *"the nav bar shouldn't extend down to the bottom of the screen…
+    /// must stay floating"*. Opaque `CardSurface`, a 1pt `CardBorder` stroke and a soft shadow:
+    /// the concept's own card, and the surface that survived two rounds of material bars failing
+    /// in light mode (a `BarSurface` glass read the rows straight through it). At rest it sits
+    /// wider and higher; scrolling, it contracts inward and drops. Content shows on all four
+    /// sides in both states, which was E's ask from the first round.
+    ///
+    /// The card is bottom-aligned inside a band of `rowHeight` — the card plus the LARGER lift —
+    /// so the bar's `safeAreaInset` is one height whichever state applies. A band that moved
+    /// with the morph would shift every page's content by the difference each time it fired.
+    ///
+    /// NOTE: `BarSurface` still has no call site. It is the wrong token for a bar the design
+    /// wants opaque, and duplicating `CardSurface` under a second name would be worse.
     private var slots: some View {
-        let row = HStack(spacing: 0) {
+        HStack(spacing: 0) {
             ForEach(AppTabBarPresentation.tabs) { slot in
                 slotButton(slot)
             }
         }
-        if isFloating {
-            // Design B: a floating card, inset from both edges and lifted off the bottom, so the
-            // page reads past it on either side while it is in the way.
-            row
-                .padding(.vertical, AppTabBarMetrics.floatingPaddingVertical)
-                .padding(.horizontal, AppTabBarMetrics.floatingPaddingHorizontal)
-                .background(
-                    Color.cardSurface,
-                    in: RoundedRectangle(
-                        cornerRadius: AppTabBarMetrics.floatingCornerRadius, style: .continuous
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: AppTabBarMetrics.floatingCornerRadius, style: .continuous
-                    )
-                    .strokeBorder(Color.cardBorder, lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 8)
-                .padding(.horizontal, AppTabBarMetrics.floatingInset)
-                .padding(.bottom, AppTabBarMetrics.floatingLift)
-        } else {
-            // Design F: full width, stopping at the bottom of the SAFE AREA rather than running
-            // on into the home-indicator strip. E's GIF verdict: that strip was "empty space
-            // that is coloured below the tab bar… wasted space", and it measured 53pt.
-            //
-            // **Opaque, and that is the concept's own answer.** This ran as `BarSurface` over
-            // an `.ultraThinMaterial` for two rounds — glass, so content read faintly through
-            // it. In DARK that looked fine; in LIGHT it failed outright, because `BarSurface` is
-            // white at 94% over a near-white page, so the bar had almost no surface and the rows
-            // passing underneath stayed fully legible behind the glyphs. E's second GIF:
-            // "the bar is better but definitely needs work".
-            //
-            // The concept had already answered it — its bar is `#FFFFFF` light / `#1D2027` dark,
-            // which is `CardSurface`, opaque. So the bar is a solid plane with a 1pt `CardBorder`
-            // top edge to separate it from the page, and content passes BEHIND it rather than
-            // through it. E's ask that the background *surrounding* the bar be transparent is
-            // carried entirely by the FLOATING state, which shows content on all four sides of
-            // its card — the resting pane runs to the screen edge instead, see below.
-            //
-            // NOTE: this leaves `BarSurface` with no call site again. It is the wrong token for
-            // a bar the design wants opaque, and duplicating `CardSurface` under a second name
-            // would be worse than leaving it unused.
-            row
-                .frame(height: AppTabBarMetrics.rowHeight)
-                .frame(maxWidth: .infinity)
-                // The fill runs to the SCREEN edge, not to the bar's own frame. E's verdict on
-                // the version that stopped at the safe area: "I am not satisfied with the LARGE
-                // gap that there is below the solid pane view" — 35pt of page between the bar and
-                // the bottom of the screen, which reads as the pane floating above a strip rather
-                // than as the bottom of the app.
-                //
-                // The glyph row does NOT move down with it: the safe area exists because the home
-                // indicator lives there, and controls in that band are both cramped and against
-                // the HIG. So the surface extends and the content stays — which is exactly what
-                // the system tab bar does.
-                //
-                // This is not a return to the thing E called "wasted coloured space" two rounds
-                // ago. That strip was a DIFFERENT, lighter shade (a material bleeding past its
-                // view), so it read as a second bar stuck underneath the first. One continuous
-                // opaque surface has no seam to notice.
-                .background {
-                    Color.cardSurface
-                        .ignoresSafeArea(edges: .bottom)
-                }
-                // The bar's own edge. Without it an opaque white bar meets a near-white page
-                // with nothing between them, and the plane stops reading as a plane.
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(Color.cardBorder)
-                        .frame(height: 1)
-                }
-        }
+        .padding(.vertical, AppTabBarMetrics.floatingPaddingVertical)
+        .padding(.horizontal, AppTabBarMetrics.floatingPaddingHorizontal)
+        .background(
+            Color.cardSurface,
+            in: RoundedRectangle(
+                cornerRadius: AppTabBarMetrics.floatingCornerRadius, style: .continuous
+            )
+        )
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: AppTabBarMetrics.floatingCornerRadius, style: .continuous
+            )
+            .strokeBorder(Color.cardBorder, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 8)
+        .padding(
+            .horizontal,
+            isFloating ? AppTabBarMetrics.floatingInset : AppTabBarMetrics.restingInset
+        )
+        .padding(
+            .bottom,
+            isFloating ? AppTabBarMetrics.floatingLift : AppTabBarMetrics.restingLift
+        )
+        .frame(maxWidth: .infinity)
+        .frame(height: AppTabBarMetrics.rowHeight, alignment: .bottom)
     }
 
     private func slotButton(_ slot: AppTabBarPresentation.Slot) -> some View {
         let isSelected = slot.tab == selection
         let badgeCount = slot.tab == .captures ? captureInboxCount : 0
+        let showsLabel = AppTabBarPresentation.showsLabel(isSelected: isSelected, isFloating: isFloating)
         return Button {
             selection = slot.tab
         } label: {
-            VStack(spacing: isFloating ? 0 : AppTabBarMetrics.glyphToIndicatorSpacing) {
+            HStack(spacing: AppTabBarMetrics.pillGlyphToLabelSpacing) {
                 glyph(slot, isSelected: isSelected, badgeCount: badgeCount)
-                    // Floating, the mark sits BEHIND the glyph rather than under it — the chip
-                    // is the indicator, so there is nothing to stack below.
-                    .background {
-                        if isFloating && isSelected { chip }
-                    }
-                    .frame(
-                        width: isFloating ? AppTabBarMetrics.chipWidth : nil,
-                        height: isFloating ? AppTabBarMetrics.chipHeight : nil
-                    )
-                // The dot's row collapses to nothing while floating, which is what shrinks the
-                // bar's height as it contracts.
-                if !isFloating {
-                    indicator(isSelected: isSelected)
+                if showsLabel {
+                    label(slot)
+                        .transition(.opacity)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: AppTabBarPresentation.minimumTouchTarget)
-            // The whole slot is the target, not just the glyph — six slots on an SE are 62.5pt
-            // wide and every point of that should answer a thumb (§3).
+            // The pill pads its own content; the floating chip is a fixed 44×34 with the glyph
+            // centred in it, and an unselected glyph is just a glyph.
+            .padding(.horizontal, showsLabel ? AppTabBarMetrics.pillPaddingHorizontal : 0)
+            .frame(
+                width: isFloating ? AppTabBarMetrics.chipWidth : nil,
+                height: AppTabBarMetrics.chipHeight
+            )
+            .frame(maxWidth: showsLabel ? AppTabBarMetrics.maximumRestingPillWidth : nil)
+            // The mark sits BEHIND the content in both states — the capsule pill at rest, the
+            // chip floating — and is sized by it, so the morph is the label collapsing and the
+            // ends squaring off, nothing else.
+            .background {
+                if isSelected {
+                    indicatorMark(
+                        cornerRadius: showsLabel
+                            ? AppTabBarMetrics.pillCornerRadius
+                            : AppTabBarMetrics.chipCornerRadius
+                    )
+                }
+            }
+            // Six equal slots — except the resting pill, which takes its own width and leaves the
+            // other five to share the rest (C's "the label shifts as you move"). The pure rule is
+            // `AppTabBarPresentation.restingSlotWidth`, whose SE floor test guards the sharing.
+            .frame(
+                maxWidth: showsLabel ? nil : .infinity,
+                minHeight: AppTabBarPresentation.minimumTouchTarget
+            )
+            .fixedSize(horizontal: showsLabel, vertical: false)
+            // The whole slot is the target, not just the glyph — every point of a slot should
+            // answer a thumb (§3).
             .contentShape(Rectangle())
+            // …but the target must not GROW the card. The 44pt minimum above is what the hit
+            // shape measures; this hands the layout back the chip's height, so the row is the
+            // highlight and the card is exactly `cardHeight`. Zero while the chip is 44 tall.
+            .padding(.vertical, -AppTabBarMetrics.slotHitOverflow)
         }
         .buttonStyle(AppTabBarSlotStyle())
         .accessibilityLabel(
@@ -198,31 +198,28 @@ struct AppTabBar: View {
             }
     }
 
-    /// Design F's position mark. The clear spacer holds the row's height whether or not this slot
-    /// is the selected one, so the glyphs never shuffle as selection moves.
-    private func indicator(isSelected: Bool) -> some View {
-        ZStack {
-            Color.clear
-                .frame(height: AppTabBarMetrics.indicatorDotDiameter)
-            if isSelected {
-                Circle()
-                    .fill(Color.accentColor)
-                    .frame(
-                        width: AppTabBarMetrics.indicatorDotDiameter,
-                        height: AppTabBarMetrics.indicatorDotDiameter
-                    )
-                    .matchedGeometryEffect(id: AppTabBarMetrics.indicatorID, in: indicatorNamespace)
-            }
-        }
+    /// Design C's label: the selected slot's name beside its glyph, at rest only. `.caption`
+    /// semibold is the concept's 12pt/600, semantic so Dynamic Type still moves it (§1); one line
+    /// that scales down before it would ever clip, for the pill's capped width. Hidden from
+    /// VoiceOver because the BUTTON already carries the name — otherwise it reads "Today, Today".
+    private func label(_ slot: AppTabBarPresentation.Slot) -> some View {
+        Text(slot.label)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Color.accentColor)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .accessibilityHidden(true)
     }
 
-    /// Design B's position mark — the dot's other form. It shares the dot's
-    /// `matchedGeometryEffect` id, which is the whole point: the mark GROWS from one into the
-    /// other and slides between slots, rather than one fading out while the other fades in.
-    private var chip: some View {
-        RoundedRectangle(cornerRadius: AppTabBarMetrics.chipCornerRadius, style: .continuous)
+    /// The one position mark, in both states: the capsule pill behind glyph and label at rest
+    /// (Design C), the 44×34 chip behind the glyph while floating (Design B). It is sized by what
+    /// it sits behind, and its corner radius is the only other thing that morphs — capsule to
+    /// the chip's 11, animated, so B keeps its own chip. The `matchedGeometryEffect` id is what
+    /// makes it TRAVEL between slots on a tab change, rather than one mark blinking out while
+    /// another blinks in.
+    private func indicatorMark(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(chipTint)
-            .frame(width: AppTabBarMetrics.chipWidth, height: AppTabBarMetrics.chipHeight)
             .matchedGeometryEffect(id: AppTabBarMetrics.indicatorID, in: indicatorNamespace)
     }
 }
@@ -306,7 +303,8 @@ extension View {
         .preferredColorScheme(.dark)
 }
 
-/// Selection has to be live for the dot to be worth previewing at all.
+/// Selection has to be live for the pill to be worth previewing at all — it is the one thing
+/// that moves.
 private struct AppTabBarPreviewHost: View {
     @State private var selection: AppTab = .today
 
