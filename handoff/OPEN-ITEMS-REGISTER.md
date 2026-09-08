@@ -1,70 +1,63 @@
-# Open items register — 2026-09-08, midday (twelfth edition; F-TabDepth-2-SearchRowAtRoot built on top of block 1, both on E's phone, PR #35 carries both and awaits E's verdict)
+# Open items register — 2026-09-08, evening (thirteenth edition; the tab depth arc MERGED on E's verdict, nothing in flight)
 
-*This edition covers the fresh session E ordered for block 2. E opened it with the three block-1
-checks still undone — *"Can I complete them after you've built block 2?"* — so block 2 was built
-on `feature/tab-depth` on top of block 1 rather than after a merge, and the phone now carries
-both. The eleventh edition (`bab1681`) is in git history; this one carries only what is still
-true.*
+*This edition closes the arc the twelfth opened. E ran the four checks on the phone — three from
+block 1, one from block 2 — and came back with *"All 4 checks were successful"* and two
+screenshots; PR #35 merged on that, the phone was reinstalled from `main`, and the suite was
+re-run ON main. The twelfth edition (`aecf82c`) is in git history; this one carries only what
+is still true.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
-to update, rather than improvising a list in chat. Supersedes the eleven earlier editions.
+to update, rather than improvising a list in chat. Supersedes the twelve earlier editions.
 
 Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `38b309c`** (PR #34, docs) · **branch `feature/tab-depth`, pushed, PR #35 OPEN with
-BOTH blocks** — block 1 `639cf24` + `96aa629` + `bab1681`, block 2 `c4fba78`, plus this
-close-out · every change lands through a PR · verified ON THE BRANCH at `c4fba78`: **unit suite
-2,543 / 0** (emulator UP, 0 `127.0.0.1:9099` hits, 0 skipped), **SwiftLint 0 / 719**, sim +
-device builds green, **`SearchRowDepthJourneyUITests` 1 / 0 (132 s)**,
-`TabReselectionJourneyUITests` 3 / 0 (carried, block 1's run) · **app target 24.76%
-(11,189/45,196)** — denominator +7 over block 1's 45,189 (the guard, the computed scope, the
-animation), numerator +1 · **E's phone runs the BRANCH build at `c4fba78`** (binary 12:06,
-`App installed` 12:07; the launch was refused — the phone was LOCKED — so E opens it, force-quit
-first) · sim `9181EBF9…` ERASED after both UI runs and is signed out · `firestore.rules`
-untouched · the emulator was left running · every `.xcresult` deleted after its figures were
-read.
+**`main` @ `1100a01`** (PR #35, the tab depth arc — both blocks) · **no branch in flight**;
+`feature/tab-depth` deleted both sides by the merge · every change lands through a PR ·
+verified ON MAIN at `1100a01`: **unit suite 2,543 / 0** (emulator UP, 0 `127.0.0.1:9099` hits,
+0 skipped), **SwiftLint 0 / 719**, device build green · **app target 24.76% (11,189/45,196)**,
+identical to the branch figure because the merged tree IS the branch tree ·
+`SearchRowDepthJourneyUITests` 1 / 0 and `TabReselectionJourneyUITests` 3 / 0 (carried from the
+branch; the tree is unchanged) · **E's phone runs `main` @ `1100a01`** (binary 19:50, `App
+installed`, `Launched`, no provisioning trouble) · sim `9181EBF9…` ERASED after both of the
+day's UI runs and is signed out · `firestore.rules` untouched · the emulator was left running ·
+every `.xcresult` deleted after its figures were read.
 
-**Built this session, IN PR — F-TabDepth-2-SearchRowAtRoot (`c4fba78`):**
+**Shipped and CLOSED this session — F-TabDepth, blocks 1 + 2 (PR #35 → `1100a01`):**
 
-- **E's ask (06:20, with a screenshot):** *"we need to remove the 'search tasks' search bar from
-  a full view task screen."* The row is mounted once at the root and `RootView` derived its
-  scope from `selectedTab` ALONE, so the root never learned the tab had gone deeper.
-- **What shipped:** `AppSearchScope.scope(for:isAtRoot:)` (`.none` below the top-level page,
-  `isAtRoot` with NO default, the one-argument form gone); `RootView.searchScope` masks the
-  tab's scope by `tabNavigation.isAtRoot(selectedTab)` and `.onChange(of: searchScope)` feeds
-  the model — so a push, a pop and a tab switch all move it, and switching back to Tasks with
-  its detail still pushed keeps the row hidden; `RootBottomOverlay` animates the row on the
-  house spring keyed on the scope. **Judgment call E can veto:** the same spring now fades the
-  row on a tab SWITCH too, where it used to pop with the hard-cut tab content.
-- **Evidence:** tests first, watched red THREE ways — the rule at compile (`extra argument
-  'isAtRoot'` ×5); then, with the rule in and the root deliberately still feeding `isAtRoot:
-  true`, the call-site guard on its own assertions (3 across 2 tests); then the UI journey
-  against that same build at *"E's screenshot, unchanged"* (162 s). Green: scoped 34 / 0,
-  journey 1 / 0, full suite 2,543 / 0. Red-checked one at a time after the commit:
-  rule-ignores-depth predicted 2 / actual 2; root-ignores-depth predicted 1 / actual 1;
-  restore proven 13 / 0. `seedTask` hoisted to `UITestSession` (`UITestFixtures.swift`).
-
-**Built last session, IN THE SAME PR — F-TabDepth-1-PopToRoot** (re-tap pops to root or
-scrolls to top; Nudges gets a Back control; the probe table is in
-`handoff/SESSION-OPENER-tab-depth-design.md`). (carried; nothing about it changed)
+- **E's asks:** (06:20, with a screenshot) *"remove the 'search tasks' search bar from a full
+  view task screen"*; (~07:00) a re-tap on the selected tab must return to that tab's top-level
+  page, and Today → Nudges had *"no way to get back"*. E's four answers: scroll to top at the
+  top level; Nudges gets a Back control; sheets untouched; one arc, pop-to-root first.
+- **Block 1 (`639cf24`):** the bar routes a repeat tap through `AppTabBarPresentation.tapOutcome`
+  into `TabNavigationCoordinator`; each of the six roots pops its own pushes or scrolls to its
+  anchor (`.tabRoot(_:isAtRoot:onPopToRoot:)`), because the simulator probe showed a
+  `NavigationPath` reset pops neither flag nor closure pushes; Nudges keeps its bar with Task
+  detail's Back chevron. Design record: `handoff/SESSION-OPENER-tab-depth-design.md`.
+- **Block 2 (`c4fba78`):** `AppSearchScope.scope(for:isAtRoot:)` (`.none` below the top-level
+  page, `isAtRoot` with NO default); `RootView.searchScope` masks the tab's scope by the depth
+  the roots report; `RootBottomOverlay` animates the row on the house spring keyed on the scope.
+  Built on the same branch because E deferred block 1's checks to block 2's sitting.
+- **Evidence:** tests first, watched red (block 2 three ways — compile, the call-site guard on
+  its own assertions with the rule in and the root still ignoring it, and the UI journey against
+  that same build); red-checked one at a time after each commit (block 1: 1/1, 1/1, restore
+  14/0; block 2: 2/2, 1/1, restore 13/0); **E's device verdict in words: *"All 4 checks were
+  successful"***, with E's two screenshots filed at `screenshots/tab-depth/` (00 the Nudges
+  Back chevron, 01 a task detail with only the disc beside the bar) and README rows.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Do both blocks behave on the phone?** Four checks in one sitting: Today → Nudges → tap
-      Today; the Nudges Back chevron; scroll any tab down and re-tap it; **Tasks → open a task's
-      detail: the "Search tasks" row is gone beside the disc, and back on the list after the
-      re-tap.** "Yes" → merge PR #35, reinstall from main. **Blocking the merge.** (updated —
-      was block 1's three checks; E deferred them to this sitting)
 - [ ] **Keep the row's spring on a tab SWITCH?** Block 2's one judgment call: the row now fades
-      in/out with the house spring when the tab changes, not only when a detail is pushed. One
-      line to revert if it reads as lag over a hard-cut page. **NEW.**
+      in/out with the house spring when the tab changes, not only when a detail is pushed. E's
+      four checks passed on the build that has it and E raised nothing; this stays listed only
+      because it was never one of the checks. One line in `RootBottomOverlay.swift` to revert
+      if it ever reads as lag over a hard-cut page. (carried, now low)
 - [ ] **Should the widget's view-only files be made testable at all?** Recommendation is still
       to leave it. (carried)
 
-## B · Real work, ready to start — recommended order
+## B · Real work, ready to start — recommended order (nothing is in flight; ask E)
 
 1. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops after #32.**
    A fix that ARRIVES but lands outside every radius still clears the card (the app ignores
@@ -87,25 +80,28 @@ scrolls to top; Nudges gets a Back control; the probe table is in
 ## D · Launch blockers — no conversation opened yet
 
 - **Free dev account** → 7-day profiles; the clock restarted with the 06:37 device build, so the
-  profile is roughly valid to **2026-09-15**. This session's 12:06 device build needed no
-  provisioning update. (carried)
+  profile is roughly valid to **2026-09-15**. Neither of today's later device builds (12:06,
+  19:50) needed a provisioning update. (carried)
 - **Sign in with Apple** built but dormant. (carried)
 
 ## E · Known, not work
 
+- **Stacking a block on an unverified block is fine when E asks for it, and the PR should say
+  so.** E deferred block 1's checks; block 2 went on the same branch, the PR body grew to cover
+  both, and E verified all four in one sitting. What made it safe: separate commits per block
+  (a revert stays one commit), and the merge waited for the verdict. (NEW)
 - **A "rule right, wiring wrong" red is worth staging on purpose.** With the pure rule in and the
   root deliberately still ignoring the depth, the call-site guard AND the UI journey both went
-  red on their own assertions — proof that each catches exactly the defect this repo ships
-  most (a correct helper nothing feeds), not merely a missing symbol. (NEW)
+  red on their own assertions — proof that each catches exactly the defect this repo ships most
+  (a correct helper nothing feeds), not merely a missing symbol. (carried from the twelfth)
 - **Derive, then `onChange` the derived value.** One `.onChange(of: searchScope)` over a computed
-  property covers the tab switch, the push and the pop; two handlers keyed on the inputs would
-  have raced each other's `activate`. (NEW)
+  property covers the tab switch, the push and the pop. (carried)
 - **`xcrun xcresulttool export attachments --path <bundle> --output-path <dir>`** pulls a
-  journey's `XCTAttachment` screenshots straight out of the result bundle — the two frames that
-  settled block 2 by eye came from there, no device or mirroring needed. (NEW)
-- **A locked phone refuses the LAUNCH and not the install** — `App installed:` then
-  `NSLocalizedFailureReason … Locked`. Confirmed again; read the reason before suspecting the
-  build. (carried, confirmed)
+  journey's screenshots out of the result bundle. (carried)
+- **A locked phone refuses the LAUNCH and not the install**; the same phone launched cleanly at
+  19:50 once unlocked. (carried, confirmed twice today)
+- **`grep -c 'Test Case.*failed'` counts test NAMES containing "failed"** (eight of them exist);
+  read the `Executed N tests, with M failures` line, never the grep. (NEW, caught twice today)
 - **Ask before designing when E invites it; read the user's REAL data before choosing between
   hypotheses.** (carried)
 - **The resolver's tie-break was designed for different radii**; any future "which place"
@@ -126,7 +122,7 @@ scrolls to top; Nudges gets a Back control; the probe table is in
 - **The watch-list is EMPTY.** (carried)
 - **The strong-password pane is environmental.** (carried)
 - **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN.** (carried)
-- **The live opener is `START-HERE-tab-depth-verdict.md`** — `START-HERE-tab-depth-arc.md`
+- **The live opener is `START-HERE-post-tab-depth.md`** — `START-HERE-tab-depth-verdict.md`
   consumed and archived in the same move. Exactly one is live. (updated)
 - **A `NavigationPath` is blind to closure-link and flag pushes, and a path reset pops neither**
   — the design record has the table. (carried)
@@ -134,8 +130,7 @@ scrolls to top; Nudges gets a Back control; the probe table is in
   swallows swipes as well as taps — wait for HITTABLE. (carried)
 - **A zero-height anchor view inside a padded stack costs its spacing** — put the `id` on the
   padded root. (carried)
-- **Twelve `screenshots/` folders without READMEs** — deliberately left. No folder for block 2:
-  the journey asserts what the frames show, so a folder would be weight without evidence.
-  (carried, applied)
+- **Twelve `screenshots/` folders without READMEs** — deliberately left. `screenshots/tab-depth/`
+  has one: E's own screenshots ARE the device half of the verdict. (carried, applied)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
 - **The emulator was left running.** (carried)
