@@ -3079,3 +3079,72 @@ untouched. Files: `Theme/AppTabBar.swift`, `Theme/AppTabBarPresentation.swift`,
 **Logged from E's aside, NOT this block:** *"the 'YOU'RE AT HOME' notification box at the top of
 the Today page does not stay there when the user drag-reloads the Today page. Which is kind of
 pointless."* → register section B as a candidate; needs its own look at the Today refresh path.
+
+---
+
+## Arrival card on Today — E's item, 2026-09-08 (branch `feature/arrival-card-refresh`, off `main` @ `e8d1605`)
+
+E's report, closing the tab-bar session: *"the 'YOU'RE AT HOME' notification box at the top of
+the Today page does not stay there when the user drag-reloads the Today page. Which is kind of
+pointless."* E's instruction opening this one: investigate FIRST, then ask which case, then
+design. **E's answer, 06:12: the task was STILL OPEN** — and E's four 06:14 screenshots
+(`screenshots/arrival-card-refresh/`) show it: card with `test quick`, one pull, no card,
+`test quick` still open.
+
+**What the investigation found (live Firestore + a swiftc probe over the real geometry files):**
+the opener's two hypotheses were both real but neither was the main cause. E's home holds
+**three saved places with the 100 m floor radius** — `Home`, `Action Test 01/09/2026` (centre
+**1.2 m** from Home's) and `routines test` (34.5 m) — and only Home ever has at-place tasks.
+`PlaceResolution.place(containing:)` picks ONE place: smallest radius, then nearest centre. With
+equal radii that is a coin flip per fix, and the card followed the coin: Home wins **50% at 10 m
+jitter, 40% at 20 m, 31% at 40 m** (100% / 100% / 96% with Home alone). Every fix succeeds; the
+card still goes on most pulls. Secondary: a fix that never arrives (8 s timeout, a request
+already pending, airplane mode) also overwrote the card with nil.
+
+### FEATURE: F-ArrivalCardRefresh — the card considers every containing place, and a refresh replaces it only when a fix says otherwise  [ ] IN PROGRESS
+
+Two pure rules, TDD-pinned, no visual change:
+
+1. **"Here" is EVERY place the fix fell inside, tightest first.** `PlaceResolution.places(
+   containing:in:)` returns the ordered list (`place(containing:)` is now its head, so the two
+   cannot disagree); `ArrivalSurface.make(currentPlaces:tasks:)` shows the first containing place
+   with something open. A test place 1.2 m from Home can no longer hide Home's work.
+2. **A refresh replaces the card only when a fix positively says otherwise.**
+   `CurrentPlaceResolution.current()` now reports what it knows — `.off` (toggle off, no
+   permission, no saved places), `.noFix` (fix or places fetch did not arrive), `.inside([Place])`
+   — and `ArrivalSurface.refreshed(previous:fix:tasks:)` applies it: `.off` clears; `.noFix` keeps
+   the previous card re-checked against the fresh tasks (closed work drops it, new work joins
+   it); `.inside([])` is the one honest "you have left" and clears; `.inside(places)` rebuilds.
+   The fix provider is injectable (`provider:`), so every outcome of the gate has a test.
+
+**Acceptance criteria**
+- [x] Tests first, watched red: `LocationStampingTests` (+3: the ordered list, equal radii by
+      centre distance, outside → empty), `ArrivalSurfaceTests` (+4: E's real three-place shape,
+      both-with-work → the tighter one, nothing open → nil, inside none → nil),
+      `ArrivalSurfaceRefreshTests` (new, 15: eight refresh-rule cases, seven resolution-gate
+      cases). RED: `type 'PlaceResolution' has no member 'places'`, then `no member 'refreshed'`
+      / `extra argument 'provider'` — the missing members, not typos.
+- [x] `refreshArrivalSurface()` applies the fix to the card already showing.
+- [x] Touched-file lint clean (`.at` → `.inside` for `identifier_name`; `HomeMomentumSections`
+      back to 399 lines); full `swiftlint lint` **0 / 712**.
+- [x] Suite **2,526 / 0** (emulator up, 0 `9099` hits), sim build green, app target **24.82%
+      (11,162/44,965)** — denominator +25 (the new rules), numerator +29, comparable. Committed
+      `4d8de11`, THEN red-checked one regression at a time: no-fix → nil predicted 2 / actual 2;
+      first-place-only predicted 1 / actual 1 (its three assertions); restore proven 39 / 0.
+- [x] Device: built from the branch at `4d8de11`, installed and relaunched on `wishwashwacky15`
+      06:38 (binary mtime 06:37).
+- [ ] **E pulls repeatedly and the card stays** — the only verification that reaches the coin
+      flip; file the after-shot as `screenshots/arrival-card-refresh/04-`.
+- [ ] PR #32 open (`https://github.com/digdiggydigger/ADHDLifeOS/pull/32`); merge after E's
+      device verdict; register + opener close-out.
+
+**Deferred, on record (not this block):** a fix that ARRIVES but lands outside every radius
+(a poor-accuracy cell fix; the app ignores `horizontalAccuracy`) still clears the card — the
+probe puts that at ~3% of pulls at 40 m jitter with Home alone, 27% at 65 m. If E still sees
+drops after this lands, accuracy-aware containment for the card is the next lever.
+`HomeService.load()` also empties `allTasks` on a failed fetch, which would drop the card
+through the re-check; the inbox precedent keeps last-known on failure, and this should too.
+
+**Logged from E's aside at 06:20, NOT this block:** *"we need to remove the 'search tasks'
+search bar from a full view task screen"* — `02-task-detail-at-place-home-open.jpeg` shows the
+Tasks tab's bottom search row still on screen with a task detail pushed. → register section B.

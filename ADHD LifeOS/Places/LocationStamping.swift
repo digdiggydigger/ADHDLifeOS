@@ -27,14 +27,26 @@ enum PlaceResolution {
     /// office". Centre-distance survives only as the tie-breaker between equally tight places,
     /// with id last so the ordering is total and never depends on the order places arrive in.
     static func place(containing coordinate: PlaceCoordinate, in places: [Place]) -> Place? {
+        Self.places(containing: coordinate, in: places).first
+    }
+
+    /// EVERY place the coordinate falls inside, in the order above — so `place(containing:)` is
+    /// simply the head of this list and the two can never disagree.
+    ///
+    /// Added for the arrival card (2026-09-08): E's real home holds three saved places with the
+    /// 100 m floor radius whose centres are 1.2 m and 34.5 m apart. With equal radii the winner
+    /// above is decided by which centre the fix happens to land nearer, i.e. a coin flip per fix
+    /// — and only one of the three ever has tasks. A caller that needs "am I at a place with
+    /// something to do" must see all of them, not the coin.
+    static func places(containing coordinate: PlaceCoordinate, in places: [Place]) -> [Place] {
         places
             .filter { PlaceGeometry.contains(place: $0, coordinate: coordinate) }
-            .min { lhs, rhs in
-                let leftDistance = PlaceGeometry.distanceMetres(from: coordinate, to: lhs.coordinate)
-                let rightDistance = PlaceGeometry.distanceMetres(from: coordinate, to: rhs.coordinate)
-                return (lhs.radiusMetres, leftDistance, lhs.id.uuidString)
-                    < (rhs.radiusMetres, rightDistance, rhs.id.uuidString)
+            .map { (place: $0, distance: PlaceGeometry.distanceMetres(from: coordinate, to: $0.coordinate)) }
+            .sorted { lhs, rhs in
+                (lhs.place.radiusMetres, lhs.distance, lhs.place.id.uuidString)
+                    < (rhs.place.radiusMetres, rhs.distance, rhs.place.id.uuidString)
             }
+            .map(\.place)
     }
 }
 

@@ -58,6 +58,40 @@ final class LocationStampingTests: XCTestCase {
         XCTAssertNil(PlaceResolution.place(containing: oxfordCircus, in: []))
     }
 
+    /// Every place the coordinate falls inside, tightest first — the office inside the town
+    /// centre lists as [office, town]. `place(containing:)` is the head of this list, so the two
+    /// can never disagree about the winner.
+    func testResolution_places_listsEveryContainingPlaceTightestFirst() {
+        let office = place("Office", oxfordCircus, radius: 100)
+        let town = place("Town centre", oxfordCircus, radius: 800)
+        let edinburgh = place("Edinburgh", PlaceCoordinate(latitude: 55.9533, longitude: -3.1883))
+
+        let containing = PlaceResolution.places(containing: oxfordCircus, in: [edinburgh, town, office])
+
+        XCTAssertEqual(containing.map(\.id), [office.id, town.id])
+        XCTAssertEqual(PlaceResolution.place(containing: oxfordCircus, in: [edinburgh, town, office])?.id, office.id)
+    }
+
+    /// Equal radii fall back to centre distance — E's real home has two 100 m places 1.2 m apart,
+    /// so BOTH must be reported, the nearer centre first.
+    func testResolution_places_equalRadii_orderByCentreDistance() {
+        let home = place("Home", oxfordCircus, radius: 100)
+        let nudged = PlaceCoordinate(latitude: oxfordCircus.latitude + 0.00001, longitude: oxfordCircus.longitude)
+        let testPlace = place("Test", nudged, radius: 100)
+        let fix = PlaceCoordinate(latitude: oxfordCircus.latitude + 0.000008, longitude: oxfordCircus.longitude)
+
+        let containing = PlaceResolution.places(containing: fix, in: [home, testPlace])
+
+        XCTAssertEqual(containing.map(\.id), [testPlace.id, home.id])
+    }
+
+    func testResolution_places_outsideEveryPlace_isEmpty() {
+        let home = place("Home", oxfordCircus, radius: 100)
+        let elsewhere = PlaceCoordinate(latitude: 55.9533, longitude: -3.1883)
+
+        XCTAssertTrue(PlaceResolution.places(containing: elsewhere, in: [home]).isEmpty)
+    }
+
     /// Overlapping places are entirely normal — "the office" inside "town centre". The SMALLEST
     /// containing place wins, because the most specific answer is the useful one.
     ///
