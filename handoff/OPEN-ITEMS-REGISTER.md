@@ -1,160 +1,130 @@
-# Open items register — 2026-09-07, SESSION close-out (sixth edition today; the previous five covered the queue-clear, the UI baseline, the permission footer, the coverage re-measure, and the adapter drift)
+# Open items register — 2026-09-08, SESSION close-out (seventh edition; the sixth closed the widget coverage and handed off to a NEW-FEATURES conversation)
 
-*This edition covers **F-WidgetCoverage (PR #25)**, B4 from the fifth edition's section B — E's
-pick, taken directly rather than waiting. It also carries the handoff:
-`START-HERE-post-adapter-drift.md` archived, `START-HERE-new-features.md` written in the same
-commit, on E's word — and the successor points at a DESIGN conversation, not a block, because
-E has shifted focus to new features.*
+*This edition covers **F-TabBar-SelectPill (PR #29)** — the first of E's new-feature ideas, taken
+from "reopen the edits to the app's Navigation bar" to merged in one night, through THREE device
+rounds judged from E's own screenshots. It also carries the handoff:
+`START-HERE-new-features.md` archived, `START-HERE-post-tabbar-select-pill.md` written in the
+same commit — and the successor again points at a CONVERSATION, because E has more ideas queued.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
-to update, rather than improvising a list in chat. Supersedes the five earlier editions.
+to update, rather than improvising a list in chat. Supersedes the six earlier editions.
 
 Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `f39092c`** (PR #25) · local = remote, tree clean, **only `main` exists** (the feature
-branch was merged and deleted) · every change lands through a PR · **unit suite 2,497 / 0** and
-**SwiftLint 0 / 711**, both at `93beff2` with the emulator UP · **app target 24.72%
-(11,114/44,961)** · **widget extension 10.29% (228/2,216) — and 97.9% (228/233) of the surface a
-unit test can actually reach**, which is the figure that means something (see below) · no
-`127.0.0.1:9099` in any run log; no UI target was run · **E's phone TRACKS MAIN at `a3e4bde`**, and
-**no Swift under `ADHD LifeOS/` changed, so no reinstall is owed** · `firestore.rules` untouched ·
+**`main` @ `76a4f47`** (PR #29) · local = remote, tree clean, **only `main` exists** (the feature
+branch was merged and deleted by the merge; `git fetch --prune` cleared the ref) · every change
+lands through a PR · re-verified ON MAIN: **unit suite 2,505 / 0** (emulator UP), **SwiftLint
+0 / 711**, sim build green · **app target 24.77% (11,133/44,940)** · no `127.0.0.1:9099` in any
+of the fourteen run logs; no UI target was run · **E's phone TRACKS MAIN at `76a4f47`** —
+rebuilt from main after the merge, installed and launched 05:52 · `firestore.rules` untouched ·
 the emulator was left running.
 
-**Shipped and CLOSED this session (PR #25):**
+**Coverage, read the CLAUDE.md way:** the denominator moved 44,961 → **44,940** (−21) because
+the bar's view body SHRANK (the flat pane and its dot went); the numerator moved 11,114 →
+**11,133** (+19) — the new pure rules (`showsLabel`, `restingSlotWidth`, `slotHitOverflow`,
+the derived metrics). Both runs measured the whole app target, so the ratios are comparable and
+the change is real: 24.72% → 24.77%.
 
-- **F-WidgetCoverage** — B4, the widget extension, closed.
+**Shipped and CLOSED this session (PR #29, seven commits):**
 
-```
-FocusWidgetSnapshot        101/102 (99.02%)  →  102/102  (100%)
-FocusActivityAttributes     71/73  (97.26%)  →   73/73   (100%)
-FocusSprintIntents           4/25  (16.00%)  →   20/25   ( 80%)
-```
+- **F-TabBar-SelectPill** — E reopened the bar against the original six-concept canvas and
+  chose to **combine B and C**. What shipped, after three rounds on the phone:
+  **one floating card in both states** (the flat pane is gone for good); at rest it sits
+  4pt in from the edges and 8pt above the safe line with the selected tab as a **capsule pill,
+  glyph + label**, 44 tall, 16pt inner padding; scrolled it contracts to 8pt in and 4pt up and
+  the mark is the icon-only chip (44×44). The morph is the label collapsing and the card
+  sliding; `TabBarScrollActivity`'s near-top rule was already the trigger and did not change.
+  `rowHeight` is the card plus the larger lift (60 + 8 = **68**) so the `safeAreaInset` never
+  moves with the morph. E, 05:43: *"I think it looks good."*
 
-  **+9 tests** (2,488 → 2,497), one new test file, **+19 covered lines on an UNCHANGED
-  denominator** — widget 9.43% → 10.29%, app target 24.68% → 24.72% (the five files are members of
-  BOTH targets, so widget work moves the app figure too). Red-checked in one pass: committed first,
-  five deliberate regressions, **exactly 7 failing test cases predicted before running and exactly
-  those 7 by name**. Restored with `git checkout --` and proven by a full green rebuild; no
-  `RED-CHECK` marker survives anywhere in the tree.
+  ```
+  round 1  C's pill on the flat pane            → "shouldn't extend down to the bottom… must stay floating"
+  round 2  one card, 8/16 rest, 12/8 scrolled   → "obvious spacing and positioning things" + 3 asks
+  round 3  4/8 · 8/4 · highlight 44 · pad 16    → APPROVED
+  ```
 
-**The finding is worth more than the +19 lines, and it corrected this register as well as
-CLAUDE.md.** Both said the widget target "went BACKWARDS — widget code shipping faster than its
-tests". The arithmetic was right and the diagnosis was wrong:
+  Tests **2,497 → 2,505** (+8 net: the class went 22 → 30, several rewritten). Red-checked
+  three times: round 1 four regressions → exactly the four predicted; round 2 three together →
+  only TWO of three, because two CANCELLED (`restingLift` 8 made `max(8, 8)` equal
+  `floatingLift`), then the band regression alone → 1 / 1; round 3 one at a time → 1 / 1,
+  1 / 1, 3 / 3. Evidence: `screenshots/tabbar-select-pill/` (00–10, README rows for each).
+  Design record: `handoff/SESSION-OPENER-tabbar-select-pill-design.md`.
 
-- **Only FIVE of the fourteen widget files are compiled into the app target** (the
-  `membershipExceptions` list in `project.pbxproj`), and they are **exactly** the five that have
-  ever had non-zero coverage. The unit-test target hosts the APP, so it never compiles the other
-  nine at all.
-- **The testable surface is 233 lines, not 2,216.** The other 1,983 are widget-only view bodies.
-- **The fall was DENOMINATOR, not decay:** `RoutineLiveActivity` (436) + `RoutineActivityAttributes`
-  (10) arrived with the routines arc on 2026-09-03 (`534265e`) — ~446 of the 457 new lines. On the
-  surface that can actually move, the target was at **89.7%** before this block, not 9.43%.
-- **Five lines stay uncovered and that is the floor, not a backlog:** `endAllActivities`' loop body
-  needs a real `Activity`, so an entitled process.
+**The finding worth more than the feature:** measuring E's round-2 shots found **the card was
+60pt on the device while the metrics said 50** — the slot's 44pt `minHeight` (§3's touch
+target) leaked into the row, so `cardHeight`, the band, the disc's 32pt gap and
+`appTabBarClearance()` were all 10pt out, and had been since F-Tools-2-Morph shipped the
+floating state. `slotHitOverflow` (negative vertical padding around the slot's `contentShape`)
+now carries the target without growing the card, and the metrics are true. Reproduced and
+re-verified in a standalone simulator probe of the real bar files.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Delete the spent `.xcresult` bundles?** Now **twenty-two** in the repo root (all
-      gitignored), **859 MB** together; boot disk **~19 GB free**. This session added three
-      (`WidgetCoverage-2026-09-07`, `RedCheck-widget`, `GreenAfterRedCheck-widget`). Related trap,
-      and the reason this is worth a minute: **CLAUDE.md's documented test command still writes to
-      `TestResults.xcresult`, which already exists**, so a session running it verbatim fails
-      *after* paying for the whole build. Deleting the bundles fixes that; so would dating the
-      documented path. I again used a dated path rather than change the documented command unasked.
-      (carried, now with a bigger number)
-
-- [ ] **Should the widget's view-only files be made testable at all?** Not started, and
-      deliberately not started — it is a design change, not a coverage chore, so it is E's call.
-      Two shapes, both real: (a) **extract the pure logic** currently embedded in widget-only view
-      files into a file that is a member of both targets — `FocusActivityCopy.status(for:isComplete:)`
-      (4 lines), `markerCentre(fraction:width:)` (5), `FocusStatsProvider`'s timeline maths (~13,
-      and its `context` parameter is already unused); (b) **UI/snapshot tests**, which is the same
-      answer the app target's 108 zero-percent files are waiting on. Shape (a) buys ~1.5% of the
-      widget target for a refactor of shipped view code — **my recommendation is to leave it**, and
-      to treat 97.9% of the testable surface as done.
+- [ ] **Delete the spent `.xcresult` bundles?** Now **39** in the repo root (all gitignored),
+      **1.4G** together; boot disk **21Gi free**. This session added seventeen (three red rounds,
+      their green runs, the main re-verify). CLAUDE.md's documented test command still writes to
+      `TestResults.xcresult`, which exists, so a session running it verbatim fails after the
+      build; I again used dated paths rather than change the documented command unasked.
+      (carried, bigger again)
+- [ ] **Should the widget's view-only files be made testable at all?** Unchanged from the sixth
+      edition; recommendation is still to leave it. (carried)
 
 ## B · Real work, ready to start — recommended order
 
-1. **Arc 2 — first-class routines + the "at a time" trigger.** Not authorised. (carried)
-2. **`F-Search-3-Journal`** — recommendation is to kill the block. E's call. (carried)
-3. **The Live Activity design review** E parked. (carried)
+**E is bringing the next idea — listen first (`START-HERE-post-tabbar-select-pill.md`).** The
+list below is what exists on paper if E asks; none is authorised.
 
-*B4 (the widget extension) is CLOSED — see above. Nothing has replaced it; section B is three
-carried items and none is authorised.*
+1. **The "YOU'RE AT HOME" card on Today vanishes on drag-reload.** E, 2026-09-08: *"does not
+   stay there when the user drag-reloads the Today page. Which is kind of pointless."* NEW.
+   Needs a look at the place-context card's lifecycle across pull-to-refresh before it is even
+   scoped — is it a refresh that rebuilds Home without the location snapshot, or a card that is
+   only shown on arrival? Not authorised.
+2. **Arc 2 — first-class routines + the "at a time" trigger.** (carried)
+3. **`F-Search-3-Journal`** — recommendation is still to kill the block. (carried)
+4. **The Live Activity design review** E parked. (carried)
 
 ## C · Parked on E's instruction — do not start unprompted
 
 - **Places backgrounding dismiss bug** — waiting on E's iOS update. (carried)
 - **App connections** — real two-way sync; Apple Notes has no iOS API. (carried)
-- **LA interactive buttons**, **time-of-day triggers**, **smart skip** — smart skip has its
-  data in `routine_runs`. (carried)
+- **LA interactive buttons**, **time-of-day triggers**, **smart skip**. (carried)
 
 ## D · Launch blockers — no conversation opened yet
 
-- **Free dev account** → 7-day profiles; the clock restarted with the build of
-  **2026-09-07 04:28**, so the profile is roughly valid to **2026-09-14**. (carried — this is an
-  absolute date deliberately; it was written the same day and would read as "today" otherwise.)
+- **Free dev account** → 7-day profiles; the clock restarted with today's builds (05:52), so the
+  profile is roughly valid to **2026-09-15**. (updated)
 - **Sign in with Apple** built but dormant. (carried)
 
 ## E · Known, not work
 
+- **A `CGContext` bitmap is TOP-DOWN.** My pixel reader flipped rows and the card appeared to
+  move the wrong way with the lift; two hours of theory followed. Draw a ruler in the probe and
+  check the reader against a KNOWN position before concluding. In the design record. (NEW)
+- **The swiftc probe settles geometry in a minute** — real bar files + colour shim + `actool` +
+  `simctl io screenshot`. Reach for it before theory. The probe (`com.probe.tabbar`) is still
+  installed on the test sim; harmless, an erase clears it. (NEW)
+- **Red-check regressions ONE AT A TIME** — two can cancel. Second instance of the register's
+  "symmetric swap" note; now a rule. (NEW)
+- **iPhone Mirroring cannot be started from the terminal**; E's own screenshots, filed with README
+  rows, worked well as the evidence route. (NEW)
+- **The "second outline" behind the floating bar in dark mode is a page card**, not a bar
+  defect — the card surface is opaque (asset alpha 1.0); E confirmed. (NEW)
 - **A percentage over a denominator that includes code the test target never compiles is not a
-  coverage figure, it is two numbers divided.** This is the session's lesson and it generalises
-  past the widget. Before reading any target's ratio as effort, check what the test host actually
-  links: `xcrun xccov view --report --files-for-target <target> <bundle>` on both targets, and the
-  intersection of the file lists is the surface that can move. Now in CLAUDE.md.
-- **A `??` autoclosure is a REGION, and three of them were the whole gap in two "finished" files.**
-  `FocusWidgetSnapshot` sat at 99.02% and `FocusActivityAttributes` at 97.26% with **zero**
-  fully-uncovered lines between them. Same lesson the Journal adapter taught yesterday, now with a
-  second instance — read regions with `xcrun xccov view --archive --file <path> <bundle>`;
-  **without `--archive` it reports "unrecognized file format"**, which reads like a corrupt bundle
-  rather than a missing flag. (extended)
-- **A symmetric swap can be invisible to a "these are wired separately" test.** The red-check
-  broke BOTH intents' action lookups at once; `testTheTwoIntents_areWiredToSeparateActions` passed
-  anyway, because each recorder still saw one call. Predicted before the run and confirmed — the
-  two single-intent tests are what actually carry that load. Worth remembering when writing a
-  pairwise assertion.
-- **Two coverage lessons from F-AdapterDrift, both in CLAUDE.md.** A fake with no error hook makes
-  a `catch` branch untestable and the report blames the adapter; the last unit in a file is often a
-  partial region. (carried)
-- **The "failing tests are slow" oddity is EXPLAINED, and it is a one-off warm-up on the FIRST
-  failure — not a per-failure penalty.** This item has been carried as unexplained since
-  routine-record block 1 ("the 107-second failing test"), and yesterday's two red-checks
-  corroborated it at 35 s and 43 s. Seven failures in one run settle it. In log order their
-  durations were:
-
-  ```
-  9.391  1.558  0.039  0.002  0.002  0.001  0.006
-  ```
-
-  A monotonic decay from the first, not a constant. The whole suite ran **49.8 s** with seven
-  failures against **48.3 s** all green — a 1.5 s difference, because the cost is paid ONCE.
-  Yesterday's 35–43 s runs were few-failure runs, so that single warm-up WAS the whole measurement,
-  which is exactly why it read as a per-failure trait.
-
-  **What this changes:** a red-check with many failures costs barely more than a green run, so
-  there is no reason to scope one down to keep it fast. Budget one slow first failure — and do not
-  read it as a hang. (RESOLVED)
-- **The 70% coverage bar is arithmetically out of reach without UI tests.** 108 of the app
-  target's 342 measured files sit at exactly 0% — **29,513 lines, 66% of the entire denominator**.
-  The largest are `NudgesView` (0/884), `HomeAccessoryStrips` (0/752), `LogComposerView` (0/718),
-  `TaskListView` (0/711), `QuickCaptureComponents` (0/677). (carried)
-- **The emulator harness held its ground**: `+Tags` 97.67%, `+Seed` 98.31%, `+Storage` 95.83%,
-  `+AccountDeletion` 90.20%. (carried)
+  coverage figure.** (carried)
+- **A `??` autoclosure is a REGION**; `xccov view --archive --file`. (carried)
+- **Failing tests pay a one-off warm-up per RUN** (5.1 s / 2.4 s / 2.5 s on the first failure this
+  session, then milliseconds) — never scope a red-check down for speed. (carried)
+- **The 70% coverage bar is arithmetically out of reach without UI tests.** (carried)
+- **The emulator harness held its ground.** (carried)
 - **The watch-list is EMPTY.** (carried)
-- **The strong-password pane is environmental** — full story in `UITestAutofill.swift`. (carried)
+- **The strong-password pane is environmental.** (carried)
 - **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN.** (carried)
-- **The live opener is `START-HERE-new-features.md`**, written at this close-out on E's word.
-  `START-HERE-post-adapter-drift.md` was archived into `handoff/archive/` in the SAME commit that
-  wrote it, per the rule — exactly one `START-HERE-*` is live in `handoff/`. **The successor is
-  deliberately not a build opener:** E's direction, 2026-09-07, is to shift focus to NEW features,
-  so its first instruction is to have the design conversation rather than open
-  `TODO-CLAUDE-CODE.md`. It carries the vision map and section C as raw material and says
-  explicitly not to pick for E. (updated)
+- **The live opener is `START-HERE-post-tabbar-select-pill.md`**, written at this close-out;
+  `START-HERE-new-features.md` was archived in the SAME commit. Exactly one is live. The
+  successor is again a conversation opener, not a build opener. (updated)
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
-- **The emulator was left running** (`scripts/emulators.sh`); `firestore-debug.log` in the repo
-  root is the truth for a silently failed write. (carried)
+- **The emulator was left running.** (carried)

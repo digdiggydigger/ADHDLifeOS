@@ -3072,7 +3072,9 @@ untouched. Files: `Theme/AppTabBar.swift`, `Theme/AppTabBarPresentation.swift`,
       was accepted as is.
 - [x] `screenshots/tabbar-select-pill/` — rounds 1–3 filed (00–10): the rejected pane, E's two
       annotated round-2 shots, and the three round-3 approvals, each row saying what it settled.
-- [ ] PR #29 merged to `main`; phone reinstalled from `main`. (Ticked in the close-out PR.)
+- [x] PR #29 merged to `main` @ `76a4f47` (04:46 UTC); re-verified ON main — suite 2,505 / 0,
+      lint 0 / 711, sim build green, 24.77% (11,133/44,940); phone rebuilt from main, installed
+      and launched 05:52. Only `main` exists.
 
 **Logged from E's aside, NOT this block:** *"the 'YOU'RE AT HOME' notification box at the top of
 the Today page does not stay there when the user drag-reloads the Today page. Which is kind of
