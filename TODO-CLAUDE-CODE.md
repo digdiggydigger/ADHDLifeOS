@@ -3127,11 +3127,16 @@ Two pure rules, TDD-pinned, no visual change:
 - [x] `refreshArrivalSurface()` applies the fix to the card already showing.
 - [x] Touched-file lint clean (`.at` → `.inside` for `identifier_name`; `HomeMomentumSections`
       back to 399 lines); full `swiftlint lint` **0 / 712**.
-- [ ] Full suite green with the emulator up, sim build green, red-checked one regression at a
-      time after the commit.
-- [ ] Device: rebuilt from the branch and installed on `wishwashwacky15`; **E pulls repeatedly
-      and the card stays** — the only verification that reaches the coin flip.
-- [ ] PR opened; merged after E's device verdict; register + opener close-out.
+- [x] Suite **2,526 / 0** (emulator up, 0 `9099` hits), sim build green, app target **24.82%
+      (11,162/44,965)** — denominator +25 (the new rules), numerator +29, comparable. Committed
+      `4d8de11`, THEN red-checked one regression at a time: no-fix → nil predicted 2 / actual 2;
+      first-place-only predicted 1 / actual 1 (its three assertions); restore proven 39 / 0.
+- [x] Device: built from the branch at `4d8de11`, installed and relaunched on `wishwashwacky15`
+      06:38 (binary mtime 06:37).
+- [ ] **E pulls repeatedly and the card stays** — the only verification that reaches the coin
+      flip; file the after-shot as `screenshots/arrival-card-refresh/04-`.
+- [ ] PR #32 open (`https://github.com/digdiggydigger/ADHDLifeOS/pull/32`); merge after E's
+      device verdict; register + opener close-out.
 
 **Deferred, on record (not this block):** a fix that ARRIVES but lands outside every radius
 (a poor-accuracy cell fix; the app ignores `horizontalAccuracy`) still clears the card — the
