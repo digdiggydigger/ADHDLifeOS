@@ -23,6 +23,29 @@ final class TabNavigationTests: XCTestCase {
         XCTAssertEqual(TabReselectionResponse.response(isAtRoot: true), .scrollToTop)
     }
 
+    // MARK: - The capture disc (E's GIF, 2026-09-08 evening)
+
+    /// A re-tap's scroll-to-top is "the page scrolled upwards again" — E's sticky-pill rule of
+    /// 2026-08-31 — but it is a programmatic scroll, so the pan-driven pill never sees it. E's
+    /// GIF: the tab bar restored (it reads the offset) and the pill stayed collapsed over a page
+    /// sitting at the top until a finger nudged it.
+    func testResponse_scrollToTop_restoresTheCaptureDisc() {
+        XCTAssertTrue(
+            TabReselectionResponse.scrollToTop.restoresCaptureDisc,
+            "A scroll-to-top re-tap leaves the capture disc as a pill over a page at the top —"
+                + " E's GIF, unchanged."
+        )
+    }
+
+    /// A pop brings the root page back at its old offset; the pill's state there is still
+    /// honest, so nothing about the disc changes.
+    func testResponse_popToRoot_leavesTheCaptureDiscAlone() {
+        XCTAssertFalse(
+            TabReselectionResponse.popToRoot.restoresCaptureDisc,
+            "A pop-to-root re-tap restores the disc over a list that is still scrolled down."
+        )
+    }
+
     // MARK: - The bar's tap
 
     func testTapOutcome_aDifferentTab_selectsIt() {

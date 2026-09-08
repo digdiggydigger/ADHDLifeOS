@@ -1,4 +1,4 @@
-# Open items register — 2026-09-08, evening (thirteenth edition; the tab depth arc MERGED on E's verdict, nothing in flight)
+# Open items register — 2026-09-08, evening (thirteenth edition, amended 20:55: the tab depth arc MERGED on E's verdict; F-PillReTap IN PR #37 on E's device verdict)
 
 *This edition closes the arc the twelfth opened. E ran the four checks on the phone — three from
 block 1, one from block 2 — and came back with *"All 4 checks were successful"* and two
@@ -14,14 +14,14 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `1100a01`** (PR #35, the tab depth arc — both blocks) · **no branch in flight**;
-`feature/tab-depth` deleted both sides by the merge · every change lands through a PR ·
+**`main` @ `669c47b`** (PR #36, docs; the code is `1100a01`, PR #35) · **branch `fix/pill-retap`,
+pushed, PR #37 OPEN** — `9a919a8` + the close-out commit; `feature/tab-depth` deleted both sides · every change lands through a PR ·
 verified ON MAIN at `1100a01`: **unit suite 2,543 / 0** (emulator UP, 0 `127.0.0.1:9099` hits,
 0 skipped), **SwiftLint 0 / 719**, device build green · **app target 24.76% (11,189/45,196)**,
 identical to the branch figure because the merged tree IS the branch tree ·
 `SearchRowDepthJourneyUITests` 1 / 0 and `TabReselectionJourneyUITests` 3 / 0 (carried from the
-branch; the tree is unchanged) · **E's phone runs `main` @ `1100a01`** (binary 19:50, `App
-installed`, `Launched`, no provisioning trouble) · sim `9181EBF9…` ERASED after both of the
+branch; the tree is unchanged) · **E's phone runs the `fix/pill-retap` BRANCH build at `9a919a8`** (binary 20:50, `App
+installed`, `Launched`; it ran `main` @ `1100a01` from 19:50 until then) · sim `9181EBF9…` ERASED after both of the
 day's UI runs and is signed out · `firestore.rules` untouched · the emulator was left running ·
 every `.xcresult` deleted after its figures were read.
 
@@ -49,6 +49,13 @@ every `.xcresult` deleted after its figures were read.
 
 ## A · Decisions only E can make — minutes each
 
+- [ ] **Does the capture disc restore on a scroll-to-top re-tap now?** Scroll any tab down until
+      the disc is the pill, re-tap that tab: the page scrolls to the top AND the disc is the
+      full disc again. "Yes" → merge PR #37, reinstall from main. **NEW, blocking the merge.**
+      E's GIF (`../Ethan's Screenshot Folder/capture-button-pill-scroll-bug-1.gif`) is the
+      before; cause and fix in the TODO block `F-PillReTap`. No UI journey can see the pill —
+      the disc's outer frame is 60×60 in both states by design — so the phone is the proof.
+
 - [ ] **Keep the row's spring on a tab SWITCH?** Block 2's one judgment call: the row now fades
       in/out with the house spring when the tab changes, not only when a detail is pushed. E's
       four checks passed on the build that has it and E raised nothing; this stays listed only
@@ -57,7 +64,7 @@ every `.xcresult` deleted after its figures were read.
 - [ ] **Should the widget's view-only files be made testable at all?** Recommendation is still
       to leave it. (carried)
 
-## B · Real work, ready to start — recommended order (nothing is in flight; ask E)
+## B · Real work, ready to start — recommended order (after PR #37; ask E)
 
 1. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops after #32.**
    A fix that ARRIVES but lands outside every radius still clears the card (the app ignores

@@ -74,8 +74,38 @@ final class TabNavigationCallSiteTests: XCTestCase {
             "`RootView` does not inject `tabNavigation`, so no tab root can reach the coordinator."
         )
         XCTAssertTrue(
-            root.contains("onReselect: { tabNavigation.reselect($0) }"),
-            "`RootView` does not route the bar's `onReselect` into the coordinator."
+            root.contains("onReselect: reselectTab"),
+            "`RootView` does not route the bar's `onReselect` through `reselectTab`, so the"
+                + " coordinator never hears a repeat tap — or hears it without the capture disc."
+        )
+    }
+
+    // MARK: - A scroll-to-top re-tap restores the capture disc (E's GIF, 2026-09-08)
+
+    /// The rule can be right and the disc still stay a pill: `TabNavigationTests` proves
+    /// `restoresCaptureDisc`, and only this proves the root ACTS on it. The pill's inputs are the
+    /// pan gesture and the tab-change reset; a programmatic scroll is neither, so the root has
+    /// to tell it. Read from `RootView+Reselect.swift` — the method lives there because
+    /// `RootView.swift` sits at the 400-line bar (the doors precedent).
+    func testAScrollToTopReTapRestoresTheCaptureDisc() throws {
+        let reselect = try Self.appCode("RootView+Reselect.swift")
+        XCTAssertTrue(
+            reselect.contains("TabReselectionResponse.response(isAtRoot: tabNavigation.isAtRoot(tab))"),
+            "`reselectTab` does not ask the rule which response the tab gets, so it cannot know"
+                + " whether the page is about to scroll to the top."
+        )
+        XCTAssertTrue(
+            reselect.contains("tabNavigation.reselect(tab)"),
+            "`reselectTab` never tells the coordinator, so no tab root pops or scrolls."
+        )
+        XCTAssertTrue(
+            reselect.contains("if response.restoresCaptureDisc {"),
+            "`reselectTab` ignores `restoresCaptureDisc`, so the pill stays collapsed over a page"
+                + " the re-tap has just scrolled to the top — E's GIF, unchanged."
+        )
+        XCTAssertTrue(
+            reselect.contains("discScrollActivity.reset()"),
+            "`reselectTab` decides the disc should restore and never resets the pill state."
         )
     }
 

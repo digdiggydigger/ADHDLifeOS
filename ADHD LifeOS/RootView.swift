@@ -26,8 +26,8 @@ struct RootView: View {
     @State var composerKind: CaptureKind?
     /// F-DiscPill: whether a drag is live anywhere in the window, fed by
     /// `CaptureDiscPanObserver`. The disc reads it to choose disc vs pill; `@StateObject` so
-    /// the one instance outlives auth-state swaps, matching the observer's once-only install.
-    @StateObject private var discScrollActivity = CaptureDiscScrollActivity()
+    /// the one instance outlives auth-state swaps. Internal: RootView+Reselect resets it.
+    @StateObject var discScrollActivity = CaptureDiscScrollActivity()
     /// F-Tools-2-Morph: is the tab bar the floating card right now? A POSITION rule — contract
     /// on the way down, hold until the page is back near the top — so it reads scroll offsets
     /// rather than the disc's pan translation. E's device verdict replaced the momentary model
@@ -38,7 +38,8 @@ struct RootView: View {
     /// disc — while each screen presents its own SURFACE, which is where the data lives.
     @StateObject private var searchModel = AppSearchModel()
     /// The tab re-tap rule's meeting point (E, 2026-09-08) — see `TabNavigation.swift`.
-    @StateObject private var tabNavigation = TabNavigationCoordinator()
+    /// Internal, not private: RootView+Reselect routes the bar's repeat tap into it.
+    @StateObject var tabNavigation = TabNavigationCoordinator()
     @State var selectedTab: AppTab = .today  // Internal, not private: RootView+Doors reaches it.
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
@@ -225,7 +226,7 @@ struct RootView: View {
                         selection: $selectedTab,
                         captureInboxCount: captureInboxCount,
                         isFloating: tabBarScrollActivity.isFloating,
-                        onReselect: { tabNavigation.reselect($0) }
+                        onReselect: reselectTab
                     )
                 }
                 .blur(radius: isFabOpen ? 4 : 0)

@@ -17,6 +17,16 @@ enum TabReselectionResponse: Equatable {
     static func response(isAtRoot: Bool) -> TabReselectionResponse {
         isAtRoot ? .scrollToTop : .popToRoot
     }
+
+    /// Whether the response also restores the capture disc from its pill (E's GIF, 2026-09-08
+    /// evening). A scroll to the top IS "the page scrolled upwards again" — E's sticky-pill rule
+    /// of 2026-08-31 — but it is a programmatic scroll, so the pan-driven pill never sees it:
+    /// the tab bar, which reads the offset, restored on its own while the pill stayed collapsed
+    /// over a page sitting at the top. A pop brings the root page back at its old offset, where
+    /// the pill's state is still honest, so it leaves the disc alone.
+    var restoresCaptureDisc: Bool {
+        self == .scrollToTop
+    }
 }
 
 /// Where the bar and the six tab roots meet.
