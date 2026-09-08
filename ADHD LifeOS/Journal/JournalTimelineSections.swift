@@ -39,6 +39,7 @@ extension JournalView {
                 }
             }
             .padding(16)
+            .tabRootScrollAnchor()
         }
         .refreshable {
             await reload()

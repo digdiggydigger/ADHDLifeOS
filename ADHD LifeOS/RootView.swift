@@ -37,6 +37,8 @@ struct RootView: View {
     /// surface is open. Owned here because the ROW is app-level — it shares a row with the capture
     /// disc — while each screen presents its own SURFACE, which is where the data lives.
     @StateObject private var searchModel = AppSearchModel()
+    /// The tab re-tap rule's meeting point (E, 2026-09-08) — see `TabNavigation.swift`.
+    @StateObject private var tabNavigation = TabNavigationCoordinator()
     @State var selectedTab: AppTab = .today  // Internal, not private: RootView+Doors reaches it.
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
@@ -214,7 +216,8 @@ struct RootView: View {
                     AppTabBar(
                         selection: $selectedTab,
                         captureInboxCount: captureInboxCount,
-                        isFloating: tabBarScrollActivity.isFloating
+                        isFloating: tabBarScrollActivity.isFloating,
+                        onReselect: { tabNavigation.reselect($0) }
                     )
                 }
                 .blur(radius: isFabOpen ? 4 : 0)
@@ -262,6 +265,7 @@ struct RootView: View {
                     await focusService.restorePersistedSprint()
                 }
                 .environmentObject(searchModel)
+                .environmentObject(tabNavigation)
                 .task { await refreshCaptureInboxCount() }
                 // Any capture written, sorted, promoted or binned anywhere in the app moves this
                 // number — the same signal every other screen reloads on.

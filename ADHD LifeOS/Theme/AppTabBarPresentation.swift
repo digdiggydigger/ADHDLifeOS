@@ -111,6 +111,18 @@ enum AppTabBarPresentation {
     static func accessibilityIdentifier(for slot: Slot) -> String {
         "tabBar.\(slot.label)"
     }
+
+    /// What a tap on a slot means (E's rule, 2026-09-08): a different tab is selected; the tab
+    /// you are already on is RE-selected, which the coordinator turns into pop-to-root or
+    /// scroll-to-top — `TabView` did both for free, and the custom bar had lost both.
+    enum TapOutcome: Equatable {
+        case select(AppTab)
+        case reselect(AppTab)
+    }
+
+    static func tapOutcome(current: AppTab, tapped: AppTab) -> TapOutcome {
+        tapped == current ? .reselect(tapped) : .select(tapped)
+    }
 }
 
 /// The bar's geometry, in one place so block 2's floating state and this resting one cannot

@@ -103,6 +103,8 @@ struct CaptureInboxView: View {
         // the way back with it.
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        // The tab re-tap (E, 2026-09-08): the pushed detail is the inbox's only depth.
+        .tabRoot(.captures, isAtRoot: inspectingCapture == nil, onPopToRoot: { inspectingCapture = nil })
         .sheet(isPresented: $isPresentingQuickCapture) {
             QuickCaptureView(client: captureClient) {
                 Task { await service.refresh() }
@@ -228,49 +230,6 @@ struct CaptureInboxView: View {
         sortSelection = nil
     }
 
-    // MARK: - States
-
-    private func loadedState(_ captures: [Capture]) -> some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
-                summaryHeader(captures)
-
-                // v3's triage shape: the FIRST waiting capture as the decision card, the rest
-                // queued under "Then" — one decision at a time, not a wall of equals.
-                if service.filter == .unprocessed, let top = service.displayedCaptures.first {
-                    topCaptureDecision(top)
-                    let rest = Array(service.displayedCaptures.dropFirst())
-                    if !rest.isEmpty {
-                        Text("Then")
-                            .sectionLabel()
-                            .foregroundStyle(Color.accentColor)
-                        ForEach(rest) { capture in
-                            row(for: capture)
-                                .bentoCard()
-                        }
-                    }
-                } else {
-                    ForEach(service.displayedCaptures) { capture in
-                        row(for: capture)
-                            .bentoCard()
-                    }
-                }
-
-                healthSection
-            }
-            .padding(16)
-        }
-        // The capture disc floats over the bottom of this scroll view, so the last card — often
-        // the Sorted button itself — sat underneath it with nothing below to scroll to (E's
-        // screenshots, 2026-08-28). The room to lift it clear, now the shared modifier: this was
-        // the only screen that had it, and it was padded INTO the content rather than inset.
-        .captureDiscClearance()
-        .refreshable {
-            await service.refresh()
-            allTags = await service.fetchAllTags()
-        }
-    }
-
     /// An empty inbox is the goal state, not an error and not a void — so it reads as an
     /// achievement and points at the one thing worth doing next. Empty is unremarkable on the
     /// other two slices, which just say where things will come from; and only the inbox offers a
@@ -354,4 +313,50 @@ struct CaptureInboxView: View {
         }
     }
 
+}
+
+// The loaded state's builder, in a same-file extension so the struct body stays inside the
+// 250-line budget (`private` still resolves here). Moved 2026-09-08 with the tab re-tap wiring.
+extension CaptureInboxView {
+    private func loadedState(_ captures: [Capture]) -> some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                summaryHeader(captures)
+
+                // v3's triage shape: the FIRST waiting capture as the decision card, the rest
+                // queued under "Then" — one decision at a time, not a wall of equals.
+                if service.filter == .unprocessed, let top = service.displayedCaptures.first {
+                    topCaptureDecision(top)
+                    let rest = Array(service.displayedCaptures.dropFirst())
+                    if !rest.isEmpty {
+                        Text("Then")
+                            .sectionLabel()
+                            .foregroundStyle(Color.accentColor)
+                        ForEach(rest) { capture in
+                            row(for: capture)
+                                .bentoCard()
+                        }
+                    }
+                } else {
+                    ForEach(service.displayedCaptures) { capture in
+                        row(for: capture)
+                            .bentoCard()
+                    }
+                }
+
+                healthSection
+            }
+            .padding(16)
+            .tabRootScrollAnchor()
+        }
+        // The capture disc floats over the bottom of this scroll view, so the last card — often
+        // the Sorted button itself — sat underneath it with nothing below to scroll to (E's
+        // screenshots, 2026-08-28). The room to lift it clear, now the shared modifier: this was
+        // the only screen that had it, and it was padded INTO the content rather than inset.
+        .captureDiscClearance()
+        .refreshable {
+            await service.refresh()
+            allTags = await service.fetchAllTags()
+        }
+    }
 }

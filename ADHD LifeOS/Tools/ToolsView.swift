@@ -40,6 +40,14 @@ struct ToolsView: View {
         self.lifeAreaEditorClient = lifeAreaEditorClient ?? FirebaseLifeAreaEditorClientAdapter()
     }
 
+    /// Which catalog destination is pushed, if any. A flag push rather than the closure-based
+    /// `NavigationLink` this screen used until 2026-09-08: a simulator probe showed a closure
+    /// push is invisible to the stack's path and survives a reset, so a tab re-tap could never
+    /// pop it. Clearing this pops it, and the closure links deeper in the stack (the Life Areas
+    /// editor's rows) collapse with it — the same probe. The closure links there stay: the probe
+    /// also showed a flag push and closure links coexist in one stack, which value links do not.
+    @State private var pushedDestination: ToolsCatalog.Destination?
+
     /// **The iOS 16 floor, answered once.** `PlacesListView` and everything under it are
     /// `@available(iOS 17.0, *)` while this app's deployment target is 16.0, so on a 16.x phone
     /// there is nothing to push to and the card must not be drawn. A hardcoded `true` here would
@@ -67,10 +75,11 @@ struct ToolsView: View {
                     // iOS 17+ because the editor a row opens is, and `placesSupported` is a
                     // `Bool`, which cannot narrow a type's availability.
                     if #available(iOS 17.0, *) {
-                        ToolsRoutinesSection(client: placesClient)
+                        ToolsRoutinesSection(client: placesClient) { pushedDestination = .places }
                     }
                 }
                 .padding(16)
+                .tabRootScrollAnchor()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
@@ -80,6 +89,15 @@ struct ToolsView: View {
             // The house pattern for a tab root that draws its own title (Today, Areas, Journal).
             // Pushed screens are unaffected — they bring their own bar.
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(isPresented: Binding(
+                get: { pushedDestination != nil },
+                set: { if !$0 { pushedDestination = nil } }
+            )) {
+                if let pushedDestination {
+                    destination(for: pushedDestination)
+                }
+            }
+            .tabRoot(.tools, isAtRoot: pushedDestination == nil, onPopToRoot: { pushedDestination = nil })
         }
     }
 
@@ -100,12 +118,13 @@ struct ToolsView: View {
 
     // MARK: - Cards
 
-    /// A closure-based `NavigationLink`, matching every other push in this stack. Mixing closure
-    /// and value links in one `NavigationStack` silently breaks the push — trap b, confirmed on
-    /// device in the Tag Editor block and restated in `LifeAreaEditorListView`.
+    /// A button that sets the flag the stack's one `navigationDestination(isPresented:)` reads.
+    /// Not a value link: mixing closure and value links in one `NavigationStack` silently breaks
+    /// the push (trap b, confirmed on device in the Tag Editor block and restated in
+    /// `LifeAreaEditorListView`), and the editor pushed from here still uses closure links.
     private func card(_ entry: ToolsCatalog.Entry) -> some View {
-        NavigationLink {
-            destination(for: entry.destination)
+        Button {
+            pushedDestination = entry.destination
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: entry.systemImage)

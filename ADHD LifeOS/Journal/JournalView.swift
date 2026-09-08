@@ -116,6 +116,11 @@ struct JournalView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            // The tab re-tap (E, 2026-09-08): the two pushed doors are the Journal's only depth.
+            .tabRoot(.journal, isAtRoot: inspectingTaskId == nil && inspectingCapture == nil) {
+                inspectingTaskId = nil
+                inspectingCapture = nil
+            }
             .safeAreaInset(edge: .bottom) { composerBar.appTabBarClearance() }
             .sheet(isPresented: $isPresentingComposer) {
                 LogComposerView(journalService: journalService, lifeAreas: journalService.lifeAreas) {

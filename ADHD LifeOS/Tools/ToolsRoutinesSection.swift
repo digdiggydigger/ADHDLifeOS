@@ -37,14 +37,19 @@ struct ToolsRoutinesSection: View {
     /// reads, and Settings sits on another tab so the two are never stale on one screen.
     @State private var arrivalNudgesEnabled = true
     private let preferencesStore: MomentumPreferencesStoring
+    /// The empty state's door to Places. `ToolsView` pushes it through its own flag, so the tab
+    /// re-tap can pop it (E, 2026-09-08) — a closure link here could not be popped from outside.
+    private let onOpenPlaces: () -> Void
 
     init(
         client: PlacesClientAdapting,
         history: RoutineRunHistoryService? = nil,
-        preferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+        preferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore(),
+        onOpenPlaces: @escaping () -> Void = {}
     ) {
         self.client = client
         self.preferencesStore = preferencesStore
+        self.onOpenPlaces = onOpenPlaces
         _service = StateObject(wrappedValue: PlacesService(client: client))
         _history = StateObject(wrappedValue: history ?? RoutineRunHistoryService.live())
     }
@@ -235,12 +240,10 @@ struct ToolsRoutinesSection: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            NavigationLink {
-                // Pushed inside the Tools stack, so it lands under the capture disc and asks
-                // for the room — the same call-site clearance `ToolsView` applies to its own
-                // Places push.
-                PlacesListView(client: client)
-                    .captureDiscClearance()
+            Button {
+                // `ToolsView` pushes Places inside the Tools stack, under the capture disc, with
+                // the same call-site clearance it applies to its own Places card.
+                onOpenPlaces()
             } label: {
                 HStack(spacing: 4) {
                     Text(reason.actionTitle)
@@ -252,6 +255,7 @@ struct ToolsRoutinesSection: View {
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             .accessibilityIdentifier("toolsRoutinesEmptyAction")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
