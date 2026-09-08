@@ -30,17 +30,12 @@ final class TabReselectionJourneyUITests: XCTestCase {
 
         let door = app.buttons["homeNudgesFirstRunDirective"]
         UITestSession.scrollUntilHittable(door, in: app)
-        XCTAssertTrue(door.waitForExistence(timeout: UITestSession.timeout), "Today's Nudges door never appeared")
-        door.tap()
-
         let nudges = app.staticTexts["nudgesEmptyState"]
-        XCTAssertTrue(nudges.waitForExistence(timeout: UITestSession.timeout), "Nudges did not push")
+        XCTAssertTrue(UITestSession.tap(door, untilExists: nudges), "Nudges did not push from Today's door")
         attach(app, "1-nudges-pushed-from-today")
 
-        reTapToday(app)
-
         XCTAssertTrue(
-            door.waitForExistence(timeout: UITestSession.timeout),
+            reTapToday(app, untilExists: door),
             "Re-tapping Today with Nudges pushed did not bring Today back — E's report, unchanged."
         )
         XCTAssertFalse(nudges.exists, "Nudges is still on screen after the Today re-tap.")
@@ -56,17 +51,18 @@ final class TabReselectionJourneyUITests: XCTestCase {
 
         let door = app.buttons["homeNudgesFirstRunDirective"]
         UITestSession.scrollUntilHittable(door, in: app)
-        XCTAssertTrue(door.waitForExistence(timeout: UITestSession.timeout))
-        door.tap()
-        XCTAssertTrue(app.staticTexts["nudgesEmptyState"].waitForExistence(timeout: UITestSession.timeout))
+        let nudges = app.staticTexts["nudgesEmptyState"]
+        XCTAssertTrue(UITestSession.tap(door, untilExists: nudges), "Nudges did not push from Today's door")
 
         let back = app.buttons["nudgesBackButton"]
         XCTAssertTrue(
             back.waitForExistence(timeout: UITestSession.timeout),
             "Nudges draws no back control; the edge swipe is the only way out."
         )
-        back.tap()
-        XCTAssertTrue(door.waitForExistence(timeout: UITestSession.timeout), "Back from Nudges did not return to Today")
+        // Through the retrying helper: a tap synthesised while the pushed screen is still
+        // settling — or while iOS's late "Save Password?" sheet is up after a fresh sign-in — is
+        // a silent no-op, and this test failed exactly that way once (the acceptance run).
+        XCTAssertTrue(UITestSession.tap(back, untilExists: door), "Back from Nudges did not return to Today")
     }
 
     /// At the top-level page, a re-tap scrolls to the top: the title's frame comes back to where
@@ -96,7 +92,7 @@ final class TabReselectionJourneyUITests: XCTestCase {
         let scrolledY = title.exists ? title.frame.minY : -1_000
         XCTAssertLessThan(scrolledY, restingY - 100, "The swipes did not move Today; nothing to scroll back from.")
 
-        reTapToday(app)
+        reTapToday(app, untilExists: nil)
 
         let returned = NSPredicate { _, _ in title.exists && abs(title.frame.minY - restingY) < 4 }
         let settled = XCTNSPredicateExpectation(predicate: returned, object: nil)
@@ -110,12 +106,21 @@ final class TabReselectionJourneyUITests: XCTestCase {
     /// A tap on the tab that is ALREADY selected. `UITestSession.openTab` returns early when the
     /// slot reports `isSelected`, which is the right behaviour for every other journey and the
     /// exact thing this one must not do — the first run of this file passed nothing through it.
+    /// With `untilExists`, the tap goes through `UITestSession.tap(_:untilExists:)` — retried,
+    /// with the system password prompt dismissed first. Without it (the scroll test, whose
+    /// target already exists) the prompt is dismissed and the slot tapped once.
     @MainActor
-    private func reTapToday(_ app: XCUIApplication) {
+    @discardableResult
+    private func reTapToday(_ app: XCUIApplication, untilExists expected: XCUIElement?) -> Bool {
         let today = UITestSession.tabButton("Today", in: app)
         XCTAssertTrue(today.waitForExistence(timeout: UITestSession.timeout), "The Today slot is missing")
         XCTAssertTrue(today.isSelected, "Today is not the selected tab, so this would be a select, not a re-tap")
+        if let expected {
+            return UITestSession.tap(today, untilExists: expected)
+        }
+        UITestSession.dismissSystemPasswordPromptIfPresent()
         today.tap()
+        return true
     }
 
     private func attach(_ app: XCUIApplication, _ name: String) {
