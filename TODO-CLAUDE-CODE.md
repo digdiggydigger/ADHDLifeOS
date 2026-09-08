@@ -3273,3 +3273,41 @@ deeper. Block 1's coordinator already carries each tab's depth; this block reads
       row gone over a pushed task detail (E's screenshot, `screenshots/tab-depth/01-`), back on
       the list; block 1's three checks passed in the same sitting. PR #35 merged on that verdict;
       phone reinstalled from main.
+
+### FEATURE: F-PillReTap — a scroll-to-top re-tap restores the capture disc from its pill  [ ] IN PROGRESS
+
+E, 2026-09-08 evening, with a GIF (`../Ethan's Screenshot Folder/capture-button-pill-scroll-bug-1.gif`):
+*"the Quick Capture button, if in collapsed pill form, when tapping the same tab page and it
+scrolls to the top of the page, the pill stays collapsed."* The frames: at 0 s the page is
+scrolled with the bar floating and the disc a pill; 2 s after the re-tap the page is at the top,
+the bar has restored, the disc is STILL the pill; it expands only at ~5 s when a finger nudges it.
+
+- **Cause:** `CaptureDiscScrollActivity` has two inputs — the window-level pan gesture's finger
+  travel and `reset()` on a tab change. The re-tap's scroll-to-top is `proxy.scrollTo`, a
+  programmatic scroll with no touch, so the pan recogniser reports nothing. The bar restores
+  because `TabBarScrollActivity` reads the scroll view's `contentOffset`, which does move.
+- **Fix, inside the settled disc rule (E's 2026-08-31 "stay in pill form until the page is
+  scrolled upwards again" — this IS that scroll):** `TabReselectionResponse.restoresCaptureDisc`
+  (true for `.scrollToTop`, false for `.popToRoot` — a pop brings the list back at its old
+  offset, where the pill is still honest); `RootView.reselectTab(_:)` in `RootView+Reselect.swift`
+  routes the bar's repeat tap into the coordinator and resets the pill on a scroll-to-top. The
+  disc's own spring animates the morph. Nothing about the collapse rule, thresholds or timing
+  changes. `discScrollActivity` and `tabNavigation` are internal on RootView now (the doors
+  precedent — that file is at 399 of 400 lines).
+
+**Acceptance criteria**
+- [x] Tests first, watched red: `TabNavigationTests` +2 (`has no member 'restoresCaptureDisc'` at
+      compile); then with the rule in and the root still routing straight to the coordinator,
+      `TabNavigationCallSiteTests` red on its own assertions (2 tests: the new guard reading
+      `RootView+Reselect.swift`, loud on the missing file; the `onReselect: reselectTab` line).
+- [x] Scoped unit run GREEN: 40 / 0 across `TabNavigationTests`, `TabNavigationCallSiteTests`,
+      `CaptureDiscPillCallSiteTests`, `CaptureDiscScrollActivityTests`, `AppSearchCallSiteTests`.
+      Touched-file lint 0 / 5; full lint **0 / 720**.
+- [x] Full suite **2,546 / 0** (emulator up, 0 `9099` hits, 0 skipped), sim build green, app
+      target **24.76% (11,192/45,206)** — denominator +10 over `1100a01`'s 45,196 (the rule and
+      the reselect method), numerator +3.
+- [ ] Committed, THEN red-checked one at a time; restore proven.
+- [ ] Device: built and installed on E's phone from the branch.
+- [ ] **E's verdict on the phone:** scroll a tab down until the disc is the pill, re-tap the tab
+      — the page scrolls to the top AND the disc is the full disc again. No UI journey can see
+      this one: the disc's outer frame is 60×60 in both states by design.
