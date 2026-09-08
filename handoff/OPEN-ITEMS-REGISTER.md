@@ -1,10 +1,13 @@
-# Open items register — 2026-09-08, SESSION close-out (seventh edition; the sixth closed the widget coverage and handed off to a NEW-FEATURES conversation)
+# Open items register — 2026-09-08, SESSION close-out (eighth edition; the seventh, minutes earlier, closed the tab bar — this one records E's two closing calls)
 
 *This edition covers **F-TabBar-SelectPill (PR #29)** — the first of E's new-feature ideas, taken
 from "reopen the edits to the app's Navigation bar" to merged in one night, through THREE device
 rounds judged from E's own screenshots. It also carries the handoff:
 `START-HERE-new-features.md` archived, `START-HERE-post-tabbar-select-pill.md` written in the
-same commit — and the successor again points at a CONVERSATION, because E has more ideas queued.*
+same commit. **Eighth edition, same close-out:** E then made two calls — *delete the bundles*
+(done, 39 → 0, a gigabyte back) and *"in the next session i want to deal with the 'You're at
+home' card vanishing on drag-reload"* — so the opener was rewritten as
+`START-HERE-home-arrival-card.md` (renamed, never consumed) and B1 below is AUTHORISED.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
@@ -63,25 +66,26 @@ re-verified in a standalone simulator probe of the real bar files.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Delete the spent `.xcresult` bundles?** Now **39** in the repo root (all gitignored),
-      **1.4G** together; boot disk **21Gi free**. This session added seventeen (three red rounds,
-      their green runs, the main re-verify). CLAUDE.md's documented test command still writes to
-      `TestResults.xcresult`, which exists, so a session running it verbatim fails after the
-      build; I again used dated paths rather than change the documented command unasked.
-      (carried, bigger again)
+- [x] **Delete the spent `.xcresult` bundles?** — **E: "yes you can clear those."** Done at this
+      close-out: 39 bundles, 1.4G → **0**, boot disk 21Gi → **22Gi free**; `git status` untouched
+      (all were gitignored). CLAUDE.md's documented test command writes to `TestResults.xcresult`
+      and works verbatim again. RESOLVED — carried in this file since the fourth edition.
 - [ ] **Should the widget's view-only files be made testable at all?** Unchanged from the sixth
       edition; recommendation is still to leave it. (carried)
 
 ## B · Real work, ready to start — recommended order
 
-**E is bringing the next idea — listen first (`START-HERE-post-tabbar-select-pill.md`).** The
-list below is what exists on paper if E asks; none is authorised.
-
-1. **The "YOU'RE AT HOME" card on Today vanishes on drag-reload.** E, 2026-09-08: *"does not
-   stay there when the user drag-reloads the Today page. Which is kind of pointless."* NEW.
-   Needs a look at the place-context card's lifecycle across pull-to-refresh before it is even
-   scoped — is it a refresh that rebuilds Home without the location snapshot, or a card that is
-   only shown on arrival? Not authorised.
+1. **The "YOU'RE AT HOME" card on Today vanishes on drag-reload — AUTHORISED as the next
+   session's first job** (E, closing 2026-09-08: *"in the next session i want to deal with…"*).
+   E's report: *"does not stay there when the user drag-reloads the Today page. Which is kind
+   of pointless."* Read first-hand at this close-out: the card is `ArrivalSurface`
+   (`Places/ArrivalSurface.swift`, rule: no card unless something is OPEN at this place);
+   pull-to-refresh is `HomeView.refreshEverything()` → `refreshArrivalSurface()`
+   (`HomeMomentumSections.swift:356`), which takes a FRESH location fix and sets the surface to
+   nil on any failure. **Two hypotheses, different fixes — the opener spells them out:** (a) a
+   failed re-resolution on the pull throws away a card that was correct a second ago; (b) the
+   card is honestly gone because its one task was CLOSED (E's own 04:41 → 05:41 screenshots
+   show exactly that transition). Investigate, then ask E which they saw. NEW, authorised.
 2. **Arc 2 — first-class routines + the "at a time" trigger.** (carried)
 3. **`F-Search-3-Journal`** — recommendation is still to kill the block. (carried)
 4. **The Live Activity design review** E parked. (carried)
@@ -122,9 +126,12 @@ list below is what exists on paper if E asks; none is authorised.
 - **The watch-list is EMPTY.** (carried)
 - **The strong-password pane is environmental.** (carried)
 - **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN.** (carried)
-- **The live opener is `START-HERE-post-tabbar-select-pill.md`**, written at this close-out;
-  `START-HERE-new-features.md` was archived in the SAME commit. Exactly one is live. The
-  successor is again a conversation opener, not a build opener. (updated)
+- **The live opener is `START-HERE-home-arrival-card.md`.** `START-HERE-new-features.md` was
+  archived at the seventh edition; the seventh's own successor
+  (`START-HERE-post-tabbar-select-pill.md`) was RENAMED and rewritten into this one minutes
+  later on E's closing call, never consumed, so nothing was archived twice. Exactly one is live,
+  and it is an investigate-then-ask opener with the two hypotheses and the code pointers.
+  (updated)
 - **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
 - **The emulator was left running.** (carried)
