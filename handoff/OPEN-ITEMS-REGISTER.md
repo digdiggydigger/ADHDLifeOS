@@ -1,70 +1,63 @@
-# Open items register — 2026-09-08, evening (thirteenth edition, amended 20:55: the tab depth arc MERGED on E's verdict; F-PillReTap IN PR #37 on E's device verdict)
+# Open items register — 2026-09-08, late evening (fourteenth edition; F-PillReTap MERGED on E's verdict, nothing in flight)
 
-*This edition closes the arc the twelfth opened. E ran the four checks on the phone — three from
-block 1, one from block 2 — and came back with *"All 4 checks were successful"* and two
-screenshots; PR #35 merged on that, the phone was reinstalled from `main`, and the suite was
-re-run ON main. The twelfth edition (`aecf82c`) is in git history; this one carries only what
+*This edition closes the day. After the tab depth arc merged (thirteenth edition), E's GIF showed
+the capture disc staying a pill after a re-tap scrolled the page to the top; the cause was traced,
+the fix built test-first, red-checked, put on E's phone, and merged on E's words — *"I've just
+checked that on my phone and it works."* The phone was reinstalled from `main` and the suite
+re-run ON main. The thirteenth edition (`3f8ee9b`) is in git history; this one carries only what
 is still true.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and
-to update, rather than improvising a list in chat. Supersedes the twelve earlier editions.
+to update, rather than improvising a list in chat. Supersedes the thirteen earlier editions.
 
 Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `669c47b`** (PR #36, docs; the code is `1100a01`, PR #35) · **branch `fix/pill-retap`,
-pushed, PR #37 OPEN** — `9a919a8` + the close-out commit; `feature/tab-depth` deleted both sides · every change lands through a PR ·
-verified ON MAIN at `1100a01`: **unit suite 2,543 / 0** (emulator UP, 0 `127.0.0.1:9099` hits,
-0 skipped), **SwiftLint 0 / 719**, device build green · **app target 24.76% (11,189/45,196)**,
-identical to the branch figure because the merged tree IS the branch tree ·
-`SearchRowDepthJourneyUITests` 1 / 0 and `TabReselectionJourneyUITests` 3 / 0 (carried from the
-branch; the tree is unchanged) · **E's phone runs the `fix/pill-retap` BRANCH build at `9a919a8`** (binary 20:50, `App
-installed`, `Launched`; it ran `main` @ `1100a01` from 19:50 until then) · sim `9181EBF9…` ERASED after both of the
-day's UI runs and is signed out · `firestore.rules` untouched · the emulator was left running ·
-every `.xcresult` deleted after its figures were read.
+**`main` @ `a6b8021`** (PR #37, F-PillReTap; the tab depth arc is `1100a01`, PR #35) · **no
+branch in flight**; `fix/pill-retap` and `feature/tab-depth` both deleted both sides by their
+merges · every change lands through a PR · verified ON MAIN at `a6b8021`: **unit suite
+2,546 / 0** (emulator UP, 0 `127.0.0.1:9099` hits, 0 skipped), **SwiftLint 0 / 720**, device
+build green · **app target 24.76% (11,192/45,206)** — denominator +10 over `1100a01`'s 45,196
+(the pill rule and the reselect method), numerator +3 · `SearchRowDepthJourneyUITests` 1 / 0 and
+`TabReselectionJourneyUITests` 3 / 0 (carried from the tab-depth branch; neither file changed
+since) · **E's phone runs `main` @ `a6b8021`** (binary 21:03, `App installed`, `Launched`, no
+provisioning trouble) · sim `9181EBF9…` ERASED after the day's two UI runs, shut down and signed
+out · `firestore.rules` untouched · the emulator was left running · every `.xcresult` deleted
+after its figures were read.
 
-**Shipped and CLOSED this session — F-TabDepth, blocks 1 + 2 (PR #35 → `1100a01`):**
+**Shipped and CLOSED this session — F-PillReTap (PR #37 → `a6b8021`, code `9a919a8`):**
 
-- **E's asks:** (06:20, with a screenshot) *"remove the 'search tasks' search bar from a full
-  view task screen"*; (~07:00) a re-tap on the selected tab must return to that tab's top-level
-  page, and Today → Nudges had *"no way to get back"*. E's four answers: scroll to top at the
-  top level; Nudges gets a Back control; sheets untouched; one arc, pop-to-root first.
-- **Block 1 (`639cf24`):** the bar routes a repeat tap through `AppTabBarPresentation.tapOutcome`
-  into `TabNavigationCoordinator`; each of the six roots pops its own pushes or scrolls to its
-  anchor (`.tabRoot(_:isAtRoot:onPopToRoot:)`), because the simulator probe showed a
-  `NavigationPath` reset pops neither flag nor closure pushes; Nudges keeps its bar with Task
-  detail's Back chevron. Design record: `handoff/SESSION-OPENER-tab-depth-design.md`.
-- **Block 2 (`c4fba78`):** `AppSearchScope.scope(for:isAtRoot:)` (`.none` below the top-level
-  page, `isAtRoot` with NO default); `RootView.searchScope` masks the tab's scope by the depth
-  the roots report; `RootBottomOverlay` animates the row on the house spring keyed on the scope.
-  Built on the same branch because E deferred block 1's checks to block 2's sitting.
-- **Evidence:** tests first, watched red (block 2 three ways — compile, the call-site guard on
-  its own assertions with the rule in and the root still ignoring it, and the UI journey against
-  that same build); red-checked one at a time after each commit (block 1: 1/1, 1/1, restore
-  14/0; block 2: 2/2, 1/1, restore 13/0); **E's device verdict in words: *"All 4 checks were
-  successful"***, with E's two screenshots filed at `screenshots/tab-depth/` (00 the Nudges
-  Back chevron, 01 a task detail with only the disc beside the bar) and README rows.
+- **E's report, with a GIF:** *"the Quick Capture button, if in collapsed pill form, when tapping
+  the same tab page and it scrolls to the top of the page, the pill stays collapsed."* The frames:
+  the bar restored 2 s after the re-tap while the disc stayed a pill until a finger nudged it.
+- **Cause:** `CaptureDiscScrollActivity` has two inputs — the window-level pan gesture and the
+  tab-change `reset()`. The re-tap's scroll-to-top is `proxy.scrollTo`, programmatic, no touch;
+  the pan recogniser never reported it. The bar reads `contentOffset`, which does move.
+- **Fix, inside E's settled 2026-08-31 disc rule** ("until the page is scrolled upwards again" —
+  this IS that scroll): `TabReselectionResponse.restoresCaptureDisc` (scroll-to-top true,
+  pop-to-root false) and `RootView.reselectTab(_:)` in `RootView+Reselect.swift`. Collapse rule,
+  thresholds and timing untouched.
+- **Evidence:** tests first, watched red twice (compile; then the call-site guard on its own
+  assertions with the rule in and the root unwired); red-checked one at a time after the commit
+  (1/1, 1 test/1 test, restore 17/0); **E's device verdict in words.** No UI journey can see the
+  pill — the disc's outer frame is 60×60 in both states by design — so the verdict is the record.
+
+**Shipped and CLOSED earlier the same day — F-TabDepth, blocks 1 + 2 (PR #35 → `1100a01`)**, on
+E's *"All 4 checks were successful"*, with E's two screenshots at `screenshots/tab-depth/`.
+(carried; nothing about it changed)
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Does the capture disc restore on a scroll-to-top re-tap now?** Scroll any tab down until
-      the disc is the pill, re-tap that tab: the page scrolls to the top AND the disc is the
-      full disc again. "Yes" → merge PR #37, reinstall from main. **NEW, blocking the merge.**
-      E's GIF (`../Ethan's Screenshot Folder/capture-button-pill-scroll-bug-1.gif`) is the
-      before; cause and fix in the TODO block `F-PillReTap`. No UI journey can see the pill —
-      the disc's outer frame is 60×60 in both states by design — so the phone is the proof.
-
-- [ ] **Keep the row's spring on a tab SWITCH?** Block 2's one judgment call: the row now fades
-      in/out with the house spring when the tab changes, not only when a detail is pushed. E's
-      four checks passed on the build that has it and E raised nothing; this stays listed only
-      because it was never one of the checks. One line in `RootBottomOverlay.swift` to revert
-      if it ever reads as lag over a hard-cut page. (carried, now low)
+- [ ] **Keep the search row's spring on a tab SWITCH?** Block 2's one judgment call: the row
+      fades with the house spring when the tab changes, not only when a detail is pushed. E's
+      checks passed on the build that has it and E has raised nothing; listed only because it
+      was never one of the checks. One line in `RootBottomOverlay.swift` to revert. (carried, low)
 - [ ] **Should the widget's view-only files be made testable at all?** Recommendation is still
       to leave it. (carried)
 
-## B · Real work, ready to start — recommended order (after PR #37; ask E)
+## B · Real work, ready to start — recommended order (nothing is in flight; ask E)
 
 1. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops after #32.**
    A fix that ARRIVES but lands outside every radius still clears the card (the app ignores
@@ -87,32 +80,34 @@ every `.xcresult` deleted after its figures were read.
 ## D · Launch blockers — no conversation opened yet
 
 - **Free dev account** → 7-day profiles; the clock restarted with the 06:37 device build, so the
-  profile is roughly valid to **2026-09-15**. Neither of today's later device builds (12:06,
-  19:50) needed a provisioning update. (carried)
+  profile is roughly valid to **2026-09-15**. None of the day's four later device builds needed
+  a provisioning update. (carried)
 - **Sign in with Apple** built but dormant. (carried)
 
 ## E · Known, not work
 
+- **A programmatic scroll is invisible to a gesture-driven model.** The pill (pan-driven) and the
+  bar (offset-driven) diverged the moment something other than a finger moved the page. Any
+  future programmatic scroll — a deep link that lands mid-page, a "jump to today" — has to tell
+  the pill itself, the way the re-tap now does. (NEW)
+- **`RootView.swift` is at 399 of 400 lines.** New members go in an extension file with the
+  touched members made `internal` and a comment saying why (`RootView+Reselect.swift` is the
+  third such file). (NEW)
 - **Stacking a block on an unverified block is fine when E asks for it, and the PR should say
-  so.** E deferred block 1's checks; block 2 went on the same branch, the PR body grew to cover
-  both, and E verified all four in one sitting. What made it safe: separate commits per block
-  (a revert stays one commit), and the merge waited for the verdict. (NEW)
-- **A "rule right, wiring wrong" red is worth staging on purpose.** With the pure rule in and the
-  root deliberately still ignoring the depth, the call-site guard AND the UI journey both went
-  red on their own assertions — proof that each catches exactly the defect this repo ships most
-  (a correct helper nothing feeds), not merely a missing symbol. (carried from the twelfth)
-- **Derive, then `onChange` the derived value.** One `.onChange(of: searchScope)` over a computed
-  property covers the tab switch, the push and the pop. (carried)
+  so** — separate commits per block, and the merge waits for the verdict. (carried)
+- **A "rule right, wiring wrong" red is worth staging on purpose** — the call-site guard and
+  the UI journey both fail on their own assertions, proving they catch the defect this repo
+  ships most. Used twice today. (carried)
+- **Derive, then `onChange` the derived value.** (carried)
 - **`xcrun xcresulttool export attachments --path <bundle> --output-path <dir>`** pulls a
-  journey's screenshots out of the result bundle. (carried)
-- **A locked phone refuses the LAUNCH and not the install**; the same phone launched cleanly at
-  19:50 once unlocked. (carried, confirmed twice today)
-- **`grep -c 'Test Case.*failed'` counts test NAMES containing "failed"** (eight of them exist);
-  read the `Executed N tests, with M failures` line, never the grep. (NEW, caught twice today)
+  journey's screenshots out of the result bundle; **`ffmpeg -vf "fps=2,scale=360:-1"`** turns
+  E's GIF into readable frames (no PIL or ImageMagick on this machine). (carried, extended)
+- **A locked phone refuses the LAUNCH and not the install.** (carried, confirmed)
+- **`grep -c 'Test Case.*failed'` counts test NAMES containing "failed"** (eight exist); read
+  the `Executed N tests, with M failures` line. (carried)
 - **Ask before designing when E invites it; read the user's REAL data before choosing between
   hypotheses.** (carried)
-- **The resolver's tie-break was designed for different radii**; any future "which place"
-  caller should take the ordered LIST, not the head. (carried)
+- **The resolver's tie-break was designed for different radii**; take the ordered LIST. (carried)
 - **The fence ledger shows all three home fences flapping departure → arrival within 4 s.**
   (carried)
 - **A swiftc probe of the pure files + the user's real coordinates settles a geometry question
@@ -129,7 +124,7 @@ every `.xcresult` deleted after its figures were read.
 - **The watch-list is EMPTY.** (carried)
 - **The strong-password pane is environmental.** (carried)
 - **The DEBUG test-fire bypasses the master switch and cooldown BY DESIGN.** (carried)
-- **The live opener is `START-HERE-post-tab-depth.md`** — `START-HERE-tab-depth-verdict.md`
+- **The live opener is `START-HERE-post-pill-retap.md`** — `START-HERE-post-tab-depth.md`
   consumed and archived in the same move. Exactly one is live. (updated)
 - **A `NavigationPath` is blind to closure-link and flag pushes, and a path reset pops neither**
   — the design record has the table. (carried)
@@ -137,7 +132,6 @@ every `.xcresult` deleted after its figures were read.
   swallows swipes as well as taps — wait for HITTABLE. (carried)
 - **A zero-height anchor view inside a padded stack costs its spacing** — put the `id` on the
   padded root. (carried)
-- **Twelve `screenshots/` folders without READMEs** — deliberately left. `screenshots/tab-depth/`
-  has one: E's own screenshots ARE the device half of the verdict. (carried, applied)
+- **Twelve `screenshots/` folders without READMEs** — deliberately left. (carried)
 - **Stale unchecked bullets inside four finished blocks.** (carried)
 - **The emulator was left running.** (carried)
