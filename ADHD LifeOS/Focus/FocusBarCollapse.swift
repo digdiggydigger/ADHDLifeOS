@@ -86,9 +86,29 @@ struct FocusBarCardShape: Shape, InsettableShape {
 /// `CaptureDiscMetrics` / `AppTabBarMetrics` house rule. CLAUDE.md §2's 4/8/16/24 grid governs
 /// SPACING, which is why the paddings here are on it and the ring and grabber are not.
 enum FocusBarMetrics {
-    /// The expanded card's horizontal inset from the screen edges. The collapsed card takes 0 —
-    /// E: *"the full-screen-width card sizing is important."*
+    /// The expanded card's horizontal inset from the screen edges.
     static let expandedInset: CGFloat = 16
+
+    /// The collapsed card's inset — **larger than the expanded card's, which is the point.**
+    ///
+    /// **E reversed the full-bleed decision on 2026-09-09** after seeing it on device: a
+    /// 393pt slab sitting on a 377pt floating pill read as a shelf, not a card. E's words —
+    /// *"it should stop being total full-screen-width and become smaller than the nav bar below
+    /// it"* — with the width marked as two red lines on `sprint-session-card-collapse-
+    /// ideal_example.jpeg`, measured at **41.8pt and 348.7pt** (width 306.8pt on a 393pt screen).
+    ///
+    /// Those marks land on the first and last tab ICON centres (measured 42.5 / 350.2; the bar's
+    /// own constants predict 42.75 / 350.25). **That alignment is NOT what this constant
+    /// encodes, and it deliberately is not derived from the slot geometry.** It holds only while
+    /// the bar is SCROLLED: at rest the selected tab renders as a pill of intrinsic width
+    /// (`maximumRestingPillWidth`), so the six slots are unequal and the outer icon centres move
+    /// with the SELECTION — ~34pt with a middle tab selected, ~59pt with Today. Nothing constant
+    /// can track that, and morphing with `isFloating` would fix only half of it while
+    /// reintroducing the horizontal movement E has been removing.
+    ///
+    /// So: the WIDTH is the requirement, the alignment was a coincidence of the state E
+    /// screenshotted. 44 is E's number to within 1.25pt and sits on §2's grid.
+    static let collapsedInset: CGFloat = 44
     static let cornerRadius: CGFloat = 24
 
     /// The drag handle. 36x5 is the iOS sheet grabber's own size, so the affordance reads as the

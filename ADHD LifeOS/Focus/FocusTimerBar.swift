@@ -16,8 +16,9 @@ import SwiftUI
 /// **Two states since F-FocusCard-1** (E's annotated screenshot `IMG_8307.jpg`, 2026-09-09). The
 /// card the contents are drawn on is this file; the contents themselves are
 /// `FocusTimerBarContent`. Expanded, it is the 16pt-inset card above with all four controls.
-/// Collapsed, it is full-bleed to both screen edges with rounded TOP corners only, dropped flush
-/// onto the tab bar, carrying exactly the ring, the sprint name and Pause. Every sprint starts
+/// Collapsed, it is inset further than the expanded card so it sits NARROWER than the tab bar
+/// below it (E's 2026-09-09 reversal of the original full-bleed call), with rounded TOP corners
+/// only, dropped flush onto the tab bar, carrying exactly the ring, the sprint name and Pause. Every sprint starts
 /// expanded, and **collapse is cleared only by the Confirm button that arrives in F-FocusCard-2**
 /// — not by a tab switch, backgrounding or a relaunch, which is E's stated requirement.
 ///
@@ -80,7 +81,7 @@ struct FocusTimerBar: View {
             // the slack between its controls — has to be hit-testable. Child buttons still win
             // their own taps; this only catches what they do not.
             .contentShape(Rectangle())
-            .padding(.horizontal, isCollapsed ? 0 : FocusBarMetrics.expandedInset)
+            .padding(.horizontal, isCollapsed ? FocusBarMetrics.collapsedInset : FocusBarMetrics.expandedInset)
             // The flush drop. `.offset` and NOT negative bottom padding: this view is the LAST
             // child of `RootBottomOverlay`'s VStack, and negative padding there would shrink the
             // stack and drag the search row and the capture disc down 32pt with it.

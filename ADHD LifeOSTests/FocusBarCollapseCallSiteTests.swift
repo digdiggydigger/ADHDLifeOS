@@ -65,13 +65,20 @@ final class FocusBarCollapseCallSiteTests: XCTestCase {
         )
     }
 
-    func testTheCardGoesFullBleedWhenCollapsed() throws {
+    /// **Full-bleed was REVERSED by E on 2026-09-09**, after seeing it on device: the collapsed
+    /// card must *"become smaller than the nav bar below it"*. It now takes its own, larger inset
+    /// rather than zero — the earlier requirement (*"the full-screen-width card sizing is
+    /// important"*) no longer holds and this guard would have kept enforcing it.
+    func testTheCollapsedCardTakesItsOwnInsetNotFullBleed() throws {
+        let source = try Self.appCode("Focus/FocusTimerBar.swift")
         XCTAssertTrue(
-            try Self.appSource("Focus/FocusTimerBar.swift")
-                .contains("isCollapsed ? 0 : FocusBarMetrics.expandedInset"),
-            "The card keeps its 16pt horizontal inset in both states. E chose full-bleed to both"
-                + " screen edges for the collapsed card — \"the full-screen-width card sizing is"
-                + " important\"."
+            source.contains("isCollapsed ? FocusBarMetrics.collapsedInset : FocusBarMetrics.expandedInset"),
+            "The collapsed card is not taking `collapsedInset`. If this reverted to `? 0 :` the"
+                + " card is full-bleed again, which E rejected on device."
+        )
+        XCTAssertFalse(
+            source.contains("isCollapsed ? 0 :"),
+            "The collapsed card is full-bleed again."
         )
     }
 
