@@ -19,22 +19,83 @@ final class FocusCompletionCallSiteTests: XCTestCase {
 
     // MARK: - The card reaches the screen
 
-    func testTheOverlayRendersTheCompletionCard() throws {
+    func testTheOverlayRendersTheCompletionStack() throws {
         let source = try Self.appCode("RootBottomOverlay.swift")
         XCTAssertTrue(
-            source.contains("FocusCompletionCard("),
-            "`RootBottomOverlay` never renders the completion card, so a finished sprint pushes a"
-                + " record nothing shows and collapse is never reset."
+            source.contains("FocusCompletionCardStack("),
+            "`RootBottomOverlay` never renders the completion stack, so a finished sprint pushes"
+                + " a record nothing shows and collapse is never reset."
         )
-        XCTAssertTrue(
+        XCTAssertFalse(
             source.contains("unconfirmedCompletions.first"),
-            "The overlay is not reading the front of the stack. E's presentation is"
-                + " iOS-notification style — newest in front, one at a time, no confirm-all."
+            "The overlay is still drawing only the front record. F-FocusCard-3 hands the WHOLE"
+                + " array to the stack, which is what lets the cards behind peek — reading"
+                + " `.first` here shows one card however many are waiting."
         )
         XCTAssertTrue(
             source.contains("confirmCompletion("),
             "The Confirm button is not wired to the service, so tapping it cannot finalise the"
                 + " record or clear collapse."
+        )
+    }
+
+    /// **E ruled a \"confirm all\" out explicitly**, one at a time, so that confirmation keeps
+    /// meaning "I looked at this". There is nothing to assert the presence of, so this asserts
+    /// the absence — and it enumerates the CLEARING forms rather than matching `removeAll`,
+    /// because `confirmCompletion` legitimately calls `removeAll { $0.id == record.id }` to drop
+    /// exactly one record.
+    func testNothingCanConfirmOrClearTheWholeStackAtOnce() throws {
+        let banned = ["confirmAll", "unconfirmedCompletions.removeAll()", "unconfirmedCompletions = []"]
+        for file in [
+            "Focus/FocusSessionService+Completions.swift",
+            "Focus/FocusSessionService.swift",
+            "Focus/FocusCompletionCardStack.swift",
+            "RootBottomOverlay.swift"
+        ] {
+            let source = try Self.appCode(file)
+            for form in banned {
+                XCTAssertFalse(
+                    source.contains(form),
+                    "\(file) can clear the stack in one move (`\(form)`). E ruled that out: the"
+                        + " user confirms one at a time so each Confirm still means \"I looked at"
+                        + " this\"."
+                )
+            }
+        }
+    }
+
+    /// A card behind the front one must be unreachable AND unreadable. Without both, VoiceOver
+    /// announces three Confirm buttons for one visible card, and a tap near the peeking top edge
+    /// can finalise a sprint the user never saw — which is the single thing this whole card
+    /// exists to prevent.
+    func testOnlyTheFrontCardIsInteractiveAndAudible() throws {
+        let source = try Self.appCode("Focus/FocusCompletionCardStack.swift")
+        XCTAssertTrue(
+            source.contains(".allowsHitTesting(layer.isFront)"),
+            "Every layer in the stack is hit-testable, so a tap can land on a card the user"
+                + " cannot see."
+        )
+        XCTAssertTrue(
+            source.contains(".accessibilityHidden(!layer.isFront)"),
+            "The cards behind are still in the accessibility tree, so VoiceOver reads a Confirm"
+                + " button for each of the three drawn layers."
+        )
+    }
+
+    /// The view must not recompute the order or the depth for itself — `drawOrder(for:)` is the
+    /// one source for both, and it is the only part of the `ZStack` trap a test can reach.
+    func testTheStackDrawsThroughThePureDrawOrder() throws {
+        let source = try Self.appCode("Focus/FocusCompletionCardStack.swift")
+        XCTAssertTrue(
+            source.contains("FocusCompletionStackLayout.drawOrder(for: records)"),
+            "The stack iterates its records directly. `ZStack` draws later children on top, so a"
+                + " newest-first array iterated in order buries the front card under the oldest"
+                + " one — with every layout assertion still passing."
+        )
+        XCTAssertFalse(
+            source.contains("ForEach(records"),
+            "The view is iterating the raw array beside the draw order, so the order the layout"
+                + " tests hold is not the order that renders."
         )
     }
 
@@ -44,7 +105,7 @@ final class FocusCompletionCallSiteTests: XCTestCase {
     /// covered by it — a card behind another cannot be confirmed.
     func testTheCompletionCardIsAboveTheRunningTimerBar() throws {
         let source = try Self.appCode("RootBottomOverlay.swift")
-        let completion = try XCTUnwrap(source.range(of: "FocusCompletionCard("))
+        let completion = try XCTUnwrap(source.range(of: "FocusCompletionCardStack("))
         let timerBar = try XCTUnwrap(source.range(of: "FocusTimerBar(service:"))
         XCTAssertTrue(
             completion.lowerBound < timerBar.lowerBound,
@@ -105,12 +166,24 @@ final class FocusCompletionCallSiteTests: XCTestCase {
 
     // MARK: - Confirm does the whole job
 
+    /// **This guard reads the CONDITION as well as the call, and that is deliberate.** Since
+    /// F-FocusCard-3 the reset fires only when no sprint is running (E, 2026-09-09), and a bare
+    /// `contains("setCardCollapsed(false)")` survives being wrapped in *any* condition — including
+    /// the inverted one. The runtime proof is the pair
+    /// `testConfirmResetsCollapse` / `testConfirmLeavesARunningSprintsCardCollapsed`; this is the
+    /// cheap textual companion that fails while reading the file.
     func testConfirmResetsCollapseAndReSavesTheRecord() throws {
         let source = try Self.appCode("Focus/FocusSessionService+Completions.swift")
-        XCTAssertTrue(
-            source.contains("setCardCollapsed(false)"),
+        let reset = try XCTUnwrap(
+            source.split(separator: "\n").first { $0.contains("setCardCollapsed(false)") },
             "Confirm does not clear collapse. Block 1 shipped it deliberately sticky and this is"
                 + " the ONLY thing that was ever going to reset it."
+        )
+        XCTAssertTrue(
+            reset.contains("isActive"),
+            "The collapse reset is unguarded, so confirming an old completion expands the card of"
+                + " a sprint that is still running — the block-2 behaviour E replaced on"
+                + " 2026-09-09."
         )
         XCTAssertTrue(
             source.contains("await log("),

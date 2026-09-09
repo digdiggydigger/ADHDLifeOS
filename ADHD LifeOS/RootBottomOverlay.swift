@@ -87,7 +87,8 @@ struct RootBottomOverlay: View {
                 .padding(.horizontal, 16)
             }
 
-            // A sprint that finished naturally waits here for the user's Confirm (F-FocusCard-2).
+            // Sprints that finished naturally wait here for the user's Confirm — newest in front,
+            // older ones peeking behind as edges (F-FocusCard-2, stacked in F-FocusCard-3).
             //
             // **Above the timer bar, deliberately.** E chose "Both show — new sprint runs": a
             // routine that auto-starts a sprint must never be dropped because the user had not
@@ -95,11 +96,12 @@ struct RootBottomOverlay: View {
             // stays operable — a card behind another cannot be paused, and one under another
             // cannot be confirmed.
             //
-            // `.first` only: E's presentation is iOS-notification style, newest in front, one at
-            // a time and no confirm-all. F-FocusCard-3 turns this into the peeking stack.
-            if let completion = focusService.unconfirmedCompletions.first {
-                FocusCompletionCard(record: completion) {
-                    Task { await focusService.confirmCompletion(completion) }
+            // The `if` is not decoration: the stack reserves top padding for the peeks its
+            // `.offset`s hang outside its frame, and an empty stack rendered unconditionally
+            // would spend that padding plus the VStack's own spacing on nothing.
+            if !focusService.unconfirmedCompletions.isEmpty {
+                FocusCompletionCardStack(records: focusService.unconfirmedCompletions) { record in
+                    Task { await focusService.confirmCompletion(record) }
                 }
             }
 

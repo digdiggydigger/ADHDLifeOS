@@ -34,16 +34,26 @@ extension FocusSessionService {
     /// never created would throw, whereas the re-save creates it. Nothing here needs a new
     /// backing-store method, a `FirestoreFieldPayloads` entry or an adapter change.
     ///
-    /// **This is the only thing in the app that clears `isCardCollapsed`.** Block 1 shipped
-    /// collapse deliberately sticky — E: the card stays collapsed *"until the user has tapped the
-    /// final, and new, 'Confirmed' button"*.
+    /// **This is the only thing in the app that clears `isCardCollapsed`, and since 2026-09-09 it
+    /// clears it only when no sprint is running.** Block 1 shipped collapse deliberately sticky —
+    /// E: the card stays collapsed *"until the user has tapped the final, and new, 'Confirmed'
+    /// button"* — and block 2 honoured that unconditionally. **Stacking is what made the
+    /// consequence visible**, in E's own scenario: a routine auto-starts sprint B while card A is
+    /// still waiting, so confirming the OLD card A blew open the NEW sprint B's card, undoing a
+    /// collapse the user had just made by hand. E was shown three candidate rules and chose *reset
+    /// only if no sprint is running*: the original rule still governs the case it was written
+    /// about, and nothing yanks open a card the user just collapsed.
+    ///
+    /// Only the RESET is conditional. The dismissal, the re-persist and the finalise all happen
+    /// either way — `testConfirmLeavesARunningSprintsCardCollapsed` asserts that too, because a
+    /// guard placed around the whole tail would pass its headline assertion.
     ///
     /// The dismissal and the persist happen BEFORE the write for the same reason the push does:
     /// the user's tap must land on screen whether or not Firestore answers.
     func confirmCompletion(_ record: CompletedFocusSession) async {
         unconfirmedCompletions.removeAll { $0.id == record.id }
         sprintStore?.writeUnconfirmedCompletions(unconfirmedCompletions)
-        setCardCollapsed(false)
+        if !isActive { setCardCollapsed(false) }
         await log(record.confirmed(at: now()))
     }
 

@@ -3439,10 +3439,38 @@ NATURAL completion pushes a card** — a manual Stop pushes nothing, which is th
 the whole feature. Confirm finalises by RE-SAVING (`save(_:id:in:)` is `setData`, a full upsert) and
 resets collapse. **Firestore rules need no change and nothing for E to republish** — verified.
 
-### FEATURE: F-FocusCard-3 — the notification-style stack  [ ] NOT STARTED
+### FEATURE: F-FocusCard-3 — the notification-style stack  [x] COMPLETED
+
+*Built 2026-09-09 on `feature/focus-card-3`. Suite 2,637/0 (emulator up, 0 `127.0.0.1:9099`,
+0 skipped), lint 0/734, sim + device builds `** BUILD SUCCEEDED **`, app target **26.56%
+(12,161/45,782)** — comparable to 26.37% (12,037/45,646) at `1f0d93a`: the denominator moved
+because the tree grew by one file, the measurement extent is unchanged. Five red-checks, one at
+a time, all five firing on exactly the predicted tests and assertion counts. Evidence:
+`screenshots/focus-card-stack/`. **Installed on E's phone; the block CLOSES on E's verdict.***
 
 Newest in front, older peeking behind as edges, three layers drawn, confirm one at a time.
 **No "confirm all"** — E ruled it out explicitly, and a call-site test guards its absence.
+
+**Two of E's section-A items were answered before the build, and one CHANGED SHIPPED BEHAVIOUR:**
+
+- The completion card's floating geometry (inset 16, radius 24, all four corners, 76pt) is
+  **kept as shipped** — E chose it explicitly rather than by sight, so the stack's peeks inherit
+  a settled shape.
+- **Confirm now resets collapse only when NO sprint is running.** Block 2 reset it
+  unconditionally, which meant confirming an OLD card blew open a NEW sprint's card, undoing a
+  collapse the user had just made by hand. Landed as its own commit with its own red-check.
+
+**`FocusCompletionStackLayout` owns the DRAW ORDER, not just the offsets.** The record named the
+`ZStack` order as this block's headline trap — get it wrong and the oldest card is in front while
+every arithmetic assertion still passes — and that is only true while the order lives in a view
+body. `drawOrder(for:)` returns the layers back to front and the trap became an ordinary
+assertion.
+
+**The render caught a bug the whole suite could not see.** `.regularMaterial` blurs what is
+behind it rather than hiding it, so a stack of full cards ghosted the second card's ring and
+summary line through the front one, worst in dark. The layers behind now draw a blank
+`FocusCompletionCardEdge` — same shape, material, keyline and 76pt height, no content. The
+rejected build is kept in the screenshots folder as the before half of the pair.
 
 ### FEATURE: F-FocusCard-4 — the celebration  [ ] NOT STARTED
 
