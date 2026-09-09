@@ -18,6 +18,10 @@ import SwiftUI
 /// geometry exactly: 16pt inset, 24pt radius on all four corners, `.regularMaterial`, one accent
 /// keyline. Collapsing changes height only, and so does completing.
 ///
+/// **E CHOSE this on 2026-09-09, from three options, before F-FocusCard-3 built the stack on top
+/// of it.** It began as a deviation approved by sight; it is settled now, and the stack's peek
+/// offsets inherit it.
+///
 /// **The confirmation is an acknowledgement, not a save.** The record was already written when
 /// the countdown ended, so nothing is lost if the user never taps this — Confirm re-saves the
 /// same row with `confirmed_at` set. `FocusSessionService.confirmCompletion` carries the why.

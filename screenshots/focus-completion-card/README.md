@@ -40,14 +40,18 @@ beside it — but it asserts the presence of a fix, never that the fix worked.
    `OfflineSprintSummaryCard`'s "Got it" button already uses, so the two completion surfaces speak
    one language even though they are deliberately separate flows.
 
-## What is NOT settled here, and is E's call
+## Settled since — E chose this geometry on 2026-09-09
 
 The design record described this card as sharing the collapsed running card's *"full-bleed flush
 geometry"*. That was written before block 1, where E reversed full-bleed on device — and "flush"
 is only available to the bottom-most piece of bottom furniture, which this card deliberately is
 not (it stacks **above** a sprint that may already be running, so the running card stays
 operable). It therefore takes the **expanded** card's geometry: 16pt inset, 24pt radius on all
-four corners, `.regularMaterial`, one keyline. **E has not seen this and has not chosen it.**
+four corners, `.regularMaterial`, one keyline.
+
+**E was shown three options at the start of F-FocusCard-3 and chose to keep it exactly as
+shipped.** It is no longer a deviation, and the stack's peek offsets inherit it. See
+`../focus-card-stack/README.md`.
 
 ## Files
 
