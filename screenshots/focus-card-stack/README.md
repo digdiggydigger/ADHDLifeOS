@@ -43,7 +43,15 @@ This is the second time in this arc that a `View`-level defect survived a green 
    sign; this is what the sign looks like.
 4. **A single card is unchanged from what E approved in block 2.** `03` is the same card at the
    same geometry — no peek drawn, and no top padding reserved for one.
-5. **Both themes read.** The light peek is carried almost entirely by the `StateGo` keyline, since
+5. **The peeks clear the search row, and the running sprint below stays operable.** `06`/`07`
+   render the REAL `RootBottomOverlay` — search row, capture disc, the three-layer stack and a
+   running sprint's expanded card in one column — because everything above was rendered over a
+   bare background and could not answer a composition question. `.offset` reserves no layout, so
+   the stack pads its top by `reservedTopPadding(forCount:)`; against the VStack's own 8pt
+   spacing that leaves a clear gap under the search row rather than the collision the reservation
+   exists to prevent. The sprint's Pause / +30s / +5m / Stop are all reachable underneath, which
+   is why the card stacks ABOVE the running one.
+6. **Both themes read.** The light peek is carried almost entirely by the `StateGo` keyline, since
    the material and `pageBackground` are close in value; the dark peek is carried by the body as
    well. Legible in both, and noticeably quieter in light — **worth E's eye on device.**
 
@@ -57,3 +65,5 @@ This is the second time in this arc that a `View`-level defect survived a green 
 | `03-stack-one-light.jpeg` | One card, and the regression check on it: identical to the block-2 card E approved, with no reserved peek space above it. |
 | `04-rejected-ghosting-dark.jpeg` | **The rejected build.** Full cards behind the front one: the second card's ring ghosts through the material as a pale blob at the top-left, and its summary line as a smudge across the card. |
 | `05-rejected-ghosting-light.jpeg` | The same rejection in light, where it is subtler but still present. |
+| `06-in-situ-three-light.jpeg` | **The real composition**, light: `RootBottomOverlay` with the search row and capture disc above, three layers, and a running sprint's expanded card below. The peeks clear the row; the sprint's controls are all reachable. |
+| `07-in-situ-three-dark.jpeg` | The same composition in dark. |

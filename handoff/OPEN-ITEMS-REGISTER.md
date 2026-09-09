@@ -82,9 +82,10 @@ executable lines), the measurement extent is unchanged, and the numerator grew +
    - **`F-FocusCard-5`** — close-out, and it has picked up more since block 2:
      `FocusTimerBar.swift:8-25`'s header, `FocusSessionBackingStore.swift`'s "append-only in
      practice" comment (now FALSE — records are re-saved on confirm), `FocusSprintPersisting`'s
-     protocol doc (predates both widenings), and now **`FocusCompletionCard.swift`'s own doc
-     comment, which still calls the floating geometry a deviation from the record** — E has since
-     chosen it outright. (updated)
+     protocol doc (predates both widenings). **`FocusCompletionCard.swift`'s doc comment and
+     `screenshots/focus-completion-card/README.md` were corrected in this session rather than
+     deferred** — both still said the floating geometry was unchosen, which is the opposite of a
+     settled decision, and that is exactly how the design record's block-1 half rotted. (updated)
    - The live opener is `handoff/START-HERE-focus-card-block4.md`.
 
 **0b. E's SECOND change — still not described.** Ask once the arc reaches a natural stopping point.
