@@ -3372,3 +3372,71 @@ of PR #32 on purpose and picked up on E's word: *"First do B-2."*
 persistence serves offline reads from cache, so a failed `fetchAllTasks()` cannot practically be
 induced on E's phone; and per CLAUDE.md "Visual evidence", a folder is earned only by what a test
 cannot assert — this is asserted, so no folder.
+
+## Focus card arc — E's design session, 2026-09-09 (from `IMG_8307.jpg`; branch TBD, off `main` @ `e9fa9df`)
+
+**The full design record is `handoff/SESSION-OPENER-focus-card-design.md` — read it, not this
+summary.** It holds E's verbatim answers to sixteen design questions, the reason behind each
+choice, the pure types, the tests-first table with what each test reads on the BROKEN build, and
+the traps. Everything in its "settled specification" was answered directly by E: **do not
+re-litigate it.**
+
+The card (`ADHD LifeOS/Focus/FocusTimerBar.swift`) is one fixed presentation today, so an active
+sprint permanently occupies a band above the tab bar on every screen. It gains a collapsed state
+and a completion-confirmation flow, tied by one rule of E's: the card stays collapsed *"until the
+user has tapped the final, and new, 'Confirmed' button"*.
+
+Five sequential blocks, E reviews each on device:
+
+### FEATURE: F-FocusCard-1 — the collapsed running card and its four toggles  [ ] NOT STARTED
+
+Collapsed = ring + name + Pause ONLY, full-bleed to both screen edges, rounded TOP corners, dropped
+FLUSH onto the tab bar. Toggled by swipe (down collapses), tap anywhere, the chevron (today a
+decorative `Image`, becomes a real control), and a new grabber. Long-press opens the detail sheet —
+it is the app's ONLY door to `FocusSprintDetailView` and tap-to-collapse takes its gesture.
+Collapse persists across tab switches, backgrounding and relaunch, on `FocusSessionService` through
+the existing `FocusSprintPersisting` seam (`RootView.swift` is at 399/400 lines, so a new
+`@StateObject` there is impossible).
+
+**Acceptance criteria**
+- [ ] Tests first, watched red. `FocusBarCollapseTests` — the direction-aware swipe (a naive
+      `toggle()` must FAIL `testSwipeIsDirectionAwareNotAToggle`), the top-only corner shape
+      (assert `contains(1,99)` AND `!contains(1,1)` — a `RoundedRectangle` fails one, a `Rectangle`
+      the other, nothing passes both by accident), `inset(by:)` actually shrinking, and the flush
+      lift DERIVED from `AppTabBarMetrics.rowHeight` rather than hard-coded 68.
+- [ ] Collapse persistence: a SECOND service over the same fake reads it back, and it restores even
+      when no sprint is stored (the `+Persistence.swift:21` ordering trap).
+- [ ] `FocusBarCollapseCallSiteTests` — the wiring guards, including that `FocusSprintDetailView(`
+      is STILL referenced (the orphan guard) and `RoundedRectangle(cornerRadius: 24` is GONE.
+- [ ] `FocusTimerBar.swift` split into `FocusTimerBarContent.swift` preemptively — it is 250 lines
+      and will blow the 400 ceiling.
+- [ ] Full suite, full lint, sim build, coverage; committed, THEN red-checked one at a time.
+- [ ] Device build on E's phone (it is behind main at `a6b8021`) and E's verdict. The morph may be
+      invisible to XCUITest the way the capture disc's pill is — if so, say so rather than shipping
+      a vacuous journey.
+- [ ] **Report that block 1 alone has STICKY collapse** — nothing resets it until block 2's Confirm.
+
+### FEATURE: F-FocusCard-2 — provisional record + the completed-unconfirmed card  [ ] NOT STARTED
+
+`confirmedAt: Date?` on `CompletedFocusSession` (`confirmed_at`), a `unconfirmedCompletions` array
+on the service under a NEW key, and the card: full ring + name + banked time + Confirm. **Only a
+NATURAL completion pushes a card** — a manual Stop pushes nothing, which is the discriminator for
+the whole feature. Confirm finalises by RE-SAVING (`save(_:id:in:)` is `setData`, a full upsert) and
+resets collapse. **Firestore rules need no change and nothing for E to republish** — verified.
+
+### FEATURE: F-FocusCard-3 — the notification-style stack  [ ] NOT STARTED
+
+Newest in front, older peeking behind as edges, three layers drawn, confirm one at a time.
+**No "confirm all"** — E ruled it out explicitly, and a call-site test guards its absence.
+
+### FEATURE: F-FocusCard-4 — the celebration  [ ] NOT STARTED
+
+A radiating ring burst + a springing checkmark, in the app's existing `ClosureCelebrationCard`
+grammar. iOS 16 floor rules out `PhaseAnimator`/`.symbolEffect`/`.sensoryFeedback`. Reduce Motion
+renders the FINAL state, never the pre-animation one. **Evidence is
+`screenshots/focus-completion-celebration/` with its README, not the unit test.**
+
+### FEATURE: F-FocusCard-5 — close-out  [ ] NOT STARTED
+
+Stale comments (`FocusTimerBar.swift:8-25`, `FocusSessionBackingStore.swift`'s "append-only"),
+the register, and the documented-but-unfixed `OfflineSprintSummaryCard` collision.
