@@ -219,6 +219,30 @@ final class FocusBarCollapseCallSiteTests: XCTestCase {
         )
     }
 
+    /// **A `layoutPriority` without a matching `fixedSize` on its siblings is a regression, not a
+    /// fix.** Priority decides who is offered space FIRST, not who may shrink — so the title at
+    /// priority 1 took what it wanted and SwiftUI compressed the emoji and the PAUSED badge to
+    /// zero and 1pt respectively. Both vanished on E's device while every test stayed green,
+    /// because nothing here asserts text layout.
+    ///
+    /// This guard is textual and coarse on purpose: a real assertion would need to measure the
+    /// rendered width of a `Text` inside an `HStack`, which `sizeThatFits` cannot reach.
+    func testTheRigidSiblingsCannotBeCompressedByTheTitlesPriority() throws {
+        let content = try Self.appCode("Focus/FocusTimerBarContent.swift")
+        XCTAssertEqual(
+            content.components(separatedBy: ".fixedSize()").count - 1, 3,
+            "There should be exactly three `.fixedSize()` calls — the life-area emoji in BOTH"
+                + " states and the expanded card's PAUSED badge. Fewer means one of them can be"
+                + " squeezed to nothing again by the title's `layoutPriority`; more means"
+                + " something else has been frozen and should be checked."
+        )
+        XCTAssertTrue(
+            content.contains(".layoutPriority(1)"),
+            "The title lost its priority, so the trailing `Spacer` will absorb the width and the"
+                + " title truncates early again — the \"9…\" E photographed."
+        )
+    }
+
     func testTheRingShrinksWithTheCard() throws {
         let content = try Self.appCode("Focus/FocusTimerBarContent.swift")
         XCTAssertTrue(

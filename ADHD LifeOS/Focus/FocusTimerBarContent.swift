@@ -61,6 +61,13 @@ struct FocusTimerBarContent: View {
 
             Text(session.lifeAreaEmoji)
                 .font(.caption)
+                // **RIGID, and this pairs with the title's `layoutPriority` below.** Priority
+                // decides who is OFFERED space first, not who is allowed to shrink — so a title
+                // at priority 1 takes what it wants and leaves a priority-0 `Text` sibling with
+                // nothing, which SwiftUI honours by compressing the emoji to zero width. It
+                // vanished on device exactly that way. `fixedSize` makes it incompressible, so
+                // the title flexes against the Spacer and the emoji is never the thing that gives.
+                .fixedSize()
             Text(session.taskTitle)
                 .font(.footnote.weight(.bold))
                 .lineLimit(1)
@@ -206,6 +213,7 @@ struct FocusTimerBarContent: View {
             HStack(spacing: 8) {
                 Text(session.lifeAreaEmoji)
                     .font(.footnote)
+                    .fixedSize()
                 Text(session.taskTitle)
                     .font(.footnote.weight(.bold))
                     .lineLimit(1)
@@ -218,6 +226,9 @@ struct FocusTimerBarContent: View {
                         .textCase(.uppercase)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        // Rigid for the same reason as the emoji — it was rendering as a 1pt
+                        // sliver beside the chevron.
+                        .fixedSize()
                         .accessibilityHidden(true)
                         .accessibilityIdentifier("focusBarPausedBadge")
                 }
