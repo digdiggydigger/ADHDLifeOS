@@ -12,6 +12,7 @@
 //  trip — the one the app actually runs — had never been asserted.
 //
 
+import SwiftUI
 import XCTest
 @testable import ADHD_LifeOS
 
@@ -89,6 +90,48 @@ final class FocusCompletionCardTests: XCTestCase {
         XCTAssertEqual(
             FocusCompletionCardMetrics.ringLineWidth, FocusBarMetrics.collapsedRingLineWidth,
             "The stroke must thin with the ring, or the arc crowds its own centre."
+        )
+    }
+
+    // MARK: - What the card actually measures
+
+    /// **The measurement, not the arithmetic** — the `testCollapsingHalvesTheCardOnScreen` mould.
+    /// Every other assertion in this file relates one constant to another, all of which hold
+    /// while the rendered card comes out any height at all. This one hosts the real view and asks
+    /// UIKit. It is what would catch the Confirm capsule's own padding, or the two-line summary
+    /// column, quietly setting the height instead of the 44pt band.
+    ///
+    /// 76 = the 44pt band + `paddingVertical` twice. The card therefore sits between the
+    /// collapsed running card (60) and the expanded one (148), which is the right order: a
+    /// finished sprint is more than a strip and less than a live instrument.
+    @MainActor
+    func testTheCardIsASingle44ptBandInsideItsPadding() {
+        let host = UIHostingController(
+            rootView: FocusCompletionCard(
+                record: record(focusedSeconds: 1530, checkpoints: 2), onConfirm: {}
+            )
+        )
+        let height = host.sizeThatFits(
+            in: CGSize(width: 393, height: CGFloat.greatestFiniteMagnitude)
+        ).height
+
+        XCTAssertEqual(
+            height,
+            FocusCompletionCardMetrics.confirmMinHeight + FocusCompletionCardMetrics.paddingVertical * 2,
+            accuracy: 0.5,
+            "The card is no longer one 44pt row inside its padding — something in it (the summary"
+                + " column, the Confirm capsule, the ring) is now taller than the band and setting"
+                + " the height on its own."
+        )
+        XCTAssertGreaterThan(
+            height, FocusBarMetrics.collapsedRingSize + FocusBarMetrics.collapsedPaddingVertical * 2,
+            "The completion card has shrunk to the collapsed running card's height — it carries"
+                + " strictly more (a second line of copy and a button), so it cannot be smaller."
+        )
+        XCTAssertLessThan(
+            height, 148,
+            "The completion card is as tall as the EXPANDED running card. It has no controls to"
+                + " lay out beyond Confirm, so that is the height of a layout mistake."
         )
     }
 
