@@ -174,19 +174,13 @@ enum FocusBarMetrics {
         max(0, (AppTabBarPresentation.minimumTouchTarget - grabberHeight) / 2)
     }
 
-    /// **The collapsed card's controls, E's 2026-09-09 layout call.** Pause loses its text label
-    /// and its glyph grows to compensate; it and the chevron move BELOW the sprint title. That
-    /// gives the title the row to itself — with the chevron and the PAUSED badge beside it the
-    /// title had collapsed to "9…" and the badge had wrapped onto two lines.
+    /// The collapsed card's Pause control — a 44pt square at the card's trailing edge.
     ///
-    /// 24pt is the LAYOUT height of each control. Their touch area is still §3's full 44pt, via
-    /// the same negative-padding overflow the grabber uses — which is the only reason a 24pt row
-    /// is allowed at all.
-    static let collapsedControlHeight: CGFloat = 24
-
-    static var collapsedControlHitOverflow: CGFloat {
-        max(0, (AppTabBarPresentation.minimumTouchTarget - collapsedControlHeight) / 2)
-    }
+    /// **E's 2026-09-09 layout, second pass**: the chevron is gone from the collapsed card and
+    /// Pause moved to the FAR RIGHT, so the glyph grew to carry that position on its own. 44
+    /// is `minimumTouchTarget`, so §3 is satisfied by the control's real frame and no
+    /// negative-padding overflow is needed here — the row is 44 tall anyway because the ring is.
+    static let collapsedPauseSize: CGFloat = AppTabBarPresentation.minimumTouchTarget
 
     /// The grabber is drawn as an OVERLAY inside the card's top padding rather than as the first
     /// child of the content stack. As a child it cost 5pt of capsule plus 8pt of stack spacing in
@@ -201,13 +195,13 @@ enum FocusBarMetrics {
     /// ring rides along inside it — which is what makes 73pt reachable at all. 36pt was offered
     /// and rejected as too cramped for the `MM:SS` countdown.
     static let expandedRingSize: CGFloat = 64
-    static let collapsedRingSize: CGFloat = 36
+    static let collapsedRingSize: CGFloat = 44
 
     /// The stroke thins with the ring so the countdown keeps its readable inner diameter: 64 − 12
     /// = 52pt expanded, 44 − 8 = 36pt collapsed. At the expanded 6pt the collapsed ring would
     /// leave 32pt, and `24:59` starts scaling down inside it.
     static let expandedRingLineWidth: CGFloat = 6
-    static let collapsedRingLineWidth: CGFloat = 3
+    static let collapsedRingLineWidth: CGFloat = 4
 
     /// §2's grid, both of them. 16 → 8 collapsed is a third of the card's total saving.
     static let expandedPaddingVertical: CGFloat = 16

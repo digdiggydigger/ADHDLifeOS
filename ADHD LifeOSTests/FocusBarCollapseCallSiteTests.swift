@@ -108,19 +108,34 @@ final class FocusBarCollapseCallSiteTests: XCTestCase {
     /// chose the long-press over a Details button, over tapping the ring, and over orphaning the
     /// view (379 lines, plus `FocusCadenceEditorCard` and `FocusSprintTimelineCard`).
     func testTheDetailSheetIsStillReachable() throws {
-        let source = try Self.appSource("Focus/FocusTimerBar.swift")
+        let source = try Self.appCode("Focus/FocusTimerBar.swift")
         XCTAssertTrue(
             source.contains("FocusSprintDetailView("),
             "`FocusSprintDetailView` has been orphaned — this bar is the app's ONLY door to it."
         )
         XCTAssertTrue(
-            source.contains("onLongPressGesture"),
-            "The detail sheet has no opener. Tap-to-collapse took over the gesture that used to"
-                + " raise it, and E chose the long-press as its replacement."
+            source.contains(".onTapGesture { openDetail() }"),
+            "A single tap no longer opens the full sprint view. E's 2026-09-09 model: tap means"
+                + " the same thing in BOTH states, and collapse moved onto the swipe and grabber."
         )
+        XCTAssertFalse(
+            source.contains("onLongPressGesture"),
+            "The long-press is back. It was retired when the tap took over opening the detail"
+                + " view — leaving it would be a hidden duplicate of a gesture that now has a"
+                + " visible one."
+        )
+    }
+
+    /// The swipe is the ONLY thing that changes the card's state now, apart from the grabber, so
+    /// its wiring matters more than when a tap could also do it.
+    func testCollapseIsReachableWithoutTheTap() throws {
+        let source = try Self.appCode("Focus/FocusTimerBar.swift")
+        XCTAssertTrue(source.contains("case .collapse: setCollapsed(true)"))
+        XCTAssertTrue(source.contains("case .expand: setCollapsed(false)"))
         XCTAssertTrue(
-            source.contains("onTapGesture"),
-            "Tapping the card body must toggle collapse — one of the four affordances E chose."
+            source.contains("focusBarGrabber"),
+            "With the tap reassigned to the detail view and the chevron gone from the collapsed"
+                + " card, the grabber is the only VISIBLE control that expands or collapses."
         )
     }
 
@@ -160,6 +175,26 @@ final class FocusBarCollapseCallSiteTests: XCTestCase {
             content.contains("focusBarPause"),
             "Pause is gone. It is one of the exactly three things E specified for the collapsed"
                 + " card, alongside the progress ring and the sprint name."
+        )
+        // E, 2026-09-09: the chevron leaves the COLLAPSED card only. `collapsedBody` must not
+        // render it; the expanded `titleColumn` still must.
+        let collapsedBody = content[
+            content.range(of: "private var collapsedBody")!.lowerBound
+            ..< content.range(of: "private var expandedBody")!.lowerBound
+        ]
+        XCTAssertFalse(
+            collapsedBody.contains("collapseChevron"),
+            "The chevron is back on the collapsed card, where the grabber already says the same"
+                + " thing 44pt away."
+        )
+        XCTAssertFalse(
+            collapsedBody.contains("pausedBadge"),
+            "The PAUSED badge is back on the collapsed card. The play/pause glyph conveys the"
+                + " state by shape; the badge is what wrapped to two lines and crushed the title."
+        )
+        XCTAssertTrue(
+            content.contains("collapseChevron"),
+            "The chevron has been deleted outright — E kept it on the EXPANDED card."
         )
     }
 

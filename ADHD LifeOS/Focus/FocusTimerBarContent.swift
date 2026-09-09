@@ -59,35 +59,18 @@ struct FocusTimerBarContent: View {
         HStack(spacing: 8) {
             sprintRing
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 8) {
-                    Text(session.lifeAreaEmoji)
-                        .font(.caption)
-                    Text(session.taskTitle)
-                        .font(.footnote.weight(.bold))
-                        .lineLimit(1)
-                        // §1's layout safety. Without it the `Spacer` below yields first and the
-                        // title truncates before anything else gives — the exact failure E
-                        // photographed.
-                        .layoutPriority(1)
-                    Spacer(minLength: 0)
-                }
+            Text(session.lifeAreaEmoji)
+                .font(.caption)
+            Text(session.taskTitle)
+                .font(.footnote.weight(.bold))
+                .lineLimit(1)
+                // §1's layout safety: without it the `Spacer` yields first and the title
+                // truncates before anything else gives — the "9…" E photographed.
+                .layoutPriority(1)
 
-                HStack(spacing: 16) {
-                    pauseControl
-                    collapseChevron
-                    if let badge = FocusBarStatus.pausedBadge(for: session) {
-                        Text(badge)
-                            .font(.caption2.weight(.bold))
-                            .textCase(.uppercase)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .accessibilityHidden(true)
-                            .accessibilityIdentifier("focusBarPausedBadge")
-                    }
-                    Spacer(minLength: 0)
-                }
-            }
+            Spacer(minLength: 0)
+
+            pauseControl
         }
     }
 
@@ -140,38 +123,45 @@ struct FocusTimerBarContent: View {
 
     /// Before F-FocusCard-1 this was a decorative `Image` that pointed up and did nothing — the
     /// row around it was the button. E chose to make it a real control that flips with the state.
+    /// **Expanded only since E's 2026-09-09 call** — *"get rid of the Chevron"* on the collapsed
+    /// card, where the grabber directly above it already advertises the same thing. The expanded
+    /// card keeps it: E chose to leave a visible collapse control on the taller state.
     private var collapseChevron: some View {
         Button(action: onToggleCollapse) {
-            Image(systemName: isCollapsed ? "chevron.up" : "chevron.down")
-                .font(.footnote.weight(.bold))
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.bold))
                 .foregroundStyle(.secondary)
                 .frame(
-                    width: FocusBarMetrics.collapsedControlHeight,
-                    height: FocusBarMetrics.collapsedControlHeight
+                    width: AppTabBarPresentation.minimumTouchTarget,
+                    height: AppTabBarPresentation.minimumTouchTarget
                 )
-                .padding(.vertical, FocusBarMetrics.collapsedControlHitOverflow)
                 .contentShape(Rectangle())
-                .padding(.vertical, -FocusBarMetrics.collapsedControlHitOverflow)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isCollapsed ? "Expand the sprint card" : "Collapse the sprint card")
+        .accessibilityLabel("Collapse the sprint card")
         .accessibilityIdentifier("focusBarExpand")
     }
 
-    /// Pause/Resume as a GLYPH ONLY — E: *"remove the label from the PAUSE icon and make the icon
-    /// bigger to make up for the removed label"*. The play/pause glyph swap is what conveys the
-    /// state, which is shape rather than colour and so satisfies §4; VoiceOver gets the word.
+    /// Pause/Resume as a GLYPH ONLY, at the collapsed card's trailing edge — E: *"remove the
+    /// label from the PAUSE icon and make the icon bigger"*, then *"move the PAUSE button over to
+    /// the far right-hand side"* with the glyph enlarged again to suit.
+    ///
+    /// `.font(.title).imageScale(.large)` rather than a fixed point size: that is the house idiom
+    /// for a bar glyph (`AppTabBar` sizes its own with `.font(.title2).imageScale(.large)`), and
+    /// it keeps the glyph on Dynamic Type instead of pinning it (§1).
+    ///
+    /// The play/pause swap is what conveys the paused state now that the PAUSED badge is gone
+    /// from this card — a SHAPE change, so §4 holds without it — and VoiceOver still gets the word.
     private var pauseControl: some View {
         Button(action: onTogglePause) {
             Image(systemName: session.isPaused ? "play.fill" : "pause.fill")
-                .font(.title3.weight(.semibold))
+                .font(.title)
+                .imageScale(.large)
                 .frame(
-                    width: FocusBarMetrics.collapsedControlHeight,
-                    height: FocusBarMetrics.collapsedControlHeight
+                    width: FocusBarMetrics.collapsedPauseSize,
+                    height: FocusBarMetrics.collapsedPauseSize
                 )
-                .padding(.vertical, FocusBarMetrics.collapsedControlHitOverflow)
                 .contentShape(Rectangle())
-                .padding(.vertical, -FocusBarMetrics.collapsedControlHitOverflow)
         }
         .buttonStyle(.plain)
         .foregroundStyle(Color.accentColor)
@@ -261,11 +251,6 @@ struct FocusTimerBarContent: View {
                 Circle()
                     .fill(state.color)
                     .frame(width: state.diameter, height: state.diameter)
-                    // The page-colour ring that separated the next marker from the coral fill on
-                    // the old track does the same job on the dial (§4: shape, never colour alone).
-                    .overlay(
-                        Circle().strokeBorder(Color(.systemBackground), lineWidth: state == .next ? 2 : 0)
-                    )
                     .position(
                         SprintRingGeometry.dotCenter(
                             checkpoint: checkpoint, durationSeconds: session.durationSeconds,

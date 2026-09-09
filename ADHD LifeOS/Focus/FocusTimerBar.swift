@@ -31,10 +31,10 @@ import SwiftUI
 ///   assertions live in `FocusCheckpointsTests` / `FocusSessionServiceTests` instead, which is
 ///   where they belong in a native app.
 /// - The full-screen focus modal (timeline inspector, live cadence editor) exists as
-///   `FocusSprintDetailView`, presented as a sheet by **long-pressing the card**. It used to be a
-///   plain tap on the task row, and the tap now collapses; E chose the long-press over a Details
-///   button, over tapping the ring, and over orphaning the view. This bar is that view's only
-///   door in the whole app, so VoiceOver gets it as a named action rather than a held gesture.
+///   `FocusSprintDetailView`, presented as a sheet by **a single tap on the card, in either
+///   state** (E, 2026-09-09). It was briefly a long-press, when the tap toggled collapse instead;
+///   E moved collapse onto the swipe and the grabber so the tap could mean one thing everywhere.
+///   This bar is that view's only door in the whole app.
 struct FocusTimerBar: View {
     @ObservedObject var service: FocusSessionService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -96,8 +96,12 @@ struct FocusTimerBar: View {
             // child of `RootBottomOverlay`'s VStack, and negative padding there would shrink the
             // stack and drag the search row and the capture disc down 32pt with it.
             .offset(y: isCollapsed ? FocusBarMetrics.collapsedOffsetY : 0)
-            .onTapGesture { setCollapsed(!isCollapsed) }
-            .onLongPressGesture(minimumDuration: 0.45) { openDetail() }
+            // **E's gesture model, 2026-09-09.** A tap opens the full sprint view in BOTH states —
+            // one meaning, nothing to remember — and the long-press that used to do it is retired
+            // rather than left as a hidden duplicate. Collapsing and expanding are the swipe and
+            // the grabber only: swipe UP on the collapsed card expands it, swipe DOWN on the
+            // expanded card collapses it, and each is a no-op in the other state.
+            .onTapGesture { openDetail() }
             // **`.simultaneousGesture`, never `.gesture`.** A plain `.gesture(DragGesture(...))`
             // on the card wins the hit test over its children and swallows Pause's taps — which
             // collapsed would leave a card whose only remaining control is dead.

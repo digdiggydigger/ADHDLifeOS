@@ -237,16 +237,16 @@ final class FocusBarGeometryTests: XCTestCase {
         let collapsed = measuredHeight(collapsed: true)
         let expanded = measuredHeight(collapsed: false)
 
-        // **58pt, and the number that matters is that it is under the tab bar's 60pt.** E's
-        // verdict on the 73pt version was "way too tall!", and a collapsed card taller than the
-        // bar it sits on is what that read as. The saving came from three places, all E's calls:
-        // the grabber moved into the top padding (-13), the ring went 44 -> 36, and Pause lost
-        // its text label so the control row is 24pt with a 44pt touch area rather than 44pt.
-        XCTAssertEqual(collapsed, 57.7, accuracy: 1)
-        XCTAssertLessThan(
+        // **60pt — the tab bar's own height exactly, and E's pick.** The 73pt version drew "way
+        // too tall!"; the fix was the grabber moving into the top padding (-13pt), which is worth
+        // the whole difference on its own. E then chose to spend the freed room on LEGIBILITY
+        // rather than take it as more height: the ring went back to the 44pt originally picked
+        // and the Pause glyph grew, once the chevron and PAUSED badge left the collapsed row.
+        XCTAssertEqual(collapsed, 60, accuracy: 1)
+        XCTAssertLessThanOrEqual(
             collapsed, AppTabBarMetrics.cardHeight,
-            "The collapsed card is at least as tall as the tab bar beneath it, which is exactly"
-                + " what E rejected — it stops reading as subordinate to the bar."
+            "The collapsed card is TALLER than the tab bar beneath it — the 73pt state E rejected"
+                + " as \"way too tall\". Matching the bar is E's chosen ceiling, exceeding it is not."
         )
         // Back to 148, the height this card was BEFORE the arc started. The grabber briefly cost
         // the expanded card 13pt as a stack child; as an overlay in the padding it costs nothing.

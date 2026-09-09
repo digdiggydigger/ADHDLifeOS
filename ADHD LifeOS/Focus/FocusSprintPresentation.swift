@@ -73,20 +73,31 @@ enum FocusCheckpointDotState: Equatable {
     /// coral progress fill, which is barely a colour change at a glance.
     ///
     /// - reached → green: unmistakably "done", and nothing else on the track is green.
-    /// - next → `.primary`: maximum contrast against BOTH the coral fill and the grey track, and it
-    ///   flips with the colour scheme instead of fighting it.
+    /// - next → `LabelPrimary`, **not `.primary`, and that distinction is the whole bug fix**
+    ///   (2026-09-09). `Color.primary` is a HIERARCHICAL style: over a `Material` SwiftUI resolves
+    ///   it with vibrancy rather than as a flat colour, so on the timer bar's `.regularMaterial`
+    ///   card the 12pt disc landed mid-grey instead of white and read as a hole punched in the
+    ///   card. `.next` was the only hierarchical value in this enum and the only one that rendered
+    ///   wrong — `.reached` and `.pending` are concrete and were always fine. `LabelPrimary` is
+    ///   the opaque token with the same intent, so the mark now looks identical on the material
+    ///   card, the page-backed timeline and anywhere else.
     /// - pending → a muted label grey that still reads on the coral fill (the old `systemFill`
     ///   nearly vanished on it).
     var color: Color {
         switch self {
         case .reached: return .green
-        case .next: return .primary
+        case .next: return Color("LabelPrimary")
         case .pending: return Color(.tertiaryLabel)
         }
     }
 
-    /// The next marker is drawn larger and ringed as well as recoloured, so it is identifiable by
-    /// SHAPE too — never by colour alone (§4).
+    /// The next marker is drawn LARGER as well as recoloured, so it is identifiable by SHAPE too
+    /// — never by colour alone (§4). 12 against 8 is that shape difference, and it is the only one
+    /// needed: the `Color(.systemBackground)` ring that used to sit around it was deleted on
+    /// 2026-09-09. That ring's premise — "a page-colour ring separates the marker from the fill" —
+    /// was false twice over. The marker sits on a MATERIAL card, which is a blur no colour can
+    /// match, and `systemBackground` (#FFF / #000) was never this app's page colour anyway
+    /// (`PageBackground` is #F2F3F7 / #15171C). In dark mode it painted a literal black ring.
     var diameter: CGFloat {
         self == .next ? 12 : 8
     }
