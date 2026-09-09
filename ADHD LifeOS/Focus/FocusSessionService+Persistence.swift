@@ -27,6 +27,10 @@ extension FocusSessionService {
         // `FocusSessionService.swift:18-21` already records hitting). The one redundant write
         // back to the store is the price, and it keeps store and published value in step.
         setCardCollapsed(sprintStore.readCardCollapsed())
+        // Above the guard for the same reason, and it bites harder here: a sprint that completed
+        // naturally CLEARED its own stored state on the way out, so on precisely the path that
+        // leaves confirmation cards waiting there is no sprint to read back.
+        restoreUnconfirmedCompletions()
         guard session == nil, let saved = sprintStore.read() else { return }
         cadence = saved.cadence
         startedAt = saved.startedAt

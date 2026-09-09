@@ -30,6 +30,12 @@ final class FocusSessionService: ObservableObject {
     @Published private(set) var completedSprintCount = 0
     /// A sprint that ran out while dead — feeds the confirmation card, persisted until acknowledged.
     @Published var offlineCompletionSummary: CompletedFocusSession?
+    /// Sprints that finished naturally and are waiting on Confirm (F-FocusCard-2), **newest
+    /// first** — so the card on top is `.first` and a card's depth in the stack is its index.
+    /// Written from `FocusSessionService+Completions.swift`, which is why it has no `private(set)`
+    /// (see the note at the top of this class). Nothing is ever auto-confirmed, and there is no
+    /// cap: E chose one at a time so confirmation keeps meaning "I looked at this".
+    @Published var unconfirmedCompletions: [CompletedFocusSession] = []
     /// The cadence the running sprint was last planned with — `start`'s argument until the modal's
     /// live editor replaces it. Published so the editor seeds from what is actually scheduled
     /// rather than from a guess reverse-engineered out of the checkpoint marks.
@@ -226,10 +232,26 @@ final class FocusSessionService: ObservableObject {
         // A manual stop that arrives after the deadline already passed (Lock Screen button on a
         // suspended app) is a countdown that genuinely ran out — record it as such.
         let ranOut = session.map { !$0.isPaused && $0.isComplete } ?? false
-        guard let record = finishCurrentSprint(completedNaturally: completedNaturally || ranOut) else { return }
+        let naturally = completedNaturally || ranOut
+        guard let record = finishCurrentSprint(completedNaturally: naturally) else { return }
         // Stamped after the teardown, before the write — additive only, so a fix that never
         // arrives can delay the history write but never lose it.
-        await log(record.stamped(with: locationStamp()))
+        let stamped = record.stamped(with: await locationStamp())
+        // **The push is SYNCHRONOUS and comes before `await log(...)`** (F-FocusCard-2): a
+        // Firestore write that hangs must not leave a finished sprint with nothing on screen.
+        // `testThePushLandsBeforeTheLogAwait` is the only test that can see the wrong order.
+        //
+        // It pushes the STAMPED copy, not the bare record, and that is not cosmetic: Confirm
+        // re-saves from exactly this copy through `save`, which is `setData` with no merge — so a
+        // card holding an unstamped record would ERASE `place_id`/lat/long from the document the
+        // moment the user confirmed it. The cost is that a slow location fix (bounded at
+        // `CoreLocationFixProvider.fixTimeout`) delays the card as well as the write.
+        //
+        // **Here and not in `finishCurrentSprint`.** That teardown is shared with the replacement
+        // path in `start` and with the app-was-dead settle in `restorePersistedSprint`, which has
+        // its own card and its own key — pushing there would raise two cards for one sprint.
+        if naturally { pushUnconfirmedCompletion(stamped) }
+        await log(stamped)
     }
 
     /// The synchronous teardown shared by `stop` and the replacement path in `start`: cancels the

@@ -136,6 +136,20 @@ struct CompletedFocusSession: Codable, Identifiable, Equatable, Sendable {
     var placeId: UUID?
     var latitude: Double?
     var longitude: Double?
+    /// When the user ACKNOWLEDGED the completion (F-FocusCard-2) — `nil` until they tap Confirm.
+    ///
+    /// **Optional is not a convenience, it is a compatibility requirement.** Every
+    /// `focus_sessions` document written before this block has no `confirmed_at` at all, so a
+    /// non-optional property would make the decoder throw `keyNotFound` on the entire existing
+    /// history and empty the weekly and trend analytics. `testLegacyRecordDecodesAsProvisional`
+    /// holds that line.
+    ///
+    /// **Inert to every existing reader, deliberately.** `FocusAnalytics`, `FocusLoggedToday` and
+    /// `FocusWidgetSnapshotBuilder` keep counting every record whether it is confirmed or not:
+    /// banked time is banked, and the confirmation is a UI acknowledgement rather than a data
+    /// gate. Filtering on this field is the plausible next step and it would silently rewrite
+    /// history the moment a card was left unconfirmed.
+    var confirmedAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case id, taskId = "task_id", taskTitle = "task_title", latitude, longitude
@@ -145,7 +159,11 @@ struct CompletedFocusSession: Codable, Identifiable, Equatable, Sendable {
         case completedNaturally = "completed_naturally"
         case startedAt = "started_at", endedAt = "ended_at"
         case placeId = "place_id"
+        case confirmedAt = "confirmed_at"
     }
+
+    /// A finished sprint the user has not yet acknowledged — what the confirmation card renders.
+    var isProvisional: Bool { confirmedAt == nil }
 
     /// A copy carrying `stamp`, or `self` untouched when there is none — additive only, the same
     /// no-failure-path rule every other stamped record follows.
@@ -156,6 +174,19 @@ struct CompletedFocusSession: Codable, Identifiable, Equatable, Sendable {
         stamped.latitude = stamp.coordinate.latitude
         stamped.longitude = stamp.coordinate.longitude
         return stamped
+    }
+
+    /// A copy marked confirmed at `date` — additive only, mirroring `stamped(with:)` above.
+    ///
+    /// **The `id` is deliberately unchanged.** `FirebaseManager.save(_:id:in:)` is `setData` keyed
+    /// on `id.uuidString` with no merge, so finalising is an UPSERT over the row the sprint
+    /// already wrote. Mint a new id here and the same sprint appears twice in history; drop a
+    /// field here and the re-save ERASES it from the document, which is why this copies the
+    /// receiver rather than rebuilding one.
+    func confirmed(at date: Date) -> CompletedFocusSession {
+        var confirmed = self
+        confirmed.confirmedAt = date
+        return confirmed
     }
 }
 

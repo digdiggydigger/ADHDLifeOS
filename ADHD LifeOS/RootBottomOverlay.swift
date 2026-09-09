@@ -87,6 +87,22 @@ struct RootBottomOverlay: View {
                 .padding(.horizontal, 16)
             }
 
+            // A sprint that finished naturally waits here for the user's Confirm (F-FocusCard-2).
+            //
+            // **Above the timer bar, deliberately.** E chose "Both show — new sprint runs": a
+            // routine that auto-starts a sprint must never be dropped because the user had not
+            // tidied up. So the running card keeps its established position at the bottom and
+            // stays operable — a card behind another cannot be paused, and one under another
+            // cannot be confirmed.
+            //
+            // `.first` only: E's presentation is iOS-notification style, newest in front, one at
+            // a time and no confirm-all. F-FocusCard-3 turns this into the peeking stack.
+            if let completion = focusService.unconfirmedCompletions.first {
+                FocusCompletionCard(record: completion) {
+                    Task { await focusService.confirmCompletion(completion) }
+                }
+            }
+
             FocusTimerBar(service: focusService)
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
@@ -101,6 +117,13 @@ struct RootBottomOverlay: View {
         .animation(
             reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
             value: searchScope
+        )
+        // F-FocusCard-2: a completion is the one moment BOTH cards move — the running card
+        // leaves as the confirmation card arrives, and again in reverse on Confirm. `isActive`
+        // above covers only the first half, so without this the new card simply pops in.
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+            value: focusService.unconfirmedCompletions.count
         )
     }
 }

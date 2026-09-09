@@ -37,6 +37,11 @@ final class FocusLocationStampTests: XCTestCase {
         var cardCollapsed = false
         func readCardCollapsed() -> Bool { cardCollapsed }
         func writeCardCollapsed(_ isCollapsed: Bool) { cardCollapsed = isCollapsed }
+
+        // F-FocusCard-2's second widening. See `FocusCompletionStackServiceTests`.
+        var unconfirmed: [CompletedFocusSession] = []
+        func readUnconfirmedCompletions() -> [CompletedFocusSession] { unconfirmed }
+        func writeUnconfirmedCompletions(_ records: [CompletedFocusSession]) { unconfirmed = records }
     }
 
     private func record(

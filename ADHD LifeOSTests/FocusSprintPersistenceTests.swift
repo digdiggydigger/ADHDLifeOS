@@ -6,6 +6,45 @@
 import XCTest
 @testable import ADHD_LifeOS
 
+/// Hoisted to FILE scope rather than nested in the test class: SwiftLint's `type_body_length`
+/// counts a nested type's body against its enclosing one, and F-FocusCard-2's second widening of
+/// `FocusSprintPersisting` tipped this class over 250. Still `private`, so it is visible to
+/// exactly this file — the twin fakes in the other Focus test files are unchanged.
+private final class FakeFocusSprintStore: FocusSprintPersisting {
+    var stored: PersistedFocusSprint?
+    var unacknowledged: CompletedFocusSession?
+    private(set) var writeCount = 0
+    private(set) var clearCount = 0
+
+    func read() -> PersistedFocusSprint? { stored }
+    func write(_ state: PersistedFocusSprint) {
+        stored = state
+        writeCount += 1
+    }
+    func clear() {
+        stored = nil
+        clearCount += 1
+    }
+
+    func readUnacknowledgedCompletion() -> CompletedFocusSession? { unacknowledged }
+    func writeUnacknowledgedCompletion(_ record: CompletedFocusSession) { unacknowledged = record }
+    func clearUnacknowledgedCompletion() { unacknowledged = nil }
+
+    // F-FocusCard-1 widened `FocusSprintPersisting`. Recorded rather than defaulted in a
+    // protocol extension deliberately: a default would have silenced the compile break that
+    // is this block's red step, and would let a service that never persists collapse pass.
+    var cardCollapsed = false
+    func readCardCollapsed() -> Bool { cardCollapsed }
+    func writeCardCollapsed(_ isCollapsed: Bool) { cardCollapsed = isCollapsed }
+
+    // F-FocusCard-2 widened it a second time, for the unconfirmed-completion stack, and
+    // for the same reason: no protocol-extension default, so the compile break is the red
+    // step and a service that never persists the stack cannot pass.
+    var unconfirmed: [CompletedFocusSession] = []
+    func readUnconfirmedCompletions() -> [CompletedFocusSession] { unconfirmed }
+    func writeUnconfirmedCompletions(_ records: [CompletedFocusSession]) { unconfirmed = records }
+}
+
 /// F-SprintPersistence (E's on-device report, 2026-08-24): a running sprint must survive the app
 /// being killed. The engine is deadline-derived, so persistence is just the sprint's identity,
 /// plan and clock anchors — relaunch recomputes the countdown, marks checkpoints crossed while
@@ -22,34 +61,6 @@ final class FocusSprintPersistenceTests: XCTestCase {
         func logCompletedSession(_ session: CompletedFocusSession) async throws {
             logged.append(session)
         }
-    }
-
-    private final class FakeFocusSprintStore: FocusSprintPersisting {
-        var stored: PersistedFocusSprint?
-        var unacknowledged: CompletedFocusSession?
-        private(set) var writeCount = 0
-        private(set) var clearCount = 0
-
-        func read() -> PersistedFocusSprint? { stored }
-        func write(_ state: PersistedFocusSprint) {
-            stored = state
-            writeCount += 1
-        }
-        func clear() {
-            stored = nil
-            clearCount += 1
-        }
-
-        func readUnacknowledgedCompletion() -> CompletedFocusSession? { unacknowledged }
-        func writeUnacknowledgedCompletion(_ record: CompletedFocusSession) { unacknowledged = record }
-        func clearUnacknowledgedCompletion() { unacknowledged = nil }
-
-        // F-FocusCard-1 widened `FocusSprintPersisting`. Recorded rather than defaulted in a
-        // protocol extension deliberately: a default would have silenced the compile break that
-        // is this block's red step, and would let a service that never persists collapse pass.
-        var cardCollapsed = false
-        func readCardCollapsed() -> Bool { cardCollapsed }
-        func writeCardCollapsed(_ isCollapsed: Bool) { cardCollapsed = isCollapsed }
     }
 
     private struct SUT {
