@@ -153,6 +153,14 @@ enum FocusCompletionCardMetrics {
 
     /// §3's touch floor, spelled as the shared constant rather than as a literal 44.
     static var confirmMinHeight: CGFloat { AppTabBarPresentation.minimumTouchTarget }
+
+    /// The whole card: one 44pt control band inside its padding, so 76.
+    ///
+    /// Named because F-FocusCard-3's stack draws BLANK bodies for the cards behind the front one,
+    /// and a blank body that is not exactly the real card's height reads as a different object
+    /// rather than as the same card further back. `testTheCardIsASingle44ptBandInsideItsPadding`
+    /// measures the rendered card against this, so the two cannot drift.
+    static var height: CGFloat { confirmMinHeight + paddingVertical * 2 }
 }
 
 #if DEBUG
