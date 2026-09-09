@@ -18,6 +18,15 @@ extension FocusSessionService {
         if offlineCompletionSummary == nil {
             offlineCompletionSummary = sprintStore.readUnacknowledgedCompletion()
         }
+        // **Above the guard below, deliberately, and this is the ordering trap of F-FocusCard-1.**
+        // That guard returns early whenever no sprint is stored — which is most launches — so a
+        // collapse read placed after it would restore the card's posture only when a sprint
+        // happened to be mid-flight. It goes through `setCardCollapsed` rather than assigning:
+        // `isCardCollapsed` is `private(set)`, which scopes its setter to the file that declares
+        // it, and this extension is a different file (the same constraint the class comment at
+        // `FocusSessionService.swift:18-21` already records hitting). The one redundant write
+        // back to the store is the price, and it keeps store and published value in step.
+        setCardCollapsed(sprintStore.readCardCollapsed())
         guard session == nil, let saved = sprintStore.read() else { return }
         cadence = saved.cadence
         startedAt = saved.startedAt
