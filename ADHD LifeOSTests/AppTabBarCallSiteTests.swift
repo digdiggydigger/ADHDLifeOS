@@ -245,6 +245,51 @@ final class AppTabBarCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The morph is horizontal only (E, 2026-09-09)
+
+    /// E retired the scroll-driven vertical movement: *"the height difference ... when scrolling
+    /// down the page ... be removed"*, and ONLY that. A metrics test can prove there is one lift;
+    /// only reading the source proves the VIEW stopped branching on it. A ternary restored here
+    /// would move the bar again while every metric test still passed.
+    func testTheBarsBottomPaddingIsUnconditional() throws {
+        let source = try Self.appCodeOnly("Theme/AppTabBar.swift")
+        XCTAssertTrue(
+            source.contains("AppTabBarMetrics.restingLift"),
+            "The bar no longer applies its lift at all — it would sit flush on the home indicator."
+        )
+        XCTAssertFalse(
+            source.contains("floatingLift"),
+            "The scroll-driven vertical drop is back. The bar must not move on scroll; only its"
+                + " WIDTH morphs (restingInset -> floatingInset), plus the pill-to-chip and the"
+                + " label hiding."
+        )
+    }
+
+    /// The horizontal half of the morph must SURVIVE. Removing the vertical drop by flattening
+    /// the whole morph would be the over-correction — E kept the contraction deliberately.
+    func testTheHorizontalMorphSurvives() throws {
+        let source = try Self.appCodeOnly("Theme/AppTabBar.swift")
+        XCTAssertTrue(
+            source.contains("isFloating ? AppTabBarMetrics.floatingInset : AppTabBarMetrics.restingInset"),
+            "The width morph is gone too. E removed ONLY the height difference."
+        )
+        XCTAssertTrue(
+            source.contains("isFloating ? AppTabBarMetrics.chipWidth : nil"),
+            "The selected pill no longer contracts to a chip on scroll."
+        )
+    }
+
+    /// Comment lines are stripped before the negative assertions above: this file's own doc
+    /// comments name `floatingLift` while explaining that it is gone, which would fail a raw
+    /// text search against a correct implementation. (Learned the same day, in
+    /// `FocusBarCollapseCallSiteTests`.)
+    private static func appCodeOnly(_ relativePath: String) throws -> String {
+        try appSource(relativePath)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
+
     // MARK: - Reading the tree
 
     private static func appSource(_ relativePath: String) throws -> String {

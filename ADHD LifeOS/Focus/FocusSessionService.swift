@@ -34,6 +34,21 @@ final class FocusSessionService: ObservableObject {
     /// live editor replaces it. Published so the editor seeds from what is actually scheduled
     /// rather than from a guess reverse-engineered out of the checkpoint marks.
     @Published var cadence: FocusNudgeCadence = .count(1)
+    /// Whether the running sprint's card is collapsed (F-FocusCard-1). **Every sprint starts
+    /// expanded**, and this survives tab switches, backgrounding and a cold relaunch — it is
+    /// cleared only by the Confirm button arriving in F-FocusCard-2. E: the card stays collapsed
+    /// *"until the user has tapped the final, and new, 'Confirmed' button"*.
+    ///
+    /// It lives here rather than in `@AppStorage` or a `RootView` `@StateObject` because
+    /// `RootView.swift` is at 399 of 400 lines (a `@StateObject` cannot live in an extension
+    /// file), because Confirm resets it and Confirm is a service operation, and because
+    /// `FocusTimerBar` already observes this object.
+    ///
+    /// **The per-device caveat at `HomeView.swift:70` does not bite here.** That warning is about
+    /// an account-scoped fact, where a wrong answer changes what content a user sees. This is
+    /// device furniture posture, and the sprint it decorates is already per-device UserDefaults
+    /// under `focus.sprint.running`.
+    @Published private(set) var isCardCollapsed = false
 
     private let logger: FocusSessionLogging?
     /// Local persistence for the RUNNING sprint (F-SprintPersistence): written on plan/clock
@@ -92,6 +107,17 @@ final class FocusSessionService: ObservableObject {
     // pause/stop path, and the service lives for the app's lifetime (owned by `RootView`).
 
     // MARK: - Controls
+
+    /// The single writer of `isCardCollapsed`, and it persists on every change in **both**
+    /// directions — a store that only ever recorded `true` would restore a card the user
+    /// deliberately expanded straight back to collapsed on the next launch.
+    ///
+    /// `sprintStore` is optional across this service (several call sites build one without), so
+    /// collapse still toggles in memory when there is nothing to write to.
+    func setCardCollapsed(_ isCollapsed: Bool) {
+        isCardCollapsed = isCollapsed
+        sprintStore?.writeCardCollapsed(isCollapsed)
+    }
 
     /// Starts a sprint, replacing any in flight (the replaced one is logged as stopped-early, so
     /// history never silently loses a session).

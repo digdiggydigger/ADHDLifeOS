@@ -147,7 +147,7 @@ enum AppTabBarMetrics {
     /// gone; the card floats in both states, higher at rest and lower while scrolling. The band
     /// is the bar's `safeAreaInset`, so it must be ONE height whichever state applies — a band
     /// that changed with the morph would move every page's content by the difference each time
-    /// it fired. The card moves inside the band; the band does not. It is not a chosen number,
+    /// it fired. The band is 68pt. It is not a chosen number,
     /// so §2's grid does not govern it; change the chip, the padding or either lift and this
     /// follows rather than drifting.
     ///
@@ -155,11 +155,11 @@ enum AppTabBarMetrics {
     /// under it, not the row, and both of those stay fixed — the slack around the content is the
     /// floating card's own 8pt padding.
     static var rowHeight: CGFloat {
-        cardHeight + max(restingLift, floatingLift)
+        cardHeight + restingLift
     }
 
     /// The floating card's own height: the chip (or the pill, the same height) plus the card's
-    /// vertical padding. 50pt. The same in both states — only the card's POSITION morphs.
+    /// vertical padding. 60pt. The same in both states — only the card's POSITION morphs.
     static var cardHeight: CGFloat {
         chipHeight + floatingPaddingVertical * 2
     }
@@ -178,8 +178,9 @@ enum AppTabBarMetrics {
     /// second half of the morph. These are the concept's numbers, on §2's grid where the concept
     /// was already on it and rounded onto it where it was not (the concept drew a 6/4 inner
     /// padding; 8/4 is the nearest grid pair and reads identically at this size). Since
-    /// 2026-09-08 the card is the bar in BOTH states; `floatingInset` / `floatingLift` are its
-    /// SCROLLED position, `restingInset` / `restingLift` its resting one. **The inset is 8, down
+    /// 2026-09-08 the card is the bar in BOTH states; `floatingInset` is its SCROLLED width and
+    /// `restingInset` its resting one. The pair of LIFTS is gone — since 2026-09-09 there is one
+    /// `restingLift` for both states. **The inset is 8, down
     /// from the concept's 12**, on E's second device verdict — *"WIDEN the horizontal width"* —
     /// so the scrolled card still contracts from the resting 4, by the same 4pt as before.
     static let floatingInset: CGFloat = 8
@@ -248,6 +249,12 @@ enum AppTabBarMetrics {
     /// with red marks about 6pt in from each screen edge. Both halved onto the grid, and the
     /// scrolled pair moved with them so the morph keeps its shape. Still the tunables.
     static let restingInset: CGFloat = 4
+
+    /// How far the card sits off the bottom of the safe area — **in both states since
+    /// 2026-09-09**, when E retired the scroll-driven drop. Not zero: the safe area already
+    /// excludes the home indicator, so this is the gap above it, and at zero the card reads as
+    /// jammed into the bottom edge. Keeps the `resting` name because `restingInset` /
+    /// `floatingInset` remain a live pair for the horizontal morph.
     static let restingLift: CGFloat = 8
 
     /// The widest a resting pill may be. This is what turns §3's floor into a GUARANTEE rather
@@ -259,18 +266,20 @@ enum AppTabBarMetrics {
     /// `minimumScaleFactor` (0.8, so down to ~110) absorbs it (§1: never clip, never truncate).
     static let maximumRestingPillWidth: CGFloat = 120
 
-    /// How far the card sits off the bottom of the safe area WHILE SCROLLING.
-    ///
-    /// **8, down from the concept's 22**, on E's GIF verdict: *"when scrolling, the icon nav bar
-    /// should move further down the page to create more space"*; **then 4**, on E's 2026-09-08
-    /// device verdict, *"the whole nav bar moved down the screen a little bit"*. That verdict is
-    /// the morph's vertical half: the card rests at `restingLift` and drops to this.
-    ///
-    /// Not zero: the safe area already excludes the home indicator, so this is the gap above it,
-    /// and at zero the card reads as jammed into the bottom edge. `rowHeight` is derived from
-    /// the larger of the two lifts, so the band follows any change here or to `restingLift`
-    /// rather than having to be re-tuned alongside it.
-    static let floatingLift: CGFloat = 4
+    // `floatingLift` was DELETED on 2026-09-09, E's call: *"the height difference ... when
+    // scrolling down the page ... be removed"*, and ONLY that. It had been the morph's vertical
+    // half — the card rested at `restingLift` and dropped to 4 while scrolling (E's GIF verdict
+    // *"the icon nav bar should move further down the page to create more space"*, shipped at 8
+    // and tuned to 4 on 2026-09-08).
+    //
+    // Deleted rather than left at `restingLift`'s value: a constant nothing reads is this repo's
+    // most repeated defect, and `restingLift` alone now says what happens. Restoring the drop
+    // means reintroducing it here AND branching in `AppTabBar`, which
+    // `AppTabBarCallSiteTests.testTheBarsBottomPaddingIsUnconditional` will fail on.
+    //
+    // It also closed a defect elsewhere for free: the collapsed focus sprint card is dropped to
+    // the constant band, so while the bar moved inside that band the card was flush only at rest
+    // and showed a 4pt sliver under its square bottom corners whenever the page was scrolled.
 
     /// Where the pill sits against the glyph's top-trailing corner. §2 allows 4pt for micro
     /// positioning; the concept's 9/-5 is rounded onto that grid.

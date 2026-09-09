@@ -43,6 +43,13 @@ final class FocusSprintPersistenceTests: XCTestCase {
         func readUnacknowledgedCompletion() -> CompletedFocusSession? { unacknowledged }
         func writeUnacknowledgedCompletion(_ record: CompletedFocusSession) { unacknowledged = record }
         func clearUnacknowledgedCompletion() { unacknowledged = nil }
+
+        // F-FocusCard-1 widened `FocusSprintPersisting`. Recorded rather than defaulted in a
+        // protocol extension deliberately: a default would have silenced the compile break that
+        // is this block's red step, and would let a service that never persists collapse pass.
+        var cardCollapsed = false
+        func readCardCollapsed() -> Bool { cardCollapsed }
+        func writeCardCollapsed(_ isCollapsed: Bool) { cardCollapsed = isCollapsed }
     }
 
     private struct SUT {

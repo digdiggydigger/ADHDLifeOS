@@ -90,6 +90,9 @@ protocol FocusSprintPersisting: AnyObject {
     func readUnacknowledgedCompletion() -> CompletedFocusSession?
     func writeUnacknowledgedCompletion(_ record: CompletedFocusSession)
     func clearUnacknowledgedCompletion()
+    /// Whether the running sprint's card is collapsed (F-FocusCard-1).
+    func readCardCollapsed() -> Bool
+    func writeCardCollapsed(_ isCollapsed: Bool)
 }
 
 /// The live store: one JSON blob in UserDefaults. Local-only device state — a sprint is not
@@ -98,6 +101,7 @@ protocol FocusSprintPersisting: AnyObject {
 final class UserDefaultsFocusSprintStore: FocusSprintPersisting {
     static let key = "focus.sprint.running"
     static let completionKey = "focus.sprint.unacknowledgedCompletion"
+    static let cardCollapsedKey = "focus.card.collapsed"
 
     private let defaults: UserDefaults?
 
@@ -137,5 +141,13 @@ final class UserDefaultsFocusSprintStore: FocusSprintPersisting {
 
     func clearUnacknowledgedCompletion() {
         defaults?.removeObject(forKey: Self.completionKey)
+    }
+
+    func readCardCollapsed() -> Bool {
+        defaults?.bool(forKey: Self.cardCollapsedKey) ?? false
+    }
+
+    func writeCardCollapsed(_ isCollapsed: Bool) {
+        defaults?.set(isCollapsed, forKey: Self.cardCollapsedKey)
     }
 }

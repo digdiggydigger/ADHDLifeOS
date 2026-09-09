@@ -98,13 +98,16 @@ struct FocusCheckpointMarker: View {
         Circle()
             .fill(fillColor)
             .frame(width: diameter, height: diameter)
-            // The next marker is bigger AND ringed, so it is identifiable by SHAPE and not only by
-            // colour (§4).
-            .overlay {
-                if state == .next {
-                    Circle().strokeBorder(Color(.systemBackground), lineWidth: 2)
-                }
-            }
+            // The next marker is BIGGER, which is the §4 shape difference on its own. The
+            // `Color(.systemBackground)` ring was deleted here on 2026-09-09 alongside the
+            // app-side one: against a Lock Screen backdrop a #FFF/#000 ring has no meaning at all,
+            // which made this the worst-affected of the three surfaces that share this palette.
+            //
+            // The FILL stays `.primary` here, unlike the app, which moved to the opaque
+            // `LabelPrimary` token. The app's problem was vibrancy over a `Material`; a Live
+            // Activity has no material backdrop, `.primary` is the correct adaptive choice against
+            // a wallpaper, and `LabelPrimary` is not in this target's catalog. Copying it across
+            // to fix a case that is not broken would be speculative duplication.
     }
 
     private var fillColor: Color {

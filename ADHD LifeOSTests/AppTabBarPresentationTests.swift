@@ -89,25 +89,45 @@ final class AppTabBarPresentationTests: XCTestCase {
 
     // MARK: - The morph's geometry (F-Tools-2-Morph)
 
-    /// **The band is ONE height, and both positions of the card fit inside it.** The card is the
-    /// bar's `safeAreaInset`; if its height changed between the two states, every page's content
-    /// would jump by the difference each time the morph fired. So `rowHeight` is DERIVED from the
-    /// card plus the LARGER of the two lifts, and the card moves inside a band that does not.
-    /// Equality, not merely "fits": slack would be the solid slab E objected to creeping back.
-    func testTheBandIsTheCardPlusTheLargerLiftSoTheInsetNeverMoves() {
+    /// **The band is the card plus its ONE lift, with no slack.** The card is the bar's
+    /// `safeAreaInset`; if its height changed between the two states, every page's content would
+    /// jump by the difference each time the morph fired. Since E retired the vertical half of the
+    /// morph (2026-09-09) there is a single lift, so the band is exact rather than sized for the
+    /// larger of two — and equality, not merely "fits", keeps the solid slab E objected to from
+    /// creeping back as slack.
+    func testTheBandIsExactlyTheCardPlusItsLift() {
         let cardHeight = AppTabBarMetrics.chipHeight + AppTabBarMetrics.floatingPaddingVertical * 2
         XCTAssertEqual(cardHeight, AppTabBarMetrics.cardHeight)
-        let largerLift = max(AppTabBarMetrics.restingLift, AppTabBarMetrics.floatingLift)
-        XCTAssertEqual(cardHeight + largerLift, AppTabBarMetrics.rowHeight)
+        XCTAssertEqual(cardHeight + AppTabBarMetrics.restingLift, AppTabBarMetrics.rowHeight)
     }
 
-    /// E's 2026-09-08 pick for the two positions — "wider, lower AND drops": at rest the card is
-    /// wider (a smaller inset) and higher (a larger lift); scrolling it contracts inward and
-    /// settles down. Both inequalities are the design; a tune that flattened either would make
-    /// the two states the same card, which E did not choose.
-    func testTheCardIsWiderAndHigherAtRestAndContractsAndDropsOnScroll() {
+    /// **The morph is HORIZONTAL ONLY since E's 2026-09-09 call.** At rest the card is wider (a
+    /// smaller inset); scrolling contracts it inward. It no longer moves vertically at all.
+    ///
+    /// E asked for the drop on the 2026-09-08 GIF verdict (*"when scrolling, the icon nav bar
+    /// should move further down the page to create more space"*), shipped at 8 then tuned to 4,
+    /// and retired it on 2026-09-09 — *"the height difference ... when scrolling down the page ...
+    /// be removed"*, and ONLY that. The inset morph, the pill-to-chip contraction and the label
+    /// hiding all stay, which is why only the vertical assertion left this test.
+    ///
+    /// **This test cannot prove the vertical morph is gone, and the name says only what it
+    /// proves.** The band is `cardHeight + lift`, so `rowHeight - cardHeight == restingLift` held
+    /// BEFORE this change too — the old band was sized off `max(restingLift, floatingLift)` and
+    /// `restingLift` was already the larger. Verified: this assertion passed against the dropping
+    /// bar. What it does guard is that the band has zero slack over the card.
+    ///
+    /// The real guard is deletion plus a source read: `floatingLift` no longer exists, so a test
+    /// naming it would not compile, and
+    /// `AppTabBarCallSiteTests.testTheBarsBottomPaddingIsUnconditional` fails if the view starts
+    /// branching on any second lift again. That one DID go red here.
+    func testTheCardContractsHorizontallyAndTheBandHasNoSlack() {
         XCTAssertLessThan(AppTabBarMetrics.restingInset, AppTabBarMetrics.floatingInset)
-        XCTAssertGreaterThan(AppTabBarMetrics.restingLift, AppTabBarMetrics.floatingLift)
+        XCTAssertEqual(
+            AppTabBarMetrics.rowHeight - AppTabBarMetrics.cardHeight,
+            AppTabBarMetrics.restingLift,
+            "The band has room for the card at more than one height, which means something has"
+                + " reintroduced a second lift and the bar moves on scroll again."
+        )
     }
 
     /// The resting pill still has to fit, with room to breathe. E's "really cramped" verdict was
@@ -192,13 +212,12 @@ final class AppTabBarPresentationTests: XCTestCase {
         XCTAssertEqual(AppTabBarMetrics.pillCornerRadius, AppTabBarMetrics.chipHeight / 2)
     }
 
-    /// It must not sit flush on the home indicator either. The safe area already excludes the
-    /// indicator, so the lift is the gap between the card and it — at zero the card reads as
-    /// jammed into the bottom edge, and the system gesture area crowds it. The floor was 8 until
-    /// E's 2026-09-08 device verdict, *"the whole nav bar moved down the screen a little bit"*;
-    /// it is the grid's 4 now, and zero stays out.
-    func testTheFloatingCardKeepsAGapAboveTheHomeIndicator() {
-        XCTAssertGreaterThanOrEqual(AppTabBarMetrics.floatingLift, 4)
+    /// It must not sit flush on the home indicator. The safe area already excludes the indicator,
+    /// so the lift is the gap between the card and it — at zero the card reads as jammed into the
+    /// bottom edge, and the system gesture area crowds it. Now asserted against the ONE lift: the
+    /// scrolled position this used to guard no longer exists.
+    func testTheCardKeepsAGapAboveTheHomeIndicator() {
+        XCTAssertGreaterThanOrEqual(AppTabBarMetrics.restingLift, 4)
     }
 
     /// The chip is the touch target while floating, not merely a decoration inside one.

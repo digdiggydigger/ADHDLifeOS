@@ -32,6 +32,11 @@ final class FocusLocationStampTests: XCTestCase {
         func readUnacknowledgedCompletion() -> CompletedFocusSession? { unacknowledged }
         func writeUnacknowledgedCompletion(_ record: CompletedFocusSession) { unacknowledged = record }
         func clearUnacknowledgedCompletion() { unacknowledged = nil }
+
+        // F-FocusCard-1's widened protocol. See the twin fake in `FocusSprintPersistenceTests`.
+        var cardCollapsed = false
+        func readCardCollapsed() -> Bool { cardCollapsed }
+        func writeCardCollapsed(_ isCollapsed: Bool) { cardCollapsed = isCollapsed }
     }
 
     private func record(
