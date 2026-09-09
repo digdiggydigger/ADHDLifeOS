@@ -234,9 +234,47 @@ final class FocusBarCollapseTests: XCTestCase {
         func writeCardCollapsed(_ isCollapsed: Bool) { cardCollapsed = isCollapsed }
     }
 
-    func testEverySprintStartsExpanded() {
+    func testAFirstSprintOnAFreshInstallStartsExpanded() {
+        // Narrow on purpose, and the name now says so. "Every sprint starts expanded" is TRUE of
+        // a fresh install and FALSE across a manual stop — see the test below, which pins the
+        // difference deliberately rather than leaving this one's name overclaiming.
         let service = FocusSessionService(sprintStore: FakeFocusSprintStore())
-        XCTAssertFalse(service.isCardCollapsed, "E: every sprint starts in the expanded state.")
+        XCTAssertFalse(service.isCardCollapsed)
+    }
+
+    func testAManualStopLeavesTheCardCollapsedIntoTheNextSprint() async {
+        // **E chose this knowing the consequence, and it is stated in the design record**: only a
+        // NATURAL completion produces a confirmation card, so a manual Stop has nothing to reset
+        // collapse — the card stays collapsed into the next sprint until expanded by hand.
+        //
+        // This test exists so nobody "fixes" it. Expanding on `start()` looks like an obvious
+        // improvement, reads as making the collapsed card less sticky, and would quietly overrule
+        // a decision E made with the trade-off in front of them. If this behaviour is ever to
+        // change it is E's call, not a passing tidy-up's.
+        let service = FocusSessionService(sprintStore: FakeFocusSprintStore())
+        service.start(taskId: nil, taskTitle: "Draft the review", lifeAreaEmoji: "\u{1F4BC}", durationSeconds: 100)
+        service.setCardCollapsed(true)
+
+        await service.stop()
+        service.start(taskId: nil, taskTitle: "Second sprint", lifeAreaEmoji: "\u{1F4BC}", durationSeconds: 100)
+
+        XCTAssertTrue(
+            service.isCardCollapsed,
+            "The card expanded itself on a new sprint. That is a reasonable-looking change and it"
+                + " is not this block's to make — E accepted sticky-across-a-stop explicitly, and"
+                + " Confirm (F-FocusCard-2) is the only thing that may clear collapse."
+        )
+    }
+
+    func testClearingTheRunningSprintDoesNotClearCollapse() {
+        // The storage half of the same fact: `clear()` drops "focus.sprint.running" and must
+        // leave "focus.card.collapsed" alone. Two keys, two lifetimes — the running sprint dies
+        // with the stop, the card's posture outlives it until Confirm.
+        let store = FakeFocusSprintStore()
+        store.cardCollapsed = true
+        store.stored = nil
+        store.clear()
+        XCTAssertTrue(store.cardCollapsed)
     }
 
     func testCollapseIsPersistedAndRestored() async {
