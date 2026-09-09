@@ -29,6 +29,11 @@ final class FocusBarGeometryTests: XCTestCase {
         func clearUnacknowledgedCompletion() { unacknowledged = nil }
         func readCardCollapsed() -> Bool { cardCollapsed }
         func writeCardCollapsed(_ isCollapsed: Bool) { cardCollapsed = isCollapsed }
+
+        // F-FocusCard-2's second widening. See `FocusCompletionStackServiceTests`.
+        var unconfirmed: [CompletedFocusSession] = []
+        func readUnconfirmedCompletions() -> [CompletedFocusSession] { unconfirmed }
+        func writeUnconfirmedCompletions(_ records: [CompletedFocusSession]) { unconfirmed = records }
     }
 
     // MARK: - The flush drop

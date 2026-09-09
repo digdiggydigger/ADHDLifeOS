@@ -93,6 +93,13 @@ protocol FocusSprintPersisting: AnyObject {
     /// Whether the running sprint's card is collapsed (F-FocusCard-1).
     func readCardCollapsed() -> Bool
     func writeCardCollapsed(_ isCollapsed: Bool)
+    /// Sprints that finished naturally and are waiting on the user's Confirm (F-FocusCard-2),
+    /// newest first. **A separate key from `readUnacknowledgedCompletion` above, never a
+    /// migration between the two**: that one belongs to the app-was-dead flow, which has its own
+    /// card in its own visual language. Two keys, two published properties, two cards, zero
+    /// interaction — `testTheNewKeyNeverTouchesTheOldOne` asserts both directions.
+    func readUnconfirmedCompletions() -> [CompletedFocusSession]
+    func writeUnconfirmedCompletions(_ records: [CompletedFocusSession])
 }
 
 /// The live store: one JSON blob in UserDefaults. Local-only device state — a sprint is not
@@ -102,6 +109,7 @@ final class UserDefaultsFocusSprintStore: FocusSprintPersisting {
     static let key = "focus.sprint.running"
     static let completionKey = "focus.sprint.unacknowledgedCompletion"
     static let cardCollapsedKey = "focus.card.collapsed"
+    static let unconfirmedCompletionsKey = "focus.sprint.unconfirmedCompletions"
 
     private let defaults: UserDefaults?
 
@@ -149,5 +157,23 @@ final class UserDefaultsFocusSprintStore: FocusSprintPersisting {
 
     func writeCardCollapsed(_ isCollapsed: Bool) {
         defaults?.set(isCollapsed, forKey: Self.cardCollapsedKey)
+    }
+
+    /// An empty stack rather than `nil` on a decode failure, deliberately: the caller renders a
+    /// list, and "nothing waiting" is the honest reading of a blob that cannot be read back.
+    func readUnconfirmedCompletions() -> [CompletedFocusSession] {
+        guard
+            let data = defaults?.data(forKey: Self.unconfirmedCompletionsKey),
+            let records = try? JSONDecoder().decode([CompletedFocusSession].self, from: data)
+        else { return [] }
+        return records
+    }
+
+    /// The whole stack is rewritten on every push and every confirm — it is at most a handful of
+    /// small records, and one blob keeps the persisted order identical to the published one
+    /// rather than reconstructing it from a set of keys.
+    func writeUnconfirmedCompletions(_ records: [CompletedFocusSession]) {
+        guard let data = try? JSONEncoder().encode(records) else { return }
+        defaults?.set(data, forKey: Self.unconfirmedCompletionsKey)
     }
 }
