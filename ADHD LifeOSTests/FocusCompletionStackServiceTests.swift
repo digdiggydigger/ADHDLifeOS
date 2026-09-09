@@ -242,61 +242,6 @@ final class FocusCompletionStackServiceTests: XCTestCase {
         await stopping.value
     }
 
-    // MARK: - Confirm
-
-    func testConfirmRemovesRePersistsAndLogsAConfirmedCopy() async throws {
-        let placeId = UUID()
-        let sut = makeSUT(placeId: placeId)
-        startSprint(sut.service)
-        await sut.service.stop(completedNaturally: true)
-        let provisional = try XCTUnwrap(sut.service.unconfirmedCompletions.first)
-
-        await sut.service.confirmCompletion(provisional)
-
-        XCTAssertTrue(sut.service.unconfirmedCompletions.isEmpty, "Confirm left the card on screen.")
-        XCTAssertTrue(sut.store.unconfirmed.isEmpty, "Confirm did not re-persist the empty stack.")
-        XCTAssertEqual(sut.logger.logged.count, 2, "Confirm must write a second time — the finalise.")
-        let confirmed = try XCTUnwrap(sut.logger.logged.last)
-        XCTAssertEqual(
-            confirmed.id, provisional.id,
-            "The confirmed copy carries a DIFFERENT id, so `save` writes a second history row"
-                + " instead of upserting the provisional one — the sprint would count twice."
-        )
-        XCTAssertNotNil(confirmed.confirmedAt, "The re-saved record is still provisional.")
-        XCTAssertEqual(
-            confirmed.placeId, placeId,
-            "The location stamp was lost on confirm. `save` is `setData` with no merge, so a"
-                + " re-save that drops a field ERASES it from the document."
-        )
-        XCTAssertEqual(confirmed.latitude, Self.stampedCoordinate.latitude)
-        XCTAssertEqual(confirmed.longitude, Self.stampedCoordinate.longitude)
-    }
-
-    /// **Block 1 shipped collapse deliberately sticky, and this is the reset.** E: the card stays
-    /// collapsed *"until the user has tapped the final, and new, 'Confirmed' button"*.
-    func testConfirmResetsCollapse() async throws {
-        let sut = makeSUT()
-        startSprint(sut.service)
-        sut.service.setCardCollapsed(true)
-        await sut.service.stop(completedNaturally: true)
-        let record = try XCTUnwrap(sut.service.unconfirmedCompletions.first)
-
-        XCTAssertTrue(
-            sut.service.isCardCollapsed,
-            "Something other than Confirm already reset collapse — the assertion below would then"
-                + " pass on an implementation that never touches it."
-        )
-
-        await sut.service.confirmCompletion(record)
-
-        XCTAssertFalse(
-            sut.service.isCardCollapsed,
-            "Confirm is the ONLY thing that clears collapse, and it did not. The next sprint"
-                + " starts collapsed."
-        )
-        XCTAssertFalse(sut.store.cardCollapsed, "The reset was not persisted, so it comes back.")
-    }
-
     // MARK: - The stack
 
     /// E raised the stack themselves: *"If the user already has an unconfirmed AND completed

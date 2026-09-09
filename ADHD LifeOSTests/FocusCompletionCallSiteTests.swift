@@ -105,12 +105,24 @@ final class FocusCompletionCallSiteTests: XCTestCase {
 
     // MARK: - Confirm does the whole job
 
+    /// **This guard reads the CONDITION as well as the call, and that is deliberate.** Since
+    /// F-FocusCard-3 the reset fires only when no sprint is running (E, 2026-09-09), and a bare
+    /// `contains("setCardCollapsed(false)")` survives being wrapped in *any* condition — including
+    /// the inverted one. The runtime proof is the pair
+    /// `testConfirmResetsCollapse` / `testConfirmLeavesARunningSprintsCardCollapsed`; this is the
+    /// cheap textual companion that fails while reading the file.
     func testConfirmResetsCollapseAndReSavesTheRecord() throws {
         let source = try Self.appCode("Focus/FocusSessionService+Completions.swift")
-        XCTAssertTrue(
-            source.contains("setCardCollapsed(false)"),
+        let reset = try XCTUnwrap(
+            source.split(separator: "\n").first { $0.contains("setCardCollapsed(false)") },
             "Confirm does not clear collapse. Block 1 shipped it deliberately sticky and this is"
                 + " the ONLY thing that was ever going to reset it."
+        )
+        XCTAssertTrue(
+            reset.contains("isActive"),
+            "The collapse reset is unguarded, so confirming an old completion expands the card of"
+                + " a sprint that is still running — the block-2 behaviour E replaced on"
+                + " 2026-09-09."
         )
         XCTAssertTrue(
             source.contains("await log("),
