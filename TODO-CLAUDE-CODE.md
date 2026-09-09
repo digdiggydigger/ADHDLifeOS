@@ -3388,7 +3388,14 @@ user has tapped the final, and new, 'Confirmed' button"*.
 
 Five sequential blocks, E reviews each on device:
 
-### FEATURE: F-FocusCard-1 — the collapsed running card and its four toggles  [ ] NOT STARTED
+### FEATURE: F-FocusCard-1 — the collapsed running card and its four toggles  [x] COMPLETED
+
+*Merged `59fcf20` 2026-09-09 (PR #43 → close-out #44 → fix #45). E on device: "That all works
+very nicely." **The block description below was overtaken during the build** — E reversed
+full-bleed (the collapsed card is inset 16, 60pt tall, no bottom keyline, no chevron and no
+PAUSED badge), and the long-press was RETIRED: a single tap opens the detail sheet in both
+states, and collapse is the swipe and the grabber only. `screenshots/focus-card-collapse/`
+records what the rejected versions looked like.*
 
 Collapsed = ring + name + Pause ONLY, full-bleed to both screen edges, rounded TOP corners, dropped
 FLUSH onto the tab bar. Toggled by swipe (down collapses), tap anywhere, the chevron (today a
@@ -3416,7 +3423,15 @@ the existing `FocusSprintPersisting` seam (`RootView.swift` is at 399/400 lines,
       a vacuous journey.
 - [ ] **Report that block 1 alone has STICKY collapse** — nothing resets it until block 2's Confirm.
 
-### FEATURE: F-FocusCard-2 — provisional record + the completed-unconfirmed card  [ ] NOT STARTED
+### FEATURE: F-FocusCard-2 — provisional record + the completed-unconfirmed card  [x] COMPLETED
+
+*Merged `1f0d93a` 2026-09-09 (PR #47). E on device: "I've run a short sprint, and it seems to be
+working correctly." Suite 2,619/0/0 skipped, lint 0/731, app target 26.37% (12,037/45,646).
+**One deviation from the design record, approved by sight rather than in words:** the record
+said this card shares the collapsed card's "full-bleed flush geometry", but full-bleed was
+reversed in block 1 and "flush" only works for the BOTTOM-most furniture — this card stacks
+above a running sprint, so it floats at the expanded card's geometry (inset 16, radius 24, all
+four corners) and measures 76pt. Evidence: `screenshots/focus-completion-card/`.*
 
 `confirmedAt: Date?` on `CompletedFocusSession` (`confirmed_at`), a `unconfirmedCompletions` array
 on the service under a NEW key, and the card: full ring + name + banked time + Confirm. **Only a
