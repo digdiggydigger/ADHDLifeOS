@@ -122,30 +122,22 @@ final class FocusBarGeometryTests: XCTestCase {
         )
     }
 
-    /// E drew the width as two red lines at **41.8pt and 348.7pt** (width 306.8pt). Measured
-    /// against the same screenshot, those land on the first and last tab ICON centres — 42.5 and
-    /// 350.2 — and the bar's own constants predict 42.75 / 350.25 for the scrolled state.
+    /// **E widened it twice.** The first pass took E's marked red lines literally — inset 44,
+    /// card 305pt — and E rejected that on device: *"the width of the collapsed bar can be
+    /// extended MORE to the left and the right"*. It is now 16, which is also the EXPANDED card's
+    /// inset, so **collapsing changes HEIGHT only, not width**.
     ///
-    /// **Spelled as a constant, not derived from the slot geometry, and that is deliberate.** The
-    /// alignment E's marks happen to hit exists only while the bar is SCROLLED: at rest the
-    /// selected tab renders as a pill with an intrinsic width (`maximumRestingPillWidth`), so the
-    /// six slots are unequal and the outer icon centres move with the SELECTION — roughly 34pt
-    /// with a middle tab selected, ~59pt with Today selected. No constant, and no `isFloating`
-    /// morph, can track that. So the width is the requirement and the alignment is a coincidence
-    /// of the state E screenshotted; 44 is E's number to within 1.25pt and sits on §2's grid.
-    func testTheCollapsedInsetIsEsMarkedWidth() {
-        XCTAssertEqual(FocusBarMetrics.collapsedInset, 44, accuracy: 0.01)
-        let width = Self.deviceWidth - FocusBarMetrics.collapsedInset * 2
+    /// That equality is the assertion, and it is deliberate rather than incidental: re-narrowing
+    /// the collapsed card is a design change E has already reversed once, so it should fail here
+    /// and be taken back to E rather than tuned in passing.
+    func testCollapsingChangesHeightOnlyNotWidth() {
+        XCTAssertEqual(FocusBarMetrics.collapsedInset, 16, accuracy: 0.01)
         XCTAssertEqual(
-            width, 306.8, accuracy: 3,
-            "The collapsed card is no longer the width E marked (306.8pt on a 393pt screen)."
+            FocusBarMetrics.collapsedInset, FocusBarMetrics.expandedInset,
+            "The collapsed card has been re-narrowed. E chose the expanded card's own inset on"
+                + " 2026-09-09 after rejecting 44 on device."
         )
-    }
-
-    /// It must not become an inset card and keep the expanded card's inset — the two are
-    /// different numbers for different jobs, and collapsing has to be a visible change of width.
-    func testTheTwoStatesUseDifferentInsets() {
-        XCTAssertGreaterThan(FocusBarMetrics.collapsedInset, FocusBarMetrics.expandedInset)
+        XCTAssertEqual(Self.deviceWidth - FocusBarMetrics.collapsedInset * 2, 361, accuracy: 0.01)
     }
 
     func testCollapsingActuallyShrinksTheCard() {
@@ -176,6 +168,48 @@ final class FocusBarGeometryTests: XCTestCase {
         XCTAssertGreaterThan(FocusBarMetrics.grabberHitOverflow, 0)
     }
 
+    // MARK: - The keyline (E, 2026-09-09: "REMOVE the bottom border on the collapsed card tab")
+
+    /// Sampled through the STROKE, not the path: an open path has no interior, so `contains` on
+    /// the path itself answers nothing useful. Stroking it turns the keyline into a fillable
+    /// region, and then "is there a border at the bottom edge?" is a real question.
+    private func borderCoversBottomEdge(collapsed: Bool) -> Bool {
+        let rect = CGRect(x: 0, y: 0, width: 100, height: 100)
+        let stroked = FocusBarCardBorder(cornerRadius: 24, omitsBottomEdge: collapsed)
+            .path(in: rect)
+            .strokedPath(StrokeStyle(lineWidth: 2))
+        return stroked.contains(CGPoint(x: 50, y: 99.5))
+    }
+
+    func testTheCollapsedCardHasNoBottomKeyline() {
+        XCTAssertFalse(
+            borderCoversBottomEdge(collapsed: true),
+            "The collapsed card still draws a bottom border. It sits flush on the tab bar, so that"
+                + " hairline lands exactly on the join and reads as a seam between two slabs."
+        )
+    }
+
+    func testTheExpandedCardKeepsAllFourEdges() {
+        // The expanded card floats with a 16pt inset on every side — drop its bottom edge and it
+        // reads as unfinished. This is the assertion that stops the fix being applied to both.
+        XCTAssertTrue(
+            borderCoversBottomEdge(collapsed: false),
+            "The expanded card lost its bottom border too."
+        )
+    }
+
+    func testTheBorderStillCoversTheTopEdgeInBothStates() {
+        for collapsed in [true, false] {
+            let stroked = FocusBarCardBorder(cornerRadius: 24, omitsBottomEdge: collapsed)
+                .path(in: CGRect(x: 0, y: 0, width: 100, height: 100))
+                .strokedPath(StrokeStyle(lineWidth: 2))
+            XCTAssertTrue(
+                stroked.contains(CGPoint(x: 50, y: 0.5)),
+                "The top keyline is missing (collapsed: \(collapsed)) — only the BOTTOM edge goes."
+            )
+        }
+    }
+
     // MARK: - What the card actually measures
 
     /// iPhone 17 Pro's width. The card is full-bleed collapsed, so the width matters.
@@ -203,20 +237,20 @@ final class FocusBarGeometryTests: XCTestCase {
         let collapsed = measuredHeight(collapsed: true)
         let expanded = measuredHeight(collapsed: false)
 
-        // 73pt is not an approximation of E's choice — it is exactly the option E picked from
-        // three measured ones, and the rendered view agrees with the arithmetic to the point:
-        //     grabber 5 + spacing 8 + row 44 (Pause's own 44pt floor) + padding 8 x 2 = 73
-        XCTAssertEqual(
-            collapsed, 73, accuracy: 0.5,
-            "The collapsed card measured \(collapsed)pt, not the 73pt E chose. The usual causes"
-                + " are the grabber's 44pt touch target leaking into the layout (it must be the"
-                + " negative-padding overflow) or the chevron's frame inflating the row."
+        // **58pt, and the number that matters is that it is under the tab bar's 60pt.** E's
+        // verdict on the 73pt version was "way too tall!", and a collapsed card taller than the
+        // bar it sits on is what that read as. The saving came from three places, all E's calls:
+        // the grabber moved into the top padding (-13), the ring went 44 -> 36, and Pause lost
+        // its text label so the control row is 24pt with a 44pt touch area rather than 44pt.
+        XCTAssertEqual(collapsed, 57.7, accuracy: 1)
+        XCTAssertLessThan(
+            collapsed, AppTabBarMetrics.cardHeight,
+            "The collapsed card is at least as tall as the tab bar beneath it, which is exactly"
+                + " what E rejected — it stops reading as subordinate to the bar."
         )
-        // 161, not the 148 this card measured before the block: the grabber is new and present in
-        // BOTH states, which costs the expanded card 5pt of capsule plus 8pt of stack spacing.
-        // Flagged for E rather than silently absorbed — the record said expanded content was
-        // unchanged, and this is the one respect in which it is not.
-        XCTAssertEqual(expanded, 161, accuracy: 0.5)
+        // Back to 148, the height this card was BEFORE the arc started. The grabber briefly cost
+        // the expanded card 13pt as a stack child; as an overlay in the padding it costs nothing.
+        XCTAssertEqual(expanded, 148, accuracy: 0.5)
         XCTAssertLessThan(
             collapsed, expanded / 1.8,
             "The collapse no longer roughly halves the card, which is the whole point of it."

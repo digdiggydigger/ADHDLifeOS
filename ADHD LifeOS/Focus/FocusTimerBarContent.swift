@@ -42,12 +42,58 @@ struct FocusTimerBarContent: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            grabber
+        if isCollapsed {
+            collapsedBody
+        } else {
+            expandedBody
+        }
+    }
 
-            // Expanded-only, with the three extend/stop controls: the banner is a full line of
-            // coaching copy, and the collapsed card is one 44pt row by design.
-            if !isCollapsed, let banner = checkpointBanner {
+    /// **E's 2026-09-09 layout**: the sprint title gets the row to itself, and Pause — now an
+    /// icon with no text label, enlarged to compensate — sits BELOW it beside the chevron.
+    ///
+    /// The previous single row put ring + emoji + title + chevron + PAUSED badge + a labelled
+    /// Pause button on one line. At 305pt the title had collapsed to "9…" and the badge had
+    /// wrapped onto two lines. Stacking the controls under the title is what buys the width back.
+    private var collapsedBody: some View {
+        HStack(spacing: 8) {
+            sprintRing
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    Text(session.lifeAreaEmoji)
+                        .font(.caption)
+                    Text(session.taskTitle)
+                        .font(.footnote.weight(.bold))
+                        .lineLimit(1)
+                        // §1's layout safety. Without it the `Spacer` below yields first and the
+                        // title truncates before anything else gives — the exact failure E
+                        // photographed.
+                        .layoutPriority(1)
+                    Spacer(minLength: 0)
+                }
+
+                HStack(spacing: 16) {
+                    pauseControl
+                    collapseChevron
+                    if let badge = FocusBarStatus.pausedBadge(for: session) {
+                        Text(badge)
+                            .font(.caption2.weight(.bold))
+                            .textCase(.uppercase)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .accessibilityHidden(true)
+                            .accessibilityIdentifier("focusBarPausedBadge")
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+    }
+
+    private var expandedBody: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let banner = checkpointBanner {
                 Label(banner, systemImage: "bell.badge.fill")
                     .font(.caption2)
                     .foregroundStyle(Color("StateWarn"))
@@ -58,14 +104,16 @@ struct FocusTimerBarContent: View {
             HStack(spacing: 8) {
                 sprintRing
                 titleColumn
-                if isCollapsed {
-                    pauseButton
-                }
             }
 
             if !isCollapsed {
                 HStack(spacing: 8) {
-                    pauseButton
+                    controlButton(
+                        session.isPaused ? "Resume" : "Pause",
+                        systemImage: session.isPaused ? "play.fill" : "pause.fill",
+                        identifier: "focusBarPause",
+                        action: onTogglePause
+                    )
 
                     controlButton("+30s", systemImage: "goforward.30", identifier: "focusBarAdd30") {
                         onExtend(30)
@@ -90,44 +138,45 @@ struct FocusTimerBarContent: View {
 
     // MARK: - The two toggle affordances
 
-    /// The one affordance that ADVERTISES that the card moves, so it is present in both states —
-    /// a collapsed card with no visible handle is a card the user has to discover by accident.
-    ///
-    /// The double `.padding(.vertical, ±grabberHitOverflow)` is the `AppTabBarMetrics`
-    /// `slotHitOverflow` pattern: the first grows the `contentShape` to §3's 44pt, the second
-    /// hands the layout space straight back, so the capsule occupies 5pt of the card's height
-    /// while a thumb anywhere near it lands.
-    private var grabber: some View {
-        Button(action: onToggleCollapse) {
-            Capsule()
-                .fill(Color(.tertiaryLabel))
-                .frame(width: FocusBarMetrics.grabberWidth, height: FocusBarMetrics.grabberHeight)
-                .padding(.vertical, FocusBarMetrics.grabberHitOverflow)
-                .contentShape(Rectangle())
-                .padding(.vertical, -FocusBarMetrics.grabberHitOverflow)
-        }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, alignment: .center)
-        .accessibilityLabel(isCollapsed ? "Expand the sprint card" : "Collapse the sprint card")
-        .accessibilityIdentifier("focusBarGrabber")
-    }
-
     /// Before F-FocusCard-1 this was a decorative `Image` that pointed up and did nothing — the
     /// row around it was the button. E chose to make it a real control that flips with the state.
     private var collapseChevron: some View {
         Button(action: onToggleCollapse) {
             Image(systemName: isCollapsed ? "chevron.up" : "chevron.down")
-                .font(.caption2.weight(.bold))
+                .font(.footnote.weight(.bold))
                 .foregroundStyle(.secondary)
                 .frame(
-                    minWidth: AppTabBarPresentation.minimumTouchTarget,
-                    minHeight: AppTabBarPresentation.minimumTouchTarget
+                    width: FocusBarMetrics.collapsedControlHeight,
+                    height: FocusBarMetrics.collapsedControlHeight
                 )
+                .padding(.vertical, FocusBarMetrics.collapsedControlHitOverflow)
                 .contentShape(Rectangle())
+                .padding(.vertical, -FocusBarMetrics.collapsedControlHitOverflow)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isCollapsed ? "Expand the sprint card" : "Collapse the sprint card")
         .accessibilityIdentifier("focusBarExpand")
+    }
+
+    /// Pause/Resume as a GLYPH ONLY — E: *"remove the label from the PAUSE icon and make the icon
+    /// bigger to make up for the removed label"*. The play/pause glyph swap is what conveys the
+    /// state, which is shape rather than colour and so satisfies §4; VoiceOver gets the word.
+    private var pauseControl: some View {
+        Button(action: onTogglePause) {
+            Image(systemName: session.isPaused ? "play.fill" : "pause.fill")
+                .font(.title3.weight(.semibold))
+                .frame(
+                    width: FocusBarMetrics.collapsedControlHeight,
+                    height: FocusBarMetrics.collapsedControlHeight
+                )
+                .padding(.vertical, FocusBarMetrics.collapsedControlHitOverflow)
+                .contentShape(Rectangle())
+                .padding(.vertical, -FocusBarMetrics.collapsedControlHitOverflow)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.accentColor)
+        .accessibilityLabel(session.isPaused ? "Resume sprint" : "Pause sprint")
+        .accessibilityIdentifier("focusBarPause")
     }
 
     // MARK: - The three things the collapsed card keeps
@@ -161,6 +210,7 @@ struct FocusTimerBarContent: View {
         }
     }
 
+    /// Expanded only — the collapsed card builds its own two-line column in `collapsedBody`.
     private var titleColumn: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
@@ -169,6 +219,7 @@ struct FocusTimerBarContent: View {
                 Text(session.taskTitle)
                     .font(.footnote.weight(.bold))
                     .lineLimit(1)
+                    .layoutPriority(1)
                 Spacer(minLength: 0)
                 collapseChevron
                 if let badge = FocusBarStatus.pausedBadge(for: session) {
@@ -176,36 +227,26 @@ struct FocusTimerBarContent: View {
                         .font(.caption2.monospaced().weight(.bold))
                         .textCase(.uppercase)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                         .accessibilityHidden(true)
                         .accessibilityIdentifier("focusBarPausedBadge")
                 }
             }
 
-            if !isCollapsed {
-                Group {
-                    if let untilNext = session.secondsUntilNextCheckpoint {
-                        Text("🔔 Next checkpoint in \(FocusTimeFormatting.digital(untilNext))")
-                            .foregroundStyle(Color("StateWarn"))
-                    } else if session.nudgeCheckpoints.isEmpty {
-                        Text("No checkpoints this sprint")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("✓ All \(session.nudgeCheckpoints.count) checkpoints reached")
-                            .foregroundStyle(Color("StateGo"))
-                    }
+            Group {
+                if let untilNext = session.secondsUntilNextCheckpoint {
+                    Text("🔔 Next checkpoint in \(FocusTimeFormatting.digital(untilNext))")
+                        .foregroundStyle(Color("StateWarn"))
+                } else if session.nudgeCheckpoints.isEmpty {
+                    Text("No checkpoints this sprint")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("✓ All \(session.nudgeCheckpoints.count) checkpoints reached")
+                        .foregroundStyle(Color("StateGo"))
                 }
-                .font(.caption2.monospaced())
             }
+            .font(.caption2.monospaced())
         }
-    }
-
-    private var pauseButton: some View {
-        controlButton(
-            session.isPaused ? "Resume" : "Pause",
-            systemImage: session.isPaused ? "play.fill" : "pause.fill",
-            identifier: "focusBarPause",
-            action: onTogglePause
-        )
     }
 
     // MARK: - Shared pieces

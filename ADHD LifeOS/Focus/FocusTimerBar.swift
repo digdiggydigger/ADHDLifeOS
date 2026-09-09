@@ -74,8 +74,18 @@ struct FocusTimerBar: View {
                     : FocusBarMetrics.expandedPaddingVertical
             )
             .frame(maxWidth: .infinity)
+            // The grabber rides in the card's TOP PADDING rather than as the first child of the
+            // content stack. As a child it cost 5pt of capsule plus 8pt of stack spacing in BOTH
+            // states — which is what made the collapsed card taller than the tab bar under it,
+            // and pushed the expanded card from 148pt to 161pt.
+            .overlay(alignment: .top) { grabber }
             .background(.regularMaterial, in: cardShape)
-            .overlay(cardShape.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1))
+            .overlay(
+                FocusBarCardBorder(
+                    cornerRadius: FocusBarMetrics.cornerRadius, omitsBottomEdge: isCollapsed
+                )
+                .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+            )
             .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
             // Tap-anywhere is one of the four affordances E chose, so the whole card — including
             // the slack between its controls — has to be hit-testable. Child buttons still win
@@ -136,6 +146,26 @@ struct FocusTimerBar: View {
     /// that isn't a commitment: chip toggles, expand/collapse"*), precedent
     /// `Theme/CollapsibleSectionHeader.swift`. Haptics.swift deliberately excludes scroll-driven
     /// morphs; this is a deliberate tap, swipe or button press, so it qualifies.
+    /// Present in BOTH states — E chose it as one of the four toggle affordances, and it is the
+    /// only one that ADVERTISES that the card moves. The double `.padding(.vertical, ±overflow)`
+    /// is the `AppTabBarMetrics.slotHitOverflow` pattern: the first grows the `contentShape` to
+    /// §3's 44pt, the second gives the layout space straight back.
+    private var grabber: some View {
+        Button { setCollapsed(!isCollapsed) } label: {
+            Capsule()
+                .fill(Color(.tertiaryLabel))
+                .frame(width: FocusBarMetrics.grabberWidth, height: FocusBarMetrics.grabberHeight)
+                .padding(.vertical, FocusBarMetrics.grabberHitOverflow)
+                .padding(.horizontal, 4)
+                .contentShape(Rectangle())
+                .padding(.vertical, -FocusBarMetrics.grabberHitOverflow)
+        }
+        .buttonStyle(.plain)
+        .padding(.top, FocusBarMetrics.grabberTopInset)
+        .accessibilityLabel(isCollapsed ? "Expand the sprint card" : "Collapse the sprint card")
+        .accessibilityIdentifier("focusBarGrabber")
+    }
+
     private func setCollapsed(_ collapsed: Bool) {
         guard collapsed != isCollapsed else { return }
         Haptics.play(.light)
