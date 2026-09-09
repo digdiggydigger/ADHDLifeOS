@@ -20,7 +20,8 @@ import SwiftUI
 ///   `restingLift`) and the selected tab is **Design C's "Select Pill"** — a tinted capsule
 ///   holding its glyph AND its label. The other five give up width to it, which is C's own
 ///   stated trade-off ("the label shifts as you move"), accepted by choosing it.
-/// - **Scrolled: the card contracts inward and drops** (`floatingInset` / `floatingLift`) and
+/// - **Scrolled: the card contracts inward** (`floatingInset`; it does NOT drop — E retired the
+///   vertical half of the morph on 2026-09-09) and
 ///   the selection is **Design B's chip** — icons only. Unchanged from F-Tools-2-Morph.
 ///
 /// This replaces Design F "Minimal Dot", E's 2026-09-02 resting pick — the dot is gone — AND the
@@ -115,10 +116,10 @@ struct AppTabBar: View {
             .horizontal,
             isFloating ? AppTabBarMetrics.floatingInset : AppTabBarMetrics.restingInset
         )
-        .padding(
-            .bottom,
-            isFloating ? AppTabBarMetrics.floatingLift : AppTabBarMetrics.restingLift
-        )
+        // UNCONDITIONAL since E's 2026-09-09 call: the bar does not move vertically on scroll.
+        // The morph is horizontal only — see the inset above, the pill-to-chip below, and the
+        // label hiding in `AppTabBarPresentation.showsLabel`.
+        .padding(.bottom, AppTabBarMetrics.restingLift)
         .frame(maxWidth: .infinity)
         .frame(height: AppTabBarMetrics.rowHeight, alignment: .bottom)
     }
@@ -142,7 +143,7 @@ struct AppTabBar: View {
                         .transition(.opacity)
                 }
             }
-            // The pill pads its own content; the floating chip is a fixed 44×34 with the glyph
+            // The pill pads its own content; the floating chip is a fixed 44×44 with the glyph
             // centred in it, and an unselected glyph is just a glyph.
             .padding(.horizontal, showsLabel ? AppTabBarMetrics.pillPaddingHorizontal : 0)
             .frame(
@@ -219,7 +220,7 @@ struct AppTabBar: View {
     }
 
     /// The one position mark, in both states: the capsule pill behind glyph and label at rest
-    /// (Design C), the 44×34 chip behind the glyph while floating (Design B). It is sized by what
+    /// (Design C), the 44×44 chip behind the glyph while floating (Design B). It is sized by what
     /// it sits behind, and its corner radius is the only other thing that morphs — capsule to
     /// the chip's 11, animated, so B keeps its own chip. The `matchedGeometryEffect` id is what
     /// makes it TRAVEL between slots on a tab change, rather than one mark blinking out while

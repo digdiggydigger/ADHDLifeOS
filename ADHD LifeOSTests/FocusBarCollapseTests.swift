@@ -128,6 +128,33 @@ final class FocusBarCollapseTests: XCTestCase {
         )
     }
 
+    /// **The link E spotted between the two changes.** The collapsed card is dropped to a
+    /// CONSTANT `rowHeight`, but the tab bar used to move inside that band — lifted 8 at rest and
+    /// 4 while scrolled — so the card was flush only at rest and showed a 4pt sliver of page
+    /// under its square bottom corners for as long as the page stayed scrolled (the scroll state
+    /// is sticky, not transient: it latches past 24pt and releases only at <= 8pt).
+    ///
+    /// E's 2026-09-09 call to retire the bar's vertical morph closes that gap at the source,
+    /// with no cross-component plumbing: with one lift, the band's top IS the card's top in
+    /// every state.
+    ///
+    /// **What this asserts is the METRIC relationship, not the behaviour** — it passed before the
+    /// change too, because `rowHeight` was already 68. The behavioural guarantee is
+    /// `AppTabBarCallSiteTests.testTheBarsBottomPaddingIsUnconditional`; this one exists so the
+    /// two numbers cannot drift apart afterwards.
+    func testTheCollapsedCardIsFlushInBothBarStates() {
+        XCTAssertEqual(
+            FocusBarMetrics.collapsedBottomLift,
+            AppTabBarMetrics.cardHeight + AppTabBarMetrics.restingLift,
+            "The collapsed card no longer lands on the tab bar's top edge."
+        )
+        XCTAssertEqual(
+            FocusBarMetrics.collapsedBottomLift, AppTabBarMetrics.rowHeight,
+            "The band and the card's top have come apart, so the bar moves inside the band again"
+                + " and the focus card is flush in only one of the two states."
+        )
+    }
+
     func testTheDropMovesTheCardDownNotUp() {
         // The assertion above is an identity between two constants: it passes whether the view
         // ends up moving down 32pt or UP 32pt, and a sign flip would open a 64pt gap that only
