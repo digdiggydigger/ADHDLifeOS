@@ -14,9 +14,9 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `89ee187`** (PR #43, seven commits) · **no branch in flight**;
-`feature/focus-card-collapse` deleted both sides by the merge · every change lands through a PR ·
-verified ON MAIN: **unit suite 2,585 / 0** (emulator UP, 0 `127.0.0.1:9099` hits, 0 skipped),
+**`main` @ `59fcf20`** (PR #43 the block → `89ee187`, PR #44 the close-out → `21b7b93`, PR #45
+the emoji fix → `59fcf20`) · **no branch in flight**; every branch deleted both sides by its merge · every change lands through a PR ·
+verified ON MAIN: **unit suite 2,586 / 0** (emulator UP, 0 `127.0.0.1:9099` hits, 0 skipped),
 **SwiftLint 0 / 725**, sim + device builds `** BUILD SUCCEEDED **` · **app target
 26.02% (11,802/45,364)**, up from 24.76% (11,191/45,205) at `e9fa9df` — **comparable**: the
 denominator moved because the tree grew (+159 executable lines), the measurement extent is
@@ -24,7 +24,8 @@ unchanged, and the numerator grew +611, so coverage grew far faster than the cod
 `firestore.rules` untouched, nothing for E to republish · the emulator is running · every
 `.xcresult` deleted after its figures were read.
 
-**E's phone is ON MAIN at `89ee187`** — reinstalled and launched clean at close-out.
+**E's phone has the `59fcf20` build INSTALLED** — the launch was refused because the device was
+locked (`devicectl` refuses the LAUNCH, never the install), so E opens it. Nothing to redo.
 
 **Shipped and CLOSED this session:**
 
@@ -53,6 +54,11 @@ unchanged, and the numerator grew +611, so coverage grew far faster than the cod
   **KEPT deliberately:** the width morph (inset 4 → 8), the pill-to-chip contraction, the label
   hiding. E removed the height difference only.
 
+- **A post-merge fix (PR #45): the title's `layoutPriority` was crushing its siblings.** E's
+  screenshots of the shipped build showed the life-area emoji gone from the collapsed card and a
+  1pt sliver where the PAUSED badge should be. `layoutPriority` decides who is OFFERED space
+  first, not who may shrink — `.fixedSize()` on the rigid pieces is the fix. **The suite was green
+  throughout**, because nothing asserts text layout. See section E.
 - **The `next` checkpoint marker's rendering bug.** See section E — it is the most transferable
   thing this session produced.
 
@@ -121,6 +127,11 @@ were settled by E LOOKING rather than by an assertion.
 
 ## E · Known, not work
 
+- **`layoutPriority` decides who is OFFERED space first, NOT who is allowed to shrink.** Putting it
+  on a flexible `Text` to beat a `Spacer` makes SwiftUI compress that `Text`'s priority-0 siblings
+  to zero width. Short, fixed content needs `.fixedSize()`. **`UIHostingController.sizeThatFits`
+  cannot catch this** — it reaches a view's total height, not the rendered width of a `Text` inside
+  an `HStack` — so a `layoutPriority` change wants a device look, not a green suite. (NEW)
 - **`Color.primary` is a HIERARCHICAL style and gets VIBRANCY over a `Material`; `Color(.systemBackground)`
   is a concrete `UIColor` and does not.** This is the session's most transferable finding. The
   sprint ring's "next" marker rendered as a grey disc in a heavy black ring in dark mode:

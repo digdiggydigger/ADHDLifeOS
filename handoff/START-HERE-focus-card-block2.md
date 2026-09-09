@@ -1,8 +1,9 @@
 # Start here — build F-FocusCard-2, the provisional record and the completed-unconfirmed card
 
 *Paste into a fresh Claude Code terminal. Written 2026-09-09 at the close of the session that
-shipped **F-FocusCard-1** (PR #43, merged `89ee187`) and, at E's separate request,
-**F-TabBar-NoScrollDrop**. Block 1 is CLOSED on E's device verdict: "That all works very nicely."*
+shipped **F-FocusCard-1** (PR #43 → `89ee187`, close-out PR #44 → `21b7b93`, follow-up fix
+PR #45 → `59fcf20`) and, at E's separate request, **F-TabBar-NoScrollDrop**. Block 1 is CLOSED on
+E's device verdict: "That all works very nicely."*
 
 **This is the ONE live opener.** If you find a second `START-HERE-*` in `handoff/`, one of them is
 a trap. Archive this file into `handoff/archive/` in the same move that writes your successor, at
@@ -46,9 +47,13 @@ badge. `FocusBarMetrics` holds every number and each carries the reason in its d
 
 ## Where things stand
 
-**`main` @ `89ee187`. No branch in flight. Nothing for block 2 has been started.**
-E's phone is ON MAIN. Verified on main: **suite 2,585 / 0** (emulator up, 0 `9099`, 0 skipped),
-**lint 0 / 725**, **app target 26.02% (11,802/45,364)**.
+**`main` @ `59fcf20`. No branch in flight. Nothing for block 2 has been started.**
+Verified on main: **suite 2,586 / 0** (emulator up, 0 `9099` hits, 0 skipped), **lint 0 / 725**,
+sim + device builds `** BUILD SUCCEEDED **`, **app target 26.02% (11,802/45,364)** (measured at
+`21b7b93`; PR #45 added one test and three `.fixedSize()` calls, so the figure still stands).
+
+**E's phone has the `59fcf20` build INSTALLED but it was not launched** — the device was locked and
+`devicectl` refuses the launch, not the install. Nothing to redo; E opens the app.
 
 ## Read these, in this order
 
@@ -67,7 +72,7 @@ E's phone is ON MAIN. Verified on main: **suite 2,585 / 0** (emulator up, 0 `909
 ```bash
 git branch --show-current            # expect main
 git status --short                   # must be empty
-git log --oneline -1                 # expect 89ee187 or later
+git log --oneline -1                 # expect 59fcf20 or later
 git log --oneline -1 origin/main     # same SHA
 swiftlint lint                       # expect 0 violations, 725 files
 ls -d *.xcresult                     # expect NONE
@@ -102,6 +107,14 @@ than fail, so the run stays green but the figures are not comparable.
   regressions ONE AT A TIME.
 - **Read the `Executed N tests, with M failures` line.** `grep -c 'Test Case.*failed'` counts
   eight test NAMES containing the word; a trailing `grep -c` that finds nothing also exits 1.
+- **`layoutPriority` decides who is OFFERED space first, NOT who may shrink.** This shipped as a
+  bug in block 1 and E caught it in a screenshot AFTER the merge: `.layoutPriority(1)` on the
+  sprint title made SwiftUI compress its priority-0 `Text` siblings to nothing — the life-area
+  emoji vanished and the PAUSED badge became a 1pt sliver. The rigid pieces need `.fixedSize()`.
+  **No test saw it**: nothing asserts text layout, and `UIHostingController.sizeThatFits` reaches a
+  view's total height but not the width of a `Text` inside an `HStack`. Block 2 adds a completion
+  card with a title, a duration and a Confirm button on one row — **if you reach for
+  `layoutPriority` there, get a device look, not just a green suite.**
 - **Erase the sim between any UI run and the next unit run** —
   `xcrun simctl erase 9181EBF9-0F54-4A4D-A19C-19945D1BF155`, chained unconditionally.
 
