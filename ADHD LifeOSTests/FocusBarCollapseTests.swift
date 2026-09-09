@@ -170,6 +170,53 @@ final class FocusBarCollapseTests: XCTestCase {
         XCTAssertGreaterThan(FocusBarMetrics.grabberHitOverflow, 0)
     }
 
+    // MARK: - What the card actually measures
+
+    /// iPhone 17 Pro's width. The card is full-bleed collapsed, so the width matters.
+    private static let screenWidth: CGFloat = 393
+
+    private func measuredHeight(collapsed: Bool) -> CGFloat {
+        let service = FocusSessionService()
+        service.start(
+            taskId: UUID(), taskTitle: "Draft the quarterly review",
+            lifeAreaEmoji: "\u{1F4BC}", durationSeconds: 1500, cadence: .count(3)
+        )
+        service.setCardCollapsed(collapsed)
+        let host = UIHostingController(rootView: FocusTimerBar(service: service))
+        return host.sizeThatFits(
+            in: CGSize(width: Self.screenWidth, height: .greatestFiniteMagnitude)
+        ).height
+    }
+
+    func testCollapsingHalvesTheCardOnScreen() {
+        // **The measurement, not the arithmetic.** Every other test in this file asserts a
+        // constant against another constant; this one hosts the real view and asks UIKit how tall
+        // it came out. It is the one assertion that would have caught a grabber whose 44pt touch
+        // target leaked into the layout, or a chevron frame inflating the collapsed row — both of
+        // which pass every metric test while shipping a "collapsed" card the size of the open one.
+        let collapsed = measuredHeight(collapsed: true)
+        let expanded = measuredHeight(collapsed: false)
+
+        // 73pt is not an approximation of E's choice — it is exactly the option E picked from
+        // three measured ones, and the rendered view agrees with the arithmetic to the point:
+        //     grabber 5 + spacing 8 + row 44 (Pause's own 44pt floor) + padding 8 x 2 = 73
+        XCTAssertEqual(
+            collapsed, 73, accuracy: 0.5,
+            "The collapsed card measured \(collapsed)pt, not the 73pt E chose. The usual causes"
+                + " are the grabber's 44pt touch target leaking into the layout (it must be the"
+                + " negative-padding overflow) or the chevron's frame inflating the row."
+        )
+        // 161, not the 148 this card measured before the block: the grabber is new and present in
+        // BOTH states, which costs the expanded card 5pt of capsule plus 8pt of stack spacing.
+        // Flagged for E rather than silently absorbed — the record said expanded content was
+        // unchanged, and this is the one respect in which it is not.
+        XCTAssertEqual(expanded, 161, accuracy: 0.5)
+        XCTAssertLessThan(
+            collapsed, expanded / 1.8,
+            "The collapse no longer roughly halves the card, which is the whole point of it."
+        )
+    }
+
     // MARK: - Collapse survives, and only Confirm clears it
 
     private final class FakeFocusSprintStore: FocusSprintPersisting {
