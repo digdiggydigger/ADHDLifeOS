@@ -66,11 +66,17 @@ executable lines), the measurement extent is unchanged, and the numerator grew +
       collapse the user had just made by hand. Landed as its own commit with its own red-check,
       and `testConfirmResetsCollapse` now states the premise that keeps it green rather than
       assuming it.
-- [ ] **The stack's LIGHT-mode peek is quieter than dark, and E has not looked at it on device.**
-      `.regularMaterial` and `pageBackground` are close in value, so in light the peeking edges are
-      carried almost entirely by the `StateGo` keyline. Legible, and noticeably quieter than dark.
-      Levers in order of bluntness: `opacityStep` (0.15), `peekStep` (8), `scaleStep` (0.05).
-      **Do not re-tune unprompted.** (NEW)
+- [x] **The stack's LIGHT-mode peek — ANSWERED 2026-09-10, and the lever ordering here was WRONG.**
+      E shot the stack on their own iPhone in both themes (`screenshots/focus-card-stack/`, `08-`
+      and `09-`), which measured the light sliver at **1.03:1** against the page — carried entirely
+      by the `StateGo` keyline at 1.30:1, against 1.09:1 and 1.62:1 in dark. E was then shown six
+      rendered options and **chose D: `peekStep` 8 → 14**; `opacityStep` and `scaleStep` unchanged.
+      **This item named `opacityStep` the blunt instrument and that was backwards** — it moves the
+      keyline 1.30:1 → 1.35:1, invisible, because the layer behind already draws at 0.85. The eye
+      reads the sliver's HEIGHT. **14 is off §2's grid**: E was offered the on-grid 16 and chose
+      the value they had approved by sight, so the waiver is written into `CLAUDE.md` §2 and pinned
+      by `testThePeekStepIsTheValueEChoseByLooking`. Evidence:
+      `screenshots/focus-card-light-peek-options/`.
 - [ ] **Do the collapsed card's square BOTTOM corners still earn their keep?** (carried) A "look
       again next time you are in there", not a defect.
 - [ ] **Should the widget's view-only files be made testable at all?** Recommendation is still to

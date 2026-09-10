@@ -57,6 +57,34 @@ final class FocusCompletionStackLayoutTests: XCTestCase {
         )
     }
 
+    /// **The one number in this file that is a DECISION rather than a derivation, so it is the
+    /// one place a literal belongs.**
+    ///
+    /// E chose it on 2026-09-10 by looking at six rendered options side by side
+    /// (`screenshots/focus-card-light-peek-options/`), after the shipped 8pt peek proved too
+    /// quiet in LIGHT mode on their own device: the sliver measured 1.03:1 against the page, so
+    /// the second card was carried entirely by its keyline at 1.30:1.
+    ///
+    /// **The lever ordering the register carried was wrong, and that is why this is pinned.**
+    /// `opacityStep` was named the blunt instrument; it moves the keyline 1.30:1 → 1.35:1, a
+    /// change nobody can see, because the layer behind already draws at 0.85. What the eye reads
+    /// is the sliver's HEIGHT. Anyone re-tuning this should raise `peekStep` and leave the other
+    /// two alone.
+    ///
+    /// **14 is deliberately OFF §2's 4/8/16/24 grid, and E waived the rule explicitly** rather
+    /// than take the on-grid 16 — see the exception recorded in `CLAUDE.md` §2. Do not "correct"
+    /// it to a grid value; that would silently undo a decision made by looking.
+    func testThePeekStepIsTheValueEChoseByLooking() {
+        XCTAssertEqual(
+            FocusCompletionStackLayout.peekStep, 14,
+            "The peek step moved off the value E chose from rendered options on 2026-09-10."
+        )
+        XCTAssertEqual(
+            FocusCompletionStackLayout.yOffset(1), -14,
+            "The second card no longer peeks by the chosen 14pt."
+        )
+    }
+
     /// Strict on every step. A `scale(_:)` that returned a constant 0.95 for every depth would
     /// pass a non-strict version of this while rendering all three layers identically.
     func testDeeperCardsShrinkStrictlyAndStayVisible() {
