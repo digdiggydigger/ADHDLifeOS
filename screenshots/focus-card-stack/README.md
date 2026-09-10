@@ -67,3 +67,45 @@ This is the second time in this arc that a `View`-level defect survived a green 
 | `05-rejected-ghosting-light.jpeg` | The same rejection in light, where it is subtler but still present. |
 | `06-in-situ-three-light.jpeg` | **The real composition**, light: `RootBottomOverlay` with the search row and capture disc above, three layers, and a running sprint's expanded card below. The peeks clear the row; the sprint's controls are all reachable. |
 | `07-in-situ-three-dark.jpeg` | The same composition in dark. |
+| `08-device-stack-light.jpeg` | **E's iPhone, light.** Two layers — the front card and one 8pt peek — over real scrolled Home content. |
+| `09-device-stack-dark.jpeg` | **E's iPhone, dark.** The same moment, same content, same sprint. The pair is the light/dark comparison the renders could not settle. |
+
+## The device pair, and the answer to the light-mode question (added 2026-09-10)
+
+**Environment.** E's own iPhone 15 Pro (`wishwashwacky15`), iOS 26, **live Firebase, E's real signed-in
+account**, app build `ddb480f` (block 3 as merged), captured by E at 22:49 on 2026-09-09. Both shots
+are the same moment — 10:48 on the status bar, the same Home scroll position, the same completed
+sprint (`5m focused · 1 checkpoint`) — so the only variable between them is the theme. No throwaway
+data: the sprint and the routines are E's own, and nothing was created or cleaned up for the shot.
+
+**Two layers, not three.** Exactly two keylines appear, 24px apart at 3x = **`peekStep` 8pt,
+confirmed on real hardware**; there is no third at y≈1878 (flat background from y=1866 to 1886). The
+front card measures 227px tall = **75.7pt, i.e. the specified 76pt**. Both constants are now
+device-verified rather than only asserted.
+
+**The open question was whether the light peek reads. Measured off these two files, it does not
+carry on its own — and the README's prediction was right.** Sampled at x=250–400, clear of the ring
+and the text (luminance is WCAG-relative; contrast is against the page background):
+
+| | light | dark |
+|---|---|---|
+| page background | `RGB(249,241,230)` | `RGB(49,45,37)` |
+| **peek strip** (the visible 8pt sliver) | ΔL **−3.4**, **1.03:1** | ΔL +6.1, **1.09:1** |
+| **peek keyline** | ΔL −28.1, **1.30:1** | ΔL +31.3, **1.62:1** |
+| front card body | ΔL −16.8, **1.17:1** | ΔL +21.8, **1.39:1** |
+
+**In light the peek's BODY is doing nothing — 1.03:1 is indistinguishable from the page** — so the
+second card is carried entirely by its `StateGo` keyline at 1.30:1. In dark the body contributes
+(1.09:1) *and* the keyline is 25% stronger (1.62:1). Every element is quieter in light; the card
+body itself reads 1.17:1 against the page there, versus 1.39:1 in dark.
+
+For reference, WCAG 1.4.11 asks **3:1** for a non-text boundary that carries meaning. Nothing here
+reaches it in either theme. Whether a peeking edge is "meaningful" or decorative is a design call,
+not a measurement — **it is E's, and the levers must not be touched unprompted**
+(`FocusCompletionStackLayout.opacityStep` 0.15, `peekStep` 8, `scaleStep` 0.05).
+
+**One thing the renders could not have shown, and it is not a defect:** the card floats over
+whatever is scrolled beneath it, so here its bottom edge lands directly on a routine card's green
+"Done for now" button. That is occlusion, not the `.regularMaterial` ghosting block 3 fixed — the
+card body sampled uniform through that band, and the button's pixels start below the card's bottom
+edge at y=2153, not inside it. Worth knowing before anyone reads the pair as a ghosting relapse.
