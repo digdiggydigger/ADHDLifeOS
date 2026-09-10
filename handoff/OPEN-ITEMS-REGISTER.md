@@ -1,5 +1,11 @@
 # Open items register — 2026-09-09 (eighteenth edition; F-FocusCard-3 BUILT and LANDED, awaiting E's verdict)
 
+*SHA correction 2026-09-10: `main` is `3861507`, not `ddb480f` — PRs #51 and #52 landed after this
+edition's State block was written. E's phone was rebuilt and reinstalled from `3861507` at 20:26 on
+2026-09-10 and launch was verified. **No app code changed between `110701a` (the block-3 merge) and
+`3861507` except a four-line doc comment in `FocusCompletionCard.swift`**, so what is on the phone
+is block 3 exactly. Everything else below stands; this is not a nineteenth edition.*
+
 *Third close-out of the same day. **F-FocusCard-3 is landed but NOT closed** — it merged at
 `110701a` and E's phone was reinstalled from main, but E had not given a device verdict when this
 session ended. The arc is three-fifths built: blocks 1 and 2 closed, block 3 landed, 4 and 5 open.
@@ -13,8 +19,9 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `ddb480f`** — the block itself merged at `110701a` (PR #49), then #50 (close-out)
-and #51 (in-situ evidence + two doc corrections) · **no branch in flight**; every feature and
+**`main` @ `3861507`** (corrected — was `ddb480f` when written) — the block itself merged at
+`110701a` (PR #49), then #50 (close-out), #51 (in-situ evidence + two doc corrections) and #52
+(session close) · **no branch in flight**; every feature and
 chore branch was deleted by its own merge and the stale local refs pruned, so **`main` is the
 only branch on GitHub** · every change lands through a PR · verified: **unit suite 2,637 / 0**
 (emulator UP, 0 `127.0.0.1:9099` hits, 0 skipped), **SwiftLint 0 / 734**, sim + device builds
@@ -24,7 +31,9 @@ executable lines), the measurement extent is unchanged, and the numerator grew +
 `firestore.rules` untouched, **nothing for E to republish** · the emulator is running · every
 `.xcresult` deleted after its figures were read.
 
-**E's phone is on MAIN at `ddb480f`**, reinstalled and launched after the final merge.
+**E's phone is on MAIN at `3861507`** — rebuilt, reinstalled and launch-verified 2026-09-10 20:26.
+(It was on `a6b8021` before that, so the install carried the whole focus-card arc blocks 1-3,
+`F-TabBar-NoScrollDrop` and `F-HomeTasksLastKnown` across in one move.)
 
 ### Landed this session, and what closing it needs
 
