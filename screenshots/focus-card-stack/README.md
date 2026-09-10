@@ -101,8 +101,10 @@ body itself reads 1.17:1 against the page there, versus 1.39:1 in dark.
 
 For reference, WCAG 1.4.11 asks **3:1** for a non-text boundary that carries meaning. Nothing here
 reaches it in either theme. Whether a peeking edge is "meaningful" or decorative is a design call,
-not a measurement — **it is E's, and the levers must not be touched unprompted**
-(`FocusCompletionStackLayout.opacityStep` 0.15, `peekStep` 8, `scaleStep` 0.05).
+not a measurement — and **E made it on 2026-09-10: `peekStep` 8 → 14**, after being shown six
+rendered options in `../focus-card-light-peek-options/`. `opacityStep` and `scaleStep` are
+unchanged. **These two device shots therefore record the 8pt peek, which no longer ships** — they
+are the evidence that prompted the change, not a picture of current behaviour.
 
 **One thing the renders could not have shown, and it is not a defect:** the card floats over
 whatever is scrolled beneath it, so here its bottom edge lands directly on a routine card's green

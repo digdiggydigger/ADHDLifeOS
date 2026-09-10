@@ -496,6 +496,15 @@ Implement layouts as an elite Apple Design Engineer. Every view must look handcr
   - `8pt`: Inter-element bounding spacing within a component wrapper.
   - `16pt`: Outer screen container margins and canvas boundaries.
   - `24pt`: Macro group-to-group layout separation.
+- **The ONE sanctioned off-grid value, and it is a waiver rather than a loophole:**
+  **`FocusCompletionStackLayout.peekStep = 14`** (E's call, 2026-09-10). The completion stack's
+  peek shipped at the on-grid 8 and proved too quiet in LIGHT mode on E's device — the visible
+  sliver measured **1.03:1** against the page, so the card behind was carried entirely by its
+  keyline. E was shown six rendered options, **offered the on-grid 16 explicitly, and chose 14**:
+  the value they had actually approved by sight. `testThePeekStepIsTheValueEChoseByLooking` pins
+  it and says why. **Do not "correct" it to a grid value** — that silently undoes a decision made
+  by looking. This waiver covers that one constant and nothing else; every other spacing value in
+  the app stays on 4/8/16/24, and `12` and `20` remain banned (§7).
 - **Structural Wrappers**: Use native `ScrollView` systems nested with `LazyVStack` or `LazyHStack` along with custom pinned segment controls over stock, standard `List` containers unless outputting basic Settings structures.
 
 ### 3. Hit Targets & Input Interaction

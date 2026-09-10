@@ -97,9 +97,24 @@ enum FocusCompletionStackLayout {
     /// auto-confirmation — but a tenth drawn edge is noise, not information.
     static let maxVisible = 3
 
-    /// How far each layer peeks above the one in front of it. §2's 8pt inter-element step, and it
-    /// is the whole peek because the scale is anchored at the top.
-    static let peekStep: CGFloat = 8
+    /// How far each layer peeks above the one in front of it — the whole peek, because the scale
+    /// is anchored at the top.
+    ///
+    /// **14, and it is deliberately OFF §2's 4/8/16/24 grid.** It shipped at 8, §2's inter-element
+    /// step, and that proved too quiet in LIGHT mode on E's own device: the visible sliver
+    /// measured **1.03:1** against the page — indistinguishable — leaving the card behind carried
+    /// entirely by its `StateGo` keyline at 1.30:1, where dark gets 1.09:1 and 1.62:1. E chose 14
+    /// on 2026-09-10 from six rendered options (`screenshots/focus-card-light-peek-options/`) and
+    /// **waived the grid explicitly** when offered the on-grid 16; the exception is recorded in
+    /// `CLAUDE.md` §2. `testThePeekStepIsTheValueEChoseByLooking` pins it so it cannot be
+    /// "corrected" back to a grid value.
+    ///
+    /// **If it ever needs to be louder again, raise THIS and leave the other two alone.** The open
+    /// item called `opacityStep` the blunt instrument and that was backwards: opacity moves the
+    /// keyline 1.30:1 → 1.35:1, a change nobody can see, because the layer behind already draws at
+    /// 0.85. What the eye reads is the sliver's HEIGHT. `scaleStep` 0.10 actually *lowers* keyline
+    /// contrast to 1.21:1, dropping more of the line onto the corner curve.
+    static let peekStep: CGFloat = 14
 
     /// 5% per layer: at the card's 361pt width that is ~9pt of inset per side, close to the inset
     /// iOS gives its own stacked notifications. It has to stay a depth CUE — a card that shrank

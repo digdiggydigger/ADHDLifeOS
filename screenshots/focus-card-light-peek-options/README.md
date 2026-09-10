@@ -1,5 +1,13 @@
 # The light-mode peek — the options E was shown
 
+> ## ✅ ANSWERED 2026-09-10: **E chose D — `peekStep` 8 → 14.**
+>
+> Shipped on `feature/focus-card-3-peek` as a follow-up to block 3, test-first.
+> **14 is deliberately off §2's 4/8/16/24 grid**: E was offered the on-grid 16 explicitly and
+> chose 14, the value they had actually approved by sight. The waiver is recorded in `CLAUDE.md`
+> §2 and pinned by `testThePeekStepIsTheValueEChoseByLooking`, so it cannot be "corrected" back.
+> `opacityStep` (0.15) and `scaleStep` (0.05) are **unchanged**.
+
 **The open A-item this answers.** The eighteenth edition of the register carried *"the stack's
 LIGHT-mode peek is quieter than dark, and E has not looked at it on device"*, and named three
 levers "in order of bluntness": `opacityStep` (0.15), `peekStep` (8), `scaleStep` (0.05).
