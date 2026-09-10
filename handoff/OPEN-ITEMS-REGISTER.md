@@ -13,8 +13,10 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `110701a`** (PR #49) · **no branch in flight**; `feature/focus-card-3` deleted both
-sides by its merge · every change lands through a PR · verified: **unit suite 2,637 / 0**
+**`main` @ `ddb480f`** — the block itself merged at `110701a` (PR #49), then #50 (close-out)
+and #51 (in-situ evidence + two doc corrections) · **no branch in flight**; every feature and
+chore branch was deleted by its own merge and the stale local refs pruned, so **`main` is the
+only branch on GitHub** · every change lands through a PR · verified: **unit suite 2,637 / 0**
 (emulator UP, 0 `127.0.0.1:9099` hits, 0 skipped), **SwiftLint 0 / 734**, sim + device builds
 `** BUILD SUCCEEDED **` · **app target 26.56% (12,161/45,782)**, up from 26.37% (12,037/45,646)
 at `1f0d93a` — **comparable**: the denominator moved because the tree grew by one file (+136
@@ -22,7 +24,7 @@ executable lines), the measurement extent is unchanged, and the numerator grew +
 `firestore.rules` untouched, **nothing for E to republish** · the emulator is running · every
 `.xcresult` deleted after its figures were read.
 
-**E's phone is on MAIN at `110701a`**, reinstalled and launched after the merge.
+**E's phone is on MAIN at `ddb480f`**, reinstalled and launched after the final merge.
 
 ### Landed this session, and what closing it needs
 

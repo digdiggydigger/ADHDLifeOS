@@ -1,7 +1,8 @@
 # Start here — F-FocusCard-4, the celebration
 
 *Paste into a fresh Claude Code terminal. Written 2026-09-09 at the close of the session that built
-**F-FocusCard-3** (PR #49 → `110701a`).*
+**F-FocusCard-3** (PR #49 → `110701a`, then #50 close-out and #51 evidence; main ends at
+`ddb480f`).*
 
 **This is the ONE live opener.** If you find a second `START-HERE-*` in `handoff/`, one of them is
 a trap. Archive this file into `handoff/archive/` in the same move that writes your successor, at
@@ -12,7 +13,7 @@ the END of your session, never at the start.
 ## ⚠ READ THIS BEFORE ANYTHING ELSE
 
 **Block 3 is LANDED but NOT CLOSED.** It merged to `main` at `110701a` and E's phone was reinstalled
-from main, but **E had not given a device verdict when that session ended.**
+from `ddb480f`, but **E had not given a device verdict when that session ended.**
 
 So your first job is not block 4:
 
@@ -64,10 +65,11 @@ Blocks 1–3 each moved against the record. Block 4 inherits what shipped, not w
 
 ## Where things stand
 
-**`main` @ `110701a`. No branch in flight.** `feature/focus-card-3` deleted both sides by its merge.
+**`main` @ `ddb480f`. No branch in flight**, and `main` is the ONLY branch on GitHub — every
+feature and chore branch was deleted by its own merge.
 Verified on main: **suite 2,637 / 0** (emulator up, 0 `127.0.0.1:9099` hits, 0 skipped),
 **lint 0 / 734**, sim + device builds `** BUILD SUCCEEDED **`, **app target 26.56%
-(12,161/45,782)**. **E's phone is ON MAIN at `110701a`.**
+(12,161/45,782)**. **E's phone is ON MAIN at `ddb480f`.**
 
 ## Read these, in this order
 
@@ -86,7 +88,7 @@ Verified on main: **suite 2,637 / 0** (emulator up, 0 `127.0.0.1:9099` hits, 0 s
 ```bash
 git branch --show-current            # expect main
 git status --short                   # must be empty
-git log --oneline -1                 # expect 110701a or later
+git log --oneline -1                 # expect ddb480f or later
 git log --oneline -1 origin/main     # same SHA
 swiftlint lint                       # expect 0 violations, 734 files
 ls -d *.xcresult                     # expect NONE
@@ -144,8 +146,8 @@ xcrun devicectl device process launch --terminate-existing \
 ```
 
 A locked phone refuses the LAUNCH but not the install — read `NSLocalizedFailureReason` before
-suspecting the build. **The free-dev-account profile is roughly valid to 2026-09-15**, which is six
-days out: an empty Xcode account list means E must sign in via Xcode → Settings → Accounts, never
+suspecting the build. **The free-dev-account profile is roughly valid to 2026-09-15**, which is days
+away: an empty Xcode account list means E must sign in via Xcode → Settings → Accounts, never
 Claude Code.
 
 **Seeing a real stack on device needs THREE completed sprints, each floored at 30s by
