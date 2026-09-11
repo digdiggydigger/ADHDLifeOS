@@ -3557,7 +3557,7 @@ commit (`4052c52`). Awaiting E's review; block 2 is not cut until then.
 FocusCompletionDrawOnTick` behind `if motion == .modern, #available(iOS 26.0, *)`. Card, stack,
 overlay and service untouched. Test-first (string tests predicted red 3 / 6), rendered in all three
 modes + in situ, evidence `screenshots/focus-completion-celebration-modes/`. **Closes on E's device
-verdict with Reduce Motion ON.** Detail: **`handoff/START-HERE-modern-ios-celebration.md`**, the
+verdict with Reduce Motion ON.** Detail: **`handoff/archive/START-HERE-modern-ios-celebration.md`** (archived at the 2026-09-11 close-out), the
 live opener written 2026-09-11 at E's request after block 1. It carries the plan's block-2 sections
 verbatim, plus two corrections found against the tree: the plan's `.asymmetric(insertion:
 .symbolEffect(.drawOn), …)` does not compile (use `AsymmetricTransition(insertion:removal:)`), and
@@ -3652,6 +3652,14 @@ app 26.87% (12,470/46,405).
 - ordinal 1's 220 pieces are field-for-field the prototype E chose from.
 
 On E's phone 09:54 BST. **Closes on E's device verdict.**
+
+**Follow-up, same day — E, on the block-1 video: "extend the animation length by 1.2 seconds".**
+- **What changed:** the 4.2 s choreography is stretched evenly over **5.4 s** by
+  `ConfirmCelebrationQueue.extraLength` / `pace` / `choreographyTime(of:at:)`, and both the frame
+  and the glow read that clock. Every piece, path and beat is kept.
+- **Tests first:** red predicted and observed 2,710 / 8 (3 tests). A red-check pointing the glow and
+  the frame back at raw time failed exactly its 2 named tests.
+- **Green:** 2,710 / 0 (0 `9099`), lint 0; device build succeeded; on E's phone 10:26 BST.
 
 ### FEATURE: F-ConfirmCelebration-2 — the stack-clearing fireworks and the light-mode dim  [ ] OPEN
 

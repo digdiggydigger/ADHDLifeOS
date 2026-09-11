@@ -1,5 +1,10 @@
 # F-ConfirmCelebration-1 — every Confirm's confetti, glow and haptic
 
+> **Later the same day, E asked for the celebration to run 1.2 s longer.** It now plays its 4.2 s
+> choreography evenly over 5.4 s. `00`, `01`, `10` and `11` were rendered BEFORE that, so read
+> their timestamps against 4.2 s; `12` is the shipped length. The wiring, the overlap and the
+> "nothing left drawn" result are unaffected; only the pace changed.
+
 **Environment.** iPhone 17 Pro simulator (iOS 26.5, the machine's only runtime), rendered at 2×
 from the unit-test host on `feature/confirm-celebration` @ `9314a13`, 2026-09-11.
 - **No backend, no account, no sign-in, nothing written anywhere.** A real `FocusSessionService`
@@ -76,5 +81,6 @@ off, what it looks like over the app, or that it leaves nothing behind. These fr
 | `00-live-confirm-light-sheet.jpeg` | Light, real clock: two waiting cards → Confirm → glow, rain and cannons, the card leaving → a second Confirm overlapping the first → everything landed and gone by t5.68. |
 | `01-live-confirm-dark-sheet.jpeg` | The same, dark. |
 | `10-every-confirm-t1.21-light-dark.jpeg` | One instant of the production frame, light beside dark: the rain and the cannons meeting mid-screen over the glow. |
-| `11-every-confirm-light-dark.mp4` | The production frame at real speed, 4.5 s, light beside dark. |
+| `11-every-confirm-light-dark.mp4` | The production frame at real speed, 4.5 s, light beside dark — at the ORIGINAL 4.2 s length. |
+| `12-every-confirm-light-dark-5.4s.mp4` | **After E's "extend the animation length by 1.2 seconds":** the same frame at real speed, 5.7 s, light beside dark. The choreography is stretched evenly over 5.4 s; same pieces, paths and beats. This is what ships. |
 | `40-…` | *Pending: E's device verdict.* |
