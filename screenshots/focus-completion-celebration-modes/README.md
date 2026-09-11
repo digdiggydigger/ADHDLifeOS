@@ -31,10 +31,10 @@ Two compositions:
 
 ## Verified paths (CLAUDE.md §7.3)
 
-> **26 path (`.modern`):** run on sim (leaf + in situ, both themes in the leaf) — E's phone with
-> Reduce Motion OFF pending. **Reduced (`.reduced`):** run on sim by injection — leaf via
-> `init(plays:motion:)`, in situ via a one-run temporary edit (below) — E's phone with Reduce Motion
-> ON pending, and that verdict closes the block. **16 path (`.full`):** code run on 26.5 by injection,
+> **26 path (`.modern`):** run on sim (leaf + in situ, both themes in the leaf) — **and on E's phone
+> with Reduce Motion OFF: correct.** **Reduced (`.reduced`):** run on sim by injection — leaf via
+> `init(plays:motion:)`, in situ via a one-run temporary edit (below) — **and on E's phone with
+> Reduce Motion ON: correct, which closed the block.** **16 path (`.full`):** code run on 26.5 by injection,
 > leaf only; its SELECTION on an iOS 16–25 OS is COMPILE-ONLY — no older runtime is installed.
 
 Nobody here can say "works on iOS 16" yet, and nothing in this folder does.
@@ -124,4 +124,4 @@ of `34` is the first frame E sees.
 | `32-in-situ-modern-confirm-reveals-older.jpeg` | Confirm: the revealed older card arrives with its tick already drawn — no stray draw-on — and the leaving card keeps its tick — no draw-off. |
 | `33-in-situ-reduced-injected.jpeg` | **Reduced, in the real card** (one-run injection): the 1.6 halo at strength on the card's edges and behind the text, then the tick fading in as the halo fades out. |
 | `34-in-situ-reduced-injected-opening-t1.01.jpeg` | **The headline frame for E's lever:** the reduced opening, raw — the frame measured above. |
-| `40-…` / `50-…` | *Pending: E's device verdicts, Reduce Motion ON (closes the block) then OFF.* |
+| *(no `40-` / `50-` files)* | **E's device verdicts, given in chat on 2026-09-11 without screenshots:** "i have done the animation checks on my iphone with Reduce Motion ON and OFF and it works correctly in both states." Both states correct as shipped, at the 2.1 s / 1.1 s fades; the block is closed. |
