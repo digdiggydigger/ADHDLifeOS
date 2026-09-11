@@ -78,8 +78,19 @@ struct PersistedFocusSprint: Codable, Equatable {
     }
 }
 
-/// Seam over the sprint's local persistence — same convention as `FocusSessionLogging`, so the
-/// service is testable with a recording fake and the storage medium stays swappable.
+/// Seam over the sprint's local, per-device persistence — same convention as
+/// `FocusSessionLogging`, so the service is testable with a recording fake and the storage medium
+/// stays swappable.
+///
+/// **Four concerns under four keys, widened three times since it was one.** The RUNNING sprint
+/// (F-SprintPersistence); the app-was-dead completion held until acknowledged (E, 2026-08-25);
+/// the running card's collapse posture (F-FocusCard-1); and the stack of naturally-finished
+/// sprints waiting on Confirm (F-FocusCard-2). Every widening broke both recording fakes' compile
+/// on purpose — that break is the red step, and a protocol-extension default would silence it.
+///
+/// **What is deliberately NOT here:** F-FocusCard-4's in-memory cue for which card just finished.
+/// It must not survive a relaunch, or a sprint that ended hours ago would burst again on every
+/// launch; `testTheStampIsNeverPersisted` holds that.
 protocol FocusSprintPersisting: AnyObject {
     func read() -> PersistedFocusSprint?
     func write(_ state: PersistedFocusSprint)

@@ -1,9 +1,8 @@
-# Open items register — 2026-09-11 (twentieth edition; F-FocusCard-4 BUILT and MERGED, awaiting E's device verdict)
+# Open items register — 2026-09-11 (twenty-first edition; THE FOCUS CARD ARC IS CLOSED)
 
-*Written at the close of the session that answered the light-mode peek question and shipped
-`F-FocusCard-3-Peek`. **Block 3 is now effectively closed** — E ran three of their four device
-checks and reported nothing wrong; only the airplane-mode one is outstanding, and it is a
-Home-refresh check unrelated to the focus card. Supersedes the eighteen earlier editions.*
+*Written at the close of the session that shipped `F-FocusCard-4` (the celebration, PR #58) and
+`F-FocusCard-5` (the close-out). **E closed block 4 on device — "the pre-beat reads fine" — and
+the five-block focus card arc is CLOSED.** Supersedes the twenty earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and to
@@ -13,46 +12,62 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ `3a6a574` (PR #58, `F-FocusCard-4`); the last CODE change is `d8b334b`** ·
-**Block 4 is BUILT, MERGED and INSTALLED on E's phone (01:48, 2026-09-11) — it CLOSES on E's
-device verdict, which has not been given.** Verified for it: suite **2,663 / 0** (emulator UP,
-0 `127.0.0.1:9099`, 0 skipped), lint **0 / 738**, sim + device `** BUILD SUCCEEDED **`, app
-target **26.69% (12,255/45,914)** — comparable to the 26.56% below (one file added, extent
-unchanged). Evidence: `screenshots/focus-completion-celebration/`. **Nothing for E to
-republish.** Earlier state, still true of everything else: **no branch in flight**; every feature and chore branch was deleted by its
+**`main` @ the block-5 merge; the last CODE change is `d8b334b`** (PR #58, `F-FocusCard-4`;
+block 5 changed comments and docs only) · **the focus card arc is CLOSED** — blocks 1–4 each
+verified by E on device, block 5 doc-only · verified this session: suite **2,663 / 0** (emulator
+UP, 0 `127.0.0.1:9099`, 0 skipped — run twice, once per block), lint **0 / 738**, sim + device
+`** BUILD SUCCEEDED **`, app target **26.68% (12,255/45,932)** after block 5 — the numerator is
+byte-identical to block 4's 26.69% (12,255/45,914) and the +18 in the denominator came from a
+comment-only diff, so it is xccov counting comment lines inside view-body regions, not code. Evidence: `screenshots/focus-completion-celebration/`. **Nothing for E to
+republish.** **E's phone runs the block-4 build, which IS `main`'s code.** Otherwise: **no
+branch in flight**; every feature and chore branch was deleted by its
 own merge, so **`main` is the only branch on GitHub** · every change lands through a PR ·
 verified: **unit suite 2,638 / 0** (emulator UP, **0** `127.0.0.1:9099` hits, 0 skipped),
 **SwiftLint 0 / 734**, sim + device builds `** BUILD SUCCEEDED **` · `firestore.rules` untouched,
 **nothing for E to republish** · every `.xcresult` deleted after its figures were read.
 
-**E's phone is on MAIN at `298fb17`**, reinstalled and launch-verified 2026-09-10 22:5x.
+**E's phone was installed and launch-verified at 01:48 on 2026-09-11 from `d8b334b`.**
 
-**Coverage: app target 26.56% (12,161/45,782) — identical to the eighteenth edition, and that is
-correct rather than a stale copy.** This session's only app change was one constant's VALUE
-(`peekStep` 8 → 14) plus doc comments, so it added and removed no executable lines: the
-denominator could not move and the numerator had nothing to gain. The +1 test lands in the test
-target, not the app's. Full breakdown:
+**Coverage: app target 26.68% (12,255/45,932) — comparable to the twentieth edition's 26.56%
+(12,161/45,782).** Block 4 grew the tree by one file (`FocusCompletionCelebration.swift`, 98
+executable lines) and the numerator by 94, so the rise is real; block 5's comment-only diff then
+moved the denominator by +18 with the numerator byte-identical — xccov counting comment lines
+inside view-body regions, which is worth knowing the next time a doc-only PR appears to lower
+the figure. Full breakdown (block 4's run; block 5 changed only the app line):
 
 ```
-ADHD LifeOS.app              26.56%  (12161/45782)
-ADHD LifeOSTests.xctest      95.40%  (41635/43641)
+ADHD LifeOS.app              26.68%  (12255/45932)  ← 26.69% (12255/45914) before block 5's comments
+ADHD LifeOSTests.xctest      95.30%  (42100/44176)
 ADHD LifeOSUITests.xctest     0.00%  (0/2962)     ← skipped in the standard run by design
 FocusTimerWidgetExtension    10.30%  (228/2214)   ← read the 233-line testable surface, not this
 ```
 
 ### Landed this session
 
-- **`F-FocusCard-3-Peek` — the peek raised 8 → 14** (PR #56, `298fb17`). A follow-up to block 3,
-  built test-first: the pinning test failed on **1 test / 2 assertions**, exactly as predicted,
-  before the constant moved. `reservedTopPadding` needed no change — block 3 derived it from
-  `yOffset` precisely so this could move. Evidence:
-  `screenshots/focus-card-light-peek-options/` (the six options) and
-  `screenshots/focus-card-stack/` `10-`–`13-` (the result on device).
+- **`F-FocusCard-4` — the celebration** (PR #58, `d8b334b` + `95038a7`). The ring's own stroke
+  radiates 1 → 1.6 while fading 0.8 → 0 on a 0.9s easeOut, the tick springs in from 0.6, both
+  after a 0.3s wait for the card to land; success haptic on `RootBottomOverlay` keyed on
+  `confirmableCompletionCount`. One service stamp (`latestConfirmableCompletion`), written by
+  the push only. Call-site guards ran RED on 5 tests / 9 failures before the implementation
+  existed; three red-checks after, each on the predicted tests. **E, on device: "the pre-beat
+  reads fine."** Evidence: `screenshots/focus-completion-celebration/` (11 frames + README).
+- **`F-FocusCard-5` — the close-out** (this PR). Stale comments corrected, the
+  `OfflineSprintSummaryCard` collision recorded in the code, the design record's postscript
+  table, this register, and the handoff swap.
+- **Two register PRs** (#59 twentieth edition, and this one).
 
-- **Three doc/evidence PRs** (#53 register SHA correction, #54 E's 8pt device pair, #55 the
-  rendered options).
+### What block 4 established, beyond the animation
 
-### What the peek work established, and it is worth more than the constant
+- **`drawHierarchy(afterScreenUpdates: false)` from a test host renders BLANK WHITE.** Use `true`
+  and a scene-attached `UIWindow`; it then captures in-flight SwiftUI animation frames, so motion
+  can be evidenced by render too.
+- **`accessibilityReduceMotion` is not writable via `.environment(\.)`.** Render the leaf with the
+  flag as a parameter; hold the parent's pass-through with a call-site test.
+- **A listener on a view inserted in the same update that changes its trigger misses that
+  change.** The haptic lives on the persistent overlay for exactly this reason.
+- **`FocusSessionService.swift` is at 394/400** after moving two accessors out.
+
+### What the peek work established (2026-09-10), and it is worth more than the constant
 
 - **The lever ordering this register carried was BACKWARDS.** It named `opacityStep` the blunt
   instrument. Opacity moves the keyline **1.30:1 → 1.35:1** — invisible — because the layer behind
@@ -76,29 +91,12 @@ FocusTimerWidgetExtension    10.30%  (228/2214)   ← read the 233-line testable
 
 ## B · Real work, ready to start — recommended order
 
-**0. THE FOCUS CARD ARC — blocks 1–3 CLOSED, 4 BUILT AND MERGED (awaiting E's verdict), 5 NOT STARTED.** The design
-   record is **`handoff/SESSION-OPENER-focus-card-design.md`** — permanent, never archive it.
-   **Read its "settled specification" with this register beside it**: blocks 1, 2 and 3 each moved
-   against it, and the live opener carries the table of what actually shipped.
-   - **`F-FocusCard-4` — SHIPPED `3a6a574` (PR #58), verdict pending.** Ask E: does the 0.3s
-     pre-beat (complete ring, no tick, while the card lands) read as anticipation or as a glitch?
-     The lever is `FocusCompletionCelebrationMetrics.delay`. The tick is the ring's existing bare
-     `checkmark`, not the record's `checkmark.circle.fill` — deliberate, so the resting card stays
-     the one E approved. The record's constraints, all held: **iOS 16 is the floor**, which rules out
-     `PhaseAnimator`, `.symbolEffect`, `.keyframeAnimator` and `.sensoryFeedback`. The haptic keys
-     on `confirmableCompletionCount`, NOT `completedSprintCount` (bumped on manual stops) and NOT
-     `unconfirmedCompletions.count` (changes on confirm-removal, so it would buzz on dismissal).
-     Reduce Motion renders the FINAL state. **Evidence is
-     `screenshots/focus-completion-celebration/` with its README, not the unit test.**
-     **Only the FRONT layer draws a real card** — a celebration keyed to a layer behind would be
-     invisible, and one keyed to the stack rather than the front record would fire for cards the
-     user never saw.
-   - **`F-FocusCard-5`** — close-out. Stale docs to fix: `FocusTimerBar.swift:8-25`'s header,
-     `FocusSessionBackingStore.swift`'s "append-only in practice" comment (now FALSE — records are
-     re-saved on confirm), `FocusSprintPersisting`'s protocol doc (predates both widenings).
-   - The live opener is `handoff/START-HERE-focus-card-block4.md`.
+**0. THE FOCUS CARD ARC IS CLOSED — nothing queued.** The design record is
+   **`handoff/SESSION-OPENER-focus-card-design.md`** (permanent), now opening with a postscript
+   table of everything that shipped against it. The live opener is
+   `handoff/START-HERE-post-focus-card.md`, and it points HERE for direction.
 
-1. **E's fourth device check, not yet run: airplane mode + pull-to-refresh on Home.**
+1. **E's one un-run device check: airplane mode + pull-to-refresh on Home.**
    `F-HomeTasksLastKnown` (`8b5f740`) should keep the last-known task set rather than emptying it.
    Unrelated to the focus card; checks 1–3 (Confirm-doesn't-reopen-a-collapsed-card,
    tap-opens-detail, `F-TabBar-NoScrollDrop`) were run by E on 2026-09-11 with nothing reported

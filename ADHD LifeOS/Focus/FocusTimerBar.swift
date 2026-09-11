@@ -16,11 +16,14 @@ import SwiftUI
 /// **Two states since F-FocusCard-1** (E's annotated screenshot `IMG_8307.jpg`, 2026-09-09). The
 /// card the contents are drawn on is this file; the contents themselves are
 /// `FocusTimerBarContent`. Expanded, it is the 16pt-inset card above with all four controls.
-/// Collapsed, it is inset further than the expanded card so it sits NARROWER than the tab bar
-/// below it (E's 2026-09-09 reversal of the original full-bleed call), with rounded TOP corners
-/// only, dropped flush onto the tab bar, carrying exactly the ring, the sprint name and Pause. Every sprint starts
-/// expanded, and **collapse is cleared only by the Confirm button that arrives in F-FocusCard-2**
-/// — not by a tab switch, backgrounding or a relaunch, which is E's stated requirement.
+/// Collapsed, it keeps the SAME 16pt inset — so collapsing changes height only, never width —
+/// and sits narrower than the tab bar below it (E's 2026-09-09 reversal of the original
+/// full-bleed call), with rounded TOP corners only, dropped flush onto the tab bar, carrying
+/// exactly the ring, the sprint name and Pause. Every sprint starts expanded, and **collapse is
+/// cleared only by the Confirm button (F-FocusCard-2), and since F-FocusCard-3 only when no
+/// sprint is running** — never by a tab switch, backgrounding or a relaunch, which is E's stated
+/// requirement. A sprint that finishes naturally raises `FocusCompletionCard` ABOVE this bar
+/// (stacked in F-FocusCard-3, celebrated in F-FocusCard-4); a manual Stop raises nothing.
 ///
 /// Deviations from the React source, per CLAUDE.md precedence:
 /// - §4 zero-hex: the web's fixed dark card (`dark-card`, white text, `#FF5B5B` accent) becomes

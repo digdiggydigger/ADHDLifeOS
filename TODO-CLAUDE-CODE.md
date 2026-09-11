@@ -3503,7 +3503,23 @@ pose is the tick alone, and a card revealed by a Confirm or restored by a relaun
   tick lands on a card that has stopped moving), but if it reads as a glitch the lever is
   `FocusCompletionCelebrationMetrics.delay`.
 
-### FEATURE: F-FocusCard-5 — close-out  [ ] NOT STARTED
+### FEATURE: F-FocusCard-5 — close-out  [x] COMPLETED
 
-Stale comments (`FocusTimerBar.swift:8-25`, `FocusSessionBackingStore.swift`'s "append-only"),
-the register, and the documented-but-unfixed `OfflineSprintSummaryCard` collision.
+*Built 2026-09-11 on `feature/focus-card-5`, after E closed block 4 on device ("the pre-beat
+reads fine — go ahead with block 5"). Doc-only: no executable line changed, so the phone build
+from block 4 IS this code. **THE FOCUS CARD ARC IS CLOSED.***
+
+- `FocusTimerBar.swift`'s header: the "tapping the bar's task row" line the record named was
+  already gone (block 1 rewrote it); what was stale was "inset further than the expanded card"
+  (both insets are 16) and "cleared only by Confirm" without block 3's no-sprint-running
+  condition. Both corrected.
+- `FocusSessionBackingStore.swift`: "append-only in practice" was FALSE since block 2 — Confirm
+  re-saves the same `id`. Rewritten to say why the re-save is an upsert and why there is still
+  no `update` or delete.
+- `FocusSprintPersisting`'s doc now enumerates its four keys and says the celebration cue is
+  deliberately NOT one of them.
+- **The `OfflineSprintSummaryCard` collision is recorded in the code** (`RootBottomOverlay.swift`
+  at the offline card, and the card's own header) as documented and deliberately unfixed — E's
+  "keep them separate... queue it".
+- The design record gained a postscript table of everything that shipped against it; the record
+  itself is untouched, as the rule requires.

@@ -80,6 +80,15 @@ struct RootBottomOverlay: View {
 
             // A sprint that finished while the app was dead announces itself here — above the
             // tab bar on every tab, gone only when acknowledged.
+            //
+            // **Known collision, documented and deliberately unfixed (F-FocusCard-5).** This card
+            // and the completion stack below share this VStack, so an old unacknowledged
+            // app-was-dead completion and a new unconfirmed sprint can be on screen together in
+            // two visual languages (green-washed v3 card above, material card below). E ruled the
+            // offline card out of the focus-card arc explicitly — *"keep them separate... queue
+            // it"* — and it fires only from `restorePersistedSprint()` after the process was
+            // killed mid-sprint, a path E has never hit in normal use. Unifying the two is a
+            // queued design question, not a defect to patch here.
             if let summary = focusService.offlineCompletionSummary {
                 OfflineSprintSummaryCard(record: summary) {
                     focusService.acknowledgeOfflineCompletion()
