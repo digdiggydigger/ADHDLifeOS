@@ -22,7 +22,8 @@ The prototypes E chose from: `screenshots/confirm-celebration-prototypes/`.
 > **The celebration is a single implementation**, with no `#available`: `Canvas` and
 > `TimelineView` are iOS 15, and no later tier adds anything (§7.1).
 > - **Sim:** it ran on the 26.5 simulator, live and injected, light and dark.
-> - **E's phone:** verdict pending (Reduce Motion ON, which E's waiver makes identical to OFF).
+> - **E's phone:** run with Reduce Motion ON and OFF, at the stretched 5.4 s — correct in both
+>   (E's verdict, 2026-09-11).
 > - **iOS 16–25:** behaviour is COMPILE-ONLY; no older runtime is installed.
 >
 > **The Confirm haptic** rides the house `.haptic` helper: `.sensoryFeedback` on 17+, the UIKit
@@ -83,4 +84,4 @@ off, what it looks like over the app, or that it leaves nothing behind. These fr
 | `10-every-confirm-t1.21-light-dark.jpeg` | One instant of the production frame, light beside dark: the rain and the cannons meeting mid-screen over the glow. |
 | `11-every-confirm-light-dark.mp4` | The production frame at real speed, 4.5 s, light beside dark — at the ORIGINAL 4.2 s length. |
 | `12-every-confirm-light-dark-5.4s.mp4` | **After E's "extend the animation length by 1.2 seconds":** the same frame at real speed, 5.7 s, light beside dark. The choreography is stretched evenly over 5.4 s; same pieces, paths and beats. This is what ships. |
-| `40-…` | *Pending: E's device verdict.* |
+| *(no `40-` file)* | **E's device verdict, given in chat on 2026-09-11 without screenshots:** "i have done the animation checks on my iphone with Reduce Motion ON and OFF and it works correctly in both states." |

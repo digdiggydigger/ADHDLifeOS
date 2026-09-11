@@ -385,7 +385,7 @@ is the one exception, and its README says in its first line that its provenance 
 is exactly when nobody can reconstruct it. Nothing here is pruned when a block merges.
 
 **Prefer JPEG.** A device screenshot is ~230KB as JPEG; a simulator PNG is several MB, and the tree
-is already 44MB. Use PNG only when the point is pixel-exact — a colour comparison, a contrast
+is already 69MB (2026-09-11; it was 44MB when this was written). Use PNG only when the point is pixel-exact — a colour comparison, a contrast
 measurement, anything that will be sampled rather than looked at.
 
 ## Version Control

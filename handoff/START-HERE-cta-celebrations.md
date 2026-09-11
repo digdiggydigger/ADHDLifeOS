@@ -27,19 +27,16 @@ sprint's card is confirmed. E approved it by video and called it "really good"; 
 4. The evidence: `screenshots/confirm-celebration-prototypes/` (what E chose from) and
    `screenshots/confirm-celebration-block-1/` (what shipped, including `12-…5.4s.mp4`).
 
-## Before designing anything: the open device verdicts
+## The device verdicts are in
 
-E has not given these yet. **Ask for them early; don't let the new arc bury them** (register §A):
-- **One short sprint gives two verdicts.** Its finish is `F-ModernIOS-2-Celebration`'s Reduce
-  Motion ON check (halo fade 2.1 s, tick 1.1 s). Its Confirm is `F-ConfirmCelebration-1`'s check,
-  now 5.4 s long.
-- **Reduce Motion OFF second look** (the iOS 26 tick draws during the card's slide-up).
-- **The reduced halo's pinned scale**: 1.6 now, or ≤ 1.25 to clear the text.
-- **Whether the +1.2 s reads right.** It is an even stretch (~78% speed), which was Claude Code's
-  reading of E's ask.
+E, after this opener was written: *"i have done the animation checks on my iphone with Reduce Motion ON and OFF and it works correctly in both states."* So:
+- **`F-ModernIOS-2-Celebration` is CLOSED.** The draw-on timing and the 1.6 reduced halo stay as
+  shipped.
+- **`F-ConfirmCelebration-1` passed**, at the stretched 5.4 s.
 - **`F-ConfirmCelebration-2`** (14 fireworks + light-mode 85% dim on the stack-clearing Confirm) is
-  approved but NOT started, and waits on the block-1 verdict. The new arc may change how it is built
-  (see "The engine" below). Ask E before building it separately.
+  approved and no longer blocked on a verdict. It still has two open questions for E: does the +1.2 s
+  stretch apply to the fireworks, and should block 2 wait for this arc's design, which may generalise
+  the engine? **Ask before building it.**
 
 ## The constraints this arc cannot design around
 

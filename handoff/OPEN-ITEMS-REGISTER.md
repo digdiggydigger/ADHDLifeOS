@@ -1,4 +1,4 @@
-# Open items register — 2026-09-11 (twenty-eighth edition; SESSION CLOSE-OUT — the Confirm celebration is on E's phone at 5.4 s; next session: celebrations for other CTAs)
+# Open items register — 2026-09-11 (twenty-ninth edition; E's device verdicts IN — both celebrations correct with Reduce Motion ON and OFF; next session: celebrations for other CTAs)
 
 *The close-out of the session that built `F-ModernIOS-2-Celebration` and `F-ConfirmCelebration-1`.
 E's last two asks:
@@ -7,8 +7,11 @@ E's last two asks:
   just created to other CTA buttons etc. throughout the app."**
 
 The next session's opener is **`handoff/START-HERE-cta-celebrations.md`**. The consumed
-`START-HERE-modern-ios-celebration.md` is archived in the same move. Supersedes the twenty-seven
-earlier editions.*
+`START-HERE-modern-ios-celebration.md` is archived in the same move.
+
+**Twenty-ninth edition, the same day:** E ran the device checks and reported both celebrations
+correct with Reduce Motion ON and OFF (§A). That CLOSES `F-ModernIOS-2-Celebration` and passes
+`F-ConfirmCelebration-1`. Supersedes the twenty-eight earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -23,8 +26,8 @@ flight once it merges; every branch this session was deleted by its merge. `fire
 untouched, so there is **nothing for E to republish**.
 
 **E's phone runs `967472a`'s app code**, installed and launch-verified at **10:26 BST on
-2026-09-11** (earlier installs: 09:54, 09:06, 07:32, 07:02). Reduce Motion is still ON there, as E
-left it. (carried)
+2026-09-11** (earlier installs: 09:54, 09:06, 07:32, 07:02). E ran the device checks in BOTH
+Reduce Motion states, so which one the phone is left in is E's.
 
 **Verified at close** (the last code change, +1.2 s):
 - unit suite **2,710 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
@@ -73,9 +76,9 @@ render probe exercises and no unit test can.
 
 - **The iOS 26 draw-on does NOT wait for a transaction's delay.** It draws at insertion, so with
   Reduce Motion OFF the tick draws during the card's slide-up. The lever is to land `.modern` after
-  `delay`.
+  `delay`. **E's device verdict kept it.**
 - **The reduced halo pinned at 1.6 overhangs the 76 pt card** (77.3 pt) and runs ~7 pt behind the
-  text; ≤ 1.25 clears it. Frame: `…-modes/34-…`. E's lever.
+  text; ≤ 1.25 clears it. Frame: `…-modes/34-…`. **E's device verdict kept 1.6.**
 - **A stored `@Published` cannot live in an extension.** Room for the 400-line bar comes from moving
   METHODS out (the `+Completions` / `+Persistence` / `+Notifications` arrangement).
 - **A countable red needs inert stubs.** Use early `XCTUnwrap` and count-first assertions. A thrown
@@ -118,41 +121,17 @@ fires under RM, as it always did.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **ONE short sprint gives BOTH open device verdicts** (the phone has everything as of 10:26 BST;
-      Reduce Motion stays ON, as E has it):
-      1. **When the sprint finishes → `F-ModernIOS-2-Celebration`'s Reduce-Motion-ON verdict.**
-         Expect a CUT arrival, a bold green halo fading over 2.1s, the tick fading in over 1.1s
-         after ~0.3s, nothing scaling, and the success haptic.
-      2. **Tap Confirm → `F-ConfirmCelebration-1`'s verdict.** Expect:
-         - the card leaves;
-         - the success haptic;
-         - a green glow swelling from the bottom;
-         - confetti raining from the top AND fired from both bottom corners at once, falling over
-           the tab bar and gone by ~5.4s (E's +1.2 s, played as an even stretch at ~78% speed —
-           if it reads floaty, the alternative is the old speed with a longer tail);
-         - taps still working underneath.
-
-         With two cards waiting, each Confirm fires its own celebration, and they overlap. Worth an
-         eye: whether it stutters on the phone (the prototypes were rendered offline, so this is
-         the first real-time run), and whether the glow reads in light. Evidence lands as `40-…`
-         in `screenshots/confirm-celebration-block-1/`. (NEW)
-
-      **R3–R8 shipped as the record's defaults**, since E approved only R1, R2 and R9: one overlay
-      in `RootView`; the haptic on the overlay; a fresh seed per Confirm; the glow in both
-      appearances; the card's dismissal unchanged; no VoiceOver announcement. Any of them is E's to
-      change at this verdict.
-
-- [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.**
-      Folded into the one-sprint item at the top of this section (its step 1), which carries what to
-      expect. Its evidence still lands as `40-…` in `screenshots/focus-completion-celebration-modes/`.
-      (NEW)
-- [ ] **E's second look with Reduce Motion OFF.** Expect the card to slide up with the tick drawing
-      itself on DURING the slide, then the halo radiating once it has landed. The early draw is the
-      finding above: judge whether it reads as one gesture or as a collision. Evidence: `50-…`. (NEW)
-- [ ] **The reduced halo's pinned scale: keep 1.6, or go smaller?** The frame to look at is
-      `screenshots/focus-completion-celebration-modes/34-…`. At 1.6 the halo overhangs the card by
-      ~0.7pt and runs ~7pt behind the text; ≤ 1.25 clears the text. Renders of the options are one
-      probe run away if wanted. (NEW)
+- [x] **E's device verdicts — DONE (2026-09-11, after the close-out).** E, verbatim: *"i have done the animation checks on my iphone with Reduce Motion ON and OFF and it works correctly in both states."*
+      This covers the sprint-finish celebration and the Confirm celebration on the phone as of
+      10:26 BST (`967472a`), in both Reduce Motion states:
+      - **`F-ModernIOS-2-Celebration` is CLOSED.** The Reduce Motion ON cross-fade (halo 2.1 s, tick
+        1.1 s) and the Reduce Motion OFF iOS 26 draw-on are both judged correct as shipped. So the
+        draw-on landing during the card's slide-up stays, and **the reduced halo stays at 1.6**: no
+        change was asked, though E can reopen either.
+      - **`F-ConfirmCelebration-1` passed its device verdict.** It plays identically in both states
+        (E's §7.2 waiver), at the stretched 5.4 s. R3–R8 stand as shipped.
+      - No device frames were captured. The verdict is recorded in words in both evidence READMEs.
+        (NEW)
 - [ ] **Install an older simulator runtime** via Xcode → Settings → Components. iOS 17.x proves the
       17 gates select and 16.x proves the floor. It is ~7 GB on the external SSD and **E's GUI job**.
       Until then every `#available` fallback is compile-only by policy (§7.3). (carried; asked
@@ -177,8 +156,9 @@ fires under RM, as it always did.
      new site needs E's own answer, and the off switch (§D) becomes more pressing.
    - Design-first (brainstorming, architectural path), then a record, then E's approval. (NEW)
 
-**0a. The Confirm celebration — E's ask (2026-09-11). RECORD APPROVED; BLOCK 1 BUILT and on E's
-   phone (awaiting E's verdict, see A); block 2 (fireworks + dim) waits on that verdict.** A celebration that uses the full screen when the user taps Confirm on a
+**0a. The Confirm celebration — E's ask (2026-09-11). RECORD APPROVED; BLOCK 1 BUILT and PASSED E's
+   device verdict (Reduce Motion ON and OFF); block 2 (fireworks + dim) is unblocked but has the two
+   open questions below.** A celebration that uses the full screen when the user taps Confirm on a
    completion card. **The record is `handoff/SESSION-OPENER-confirm-celebration-design.md`**,
    renamed from the `…-confetti-design.md` the last edition promised because it now covers
    fireworks, the glow and the dim as well. Its evidence is `screenshots/confirm-celebration-prototypes/`.
@@ -209,13 +189,9 @@ fires under RM, as it always did.
      (≈ 5.0 s → ≈ 6.4 s)? And should block 2 wait for the CTA arc's design, which may generalise
      the engine?
 
-**0. Follow-ups to the pilot — pick up only after E's verdicts, and only what E asks for:**
-   - **The draw-on's timing**, if E's RM-OFF look says the tick should wait for the card: land
-     `.modern` after `delay`, not inside it. A small change to the view's `onAppear` plus its
-     call-site pin, then a re-render.
-   - **The reduced halo's pinned scale**, if E picks a smaller value. It needs its own constant
-     beside `burstScaleEnd`, the two pure tests that read `burstScaleEnd` for the reduced pose, and a
-     re-render in the card.
+**0. Follow-ups to the pilot — only what E asks for.** E's verdict kept the draw-on timing and the
+   1.6 halo as shipped, so those two follow-ups are gone. If E reopens either: land `.modern` after
+   `delay`, or give the reduced halo its own constant beside `burstScaleEnd`.
    - **RM arrival fade for the bottom furniture** (`RootBottomOverlay`'s three nil animations + the
      card's unconditional `.move + .opacity` transition), only if E likes the cross-fade. The
      reflow must NOT tween under RM, so the card's transition would split. (carried)

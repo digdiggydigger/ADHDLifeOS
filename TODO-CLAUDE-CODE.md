@@ -3583,6 +3583,7 @@ Red-checks on a committed tree, each predicted by test name and observed exactly
 delay (it draws during the card's slide-up; shipped as rendered, per the plan), and the reduced
 halo pinned at 1.6 overhangs the 76pt card by ~0.7pt and runs ~7pt behind the summary text at 80%
 (E's lever; ≤ 1.25 clears the text). **Closes on E's device verdict with Reduce Motion ON.**
+**CLOSED 2026-09-11 — E: "i have done the animation checks on my iphone with Reduce Motion ON and OFF and it works correctly in both states."** Both states correct as shipped; the draw-on timing and the 1.6 halo stay.
 Merged as PR #65 (`a2f20ab`).
 
 **Follow-up, same day — E: "Can you make the animations longer?"** Both fades doubled (halo
@@ -3660,6 +3661,8 @@ On E's phone 09:54 BST. **Closes on E's device verdict.**
 - **Tests first:** red predicted and observed 2,710 / 8 (3 tests). A red-check pointing the glow and
   the frame back at raw time failed exactly its 2 named tests.
 - **Green:** 2,710 / 0 (0 `9099`), lint 0; device build succeeded; on E's phone 10:26 BST.
+
+**Device verdict PASSED 2026-09-11 — E: "i have done the animation checks on my iphone with Reduce Motion ON and OFF and it works correctly in both states."**
 
 ### FEATURE: F-ConfirmCelebration-2 — the stack-clearing fireworks and the light-mode dim  [ ] OPEN
 
