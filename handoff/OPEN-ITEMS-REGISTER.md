@@ -1,10 +1,15 @@
-# Open items register — 2026-09-11 (twenty-fifth edition; celebration fades LENGTHENED at E's ask; Confirm-confetti design IN PROGRESS)
+# Open items register — 2026-09-11 (twenty-sixth edition; Confirm-celebration design record APPROVED by E)
 
-*Written the same session as the twenty-fourth, after E answered its verdict request with two asks:
-"Can you make the animations longer?" (done: PR #66) and a full-screen celebration on Confirm,
-"possibly confetti?" (design in progress, four decisions taken — see B.0a). Block 2 is still
-**waiting on E's Reduce-Motion-ON verdict**, now on the longer build. Supersedes the twenty-four
-earlier editions.*
+*Written the same session as the twenty-fourth and twenty-fifth. E answered that edition's verdict
+request with two asks:
+- "Can you make the animations longer?" — done in PR #66;
+- a full-screen celebration on Confirm, "possibly confetti?".
+
+**All eight of E's decisions on the celebration are now taken, and the design record is written:**
+`handoff/SESSION-OPENER-confirm-celebration-design.md` (PR #67). **E approved it: "R1, R2, R9
+(a+b) = Approved."** It is not built yet. Block 2
+is still **waiting on E's Reduce-Motion-ON verdict**, on the longer build. Supersedes the
+twenty-five earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -37,12 +42,14 @@ renders showed, `0f5624b` is the evidence and paperwork.
   - app target **26.75% (12,309/46,014)**
 - `firestore.rules` untouched, so there is **nothing for E to republish**. Every `.xcresult` was
   deleted after its figures were read.
-- **No branch in flight** once #65's branch is deleted by the merge.
+- **No branch in flight once #67 merges.** #67 is the design record and its prototype evidence,
+  held open for E's review and merged on E's approval; no app code was on it. #65's and #66's
+  branches were deleted by their merges.
 
 **E's phone runs this block's app code**, installed and launch-verified at **07:02 BST on
 2026-09-11**, built from `0f5624b`. `main`'s app code at the merge is identical to that commit's
 (checked at close-out with `git diff 0f5624b main -- "ADHD LifeOS" FocusTimerWidget`, empty).
-Reduce Motion is still ON there, as E left it.
+Reduce Motion is still ON there, as E left it. (carried)
 
 **Coverage: app target 26.75% (12,309/46,014), and it IS comparable to block 1's 26.68%
 (12,255/45,932).** The denominator moved +82 because the tree grew (one new app file, and the view
@@ -167,6 +174,13 @@ fires under RM, as it always did.
 
 ## A · Decisions only E can make — minutes each
 
+- [x] **Review the Confirm-celebration design record — DONE.** E, verbatim: **"R1, R2, R9 (a+b) =
+      Approved."**
+      - R1 (overlap, capped at 3), R2 (a second service stamp) and both of R9's blocks are E's
+        decisions now.
+      - R3–R8 went unmentioned and stand as the build's defaults. The record says so.
+
+      Merged as PR #67. (NEW)
 - [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.** The
       phone has the LONGER build (07:32 BST): halo fades over 1.8s, tick over 0.8s. Finish a short
       sprint and expect:
@@ -198,21 +212,32 @@ fires under RM, as it always did.
 
 ## B · Real work, ready to start — recommended order
 
-**0a. Confirm confetti — E's ask (2026-09-11), DESIGN IN PROGRESS, nothing built.** A celebration
-   that can use the full screen when the user taps Confirm on a completion card. Being designed
-   question by question in chat; the design record will be `handoff/SESSION-OPENER-confetti-design.md`
-   once the visual choices are made. **E's decisions so far, settled:**
+**0a. The Confirm celebration — E's ask (2026-09-11). DESIGN SETTLED, RECORD APPROVED by E (R1, R2,
+   R9 a+b), block 1 next; nothing built yet.** A celebration that uses the full screen when the user taps Confirm on a
+   completion card. **The record is `handoff/SESSION-OPENER-confirm-celebration-design.md`**,
+   renamed from the `…-confetti-design.md` the last edition promised because it now covers
+   fireworks, the glow and the dim as well. Its evidence is `screenshots/confirm-celebration-prototypes/`.
+   **E's eight decisions, all settled:**
    1. **Reduce Motion ON shows BOTH a full-screen done-green glow AND real falling confetti.** A
       deliberate, named **waiver of CLAUDE.md §7.2** for this one moment (like `peekStep`'s of §2).
       With nothing left to reduce, Reduce Motion OFF is the same.
-   2. **Every Confirm fires it; the Confirm that empties the stack gets a BIGGER burst.**
+   2. **Every Confirm fires it; the Confirm that empties the stack is bigger.** Decision 6 made the
+      fireworks the "bigger"; the confetti is identical on both.
    3. **The success haptic fires on every Confirm.**
    4. **No Settings switch for now** — recorded as a pre-launch item in D.
+   5. **Confetti from two sources at once, on every Confirm:** rain from the top (120) and both
+      bottom corners' cannons (100), chosen by video.
+   6. **The stack-clearing Confirm adds fireworks.**
+   7. **More of them, in more colours:** 14 shells in 9 token colours, in three burst kinds (single,
+      two-tone, ring-in-ring) and three sizes, ending on a two-shell finale, chosen by video.
+   8. **In LIGHT appearance the screen dims to 85% (`Scrim`) for the fireworks' length**; dark never
+      dims, chosen by video over 55% and none.
 
-   **Still open, to be shown as renders:** where the confetti comes from and how it moves, its
-   token palette, the glow's strength, the length and density, and how much bigger the final burst
-   is. Expect a full-screen layer in `RootView` above the tabs, ignoring taps; no particle,
-   confetti or full-screen overlay code exists in the app today.
+   **Next — approved:** write `F-ConfirmCelebration-1` (engine, trigger stamp,
+   every Confirm's confetti + glow + haptic) and `-2` (fireworks + dim) into `TODO-CLAUDE-CODE.md`
+   from it, then build test-first. **Both files the build touches are at their line ceiling**
+   (`FocusSessionService.swift` 394, `RootView.swift` 399). The record plans the room-making move
+   as block 1's first commit.
 
 **0. Follow-ups to the pilot — pick up only after E's verdicts, and only what E asks for:**
    - **The draw-on's timing**, if E's RM-OFF look says the tick should wait for the card: land
