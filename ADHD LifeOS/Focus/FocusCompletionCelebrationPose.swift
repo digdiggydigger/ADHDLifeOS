@@ -18,7 +18,9 @@ import SwiftUI
 /// **There is no iOS 17 tier, and that is §7.1's filter, not an oversight.** Of the 17 symbol
 /// effects, `.appear` is a scale-in without the spring's overshoot, which shows less than the floor
 /// already does, and `.bounce` fires on the state change itself, ignoring the 0.3s landing delay.
-/// Neither shows the user anything the 16 spring cannot, so iOS 17–25 get the floor.
+/// Neither shows the user anything the 16 spring cannot, so iOS 17–25 get the floor. (The iOS 26
+/// draw-on turned out to ignore the delay too, and still passes the filter: a stroke drawing
+/// itself is something no 16 animation can show.)
 enum FocusCompletionCelebrationMotion: CaseIterable, Equatable {
     case full, reduced, modern
 
@@ -112,7 +114,8 @@ enum FocusCompletionCelebrationMetrics {
     static let checkmarkFadeDuration: TimeInterval = 0.4
     /// The card arrives on `RootBottomOverlay`'s 0.35s spring. Started at frame one the burst
     /// plays mostly while the card is still sliding up and the checkmark's pop is lost in the
-    /// slide, so both beats wait for the card to land. Every mode waits the same.
+    /// slide, so both beats wait for the card to land. The halo waits in every mode, and so do the
+    /// floor's and the reduced tick; the iOS 26 draw-on does not (`FocusCompletionDrawOnTick`).
     static let delay: TimeInterval = 0.3
 
     static func burstScale(progress: Double) -> CGFloat {
@@ -131,8 +134,9 @@ enum FocusCompletionCelebrationMetrics {
 
     /// The tick's animation for a mode. The floor and iOS 26 share block 4's spring, looser than the
     /// house 0.8 damping on purpose (0.6 lets the tick overshoot once, the "pop" that makes it a
-    /// celebration), and the draw-on rides the same transaction. Under Reduce Motion it is a plain
-    /// ease, §5's carve-out for a Reduce Motion fade: nothing springs.
+    /// celebration). iOS 26 inserts its draw-on in this same transaction, though the stroke runs on
+    /// the symbol effect's own clock from insertion rather than on this delay. Under Reduce Motion
+    /// it is a plain ease, §5's carve-out for a Reduce Motion fade: nothing springs.
     static func checkmarkAnimation(for motion: FocusCompletionCelebrationMotion) -> Animation {
         switch motion {
         case .reduced:

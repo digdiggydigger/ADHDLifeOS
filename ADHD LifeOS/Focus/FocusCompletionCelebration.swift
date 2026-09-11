@@ -140,8 +140,15 @@ private struct FocusCompletionTickGlyph: View {
 
 /// iOS 26's tick: the glyph draws its own stroke on as it arrives.
 ///
-/// - **The transition form, not `.symbolEffect(.drawOn, isActive:)`**, so the draw rides the
-///   `withAnimation` transaction that lands it and waits the same 0.3s.
+/// - **An insertion transition, not `.symbolEffect(.drawOn, isActive:)`**, so the stroke is tied
+///   to the tick's ARRIVAL: a card that opens settled, or is revealed by a Confirm, already has its
+///   tick and draws nothing (checked in situ, `screenshots/focus-completion-celebration-modes/`).
+/// - **The stroke does NOT wait for the landing transaction's 0.3s delay.** The plan expected it
+///   to; rendered on the 26.5 simulator it starts drawing the moment the tick is inserted and is
+///   complete in about 0.3s, before the halo begins. So on a phone the tick draws while the card is
+///   still sliding up. It ships as rendered, for E's Reduce-Motion-off look (the approved plan's
+///   "evidence it, don't fight it"); the lever is to land `.modern` after
+///   `FocusCompletionCelebrationMetrics.delay` rather than inside it.
 /// - **Insertion only.** Removal is `.identity`, so a Confirm, or `.id(celebrates)` rebuilding the
 ///   celebration, never draws the tick OFF.
 /// - **`AsymmetricTransition`, not `.asymmetric(insertion:removal:)`.** The latter exists only on

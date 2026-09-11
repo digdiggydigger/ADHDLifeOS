@@ -84,7 +84,8 @@ final class FocusCelebrationModernPathCallSiteTests: XCTestCase {
         )
         XCTAssertTrue(
             tickType.contains("AsymmetricTransition(insertion:"),
-            "The draw-on is not the transition form, so it cannot ride the landing transaction's delay."
+            "The draw-on is no longer an insertion transition, so the stroke is not tied to the tick's"
+                + " arrival — the form whose second-push and Confirm frames were checked for a stray draw."
         )
         XCTAssertTrue(
             tickType.contains("removal: .identity"),

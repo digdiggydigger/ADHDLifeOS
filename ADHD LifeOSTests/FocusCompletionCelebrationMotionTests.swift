@@ -18,6 +18,7 @@ import SwiftUI
 import XCTest
 @testable import ADHD_LifeOS
 
+@MainActor
 final class FocusCompletionCelebrationMotionTests: XCTestCase {
 
     // MARK: - Which mode
@@ -82,7 +83,9 @@ final class FocusCompletionCelebrationMotionTests: XCTestCase {
 
     /// A plain ease is §5's carve-out for a Reduce Motion fade (§7.2): the point of the reduced path
     /// is that nothing springs. It waits the same 0.3s, so the fade still lands on a card that has
-    /// arrived. The floor keeps block 4's spring, and the draw-on rides the same transaction.
+    /// arrived. The floor keeps block 4's spring, and iOS 26 inserts its draw-on in that same
+    /// transaction (the stroke itself runs on the symbol effect's own clock; see
+    /// `FocusCompletionDrawOnTick`).
     func testTheReducedTickFadesOnAPlainEaseAfterTheSameDelay() {
         let metrics = FocusCompletionCelebrationMetrics.self
         XCTAssertEqual(
@@ -98,7 +101,8 @@ final class FocusCompletionCelebrationMotionTests: XCTestCase {
         )
         XCTAssertEqual(
             metrics.checkmarkAnimation(for: .modern), metrics.checkmarkAnimation(for: .full),
-            "The draw-on no longer rides the floor's timing, so the two tiers land at different moments."
+            "iOS 26 lands its tick on a different animation from the floor's, so the tier changes the"
+                + " timing as well as the glyph."
         )
     }
 

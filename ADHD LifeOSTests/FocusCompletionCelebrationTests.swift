@@ -16,6 +16,7 @@
 import XCTest
 @testable import ADHD_LifeOS
 
+@MainActor
 final class FocusCompletionCelebrationTests: XCTestCase {
 
     // MARK: - The opening pose — where Reduce Motion is decided
