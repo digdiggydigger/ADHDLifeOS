@@ -101,22 +101,6 @@ final class FocusCompletionCelebrationCallSiteTests: XCTestCase {
         )
     }
 
-    // MARK: - The floor
-
-    /// iOS 16.0 is the deployment target. §7 of `CLAUDE.md` records that its own §3 prescribes
-    /// `.sensoryFeedback` without flagging it as iOS 17+; the same goes for the three animation
-    /// APIs the record rules out. The house haptic helper is already `#available`-split.
-    func testTheCelebrationUsesNothingAboveTheiOS16Floor() throws {
-        let source = try Self.appCode("Focus/FocusCompletionCelebration.swift")
-        for api in ["PhaseAnimator", ".symbolEffect", ".keyframeAnimator", ".sensoryFeedback"] {
-            XCTAssertFalse(
-                source.contains(api),
-                "`\(api)` is iOS 17+. The app target is 16.0 and this file is not `#available`"
-                    + "-gated, so the celebration would not compile for the floor."
-            )
-        }
-    }
-
     // MARK: - The stamp
 
     /// The cue is written by the push and by nothing else. Written on Confirm it would move to a

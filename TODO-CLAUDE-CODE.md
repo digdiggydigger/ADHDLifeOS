@@ -3532,7 +3532,7 @@ gate in the app is `nil`, so the block-4 burst has never played for E. E's decis
 the tests and the verification bar are in `handoff/START-HERE-modern-ios-pilot.md` (the approved
 plan, verbatim). Two blocks, strictly in order, each its own PR.*
 
-### FEATURE: F-ModernIOS-1-Policy — CLAUDE.md §7 becomes the progressive-enhancement + Reduce Motion policy  [ ] NOT STARTED
+### FEATURE: F-ModernIOS-1-Policy — CLAUDE.md §7 becomes the progressive-enhancement + Reduce Motion policy  [x] COMPLETED
 
 Best available API per site behind `#available` (17/18/26) with a complete 16 path; Reduce Motion
 replaces motion with a fade, never removes feedback (house pattern `CaptureFanOverlay.swift:89-96`);
@@ -3540,6 +3540,14 @@ fallback paths compile-only until an older runtime exists, said so in every bloc
 tests assert BOTH branches. Delete `testTheCelebrationUsesNothingAboveTheiOS16Floor`, add
 `ModernAPIPolicyCallSiteTests.testTheHouseHapticHelperIsTheTwoBranchExemplar`. Suite 2,663 → 2,663.
 Detail: the opener, "Block 1".
+
+**Completed 2026-09-11, PR #63 (`0e980e5`).** §7 is 7.1–7.5 as specified, plus the two post-approval
+additions (7.5 covers the `apple:*` / `apple-skills:*` plugins; `apple:modernize` does not skip the
+gate). The new test reads the four forms IN ORDER inside `haptic(_:trigger:)`, not bare presence.
+Red-checked on a committed tree (`} else {` → `} else  {`): full suite 2,663 / 1 failure, exactly
+that test. Green: 2,663 / 0 (emulator UP, 0 `9099`), lint 0 / 739, sim build succeeded, app
+26.68% (12,255/45,932), byte-identical. E's `MARKETING_VERSION` 1.2 → 1.3 rode along as its own
+commit (`4052c52`). Awaiting E's review; block 2 is not cut until then.
 
 ### FEATURE: F-ModernIOS-2-Celebration — the pilot: 16 spring / RM cross-fade / iOS 26 draw-on  [ ] NOT STARTED
 

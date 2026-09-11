@@ -75,9 +75,9 @@
 			membershipExceptions = (
 				FocusActivityAttributes.swift,
 				FocusSprintIntents.swift,
-				RoutineActivityAttributes.swift,
 				FocusWidgetSnapshot.swift,
 				LifeAreasWidgetSnapshot.swift,
+				RoutineActivityAttributes.swift,
 			);
 			target = AAF46F433009F8BE008ECC13 /* ADHD LifeOS */;
 		};
@@ -634,7 +634,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.ethananthony.ADHD-LifeOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -677,7 +677,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.ethananthony.ADHD-LifeOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
