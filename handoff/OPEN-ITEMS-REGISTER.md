@@ -1,4 +1,4 @@
-# Open items register — 2026-09-11 (nineteenth edition; the focus card's light-mode peek CLOSED, block 4 next)
+# Open items register — 2026-09-11 (twentieth edition; F-FocusCard-4 BUILT and MERGED, awaiting E's device verdict)
 
 *Written at the close of the session that answered the light-mode peek question and shipped
 `F-FocusCard-3-Peek`. **Block 3 is now effectively closed** — E ran three of their four device
@@ -13,8 +13,13 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ the close-out merge; the last CODE change is `298fb17`** (PR #56,
-`F-FocusCard-3-Peek`) · **no branch in flight**; every feature and chore branch was deleted by its
+**`main` @ `3a6a574` (PR #58, `F-FocusCard-4`); the last CODE change is `d8b334b`** ·
+**Block 4 is BUILT, MERGED and INSTALLED on E's phone (01:48, 2026-09-11) — it CLOSES on E's
+device verdict, which has not been given.** Verified for it: suite **2,663 / 0** (emulator UP,
+0 `127.0.0.1:9099`, 0 skipped), lint **0 / 738**, sim + device `** BUILD SUCCEEDED **`, app
+target **26.69% (12,255/45,914)** — comparable to the 26.56% below (one file added, extent
+unchanged). Evidence: `screenshots/focus-completion-celebration/`. **Nothing for E to
+republish.** Earlier state, still true of everything else: **no branch in flight**; every feature and chore branch was deleted by its
 own merge, so **`main` is the only branch on GitHub** · every change lands through a PR ·
 verified: **unit suite 2,638 / 0** (emulator UP, **0** `127.0.0.1:9099` hits, 0 skipped),
 **SwiftLint 0 / 734**, sim + device builds `** BUILD SUCCEEDED **` · `firestore.rules` untouched,
@@ -71,11 +76,15 @@ FocusTimerWidgetExtension    10.30%  (228/2214)   ← read the 233-line testable
 
 ## B · Real work, ready to start — recommended order
 
-**0. THE FOCUS CARD ARC — blocks 1–3 CLOSED (peek included), 4 and 5 NOT STARTED.** The design
+**0. THE FOCUS CARD ARC — blocks 1–3 CLOSED, 4 BUILT AND MERGED (awaiting E's verdict), 5 NOT STARTED.** The design
    record is **`handoff/SESSION-OPENER-focus-card-design.md`** — permanent, never archive it.
    **Read its "settled specification" with this register beside it**: blocks 1, 2 and 3 each moved
    against it, and the live opener carries the table of what actually shipped.
-   - **`F-FocusCard-4`** — the celebration. **iOS 16 is the floor**, which rules out
+   - **`F-FocusCard-4` — SHIPPED `3a6a574` (PR #58), verdict pending.** Ask E: does the 0.3s
+     pre-beat (complete ring, no tick, while the card lands) read as anticipation or as a glitch?
+     The lever is `FocusCompletionCelebrationMetrics.delay`. The tick is the ring's existing bare
+     `checkmark`, not the record's `checkmark.circle.fill` — deliberate, so the resting card stays
+     the one E approved. The record's constraints, all held: **iOS 16 is the floor**, which rules out
      `PhaseAnimator`, `.symbolEffect`, `.keyframeAnimator` and `.sensoryFeedback`. The haptic keys
      on `confirmableCompletionCount`, NOT `completedSprintCount` (bumped on manual stops) and NOT
      `unconfirmedCompletions.count` (changes on confirm-removal, so it would buzz on dismissal).
