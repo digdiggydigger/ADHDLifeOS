@@ -113,10 +113,8 @@ final class ConfirmFireworksPhysicsTests: XCTestCase {
     func testSparksSpreadEvenlyAtNearTheirClassSpeed() {
         let sparks = ConfirmFireworksPhysics.sparks(of: shell(size: .small), index: 3, canvas: canvas)
         let speeds = sparks.map(speed)
-        XCTAssertTrue(
-            speeds.allSatisfy { (220 * 0.8 - 1e-9 ... 220 + 1e-9).contains($0) },
-            "A spark is outside 0.8–1.0 × its class speed."
-        )
+        let classSpeeds: ClosedRange<Double> = (176 - 1e-9)...(220 + 1e-9)   // 0.8 × 220 … 220
+        XCTAssertTrue(speeds.allSatisfy { classSpeeds.contains($0) }, "A spark is outside 0.8–1.0 × its class speed.")
         XCTAssertGreaterThan(
             (speeds.max() ?? 0) - (speeds.min() ?? 0), 10,
             "Every spark flies at the same speed, so the ring is a perfect circle with no life."
@@ -158,11 +156,10 @@ final class ConfirmFireworksPhysicsTests: XCTestCase {
         let inner = sparks.filter { $0.colorName == "AreaAdminVivid" }
         XCTAssertEqual(outer.count, 36, "The outer ring is not half the sparks.")
         XCTAssertEqual(inner.count, 36, "The inner ring is not half the sparks, in the second colour.")
-        XCTAssertTrue(outer.map(speed).allSatisfy { (400 * 0.8 - 1e-9 ... 400 + 1e-9).contains($0) })
-        XCTAssertTrue(
-            inner.map(speed).allSatisfy { (400 * 0.8 * 0.55 - 1e-9 ... 400 * 0.55 + 1e-9).contains($0) },
-            "The inner ring is not at 0.55× speed."
-        )
+        let outerSpeeds: ClosedRange<Double> = (320 - 1e-9)...(400 + 1e-9)
+        let innerSpeeds: ClosedRange<Double> = (176 - 1e-9)...(220 + 1e-9)   // 0.55 × 320 … 0.55 × 400
+        XCTAssertTrue(outer.map(speed).allSatisfy { outerSpeeds.contains($0) })
+        XCTAssertTrue(inner.map(speed).allSatisfy { innerSpeeds.contains($0) }, "The inner ring is not at 0.55× speed.")
         let step = 2 * Double.pi / 36
         for (index, spark) in outer.enumerated() {
             XCTAssertEqual(angleDistance(angle(of: spark), step * Double(index)), 0, accuracy: 1e-6, "Outer spark \(index) is off its step.")
