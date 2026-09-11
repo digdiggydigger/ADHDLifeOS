@@ -100,7 +100,10 @@ struct RootBottomOverlay: View {
             // `.offset`s hang outside its frame, and an empty stack rendered unconditionally
             // would spend that padding plus the VStack's own spacing on nothing.
             if !focusService.unconfirmedCompletions.isEmpty {
-                FocusCompletionCardStack(records: focusService.unconfirmedCompletions) { record in
+                FocusCompletionCardStack(
+                    records: focusService.unconfirmedCompletions,
+                    celebratingID: focusService.celebratingCompletionID
+                ) { record in
                     Task { await focusService.confirmCompletion(record) }
                 }
             }
@@ -127,5 +130,14 @@ struct RootBottomOverlay: View {
             reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
             value: focusService.unconfirmedCompletions.count
         )
+        // F-FocusCard-4: the success feel for a sprint that ran its countdown out. **On this
+        // view and not on the stack**, because the stack is inserted by the `if` above in the
+        // same update that bumps the count, and a listener arriving with the value already
+        // changed observes no change — the first card after an empty stack would be silent.
+        // Keyed on `confirmableCompletionCount`, never `completedSprintCount` (bumped by manual
+        // stops, which raise no card) nor the stack's depth (falls on Confirm, so it would buzz
+        // on dismissal). `.haptic` is the `#available`-split helper — `.sensoryFeedback` itself
+        // is iOS 17+ against the 16.0 floor.
+        .haptic(.success, trigger: focusService.confirmableCompletionCount)
     }
 }

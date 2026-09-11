@@ -27,7 +27,15 @@ import SwiftUI
 /// same row with `confirmed_at` set. `FocusSessionService.confirmCompletion` carries the why.
 struct FocusCompletionCard: View {
     let record: CompletedFocusSession
+    /// Whether this sprint JUST finished (F-FocusCard-4) — `true` only for the record the service
+    /// stamped, so a card revealed by a Confirm or restored by a relaunch shows the ring at rest.
+    var celebrates = false
     let onConfirm: () -> Void
+
+    /// Read HERE and handed down, not read inside the celebration: the value is not available in
+    /// an `init`, and the celebration's opening pose is its initial `@State`. Resolved any later,
+    /// the pre-animation pose would show for one frame under Reduce Motion.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// "25m 30s focused · 2 checkpoints" — pure, so the copy is locked by a test rather than by
     /// reading the screen.
@@ -70,6 +78,11 @@ struct FocusCompletionCard: View {
     /// The sprint ring at rest: a complete arc in the app's done-green, with a tick where the
     /// countdown used to be. Same instrument as the running card's, one state further on — which
     /// is what makes the completion legible without reading a word of it.
+    ///
+    /// The tick is drawn by `FocusCompletionCelebration`, which springs it in and radiates the
+    /// ring outward when the sprint has just finished, and draws exactly this resting tick
+    /// otherwise. `.id(celebrates)` makes a flip of the cue rebuild it in the armed pose, so the
+    /// burst cannot be lost to an update that delivered the record a frame before the cue.
     private var completedRing: some View {
         ClosureRing(
             progress: 1,
@@ -77,9 +90,8 @@ struct FocusCompletionCard: View {
             lineWidth: FocusCompletionCardMetrics.ringLineWidth,
             arcStyle: AnyShapeStyle(Color("StateGo"))
         ) {
-            Image(systemName: "checkmark")
-                .font(.footnote.weight(.bold))
-                .foregroundStyle(Color("StateGo"))
+            FocusCompletionCelebration(plays: celebrates, reduceMotion: reduceMotion)
+                .id(celebrates)
         }
         .accessibilityHidden(true)
     }
