@@ -9,43 +9,79 @@
 //  trap lives, and the curve's endpoints are what make the resting card identical to the one E
 //  approved in block 2.
 //
+//  F-ModernIOS-2-Celebration added the motion modes; which mode a card resolves to, and the
+//  reduced path's timing, are `FocusCompletionCelebrationMotionTests`.
+//
 
 import XCTest
 @testable import ADHD_LifeOS
 
+@MainActor
 final class FocusCompletionCelebrationTests: XCTestCase {
 
     // MARK: - The opening pose — where Reduce Motion is decided
 
+    /// The floor and iOS 26 both open on the floor's armed pose: the draw-on changes how the tick
+    /// ARRIVES, not where the halo starts.
     func testACardThatPlaysOpensArmed() {
-        XCTAssertEqual(
-            FocusCompletionCelebrationPose.opening(plays: true, reduceMotion: false),
-            .armed,
-            "A fresh completion opens on the FINAL state, so there is nothing to animate from and"
-                + " the burst never happens."
-        )
+        for motion in [FocusCompletionCelebrationMotion.full, .modern] {
+            XCTAssertEqual(
+                FocusCompletionCelebrationPose.opening(plays: true, motion: motion),
+                .armed,
+                "A fresh completion (\(motion)) opens on the FINAL state, so there is nothing to"
+                    + " animate from and the burst never happens."
+            )
+        }
     }
 
-    /// **The trap the design record names.** Under Reduce Motion the celebration must open on the
-    /// final state — checkmark present, no ring — never on the pre-animation one, which is what
-    /// makes reduce-motion paths look broken: a checkmark stuck at 0.6 scale and a ring frozen at
-    /// 0.8 opacity, for ever.
-    func testReduceMotionOpensOnTheFinalState() {
+    /// **Flipped by F-ModernIOS-2-Celebration (E, 2026-09-11).** This was
+    /// `testReduceMotionOpensOnTheFinalState`, and it held exactly what the design record asked
+    /// for: under Reduce Motion, open SETTLED. That was the hard cut E lived with. E's phone runs
+    /// Reduce Motion ON, so the block-4 celebration never once played for its author — E saw a
+    /// finished tick and felt the haptic. CLAUDE.md §7.2 now says Reduce Motion replaces motion
+    /// with a fade and never removes the feedback.
+    ///
+    /// The record's trap still stands, restated for a fade: the opening must never show the
+    /// pre-animation GEOMETRY (a tick at 0.6, a halo on the ring). So the reduced opening has every
+    /// scale at its final value and only opacity left to travel — tick clear, halo visible.
+    /// Resolved for E's own configuration, iOS 26 with Reduce Motion ON, where the draw-on tier is
+    /// available and must still lose.
+    func testReduceMotionOpensWithGeometryAtRestAndOnlyOpacityToTravel() {
+        let motion = FocusCompletionCelebrationMotion.resolve(reduceMotion: true, drawOnAvailable: true)
+        let opening = FocusCompletionCelebrationPose.opening(plays: true, motion: motion)
+        let metrics = FocusCompletionCelebrationMetrics.self
         XCTAssertEqual(
-            FocusCompletionCelebrationPose.opening(plays: true, reduceMotion: true),
-            .settled,
-            "Reduce Motion is showing the pre-animation pose. With no animation to carry it to"
-                + " the final state, the card is stuck mid-burst."
+            opening, .armedInPlace,
+            "A Reduce Motion card does not open armed in place, so it either cuts or moves."
+        )
+        XCTAssertEqual(
+            opening.burstScale, metrics.burstScaleEnd,
+            "The halo opens on the ring and would GROW under Reduce Motion."
+        )
+        XCTAssertEqual(
+            opening.checkmarkScale, 1,
+            "The tick opens small and would SPRING under Reduce Motion — the record's trap."
+        )
+        XCTAssertEqual(
+            opening.checkmarkOpacity, 0,
+            "The tick is already visible, so there is nothing to fade in: the old hard cut."
+        )
+        XCTAssertEqual(
+            opening.burstOpacity, metrics.burstOpacityStart,
+            "The halo is already gone, so there is nothing to fade out."
         )
     }
 
     /// A card revealed by a Confirm, or restored by a relaunch, did not just finish. It opens
-    /// settled — the same view, already at rest.
+    /// settled — the same view, already at rest — in every mode.
     func testACardThatDoesNotPlayOpensSettled() {
-        XCTAssertEqual(
-            FocusCompletionCelebrationPose.opening(plays: false, reduceMotion: false),
-            .settled
-        )
+        for motion in FocusCompletionCelebrationMotion.allCases {
+            XCTAssertEqual(
+                FocusCompletionCelebrationPose.opening(plays: false, motion: motion),
+                .settled,
+                "A card that did not just finish replays its celebration (\(motion))."
+            )
+        }
     }
 
     // MARK: - The resting card is the card E approved

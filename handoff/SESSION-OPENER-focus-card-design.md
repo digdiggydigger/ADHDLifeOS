@@ -25,6 +25,7 @@ because it is the record of what was asked, and this is the record of what was c
 | the stack's peek is 8pt | **14pt** — deliberately OFF §2's grid; CLAUDE.md §2 carries the waiver | E chose from six renders, 2026-09-10 |
 | celebration tick is `checkmark.circle.fill` | the ring's existing bare `checkmark`, springing from 0.6 — so the resting card stays the block-2 card E approved | Claude Code, E accepted on device 2026-09-11 |
 | (unstated) | the burst and haptic wait **0.3s** for the card to land; the pre-beat is a complete ring with no tick | E: "the pre-beat reads fine", 2026-09-11 |
+| "iOS 16 is the floor, which rules out … `.symbolEffect`"; "under Reduce Motion render the FINAL state" | **a 16 / Reduce Motion cross-fade / iOS 26 draw-on ladder** (`F-ModernIOS-2-Celebration`): below 26 the burst above, unchanged; under Reduce Motion the celebration opens with geometry at rest (halo at 1.6, tick at 1) and FADES, where it used to open settled, the hard cut E lived with; on iOS 26 the tick draws itself on (`.drawOn`), whose stroke turned out not to wait for the 0.3s delay | E, 2026-09-11 (CLAUDE.md §7); device verdicts pending |
 
 Two names in block 4's section below did not exist when it was written and were created as
 specified: `confirmableCompletionCount` (the haptic's trigger) and, beside it, the record id the
