@@ -22,7 +22,7 @@ import SwiftUI
 /// **CLAUDE.md §7.1's second two-branch exemplar.** iOS 16.0 is a floor, not a ceiling, and this is
 /// a DEGRADED site (feedback is never absent), so the tick always has an `else`. The three modes and
 /// why there is no iOS 17 tier are `FocusCompletionCelebrationMotion`:
-/// - **`.full`**, the 16 path: block 4's burst, unchanged.
+/// - **`.full`**, the 16 path: block 4's burst, at the longer length E asked for.
 /// - **`.reduced`**, Reduce Motion ON on any OS: the same two beats as a cross-fade. Geometry is
 ///   pinned at rest and only opacity travels (§7.2).
 /// - **`.modern`**, iOS 26: the tick draws itself on (`FocusCompletionDrawOnTick`, below).
