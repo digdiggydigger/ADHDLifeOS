@@ -75,7 +75,21 @@ enum ConfettiPhysics {
     ///     x(t) = x₀ + vₓ/k · (1 − e^(−k·t)) + flutter(t)
     ///     y(t) = y₀ + (v_y − g/k)/k · (1 − e^(−k·t)) + (g/k)·t
     static func state(of piece: ConfettiPiece, at time: TimeInterval) -> ConfettiPieceState? {
-        nil
+        let flight = time - piece.delay
+        guard flight >= 0, flight <= piece.lifetime else { return nil }
+        let damping = 1 - exp(-drag * flight)
+        let terminal = gravity / drag
+        let flutter = piece.flutterAmplitude
+            * sin(piece.flutterRate * flight + piece.flutterPhase)
+            * min(1, flight / flutterRampIn)
+        let across = Double(piece.origin.x) + Double(piece.velocity.dx) / drag * damping + flutter
+        let down = Double(piece.origin.y) + (Double(piece.velocity.dy) - terminal) / drag * damping + terminal * flight
+        return ConfettiPieceState(
+            position: CGPoint(x: across, y: down),
+            rotation: piece.spinStart + piece.spinRate * flight,
+            tumbleScale: max(minimumTumbleScale, abs(cos(piece.tumbleRate * flight + piece.tumblePhase))),
+            opacity: min(1, max(0, (piece.lifetime - flight) / fadeOut))
+        )
     }
 }
 

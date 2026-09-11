@@ -26,17 +26,90 @@ enum ConfettiRecipe {
     /// Every Confirm's 220 pieces for a canvas, rain first. Seeded from the confirmation's ordinal
     /// (R5), so the same Confirm replays identically and the next one is different.
     static func everyConfirm(canvas: CGSize, ordinal: Int) -> [ConfettiPiece] {
-        []
+        // Odd seeds for the rain and even for the cannons, so ordinal 1 draws exactly the
+        // prototype E chose from (which seeded them 1 and 2).
+        let base = UInt64(truncatingIfNeeded: ordinal) &* 2
+        return rain(count: rainCount, canvas: canvas, seed: base &- 1)
+            + cannons(count: cannonCount, canvas: canvas, seed: base)
     }
 
     /// Drifts down across the whole width from just above the top edge.
     static func rain(count: Int, canvas: CGSize, seed: UInt64) -> [ConfettiPiece] {
-        []
+        var random = ConfettiRandom(seed: seed)
+        return (0..<count).map { index in
+            let look = ConfettiLook(index: index, using: &random)
+            let origin = CGPoint(
+                x: random.uniform(-10, Double(canvas.width) + 10), y: random.uniform(-80, -10)
+            )
+            let velocity = CGVector(dx: random.uniform(-60, 60), dy: random.uniform(420, 720))
+            let delay = random.uniform(0, 0.6)
+            return look.piece(origin: origin, velocity: velocity, delay: delay, lifetime: 3.0...3.6, using: &random)
+        }
     }
 
     /// Fired up and inward from both bottom corners, alternating left and right.
     static func cannons(count: Int, canvas: CGSize, seed: UInt64) -> [ConfettiPiece] {
-        []
+        var random = ConfettiRandom(seed: seed)
+        return (0..<count).map { index in
+            let look = ConfettiLook(index: index, using: &random)
+            let fromLeft = index.isMultiple(of: 2)
+            let origin = CGPoint(x: fromLeft ? -4 : canvas.width + 4, y: canvas.height * 0.86)
+            // 52°–78° above the horizontal, mirrored for the right corner so both aim inward.
+            let elevation = random.uniform(-78, -52)
+            let radians = (fromLeft ? elevation : -180 - elevation) * .pi / 180
+            let speed = random.uniform(1100, 1900)
+            let velocity = CGVector(dx: cos(radians) * speed, dy: sin(radians) * speed)
+            let delay = random.uniform(0, 0.12)
+            return look.piece(origin: origin, velocity: velocity, delay: delay, lifetime: 2.8...3.5, using: &random)
+        }
+    }
+}
+
+/// A piece's colour, shape and size, before it is given a flight.
+///
+/// **Every value is drawn from the generator in a fixed order** — shape, size, then (in the
+/// source) origin, velocity and delay, then spin, tumble, flutter and life — which is the
+/// prototype's order, so a seed always means the same pieces and ordinal 1 is what E saw.
+private struct ConfettiLook {
+    let shape: ConfettiPiece.Shape
+    let size: CGSize
+    let colorName: String
+
+    /// Colour cycles by index; three rectangles to every circle.
+    init(index: Int, using random: inout ConfettiRandom) {
+        colorName = ConfettiRecipe.palette[index % ConfettiRecipe.palette.count]
+        if random.unit() < 0.75 {
+            shape = .rectangle
+            let width = random.uniform(7, 10)
+            size = CGSize(width: width, height: random.uniform(4, 6))
+        } else {
+            shape = .circle
+            size = CGSize(width: 6, height: 6)
+        }
+    }
+
+    /// The spin, tumble, flutter and life every source shares, drawn last.
+    func piece(
+        origin: CGPoint,
+        velocity: CGVector,
+        delay: TimeInterval,
+        lifetime: ClosedRange<TimeInterval>,
+        using random: inout ConfettiRandom
+    ) -> ConfettiPiece {
+        let spinStart = random.uniform(0, .pi * 2)
+        let spinRate = random.uniform(-9, 9)
+        let tumbleRate = random.uniform(4, 11)
+        let tumblePhase = random.uniform(0, .pi * 2)
+        let flutterAmplitude = random.uniform(6, 18)
+        let flutterRate = random.uniform(3, 6)
+        let flutterPhase = random.uniform(0, .pi * 2)
+        let life = random.uniform(lifetime.lowerBound, lifetime.upperBound)
+        return ConfettiPiece(
+            origin: origin, velocity: velocity, delay: delay, lifetime: life,
+            size: size, shape: shape, colorName: colorName,
+            spinStart: spinStart, spinRate: spinRate, tumbleRate: tumbleRate, tumblePhase: tumblePhase,
+            flutterAmplitude: flutterAmplitude, flutterRate: flutterRate, flutterPhase: flutterPhase
+        )
     }
 }
 
@@ -51,13 +124,16 @@ enum ConfirmCelebrationGlow {
 
     /// How strongly the glow shows `time` seconds after its Confirm, 0…1.
     static func envelope(at time: TimeInterval) -> Double {
-        0
+        if time <= 0 { return 0 }
+        if time < fadeIn { return time / fadeIn }
+        if time <= holdUntil { return 1 }
+        return max(0, 1 - (time - holdUntil) / (goneBy - holdUntil))
     }
 
     /// Overlapping Confirms share ONE glow at the strongest envelope, rather than stacking three
     /// washes of 0.32 into something much heavier than anything E saw.
     static func strongestEnvelope(of bursts: [ConfirmCelebrationBurst], at date: Date) -> Double {
-        0
+        bursts.map { envelope(at: date.timeIntervalSince($0.start)) }.max() ?? 0
     }
 }
 
@@ -88,18 +164,28 @@ enum ConfirmCelebrationQueue {
     /// The last rain piece can launch at 0.6 s and live 3.6 s.
     static let everyConfirmLength: TimeInterval = 4.2
 
+    /// How long a burst stays in the air.
+    static func length(of burst: ConfirmCelebrationBurst) -> TimeInterval {
+        everyConfirmLength
+    }
+
     static func adding(
         _ burst: ConfirmCelebrationBurst, to bursts: [ConfirmCelebrationBurst], now: Date
     ) -> [ConfirmCelebrationBurst] {
-        bursts
+        Array((pruned(bursts, now: now) + [burst]).suffix(liveCap))
     }
 
+    /// Only the bursts still in the air at `now`. A burst ends exactly at its length.
     static func pruned(_ bursts: [ConfirmCelebrationBurst], now: Date) -> [ConfirmCelebrationBurst] {
-        bursts
+        bursts.filter { now < end(of: $0) }
     }
 
     /// When the soonest-ending live burst ends, or `nil` with nothing live.
     static func nextExpiry(of bursts: [ConfirmCelebrationBurst]) -> Date? {
-        nil
+        bursts.map { end(of: $0) }.min()
+    }
+
+    private static func end(of burst: ConfirmCelebrationBurst) -> Date {
+        burst.start.addingTimeInterval(length(of: burst))
     }
 }

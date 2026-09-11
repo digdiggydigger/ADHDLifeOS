@@ -247,6 +247,9 @@ struct RootView: View {
                         onOpenSearch: { searchModel.open() }
                     )
                 }
+                // F-ConfirmCelebration-1: the full-screen Confirm celebration, over the card and the
+                // bar and under the covers. Always mounted; see the file for why.
+                .overlay { ConfirmCelebrationOverlay(focusService: focusService) }
                 .fullScreenCover(item: $presentedRoutineRun) { run in
                     routineCover(run)
                 }

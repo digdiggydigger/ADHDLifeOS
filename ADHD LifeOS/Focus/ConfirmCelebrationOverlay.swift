@@ -1,0 +1,173 @@
+//
+//  ConfirmCelebrationOverlay.swift
+//  ADHD LifeOS
+//
+//  F-ConfirmCelebration-1: the full-screen celebration a Confirm sets off — the done-green glow,
+//  then confetti raining from the top and fired from both bottom corners. E's design, every number
+//  and the why: `handoff/SESSION-OPENER-confirm-celebration-design.md`.
+//
+//  **Reduce Motion is not read anywhere in here, on purpose.** E waived CLAUDE.md §7.2 for this one
+//  moment ("B AND C": with Reduce Motion ON, the glow AND real falling confetti), so it plays the
+//  same either way. `testTheConfirmCelebrationIgnoresReduceMotionByDesign` pins that.
+//
+//  **A single implementation, with no `#available` (§7.1).** `Canvas` and `TimelineView` are iOS
+//  15, below the floor, and no later tier adds anything a particle field can use: `MeshGradient`
+//  (18) would draw the glow the radial gradient already draws, and `.visualEffect` (17) or
+//  `.glassEffect` (26) have nothing to act on.
+//
+
+import SwiftUI
+
+/// Mounted once by `RootView` above the bottom furniture and below the covers (R3).
+///
+/// Always present and drawing nothing while nothing is live: the `.onChange` has to be listening
+/// before the first Confirm lands (the trap `testTheHapticListenerOutlivesTheStack` records), and
+/// the frame clock has to stop when the last burst ends.
+struct ConfirmCelebrationOverlay: View {
+    @ObservedObject var focusService: FocusSessionService
+    @State private var bursts: [ConfirmCelebrationBurst] = []
+
+    var body: some View {
+        GeometryReader { proxy in
+            if !bursts.isEmpty {
+                ConfirmCelebrationStage(bursts: bursts, canvas: proxy.size)
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onChange(of: focusService.latestConfirmation) { confirmation in
+            guard let confirmation else { return }
+            let now = Date()
+            bursts = ConfirmCelebrationQueue.adding(
+                ConfirmCelebrationBurst(confirmation: confirmation, start: now), to: bursts, now: now
+            )
+        }
+        // Removes each burst the moment it ends. Keyed on the list, so every change re-arms it for
+        // whichever burst ends next; with nothing live it returns at once and nothing is scheduled.
+        .task(id: bursts) {
+            guard let expiry = ConfirmCelebrationQueue.nextExpiry(of: bursts) else { return }
+            let wait = expiry.timeIntervalSinceNow
+            if wait > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+            }
+            guard !Task.isCancelled else { return }
+            // Pruned at the expiry at the latest, so a sleep that wakes a hair early still removes
+            // the burst it was waiting for rather than leaving the list — and the clock — unchanged.
+            bursts = ConfirmCelebrationQueue.pruned(bursts, now: max(Date(), expiry))
+        }
+    }
+}
+
+/// The live bursts on a frame clock. Built only while something is in the air, so
+/// `TimelineView(.animation)` asks for frames only then.
+///
+/// Each burst's 220 pieces are generated here, once per change to the live list, never inside the
+/// per-frame closure.
+struct ConfirmCelebrationStage: View {
+    let bursts: [ConfirmCelebrationBurst]
+    let canvas: CGSize
+
+    var body: some View {
+        let scenes = bursts.map { burst in
+            ConfirmCelebrationScene(
+                burst: burst, confetti: ConfettiRecipe.everyConfirm(canvas: canvas, ordinal: burst.ordinal)
+            )
+        }
+        TimelineView(.animation) { timeline in
+            ConfirmCelebrationFrame(scenes: scenes, date: timeline.date)
+        }
+    }
+}
+
+/// One burst with the pieces it launched.
+struct ConfirmCelebrationScene {
+    let burst: ConfirmCelebrationBurst
+    let confetti: [ConfettiPiece]
+}
+
+/// One frame of the celebration at an explicit instant — what the stage draws on each tick, and
+/// what previews and render probes draw at any `date` they choose.
+///
+/// Back to front: the glow, then the confetti. Block 2 adds the dim beneath the glow and the
+/// fireworks between the glow and the confetti.
+struct ConfirmCelebrationFrame: View {
+    let scenes: [ConfirmCelebrationScene]
+    let date: Date
+
+    var body: some View {
+        ZStack {
+            RadialGradient(
+                colors: [
+                    Color(ConfirmCelebrationGlow.colorName).opacity(ConfirmCelebrationGlow.peakOpacity),
+                    Color(ConfirmCelebrationGlow.colorName).opacity(0)
+                ],
+                center: .bottom,
+                startRadius: 0,
+                endRadius: ConfirmCelebrationGlow.radius
+            )
+            .opacity(ConfirmCelebrationGlow.strongestEnvelope(of: scenes.map(\.burst), at: date))
+
+            Canvas { context, _ in
+                // The seven token shadings, resolved once per frame rather than once per piece.
+                var shadings: [String: GraphicsContext.Shading] = [:]
+                for name in ConfettiRecipe.palette {
+                    shadings[name] = context.resolve(.color(Color(name)))
+                }
+                for scene in scenes {
+                    let elapsed = date.timeIntervalSince(scene.burst.start)
+                    for piece in scene.confetti {
+                        guard let state = ConfettiPhysics.state(of: piece, at: elapsed) else { continue }
+                        var pieceContext = context
+                        pieceContext.opacity = state.opacity
+                        pieceContext.translateBy(x: state.position.x, y: state.position.y)
+                        pieceContext.rotate(by: .radians(state.rotation))
+                        pieceContext.scaleBy(x: state.tumbleScale, y: 1)
+                        let bounds = CGRect(
+                            x: -piece.size.width / 2, y: -piece.size.height / 2,
+                            width: piece.size.width, height: piece.size.height
+                        )
+                        let path = piece.shape == .circle ? Path(ellipseIn: bounds) : Path(bounds)
+                        pieceContext.fill(path, with: shadings[piece.colorName] ?? .color(Color(piece.colorName)))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Previews
+
+/// A Confirm 1.2 s in — glow at full strength, rain halfway down, the cannons' pieces at their
+/// peak — over the page background, in both appearances.
+private struct ConfirmCelebrationFramePreview: View {
+    private static let start = Date(timeIntervalSince1970: 1_800_000_000)
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                Color.pageBackground
+                ConfirmCelebrationFrame(
+                    scenes: [
+                        ConfirmCelebrationScene(
+                            burst: ConfirmCelebrationBurst(ordinal: 1, clearedStack: false, start: Self.start),
+                            confetti: ConfettiRecipe.everyConfirm(canvas: proxy.size, ordinal: 1)
+                        )
+                    ],
+                    date: Self.start.addingTimeInterval(1.2)
+                )
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
+#Preview("Light") {
+    ConfirmCelebrationFramePreview()
+        .preferredColorScheme(.light)
+}
+
+#Preview("Dark") {
+    ConfirmCelebrationFramePreview()
+        .preferredColorScheme(.dark)
+}

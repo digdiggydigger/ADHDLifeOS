@@ -60,8 +60,9 @@ extension FocusSessionService {
     func pushUnconfirmedCompletion(_ record: CompletedFocusSession) {
         unconfirmedCompletions.insert(record, at: 0)
         sprintStore?.writeUnconfirmedCompletions(unconfirmedCompletions)
-        // The ONLY writer of the stamp. Confirm leaves it alone (a revealed card must not
-        // re-celebrate) and so does the restore (a relaunch must not replay one).
+        // The ONLY writer of the completion stamp. Confirm leaves it alone (a revealed card must
+        // not re-celebrate; Confirm writes its own stamp) and so does the restore (a relaunch
+        // must not replay one).
         latestConfirmableCompletion = FocusConfirmableCompletion(
             ordinal: confirmableCompletionCount + 1, recordID: record.id
         )
@@ -92,9 +93,20 @@ extension FocusSessionService {
     ///
     /// The dismissal and the persist happen BEFORE the write for the same reason the push does:
     /// the user's tap must land on screen whether or not Firestore answers.
+    ///
+    /// **F-ConfirmCelebration-1: the Confirm is also stamped here**, beside the dismissal and for
+    /// the same reason — the celebration must not wait on Firestore — but only for a card that was
+    /// actually waiting, so a second call for a card already gone celebrates nothing. `clearedStack`
+    /// is read straight after the removal: nothing left behind it.
     func confirmCompletion(_ record: CompletedFocusSession) async {
+        let wasWaiting = unconfirmedCompletions.contains { $0.id == record.id }
         unconfirmedCompletions.removeAll { $0.id == record.id }
         sprintStore?.writeUnconfirmedCompletions(unconfirmedCompletions)
+        if wasWaiting {
+            latestConfirmation = FocusConfirmation(
+                ordinal: confirmationCount + 1, clearedStack: unconfirmedCompletions.isEmpty
+            )
+        }
         if !isActive { setCardCollapsed(false) }
         await log(record.confirmed(at: now()))
     }

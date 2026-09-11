@@ -581,8 +581,8 @@ cut plus a haptic. The skill-precedence rules are unchanged in substance and now
   - **Degraded:** a site with a modern and a floor rendering of the same thing. Always
     `if #available { … } else { … }`. The exemplar is **`View.haptic(_:trigger:)`**
     (`Theme/Haptics.swift`): `.sensoryFeedback` on 17+, the UIKit performer through `.onChange`
-    on 16. `ModernAPIPolicyCallSiteTests` pins it. Once `F-ModernIOS-2-Celebration` lands,
-    `FocusCompletionCelebration` is the second (16 spring / RM cross-fade / 26 draw-on).
+    on 16. `ModernAPIPolicyCallSiteTests` pins it. `FocusCompletionCelebration` is the second
+    (16 spring / RM cross-fade / 26 draw-on), landed in `F-ModernIOS-2-Celebration` (PR #65).
   - **Absent:** a feature whose WHOLE surface is above the floor (Places and the routine screen,
     E's 2026-08-27 deviation recorded in `PlaceMapPicker`). It may have no `else`, but the absence
     is announced by a flag in the `ToolsView.placesSupported` shape, so a 16.x user is never shown
@@ -615,6 +615,16 @@ cut plus a haptic. The skill-precedence rules are unchanged in substance and now
   geometry and then snaps is the bug, not the fix.
 - **Haptics are unaffected**, because they are not motion. They fire under Reduce Motion as they
   always have.
+- **The ONE sanctioned waiver of this section, and it is a waiver rather than a loophole: the
+  Confirm celebration** (`Focus/ConfirmCelebrationOverlay.swift`, E's call, 2026-09-11). Asked
+  what Confirm should show with Reduce Motion ON, E was offered a still confetti that fades (the
+  policy answer, recommended), a glow, or real falling confetti as a named waiver, and answered
+  **"B AND C"**: the glow AND real falling confetti. So it plays identically with Reduce Motion ON
+  and OFF, and its files never read the setting. `testTheConfirmCelebrationIgnoresReduceMotionByDesign`
+  pins that. **Do not "fix" it in a Reduce Motion sweep** — that would silently undo E's decision.
+  E's accepted cost is recorded in the register (§D): people who turned Reduce Motion on for motion
+  sensitivity get full-screen confetti with no off switch, to revisit before launch. Like
+  `peekStep`'s waiver of §2, it covers that one site and nothing else.
 - **Symbol effects, `PhaseAnimator` and `keyframeAnimator` do NOT honour Reduce Motion themselves.**
   `SymbolEffectOptions` has no Reduce Motion option in the 26.5 SDK. Resolve RM FIRST and choose
   the tier second, so a reduced site can never reach a modern motion tier.
