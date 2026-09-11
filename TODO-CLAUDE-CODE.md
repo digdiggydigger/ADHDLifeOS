@@ -3549,7 +3549,7 @@ that test. Green: 2,663 / 0 (emulator UP, 0 `9099`), lint 0 / 739, sim build suc
 26.68% (12,255/45,932), byte-identical. E's `MARKETING_VERSION` 1.2 → 1.3 rode along as its own
 commit (`4052c52`). Awaiting E's review; block 2 is not cut until then.
 
-### FEATURE: F-ModernIOS-2-Celebration — the pilot: 16 spring / RM cross-fade / iOS 26 draw-on  [ ] NOT STARTED
+### FEATURE: F-ModernIOS-2-Celebration — the pilot: 16 spring / RM cross-fade / iOS 26 draw-on  [x] COMPLETED
 
 `FocusCompletionCelebrationMotion.resolve(reduceMotion:drawOnAvailable:)`; pure types split to
 `Focus/FocusCompletionCelebrationPose.swift`; `Pose.geometryPinned`, `.armedInPlace`, `isArmed`,
@@ -3562,3 +3562,24 @@ live opener written 2026-09-11 at E's request after block 1. It carries the plan
 verbatim, plus two corrections found against the tree: the plan's `.asymmetric(insertion:
 .symbolEffect(.drawOn), …)` does not compile (use `AsymmetricTransition(insertion:removal:)`), and
 the string tests' red count is 5 failures for the listed assertion set, not 6.
+
+**Completed 2026-09-11 on `feature/modern-ios-celebration` (`bfb1fa3`, `da65027`).** Built as
+specified, with the `AsymmetricTransition` form. Deviations, all reported:
+- **The string tests read ORDER inside the tick site**, not bare presence: the view's own
+  `drawOnAvailable` flag contains `#available(iOS 26.0, *) {`, so the plan's bare-presence pin was
+  vacuous. Test 3 also pins `guard pose.isArmed else { return }` and bans `pose == .armed` — the
+  line that would have frozen the reduced opening for ever.
+- **The class is `FocusCelebrationModernPathCallSiteTests`**, not the plan's 49-character name:
+  SwiftLint's `type_name` ceiling is 40.
+- **`@MainActor` on the two celebration test classes**, clearing 5 pre-existing and 3 new
+  isolation warnings.
+
+Red #1, predicted in writing and observed exactly: `Executed 2672 tests, with 16 failures`, 9 tests.
+Red-checks on a committed tree, each predicted by test name and observed exactly: `} else {` →
+2,672 / 1; `resolve` ignoring RM → 2,672 / 5 (2 tests); `geometryPinned = true` → 2,672 / 3
+(2 tests). Final green 2,672 / 0 (emulator UP, 0 `9099`), lint 0 / 742, sim build succeeded, app
+26.75% (12,309/46,014). **The renders found two things the tests cannot** (evidence
+`screenshots/focus-completion-celebration-modes/`): the iOS 26 draw-on does NOT wait for the 0.3s
+delay (it draws during the card's slide-up; shipped as rendered, per the plan), and the reduced
+halo pinned at 1.6 overhangs the 76pt card by ~0.7pt and runs ~7pt behind the summary text at 80%
+(E's lever; ≤ 1.25 clears the text). **Closes on E's device verdict with Reduce Motion ON.**

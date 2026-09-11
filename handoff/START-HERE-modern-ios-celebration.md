@@ -1,5 +1,11 @@
 # Start here — `F-ModernIOS-2-Celebration` (block 2 of the modern-iOS pilot)
 
+> **STATUS 2026-09-11: BLOCK 2 IS BUILT AND LANDED — DO NOT BUILD IT AGAIN.** It merged to `main`
+> (see `handoff/OPEN-ITEMS-REGISTER.md`, twenty-fourth edition, for the PR and SHA) and is waiting
+> on E's two device verdicts: Reduce Motion ON (closes the block), then OFF. Everything below is the
+> specification it was built from. This opener stays live only until those verdicts are in; the
+> session that records them archives it with its successor.
+
 > **E, before you launch the session:**
 > - **Open Xcode on `ADHD LifeOS.xcodeproj` FIRST**, so the `xcode` MCP bridge connects. It was
 >   absent for all of block 1's session because Xcode was closed.
