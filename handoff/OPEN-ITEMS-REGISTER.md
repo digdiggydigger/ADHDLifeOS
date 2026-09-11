@@ -1,4 +1,4 @@
-# Open items register — 2026-09-11 (twenty-third edition; F-ModernIOS-1-Policy LANDED — block 2 waits on E's review)
+# Open items register — 2026-09-11 (twenty-third edition; F-ModernIOS-1-Policy LANDED — block 2's opener written, E gave the go-ahead)
 
 *Written at the close of block 1 of the modern-iOS pilot, by the fresh session the twenty-second
 edition queued. `F-ModernIOS-1-Policy` rewrote CLAUDE.md §7 and swapped one test. It is merged to
@@ -17,8 +17,9 @@ Every figure below was measured this session unless marked (carried).
 (PR #58, `F-FocusCard-4`). Block 1 changed CLAUDE.md, two test files and the app's marketing
 version, and no line the app target compiles.
 - **The modern-iOS pilot is HALF DONE:** block 1 is on `main`, and block 2 waits for E's review.
-  The live opener is still **`handoff/START-HERE-modern-ios-pilot.md`**, which now opens with a
-  status line saying block 1 has landed.
+  **E asked for block 2's opener, which is the go-ahead.** The live opener is now
+  **`handoff/START-HERE-modern-ios-celebration.md`**, written at the block-2 handoff. The pilot
+  opener it replaced is in `handoff/archive/`.
 - **Verified this session:** unit suite **2,663 / 0** (emulator UP, **0** `127.0.0.1:9099` hits,
   0 skipped; the 2,663 → 2,663 prediction held), SwiftLint **0 / 739**, sim
   `** BUILD SUCCEEDED **`, app target **26.68% (12,255/45,932)**.
@@ -77,6 +78,25 @@ FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testab
   `The CFBundleShortVersionString of an app extension ('1.0') must match that of its containing
   parent app ('1.3')`. It was already 1.0 against 1.2 before E's bump. This is E's call (§A).
   Confirm against an actual upload report before calling it a launch blocker.
+
+### What writing block 2's opener established — two corrections to the approved plan
+
+- **The plan's `.modern` tick expression does not compile.** The plan writes
+  `.transition(.asymmetric(insertion: .symbolEffect(.drawOn), removal: .identity))`. In the 26.5 SDK,
+  `asymmetric(insertion:removal:)` exists only on `AnyTransition`, while SwiftUI's `symbolEffect`
+  transition is a `Transition`-protocol type (`SymbolEffectTransition`).
+  - **The probe:** `swiftc -typecheck` at `-target arm64-apple-ios16.0-simulator`, with the tick
+    inside an `@available(iOS 26.0, *)` struct.
+  - **The plan's form:** exit 1, `type 'AnyTransition' has no member 'symbolEffect'`.
+  - **`AsymmetricTransition(insertion: .symbolEffect(.drawOn), removal: .identity)`:** exit 0.
+  - **`.asymmetric(insertion: AnyTransition(.symbolEffect(.drawOn)), removal: .identity)`:** exit 0.
+
+  The opener prescribes the `AsymmetricTransition` form. The design is unchanged.
+- **The red prediction "3 tests / 6 failures" is 5 failures for the assertion set as listed.** Two
+  of `testTheFloorPathIsStillTheTwoBeatBurst`'s three forms are already present in today's file.
+  The count is 6 only if that test also bans the old
+  `withAnimation(FocusCompletionCelebrationMetrics.checkmarkAnimation) {`. The building session
+  decides the set and predicts before running. The suite prediction 2,663 → 2,672 is unaffected.
 
 ### What the planning session established — the Reduce Motion root cause (2026-09-11) (carried)
 
@@ -138,8 +158,9 @@ FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testab
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **E's review of `F-ModernIOS-1-Policy`** (PR #63, merged). Read CLAUDE.md §7.1–7.5. Block 2's
-      branch is cut after this. (NEW)
+- [x] **E's review of `F-ModernIOS-1-Policy`** (PR #63, merged). E's answer to the block-1 report
+      was to ask for block 2's opener, which is the go-ahead. No change to §7 was requested. (DONE
+      2026-09-11)
 - [ ] **Install an older simulator runtime** via Xcode → Settings → Components. iOS 17.x proves
       the 17 gates select and 16.x proves the floor. It is ~7 GB on the external SSD and **E's GUI
       job** per the manual-step convention. Until then every `#available` fallback in the app is
@@ -158,8 +179,9 @@ FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testab
 ## B · Real work, ready to start — recommended order
 
 **0. `F-ModernIOS-2-Celebration`: the pilot's second block, NEXT, once E has reviewed block 1.**
-   - **Where it is specified:** the live opener, **`handoff/START-HERE-modern-ios-pilot.md`**,
-     "Block 2", which carries E's approved plan verbatim.
+   - **Where it is specified:** the live opener, **`handoff/START-HERE-modern-ios-celebration.md`**.
+     It carries E's approved plan's block-2 sections verbatim, plus two corrections found by
+     checking the plan against the tree (see "established" above).
    - **Branch:** `feature/modern-ios-celebration` off `main`. Block 1 is on `main`, so the order
      holds.
    - **The design:** three motion modes (`.full` 16 spring unchanged / `.reduced` RM cross-fade /
