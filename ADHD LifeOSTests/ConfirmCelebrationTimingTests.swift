@@ -1,0 +1,101 @@
+//
+//  ConfirmCelebrationTimingTests.swift
+//  ADHD LifeOSTests
+//
+//  F-ConfirmCelebration-1: how long a Confirm's celebration lasts, how its glow moves, and what
+//  happens when Confirms come quickly — E's approved R1: they OVERLAP, at most three at once, the
+//  oldest dropped. The removal matters as much as the cap: a burst left in the list after it ends
+//  keeps the layer asking for a frame at display rate for as long as the app runs.
+//
+
+import XCTest
+@testable import ADHD_LifeOS
+
+@MainActor
+final class ConfirmCelebrationTimingTests: XCTestCase {
+
+    private let launch = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func burst(_ ordinal: Int, after seconds: TimeInterval = 0) -> ConfirmCelebrationBurst {
+        ConfirmCelebrationBurst(ordinal: ordinal, clearedStack: false, start: launch.addingTimeInterval(seconds))
+    }
+
+    // MARK: - The glow
+
+    /// In over 0.3 s, held to 0.9 s, out by 2.4 s — the envelope of the glow E saw.
+    func testTheGlowSwellsHoldsAndFadesOnTheRecordsEnvelope() {
+        let glow = ConfirmCelebrationGlow.self
+        XCTAssertEqual(glow.envelope(at: -0.1), 0, accuracy: 1e-9, "The glow shows before its Confirm.")
+        XCTAssertEqual(glow.envelope(at: 0), 0, accuracy: 1e-9)
+        XCTAssertEqual(glow.envelope(at: 0.15), 0.5, accuracy: 1e-9, "The glow does not swell over 0.3 s.")
+        XCTAssertEqual(glow.envelope(at: 0.3), 1, accuracy: 1e-9)
+        XCTAssertEqual(glow.envelope(at: 0.9), 1, accuracy: 1e-9, "The glow does not hold to 0.9 s.")
+        XCTAssertEqual(glow.envelope(at: 1.65), 0.5, accuracy: 1e-9, "The glow does not fade out by 2.4 s.")
+        XCTAssertEqual(glow.envelope(at: 2.4), 0, accuracy: 1e-9)
+        XCTAssertEqual(glow.envelope(at: 3), 0, accuracy: 1e-9)
+    }
+
+    /// Two quick Confirms show one glow at whichever is stronger at that instant — here the OLDER
+    /// one, still fading, over the newer one just swelling.
+    func testOverlappingConfirmsShareOneGlowAtTheStrongest() {
+        let older = burst(1)
+        let newer = burst(2, after: 1.2)
+        XCTAssertEqual(
+            ConfirmCelebrationGlow.strongestEnvelope(of: [older, newer], at: launch.addingTimeInterval(1.25)),
+            1 - 0.35 / 1.5, accuracy: 1e-9,
+            "Overlapping glows are not one wash at the strongest envelope."
+        )
+        XCTAssertEqual(ConfirmCelebrationGlow.strongestEnvelope(of: [], at: launch), 0, accuracy: 1e-9)
+    }
+
+    // MARK: - Length
+
+    /// The burst must last until its last piece has landed, and not a noticeable moment longer.
+    func testAConfirmBurstLastsUntilItsLastPieceHasLanded() {
+        let pieces = ConfettiRecipe.everyConfirm(canvas: CGSize(width: 393, height: 852), ordinal: 1)
+        let lastLanding = pieces.map { $0.delay + $0.lifetime }.max() ?? 0
+        XCTAssertEqual(ConfirmCelebrationQueue.everyConfirmLength, 4.2, accuracy: 1e-9)
+        XCTAssertLessThanOrEqual(
+            lastLanding, ConfirmCelebrationQueue.everyConfirmLength,
+            "A burst is removed while its pieces are still falling, so they vanish mid-air."
+        )
+        XCTAssertGreaterThan(lastLanding, 4, "The premise: the recipe really does fly for about 4.2 s.")
+    }
+
+    // MARK: - Quick Confirms (R1)
+
+    /// Four Confirms inside a second: the first is dropped, the other three stay in the air.
+    func testAFourthQuickConfirmDropsTheOldestBurst() {
+        var bursts: [ConfirmCelebrationBurst] = []
+        for ordinal in 1...4 {
+            let next = burst(ordinal, after: 0.2 * Double(ordinal))
+            bursts = ConfirmCelebrationQueue.adding(next, to: bursts, now: next.start)
+        }
+        XCTAssertEqual(
+            bursts.map(\.ordinal), [2, 3, 4],
+            "More than three celebrations are live, or the newest was dropped instead of the oldest."
+        )
+    }
+
+    /// A burst is removed the moment its length has passed — and adding a new one clears any that
+    /// already have — so nothing is left for the layer to keep drawing.
+    func testABurstIsGoneOnceItsLengthHasPassed() {
+        let first = burst(1)
+        let queue = ConfirmCelebrationQueue.self
+        XCTAssertEqual(queue.pruned([first], now: launch.addingTimeInterval(4.1)).map(\.ordinal), [1])
+        XCTAssertEqual(
+            queue.pruned([first], now: launch.addingTimeInterval(4.2)).count, 0,
+            "A finished burst stays live, so the layer keeps redrawing an empty sky."
+        )
+        let later = burst(2, after: 5)
+        XCTAssertEqual(
+            queue.adding(later, to: [first], now: later.start).map(\.ordinal), [2],
+            "Adding a burst keeps one that had already ended."
+        )
+        XCTAssertEqual(
+            queue.nextExpiry(of: [first, burst(3, after: 1)]), launch.addingTimeInterval(4.2),
+            "The layer is not told when the soonest burst ends, so it cannot remove it on time."
+        )
+        XCTAssertNil(queue.nextExpiry(of: []))
+    }
+}

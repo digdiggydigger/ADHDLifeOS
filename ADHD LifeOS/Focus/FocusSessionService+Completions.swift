@@ -25,7 +25,22 @@ struct FocusConfirmableCompletion: Equatable {
     let recordID: UUID
 }
 
+/// The stamp a Confirm leaves on the service (F-ConfirmCelebration-1, E's approved R2): the ordinal
+/// of this launch's Confirms, which the Confirm haptic and the full-screen celebration key on, and
+/// whether that Confirm emptied the stack, which block 2's fireworks will key on.
+///
+/// **A second stamp, never `FocusConfirmableCompletion` reused.** That one keys the completion
+/// haptic and the in-ring burst, and Confirm must leave it alone: written on Confirm it would
+/// re-celebrate a card the Confirm merely revealed.
+struct FocusConfirmation: Equatable {
+    let ordinal: Int
+    let clearedStack: Bool
+}
+
 extension FocusSessionService {
+    /// How many cards have been confirmed this launch. The Confirm haptic's trigger.
+    var confirmationCount: Int { latestConfirmation?.ordinal ?? 0 }
+
     /// How many sprints have finished NATURALLY this launch. The success haptic's trigger — see
     /// `FocusConfirmableCompletion` for why neither existing counter would do.
     var confirmableCompletionCount: Int { latestConfirmableCompletion?.ordinal ?? 0 }

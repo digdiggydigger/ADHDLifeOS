@@ -44,6 +44,10 @@ final class FocusSessionService: ObservableObject {
     /// cleared, so a Confirm revealing the next card cannot re-celebrate it; never persisted, so
     /// a relaunch celebrates nothing. Written from `+Completions.swift`, hence no `private(set)`.
     @Published var latestConfirmableCompletion: FocusConfirmableCompletion?
+    /// The most recent Confirm this launch — F-ConfirmCelebration's cue for the full-screen
+    /// celebration and the Confirm haptic. Set only by `confirmCompletion`, only for a card that was
+    /// waiting; never persisted, so a relaunch celebrates nothing. From `+Completions.swift`.
+    @Published var latestConfirmation: FocusConfirmation?
     /// The cadence the running sprint was last planned with — `start`'s argument until the modal's
     /// live editor replaces it. Published so the editor seeds from what is actually scheduled
     /// rather than from a guess reverse-engineered out of the checkpoint marks.
