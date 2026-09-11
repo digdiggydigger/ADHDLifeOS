@@ -5,9 +5,9 @@ handoff": `SESSION-OPENER-*` files are records despite the name). Written 2026-0
 answers in chat and the throwaway prototype renders E chose from
 (`screenshots/confirm-celebration-prototypes/`). The arc is `F-ConfirmCelebration-1` and
 `F-ConfirmCelebration-2`. **Reviewed by E the same day: R1, R2 and R9 approved (see
-"Claude Code's recommendations"). **Block 1 (`F-ConfirmCelebration-1`) was built and landed the same
+"Claude Code's recommendations"). Block 1 (`F-ConfirmCelebration-1`) was built and landed the same
 day, PR #69, and is awaiting E's device verdict; block 2 is not started.** Build status lives in
-`OPEN-ITEMS-REGISTER.md`; this record stays the design.***
+`OPEN-ITEMS-REGISTER.md`; this record stays the design.*
 
 **Everything in "The settled specification" was answered directly by E. Do not re-litigate any of
 it without E.** Where a line says E chose, E was shown the alternatives — as text options or as
