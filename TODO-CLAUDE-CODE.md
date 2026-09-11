@@ -3671,3 +3671,148 @@ the record's schedule, only when `clearedStack`; `Scrim` at 0.85 in LIGHT appear
 held to 0.4 s before the last spark, out 0.6 s. Pure model + schedule + dim tests, call-site test
 that both play only on a cleared stack, renders light + dark, device verdict. **Not started until E's
 verdict on block 1.**
+
+## The CTA celebrations arc — E's design, settled 2026-09-11; NOT BUILT (build starts in a fresh session, E's instruction)
+
+*E: "I want to focus on assigning animations such as this one we've just created to other CTA
+buttons etc. throughout the app." Designed question by question — twenty-seven answers, seven
+recommendations overruled; every decision, number and constraint is in
+**`handoff/SESSION-OPENER-cta-celebrations-design.md`** (permanent). E's direction at close:
+"YOU MUST NOT BUILD IT IN THIS SESSION" / "You must start building this in a fresh claude code
+terminal session." The record's recommendations R-a…R-h are NOT yet ruled on — ask E before block 1.
+Eight blocks, strictly in order, each closing on E's device verdict.*
+
+### FEATURE: F-ConfirmCelebration-2 — (see the block above; E's decision 1: the fireworks take the same even stretch, ≈ 6.43 s on a stack-clearing Confirm; built FIRST, E's decision 2)  [ ] OPEN
+
+Unchanged in scope from the block above. Adds: `length(of:)` → `5.0 / pace` for a cleared stack;
+three files `Focus/ConfirmFireworksSchedule.swift` / `ConfirmFireworksPhysics.swift` /
+`ConfirmFireworksDrawing.swift` (each under 400, all on the choreography clock, all added to the
+waiver pin's list); a `ConfettiPhysics.state(of:at:gravity:drag:)` overload at 150 / 2.4. Tests:
+shell timings, 72/56/40 sparks, inner ring 0.55×, two-tone alternation, 14 shells in 9 real
+tokens, last spark 4.79 s, the dim envelope and light-only, 6.43 vs 5.4; call-site: fireworks and
+dim draw only for a cleared stack. Evidence `screenshots/confirm-celebration-block-2/` (stills at
+0.3 / 1.2 / 2.6 / 4.8 s light + dark, the 6.4 s mp4, an every-Confirm frame pixel-diffed against
+block 1: 0 pixels). Device verdict.
+
+### FEATURE: F-CTACelebrations-1 — the haptic tidy and the closure card's spring-in  [ ] OPEN
+
+- **Room first, own commit:** `HomeView.swift:360-399` → `Home/HomeView+Refresh.swift`;
+  `HomeMomentumSections.swift:235-329` → `Home/HomeLifeAreasSections.swift`.
+- Sorted `.success` on the detail screen too (`CaptureDetailComponents.swift:287`, was `.solid`);
+  "Done for now" `.success` (`NudgeDueCard.swift:35`, was `.light`); Save a place `.solid` after the
+  write lands (`PlaceEditorView.swift` `save()`); Stop sprint `.light` (`FocusTimerBar.swift:142`).
+- `ClosureCelebrationCard` springs in: `.transition(reduceMotion ? .opacity : .scale(scale: 0.9).combined(with: .opacity))`
+  and `withAnimation(reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8))`
+  around the three writers of `celebratedTask` (`HomeMomentumSections.swift`); the
+  `CaptureFanOverlay` house pattern.
+- Tests: `CTAHapticTidyCallSiteTests`, five prose tests, both RM branches by string. Predicted red
+  5 / 5. Evidence `screenshots/cta-celebrations-block-1/`: the card at 0.1 s full vs reduced.
+  Device verdict by feel.
+
+### FEATURE: F-CTACelebrations-2 — the two switches; Celebrations live on Confirm  [ ] OPEN
+
+- `MomentumPreferences`: `celebrationsEnabled` (true) and `celebrationSoundsEnabled` (false), each
+  the FOUR-place edit (stored property, memberwise default, `decodeIfPresent ?? default`,
+  `normalized()`). `AppFeedback.celebrationsEnabled(store:)` / `.celebrationSoundsEnabled(store:)`,
+  read at fire time. Two Toggles after "Haptics" in `feedbackSection`, ids
+  `settingsCelebrationsToggle` / `settingsCelebrationSoundsToggle`, one footer sentence each.
+- `ConfirmCelebrationOverlay` gates on `AppFeedback.celebrationsEnabled()` at fire time, so the row
+  is never a lie. The sound switch goes live with block 7's player.
+- Tests: defaults; pre-existing blobs keep their values; `normalized()` keeps both OFF; the Feedback
+  section carries both with ids and writes; the Confirm layer reads the switch at fire time.
+  Predicted red 5 / 5. Evidence: the Feedback section light + dark (`RenderPreview`); Confirm with
+  the switch off pixel-identical to a never-mounted window. Device verdict.
+
+### FEATURE: F-CTACelebrations-3 — the centre, the shared layer, the four surfaces, Confirm re-routed  [ ] OPEN
+
+- **Room first, own commit:** `RootView.swift:73-93` → `RootView+Furniture.swift`.
+- New `ADHD LifeOS/Celebrations/`: `CelebrationRequesting` (kinds, surfaces, outcome, the protocol,
+  the inert requester, the two environment keys), `CelebrationBurst` + `CelebrationQueue` (one
+  ordinal counter; full-screen cap 3, pop cap 8; lengths; `choreographyTime`), `CelebrationPolicy`
+  (**`milestoneCooldown = 5` s — E's testing value, do not "correct" it**), `CelebrationCenter`
+  (App-owned `@StateObject`, passed to `RootView` like `authService`; `lastFullScreenAt`; the
+  surface stack; `held` full-screens for a self-dismissing surface, released on `surfaceDismissed`,
+  dropped after 60 s; the chime hook), `CelebrationMotion` (`.full` for Confirm on ANY setting; else
+  `.still` under RM), `CelebrationRecipes` (pop / stillPop / stillField; seven tokens),
+  `CelebrationFrame` + `CelebrationStage` (moved from `ConfirmCelebrationOverlay.swift`, which is
+  deleted), `CelebrationLayer(surface:)`, `CelebrationPopSource` (`onGeometryChange`, back-deployed
+  16.0). `ConfirmCelebrationQueue` → `ConfirmCelebrationClock`; `ConfirmCelebrationBurst` removed.
+- Mounts: `RootView` `.overlay { CelebrationLayer(surface: .root) }` at the SAME position; the routine
+  cover (`RootView+Doors`), `TaskSearchSurface`, `CapturePromoteSheet`; each presenter's `onDismiss`
+  calls `surfaceDismissed`. The Confirm bridge: `.onChange(of: focusService.latestConfirmation)`
+  beside the Confirm haptic on `RootBottomOverlay`. The haptic and the stamp are untouched.
+- Tests: `CelebrationPolicyTests`, `CelebrationCenterTests` (injected `now`), `CelebrationMotionTests`,
+  `CelebrationRecipeTests`, a mount-enumeration test (four mounts, three `onDismiss`es); the six
+  `ConfirmCelebrationCallSiteTests` re-pointed, each named in the report; the waiver pin becomes
+  "the Confirm files are RM-free AND the resolver returns `.full` for Confirm" (CLAUDE.md §7.2 is
+  updated to say so). Predicted red: counted per class. Evidence `screenshots/cta-celebrations-block-3/`:
+  the block-1 live-Confirm probe through the centre, pixel-identical after landing; a
+  `.routineCover` burst drawn by that layer only; Confirm under injected RM still full. Device
+  verdict: Confirm indistinguishable from today; switch off = nothing.
+
+### FEATURE: F-CTACelebrations-4 — the nine mini confetti pops  [ ] OPEN
+
+- **Render FIRST:** the pop in situ on a real `TaskRow`, two or three count/spread variants, full
+  and still; send them; E picks by looking (E's F6). Then wire the nine sites, each wrapped in
+  `CelebrationPopSource` with the pop line INSIDE the same closure as the site's haptic:
+  `TaskRow` (circle + swipe, one origin), `TaskDetailFormSections` "Close it", `AreaTaskRow`,
+  Best-next-move "Close it", Sorted (triage + detail), Journal it, Create Task (post-success; the
+  sheet holds 0.45 s — R-e), Done for now, the routine step.
+- Tests: `CelebrationPopCallSiteTests` (one prose test per site; the sheet hold); `TaskRow` "the
+  swipe and the circle pop from one origin". Predicted red 11 / 11. Evidence
+  `screenshots/cta-celebrations-block-4/`: pops over a row, over the Form row (the root layer beats
+  row clipping), inside the routine cover and the search surface; mp4. Device verdict RM ON and OFF.
+
+### FEATURE: F-CTACelebrations-5 — inbox zero, the streak on 7, the daily goal  [ ] OPEN
+
+- **Room first, own commit:** `CaptureInboxService.swift:266-310` → `CaptureInboxService+Notes.swift`.
+- Inbox zero in `CaptureInboxService+Celebrations.swift` after `removeCapture` in `sort`,
+  `logToJournal`, `promoteToTask` (not discard — R-a); the list-less doors fetch once. The streak in
+  `NudgesService.dismiss` via `NudgeStreak.landsOnSeven(before:after:asOf:)` (exactly 7 — R-b). The
+  daily goal in `HomeView`: `ringCount`, `ringSettled`, `DailyGoalTracker`, the per-ACCOUNT day
+  marker, `request(.milestone(.dailyGoal), at: ringOrigin)`; the centre plays `.success` for it
+  (R-d). Both services take `celebrate:` as a defaulted init parameter from their hosts.
+- Tests: `CaptureInboxServiceCelebrationTests`, `NudgesServiceStreakTests`, `DailyGoalTrackerTests`
+  (first load never counts; rising across counts once; a lowered goal never counts; undo-and-recross
+  refused by the marker; the marker is per account), call-site "the daily goal is observed from Home
+  on both the count and the settle flag". Predicted red ≈ 17 tests. Evidence
+  `screenshots/cta-celebrations-block-5/`: the milestone over the empty inbox light/dark; the still
+  field under RM; a daily-goal burst over the Tasks tab; a downgraded milestone showing only the
+  pop. Device verdict — **and E's call on the cooldown** (5 s for testing).
+
+### FEATURE: F-CTACelebrations-6 — the routine Completed flow (R1–R5)  [ ] OPEN
+
+- **Render FIRST:** `PlaceRoutineCongratulationView` light, dark, RM, the switch-off beat; send it.
+- `PlaceRoutineCompletedCard` in the next-step slot once nothing is pending and the run is fully
+  resolved (done OR skipped); `complete()`: `.success` → `store.end` + `recorder.ended(.completed)`
+  → `activity.ended(); DataChangeSignal.post()` → `celebrate.request(.milestone(.routineFinished), at: buttonOrigin)`
+  on the cover's OWN layer → the congratulation (display name from the same source Settings' account
+  row reads, threaded through `RootView+Doors`; 5.4 s on a full-screen outcome, ≈ 2 s otherwise;
+  tap anywhere skips). **`leaveScreen()` no longer ends the run; the background auto-end is
+  removed** — leaving keeps a fully-ticked run LIVE (E's R1, reversing the routine-record rule).
+  R-f: auto-only / all-skipped runs complete quietly.
+- Tests: `PlaceRoutineCompletionTests` (Completed shows only when nothing is pending; leaving no
+  longer ends a resolved run; Completed records exactly once; auto-only earns no celebration; the
+  view's length follows the outcome; a tap skips), call-site "Completed plays the success feel,
+  records, then requests on the cover's own layer", **and every test pinning the old rule updated
+  by name** (the routine journey too — erase the simulator afterwards). Evidence
+  `screenshots/cta-celebrations-block-6/`: the Completed card; the congratulation with confetti
+  (full + still); the Today recovery card showing a live fully-ticked run. Device verdict.
+
+### FEATURE: F-CTACelebrations-7 — the chime  [ ] OPEN
+
+- `CelebrationSound.swift`: `CelebrationSoundPlaying` (+ inert); one `AVAudioPlayer` from
+  `Assets.xcassets/CelebrationChime.dataset` (`.caf` PCM), `.ambient` + `.mixWithOthers` re-asserted
+  before EVERY play, never `setActive(false)`; the centre's default player; the sound switch live.
+- Candidates: three `sox`-synthesised chimes + one or two ElevenLabs sound-effect generations,
+  peak-normalised, sent with `SendUserFile`; **E picks by ear**; the pick into the dataset, the
+  candidates into `screenshots/cta-celebrations-block-7/` with the README.
+- Tests: the asset resolves; the session is set ambient + mixing before every play; a missing asset
+  degrades to silence. Predicted red 3 / 3. Closes on E's pick and a device verdict with music
+  playing and the silent switch on.
+
+### FEATURE: F-FocusCard-Corners — round the collapsed card's bottom corners (E: "Round them", 2026-09-11)  [ ] OPEN
+
+After the arc. Round the collapsed focus card's BOTTOM corners and give
+`FocusBarCardShape.roundsBottomCorners` `animatableData` so the corner morph stops snapping inside
+the 350 ms spring. Test-first; render before and after; device verdict.
