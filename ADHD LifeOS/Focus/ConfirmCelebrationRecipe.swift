@@ -164,7 +164,11 @@ enum ConfirmCelebrationQueue {
     /// The prototype's choreography E chose from: the last rain piece can launch at 0.6 s and live
     /// 3.6 s. Every number in the physics, the recipe and the glow is on THIS clock.
     static let choreographyLength: TimeInterval = 4.2
-    static let extraLength: TimeInterval = 0
+    /// **E, after watching block 1 (2026-09-11): "extend the animation length by 1.2 seconds".**
+    /// Added by STRETCHING the choreography evenly rather than by tacking on a tail, so every piece,
+    /// path and beat E approved is kept, with no extra drawing. It simply plays at `pace` (~78%).
+    /// A tail at the same speed would have either drawn off-screen or thinned the confetti.
+    static let extraLength: TimeInterval = 1.2
     /// How long a celebration is on screen.
     static var everyConfirmLength: TimeInterval { choreographyLength + extraLength }
     /// How fast the choreography plays against the wall clock.
