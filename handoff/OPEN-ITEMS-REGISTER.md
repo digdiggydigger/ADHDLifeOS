@@ -1,8 +1,9 @@
-# Open items register — 2026-09-11 (twenty-first edition; THE FOCUS CARD ARC IS CLOSED)
+# Open items register — 2026-09-11 (twenty-second edition; MODERN iOS PILOT QUEUED — two blocks, fresh session)
 
-*Written at the close of the session that shipped `F-FocusCard-4` (the celebration, PR #58) and
-`F-FocusCard-5` (the close-out). **E closed block 4 on device — "the pre-beat reads fine" — and
-the five-block focus card arc is CLOSED.** Supersedes the twenty earlier editions.*
+*Written at the close of the session that shipped `F-FocusCard-4` and `F-FocusCard-5`, then
+debugged E's "I can't see any of the animations", found the cause on E's phone, and planned the
+modern-iOS pilot with E. **E's instruction: a FRESH session builds it** — this session landed only
+the handoff. Supersedes the twenty-one earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding — so it is the thing to read, and to
@@ -12,9 +13,10 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ the block-5 merge; the last CODE change is `d8b334b`** (PR #58, `F-FocusCard-4`;
-block 5 changed comments and docs only) · **the focus card arc is CLOSED** — blocks 1–4 each
-verified by E on device, block 5 doc-only · verified this session: suite **2,663 / 0** (emulator
+**`main` @ the block-0 handoff merge; the last CODE change is `d8b334b`** (PR #58,
+`F-FocusCard-4`; everything since is docs) · **the focus card arc is CLOSED** · **the modern-iOS
+pilot is QUEUED for a fresh session: `handoff/START-HERE-modern-ios-pilot.md`** · figures below
+are (carried) from the block-5 run: suite **2,663 / 0** (emulator
 UP, 0 `127.0.0.1:9099`, 0 skipped — run twice, once per block), lint **0 / 738**, sim + device
 `** BUILD SUCCEEDED **`, app target **26.68% (12,255/45,932)** after block 5 — the numerator is
 byte-identical to block 4's 26.69% (12,255/45,914) and the +18 in the denominator came from a
@@ -56,6 +58,33 @@ FocusTimerWidgetExtension    10.30%  (228/2214)   ← read the 233-line testable
   table, this register, and the handoff swap.
 - **Two register PRs** (#59 twentieth edition, and this one).
 
+### What this session established — the Reduce Motion root cause (2026-09-11)
+
+- **E's phone runs Reduce Motion ON (and Prefer Cross-Fade Transitions ON).** Read off the phone
+  via iPhone Mirroring, read-only. Every animation in the bottom furniture is
+  `reduceMotion ? nil : …` and the celebration opens on its settled pose under RM — exactly what
+  the design record specified — so **the block-4 burst has never once played on E's phone.** E
+  saw a hard cut plus the success haptic (which does fire under RM). Not a code defect: the
+  celebration renders correctly in the simulator in isolation AND in situ through the real
+  overlay + service. A product gap: Apple's guidance under RM is to replace motion with a fade,
+  not remove feedback, and this app removes it (19 of its 20 RM-guarded sites are `nil`; the one
+  fade is `Capture/CaptureFanOverlay.swift:89-96`).
+- **E's decisions, settled:** RM → cross-fade celebration; progressive enhancement across every
+  tier that adds value above the 16.0 floor; fallback proof compile-only for now, documented;
+  policy first (CLAUDE.md §7 rewrite) then the celebration as the pilot; a fresh session builds;
+  the tick's ladder is 16 spring / RM fade / **iOS 26 `.drawOn`** with no 17 tier (the 17 symbol
+  effects add nothing the spring lacks for this glyph).
+- **`.drawOn`/`.drawOff` are `@available(iOS 26.0)`** in the 26.5 SDK's swiftinterfaces and E's
+  phone is on 26, so it is a tier E can see. `SymbolEffectOptions` has no RM option — symbol
+  effects do not self-gate; RM must be resolved before the tier.
+- **What "compile-only" means here, precisely:** the 16 branch's CODE runs on the 26.5 simulator
+  whenever the motion mode is injected as `.full`; what cannot be exercised is its *selection* on
+  a 16–25 OS. Report per tier; never write "works on iOS 16".
+- **Harness lessons:** an `async` XCTest pumping `RunLoop.main` cannot drain the queue SwiftUI's
+  updates land on — the in-situ frames froze mid-transition until the probe became a synchronous
+  test driving `finishCurrentSprint` → pump → `pushUnconfirmedCompletion`. And the block-4 render
+  was the card in isolation; the first in-situ render came only when E reported the gap.
+
 ### What block 4 established, beyond the animation
 
 - **`drawHierarchy(afterScreenUpdates: false)` from a test host renders BLANK WHITE.** Use `true`
@@ -82,6 +111,11 @@ FocusTimerWidgetExtension    10.30%  (228/2214)   ← read the 233-line testable
 
 ## A · Decisions only E can make — minutes each
 
+- [ ] **Install an older simulator runtime** — Xcode → Settings → Components, iOS 17.x proves the
+      17 gates select and 16.x proves the floor; ~7 GB on the external SSD; **E's GUI job** per the
+      manual-step convention. Until then every `#available` fallback in the app is compile-only
+      **by policy (CLAUDE.md §7.3 once block 1 lands), not by oversight.** Ask at a natural
+      break. (NEW)
 - [ ] **Do the collapsed card's square BOTTOM corners still earn their keep?** (carried) A "look
       again next time you are in there", not a defect.
 - [ ] **Should the widget's view-only files be made testable at all?** Recommendation is still to
@@ -91,10 +125,37 @@ FocusTimerWidgetExtension    10.30%  (228/2214)   ← read the 233-line testable
 
 ## B · Real work, ready to start — recommended order
 
-**0. THE FOCUS CARD ARC IS CLOSED — nothing queued.** The design record is
-   **`handoff/SESSION-OPENER-focus-card-design.md`** (permanent), now opening with a postscript
-   table of everything that shipped against it. The live opener is
-   `handoff/START-HERE-post-focus-card.md`, and it points HERE for direction.
+**0. THE MODERN iOS PILOT — two blocks, a FRESH session builds them (E's instruction).**
+   Live opener **`handoff/START-HERE-modern-ios-pilot.md`**, which carries E's approved plan
+   verbatim. Block 1 `F-ModernIOS-1-Policy`: CLAUDE.md §7 becomes the progressive-enhancement +
+   Reduce-Motion policy; delete `testTheCelebrationUsesNothingAboveTheiOS16Floor`, add
+   `ModernAPIPolicyCallSiteTests`. Block 2 `F-ModernIOS-2-Celebration`: three motion modes
+   (`.full` 16 spring unchanged / `.reduced` RM cross-fade / `.modern` iOS 26 draw-on), pure
+   types split to `FocusCompletionCelebrationPose.swift`, test-first (predicted red 3 tests /
+   6 failures on the string tests), rendered in all three modes + in situ, then **E's phone with
+   RM ON is the verdict that closes it**, RM OFF a second look. Block 2's branch is not cut until
+   block 1 is on `main`.
+
+**0b. Follow-ups the pilot deliberately leaves out — pick up only after E's verdict:**
+   - **RM arrival fade for the bottom furniture** (`RootBottomOverlay`'s three nil animations +
+     the card's unconditional `.move + .opacity` transition) — only if E likes the pilot's
+     cross-fade. The reflow must NOT tween under RM; the card's transition would split.
+   - **The modern-API inventory, register-only until each is a block:** free at 16.0 —
+     `.contentTransition(.numericText(countsDown: true))` on the sprint countdown
+     (`FocusTimerBarContent.swift:194`) and ~20 `.monospacedDigit()` counters;
+     `.presentationBackground` (16.4) on three sheets. Needs 17 — `ContentUnavailableView` in
+     `TaskListView`, `CaptureInboxView`, `TagEditorListView`, `TaskSearchSurface`;
+     `.contentTransition(.symbolEffect(.replace))` for pause/play and disclosure chevrons;
+     interactive Home Screen widgets (`Button(intent:)`) and step check-off on the routine Live
+     Activity; `@Observable` migration (27 classes); TipKit for the card's undiscoverable
+     gestures. Needs 18/26 — `Tab`/`.tabBarMinimizeBehavior` and `.glassEffect`, both constrained
+     by the custom `AppTabBar` (adoption means replacing it, not augmenting it).
+   - **Two RM sites that remove the press affordance entirely** (`AppTabBar.swift:266`,
+     `AppSearchRow.swift:71`) and `RootView.swift:63`'s declared-but-unread `reduceMotion` beside
+     two unguarded animations — the policy's first sweep candidates.
+
+   The focus card design record (`handoff/SESSION-OPENER-focus-card-design.md`, permanent) opens
+   with a postscript table of everything that shipped against it; block 2 adds one row.
 
 1. **E's one un-run device check: airplane mode + pull-to-refresh on Home.**
    `F-HomeTasksLastKnown` (`8b5f740`) should keep the last-known task set rather than emptying it.
