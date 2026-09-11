@@ -3529,7 +3529,7 @@ from block 4 IS this code. **THE FOCUS CARD ARC IS CLOSED.***
 
 *Prompted by E's "I can't see any of the animations": E's phone runs Reduce Motion ON, every RM
 gate in the app is `nil`, so the block-4 burst has never played for E. E's decisions, the design,
-the tests and the verification bar are in `handoff/START-HERE-modern-ios-pilot.md` (the approved
+the tests and the verification bar are in `handoff/archive/START-HERE-modern-ios-pilot.md` (the approved
 plan, verbatim). Two blocks, strictly in order, each its own PR.*
 
 ### FEATURE: F-ModernIOS-1-Policy — CLAUDE.md §7 becomes the progressive-enhancement + Reduce Motion policy  [x] COMPLETED
@@ -3557,4 +3557,8 @@ commit (`4052c52`). Awaiting E's review; block 2 is not cut until then.
 FocusCompletionDrawOnTick` behind `if motion == .modern, #available(iOS 26.0, *)`. Card, stack,
 overlay and service untouched. Test-first (string tests predicted red 3 / 6), rendered in all three
 modes + in situ, evidence `screenshots/focus-completion-celebration-modes/`. **Closes on E's device
-verdict with Reduce Motion ON.** Detail: the opener, "Block 2".
+verdict with Reduce Motion ON.** Detail: **`handoff/START-HERE-modern-ios-celebration.md`**, the
+live opener written 2026-09-11 at E's request after block 1. It carries the plan's block-2 sections
+verbatim, plus two corrections found against the tree: the plan's `.asymmetric(insertion:
+.symbolEffect(.drawOn), …)` does not compile (use `AsymmetricTransition(insertion:removal:)`), and
+the string tests' red count is 5 failures for the listed assertion set, not 6.
