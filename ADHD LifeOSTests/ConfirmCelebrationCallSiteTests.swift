@@ -91,6 +91,17 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
         )
     }
 
+    /// E's extra 1.2 s is a stretch of the whole choreography, so the frame must place every piece
+    /// on the stretched clock. Reverting to raw elapsed time would play the old 4.2 s inside a 5.4 s
+    /// burst, then show nothing for the last 1.2 s.
+    func testTheFrameDrawsOnTheStretchedClock() throws {
+        let layer = try Self.appCode(Self.layerFile)
+        XCTAssertTrue(
+            layer.contains("ConfirmCelebrationQueue.choreographyTime(of: scene.burst, at: date)"),
+            "The confetti is placed on raw elapsed time, not on the stretched choreography clock."
+        )
+    }
+
     // MARK: - The haptic (R4)
 
     /// On the overlay beside the completion haptic, keyed on the Confirm ordinal — never on the

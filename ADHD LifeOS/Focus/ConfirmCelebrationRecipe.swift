@@ -133,7 +133,7 @@ enum ConfirmCelebrationGlow {
     /// Overlapping Confirms share ONE glow at the strongest envelope, rather than stacking three
     /// washes of 0.32 into something much heavier than anything E saw.
     static func strongestEnvelope(of bursts: [ConfirmCelebrationBurst], at date: Date) -> Double {
-        bursts.map { envelope(at: date.timeIntervalSince($0.start)) }.max() ?? 0
+        bursts.map { envelope(at: ConfirmCelebrationQueue.choreographyTime(of: $0, at: date)) }.max() ?? 0
     }
 }
 
@@ -161,8 +161,19 @@ struct ConfirmCelebrationBurst: Equatable, Identifiable {
 /// the layer stops drawing, and stops asking for frames, when nothing is left in the air.
 enum ConfirmCelebrationQueue {
     static let liveCap = 3
-    /// The last rain piece can launch at 0.6 s and live 3.6 s.
-    static let everyConfirmLength: TimeInterval = 4.2
+    /// The prototype's choreography E chose from: the last rain piece can launch at 0.6 s and live
+    /// 3.6 s. Every number in the physics, the recipe and the glow is on THIS clock.
+    static let choreographyLength: TimeInterval = 4.2
+    static let extraLength: TimeInterval = 0
+    /// How long a celebration is on screen.
+    static var everyConfirmLength: TimeInterval { choreographyLength + extraLength }
+    /// How fast the choreography plays against the wall clock.
+    static var pace: Double { choreographyLength / everyConfirmLength }
+
+    /// Where `burst` is in its choreography at `date`: wall-clock seconds since the Confirm, at `pace`.
+    static func choreographyTime(of burst: ConfirmCelebrationBurst, at date: Date) -> TimeInterval {
+        date.timeIntervalSince(burst.start) * pace
+    }
 
     /// How long a burst stays in the air.
     static func length(of burst: ConfirmCelebrationBurst) -> TimeInterval {
