@@ -1,9 +1,9 @@
-# Open items register — 2026-09-11 (twenty-third edition; F-ModernIOS-1-Policy LANDED — block 2's opener written, E gave the go-ahead)
+# Open items register — 2026-09-11 (twenty-fourth edition; F-ModernIOS-2-Celebration LANDED — waiting on E's two device verdicts)
 
-*Written at the close of block 1 of the modern-iOS pilot, by the fresh session the twenty-second
-edition queued. `F-ModernIOS-1-Policy` rewrote CLAUDE.md §7 and swapped one test. It is merged to
-`main` and **waiting on E's review. Block 2, `F-ModernIOS-2-Celebration`, is not cut until E has
-seen block 1** (the opener's order). Supersedes the twenty-two earlier editions.*
+*Written at the close of block 2 of the modern-iOS pilot, by the fresh session the twenty-third
+edition's opener queued. `F-ModernIOS-2-Celebration` is merged to `main` (PR #65), installed on E's
+phone, and **waiting on E's device verdicts: Reduce Motion ON closes the block, then a second look
+with it OFF.** Supersedes the twenty-three earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -13,239 +13,222 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ the `F-ModernIOS-1-Policy` merge (PR #63). The last APP-code change is still `d8b334b`**
-(PR #58, `F-FocusCard-4`). Block 1 changed CLAUDE.md, two test files and the app's marketing
-version, and no line the app target compiles.
-- **The modern-iOS pilot is HALF DONE:** block 1 is on `main`, and block 2 waits for E's review.
-  **E asked for block 2's opener, which is the go-ahead.** The live opener is now
-  **`handoff/START-HERE-modern-ios-celebration.md`**, written at the block-2 handoff. The pilot
-  opener it replaced is in `handoff/archive/`.
-- **Verified this session:** unit suite **2,663 / 0** (emulator UP, **0** `127.0.0.1:9099` hits,
-  0 skipped; the 2,663 → 2,663 prediction held), SwiftLint **0 / 739**, sim
-  `** BUILD SUCCEEDED **`, app target **26.68% (12,255/45,932)**.
+**`main` @ the `F-ModernIOS-2-Celebration` merge (PR #65).** It is the first APP-code change since
+`d8b334b` (`F-FocusCard-4`): `bfb1fa3` is the code, `da65027` corrects its comments to what the
+renders showed, `0f5624b` is the evidence and paperwork.
+- **The modern-iOS pilot is BUILT:** block 1 (the §7 policy) and block 2 (the celebration) are both
+  on `main`. Block 2 is not CLOSED until E's Reduce-Motion-ON verdict.
+- **The live opener is still `handoff/START-HERE-modern-ios-celebration.md`**, now headed by a status
+  line saying the block has landed and must not be rebuilt. It stays live until E's verdicts are in;
+  the session that records them archives it together with its successor.
+- **Verified this session:**
+  - unit suite **2,672 / 0** (emulator UP, **0** `127.0.0.1:9099` hits, 0 skipped). The baseline was
+    2,663 / 0 before any change, and the prediction 2,663 → 2,672 held.
+  - SwiftLint **0 / 742**
+  - sim `** BUILD SUCCEEDED **`; device `** BUILD SUCCEEDED **`
+  - app target **26.75% (12,309/46,014)**
 - `firestore.rules` untouched, so there is **nothing for E to republish**. Every `.xcresult` was
   deleted after its figures were read.
-- **No branch in flight:** `main` is the only branch on GitHub.
+- **No branch in flight** once #65's branch is deleted by the merge.
 
-**E's phone still runs `d8b334b` (installed 01:48 on 2026-09-11), which IS `main`'s app code.** It
-was not reinstalled because block 1 changed no app code. The only build-visible change on `main`
-since then is E's `MARKETING_VERSION` 1.2 → 1.3.
+**E's phone runs this block's app code**, installed and launch-verified at **07:02 BST on
+2026-09-11**, built from `0f5624b`. `main`'s app code at the merge is identical to that commit's
+(checked at close-out with `git diff 0f5624b main -- "ADHD LifeOS" FocusTimerWidget`, empty).
+Reduce Motion is still ON there, as E left it.
 
-**Coverage: app target 26.68% (12,255/45,932), byte-identical to block 5's figure.** This is the
-trivially comparable case: no app-target line moved, so neither did the numerator or the
-denominator. The test target moved because its files did (one test out, one in, one new file).
+**Coverage: app target 26.75% (12,309/46,014), and it IS comparable to block 1's 26.68%
+(12,255/45,932).** The denominator moved +82 because the tree grew (one new app file, and the view
+grew), not because the measurement's extent changed: both runs measured the whole app target. The
+numerator moved +54. The new pure file is **92.31% (36/39)**; its three uncovered lines are
+`burstAnimation`, moved unchanged from block 4 and reached only from the view's `onAppear`.
 
 ```
-ADHD LifeOS.app              26.68%  (12255/45932)  ← identical to block 5
-ADHD LifeOSTests.xctest      95.27%  (42130/44220)  ← was 95.30% (42100/44176)
+ADHD LifeOS.app              26.75%  (12309/46014)  ← was 26.68% (12255/45932)
+ADHD LifeOSTests.xctest      95.20%  (42362/44500)  ← was 95.27% (42130/44220)
 ADHD LifeOSUITests.xctest     0.00%  (0/2962)       ← skipped in the standard run by design
 FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testable surface, not this
 ```
 
 ### Landed this session
 
-- **E's `MARKETING_VERSION` 1.2 → 1.3** (`4052c52`, its own commit on the block-1 branch). E made
-  the edit in Xcode before the session and confirmed it in chat. Xcode also re-sorted the widget's
-  `membershipExceptions` list alphabetically, which changes nothing.
-- **`F-ModernIOS-1-Policy`** (`0e980e5`, PR #63). CLAUDE.md §7 is now "The iOS 16 floor, modern
-  APIs, and Reduce Motion":
-  - **7.1:** the best API per site, with a complete 16 branch beside it. *Degraded* sites always
-    have an `else`; *absent* is for whole features only; feedback is never absent.
-  - **7.2:** Reduce Motion fades and never removes feedback.
-  - **7.3:** compile-only by policy, plus the "Verified paths" report line.
-  - **7.4:** tests over two paths.
-  - **7.5:** the old skill-precedence section, extended to the `apple:*` / `apple-skills:*`
-    plugins, with `apple:modernize` explicitly barred from skipping the gate.
-  - **Touch-ups** in Architecture notes, §2, §3 and §5.
+- **`F-ModernIOS-2-Celebration`** (PR #65). The completion celebration now has three motion modes,
+  chosen by `FocusCompletionCelebrationMotion.resolve(reduceMotion:drawOnAvailable:)`, which decides
+  Reduce Motion BEFORE the tier:
+  - **`.full`**, below iOS 26 with RM off: block 4's burst, unchanged.
+  - **`.reduced`**, RM on, any OS: geometry pinned at rest (halo 1.6, tick 1), and only opacity
+    travels. It replaces the hard cut E lived with.
+  - **`.modern`**, iOS 26 with RM off: the tick draws itself on, via
+    `AsymmetricTransition(insertion: .symbolEffect(.drawOn), removal: .identity)` in its own
+    `@available(iOS 26.0, *)` type.
+  - **No iOS 17 tier**, per §7.1's filter: `.appear` is less than the spring and `.bounce` ignores
+    the landing delay.
 
-  `testTheCelebrationUsesNothingAboveTheiOS16Floor` is deleted.
-  `ModernAPIPolicyCallSiteTests.testTheHouseHapticHelperIsTheTwoBranchExemplar` is added. It reads
-  the gate, `.sensoryFeedback(`, `} else {` and `Haptics.play(feel)` **in order** inside
-  `haptic(_:trigger:)`, because `} else {` alone is the commonest line in Swift. **Red-checked** on
-  a committed tree: changing `} else {` to `} else  {` in `Theme/Haptics.swift` gave a full suite of
-  `Executed 2663 tests, with 1 failure`, and it was exactly that test. The file was restored with
-  `git checkout --` and the restore proved by the green rebuild.
+  The pure types moved to `Focus/FocusCompletionCelebrationPose.swift`. `init(plays:reduceMotion:)`
+  kept its signature, so the card, stack, overlay, service and `Theme/Haptics.swift` show NO diff
+  against `main`.
+- **Tests, first.**
+  - **Red #1, predicted in writing and observed exactly:** `Executed 2672 tests, with 16 failures`,
+    9 tests.
+  - **Three red-checks on a committed tree, each predicted by TEST NAME and observed exactly:**
+    - `} else {` → `} else  {`: 2,672 / 1, `testTheCelebrationCarriesBothTheModernAndTheFloorBranch`.
+    - `resolve` ignoring RM: 2,672 / 5, `testReduceMotionWinsOverEveryTier` (2) and
+      `testReduceMotionOpensWithGeometryAtRestAndOnlyOpacityToTravel` (3).
+    - `geometryPinned = true`: 2,672 / 3, `testTheArmedPoseHoldsTheRingAtTheRingAndTheCheckmarkSmall`
+      (2) and `testAPoseReadsItsRingOffTheCurve` (1).
+
+    Each was restored with `git checkout -- "ADHD LifeOS/"`; the final green run proved the last.
+- **Evidence:** `screenshots/focus-completion-celebration-modes/`, 14 JPEGs and a README with the
+  Verified paths line.
+- **Paperwork:** TODO ticked; one postscript row in `SESSION-OPENER-focus-card-design.md`; the
+  opener's status line.
 
 ### What this session established
 
-- **The 25-test gap is NOT tests that `xcodebuild` skips.** `ADHD LifeOSTests` defines exactly
-  **2,663** `func test…` and the run executed **2,663**, so every defined unit test runs. The gap is
-  not unit + UI either: the UI target defines 30, which would make 2,693. The bridge's 2,688 is its
-  own enumeration and could not be re-run, because **the `xcode` MCP server was down all session**
-  (Xcode was not running at session start, the documented trap). Re-check `GetTestList` the next
-  time the bridge is up. It is not a defect.
-- **The widget/app version mismatch is a live build warning on every build:**
-  `The CFBundleShortVersionString of an app extension ('1.0') must match that of its containing
-  parent app ('1.3')`. It was already 1.0 against 1.2 before E's bump. This is E's call (§A).
-  Confirm against an actual upload report before calling it a launch blocker.
+- **The iOS 26 draw-on does NOT wait for the landing transaction's 0.3s delay.** This was the plan's
+  named risk, and the render settles it. The stroke starts the moment the tick is inserted and is
+  complete in ~0.3s (a dot at t0.09, whole by t0.42), while the halo still waits and starts ~t0.51.
+  - In situ the draw is under way while the card is still arriving. **So on a phone with RM off the
+    tick draws during the slide-up**, the collision block 4's delay was added to prevent.
+  - Shipped as rendered, per the plan ("evidence it, don't fight it"), and the code's comments say
+    so. **The lever:** land `.modern` after `FocusCompletionCelebrationMetrics.delay`, not inside it.
+- **The reduced halo pinned at 1.6 is heavier inside the real card than in the plan's reasoning.**
+  At 1.6 the stroke scales too (4pt → 6.4pt). Measured off an in-situ render:
+  - **outer diameter 77.3pt against the card's 76.0pt**, so it overhangs the top and bottom border by
+    ~0.7pt each;
+  - **right edge 92.3pt against the summary column's 85.0pt**, so it runs ~7pt behind the emoji and
+    "25m";
+  - held at 80% opacity through the delay before it fades.
 
-### What writing block 2's opener established — two corrections to the approved plan
+  **A pin ≤ 1.25 clears the text** (right edge 83.8pt); 1.3 touches it. Not changed: E's lever.
+- **Both plan corrections resolved as the opener said.**
+  - The `AsymmetricTransition` form compiles and is what shipped.
+  - The red count depends on the assertion set, which this session changed: its string tests read
+    ORDER inside the tick site. They also pin `guard pose.isArmed else { return }` and ban
+    `pose == .armed`, because that old guard would have frozen the reduced opening for ever, halo up
+    and no tick.
+  - Red #1's string tests counted 3 tests / 6 failures, the plan's number, from a different
+    composition.
+- **The plan's bare-presence pin on `#available(iOS 26.0, *) {` was VACUOUS.** The view's own
+  `drawOnAvailable` flag (the `placesSupported` shape) contains that exact string on a line that
+  draws nothing. Same lesson as block 1's `} else {`: read order inside a scoped region.
+- **SwiftLint's `type_name` ceiling is 40 characters.** The plan's
+  `FocusCompletionCelebrationModernPathCallSiteTests` (49) failed lint, so the class is
+  `FocusCelebrationModernPathCallSiteTests`.
+- **The app target's `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` makes every pure app type's
+  `Equatable` main-actor-isolated.** A non-`@MainActor` test class comparing them raises
+  "main actor-isolated conformance … cannot be used in nonisolated context".
+  - `FocusCompletionCelebrationTests` carried 5 such warnings before this block.
+  - `@MainActor` on the class (92 test files already do it) cleared those and the 3 the new tests
+    would have added.
+  - The test target still carries ~665 unique warnings at baseline: known noise, not this block's.
+- **`Animation` equality is reliable at runtime** on this toolchain.
+  `.spring(response: 0.4, dampingFraction: 0.6).delay(0.3)` built twice compares equal, so an
+  animation choice is assertable directly.
+- **A nested insertion transition does NOT replay when its parent is rebuilt or revealed.** On a
+  second push the new front card draws on and the old one keeps its tick; on Confirm the revealed
+  card arrives already ticked, with no draw-off on the leaving one.
+- **Reduce Motion in situ can be rendered by a ONE-RUN temporary edit** (force `reduceMotion: true`
+  into `resolve`), restored with `git checkout --` and proved by the next build. It is the §7.2 gap
+  the environment cannot fill. The overlay still animates the arrival in that render, so it shows
+  the celebration, not E's cut arrival.
+- **`xcodebuild` prints "Executed 1 test" (singular)** for a one-test run, so a grep for `tests`
+  misses it. Read the exit code.
 
-- **The plan's `.modern` tick expression does not compile.** The plan writes
-  `.transition(.asymmetric(insertion: .symbolEffect(.drawOn), removal: .identity))`. In the 26.5 SDK,
-  `asymmetric(insertion:removal:)` exists only on `AnyTransition`, while SwiftUI's `symbolEffect`
-  transition is a `Transition`-protocol type (`SymbolEffectTransition`).
-  - **The probe:** `swiftc -typecheck` at `-target arm64-apple-ios16.0-simulator`, with the tick
-    inside an `@available(iOS 26.0, *)` struct.
-  - **The plan's form:** exit 1, `type 'AnyTransition' has no member 'symbolEffect'`.
-  - **`AsymmetricTransition(insertion: .symbolEffect(.drawOn), removal: .identity)`:** exit 0.
-  - **`.asymmetric(insertion: AnyTransition(.symbolEffect(.drawOn)), removal: .identity)`:** exit 0.
+### How the Reduce Motion story got here (2026-09-11, carried in brief)
 
-  The opener prescribes the `AsymmetricTransition` form. The design is unchanged.
-- **The red prediction "3 tests / 6 failures" is 5 failures for the assertion set as listed.** Two
-  of `testTheFloorPathIsStillTheTwoBeatBurst`'s three forms are already present in today's file.
-  The count is 6 only if that test also bans the old
-  `withAnimation(FocusCompletionCelebrationMetrics.checkmarkAnimation) {`. The building session
-  decides the set and predicts before running. The suite prediction 2,663 → 2,672 is unaffected.
+E's phone runs **Reduce Motion ON (and Prefer Cross-Fade Transitions ON)**, read off the phone via
+iPhone Mirroring, read-only. Every RM gate in the bottom furniture was `reduceMotion ? nil : …`, so
+block 4's burst never once played for E: E saw a hard cut plus the haptic. This was a product gap,
+not a code defect. E's decisions produced CLAUDE.md §7 (block 1) and this block's ladder. The haptic
+fires under RM, as it always did.
 
-### What the planning session established — the Reduce Motion root cause (2026-09-11) (carried)
+### What block 4 established (carried)
 
-- **E's phone runs Reduce Motion ON (and Prefer Cross-Fade Transitions ON).** This was read off the
-  phone via iPhone Mirroring, read-only. Every animation in the bottom furniture is
-  `reduceMotion ? nil : …`, and the celebration opens on its settled pose under RM, exactly as the
-  design record specified. So **the block-4 burst has never once played on E's phone.** E saw a
-  hard cut plus the success haptic, which does fire under RM.
-- **This is not a code defect.** The celebration renders correctly in the simulator, both in
-  isolation AND in situ through the real overlay + service. It is a product gap: Apple's guidance
-  under RM is to replace motion with a fade, not remove feedback, and this app removes it (19 of
-  its 20 RM-guarded sites are `nil`; the one fade is `Capture/CaptureFanOverlay.swift:89-96`).
-  **CLAUDE.md §7.2 now says so.**
-- **E's decisions, settled:**
-  - RM gets a cross-fade celebration.
-  - Progressive enhancement across every tier that adds value above the 16.0 floor.
-  - Fallback proof is compile-only for now, documented (§7.3).
-  - Policy first (landed), then the celebration as the pilot.
-  - A fresh session builds.
-  - The tick's ladder is 16 spring / RM fade / **iOS 26 `.drawOn`**, with no 17 tier.
-- **`.drawOn`/`.drawOff` are `@available(iOS 26.0)`** in the 26.5 SDK's swiftinterfaces, and E's
-  phone is on 26, so it is a tier E can see. `SymbolEffectOptions` has no RM option: symbol effects
-  do not self-gate, so RM must be resolved before the tier.
-- **What "compile-only" means, precisely:** the 16 branch's CODE runs on the 26.5 simulator
-  whenever the motion mode is injected as `.full`. What cannot be exercised is its *selection* on a
-  16–25 OS. Report per tier, and never write "works on iOS 16".
-- **Harness lessons:**
-  - An `async` XCTest pumping `RunLoop.main` cannot drain the queue SwiftUI's updates land on. The
-    in-situ frames froze mid-transition until the probe became a synchronous test driving
-    `finishCurrentSprint` → pump → `pushUnconfirmedCompletion`.
-  - The block-4 render was the card in isolation. The first in-situ render came only when E
-    reported the gap.
+- **`drawHierarchy(afterScreenUpdates: false)` from a test host renders BLANK WHITE.** Use `true` and
+  a scene-attached `UIWindow`. It captures in-flight SwiftUI animation frames.
+- **`accessibilityReduceMotion` is not writable via `.environment(\.)`** (now §7.2).
+- **A listener on a view inserted in the same update that changes its trigger misses that change.**
+- **`FocusSessionService.swift` is at 394/400.**
 
-### What block 4 established, beyond the animation (carried)
+### What the peek work established (2026-09-10) (carried)
 
-- **`drawHierarchy(afterScreenUpdates: false)` from a test host renders BLANK WHITE.** Use `true`
-  and a scene-attached `UIWindow`. It then captures in-flight SwiftUI animation frames, so motion
-  can be evidenced by render too.
-- **`accessibilityReduceMotion` is not writable via `.environment(\.)`.** Render the leaf with the
-  flag as a parameter, and hold the parent's pass-through with a call-site test (now §7.2).
-- **A listener on a view inserted in the same update that changes its trigger misses that
-  change.** The haptic lives on the persistent overlay for exactly this reason.
-- **`FocusSessionService.swift` is at 394/400** after moving two accessors out.
-
-### What the peek work established (2026-09-10), and it is worth more than the constant (carried)
-
-- **The lever ordering this register carried was BACKWARDS.** It named `opacityStep` the blunt
-  instrument, but opacity moves the keyline only **1.30:1 → 1.35:1**, which is invisible, because
-  the layer behind already draws at 0.85.
-  - **What the eye reads is the sliver's HEIGHT**, so `peekStep` is the lever.
-  - `scaleStep` 0.10 actually *lowers* keyline contrast to 1.21:1, dropping more of the line onto
-    the corner curve.
-  - **A contrast ratio answers whether an edge can be DISTINGUISHED, never whether anyone will
-    NOTICE it.** Render the options before ranking levers.
-- **`peekStep = 14` is the app's ONLY sanctioned off-grid spacing value.** §2 is 4/8/16/24; E was
-  offered the on-grid 16 explicitly and chose the value they had approved by sight. The waiver is
-  written into **`CLAUDE.md` §2** and pinned by `testThePeekStepIsTheValueEChoseByLooking`.
-  **Do not "correct" it.**
+- **What the eye reads is a sliver's HEIGHT, not its contrast.** Render the options before ranking
+  levers.
+- **`peekStep = 14` is the app's ONLY sanctioned off-grid spacing value**, waived in CLAUDE.md §2 and
+  pinned by `testThePeekStepIsTheValueEChoseByLooking`. **Do not "correct" it.**
 
 ## A · Decisions only E can make — minutes each
 
-- [x] **E's review of `F-ModernIOS-1-Policy`** (PR #63, merged). E's answer to the block-1 report
-      was to ask for block 2's opener, which is the go-ahead. No change to §7 was requested. (DONE
+- [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.** The
+      phone already has the build and RM is still on. Finish a short sprint and expect:
+      - a CUT arrival;
+      - a bold green halo around the ring;
+      - after ~0.3s, the tick fading in as the halo fades out;
+      - nothing scaling, no stroke drawing, the haptic as before.
+
+      Evidence lands as `40-…` in the evidence folder. (NEW)
+- [ ] **E's second look with Reduce Motion OFF.** Expect the card to slide up with the tick drawing
+      itself on DURING the slide, then the halo radiating once it has landed. The early draw is the
+      finding above: judge whether it reads as one gesture or as a collision. Evidence: `50-…`. (NEW)
+- [ ] **The reduced halo's pinned scale: keep 1.6, or go smaller?** The frame to look at is
+      `screenshots/focus-completion-celebration-modes/34-…`. At 1.6 the halo overhangs the card by
+      ~0.7pt and runs ~7pt behind the text; ≤ 1.25 clears the text. Renders of the options are one
+      probe run away if wanted. (NEW)
+- [ ] **Install an older simulator runtime** via Xcode → Settings → Components. iOS 17.x proves the
+      17 gates select and 16.x proves the floor. It is ~7 GB on the external SSD and **E's GUI job**.
+      Until then every `#available` fallback is compile-only by policy (§7.3). (carried; asked
       2026-09-11)
-- [ ] **Install an older simulator runtime** via Xcode → Settings → Components. iOS 17.x proves
-      the 17 gates select and 16.x proves the floor. It is ~7 GB on the external SSD and **E's GUI
-      job** per the manual-step convention. Until then every `#available` fallback in the app is
-      compile-only **by policy (CLAUDE.md §7.3, now landed), not by oversight.** Asked at block 1's
-      stop, which is the natural break the last edition named. (carried; asked 2026-09-11)
-- [ ] **The widget extension's `MARKETING_VERSION` is 1.0; the app's is 1.3.** Xcode warns on
-      every build (see "established" above). Match them or leave it: version numbers are E's.
-      (NEW)
-- [ ] **Do the collapsed card's square BOTTOM corners still earn their keep?** (carried) A "look
-      again next time you are in there", not a defect.
+- [ ] **The widget extension's `MARKETING_VERSION` is 1.0; the app's is 1.3.** Xcode warns on every
+      build. Version numbers are E's. (carried)
+- [ ] **Do the collapsed card's square BOTTOM corners still earn their keep?** A "look again next
+      time you are in there", not a defect. (carried)
 - [ ] **Should the widget's view-only files be made testable at all?** Recommendation is still to
       leave it. (carried)
-- [ ] **E's SECOND change — still not described.** Ask once the arc reaches a natural stopping
-      point. (carried; E's *first* change was the focus card arc.)
+- [ ] **E's SECOND change — still not described.** Ask once the pilot reaches its stopping point.
+      (carried)
 
 ## B · Real work, ready to start — recommended order
 
-**0. `F-ModernIOS-2-Celebration`: the pilot's second block, NEXT, once E has reviewed block 1.**
-   - **Where it is specified:** the live opener, **`handoff/START-HERE-modern-ios-celebration.md`**.
-     It carries E's approved plan's block-2 sections verbatim, plus two corrections found by
-     checking the plan against the tree (see "established" above).
-   - **Branch:** `feature/modern-ios-celebration` off `main`. Block 1 is on `main`, so the order
-     holds.
-   - **The design:** three motion modes (`.full` 16 spring unchanged / `.reduced` RM cross-fade /
-     `.modern` iOS 26 draw-on), with the pure types split to
-     `FocusCompletionCelebrationPose.swift`.
-   - **Tests first:** the string tests are predicted red at 3 tests / 6 failures, and the suite
-     goes 2,663 → 2,672.
-   - **Evidence:** rendered in all three modes + in situ.
-   - **Closes on E's phone with RM ON**; RM OFF is a second look.
-   - **Now binding:** every report carries §7.3's "Verified paths" line.
-
-**0b. Follow-ups the pilot deliberately leaves out — pick up only after E's verdict:**
-   - **RM arrival fade for the bottom furniture** (`RootBottomOverlay`'s three nil animations +
-     the card's unconditional `.move + .opacity` transition), only if E likes the pilot's
-     cross-fade. The reflow must NOT tween under RM, so the card's transition would split.
+**0. Follow-ups to the pilot — pick up only after E's verdicts, and only what E asks for:**
+   - **The draw-on's timing**, if E's RM-OFF look says the tick should wait for the card: land
+     `.modern` after `delay`, not inside it. A small change to the view's `onAppear` plus its
+     call-site pin, then a re-render.
+   - **The reduced halo's pinned scale**, if E picks a smaller value. It needs its own constant
+     beside `burstScaleEnd`, the two pure tests that read `burstScaleEnd` for the reduced pose, and a
+     re-render in the card.
+   - **RM arrival fade for the bottom furniture** (`RootBottomOverlay`'s three nil animations + the
+     card's unconditional `.move + .opacity` transition), only if E likes the cross-fade. The
+     reflow must NOT tween under RM, so the card's transition would split. (carried)
    - **The modern-API inventory, register-only until each is a block.** `apple:modernize`'s
-     suggestions land here too, per §7.5.
-     - **Free at 16.0:** `.contentTransition(.numericText(countsDown: true))` on the sprint
-       countdown (`FocusTimerBarContent.swift:194`) and ~20 `.monospacedDigit()` counters;
+     suggestions land here too, per §7.5. (carried)
+     - **Free at 16.0:** `.contentTransition(.numericText(countsDown: true))` on the sprint countdown
+       (`FocusTimerBarContent.swift:194`) and ~20 `.monospacedDigit()` counters;
        `.presentationBackground` (16.4) on three sheets.
-     - **Needs 17:**
-       - `ContentUnavailableView` in `TaskListView`, `CaptureInboxView`, `TagEditorListView` and
-         `TaskSearchSurface`.
-       - `.contentTransition(.symbolEffect(.replace))` for pause/play and the disclosure
-         chevrons.
-       - Interactive Home Screen widgets (`Button(intent:)`) and step check-off on the routine
-         Live Activity.
-       - The `@Observable` migration (27 classes).
-       - TipKit for the card's undiscoverable gestures.
+     - **Needs 17:** `ContentUnavailableView` in four empty states;
+       `.contentTransition(.symbolEffect(.replace))` for pause/play and the chevrons; interactive
+       widgets (`Button(intent:)`) and routine Live Activity check-off; the `@Observable` migration
+       (27 classes); TipKit for the card's gestures.
      - **Needs 18/26:** `Tab`/`.tabBarMinimizeBehavior` and `.glassEffect`, both constrained by the
-       custom `AppTabBar` (adoption means replacing it, not augmenting it).
+       custom `AppTabBar` (adoption means replacing it).
    - **Two RM sites that remove the press affordance entirely** (`AppTabBar.swift:266`,
      `AppSearchRow.swift:71`), and `RootView.swift:63`'s declared-but-unread `reduceMotion` beside
-     two unguarded animations. These are §7.2's first sweep candidates.
+     two unguarded animations. §7.2's first sweep candidates. (carried)
 
-   The focus card design record (`handoff/SESSION-OPENER-focus-card-design.md`, permanent) opens
-   with a postscript table of everything that shipped against it; block 2 adds one row.
+1. **E's one un-run device check: airplane mode + pull-to-refresh on Home.** `F-HomeTasksLastKnown`
+   (`8b5f740`) should keep the last-known task set rather than emptying it. (carried)
 
-1. **E's one un-run device check: airplane mode + pull-to-refresh on Home.**
-   `F-HomeTasksLastKnown` (`8b5f740`) should keep the last-known task set rather than emptying it.
-   This is unrelated to the focus card. E ran checks 1–3 on 2026-09-11 with nothing reported wrong:
-   Confirm doesn't reopen a collapsed card, a tap opens the detail, and `F-TabBar-NoScrollDrop`.
-   (carried)
-
-2. **Small defects in the card, none blocking:**
-   - **`FocusBarCardShape.roundsBottomCorners` is a `Bool` with no `animatableData`**, so the
-     corner morph SNAPS inside the 350ms spring while the inset, offset and padding all tween.
-     Fixing it means a `CGFloat` bottom radius and per-corner arcs. (carried)
+2. **Small defects in the card, none blocking:** (carried)
+   - **`FocusBarCardShape.roundsBottomCorners` is a `Bool` with no `animatableData`**, so the corner
+     morph SNAPS inside the 350ms spring.
    - **The card's `.accessibilityAction(named:)` may attach to nothing.** It wants an Accessibility
-     Inspector pass: this bar is the app's only door to `FocusSprintDetailView`. (carried)
-   - **`FocusTimerBarContent` has no `#Preview` of its own**, unlike the other content-split
-     files. (carried)
-   - **A slow location fix delays the completion CARD, not just the write.** Correct as built, but
-     worth knowing if E ever reports the card appearing late. (carried)
-   - **The stack has no UI journey** and probably cannot have a useful one. The evidence is the
-     render plus E's device shots, which is what the design record anticipated. (carried)
+     Inspector pass: this bar is the app's only door to `FocusSprintDetailView`.
+   - **`FocusTimerBarContent` has no `#Preview` of its own.**
+   - **A slow location fix delays the completion CARD, not just the write.**
+   - **The stack has no UI journey** and probably cannot have a useful one.
 
-3. **Two more dead design tokens, and two dead helpers.**
-   - `BarSurface` is a colorset that is defined and unit-tested, and used by nothing.
-   - `AppTabBarPresentation.slotWidth` / `restingSlotWidth` have ZERO production call sites and
-     **disagree about their input**.
-
-   (carried)
-
+3. **Two more dead design tokens, and two dead helpers.** `BarSurface` is defined, unit-tested and
+   used by nothing; `AppTabBarPresentation.slotWidth` / `restingSlotWidth` have ZERO production call
+   sites and **disagree about their input**. (carried)
 4. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops after #32.**
    (carried)
 5. **Arc 2 — first-class routines + the "at a time" trigger.** (carried)
@@ -257,10 +240,9 @@ FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testab
 - **Places backgrounding dismiss bug** — waiting on E's iOS update. (carried)
 - **App connections** — real two-way sync; Apple Notes has no iOS API. (carried)
 - **LA interactive buttons**, **time-of-day triggers**, **smart skip**. (carried)
-- **`OfflineSprintSummaryCard`** — E ruled it out of this arc explicitly. The collision is real
-  and documented, not fixed: it shares `RootBottomOverlay`'s VStack with the completion stack. So
-  an old unacknowledged app-was-dead completion and a new unconfirmed sprint can be on screen
-  together in two different visual languages. `F-FocusCard-5` records it. (carried)
+- **`OfflineSprintSummaryCard`** — E ruled it out of the focus-card arc explicitly. It shares
+  `RootBottomOverlay`'s VStack with the completion stack, so two visual languages can be on screen
+  together. `F-FocusCard-5` records it. (carried)
 
 ## D · Launch blockers — no conversation opened yet
 
@@ -269,34 +251,26 @@ FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testab
 
 ## E · Known, not work
 
-- **Xcode's MCP bridge (`xcrun mcpbridge`, server `xcode`) is documented in CLAUDE.md under
-  Commands, and it was DOWN this whole session.** The connection closed at startup because Xcode
-  was not running: open Xcode BEFORE the session. Its `GetTestList` count of 2,688 against 2,663
-  executed is reconciled as far as it can be without the bridge: every defined unit test runs, and
-  unit + UI would be 2,693, so 2,688 is the bridge's own enumeration. (updated)
-- **A green suite cannot see a `View`'s appearance, and the focus card arc proved it four times.**
-  - Block 1's `layoutPriority` compression reached E's device.
-  - Block 2's was caught by a render.
-  - Block 3's was the cards behind **ghosting through `.regularMaterial`**.
-  - The peek's own quietness was invisible to every layout assertion, all of which held.
-
-  **Render the view to PNG from a unit test before the device build:** `UIHostingController` +
-  `UIGraphicsImageRenderer` + `drawHierarchy`, `overrideUserInterfaceStyle` for dark, hosted in a
-  `UIWindow` with the run loop pumped briefly. It costs a minute and needs no signed-in simulator.
-  **To vary a `static let` constant across variants, make it `var` for ONE run, then
-  `git checkout --` and prove the restore with a full build.** (carried)
+- **Xcode's MCP bridge (`xcrun mcpbridge`, server `xcode`) was DOWN again this session**
+  (CONNECTION_CLOSED at startup). Open Xcode BEFORE the session. Every figure above is pasted
+  `xcodebuild` output, which is the bar either way. The bridge's 2,688-vs-2,663 enumeration question
+  is still unchecked. (updated)
+- **A green suite cannot see a `View`'s appearance, and this block proved it twice more.** Neither
+  the draw-on's timing nor the reduced halo's collision with the card is visible to any assertion
+  that holds.
+  - **Render the view to PNG from a unit test before the device build:** `UIHostingController` +
+    `UIGraphicsImageRenderer` + `drawHierarchy(afterScreenUpdates: true)` in a scene-attached
+    `UIWindow`, a synchronous test pumping `RunLoop.main`.
+  - **Render IN SITU, not just the leaf:** the halo's collision exists only against the card's real
+    edges and text.
+  - The probe from this block is kept outside the repo in that session's scratchpad; rebuild it from
+    the evidence README's description if needed. (updated)
 - **`Executed N tests, with M failures` counts failed ASSERTIONS, not failing TESTS.** Predict in
   TESTS, then reconcile. Names: `grep -oE "Test Case .*' failed" <log> | sort -u`. (carried)
-- **SwiftLint's 400-line file and 250-line `type_body_length` ceilings are one TEST away.** The
-  fix is a thematic file split with its own `private` doubles. (carried)
+- **SwiftLint's 400-line file, 250-line `type_body_length` and 40-character `type_name` ceilings.**
+  The first two are one TEST away in the big files; the third bit a test class name this block.
+  (updated)
 - **A `devicectl` launch denied with `Security` / "invalid code signature… not explicitly trusted"
-  right after a re-issued profile is TRANSIENT — retry once before escalating to E.** It reads
-  exactly like the free-account provisioning blocker. Check the embedded profile's
-  `ExpirationDate` against `date` and run `codesign --verify --deep --strict`: valid and freshly
-  minted means retry, not E. Three species share that one error surface, separated only by the
-  failure reason:
-  - `Locked`: unlock the phone.
-  - `Security` + a valid profile: retry.
-  - `Security` + an expired profile or "No Accounts": E signs in via Xcode → Settings → Accounts.
-
-  (carried)
+  right after a re-issued profile is TRANSIENT — retry once before escalating to E.** The three
+  species: `Locked` (unlock), `Security` + valid profile (retry), `Security` + expired profile or
+  "No Accounts" (E signs in via Xcode → Settings → Accounts). (carried)
