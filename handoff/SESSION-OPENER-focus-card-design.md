@@ -8,6 +8,29 @@ in it. The arc is `F-FocusCard-1` … `F-FocusCard-5`.*
 **Everything in "The settled specification" was answered directly by E. Do not re-litigate any of
 it without E.** Where a line says "E chose", E was shown the alternatives and picked.
 
+## Postscript — what shipped differently (added at the arc's close, 2026-09-11)
+
+The arc is CLOSED: all five blocks merged, blocks 1–4 each verified by E on device. **Blocks 1–4
+each moved against the specification below, always on E's word and always by looking at the
+device.** Read the specification with this table beside it; the specification stays as written
+because it is the record of what was asked, and this is the record of what was chosen instead.
+
+| the record says | what actually shipped | who / when |
+|---|---|---|
+| collapsed card full-bleed to both screen edges | **inset 16pt** (361pt wide), 60pt tall — same inset as expanded, so collapsing changes height only | E, device, 2026-09-09 |
+| collapsed card has a chevron | **gone** collapsed; kept expanded | E, 2026-09-09 |
+| long-press opens the detail sheet | **single TAP**, in both states; long-press RETIRED | E, 2026-09-09 |
+| completion card shares the "full-bleed flush geometry" | **it floats** — inset 16, radius 24, all four corners, 76pt tall | E chose from three, 2026-09-09 |
+| Confirm resets collapse | **only when NO sprint is running** | E chose from three rules, 2026-09-09 |
+| the stack's peek is 8pt | **14pt** — deliberately OFF §2's grid; CLAUDE.md §2 carries the waiver | E chose from six renders, 2026-09-10 |
+| celebration tick is `checkmark.circle.fill` | the ring's existing bare `checkmark`, springing from 0.6 — so the resting card stays the block-2 card E approved | Claude Code, E accepted on device 2026-09-11 |
+| (unstated) | the burst and haptic wait **0.3s** for the card to land; the pre-beat is a complete ring with no tick | E: "the pre-beat reads fine", 2026-09-11 |
+
+Two names in block 4's section below did not exist when it was written and were created as
+specified: `confirmableCompletionCount` (the haptic's trigger) and, beside it, the record id the
+burst keys on — both derived from one stamp, `latestConfirmableCompletion`, written by the push
+alone.
+
 ---
 
 ## What prompted it

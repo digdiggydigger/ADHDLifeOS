@@ -9,6 +9,13 @@ import SwiftUI
 /// 2026-08-25): on relaunch the progress must be SEEN, not silently filed into history. Same
 /// green-washed v3 language as the closure celebration, shown above the timer bar's slot until
 /// acknowledged — and it survives further relaunches until then.
+///
+/// **Not the completion card, and deliberately not unified with it.** `FocusCompletionCard` (the
+/// F-FocusCard arc) is the LIVE path: a sprint that ends while the app is running. This is the
+/// app-was-dead path only, reached from `restorePersistedSprint()`, with its own UserDefaults key
+/// (`unacknowledgedCompletion`) and its own published property; there is no migration between
+/// the two. E kept them separate on 2026-09-09. The two can co-exist in `RootBottomOverlay`'s
+/// column — see the note there — which is documented and unfixed by decision.
 struct OfflineSprintSummaryCard: View {
     let record: CompletedFocusSession
     let onAcknowledge: () -> Void
