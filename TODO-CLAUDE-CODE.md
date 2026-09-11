@@ -3604,7 +3604,7 @@ question and by rendered prototype; every decision, number and constraint is in
 `screenshots/confirm-celebration-prototypes/`. E's review: "R1, R2, R9 (a+b) = Approved"; R3–R8
 stand as defaults. Two blocks, strictly in order, each closing on E's device verdict.*
 
-### FEATURE: F-ConfirmCelebration-1 — the engine, the trigger, and every Confirm's confetti + glow + haptic  [ ] OPEN
+### FEATURE: F-ConfirmCelebration-1 — the engine, the trigger, and every Confirm's confetti + glow + haptic  [x] COMPLETED
 
 - **Room first, own commit:** `FocusSessionService.swift` (394/400) moves methods out to an extension
   file; `RootView.swift` (399/400) moves `startFocus` to `RootView+Doors`.
@@ -3622,6 +3622,36 @@ stand as defaults. Two blocks, strictly in order, each closing on E's device ver
 - **§7.2 waiver** written into CLAUDE.md with a pinning call-site test.
 - Test-first with a predicted red; red-checks on a committed tree; in-situ renders light + dark;
   device verdict (Reduce Motion ON, which the waiver makes identical to OFF).
+
+**Completed 2026-09-11 on `feature/confirm-celebration`** (`281e151` room, `7f0326a` red, `9314a13`
+green). Built as specified. New files:
+- `Focus/ConfettiPhysics.swift`
+- `Focus/ConfirmCelebrationRecipe.swift`
+- `Focus/ConfirmCelebrationOverlay.swift`
+- `Focus/FocusSessionService+Notifications.swift`
+
+**Tests:** 35 new, in `ConfettiPhysicsTests`, `ConfettiRecipeTests`, `ConfirmCelebrationTimingTests`,
+`FocusConfirmationStampTests` and `ConfirmCelebrationCallSiteTests`.
+
+**Red #1, predicted in writing per test and observed exactly:** `Executed 2708 tests, with 46
+failures (4 unexpected)`, 32 tests.
+
+**Red-checks on the committed tree, each predicted by test name and observed exactly:**
+- the in-stack guard dropped + the cap removed → 2,708 / 3
+  (`testConfirmingACardThatIsNotWaitingCelebratesNothing` 2, `testAFourthQuickConfirmDropsTheOldestBurst` 1);
+- the stamp moved below `await log` + `allowsHitTesting(false)` removed → 2,708 / 2
+  (`testTheConfirmationStampLandsBeforeTheLogAwait`, `testTheLayerNeverTakesATapAndIsNeverReadOut`).
+
+**Final green:** 2,708 / 0 (emulator UP, 0 `9099`); lint 0 / 751; sim and device builds succeeded;
+app 26.87% (12,470/46,405).
+
+**Renders** (`screenshots/confirm-celebration-block-1/`):
+- a real `confirmCompletion` sets the celebration off through the real overlay on the real clock,
+  two quick Confirms overlap, and everything is pixel-identical to a never-celebrated window once
+  it lands;
+- ordinal 1's 220 pieces are field-for-field the prototype E chose from.
+
+On E's phone 09:54 BST. **Closes on E's device verdict.**
 
 ### FEATURE: F-ConfirmCelebration-2 — the stack-clearing fireworks and the light-mode dim  [ ] OPEN
 

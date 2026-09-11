@@ -1,15 +1,14 @@
-# Open items register — 2026-09-11 (twenty-sixth edition; Confirm-celebration design record APPROVED by E)
+# Open items register — 2026-09-11 (twenty-seventh edition; F-ConfirmCelebration-1 BUILT and on E's phone, awaiting E's verdict)
 
-*Written the same session as the twenty-fourth and twenty-fifth. E answered that edition's verdict
-request with two asks:
-- "Can you make the animations longer?" — done in PR #66;
-- a full-screen celebration on Confirm, "possibly confetti?".
+*Written the same session as the twenty-fourth to twenty-sixth. Since the twenty-sixth:
+- E approved the Confirm-celebration record: **"R1, R2, R9 (a+b) = Approved"** (PR #67);
+- E named the celebration fades: **"make the halo fade 2.1s and the tick fade 1.1s"** (PR #68);
+- **`F-ConfirmCelebration-1` is built** — every Confirm's confetti, glow and haptic — and
+  installed on E's phone at 09:54 BST.
 
-**All eight of E's decisions on the celebration are now taken, and the design record is written:**
-`handoff/SESSION-OPENER-confirm-celebration-design.md` (PR #67). **E approved it: "R1, R2, R9
-(a+b) = Approved."** It is not built yet. Block 2
-is still **waiting on E's Reduce-Motion-ON verdict**, on the longer build. Supersedes the
-twenty-five earlier editions.*
+**Two device verdicts are open, and ONE sprint gives both** (see A). Block 2 of the celebration
+arc (fireworks + dim) is not started until E's verdict on block 1. Supersedes the twenty-six
+earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -46,13 +45,23 @@ renders showed, `0f5624b` is the evidence and paperwork.
   - app target **26.75% (12,309/46,014)**
 - `firestore.rules` untouched, so there is **nothing for E to republish**. Every `.xcresult` was
   deleted after its figures were read.
-- **No branch in flight once the fade-lengths PR merges.** #67 was the design record and its
-  prototype evidence, held open for E's review and merged on E's approval; no app code was on it.
-  Every branch was deleted by its merge.
+- **`F-ConfirmCelebration-1` (this edition's block), on `feature/confirm-celebration`:**
+  - room made (`281e151`): the notification pair moved to `+Notifications`, and `startFocus` to
+    `RootView+Doors`;
+  - red (`7f0326a`) predicted per test and observed exactly: 2,708 / 46 (4 unexpected), 32 tests;
+  - green (`9314a13`), with two paired red-checks, each exact (2,708 / 3 and 2,708 / 2).
+- **Verified for that block:**
+  - suite **2,708 / 0** (emulator UP, 0 `9099`);
+  - SwiftLint **0 / 751**;
+  - sim and device `** BUILD SUCCEEDED **`;
+  - app target **26.87% (12,470/46,405)**. Comparable to #65's 26.75%: the tree grew and both runs
+    measured the whole target. The new pure files are at 97–100%; `ConfirmCelebrationOverlay` is
+    0/217, a view body and UI territory, and the render probe is what exercises it.
+- **No branch in flight once that PR merges.** #67 was the design record; #68 the fade lengths.
 
-**E's phone runs `40a70e4`'s app code**, installed and launch-verified at **09:06 BST on
-2026-09-11**. Its merge to `main` adds no app code. (Before that: 07:32 from #66, and 07:02 from
-`0f5624b`.) Reduce Motion is still ON there, as E left it. (carried)
+**E's phone runs `9314a13`'s app code (F-ConfirmCelebration-1, with the 2.1s / 1.1s fades)**, installed and launch-verified at **09:54 BST on
+2026-09-11**. Its merge to `main` adds no app code. (Before that: 09:06 from `40a70e4`, 07:32 from
+#66, and 07:02 from `0f5624b`.) Reduce Motion is still ON there, as E left it. (carried)
 
 **Coverage: app target 26.75% (12,309/46,014), and it IS comparable to block 1's 26.68%
 (12,255/45,932).** The denominator moved +82 because the tree grew (one new app file, and the view
@@ -177,6 +186,29 @@ fires under RM, as it always did.
 
 ## A · Decisions only E can make — minutes each
 
+- [ ] **ONE short sprint gives BOTH open device verdicts** (the phone has everything as of 09:54 BST;
+      Reduce Motion stays ON, as E has it):
+      1. **When the sprint finishes → `F-ModernIOS-2-Celebration`'s Reduce-Motion-ON verdict.**
+         Expect a CUT arrival, a bold green halo fading over 2.1s, the tick fading in over 1.1s
+         after ~0.3s, nothing scaling, and the success haptic.
+      2. **Tap Confirm → `F-ConfirmCelebration-1`'s verdict.** Expect:
+         - the card leaves;
+         - the success haptic;
+         - a green glow swelling from the bottom;
+         - confetti raining from the top AND fired from both bottom corners at once, falling over
+           the tab bar for ~4s and gone by ~4.2s;
+         - taps still working underneath.
+
+         With two cards waiting, each Confirm fires its own celebration, and they overlap. Worth an
+         eye: whether it stutters on the phone (the prototypes were rendered offline, so this is
+         the first real-time run), and whether the glow reads in light. Evidence lands as `40-…`
+         in `screenshots/confirm-celebration-block-1/`. (NEW)
+
+      **R3–R8 shipped as the record's defaults**, since E approved only R1, R2 and R9: one overlay
+      in `RootView`; the haptic on the overlay; a fresh seed per Confirm; the glow in both
+      appearances; the card's dismissal unchanged; no VoiceOver announcement. Any of them is E's to
+      change at this verdict.
+
 - [x] **Review the Confirm-celebration design record — DONE.** E, verbatim: **"R1, R2, R9 (a+b) =
       Approved."**
       - R1 (overlap, capped at 3), R2 (a second service stamp) and both of R9's blocks are E's
@@ -184,15 +216,10 @@ fires under RM, as it always did.
       - R3–R8 went unmentioned and stand as the build's defaults. The record says so.
 
       Merged as PR #67. (NEW)
-- [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.** The
-      phone has E's NAMED lengths (09:06 BST): halo fades over 2.1s, tick over 1.1s. Finish a short
-      sprint and expect:
-      - a CUT arrival;
-      - a bold green halo around the ring;
-      - after ~0.3s, the tick fading in as the halo fades out;
-      - nothing scaling, no stroke drawing, the haptic as before.
-
-      Evidence lands as `40-…` in the evidence folder. (NEW)
+- [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.**
+      Folded into the one-sprint item at the top of this section (its step 1), which carries what to
+      expect. Its evidence still lands as `40-…` in `screenshots/focus-completion-celebration-modes/`.
+      (NEW)
 - [ ] **E's second look with Reduce Motion OFF.** Expect the card to slide up with the tick drawing
       itself on DURING the slide, then the halo radiating once it has landed. The early draw is the
       finding above: judge whether it reads as one gesture or as a collision. Evidence: `50-…`. (NEW)
@@ -215,8 +242,8 @@ fires under RM, as it always did.
 
 ## B · Real work, ready to start — recommended order
 
-**0a. The Confirm celebration — E's ask (2026-09-11). DESIGN SETTLED, RECORD APPROVED by E (R1, R2,
-   R9 a+b), block 1 next; nothing built yet.** A celebration that uses the full screen when the user taps Confirm on a
+**0a. The Confirm celebration — E's ask (2026-09-11). RECORD APPROVED; BLOCK 1 BUILT and on E's
+   phone (awaiting E's verdict, see A); block 2 (fireworks + dim) waits on that verdict.** A celebration that uses the full screen when the user taps Confirm on a
    completion card. **The record is `handoff/SESSION-OPENER-confirm-celebration-design.md`**,
    renamed from the `…-confetti-design.md` the last edition promised because it now covers
    fireworks, the glow and the dim as well. Its evidence is `screenshots/confirm-celebration-prototypes/`.
@@ -236,11 +263,11 @@ fires under RM, as it always did.
    8. **In LIGHT appearance the screen dims to 85% (`Scrim`) for the fireworks' length**; dark never
       dims, chosen by video over 55% and none.
 
-   **Next — approved:** write `F-ConfirmCelebration-1` (engine, trigger stamp,
-   every Confirm's confetti + glow + haptic) and `-2` (fireworks + dim) into `TODO-CLAUDE-CODE.md`
-   from it, then build test-first. **Both files the build touches are at their line ceiling**
-   (`FocusSessionService.swift` 394, `RootView.swift` 399). The record plans the room-making move
-   as block 1's first commit.
+   **Both blocks are in `TODO-CLAUDE-CODE.md`; block 1 is ticked.** Block 2 needs no more room:
+   `FocusSessionService.swift` is at 374 and `RootView.swift` at 394 after block 1's move. The
+   fireworks and the dim draw inside `ConfirmCelebrationFrame` (the engine takes an injected date),
+   key on `FocusConfirmation.clearedStack`, and extend `ConfirmCelebrationQueue.length(of:)` to the
+   stack-clearing ~5.0s.
 
 **0. Follow-ups to the pilot — pick up only after E's verdicts, and only what E asks for:**
    - **The draw-on's timing**, if E's RM-OFF look says the tick should wait for the card: land
