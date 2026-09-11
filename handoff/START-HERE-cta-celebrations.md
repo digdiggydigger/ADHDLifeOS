@@ -16,11 +16,51 @@ Nothing below is a decision unless it quotes E.
 the top and fired from both bottom corners, plus the success haptic. It plays when a finished
 sprint's card is confirmed. E approved it by video and called it "really good"; it is on E's phone.
 
+## ASK E THESE FIRST — one at a time, before any design or build
+
+E asked for these to be put to them at the start of this session. Ask each on its own, with the
+options and a recommendation (the way the Confirm design was run), and record the answers in the
+register. **None is decided.**
+
+**Carried from last session: quick decisions**
+1. **Fireworks timing.** Should `F-ConfirmCelebration-2`'s fireworks take the same +1.2 s stretch as
+   the confetti (≈ 5.0 s → ≈ 6.4 s), or keep their own pace?
+2. **Fireworks order.** Build block 2 now, or wait for this arc's design, which may change how
+   celebrations are triggered across the app?
+3. **The confetti off switch** (register §D, a pre-launch item). Add a Settings switch now that
+   celebrations may spread to other buttons, or keep it for pre-launch?
+4. **"The second change".** Is this celebrations-on-other-buttons focus the second change E
+   mentioned earlier, or is that still to come?
+
+**This arc's design questions** (show rendered options wherever the answer is visual)
+
+5. **Which moments earn a celebration at all, and how big?** Full-screen (like Confirm), in place on
+   the button or row (like the in-ring halo), haptic only, or nothing. The survey below lists 23
+   candidates.
+6. **Frequency.** Should something done many times a day (closing a task) celebrate every time, get
+   a smaller celebration, or celebrate only on milestones (a streak, the last task, inbox zero)?
+7. **Reduce Motion, per new site.** E's waiver covers the Confirm celebration only. For each new
+   one: fade (the §7.2 policy) or full motion (a new, named waiver)?
+8. **Tidy the haptic inconsistencies the survey found?**
+   - Sorted is `.success` on triage but `.solid` on detail.
+   - "Done for now" completes a nudge with only `.light`.
+   - Saving a place and stopping a sprint have no haptic.
+   - `ClosureCelebrationCard` pops in unanimated.
+
+**Lower priority, still open in register §A** (ask if there is time):
+- the widget's `MARKETING_VERSION` (1.0) vs the app's (1.3);
+- installing an older simulator runtime (E's Xcode job);
+- the collapsed card's square bottom corners;
+- whether the widget's view-only files should be testable.
+
+**A reminder, not a question:** E's phone's development profile expires **2026-09-17**. When a
+device install fails on it, E re-signs in Xcode → Settings → Accounts.
+
 ## Read first, in this order
 
 1. **CLAUDE.md's start-of-session checklist.** `claudecode.md`, "Architecture notes", and **§7**
    (the iOS 16 floor, modern APIs, Reduce Motion) in particular.
-2. **`handoff/OPEN-ITEMS-REGISTER.md`** (the twenty-eighth edition or later) — THE outstanding list.
+2. **`handoff/OPEN-ITEMS-REGISTER.md`** (the twenty-ninth edition or later) — THE outstanding list.
 3. **`handoff/SESSION-OPENER-confirm-celebration-design.md`** — the permanent record of how the
    Confirm celebration was designed: E's nine answers, the numbers, the §7.2 waiver, and why each
    choice was made. The next design should be run the same way.
@@ -34,9 +74,7 @@ E, after this opener was written: *"i have done the animation checks on my iphon
   shipped.
 - **`F-ConfirmCelebration-1` passed**, at the stretched 5.4 s.
 - **`F-ConfirmCelebration-2`** (14 fireworks + light-mode 85% dim on the stack-clearing Confirm) is
-  approved and no longer blocked on a verdict. It still has two open questions for E: does the +1.2 s
-  stretch apply to the fireworks, and should block 2 wait for this arc's design, which may generalise
-  the engine? **Ask before building it.**
+  approved and no longer blocked on a verdict. **Its questions 1 and 2 above come first.**
 
 ## The constraints this arc cannot design around
 
@@ -117,23 +155,9 @@ read as an achievement, and every primary button style shrinks to 0.97 on press.
 six cases (`selection`, `light`, `solid`, `success`, `warning`, `error`), plus the aliases
 `tabChange` = `.light` and `taskClose` = `.success`.
 
-## Questions that are E's (put one at a time, as the Confirm design did)
+## E's questions
 
-These are prompts, not recommendations. None is decided:
-- **Which moments earn a celebration at all**, and at what size: full-screen (like Confirm),
-  in-place on the button or row (like the in-ring halo), haptic-only, or nothing? Closing a task and
-  saving a place are different in kind.
-- **Frequency.** Does a task closed ten times a day get the same celebration as a sprint confirmed
-  once? Is a celebration that plays on every close still a reward?
-- **Reduce Motion, per site** (the waiver covers only Confirm), and whether the off switch now
-  comes before launch.
-- **Consistency the survey surfaced:**
-  - Sorted is `.success` on triage but `.solid` on detail.
-  - "Done for now" completes a nudge with only `.light`.
-  - Saving a place and stopping a sprint have no haptic.
-  - `ClosureCelebrationCard` pops in unanimated.
-
-  Whether to tidy these is E's call.
+All of them are at the top of this file ("ASK E THESE FIRST"), numbered, so there is one list.
 
 ## How to run the session
 
