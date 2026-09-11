@@ -47,6 +47,7 @@ why the recommendations are recorded at all: they are not the design.
 | 6 | *(unprompted — arrived at 08:04 BST while the #5 combination was being rendered)* | **"for the stack-clearing burst can you incorporate a firework animation?"** | — |
 | 7 | "Is this the direction?" A — Yes / B — Yes, with changes / C — Not quite | **"B - more fireworks on the ‘Stack Cleared’ and incorporate MORE and OTHER COLOURED fireworks.<br>and possibly, for light-mode display views, a background dim for the duration of the fireworks could look good"** | `10-` / `11-`: every Confirm (rain + cannons), and the stack-clearing Confirm with 5 fireworks, light and dark |
 | 8 | "Which light-mode treatment for the stack-clearing Confirm?" A — Dim 85% (rec.) / B — Dim 55% / C — No dim | **"A"** | `20-` / `21-`: 14 fireworks — light no dim / light 55% / light 85% / dark |
+| 9 | *(after block 1 was built, on its video)* | **"looks really good, Can you extend the animation length by 1.2 seconds please."** | `screenshots/confirm-celebration-block-1/11-`: block 1 at 4.2 s |
 
 ### What that adds up to
 
@@ -216,8 +217,18 @@ in over 0.35 s, held until 0.4 s before the last spark (≈ 4.39 s), out over 0.
 
 ### Order and length
 
-Drawn back to front: **app → dim → glow → fireworks → confetti.** An every-Confirm celebration
-lasts ≈ **4.2 s** (the last rain piece); a stack-clearing one ≈ **5.0 s** (the dim's fade).
+Drawn back to front: **app → dim → glow → fireworks → confetti.** The choreography above lasts
+≈ **4.2 s** for every Confirm (the last rain piece) and ≈ **5.0 s** for a stack-clearing one (the
+dim's fade).
+
+**E's decision 9 adds 1.2 s on screen (block 1, `ConfirmCelebrationQueue.extraLength`).** Every
+number in this section stays as written, on the CHOREOGRAPHY clock. That clock plays at
+`4.2 / 5.4` (~78%) of wall time, so an every-Confirm celebration is on screen for **5.4 s** with
+the same pieces, paths and beats.
+- **Claude Code's reading, pending E's feel on the phone:** a stretch rather than a longer tail. A
+  tail at the same speed would have either drawn off-screen or thinned the confetti.
+- **For block 2 it is open** whether the fireworks take the same stretch (≈ 5.0 s → ≈ 6.4 s) or keep
+  their own clock. Ask E.
 
 ---
 

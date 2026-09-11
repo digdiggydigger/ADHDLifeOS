@@ -115,7 +115,7 @@ struct ConfirmCelebrationFrame: View {
                     shadings[name] = context.resolve(.color(Color(name)))
                 }
                 for scene in scenes {
-                    let elapsed = date.timeIntervalSince(scene.burst.start)
+                    let elapsed = ConfirmCelebrationQueue.choreographyTime(of: scene.burst, at: date)
                     for piece in scene.confetti {
                         guard let state = ConfettiPhysics.state(of: piece, at: elapsed) else { continue }
                         var pieceContext = context

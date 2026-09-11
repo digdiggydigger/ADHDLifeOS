@@ -1,13 +1,13 @@
-# Open items register — 2026-09-11 (twenty-seventh edition; F-ConfirmCelebration-1 BUILT and on E's phone, awaiting E's verdict)
+# Open items register — 2026-09-11 (twenty-eighth edition; SESSION CLOSE-OUT — the Confirm celebration is on E's phone at 5.4 s; next session: celebrations for other CTAs)
 
-*Written the same session as the twenty-fourth to twenty-sixth. Since the twenty-sixth:
-- E approved the Confirm-celebration record: **"R1, R2, R9 (a+b) = Approved"** (PR #67);
-- E named the celebration fades: **"make the halo fade 2.1s and the tick fade 1.1s"** (PR #68);
-- **`F-ConfirmCelebration-1` is built** — every Confirm's confetti, glow and haptic — and
-  installed on E's phone at 09:54 BST.
+*The close-out of the session that built `F-ModernIOS-2-Celebration` and `F-ConfirmCelebration-1`.
+E's last two asks:
+- **"extend the animation length by 1.2 seconds"** — done, in this edition's PR;
+- **"safely close this session out … I want to focus on assigning animations such as this one we've
+  just created to other CTA buttons etc. throughout the app."**
 
-**Two device verdicts are open, and ONE sprint gives both** (see A). Block 2 of the celebration
-arc (fireworks + dim) is not started until E's verdict on block 1. Supersedes the twenty-six
+The next session's opener is **`handoff/START-HERE-cta-celebrations.md`**. The consumed
+`START-HERE-modern-ios-celebration.md` is archived in the same move. Supersedes the twenty-seven
 earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
@@ -18,148 +18,80 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ the fade-lengths merge (code commit `40a70e4`), on top of the design record (PR #67,
-`bcadc4f`), the longer-fades merge (PR #66, `e1d87d8`) and the `F-ModernIOS-2-Celebration` merge
-(PR #65, `a2f20ab`).** #65 was the first APP-code change since
-`d8b334b` (`F-FocusCard-4`): `bfb1fa3` is the code, `da65027` corrects its comments to what the
-renders showed, `0f5624b` is the evidence and paperwork.
-- **The fades are E's numbers now: halo 2.1s, Reduce Motion tick 1.1s** (the fade-lengths PR,
-  `40a70e4`), pinned by `testTheFadesRunAtTheLengthEAskedFor`.
-  - They got there in two steps: #66 doubled block 4's 0.9s / 0.4s to 1.8s / 0.8s at E's "make the
-    animations longer", then E named 2.1s / 1.1s.
-  - The 0.3s delay, the RM-off tick spring and the draw-on did not change.
-  - Red predicted and observed 2,673 / 2 (1 test); green **2,673 / 0**, 0 `9099`, lint 0 / 0 lines.
-  - **Installed and launch-verified on E's phone at 09:06 BST**; the install was confirmed by
-    `devicectl`'s "App installed".
-  - Coverage not re-run: constants only, no executable line added (figures below are #65's).
-- **The modern-iOS pilot is BUILT:** block 1 (the §7 policy) and block 2 (the celebration) are both
-  on `main`. Block 2 is not CLOSED until E's Reduce-Motion-ON verdict.
-- **The live opener is still `handoff/START-HERE-modern-ios-celebration.md`**, now headed by a status
-  line saying the block has landed and must not be rebuilt. It stays live until E's verdicts are in;
-  the session that records them archives it together with its successor.
-- **Verified this session:**
-  - unit suite **2,672 / 0** (emulator UP, **0** `127.0.0.1:9099` hits, 0 skipped). The baseline was
-    2,663 / 0 before any change, and the prediction 2,663 → 2,672 held.
-  - SwiftLint **0 / 742**
-  - sim `** BUILD SUCCEEDED **`; device `** BUILD SUCCEEDED **`
-  - app target **26.75% (12,309/46,014)**
-- `firestore.rules` untouched, so there is **nothing for E to republish**. Every `.xcresult` was
-  deleted after its figures were read.
-- **`F-ConfirmCelebration-1` (this edition's block), on `feature/confirm-celebration`:**
-  - room made (`281e151`): the notification pair moved to `+Notifications`, and `startFocus` to
-    `RootView+Doors`;
-  - red (`7f0326a`) predicted per test and observed exactly: 2,708 / 46 (4 unexpected), 32 tests;
-  - green (`9314a13`), with two paired red-checks, each exact (2,708 / 3 and 2,708 / 2).
-- **Verified for that block:**
-  - suite **2,708 / 0** (emulator UP, 0 `9099`);
-  - SwiftLint **0 / 751**;
-  - sim and device `** BUILD SUCCEEDED **`;
-  - app target **26.87% (12,470/46,405)**. Comparable to #65's 26.75%: the tree grew and both runs
-    measured the whole target. The new pure files are at 97–100%; `ConfirmCelebrationOverlay` is
-    0/217, a view body and UI territory, and the render probe is what exercises it.
-- **No branch in flight once that PR merges.** #67 was the design record; #68 the fade lengths.
+**`main` @ this edition's merge (the +1.2 s PR; its last code commit is `967472a`).** Nothing is in
+flight once it merges; every branch this session was deleted by its merge. `firestore.rules` is
+untouched, so there is **nothing for E to republish**.
 
-**E's phone runs `9314a13`'s app code (F-ConfirmCelebration-1, with the 2.1s / 1.1s fades)**, installed and launch-verified at **09:54 BST on
-2026-09-11**. Its merge to `main` adds no app code. (Before that: 09:06 from `40a70e4`, 07:32 from
-#66, and 07:02 from `0f5624b`.) Reduce Motion is still ON there, as E left it. (carried)
+**E's phone runs `967472a`'s app code**, installed and launch-verified at **10:26 BST on
+2026-09-11** (earlier installs: 09:54, 09:06, 07:32, 07:02). Reduce Motion is still ON there, as E
+left it. (carried)
 
-**Coverage: app target 26.75% (12,309/46,014), and it IS comparable to block 1's 26.68%
-(12,255/45,932).** The denominator moved +82 because the tree grew (one new app file, and the view
-grew), not because the measurement's extent changed: both runs measured the whole app target. The
-numerator moved +54. The new pure file is **92.31% (36/39)**; its three uncovered lines are
-`burstAnimation`, moved unchanged from block 4 and reached only from the view's `onAppear`.
+**Verified at close** (the last code change, +1.2 s):
+- unit suite **2,710 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+- SwiftLint **0 / 751**;
+- sim `** BUILD SUCCEEDED **` (at close) and device `** BUILD SUCCEEDED **`.
+
+Coverage was last measured at block 1:
 
 ```
-ADHD LifeOS.app              26.75%  (12309/46014)  ← was 26.68% (12255/45932)
-ADHD LifeOSTests.xctest      95.20%  (42362/44500)  ← was 95.27% (42130/44220)
+ADHD LifeOS.app              26.87%  (12470/46405)  ← was 26.75% (12309/46014) at #65; comparable (tree grew, whole target measured both times)
+ADHD LifeOSTests.xctest      95.09%  (43131/45358)
 ADHD LifeOSUITests.xctest     0.00%  (0/2962)       ← skipped in the standard run by design
 FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testable surface, not this
 ```
 
-### Landed this session
+The new pure files are at 97–100%. `ConfirmCelebrationOverlay` is 0/217: a view body, which the
+render probe exercises and no unit test can.
 
-- **`F-ModernIOS-2-Celebration`** (PR #65). The completion celebration now has three motion modes,
-  chosen by `FocusCompletionCelebrationMotion.resolve(reduceMotion:drawOnAvailable:)`, which decides
-  Reduce Motion BEFORE the tier:
-  - **`.full`**, below iOS 26 with RM off: block 4's burst, unchanged.
-  - **`.reduced`**, RM on, any OS: geometry pinned at rest (halo 1.6, tick 1), and only opacity
-    travels. It replaces the hard cut E lived with.
-  - **`.modern`**, iOS 26 with RM off: the tick draws itself on, via
-    `AsymmetricTransition(insertion: .symbolEffect(.drawOn), removal: .identity)` in its own
-    `@available(iOS 26.0, *)` type.
-  - **No iOS 17 tier**, per §7.1's filter: `.appear` is less than the spring and `.bounce` ignores
-    the landing delay.
+### Landed this session (PRs #65–#72)
 
-  The pure types moved to `Focus/FocusCompletionCelebrationPose.swift`. `init(plays:reduceMotion:)`
-  kept its signature, so the card, stack, overlay, service and `Theme/Haptics.swift` show NO diff
-  against `main`.
-- **Tests, first.**
-  - **Red #1, predicted in writing and observed exactly:** `Executed 2672 tests, with 16 failures`,
-    9 tests.
-  - **Three red-checks on a committed tree, each predicted by TEST NAME and observed exactly:**
-    - `} else {` → `} else  {`: 2,672 / 1, `testTheCelebrationCarriesBothTheModernAndTheFloorBranch`.
-    - `resolve` ignoring RM: 2,672 / 5, `testReduceMotionWinsOverEveryTier` (2) and
-      `testReduceMotionOpensWithGeometryAtRestAndOnlyOpacityToTravel` (3).
-    - `geometryPinned = true`: 2,672 / 3, `testTheArmedPoseHoldsTheRingAtTheRingAndTheCheckmarkSmall`
-      (2) and `testAPoseReadsItsRingOffTheCurve` (1).
+- **#65 `F-ModernIOS-2-Celebration`.** The in-ring completion celebration's three motion modes:
+  - `.full` below iOS 26;
+  - `.reduced` with Reduce Motion ON: geometry pinned, opacity only;
+  - `.modern`, the iOS 26 draw-on tick.
 
-    Each was restored with `git checkout -- "ADHD LifeOS/"`; the final green run proved the last.
-- **Evidence:** `screenshots/focus-completion-celebration-modes/`, 14 JPEGs and a README with the
-  Verified paths line.
-- **Paperwork:** TODO ticked; one postscript row in `SESSION-OPENER-focus-card-design.md`; the
-  opener's status line.
+  Reduce Motion is resolved before the tier. Evidence: `screenshots/focus-completion-celebration-modes/`.
+- **#66, then #68: the fades are E's numbers.** Halo **2.1 s**, Reduce Motion tick **1.1 s** (first
+  doubled from 0.9 / 0.4, then named by E), pinned by `testTheFadesRunAtTheLengthEAskedFor`.
+- **#67 (+ #70, #71): the Confirm-celebration design record**, `handoff/SESSION-OPENER-confirm-celebration-design.md`,
+  permanent. It holds E's nine answers, R1–R9, and every number; E: "R1, R2, R9 (a+b) = Approved".
+- **#69 `F-ConfirmCelebration-1`.** Every Confirm gets the glow, the rain and both corner cannons,
+  plus the success haptic.
+  - A second service stamp: `FocusConfirmation`, written before `await log`.
+  - A pure engine: `ConfettiPhysics` / `ConfettiRecipe` / `ConfirmCelebrationQueue`, capped at 3.
+  - One always-mounted overlay in `RootView`, which draws only while a burst is live.
+  - CLAUDE.md §7.2 carries E's waiver.
+  - Red 2,708 / 46 (4 unexpected, 32 tests), predicted per test; both red-check pairs exact.
+  - Evidence: `screenshots/confirm-celebration-block-1/`. A real Confirm fires it on the real clock,
+    it leaves 0 pixels behind, and ordinal 1 is the prototype E chose.
+- **#72 (this edition): +1.2 s.** The 4.2 s choreography is stretched evenly over **5.4 s**
+  (`extraLength`, `pace`, `choreographyTime`), so every piece and beat is kept.
+  - Red 2,710 / 8 (3 tests), predicted; a red-check on the clock wiring was exact.
+  - `12-every-confirm-light-dark-5.4s.mp4` shows the shipped length.
 
 ### What this session established
 
-- **The iOS 26 draw-on does NOT wait for the landing transaction's 0.3s delay.** This was the plan's
-  named risk, and the render settles it. The stroke starts the moment the tick is inserted and is
-  complete in ~0.3s (a dot at t0.09, whole by t0.42), while the halo still waits and starts ~t0.51.
-  - In situ the draw is under way while the card is still arriving. **So on a phone with RM off the
-    tick draws during the slide-up**, the collision block 4's delay was added to prevent.
-  - Shipped as rendered, per the plan ("evidence it, don't fight it"), and the code's comments say
-    so. **The lever:** land `.modern` after `FocusCompletionCelebrationMetrics.delay`, not inside it.
-- **The reduced halo pinned at 1.6 is heavier inside the real card than in the plan's reasoning.**
-  At 1.6 the stroke scales too (4pt → 6.4pt). Measured off an in-situ render:
-  - **outer diameter 77.3pt against the card's 76.0pt**, so it overhangs the top and bottom border by
-    ~0.7pt each;
-  - **right edge 92.3pt against the summary column's 85.0pt**, so it runs ~7pt behind the emoji and
-    "25m";
-  - held at 80% opacity through the delay before it fades.
-
-  **A pin ≤ 1.25 clears the text** (right edge 83.8pt); 1.3 touches it. Not changed: E's lever.
-- **Both plan corrections resolved as the opener said.**
-  - The `AsymmetricTransition` form compiles and is what shipped.
-  - The red count depends on the assertion set, which this session changed: its string tests read
-    ORDER inside the tick site. They also pin `guard pose.isArmed else { return }` and ban
-    `pose == .armed`, because that old guard would have frozen the reduced opening for ever, halo up
-    and no tick.
-  - Red #1's string tests counted 3 tests / 6 failures, the plan's number, from a different
-    composition.
-- **The plan's bare-presence pin on `#available(iOS 26.0, *) {` was VACUOUS.** The view's own
-  `drawOnAvailable` flag (the `placesSupported` shape) contains that exact string on a line that
-  draws nothing. Same lesson as block 1's `} else {`: read order inside a scoped region.
-- **SwiftLint's `type_name` ceiling is 40 characters.** The plan's
-  `FocusCompletionCelebrationModernPathCallSiteTests` (49) failed lint, so the class is
-  `FocusCelebrationModernPathCallSiteTests`.
-- **The app target's `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` makes every pure app type's
-  `Equatable` main-actor-isolated.** A non-`@MainActor` test class comparing them raises
-  "main actor-isolated conformance … cannot be used in nonisolated context".
-  - `FocusCompletionCelebrationTests` carried 5 such warnings before this block.
-  - `@MainActor` on the class (92 test files already do it) cleared those and the 3 the new tests
-    would have added.
-  - The test target still carries ~665 unique warnings at baseline: known noise, not this block's.
-- **`Animation` equality is reliable at runtime** on this toolchain.
-  `.spring(response: 0.4, dampingFraction: 0.6).delay(0.3)` built twice compares equal, so an
-  animation choice is assertable directly.
-- **A nested insertion transition does NOT replay when its parent is rebuilt or revealed.** On a
-  second push the new front card draws on and the old one keeps its tick; on Confirm the revealed
-  card arrives already ticked, with no draw-off on the leaving one.
-- **Reduce Motion in situ can be rendered by a ONE-RUN temporary edit** (force `reduceMotion: true`
-  into `resolve`), restored with `git checkout --` and proved by the next build. It is the §7.2 gap
-  the environment cannot fill. The overlay still animates the arrival in that render, so it shows
-  the celebration, not E's cut arrival.
-- **`xcodebuild` prints "Executed 1 test" (singular)** for a one-test run, so a grep for `tests`
-  misses it. Read the exit code.
+- **The iOS 26 draw-on does NOT wait for a transaction's delay.** It draws at insertion, so with
+  Reduce Motion OFF the tick draws during the card's slide-up. The lever is to land `.modern` after
+  `delay`.
+- **The reduced halo pinned at 1.6 overhangs the 76 pt card** (77.3 pt) and runs ~7 pt behind the
+  text; ≤ 1.25 clears it. Frame: `…-modes/34-…`. E's lever.
+- **A stored `@Published` cannot live in an extension.** Room for the 400-line bar comes from moving
+  METHODS out (the `+Completions` / `+Persistence` / `+Notifications` arrangement).
+- **A countable red needs inert stubs.** Use early `XCTUnwrap` and count-first assertions. A thrown
+  source-read error counts as "unexpected"; an `XCTUnwrap` failure does not.
+- **"Nothing left drawn" is provable.** Diff late live frames against a window that never mounted
+  the layer (0 pixels).
+- **Parity with a prototype is provable too.** Re-run the prototype's generator with its seeds and
+  compare field for field.
+- **To lengthen a physics animation E likes, stretch its clock** rather than tacking on a tail. A
+  tail draws off-screen or thins the effect, and the stretch keeps what E approved.
+- **SwiftLint:** `type_name` ≤ 40 characters, `identifier_name` ≥ 3 (no `x`, `y`, `xs`),
+  `large_tuple` > 2 warns. With `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, passing a static
+  method by reference into `map` warns; use a closure.
+- **`Animation` equality is reliable at runtime**, and a nested insertion transition does not replay
+  when its parent is rebuilt.
+- **`xcodebuild` prints "Executed 1 test" (singular)**, so read the exit code.
 
 ### How the Reduce Motion story got here (2026-09-11, carried in brief)
 
@@ -175,7 +107,7 @@ fires under RM, as it always did.
   a scene-attached `UIWindow`. It captures in-flight SwiftUI animation frames.
 - **`accessibilityReduceMotion` is not writable via `.environment(\.)`** (now §7.2).
 - **A listener on a view inserted in the same update that changes its trigger misses that change.**
-- **`FocusSessionService.swift` is at 394/400.**
+- **`FocusSessionService.swift` was at 394/400**; it is 374 since `F-ConfirmCelebration-1` moved the notification pair out.
 
 ### What the peek work established (2026-09-10) (carried)
 
@@ -186,7 +118,7 @@ fires under RM, as it always did.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **ONE short sprint gives BOTH open device verdicts** (the phone has everything as of 09:54 BST;
+- [ ] **ONE short sprint gives BOTH open device verdicts** (the phone has everything as of 10:26 BST;
       Reduce Motion stays ON, as E has it):
       1. **When the sprint finishes → `F-ModernIOS-2-Celebration`'s Reduce-Motion-ON verdict.**
          Expect a CUT arrival, a bold green halo fading over 2.1s, the tick fading in over 1.1s
@@ -196,7 +128,8 @@ fires under RM, as it always did.
          - the success haptic;
          - a green glow swelling from the bottom;
          - confetti raining from the top AND fired from both bottom corners at once, falling over
-           the tab bar for ~4s and gone by ~4.2s;
+           the tab bar and gone by ~5.4s (E's +1.2 s, played as an even stretch at ~78% speed —
+           if it reads floaty, the alternative is the old speed with a longer tail);
          - taps still working underneath.
 
          With two cards waiting, each Confirm fires its own celebration, and they overlap. Worth an
@@ -209,13 +142,6 @@ fires under RM, as it always did.
       appearances; the card's dismissal unchanged; no VoiceOver announcement. Any of them is E's to
       change at this verdict.
 
-- [x] **Review the Confirm-celebration design record — DONE.** E, verbatim: **"R1, R2, R9 (a+b) =
-      Approved."**
-      - R1 (overlap, capped at 3), R2 (a second service stamp) and both of R9's blocks are E's
-        decisions now.
-      - R3–R8 went unmentioned and stand as the build's defaults. The record says so.
-
-      Merged as PR #67. (NEW)
 - [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.**
       Folded into the one-sprint item at the top of this section (its step 1), which carries what to
       expect. Its evidence still lands as `40-…` in `screenshots/focus-completion-celebration-modes/`.
@@ -237,17 +163,26 @@ fires under RM, as it always did.
       time you are in there", not a defect. (carried)
 - [ ] **Should the widget's view-only files be made testable at all?** Recommendation is still to
       leave it. (carried)
-- [ ] **E's SECOND change — still not described.** Ask once the pilot reaches its stopping point.
-      (carried)
+- [ ] **E's SECOND change.** E has now named the next focus, celebrations on other CTAs. Whether
+      that IS the long-pending "second change" is unconfirmed: ask in the next session. (updated)
 
 ## B · Real work, ready to start — recommended order
+
+**00. NEXT SESSION — celebrations for the app's other call-to-action buttons.** E, verbatim: *"I
+   want to focus on assigning animations such as this one we've just created to other CTA buttons
+   etc. throughout the app."* **Nothing is decided or built.**
+   - The opener, **`handoff/START-HERE-cta-celebrations.md`**, carries a verified survey of 23 CTA
+     sites and their current feedback, the engine to reuse, the constraints, and E's open questions.
+   - The key constraint: **§7.2's Reduce Motion waiver covers ONLY the Confirm celebration**; every
+     new site needs E's own answer, and the off switch (§D) becomes more pressing.
+   - Design-first (brainstorming, architectural path), then a record, then E's approval. (NEW)
 
 **0a. The Confirm celebration — E's ask (2026-09-11). RECORD APPROVED; BLOCK 1 BUILT and on E's
    phone (awaiting E's verdict, see A); block 2 (fireworks + dim) waits on that verdict.** A celebration that uses the full screen when the user taps Confirm on a
    completion card. **The record is `handoff/SESSION-OPENER-confirm-celebration-design.md`**,
    renamed from the `…-confetti-design.md` the last edition promised because it now covers
    fireworks, the glow and the dim as well. Its evidence is `screenshots/confirm-celebration-prototypes/`.
-   **E's eight decisions, all settled:**
+   **E's nine decisions, all settled:**
    1. **Reduce Motion ON shows BOTH a full-screen done-green glow AND real falling confetti.** A
       deliberate, named **waiver of CLAUDE.md §7.2** for this one moment (like `peekStep`'s of §2).
       With nothing left to reduce, Reduce Motion OFF is the same.
@@ -263,11 +198,16 @@ fires under RM, as it always did.
    8. **In LIGHT appearance the screen dims to 85% (`Scrim`) for the fireworks' length**; dark never
       dims, chosen by video over 55% and none.
 
+   9. **"extend the animation length by 1.2 seconds"** (after block 1): shipped as an even stretch to
+      5.4 s (#72), pending E's feel.
+
    **Both blocks are in `TODO-CLAUDE-CODE.md`; block 1 is ticked.** Block 2 needs no more room:
-   `FocusSessionService.swift` is at 374 and `RootView.swift` at 394 after block 1's move. The
-   fireworks and the dim draw inside `ConfirmCelebrationFrame` (the engine takes an injected date),
-   key on `FocusConfirmation.clearedStack`, and extend `ConfirmCelebrationQueue.length(of:)` to the
-   stack-clearing ~5.0s.
+   `FocusSessionService.swift` is at 374 and `RootView.swift` at 394.
+   - How it would draw: the fireworks and the dim go inside `ConfirmCelebrationFrame`, key on
+     `FocusConfirmation.clearedStack`, and extend `ConfirmCelebrationQueue.length(of:)`.
+   - **Two questions for E before building it:** does the +1.2 s stretch apply to the fireworks too
+     (≈ 5.0 s → ≈ 6.4 s)? And should block 2 wait for the CTA arc's design, which may generalise
+     the engine?
 
 **0. Follow-ups to the pilot — pick up only after E's verdicts, and only what E asks for:**
    - **The draw-on's timing**, if E's RM-OFF look says the tick should wait for the card: land
@@ -330,7 +270,8 @@ fires under RM, as it always did.
 - **Sign in with Apple** built but dormant. (carried)
 - **A way to turn the Confirm confetti off.** E chose no switch for now (2026-09-11). Because it
   deliberately ignores Reduce Motion, people who turned Reduce Motion on for motion sensitivity get
-  full-screen falling confetti with no escape. Revisit before launch. (NEW)
+  full-screen falling confetti with no escape. Revisit before launch, and **before celebrations
+  spread to other buttons** (B.00). (updated)
 
 ## E · Known, not work
 
@@ -346,8 +287,10 @@ fires under RM, as it always did.
     `UIWindow`, a synchronous test pumping `RunLoop.main`.
   - **Render IN SITU, not just the leaf:** the halo's collision exists only against the card's real
     edges and text.
-  - The probe from this block is kept outside the repo in that session's scratchpad; rebuild it from
-    the evidence README's description if needed. (updated)
+  - The probes from this session are kept outside the repo in its scratchpad
+    (`ZZFocusCelebrationRenderProbe`, `ZZConfettiPrototypeProbe*`, `ZZConfirmCelebrationRenderProbe`).
+    Rebuild from the evidence READMEs' descriptions: a scene-attached `UIWindow`, an injected time,
+    ffmpeg for video. (updated)
 - **`Executed N tests, with M failures` counts failed ASSERTIONS, not failing TESTS.** Predict in
   TESTS, then reconcile. Names: `grep -oE "Test Case .*' failed" <log> | sort -u`. (carried)
 - **SwiftLint's 400-line file, 250-line `type_body_length` and 40-character `type_name` ceilings.**

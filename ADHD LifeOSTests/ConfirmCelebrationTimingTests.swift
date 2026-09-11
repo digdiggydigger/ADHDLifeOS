@@ -36,30 +36,52 @@ final class ConfirmCelebrationTimingTests: XCTestCase {
     }
 
     /// Two quick Confirms show one glow at whichever is stronger at that instant — here the OLDER
-    /// one, still fading, over the newer one just swelling.
+    /// one, still fading, over the newer one just swelling. Instants are given on the CHOREOGRAPHY
+    /// clock (divided by the pace), so this also holds the glow to the stretched playback.
     func testOverlappingConfirmsShareOneGlowAtTheStrongest() {
+        let pace = ConfirmCelebrationQueue.pace
         let older = burst(1)
-        let newer = burst(2, after: 1.2)
+        let newer = burst(2, after: 1.2 / pace)
         XCTAssertEqual(
-            ConfirmCelebrationGlow.strongestEnvelope(of: [older, newer], at: launch.addingTimeInterval(1.25)),
-            1 - 0.35 / 1.5, accuracy: 1e-9,
-            "Overlapping glows are not one wash at the strongest envelope."
+            ConfirmCelebrationGlow.strongestEnvelope(of: [older, newer], at: launch.addingTimeInterval(1.25 / pace)),
+            1 - 0.35 / 1.5, accuracy: 1e-6,
+            "Overlapping glows are not one wash at the strongest envelope, on the stretched clock."
         )
         XCTAssertEqual(ConfirmCelebrationGlow.strongestEnvelope(of: [], at: launch), 0, accuracy: 1e-9)
     }
 
     // MARK: - Length
 
+    /// **E, after watching block 1 (2026-09-11): "extend the animation length by 1.2 seconds".**
+    /// The prototype's 4.2 s of choreography now plays evenly over 5.4 s: every piece, path and beat
+    /// E approved is kept and simply takes longer, with no extra drawing. Stretching was Claude
+    /// Code's reading, pending E's feel on the phone; the alternative (same speed, a longer tail)
+    /// would have either drawn off-screen or thinned the confetti.
+    func testTheCelebrationRunsTheExtraSecondsEAskedFor() {
+        let queue = ConfirmCelebrationQueue.self
+        let confirm = burst(1)
+        XCTAssertEqual(queue.extraLength, 1.2, accuracy: 1e-9, "The celebration is not the 1.2 s longer E asked for.")
+        XCTAssertEqual(queue.everyConfirmLength, 5.4, accuracy: 1e-9)
+        XCTAssertEqual(
+            queue.choreographyTime(of: confirm, at: launch.addingTimeInterval(5.4)), 4.2, accuracy: 1e-6,
+            "The whole prototype choreography does not fit the longer celebration exactly."
+        )
+        XCTAssertEqual(
+            queue.choreographyTime(of: confirm, at: launch.addingTimeInterval(2.7)), 2.1, accuracy: 1e-6,
+            "The stretch is not even, so some beats speed up while others slow down."
+        )
+    }
+
     /// The burst must last until its last piece has landed, and not a noticeable moment longer.
     func testAConfirmBurstLastsUntilItsLastPieceHasLanded() {
         let pieces = ConfettiRecipe.everyConfirm(canvas: CGSize(width: 393, height: 852), ordinal: 1)
-        let lastLanding = pieces.map { $0.delay + $0.lifetime }.max() ?? 0
-        XCTAssertEqual(ConfirmCelebrationQueue.everyConfirmLength, 4.2, accuracy: 1e-9)
+        let lastLanding = (pieces.map { $0.delay + $0.lifetime }.max() ?? 0) / ConfirmCelebrationQueue.pace
+        XCTAssertEqual(ConfirmCelebrationQueue.everyConfirmLength, 5.4, accuracy: 1e-9)
         XCTAssertLessThanOrEqual(
             lastLanding, ConfirmCelebrationQueue.everyConfirmLength,
             "A burst is removed while its pieces are still falling, so they vanish mid-air."
         )
-        XCTAssertGreaterThan(lastLanding, 4, "The premise: the recipe really does fly for about 4.2 s.")
+        XCTAssertGreaterThan(lastLanding, 5, "The premise: the stretched recipe really does fly for about 5.4 s.")
     }
 
     // MARK: - Quick Confirms (R1)
@@ -82,18 +104,18 @@ final class ConfirmCelebrationTimingTests: XCTestCase {
     func testABurstIsGoneOnceItsLengthHasPassed() {
         let first = burst(1)
         let queue = ConfirmCelebrationQueue.self
-        XCTAssertEqual(queue.pruned([first], now: launch.addingTimeInterval(4.1)).map(\.ordinal), [1])
+        XCTAssertEqual(queue.pruned([first], now: launch.addingTimeInterval(5.39)).map(\.ordinal), [1])
         XCTAssertEqual(
-            queue.pruned([first], now: launch.addingTimeInterval(4.2)).count, 0,
+            queue.pruned([first], now: launch.addingTimeInterval(5.41)).count, 0,
             "A finished burst stays live, so the layer keeps redrawing an empty sky."
         )
-        let later = burst(2, after: 5)
+        let later = burst(2, after: 6)
         XCTAssertEqual(
             queue.adding(later, to: [first], now: later.start).map(\.ordinal), [2],
             "Adding a burst keeps one that had already ended."
         )
         XCTAssertEqual(
-            queue.nextExpiry(of: [first, burst(3, after: 1)]), launch.addingTimeInterval(4.2),
+            queue.nextExpiry(of: [first, burst(3, after: 1)])?.timeIntervalSince(launch) ?? 0, 5.4, accuracy: 1e-6,
             "The layer is not told when the soonest burst ends, so it cannot remove it on time."
         )
         XCTAssertNil(queue.nextExpiry(of: []))
