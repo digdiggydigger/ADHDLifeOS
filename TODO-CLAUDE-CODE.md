@@ -3472,12 +3472,36 @@ summary line through the front one, worst in dark. The layers behind now draw a 
 `FocusCompletionCardEdge` — same shape, material, keyline and 76pt height, no content. The
 rejected build is kept in the screenshots folder as the before half of the pair.
 
-### FEATURE: F-FocusCard-4 — the celebration  [ ] NOT STARTED
+### FEATURE: F-FocusCard-4 — the celebration  [x] COMPLETED
 
-A radiating ring burst + a springing checkmark, in the app's existing `ClosureCelebrationCard`
-grammar. iOS 16 floor rules out `PhaseAnimator`/`.symbolEffect`/`.sensoryFeedback`. Reduce Motion
-renders the FINAL state, never the pre-animation one. **Evidence is
-`screenshots/focus-completion-celebration/` with its README, not the unit test.**
+*Built 2026-09-11 on `feature/focus-card-4`. Suite **2,663/0** (emulator up, 0 `127.0.0.1:9099`,
+0 skipped), lint **0/738**, sim + device builds, app target **26.69% (12,255/45,914)** —
+comparable to 26.56% (12,161/45,782): the tree grew by one file, the measurement extent is
+unchanged. The call-site guards ran RED on 5 tests / 9 failures as predicted before the
+implementation existed; three red-checks afterwards, one at a time, each firing on exactly the
+predicted tests. Evidence: `screenshots/focus-completion-celebration/`. **Installed on E's phone;
+the block CLOSES on E's verdict.***
+
+A radiating ring burst + a springing checkmark, inside the completion card's ring: the ring's own
+stroke scales 1 → 1.6 while fading 0.8 → 0 on a 0.9s easeOut, the tick springs in from 0.6, both
+after a 0.3s wait for the card to land. **It ends on the block-2 card E approved** — the settled
+pose is the tick alone, and a card revealed by a Confirm or restored by a relaunch opens in it.
+
+- **The haptic keys on `confirmableCompletionCount`**, on `RootBottomOverlay` — NOT on the stack,
+  which is inserted in the same update that bumps the count and would miss the first card.
+- **One stamp, `latestConfirmableCompletion` (ordinal + record id), written by the push only.**
+  The count drives the haptic, the id drives the burst; Confirm and restore leave it alone.
+- **Reduce Motion is resolved by the CARD** and handed to the celebration before its `@State`
+  exists, so the first frame is the final state — the trap the record names.
+- **iOS 16 floor held:** two `withAnimation`s from `onAppear`; no `PhaseAnimator`, `.symbolEffect`,
+  `.keyframeAnimator` or `.sensoryFeedback` (a call-site test bans all four).
+- Two widget accessors moved to `FocusWidgetPublishing.swift` to keep the service file under 400.
+- **Deviation from the record, and why:** the tick is the ring's existing bare `checkmark`, not a
+  `checkmark.circle.fill` — the record's glyph predates block 2's ring, and a filled disc inside the
+  ring would change the resting card E approved. The burst is what happens TO that card.
+- **For E's eye on device:** the 0.3s pre-beat shows a complete ring with no tick. Deliberate (the
+  tick lands on a card that has stopped moving), but if it reads as a glitch the lever is
+  `FocusCompletionCelebrationMetrics.delay`.
 
 ### FEATURE: F-FocusCard-5 — close-out  [ ] NOT STARTED
 
