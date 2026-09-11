@@ -108,13 +108,14 @@ enum FocusCompletionCelebrationMetrics {
     static let burstOpacityStart: Double = 0.8
     static let burstOpacityEnd: Double = 0
     /// "Long" relative to the app's 0.35s spring: the ring is seen to radiate rather than blink.
-    /// **Doubled from block 4's 0.9s when E asked for the animations to be longer** (2026-09-11);
-    /// `testTheFadesRunAtTheLengthEAskedFor` holds it.
-    static let burstDuration: TimeInterval = 1.8
+    /// **E's number (2026-09-11):** block 4's 0.9s, doubled to 1.8s when E asked for the animations
+    /// to be longer, then set to 2.1s when E named it. `testTheFadesRunAtTheLengthEAskedFor` holds it.
+    static let burstDuration: TimeInterval = 2.1
     static let checkmarkScaleStart: CGFloat = 0.6
     /// The reduced tick's fade. Shorter than the halo's: the tick is the news and should read at
-    /// once, while the halo fading out behind it is the afterglow. Doubled from 0.4s with the halo.
-    static let checkmarkFadeDuration: TimeInterval = 0.8
+    /// once, while the halo fading out behind it is the afterglow. **E's number too:** 0.4s, then
+    /// 0.8s, then 1.1s.
+    static let checkmarkFadeDuration: TimeInterval = 1.1
     /// The card arrives on `RootBottomOverlay`'s 0.35s spring. Started at frame one the burst
     /// plays mostly while the card is still sliding up and the checkmark's pop is lost in the
     /// slide, so both beats wait for the card to land. The halo waits in every mode, and so do the

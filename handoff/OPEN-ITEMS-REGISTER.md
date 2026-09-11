@@ -19,16 +19,20 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ the longer-fades merge (PR #66; its code commit is `e1d87d8`), on top of the
-`F-ModernIOS-2-Celebration` merge (PR #65, `a2f20ab`).** #65 was the first APP-code change since
+**`main` @ the fade-lengths merge (code commit `40a70e4`), on top of the design record (PR #67,
+`bcadc4f`), the longer-fades merge (PR #66, `e1d87d8`) and the `F-ModernIOS-2-Celebration` merge
+(PR #65, `a2f20ab`).** #65 was the first APP-code change since
 `d8b334b` (`F-FocusCard-4`): `bfb1fa3` is the code, `da65027` corrects its comments to what the
 renders showed, `0f5624b` is the evidence and paperwork.
-- **Longer fades (#66), E's ask on device:** the halo 0.9s → **1.8s** in every mode and the
-  Reduce Motion tick 0.4s → **0.8s**, pinned by `testTheFadesRunAtTheLengthEAskedFor`. The factor
-  (2×) was Claude Code's pick, pending E's feel on the phone. The 0.3s delay, the RM-off tick
-  spring and the draw-on did not change. Red predicted and observed 2,673 / 2 (1 test); green
-  **2,673 / 0**, 0 `9099`, lint 0. **Installed and launch-verified on E's phone at 07:32 BST.**
-  Coverage not re-run: constants only, no executable line added (figures below are #65's).
+- **The fades are E's numbers now: halo 2.1s, Reduce Motion tick 1.1s** (the fade-lengths PR,
+  `40a70e4`), pinned by `testTheFadesRunAtTheLengthEAskedFor`.
+  - They got there in two steps: #66 doubled block 4's 0.9s / 0.4s to 1.8s / 0.8s at E's "make the
+    animations longer", then E named 2.1s / 1.1s.
+  - The 0.3s delay, the RM-off tick spring and the draw-on did not change.
+  - Red predicted and observed 2,673 / 2 (1 test); green **2,673 / 0**, 0 `9099`, lint 0 / 0 lines.
+  - **Installed and launch-verified on E's phone at 09:06 BST**; the install was confirmed by
+    `devicectl`'s "App installed".
+  - Coverage not re-run: constants only, no executable line added (figures below are #65's).
 - **The modern-iOS pilot is BUILT:** block 1 (the §7 policy) and block 2 (the celebration) are both
   on `main`. Block 2 is not CLOSED until E's Reduce-Motion-ON verdict.
 - **The live opener is still `handoff/START-HERE-modern-ios-celebration.md`**, now headed by a status
@@ -42,14 +46,13 @@ renders showed, `0f5624b` is the evidence and paperwork.
   - app target **26.75% (12,309/46,014)**
 - `firestore.rules` untouched, so there is **nothing for E to republish**. Every `.xcresult` was
   deleted after its figures were read.
-- **No branch in flight once #67 merges.** #67 is the design record and its prototype evidence,
-  held open for E's review and merged on E's approval; no app code was on it. #65's and #66's
-  branches were deleted by their merges.
+- **No branch in flight once the fade-lengths PR merges.** #67 was the design record and its
+  prototype evidence, held open for E's review and merged on E's approval; no app code was on it.
+  Every branch was deleted by its merge.
 
-**E's phone runs this block's app code**, installed and launch-verified at **07:02 BST on
-2026-09-11**, built from `0f5624b`. `main`'s app code at the merge is identical to that commit's
-(checked at close-out with `git diff 0f5624b main -- "ADHD LifeOS" FocusTimerWidget`, empty).
-Reduce Motion is still ON there, as E left it. (carried)
+**E's phone runs `40a70e4`'s app code**, installed and launch-verified at **09:06 BST on
+2026-09-11**. Its merge to `main` adds no app code. (Before that: 07:32 from #66, and 07:02 from
+`0f5624b`.) Reduce Motion is still ON there, as E left it. (carried)
 
 **Coverage: app target 26.75% (12,309/46,014), and it IS comparable to block 1's 26.68%
 (12,255/45,932).** The denominator moved +82 because the tree grew (one new app file, and the view
@@ -182,7 +185,7 @@ fires under RM, as it always did.
 
       Merged as PR #67. (NEW)
 - [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.** The
-      phone has the LONGER build (07:32 BST): halo fades over 1.8s, tick over 0.8s. Finish a short
+      phone has E's NAMED lengths (09:06 BST): halo fades over 2.1s, tick over 1.1s. Finish a short
       sprint and expect:
       - a CUT arrival;
       - a bold green halo around the ring;

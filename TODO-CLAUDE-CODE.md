@@ -3588,4 +3588,9 @@ Merged as PR #65 (`a2f20ab`).
 **Follow-up, same day — E: "Can you make the animations longer?"** Both fades doubled (halo
 0.9s → 1.8s in every mode, reduced tick 0.4s → 0.8s; the factor is Claude Code's pick pending E's
 feel), pinned by `testTheFadesRunAtTheLengthEAskedFor`. Red 2,673 / 2 (1 test), green 2,673 / 0,
-lint 0. PR #66 (`e1d87d8`); on E's phone 07:32 BST. The RM-ON verdict is now on this build.
+lint 0. PR #66 (`e1d87d8`); on E's phone 07:32 BST.
+
+**Second follow-up, same day — E named the numbers: "make the halo fade 2.1s and the tick fade
+1.1s".** Halo 1.8s → **2.1s**, reduced tick 0.8s → **1.1s**. These are E's values, not a factor, and
+the same test pins them. Red predicted and observed 2,673 / 2 (1 test); green 2,673 / 0, 0 `9099`,
+lint 0. `40a70e4`; on E's phone 09:06 BST. **The RM-ON verdict is now on this build.**
