@@ -85,14 +85,6 @@ struct RootView: View {
         discScrollActivity.prefersPill && !isFabOpen
     }
 
-    /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
-    /// success haptic the web fires on start (`triggerHaptic('success')`) happens exactly once
-    /// per launch.
-    func startFocus(_ plan: FocusSprintPlan) {  // Internal, not private: the sprint door calls it.
-        Haptics.play(.success)
-        focusService.start(plan: plan)
-    }
-
     /// The tab badge's one writer. A failure leaves the previous number standing rather than
     /// dropping to zero: an offline moment is not an empty inbox.
     private func refreshCaptureInboxCount() async {

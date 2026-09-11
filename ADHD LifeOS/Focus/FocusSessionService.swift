@@ -18,7 +18,9 @@ final class FocusSessionService: ObservableObject {
     /// Several members below are internal rather than private, and three published properties
     /// have lost their `private(set)`, for one reason: their writers in `restorePersistedSprint`
     /// moved to `FocusSessionService+Persistence.swift` (the `CaptureInboxService+Create`
-    /// precedent) when this file hit its length budget. The set of writers is unchanged.
+    /// precedent) when this file hit its length budget. The set of writers is unchanged. The same
+    /// is true of `notificationScheduler` and `notificationTask`, whose only readers moved to
+    /// `+Notifications.swift` when F-ConfirmCelebration-1 needed room for one more stamp.
     @Published var session: FocusSession?
     /// Coaching copy for the checkpoint just crossed; the bar shows it briefly.
     @Published private(set) var checkpointBanner: String?
@@ -80,7 +82,7 @@ final class FocusSessionService: ObservableObject {
     /// Hands the sprint's checkpoint + completion notifications to the OS. Distinct from the
     /// Activity mirror: the OS re-renders an Activity from a deadline on its own, but a
     /// notification must be scheduled ahead of time — the app is suspended when one comes due.
-    private let notificationScheduler: FocusNotificationScheduling?
+    let notificationScheduler: FocusNotificationScheduling?
     let now: () -> Date
     var deadline: Date?
     var startedAt: Date?
@@ -88,7 +90,7 @@ final class FocusSessionService: ObservableObject {
     /// The in-flight notification write. Retained so successive mutations serialise (a pause
     /// landing before the resume that followed it would leave the OS holding a stale schedule)
     /// and so tests can await it.
-    private var notificationTask: Task<Void, Never>?
+    var notificationTask: Task<Void, Never>?
 
     var isActive: Bool { session != nil }
 
@@ -106,12 +108,6 @@ final class FocusSessionService: ObservableObject {
         self.sprintStore = sprintStore
         self.locationStamp = locationStamp ?? { await RecordLocationStamp.current() }
         self.now = now
-    }
-
-    /// Awaits any in-flight notification write. Used by tests, and by the Lock Screen intents so a
-    /// pause/resume's schedule change lands before the OS re-suspends the app.
-    func pendingNotificationWork() async {
-        await notificationTask?.value
     }
 
     // No `deinit` cancelling `ticker`: the module compiles with default-MainActor isolation, so a
@@ -298,26 +294,6 @@ final class FocusSessionService: ObservableObject {
             try await logger?.logCompletedSession(record)
         } catch {
             logErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-        }
-    }
-
-    /// Re-derives the sprint's whole notification schedule and hands it to the OS, replacing
-    /// whatever was pending. Called from every mutation that can change WHEN a nudge is due —
-    /// start, pause, resume, extend, re-plan, end — and deliberately NOT from plain ticks: the OS
-    /// already holds the schedule, so re-handing it twice a second would be pure churn.
-    ///
-    /// Fire-and-forget, because the engine's mutations are synchronous and must stay that way; the
-    /// writes are chained so they can never land out of order.
-    func rescheduleNotifications(requestingAuthorization: Bool = false) {
-        guard let notificationScheduler else { return }
-        let plan = FocusNotificationPlanning.plan(session: session, deadline: deadline, now: now())
-        let previous = notificationTask
-        notificationTask = Task {
-            await previous?.value
-            if requestingAuthorization {
-                await notificationScheduler.requestAuthorizationIfNeeded()
-            }
-            await notificationScheduler.replaceScheduled(with: plan)
         }
     }
 
