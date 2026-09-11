@@ -20,6 +20,11 @@ struct FocusCompletionCardStack: View {
     /// The service's `unconfirmedCompletions`, **newest first** — block 2 built the array that
     /// way precisely so a card's depth here is its index, with no second ordering to keep in step.
     let records: [CompletedFocusSession]
+    /// The record whose sprint JUST finished (F-FocusCard-4), from the service's stamp. Compared
+    /// against the FRONT layer only: the layers behind draw blank edges, so a burst on any of
+    /// them would be invisible — and a burst keyed to the stack rather than to a record would
+    /// fire for cards the user never saw.
+    var celebratingID: UUID?
     let onConfirm: (CompletedFocusSession) -> Void
 
     var body: some View {
@@ -31,7 +36,10 @@ struct FocusCompletionCardStack: View {
             ForEach(FocusCompletionStackLayout.drawOrder(for: records)) { layer in
                 Group {
                     if layer.isFront {
-                        FocusCompletionCard(record: layer.record) { onConfirm(layer.record) }
+                        FocusCompletionCard(
+                            record: layer.record,
+                            celebrates: layer.record.id == celebratingID
+                        ) { onConfirm(layer.record) }
                     } else {
                         FocusCompletionCardEdge()
                     }

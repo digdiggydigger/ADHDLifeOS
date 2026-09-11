@@ -10,7 +10,29 @@
 
 import Foundation
 
+/// The stamp a natural completion leaves on the service (F-FocusCard-4): the ordinal of this
+/// launch's completions, which is what the success haptic keys on, and the record it raised, which
+/// is what the burst keys on.
+///
+/// One value rather than two properties because they are one event. The ordinal exists so the
+/// haptic's trigger CHANGES on every completion — `unconfirmedCompletions.count` also falls on
+/// Confirm and would buzz on dismissal, and `completedSprintCount` is bumped by manual stops too,
+/// which raise no card. The record id exists so only the card that just finished bursts: one keyed
+/// to the stack would fire for cards the user never saw, and one keyed to "the front card" would
+/// replay on every Confirm that reveals the next.
+struct FocusConfirmableCompletion: Equatable {
+    let ordinal: Int
+    let recordID: UUID
+}
+
 extension FocusSessionService {
+    /// How many sprints have finished NATURALLY this launch. The success haptic's trigger — see
+    /// `FocusConfirmableCompletion` for why neither existing counter would do.
+    var confirmableCompletionCount: Int { latestConfirmableCompletion?.ordinal ?? 0 }
+
+    /// The record whose card should burst, or `nil` when nothing finished this launch.
+    var celebratingCompletionID: UUID? { latestConfirmableCompletion?.recordID }
+
     /// Raises a confirmation card for a sprint that ran its countdown out, and persists the stack
     /// in the same move.
     ///
@@ -23,6 +45,11 @@ extension FocusSessionService {
     func pushUnconfirmedCompletion(_ record: CompletedFocusSession) {
         unconfirmedCompletions.insert(record, at: 0)
         sprintStore?.writeUnconfirmedCompletions(unconfirmedCompletions)
+        // The ONLY writer of the stamp. Confirm leaves it alone (a revealed card must not
+        // re-celebrate) and so does the restore (a relaunch must not replay one).
+        latestConfirmableCompletion = FocusConfirmableCompletion(
+            ordinal: confirmableCompletionCount + 1, recordID: record.id
+        )
     }
 
     /// The Confirm button: dismiss the card, finalise the record, and release the collapse.

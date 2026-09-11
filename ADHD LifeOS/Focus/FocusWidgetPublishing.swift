@@ -61,6 +61,18 @@ enum FocusWidgetSnapshotBuilder {
 }
 
 extension FocusSessionService {
+    /// The running sprint's countdown deadline; `nil` while paused or idle.
+    ///
+    /// Exposed read-only so the Home Screen widget's projection (`widgetSprint`, below) can be
+    /// built outside the engine without the engine growing a second presentation concern. The
+    /// deadline is deliberately what leaves this type rather than `remainingSeconds`: it is stable
+    /// while a sprint merely counts down, which is what lets Home republish on change without
+    /// churn. Moved here from `FocusSessionService.swift` in F-FocusCard-4, when that file hit its
+    /// length budget — it is a presentation accessor, and this is where its consumer lives.
+    var sprintDeadline: Date? { deadline }
+    /// When the running sprint began — S4's "started 09:26" line in `FocusSprintDetailView`.
+    var sprintStartedAt: Date? { startedAt }
+
     /// The running sprint, projected for the Home Screen widget — `nil` when none is running.
     ///
     /// Deliberately built from the DEADLINE rather than from `remainingSeconds`, for two reasons.

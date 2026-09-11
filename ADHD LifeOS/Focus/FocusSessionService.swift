@@ -36,6 +36,12 @@ final class FocusSessionService: ObservableObject {
     /// (see the note at the top of this class). Nothing is ever auto-confirmed, and there is no
     /// cap: E chose one at a time so confirmation keeps meaning "I looked at this".
     @Published var unconfirmedCompletions: [CompletedFocusSession] = []
+    /// The most recent NATURAL completion this launch — F-FocusCard-4's cue for the success
+    /// haptic (its ordinal) and the burst (its record id). Set only by `pushUnconfirmedCompletion`,
+    /// so never by a manual Stop, a replacement, the offline settle or a relaunch's restore; never
+    /// cleared, so a Confirm revealing the next card cannot re-celebrate it; never persisted, so
+    /// a relaunch celebrates nothing. Written from `+Completions.swift`, hence no `private(set)`.
+    @Published var latestConfirmableCompletion: FocusConfirmableCompletion?
     /// The cadence the running sprint was last planned with — `start`'s argument until the modal's
     /// live editor replaces it. Published so the editor seeds from what is actually scheduled
     /// rather than from a guess reverse-engineered out of the checkpoint marks.
@@ -314,16 +320,6 @@ final class FocusSessionService: ObservableObject {
             await notificationScheduler.replaceScheduled(with: plan)
         }
     }
-
-    /// The running sprint's countdown deadline; `nil` while paused or idle.
-    ///
-    /// Exposed read-only so the Home Screen widget's projection (`widgetSprint`) can be built
-    /// outside the engine without the engine growing a second presentation concern. The deadline is
-    /// deliberately what leaves this type rather than `remainingSeconds`: it is stable while a
-    /// sprint merely counts down, which is what lets Home republish on change without churn.
-    var sprintDeadline: Date? { deadline }
-    /// When the running sprint began — S4's "started 09:26" line.
-    var sprintStartedAt: Date? { startedAt }
 
     // MARK: - Ticking
 
