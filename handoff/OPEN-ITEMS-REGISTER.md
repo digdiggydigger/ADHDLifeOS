@@ -1,9 +1,10 @@
-# Open items register — 2026-09-11 (twenty-fourth edition; F-ModernIOS-2-Celebration LANDED — waiting on E's two device verdicts)
+# Open items register — 2026-09-11 (twenty-fifth edition; celebration fades LENGTHENED at E's ask; Confirm-confetti design IN PROGRESS)
 
-*Written at the close of block 2 of the modern-iOS pilot, by the fresh session the twenty-third
-edition's opener queued. `F-ModernIOS-2-Celebration` is merged to `main` (PR #65), installed on E's
-phone, and **waiting on E's device verdicts: Reduce Motion ON closes the block, then a second look
-with it OFF.** Supersedes the twenty-three earlier editions.*
+*Written the same session as the twenty-fourth, after E answered its verdict request with two asks:
+"Can you make the animations longer?" (done: PR #66) and a full-screen celebration on Confirm,
+"possibly confetti?" (design in progress, four decisions taken — see B.0a). Block 2 is still
+**waiting on E's Reduce-Motion-ON verdict**, now on the longer build. Supersedes the twenty-four
+earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -13,9 +14,16 @@ Every figure below was measured this session unless marked (carried).
 
 ## State
 
-**`main` @ the `F-ModernIOS-2-Celebration` merge (PR #65).** It is the first APP-code change since
+**`main` @ the longer-fades merge (PR #66; its code commit is `e1d87d8`), on top of the
+`F-ModernIOS-2-Celebration` merge (PR #65, `a2f20ab`).** #65 was the first APP-code change since
 `d8b334b` (`F-FocusCard-4`): `bfb1fa3` is the code, `da65027` corrects its comments to what the
 renders showed, `0f5624b` is the evidence and paperwork.
+- **Longer fades (#66), E's ask on device:** the halo 0.9s → **1.8s** in every mode and the
+  Reduce Motion tick 0.4s → **0.8s**, pinned by `testTheFadesRunAtTheLengthEAskedFor`. The factor
+  (2×) was Claude Code's pick, pending E's feel on the phone. The 0.3s delay, the RM-off tick
+  spring and the draw-on did not change. Red predicted and observed 2,673 / 2 (1 test); green
+  **2,673 / 0**, 0 `9099`, lint 0. **Installed and launch-verified on E's phone at 07:32 BST.**
+  Coverage not re-run: constants only, no executable line added (figures below are #65's).
 - **The modern-iOS pilot is BUILT:** block 1 (the §7 policy) and block 2 (the celebration) are both
   on `main`. Block 2 is not CLOSED until E's Reduce-Motion-ON verdict.
 - **The live opener is still `handoff/START-HERE-modern-ios-celebration.md`**, now headed by a status
@@ -160,7 +168,8 @@ fires under RM, as it always did.
 ## A · Decisions only E can make — minutes each
 
 - [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.** The
-      phone already has the build and RM is still on. Finish a short sprint and expect:
+      phone has the LONGER build (07:32 BST): halo fades over 1.8s, tick over 0.8s. Finish a short
+      sprint and expect:
       - a CUT arrival;
       - a bold green halo around the ring;
       - after ~0.3s, the tick fading in as the halo fades out;
@@ -188,6 +197,22 @@ fires under RM, as it always did.
       (carried)
 
 ## B · Real work, ready to start — recommended order
+
+**0a. Confirm confetti — E's ask (2026-09-11), DESIGN IN PROGRESS, nothing built.** A celebration
+   that can use the full screen when the user taps Confirm on a completion card. Being designed
+   question by question in chat; the design record will be `handoff/SESSION-OPENER-confetti-design.md`
+   once the visual choices are made. **E's decisions so far, settled:**
+   1. **Reduce Motion ON shows BOTH a full-screen done-green glow AND real falling confetti.** A
+      deliberate, named **waiver of CLAUDE.md §7.2** for this one moment (like `peekStep`'s of §2).
+      With nothing left to reduce, Reduce Motion OFF is the same.
+   2. **Every Confirm fires it; the Confirm that empties the stack gets a BIGGER burst.**
+   3. **The success haptic fires on every Confirm.**
+   4. **No Settings switch for now** — recorded as a pre-launch item in D.
+
+   **Still open, to be shown as renders:** where the confetti comes from and how it moves, its
+   token palette, the glow's strength, the length and density, and how much bigger the final burst
+   is. Expect a full-screen layer in `RootView` above the tabs, ignoring taps; no particle,
+   confetti or full-screen overlay code exists in the app today.
 
 **0. Follow-ups to the pilot — pick up only after E's verdicts, and only what E asks for:**
    - **The draw-on's timing**, if E's RM-OFF look says the tick should wait for the card: land
@@ -248,6 +273,9 @@ fires under RM, as it always did.
 
 - **Free dev account** → 7-day profiles; the current one is valid to **2026-09-17**. (carried)
 - **Sign in with Apple** built but dormant. (carried)
+- **A way to turn the Confirm confetti off.** E chose no switch for now (2026-09-11). Because it
+  deliberately ignores Reduce Motion, people who turned Reduce Motion on for motion sensitivity get
+  full-screen falling confetti with no escape. Revisit before launch. (NEW)
 
 ## E · Known, not work
 

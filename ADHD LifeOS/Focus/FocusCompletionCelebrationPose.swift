@@ -8,7 +8,8 @@ import SwiftUI
 /// Which celebration a completion card plays: CLAUDE.md §7.1's ladder for this one site, with
 /// §7.2's Reduce Motion rule applied to it (F-ModernIOS-2-Celebration, E's 2026-09-11 decisions).
 ///
-/// - **`.full`: Reduce Motion off, below iOS 26. This is the 16 path, block 4's burst unchanged.**
+/// - **`.full`: Reduce Motion off, below iOS 26. This is the 16 path: block 4's burst, at the
+///   longer length E asked for.**
 ///   The tick springs in from 0.6 while the halo radiates 1 → 1.6 and fades 0.8 → 0.
 /// - **`.reduced`: Reduce Motion ON, on any OS.** The same two beats as a cross-fade. The tick
 ///   fades in at full size and the halo fades out at its end scale; nothing grows or moves.
@@ -107,11 +108,13 @@ enum FocusCompletionCelebrationMetrics {
     static let burstOpacityStart: Double = 0.8
     static let burstOpacityEnd: Double = 0
     /// "Long" relative to the app's 0.35s spring: the ring is seen to radiate rather than blink.
-    static let burstDuration: TimeInterval = 0.9
+    /// **Doubled from block 4's 0.9s when E asked for the animations to be longer** (2026-09-11);
+    /// `testTheFadesRunAtTheLengthEAskedFor` holds it.
+    static let burstDuration: TimeInterval = 1.8
     static let checkmarkScaleStart: CGFloat = 0.6
-    /// The reduced tick's fade. Shorter than the halo's 0.9s: the tick is the news and should read
-    /// at once, while the halo fading out behind it is the afterglow.
-    static let checkmarkFadeDuration: TimeInterval = 0.4
+    /// The reduced tick's fade. Shorter than the halo's: the tick is the news and should read at
+    /// once, while the halo fading out behind it is the afterglow. Doubled from 0.4s with the halo.
+    static let checkmarkFadeDuration: TimeInterval = 0.8
     /// The card arrives on `RootBottomOverlay`'s 0.35s spring. Started at frame one the burst
     /// plays mostly while the card is still sliding up and the checkmark's pop is lost in the
     /// slide, so both beats wait for the card to land. The halo waits in every mode, and so do the

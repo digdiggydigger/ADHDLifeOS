@@ -3583,3 +3583,9 @@ Red-checks on a committed tree, each predicted by test name and observed exactly
 delay (it draws during the card's slide-up; shipped as rendered, per the plan), and the reduced
 halo pinned at 1.6 overhangs the 76pt card by ~0.7pt and runs ~7pt behind the summary text at 80%
 (E's lever; ≤ 1.25 clears the text). **Closes on E's device verdict with Reduce Motion ON.**
+Merged as PR #65 (`a2f20ab`).
+
+**Follow-up, same day — E: "Can you make the animations longer?"** Both fades doubled (halo
+0.9s → 1.8s in every mode, reduced tick 0.4s → 0.8s; the factor is Claude Code's pick pending E's
+feel), pinned by `testTheFadesRunAtTheLengthEAskedFor`. Red 2,673 / 2 (1 test), green 2,673 / 0,
+lint 0. PR #66 (`e1d87d8`); on E's phone 07:32 BST. The RM-ON verdict is now on this build.

@@ -37,7 +37,7 @@ final class FocusCompletionCelebrationMotionTests: XCTestCase {
         }
     }
 
-    /// The floor's celebration is block 4's two-beat burst, unchanged: iOS 16 through 25 with
+    /// The floor's celebration is block 4's two-beat burst: iOS 16 through 25 with
     /// Reduce Motion off. It was green before this block by design — the 16 path is today's code.
     func testTheFloorGetsTheBurst() {
         XCTAssertEqual(
@@ -93,7 +93,6 @@ final class FocusCompletionCelebrationMotionTests: XCTestCase {
             .easeOut(duration: metrics.checkmarkFadeDuration).delay(metrics.delay),
             "The reduced tick springs. An overshoot is motion, which is what the user turned off."
         )
-        XCTAssertEqual(metrics.checkmarkFadeDuration, 0.4)
         XCTAssertEqual(
             metrics.checkmarkAnimation(for: .full),
             .spring(response: 0.4, dampingFraction: 0.6).delay(metrics.delay),

@@ -1,5 +1,11 @@
 # F-ModernIOS-2-Celebration — the celebration's three motion modes
 
+> **Later the same day (PR #66): E asked for the animations to be longer, and both fades were
+> doubled** — the halo 0.9s → 1.8s, the reduced tick 0.4s → 0.8s. **Every frame below was rendered
+> at the ORIGINAL lengths**, so read its timestamps against 0.9s / 0.4s. The phases, the geometry,
+> the draw-on's timing (it ignores the delay and runs on its own ~0.3s clock) and the halo's
+> measurements are unaffected; only how long each fade takes has changed.
+
 **Environment.** iPhone 17 Pro simulator (iOS 26.5, the machine's only runtime), rendered at 3x
 from the unit-test host on branch `feature/modern-ios-celebration`, 2026-09-11. **No backend, no
 account, no sign-in.** Every frame is a `UIGraphicsImageRenderer` capture
