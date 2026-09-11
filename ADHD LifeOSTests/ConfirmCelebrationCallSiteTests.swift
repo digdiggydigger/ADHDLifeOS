@@ -102,6 +102,54 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The stack-clearing Confirm (block 2)
+
+    /// E's decision 2: the fireworks ARE what makes the stack-clearing Confirm bigger; the confetti
+    /// is identical on both. So the display is built only for a burst whose stamp cleared the
+    /// stack, and the dim is driven by the same live bursts (which know which of them cleared it).
+    func testTheFireworksAndTheDimPlayOnlyOnAStackClearingConfirm() throws {
+        let layer = try Self.appCode(Self.layerFile)
+        XCTAssertTrue(
+            layer.contains("fireworks: burst.clearedStack ? ConfirmFireworks(canvas: canvas) : nil"),
+            "The fireworks are built for every Confirm, or for none. They belong to the stack-clearing one only."
+        )
+        XCTAssertTrue(
+            layer.contains("ConfirmCelebrationDim.strongestEnvelope(of: scenes.map(\\.burst), at: date)"),
+            "The dim is not driven by the live bursts, so it cannot follow a stack-clearing Confirm."
+        )
+    }
+
+    /// E (#7): "for light-mode display views, a background dim". Dark appearance does not dim
+    /// (R6: the glow shows in both; only the dim is light-only).
+    func testTheDimIsLightAppearanceOnly() throws {
+        let layer = try Self.appCode(Self.layerFile)
+        XCTAssertTrue(
+            layer.contains("@Environment(\\.colorScheme) private var colorScheme"),
+            "The frame never reads the appearance, so the dim plays in dark too."
+        )
+        let gate = try XCTUnwrap(layer.range(of: "if colorScheme == .light"), "The dim is not gated on the light appearance.")
+        let dim = try XCTUnwrap(layer.range(of: "Color(ConfirmCelebrationDim.colorName)"), "The frame draws no dim.")
+        XCTAssertLessThan(gate.lowerBound, dim.lowerBound, "The dim is drawn outside the light-appearance gate.")
+    }
+
+    /// Back to front, the record's order: app → dim → glow → fireworks → confetti. The dim under
+    /// the glow keeps the green wash visible over the night sky; the fireworks under the confetti
+    /// keep the paper in front of the sparks. And the fireworks are placed at `elapsed`, the
+    /// stretched choreography time, never at raw wall-clock time (E's "Same stretch").
+    func testTheFrameDrawsDimThenGlowThenFireworksThenConfettiOnTheStretchedClock() throws {
+        let layer = try Self.appCode(Self.layerFile)
+        let dim = try XCTUnwrap(layer.range(of: "Color(ConfirmCelebrationDim.colorName)"), "The frame draws no dim.")
+        let glow = try XCTUnwrap(layer.range(of: "RadialGradient("))
+        let fireworks = try XCTUnwrap(
+            layer.range(of: "ConfirmFireworksDrawing.draw(fireworks, in: &context, at: elapsed"),
+            "The frame draws no fireworks, or draws them off the stretched clock."
+        )
+        let confetti = try XCTUnwrap(layer.range(of: "for piece in scene.confetti"))
+        XCTAssertLessThan(dim.lowerBound, glow.lowerBound, "The dim is drawn over the glow.")
+        XCTAssertLessThan(glow.lowerBound, fireworks.lowerBound, "The fireworks are drawn under the glow.")
+        XCTAssertLessThan(fireworks.lowerBound, confetti.lowerBound, "The fireworks are drawn over the confetti.")
+    }
+
     // MARK: - The haptic (R4)
 
     /// On the overlay beside the completion haptic, keyed on the Confirm ordinal — never on the
@@ -120,7 +168,11 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
     /// setting — Confirm shows the glow AND real falling confetti, identical to Reduce Motion OFF.
     /// Pinned so a later Reduce Motion sweep cannot quietly turn E's celebration into a fade.
     func testTheConfirmCelebrationIgnoresReduceMotionByDesign() throws {
-        for file in ["Focus/ConfettiPhysics.swift", "Focus/ConfirmCelebrationRecipe.swift", Self.layerFile] {
+        for file in [
+            "Focus/ConfettiPhysics.swift", "Focus/ConfirmCelebrationRecipe.swift", Self.layerFile,
+            "Focus/ConfirmFireworksSchedule.swift", "Focus/ConfirmFireworksPhysics.swift",
+            "Focus/ConfirmFireworksDrawing.swift"
+        ] {
             let source = try Self.appCode(file)
             XCTAssertFalse(
                 source.contains("reduceMotion") || source.contains("accessibilityReduceMotion"),

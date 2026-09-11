@@ -74,6 +74,12 @@ enum ConfettiPhysics {
     ///
     ///     x(t) = x₀ + vₓ/k · (1 − e^(−k·t)) + flutter(t)
     ///     y(t) = y₀ + (v_y − g/k)/k · (1 − e^(−k·t)) + (g/k)·t
+    static func state(
+        of piece: ConfettiPiece, at time: TimeInterval, gravity: Double, drag: Double
+    ) -> ConfettiPieceState? {
+        nil
+    }
+
     static func state(of piece: ConfettiPiece, at time: TimeInterval) -> ConfettiPieceState? {
         let flight = time - piece.delay
         guard flight >= 0, flight <= piece.lifetime else { return nil }

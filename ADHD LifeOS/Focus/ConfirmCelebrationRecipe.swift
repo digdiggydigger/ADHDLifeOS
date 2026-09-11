@@ -169,6 +169,7 @@ enum ConfirmCelebrationQueue {
     /// path and beat E approved is kept, with no extra drawing. It simply plays at `pace` (~78%).
     /// A tail at the same speed would have either drawn off-screen or thinned the confetti.
     static let extraLength: TimeInterval = 1.2
+    static let stackClearingChoreographyLength: TimeInterval = 0
     /// How long a celebration is on screen.
     static var everyConfirmLength: TimeInterval { choreographyLength + extraLength }
     /// How fast the choreography plays against the wall clock.
