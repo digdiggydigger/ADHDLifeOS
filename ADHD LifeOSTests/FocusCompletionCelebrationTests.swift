@@ -161,20 +161,23 @@ final class FocusCompletionCelebrationTests: XCTestCase {
         XCTAssertGreaterThan(FocusCompletionCelebrationMetrics.burstDuration, 0.35)
     }
 
-    /// **E asked for the animations to be longer** (2026-09-11, on device with Reduce Motion ON,
-    /// once F-ModernIOS-2-Celebration had landed). Both fades were doubled from block 4's lengths —
-    /// the halo 0.9s → 1.8s in every mode, the reduced tick 0.4s → 0.8s. The factor was Claude
-    /// Code's pick, pending E's verdict on the phone. The 0.3s landing delay is a wait, not an
-    /// animation, and did not move. Pinned so a tidy-up cannot quietly undo a length judged by eye;
-    /// if E tunes it again, change it here with the reason.
+    /// **E asked for the animations to be longer, twice, on 2026-09-11.**
+    /// - First "Can you make the animations longer?", on device with Reduce Motion ON once
+    ///   F-ModernIOS-2-Celebration had landed. Claude Code doubled both fades from block 4's
+    ///   lengths: the halo 0.9s → 1.8s in every mode, the reduced tick 0.4s → 0.8s.
+    /// - Then E named the numbers: "make the halo fade 2.1s and the tick fade 1.1s". **These are E's
+    ///   values, not a factor.**
+    ///
+    /// The 0.3s landing delay is a wait, not an animation, and did not move. Pinned so a tidy-up
+    /// cannot quietly undo a length E chose; if E tunes it again, change it here with the reason.
     func testTheFadesRunAtTheLengthEAskedFor() {
         XCTAssertEqual(
-            FocusCompletionCelebrationMetrics.burstDuration, 1.8, accuracy: 0.0001,
-            "The halo's fade is not the length E asked for."
+            FocusCompletionCelebrationMetrics.burstDuration, 2.1, accuracy: 0.0001,
+            "The halo's fade is not the 2.1s E asked for."
         )
         XCTAssertEqual(
-            FocusCompletionCelebrationMetrics.checkmarkFadeDuration, 0.8, accuracy: 0.0001,
-            "The Reduce Motion tick's fade is not the length E asked for."
+            FocusCompletionCelebrationMetrics.checkmarkFadeDuration, 1.1, accuracy: 0.0001,
+            "The Reduce Motion tick's fade is not the 1.1s E asked for."
         )
     }
 }
