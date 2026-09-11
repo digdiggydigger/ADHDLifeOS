@@ -3523,3 +3523,30 @@ from block 4 IS this code. **THE FOCUS CARD ARC IS CLOSED.***
   "keep them separate... queue it".
 - The design record gained a postscript table of everything that shipped against it; the record
   itself is untouched, as the rule requires.
+
+
+## Modern iOS pilot — E's call 2026-09-11 (a FRESH session builds; branches off `main` after the block-0 handoff)
+
+*Prompted by E's "I can't see any of the animations": E's phone runs Reduce Motion ON, every RM
+gate in the app is `nil`, so the block-4 burst has never played for E. E's decisions, the design,
+the tests and the verification bar are in `handoff/START-HERE-modern-ios-pilot.md` (the approved
+plan, verbatim). Two blocks, strictly in order, each its own PR.*
+
+### FEATURE: F-ModernIOS-1-Policy — CLAUDE.md §7 becomes the progressive-enhancement + Reduce Motion policy  [ ] NOT STARTED
+
+Best available API per site behind `#available` (17/18/26) with a complete 16 path; Reduce Motion
+replaces motion with a fade, never removes feedback (house pattern `CaptureFanOverlay.swift:89-96`);
+fallback paths compile-only until an older runtime exists, said so in every block report; call-site
+tests assert BOTH branches. Delete `testTheCelebrationUsesNothingAboveTheiOS16Floor`, add
+`ModernAPIPolicyCallSiteTests.testTheHouseHapticHelperIsTheTwoBranchExemplar`. Suite 2,663 → 2,663.
+Detail: the opener, "Block 1".
+
+### FEATURE: F-ModernIOS-2-Celebration — the pilot: 16 spring / RM cross-fade / iOS 26 draw-on  [ ] NOT STARTED
+
+`FocusCompletionCelebrationMotion.resolve(reduceMotion:drawOnAvailable:)`; pure types split to
+`Focus/FocusCompletionCelebrationPose.swift`; `Pose.geometryPinned`, `.armedInPlace`, `isArmed`,
+`opening(plays:motion:)`; `Metrics.checkmarkAnimation(for:)`; `@available(iOS 26.0, *)
+FocusCompletionDrawOnTick` behind `if motion == .modern, #available(iOS 26.0, *)`. Card, stack,
+overlay and service untouched. Test-first (string tests predicted red 3 / 6), rendered in all three
+modes + in situ, evidence `screenshots/focus-completion-celebration-modes/`. **Closes on E's device
+verdict with Reduce Motion ON.** Detail: the opener, "Block 2".
