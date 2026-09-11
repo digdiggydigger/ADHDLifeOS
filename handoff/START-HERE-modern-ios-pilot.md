@@ -41,6 +41,24 @@ guidance under RM is to replace motion with fades, not remove feedback. The app 
 
 **The full approved plan is below — it is the specification.** Read it whole before doing anything.
 
+**Two additions made after the plan was approved (2026-09-11, later the same day):**
+- **Block 1 must extend §7.5's precedence rule to the new plugins.** E installed the
+  `indie-apple-stack` plugin (the `apple:*` skills and agents — `apple:modernize`, `apple:juice`,
+  `apple:review`, `apple:hig-reviewer`, `apple:swiftui-builder`, …) and the `apple-skills:*` set.
+  §7 names three design skills; the rule is the same for all of these: they improve HOW an
+  authorised change is executed, never expand scope, never override CLAUDE.md, and every
+  conflict is reported in the block report. `apple:modernize` in particular pushes Liquid Glass
+  and current-OS adoption — that is exactly what 7.1's "every tier that adds value, behind a
+  gate with a complete 16 path" filter governs; the skill does not get to skip the gate.
+- **Xcode's MCP bridge is documented in CLAUDE.md under Commands.** Open Xcode on the project
+  BEFORE starting your session or its tools will be absent. `RenderPreview` may produce the still
+  evidence for block 2's three modes; frames still need the probe. Bridge results never replace
+  pasted `xcodebuild` output.
+- **A count to reconcile, not chase:** the bridge's `GetTestList` enumerates **2,688** enabled
+  unit tests where the last full `xcodebuild` run executed **2,663**. Note the gap in your first
+  suite run's report; if the 25 are real tests the plan is enumerating and `xcodebuild` is not
+  running, that is a finding for the register.
+
 ## Read these, in this order
 
 1. This file, to the end.
