@@ -11,6 +11,15 @@
 import SwiftUI
 
 extension RootView {
+    /// Every sprint-start path (card button, detail-screen launch row) funnels here, so the
+    /// success haptic the web fires on start (`triggerHaptic('success')`) happens exactly once
+    /// per launch. Moved here from `RootView.swift` in F-ConfirmCelebration-1, for the 400-line
+    /// bar; the sprint door below is one of its callers.
+    func startFocus(_ plan: FocusSprintPlan) {
+        Haptics.play(.success)
+        focusService.start(plan: plan)
+    }
+
     /// The widget doors' one entry point — called immediately when the tabs are on screen,
     /// and as the drain for a link that had to wait out a cold launch.
     func openWidgetDoor(_ link: AppDeepLink) {

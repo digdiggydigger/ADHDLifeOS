@@ -3594,3 +3594,69 @@ lint 0. PR #66 (`e1d87d8`); on E's phone 07:32 BST.
 1.1s".** Halo 1.8s → **2.1s**, reduced tick 0.8s → **1.1s**. These are E's values, not a factor, and
 the same test pins them. Red predicted and observed 2,673 / 2 (1 test); green 2,673 / 0, 0 `9099`,
 lint 0. `40a70e4`; on E's phone 09:06 BST. **The RM-ON verdict is now on this build.**
+
+## The Confirm celebration — E's ask 2026-09-11, record approved the same day (branch `feature/confirm-celebration`, off `main` @ `a07402d`)
+
+*E: "when the user taps "Confirm" on a completed sprint/notification card. There needs to be an
+animation that can use up to the full-screen if so, Possibly confetti?" Designed question by
+question and by rendered prototype; every decision, number and constraint is in
+**`handoff/SESSION-OPENER-confirm-celebration-design.md`** (permanent), evidence
+`screenshots/confirm-celebration-prototypes/`. E's review: "R1, R2, R9 (a+b) = Approved"; R3–R8
+stand as defaults. Two blocks, strictly in order, each closing on E's device verdict.*
+
+### FEATURE: F-ConfirmCelebration-1 — the engine, the trigger, and every Confirm's confetti + glow + haptic  [x] COMPLETED
+
+- **Room first, own commit:** `FocusSessionService.swift` (394/400) moves methods out to an extension
+  file; `RootView.swift` (399/400) moves `startFocus` to `RootView+Doors`.
+- **Stamp (R2):** `FocusConfirmation(ordinal:clearedStack:)` published as `latestConfirmation`, written
+  only by `confirmCompletion`, only for a record that was in the stack, before `await log`; never
+  persisted; `latestConfirmableCompletion` untouched.
+- **Engine:** a pure, closed-form confetti model (gravity 520, drag 2.2, fade 0.7 s, tumble, flutter),
+  seeded per confirmation ordinal (R5); every Confirm = 120 rain + 100 cannons in the 7 record tokens;
+  the StateGo glow (0.32, in 0.3 / hold 0.9 / out by 2.4 s). Live bursts capped at 3, oldest dropped
+  (R1); pruned when they end so nothing redraws once they have.
+- **Layer (R3):** one `.overlay` in `RootView` after `RootBottomOverlay`'s, before the covers;
+  `allowsHitTesting(false)`, `ignoresSafeArea()`, `accessibilityHidden(true)`; `Canvas` in
+  `TimelineView(.animation)`, single implementation (§7.1: no tier adds value).
+- **Haptic (R4):** `.haptic(.success, trigger:)` on `RootBottomOverlay`, keyed on the Confirm ordinal.
+- **§7.2 waiver** written into CLAUDE.md with a pinning call-site test.
+- Test-first with a predicted red; red-checks on a committed tree; in-situ renders light + dark;
+  device verdict (Reduce Motion ON, which the waiver makes identical to OFF).
+
+**Completed 2026-09-11 on `feature/confirm-celebration`** (`281e151` room, `7f0326a` red, `9314a13`
+green). Built as specified. New files:
+- `Focus/ConfettiPhysics.swift`
+- `Focus/ConfirmCelebrationRecipe.swift`
+- `Focus/ConfirmCelebrationOverlay.swift`
+- `Focus/FocusSessionService+Notifications.swift`
+
+**Tests:** 35 new, in `ConfettiPhysicsTests`, `ConfettiRecipeTests`, `ConfirmCelebrationTimingTests`,
+`FocusConfirmationStampTests` and `ConfirmCelebrationCallSiteTests`.
+
+**Red #1, predicted in writing per test and observed exactly:** `Executed 2708 tests, with 46
+failures (4 unexpected)`, 32 tests.
+
+**Red-checks on the committed tree, each predicted by test name and observed exactly:**
+- the in-stack guard dropped + the cap removed → 2,708 / 3
+  (`testConfirmingACardThatIsNotWaitingCelebratesNothing` 2, `testAFourthQuickConfirmDropsTheOldestBurst` 1);
+- the stamp moved below `await log` + `allowsHitTesting(false)` removed → 2,708 / 2
+  (`testTheConfirmationStampLandsBeforeTheLogAwait`, `testTheLayerNeverTakesATapAndIsNeverReadOut`).
+
+**Final green:** 2,708 / 0 (emulator UP, 0 `9099`); lint 0 / 751; sim and device builds succeeded;
+app 26.87% (12,470/46,405).
+
+**Renders** (`screenshots/confirm-celebration-block-1/`):
+- a real `confirmCompletion` sets the celebration off through the real overlay on the real clock,
+  two quick Confirms overlap, and everything is pixel-identical to a never-celebrated window once
+  it lands;
+- ordinal 1's 220 pieces are field-for-field the prototype E chose from.
+
+On E's phone 09:54 BST. **Closes on E's device verdict.**
+
+### FEATURE: F-ConfirmCelebration-2 — the stack-clearing fireworks and the light-mode dim  [ ] OPEN
+
+14 shells in 9 tokens (single / two-tone / ring-in-ring; big / medium / small; two-shell finale) on
+the record's schedule, only when `clearedStack`; `Scrim` at 0.85 in LIGHT appearance only, in 0.35 s,
+held to 0.4 s before the last spark, out 0.6 s. Pure model + schedule + dim tests, call-site test
+that both play only on a cleared stack, renders light + dark, device verdict. **Not started until E's
+verdict on block 1.**
