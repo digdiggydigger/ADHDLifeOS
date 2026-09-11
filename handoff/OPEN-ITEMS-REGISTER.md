@@ -203,6 +203,11 @@ FocusTimerWidgetExtension    10.30%  (228/2214)   ← read the 233-line testable
 
 ## E · Known, not work
 
+- **Xcode's MCP bridge is live (`xcrun mcpbridge`, server `xcode`) and documented in CLAUDE.md
+  under Commands.** Open Xcode BEFORE the session or its tools are absent all session. Its
+  `GetTestList` enumerates 2,688 enabled unit tests against the 2,663 the last full run
+  executed — a 25-test gap the fresh session should reconcile in its first suite report. (NEW)
+
 - **A green suite cannot see a `View`'s appearance, and this arc proved it four times now.**
   Block 1's `layoutPriority` compression reached E's device; block 2's was caught by a render;
   block 3's was the cards behind **ghosting through `.regularMaterial`**; and the peek's own

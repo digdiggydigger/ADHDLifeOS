@@ -118,6 +118,29 @@ installed — there is no iPhone 15 Pro simulator, so the previously documented 
 runnable. If `xcodebuild` reports the destination is unavailable, run
 `xcrun simctl list devices available` and use an installed device rather than guessing.
 
+### Xcode's MCP bridge (E installed it 2026-09-11)
+
+Xcode 26.6 ships an MCP server, `xcrun mcpbridge`, registered in this project as the `xcode`
+server. **Open Xcode on the project BEFORE starting the Claude Code session.** The session fetches
+the tool list once at startup; if Xcode is not running then, the fetch times out and the server
+is absent for the whole session — `ToolSearch` finds nothing and the only recovery is a stdio
+JSON-RPC helper that spawns the bridge itself (this cost the 2026-09-11 session the tools).
+
+Twenty-one tools. `XcodeListWindows` first — everything else needs its `tabIdentifier`
+(`windowtab1` with one window). The file tools (`XcodeLS/Read/Glob/Grep/Write/Update/MV/RM`)
+take **project-navigator paths, not filesystem paths**: root is `/`, the project node is
+`ADHD LifeOS`, the app group is `ADHD LifeOS/ADHD LifeOS`. Also `XcodeRefreshCodeIssuesInFile`,
+`XcodeListNavigatorIssues`, `BuildProject` + `GetBuildLog`, `GetTestList`, `RunAllTests`,
+`RunSomeTests` (target name + XCTest identifier), `RunCodeSnippet`, `DocumentationSearch`, and
+**`RenderPreview`**, which builds and snapshots any `#Preview` in a file by index.
+
+**Where it sits against the bar above — and it does not move the bar.** `RenderPreview` is a
+sanctioned way to produce STILL evidence for `screenshots/` (every view already has Light/Dark
+previews); animation FRAMES still need the run-loop-pumping render probe. `RunSomeTests` shortens
+a red-check loop. Neither replaces pasted `xcodebuild` output: a block is done on the terminal
+output E reads, never on a bridge green. Treat a bridge result as a hint to confirm, and say which
+it was in the report.
+
 **A UI-TARGET RUN POISONS THE SIMULATOR. Erase it in the same breath, before any unit run.**
 A UI journey signs the simulator in; the next unit suite then drags a Firebase client retrying
 against an emulator that is no longer up, and every test takes **60-80 seconds instead of
