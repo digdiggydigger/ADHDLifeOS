@@ -111,3 +111,39 @@ whatever is scrolled beneath it, so here its bottom edge lands directly on a rou
 "Done for now" button. That is occlusion, not the `.regularMaterial` ghosting block 3 fixed — the
 card body sampled uniform through that band, and the button's pixels start below the card's bottom
 edge at y=2153, not inside it. Worth knowing before anyone reads the pair as a ghosting relapse.
+
+## After: the 14pt peek on device, both themes (added 2026-09-11)
+
+**Environment.** E's own iPhone 15 Pro, iOS 26, **live Firebase, E's real signed-in account**, app
+build `298fb17` (PR #56, `peekStep` 8 → 14), captured by E at 12:41–12:42 on 2026-09-11. Three
+real unconfirmed completions, produced by running three 30s sprints to their natural end and
+confirming none — the `presetDurationsSeconds` 30s chip makes that a ~90-second exercise rather
+than three pomodoros. **The sprints are E's own data and were left in place.**
+
+**14.0pt, measured on the hardware, in both themes.** The keylines sit **42–43px apart at 3x** in
+`10-` (light) and `12-` (dark) — 14.0 and 14.3pt, which is the chosen value landing exactly. Three
+keylines, so three layers: `maxVisible` 3 is doing its job with a real stack rather than a literal.
+
+**This is the first real three-layer stack anyone has seen.** Every earlier image of three layers
+was a render, because reaching one needs three sprints each floored at 30s with none confirmed —
+the reason block 3's evidence was simulator-rendered in the first place.
+
+**What these settle that the renders could not:**
+- **The taller peek still clears the search row.** `13-` is the Tasks tab with the bottom search
+  row directly above the stack and the tab bar below it. Raising `peekStep` raises
+  `reservedTopPadding` with it (it is derived from `yOffset`), and the gap holds — no collision,
+  which was the one risk flagged when the value changed.
+- **It reads in light.** `10-` and `11-` are the same stack at two scroll positions over real Home
+  content; the two peeking edges are legible against the page rather than carried by a hairline
+  nobody can see. That was the whole point of the change.
+- **Dark was never the problem and is not hurt.** `12-` on the Areas tab over saturated life-area
+  cards.
+
+## Files (after)
+
+| file | what it proves |
+|---|---|
+| `10-device-14pt-three-light.jpeg` | **Three layers at 14pt, light, on device.** Keylines 42px apart at 3x. |
+| `11-device-14pt-three-light-scrolled.jpeg` | The same stack at a different scroll position — the peek does not depend on what is behind it. |
+| `12-device-14pt-three-dark-areas.jpeg` | Dark, over the Areas grid's saturated cards. |
+| `13-device-14pt-clears-search-row-dark.jpeg` | **The composition check:** search row above, stack below, tab bar under. The reservation holds at the taller peek. |
