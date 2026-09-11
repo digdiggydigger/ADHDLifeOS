@@ -5,6 +5,14 @@ debugged "I can't see any of the animations", found the root cause on E's phone,
 pilot with E. E's instruction: **a fresh session builds it** — the session that planned it landed
 only this handoff.*
 
+> **STATUS 2026-09-11 — BLOCK 1 HAS LANDED. START AT BLOCK 2.** `F-ModernIOS-1-Policy` merged via
+> PR #63 (commit `0e980e5` on `main`; confirm with `git log --oneline origin/main | grep
+> F-ModernIOS-1-Policy`). CLAUDE.md §7 is already the new 7.1–7.5 policy and
+> `ModernAPIPolicyCallSiteTests` exists, so **do not rebuild block 1**. Block 2's branch is cut
+> once E has reviewed block 1 (the register's twenty-third edition says whether E has). Everything
+> below is the original opener, unchanged. Its "Where things stand" figures predate block 1;
+> the register carries the current ones.
+
 **This is the ONE live opener.** If you find a second `START-HERE-*` in `handoff/`, one of them is
 a trap. Archive this file into `handoff/archive/` in the same move that writes your successor, at
 the END of your session, never at the start. Its predecessor, `START-HERE-post-focus-card.md`, is
