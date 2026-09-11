@@ -4,7 +4,8 @@
 handoff": `SESSION-OPENER-*` files are records despite the name). Written 2026-09-11 from E's
 answers in chat and the throwaway prototype renders E chose from
 (`screenshots/confirm-celebration-prototypes/`). The arc is `F-ConfirmCelebration-1` and
-`F-ConfirmCelebration-2`. **Nothing here is built yet.***
+`F-ConfirmCelebration-2`. **Reviewed by E the same day: R1, R2 and R9 approved (see
+"Claude Code's recommendations"). Nothing here is built yet.***
 
 **Everything in "The settled specification" was answered directly by E. Do not re-litigate any of
 it without E.** Where a line says E chose, E was shown the alternatives — as text options or as
@@ -82,15 +83,22 @@ only. So both are answered, not inferred.
 
 ---
 
-## Claude Code's recommendations — NOT yet E's decisions
+## Claude Code's recommendations — and E's review of them
 
-Each is the default the build would take. Accept, change or reject any of them in review.
+**E reviewed this record on 2026-09-11 (PR #67) and answered, verbatim: "R1, R2, R9 (a+b) =
+Approved."** "(a+b)" is both of R9's blocks.
+- **R1, R2 and R9 are E's decisions now.** Treat them like the settled specification.
+- **R3–R8 were not mentioned.** They stand as the build's DEFAULTS, not as E's decisions. The build
+  takes them as written, and E can change any of them at a device verdict without that counting as
+  re-litigating.
 
-- **R1 · Rapid Confirms overlap, capped.** "Every Confirm fires it" means two Confirms 1s apart
+Each item below was the default the build would take.
+
+- **R1 · APPROVED by E · Rapid Confirms overlap, capped.** "Every Confirm fires it" means two Confirms 1s apart
   would each start a celebration. Recommendation: they **overlap** (each is its own instance, keyed
   by start time), **capped at 3** live instances with the oldest dropped. Restarting instead would
   cut the first celebration off mid-air, which reads as a glitch.
-- **R2 · The trigger is a NEW service stamp, by analogy with `latestConfirmableCompletion`.**
+- **R2 · APPROVED by E · The trigger is a NEW service stamp, by analogy with `latestConfirmableCompletion`.**
   `confirmCompletion` writes `latestConfirmation = FocusConfirmation(ordinal:clearedStack:)`:
   - **it is a second stamp, never the existing one.** `latestConfirmableCompletion` keys the
     completion haptic and the in-ring burst, and its comment in `+Completions.swift` records that
@@ -119,7 +127,7 @@ Each is the default the build would take. Accept, change or reject any of them i
   card leaves on the overlay's existing animation.
 - **R8 · No VoiceOver announcement.** The layer is hidden; the card's removal and the haptic are
   the feedback, as they are today.
-- **R9 · Two blocks,** each closing on E's device verdict (below).
+- **R9 · APPROVED by E, both blocks · Two blocks,** each closing on E's device verdict (below).
 
 ---
 

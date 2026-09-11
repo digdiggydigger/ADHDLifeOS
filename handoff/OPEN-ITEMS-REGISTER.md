@@ -1,4 +1,4 @@
-# Open items register — 2026-09-11 (twenty-sixth edition; Confirm-celebration design record WRITTEN, awaiting E's review)
+# Open items register — 2026-09-11 (twenty-sixth edition; Confirm-celebration design record APPROVED by E)
 
 *Written the same session as the twenty-fourth and twenty-fifth. E answered that edition's verdict
 request with two asks:
@@ -6,8 +6,8 @@ request with two asks:
 - a full-screen celebration on Confirm, "possibly confetti?".
 
 **All eight of E's decisions on the celebration are now taken, and the design record is written:**
-`handoff/SESSION-OPENER-confirm-celebration-design.md`, on the open PR for
-`chore/confirm-celebration-design`. It is not built; E's review of the record is the gate. Block 2
+`handoff/SESSION-OPENER-confirm-celebration-design.md` (PR #67). **E approved it: "R1, R2, R9
+(a+b) = Approved."** It is not built yet. Block 2
 is still **waiting on E's Reduce-Motion-ON verdict**, on the longer build. Supersedes the
 twenty-five earlier editions.*
 
@@ -42,9 +42,9 @@ renders showed, `0f5624b` is the evidence and paperwork.
   - app target **26.75% (12,309/46,014)**
 - `firestore.rules` untouched, so there is **nothing for E to republish**. Every `.xcresult` was
   deleted after its figures were read.
-- **One branch in flight, deliberately: `chore/confirm-celebration-design`**, the design record and
-  its prototype evidence, left OPEN for E's review. This is the sanctioned open-PR state, not an
-  unlanded block. No app code is on it. #65's and #66's branches were deleted by their merges.
+- **No branch in flight once #67 merges.** #67 is the design record and its prototype evidence,
+  held open for E's review and merged on E's approval; no app code was on it. #65's and #66's
+  branches were deleted by their merges.
 
 **E's phone runs this block's app code**, installed and launch-verified at **07:02 BST on
 2026-09-11**, built from `0f5624b`. `main`'s app code at the merge is identical to that commit's
@@ -174,15 +174,13 @@ fires under RM, as it always did.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Review the Confirm-celebration design record** (`handoff/SESSION-OPENER-confirm-celebration-design.md`,
-      open PR on `chore/confirm-celebration-design`). The settled half is E's own eight answers,
-      quoted with the options as E saw them. **What needs E's eye is its "recommendations — NOT yet
-      E's decisions" list, R1–R9**, chiefly:
-      - R1: rapid Confirms overlap, capped at 3;
-      - R2: a second service stamp, never the existing one;
-      - R9: two blocks, each closing on a device verdict.
+- [x] **Review the Confirm-celebration design record — DONE.** E, verbatim: **"R1, R2, R9 (a+b) =
+      Approved."**
+      - R1 (overlap, capped at 3), R2 (a second service stamp) and both of R9's blocks are E's
+        decisions now.
+      - R3–R8 went unmentioned and stand as the build's defaults. The record says so.
 
-      Approve, change, or reject; the build starts only after. (NEW)
+      Merged as PR #67. (NEW)
 - [ ] **E's device verdict with Reduce Motion ON — this closes `F-ModernIOS-2-Celebration`.** The
       phone has the LONGER build (07:32 BST): halo fades over 1.8s, tick over 0.8s. Finish a short
       sprint and expect:
@@ -214,8 +212,8 @@ fires under RM, as it always did.
 
 ## B · Real work, ready to start — recommended order
 
-**0a. The Confirm celebration — E's ask (2026-09-11). DESIGN SETTLED, RECORD WRITTEN, awaiting E's
-   review; nothing built.** A celebration that uses the full screen when the user taps Confirm on a
+**0a. The Confirm celebration — E's ask (2026-09-11). DESIGN SETTLED, RECORD APPROVED by E (R1, R2,
+   R9 a+b), block 1 next; nothing built yet.** A celebration that uses the full screen when the user taps Confirm on a
    completion card. **The record is `handoff/SESSION-OPENER-confirm-celebration-design.md`**,
    renamed from the `…-confetti-design.md` the last edition promised because it now covers
    fireworks, the glow and the dim as well. Its evidence is `screenshots/confirm-celebration-prototypes/`.
@@ -235,7 +233,7 @@ fires under RM, as it always did.
    8. **In LIGHT appearance the screen dims to 85% (`Scrim`) for the fireworks' length**; dark never
       dims, chosen by video over 55% and none.
 
-   **Next, only after E approves the record:** write `F-ConfirmCelebration-1` (engine, trigger stamp,
+   **Next — approved:** write `F-ConfirmCelebration-1` (engine, trigger stamp,
    every Confirm's confetti + glow + haptic) and `-2` (fireworks + dim) into `TODO-CLAUDE-CODE.md`
    from it, then build test-first. **Both files the build touches are at their line ceiling**
    (`FocusSessionService.swift` 394, `RootView.swift` 399). The record plans the room-making move
