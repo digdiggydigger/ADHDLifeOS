@@ -263,52 +263,6 @@ final class CaptureInboxService: ObservableObject {
         }
     }
 
-    /// Assigns (or clears, via `lifeAreaId: nil`) a capture's Life Area. Updates the loaded list
-    /// in place on success so the row reflects the change without a full reload.
-    @discardableResult
-    func updateLifeArea(capture: Capture, lifeAreaId: UUID?) async -> Bool {
-        triageErrorMessage = nil
-        do {
-            let updated = try await client.updateCapture(
-                id: capture.id, changes: CaptureUpdate(lifeAreaId: .some(lifeAreaId))
-            )
-            replaceCapture(updated)
-            return true
-        } catch {
-            triageErrorMessage = Self.message(for: error)
-            return false
-        }
-    }
-
-    /// The detail screen's re-fetch (the `TaskDetailView` precedent: the push carries an id, the
-    /// screen re-reads the server's document rather than trusting a possibly stale list row).
-    /// Throws rather than publishing a message — the failure belongs to the detail screen's own
-    /// local state, not to the list behind it.
-    func fetchCaptureDetail(id: UUID) async throws -> Capture {
-        try await client.fetchCapture(id: id)
-    }
-
-    /// Saves (or, for whitespace-only input, clears) the user's annotation. Returns the server's
-    /// re-read document so the detail screen can adopt it; the loaded list gets the same copy so
-    /// the row behind the detail agrees without a reload. `nil` means the write failed and
-    /// `triageErrorMessage` says why.
-    @discardableResult
-    func saveNotes(capture: Capture, notes: String) async -> Capture? {
-        triageErrorMessage = nil
-        let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        do {
-            let updated = try await client.updateCapture(
-                id: capture.id,
-                changes: CaptureUpdate(notes: trimmed.isEmpty ? .some(nil) : .some(trimmed))
-            )
-            replaceCapture(updated)
-            return updated
-        } catch {
-            triageErrorMessage = Self.message(for: error)
-            return nil
-        }
-    }
-
     /// Drops a retired capture from the loaded list without a refetch, and keeps the active tab's
     /// count in step with it. Lives here rather than in `CaptureInboxService+Triage` because
     /// `state` has a `private(set)` setter — the only writers must be in this file.
@@ -325,7 +279,11 @@ final class CaptureInboxService: ObservableObject {
         counts[filter] = remaining.count
     }
 
-    private func replaceCapture(_ updated: Capture) {
+    /// Internal rather than private for the `+Triage` reason: its two callers moved to
+    /// `CaptureInboxService+Notes.swift` in `F-CTACelebrations-5`'s room-first commit, and it
+    /// could not follow them — it writes `state`, whose `private(set)` setter keeps every writer
+    /// in this file.
+    func replaceCapture(_ updated: Capture) {
         guard case .loaded(let captures) = state else { return }
         state = .loaded(captures.map { $0.id == updated.id ? updated : $0 })
     }
