@@ -199,6 +199,31 @@ honest floor.
      rather than a typo. **Judge it when E looks at the render, and say it is a rise-then-fall.**
    - The pop's origin is recorded GLOBAL and converted in `CelebrationStage`; a `TaskDetail` Form
      row is drawn by the ROOT layer, which is what beats row clipping. (NEW)
+   - **Cover environment inheritance is pinned by a call-site test, and UNEXERCISED at runtime.**
+     `CelebrationMountCallSiteTests` asserts the two `.environment(...)` lines sit outside the
+     covers' chain, and block 3's renders prove the layers draw — but both probes injected the
+     environment themselves, so nothing has yet proved a layer inside a `fullScreenCover` inherits
+     the centre from `RootView` at runtime. **No cover-hosted celebration exists until block 4**,
+     so the first pop on `TaskSearchSurface` is also the first real test of that wiring. Read it as
+     one. (NEW)
+
+**00b. A LATENT defect in `CelebrationCenter`, found after the close-out and deliberately NOT fixed
+   in block 3.** `request(_:at:)` stamps `lastFullScreenAt` and fires the `chime` hook when the
+   outcome is `.fullScreen` — **before** the held branch — and `releaseHeld()` sets neither. Two
+   consequences, both wrong once anything depends on them:
+   - a burst HELD behind the Create Task sheet chimes while the sheet is still up, ~0.45 s before
+     any confetti is drawn (R-e's hold), rather than when it plays;
+   - a held burst DROPPED at 60 s (R-g) has already chimed and already stamped the cooldown, for a
+     celebration that never appeared — so it can silence a real milestone that follows it.
+
+   **Unreachable today**, which is why it was left: the only thing that requests `.fullScreen` is
+   the Confirm bridge on `RootBottomOverlay`, which sits BELOW every sheet, so a Confirm cannot be
+   tapped while the promote sheet is frontmost. It becomes reachable at **`-5`** (inbox zero via
+   the promote sheet is exactly the held path) and audible at **`-7`** (the real player). Fix it in
+   whichever lands first: move the stamp and the chime to the moment a burst actually starts, so
+   both a held release and a direct enqueue go through one place. **`CelebrationCenterTests` has no
+   test of held-burst stamp or chime timing** — that gap is the reason this was not caught by the
+   suite, and closing it is part of the fix. (NEW)
 
 **0. Follow-ups to the modern-iOS pilot — only what E asks for.** (carried)
    - **RM arrival fade for the bottom furniture**, only if E likes the cross-fade.
