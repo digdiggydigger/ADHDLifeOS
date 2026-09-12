@@ -3758,7 +3758,7 @@ block 1: 0 pixels). Device verdict.
   Predicted red 5 / 5. Evidence: the Feedback section light + dark (`RenderPreview`); Confirm with
   the switch off pixel-identical to a never-mounted window. Device verdict.
 
-### FEATURE: F-CTACelebrations-3 — the centre, the shared layer, the four surfaces, Confirm re-routed  [ ] OPEN
+### FEATURE: F-CTACelebrations-3 — the centre, the shared layer, the four surfaces, Confirm re-routed  [x] COMPLETED 2026-09-12 — awaiting E's device verdict
 
 - **Room first, own commit:** `RootView.swift:73-93` → `RootView+Furniture.swift`.
 - New `ADHD LifeOS/Celebrations/`: `CelebrationRequesting` (kinds, surfaces, outcome, the protocol,
@@ -3784,6 +3784,22 @@ block 1: 0 pixels). Device verdict.
   the block-1 live-Confirm probe through the centre, pixel-identical after landing; a
   `.routineCover` burst drawn by that layer only; Confirm under injected RM still full. Device
   verdict: Confirm indistinguishable from today; switch off = nothing.
+- **Shipped, and the four things that differed from the plan.** (1) The design predicted THREE
+  `onDismiss`es; there are **four**, because `CapturePromoteSheet` is presented from both
+  `CaptureInboxView` and `CaptureDetailView` — a miscount in the record, not a design decision.
+  (2) `CelebrationFrame` takes NO `originOffset`: the layer resolves a pop's global origin into its
+  own space in `CelebrationStage`, where the geometry already lives, so the frame stays a pure
+  function of scenes + date — which every render probe and preview in this arc depends on.
+  (3) The §7.2 waiver pin could not survive "unchanged" literally, because it read the deleted
+  overlay; it kept its NAME and E's decision, swapped the overlay for `CelebrationFrame` (RM-free
+  because the rendering arrives as a parameter) and gained the resolver-order assertion, which is
+  exactly what this block said it would "become". (4) `CelebrationPopSource`, `CelebrationKind.pop`
+  and the three new recipes have **no production call site until `-4`/`-5`** — built here because
+  this block's file list names them, and named here so the reachability guard is not forgotten.
+- Predicted red in TWO parts and both matched: 17 / 23 source-reading tests, then a BUILD failure
+  naming every new symbol. 2,757 → 2,810 tests. App coverage 27.05 % → **27.42 %**
+  (12,949/47,221); the centre, the policy, the motion resolver, the recipes and the burst are all
+  at **100 %**, and what is left at 0 % is view body.
 
 ### FEATURE: F-CTACelebrations-4 — the nine mini confetti pops  [ ] OPEN
 
