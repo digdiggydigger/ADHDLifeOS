@@ -1,4 +1,4 @@
-# Open items register — 2026-09-12 (thirty-first edition; the CTA celebrations arc's block 1, `F-ConfirmCelebration-2`, is BUILT and MERGED, awaiting E's device verdict; seven blocks remain)
+# Open items register — 2026-09-12 (thirty-first edition; the CTA celebrations arc's block 1, `F-ConfirmCelebration-2`, is BUILT, MERGED and PASSED E's device verdict; seven blocks remain)
 
 *The close-out of the first build session of the CTA celebrations arc. E's asks this session,
 verbatim: *"Start from handoff/START-HERE-cta-celebrations-build.md. Read it, then the design
@@ -104,10 +104,9 @@ site fades (E's #7).
 - [x] **Review the design record** and rule on **R-a…R-h** — E, at the start of the build session
       2026-09-11, asked in one message with each default listed: **"yes"**. The record is approved
       and all eight recommendations stand as the build's defaults. (CLOSED)
-- [ ] **E's device verdict on `F-ConfirmCelebration-2`** — the stack-clearing fireworks and the
-      light-mode dim, on the phone from `main @ 9a7b664`, light AND dark, Reduce Motion ON (E's
-      setting; the waiver makes it identical to OFF). The block is ticked; the verdict closes it and
-      opens `F-CTACelebrations-1`. (NEW)
+- [x] **E's device verdict on `F-ConfirmCelebration-2`** — PASSED 2026-09-12, E: *"it looks good.
+      It looks as if it's working as as you specified."* The block is CLOSED; the next is
+      `F-CTACelebrations-1`. E also said to ignore the stray Codex `AGENTS.md` for now. (CLOSED)
 - [ ] **The milestone cooldown.** E: *"i am undecided about the cooldown at the moment anyway."* It
       ships at **5 s for testing**; whether it exists and at what value is E's call on the phone
       after `F-CTACelebrations-5`. (carried; untouched this session, as E instructed)
@@ -153,7 +152,7 @@ site fades (E's #7).
    9. **Architecture:** one App-owned `CelebrationCenter`, reached through an environment value with
       an inert default; one `CelebrationLayer(surface:)` per presented surface (root, the routine
       cover, the Tasks search surface, the Create Task sheet).
-   **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ (DONE 2026-09-12, verdict pending) →
+   **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ (DONE 2026-09-12, verdict PASSED) →
    `F-CTACelebrations-1` (haptic tidy + spring-in) → `-2` (switches) → `-3` (centre + layers,
    Confirm re-routed) → `-4` (pops; render first, E picks) → `-5` (inbox zero, streak, daily goal)
    → `-6` (Completed flow; render the congratulation first) → `-7` (chime; E picks by ear).

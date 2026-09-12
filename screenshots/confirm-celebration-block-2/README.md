@@ -22,8 +22,8 @@ The design, every number and E's decisions: `handoff/SESSION-OPENER-confirm-cele
 > no later tier adds anything to a particle field (§7.1: "no tier adds value").
 > - **Sim:** run on the 26.5 simulator, live (a real Confirm on the real clock) and injected, light
 >   and dark.
-> - **E's phone:** installed from `main` after the merge; **E's device verdict is what closes this
->   block** and is not yet given as this README is written.
+> - **E's phone:** installed from `main @ 9a7b664` after the merge; **E's device verdict PASSED**
+>   on 2026-09-12 (Reduce Motion ON, E's setting).
 > - **iOS 16–25:** behaviour is COMPILE-ONLY; no older runtime is installed.
 > - **Reduce Motion:** none of the six celebration files reads it — E's §7.2 waiver, pinned by
 >   `testTheConfirmCelebrationIgnoresReduceMotionByDesign`, now listing the three fireworks files.
@@ -93,4 +93,4 @@ dark never dims, or that an every-Confirm is untouched. These frames do.
 | `13-stack-cleared-c4.8-t6.17-light-dark.jpeg` | Just past the last spark (4.79 s): the dim lifting (envelope ≈ 0.32), confetti landed, sky nearly clear. |
 | `20-every-confirm-t1.21-light-dark-unchanged.jpeg` | A NON-clearing Confirm's frame on this tree — pixel-identical (0 / 1,339,344) to block 1's rendering of the same frame. |
 | `30-stack-cleared-light-dark-6.4s.mp4` | The production frame at real speed, 6.6 s, light beside dark: the whole stack-clearing celebration on the stretched clock. |
-| *(no `40-` file yet)* | **E's device verdict closes the block**; recorded here when given. |
+| *(no `40-` file)* | **E's device verdict, given in chat on 2026-09-12 without screenshots, PASSED:** "I've checked your most recent build on my iPhone, and it looks good. It looks as if it's working as as you specified." |

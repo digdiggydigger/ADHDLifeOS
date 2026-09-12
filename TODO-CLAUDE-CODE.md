@@ -3695,7 +3695,7 @@ all through the real overlay and leaves 0 pixels behind at 6.65 s light / 6.22 s
 stills light beside dark; the 6.6 s mp4; a NON-clearing Confirm's frame pixel-diffed against block
 1's own rendering (a worktree at `b5fe8c8`): **0 / 1,339,344, light and dark**.
 
-**Closes on E's device verdict.**
+**Device verdict PASSED 2026-09-12 — E: "I've checked your most recent build on my iPhone, and it looks good. It looks as if it's working as as you specified."** (`main @ 9a7b664`, Reduce Motion ON is E's setting.)
 
 ## The CTA celebrations arc — E's design, settled 2026-09-11; NOT BUILT (build starts in a fresh session, E's instruction)
 
@@ -3707,7 +3707,7 @@ recommendations overruled; every decision, number and constraint is in
 terminal session." The record's recommendations R-a…R-h are NOT yet ruled on — ask E before block 1.
 Eight blocks, strictly in order, each closing on E's device verdict.*
 
-### FEATURE: F-ConfirmCelebration-2 — (see the block above; E's decision 1: the fireworks take the same even stretch, ≈ 6.43 s on a stack-clearing Confirm; built FIRST, E's decision 2)  [x] COMPLETED 2026-09-12 — see the block above; device verdict pending
+### FEATURE: F-ConfirmCelebration-2 — (see the block above; E's decision 1: the fireworks take the same even stretch, ≈ 6.43 s on a stack-clearing Confirm; built FIRST, E's decision 2)  [x] COMPLETED 2026-09-12 — see the block above; device verdict PASSED
 
 Unchanged in scope from the block above. Adds: `length(of:)` → `5.0 / pace` for a cleared stack;
 three files `Focus/ConfirmFireworksSchedule.swift` / `ConfirmFireworksPhysics.swift` /
