@@ -284,7 +284,7 @@ struct CaptureDetailActions: View {
     // floor), not a spacing token.
     private var sortedButton: some View {
         Button {
-            Haptics.play(.solid)
+            Haptics.play(.success)
             onSort()
         } label: {
             if isSorting {

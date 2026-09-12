@@ -32,8 +32,9 @@ extension HomeView {
                         )?.focusDurationSeconds
                     ),
                     onUndo: { Task { await undoClose(celebrated) } },
-                    onNext: { celebratedTask = nil }
+                    onNext: { setCelebratedTask(nil) }
                 )
+                .transition(reduceMotion ? .opacity : .scale(scale: 0.9).combined(with: .opacity))
             } else {
                 bestNextMoveSection
             }
@@ -207,6 +208,25 @@ extension HomeView {
         .accessibilityIdentifier("homeDueNowRow-\(task.id)")
     }
 
+    // MARK: - The closure card's arrival
+
+    /// E's #8: the card springs in instead of appearing unanimated. The house pattern is
+    /// `Capture/CaptureFanOverlay.swift:89-97` — under Reduce Motion the spring is replaced by
+    /// a plain ease, not removed, because §7.2's rule for something that APPEARS is to swap
+    /// motion for a fade rather than to strip the feedback. Paired with the card's
+    /// opacity-only transition, the first reduced frame is already at final geometry and only
+    /// the fade travels (the opening-pose rule).
+    var closureCardAnimation: Animation {
+        reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8)
+    }
+
+    /// The ONLY writer of `celebratedTask`. Three paths move it — the card's Next, a close
+    /// from Home, and Undo — and a transition only runs if every one of them is animated, so
+    /// they share a setter rather than each remembering to wrap itself.
+    func setCelebratedTask(_ task: TaskSummary?) {
+        withAnimation(closureCardAnimation) { celebratedTask = task }
+    }
+
     // MARK: - Close-from-Home
 
     func closeTask(_ task: TaskSummary) async {
@@ -215,7 +235,7 @@ extension HomeView {
         defer { isClosingTask = false }
         do {
             _ = try await taskDetailClient.updateStatus(id: task.id, status: .done)
-            celebratedTask = task
+            setCelebratedTask(task)
             await homeService.load()
         } catch {
             closeTaskErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -225,106 +245,10 @@ extension HomeView {
     func undoClose(_ task: TaskSummary) async {
         do {
             _ = try await taskDetailClient.updateStatus(id: task.id, status: .open)
-            celebratedTask = nil
+            setCelebratedTask(nil)
             await homeService.load()
         } catch {
             closeTaskErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-        }
-    }
-
-    /// The reorder-mode toggle, as the collapsible header's trailing control. Arrange mode is
-    /// still reached from here and nowhere else.
-    @ViewBuilder
-    func arrangeControl(activeAreas: [LifeArea], isVisible: Bool) -> some View {
-        if isVisible {
-            arrangeButton(activeAreas: activeAreas)
-        }
-    }
-
-    /// The plain (non-folding) header, still used by ARRANGE mode, where the section is forced
-    /// open and a fold control would be a contradiction.
-    ///
-    /// Deliberately NOT a toolbar item — the toolbar carries screen-level navigation, and a
-    /// content-mutating mode control belongs beside the content it mutates. A real text label,
-    /// never a third competing glyph (§4).
-    func lifeAreasHeader(activeAreas: [LifeArea], showArrangeControl: Bool) -> some View {
-        HStack {
-            Text("Your life areas")
-                .sectionLabel()
-                .foregroundStyle(.secondary)
-            Spacer()
-            if showArrangeControl {
-                arrangeButton(activeAreas: activeAreas)
-            }
-        }
-    }
-
-    func arrangeButton(activeAreas: [LifeArea]) -> some View {
-        Button {
-            // 27. Arrange mode is a mode change, not a write — light either way.
-            Haptics.play(.light)
-            if isArranging {
-                isArranging = false
-                Task { await homeService.load() }
-            } else {
-                arrangeAreas = activeAreas
-                isArranging = true
-            }
-        } label: {
-            Label(
-                isArranging ? "Done" : "Arrange",
-                systemImage: isArranging ? "checkmark" : "arrow.up.arrow.down"
-            )
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(isArranging ? AreaPalette.work.onColor : Color.accentColor)
-            .padding(.horizontal, 16)
-            .frame(minHeight: 44)
-            .background(
-                isArranging ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.cardSurface),
-                in: Capsule()
-            )
-            .overlay(Capsule().strokeBorder(Color.cardBorder, lineWidth: isArranging ? 0 : 1))
-            .contentShape(Capsule())
-        }
-        .accessibilityIdentifier("homeArrangeButton")
-    }
-
-    /// v3's life-areas block: the caps header with the Arrange control, the explainer, and the
-    /// rows themselves — and, since E's 2026-08-28 note, a fold.
-    ///
-    /// This is the tallest thing on Today, and folding it is how the rest of the screen comes back
-    /// within reach; the nudges section below it already sits under the fold on a 6.3" phone. The
-    /// header keeps saying what it hid, so collapsing is not the same as losing it.
-    ///
-    /// The state is a stored preference rather than `@State`: you fold this because you do not
-    /// want to see it, and having it spring back open on the next launch would defeat the point.
-    /// Arrange mode force-expands — reordering rows you cannot see is not a mode worth allowing.
-    @ViewBuilder
-    func lifeAreasSection(activeAreas: [LifeArea]) -> some View {
-        let items = MomentumScoreboard.areaMomentum(
-            areas: activeAreas, openTasks: homeService.openTasks, allTasks: homeService.allTasks
-        )
-        let isExpanded = !lifeAreasCollapsed || isArranging
-        CollapsibleSectionHeader(
-            title: "Your life areas",
-            summary: HomeLifeAreasSection.collapsedLine(items: items),
-            isExpanded: isExpanded,
-            onToggle: { lifeAreasCollapsed.toggle() },
-            trailing: {
-                arrangeControl(
-                    activeAreas: activeAreas,
-                    isVisible: HomeLifeAreasSection.showsArrangeControl(
-                        areaCount: activeAreas.count, isExpanded: isExpanded
-                    )
-                )
-            }
-        )
-        .accessibilityIdentifier("homeLifeAreasHeader")
-        if isExpanded {
-            Text("How many of each area's tasks you have closed this week. Tap one to work inside it.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            AreaMomentumList(items: items)
         }
     }
 
