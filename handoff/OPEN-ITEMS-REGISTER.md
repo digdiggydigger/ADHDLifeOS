@@ -171,7 +171,9 @@ the blocks, and now is exercised only by injection. §7.3 carries the consequenc
       (CLOSED)
 - [x] **E's device verdict on `F-ConfirmCelebration-2`** — PASSED 2026-09-12, E: *"it looks good.
       It looks as if it's working as as you specified."* The block is CLOSED. E also said to ignore
-      the stray Codex `AGENTS.md` for now. (CLOSED)
+      the stray Codex `AGENTS.md` for now — **superseded later the same day: E asked for the
+      Codex-added files to be listed and confirmed, then deleted. `AGENTS.md` was the only one, and
+      it is now deleted; the working tree is completely clean.** (CLOSED)
 - [ ] **The milestone cooldown.** E: *"i am undecided about the cooldown at the moment anyway."* It
       ships at **5 s for testing**; whether it exists and at what value is E's call on the phone
       after `F-CTACelebrations-5`. (carried; untouched this session, as E instructed)
