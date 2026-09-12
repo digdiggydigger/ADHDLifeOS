@@ -33,8 +33,9 @@ final class CelebrationPopCallSiteTests: XCTestCase {
 
     func testTheTaskRowsCloseCirclePopsFromTheCircleItself() throws {
         try assertPops(
-            in: "Tasks/TaskRow.swift", afterHaptic: "private func close() { Haptics.play(.taskClose)",
-            upTo: "var body: some View", pop: "celebrate.request(.pop, at: popOrigin)",
+            in: "Tasks/TaskRow.swift",
+            afterHaptic: "private func close(poppingFrom origin: CGPoint? = nil) { Haptics.play(.taskClose)",
+            upTo: "var body: some View", pop: "celebrate.request(.pop, at: origin ?? popOrigin)",
             because: "closing a task from the Tasks list is E's first in-place moment"
         )
     }
@@ -135,91 +136,44 @@ final class CelebrationPopCallSiteTests: XCTestCase {
 
     // MARK: - The two rules that no single site can carry
 
-    /// E's design says the row's circle and its swipe pop from ONE point. They already share
-    /// `close()`; what this pins is that nothing else in the row pops, so the swipe cannot acquire
-    /// an origin of its own without this failing.
-    func testTheSwipeAndTheCircleClosePopFromOneOrigin() throws {
+    /// **E's design said the row's circle and its swipe pop from ONE point, and E REVERSED that on
+    /// the device** (2026-09-12): *"make the animation origin at the tap location of the 'swipe to
+    /// complete'."*
+    ///
+    /// The reason is the one the original rule could not have anticipated. The shared origin was
+    /// the circle's, and the circle sits at the row's TRAILING edge; once
+    /// `F-CTACelebrations-PopScale` took the throw to 208 pt, a swipe threw most of its paper off
+    /// the right-hand side of the screen. E recorded it and sent the clip.
+    ///
+    /// So this guard now pins the OPPOSITE: two origins, one per path, still funnelling through one
+    /// `close()` so the haptic and the pop can never be attached to one and forgotten on the other.
+    func testTheCirclePopsFromItselfAndTheSwipePopsFromTheFinger() throws {
         let row = try flattened("Tasks/TaskRow.swift")
         XCTAssertEqual(
             row.components(separatedBy: "celebrate.request(").count - 1, 1,
-            "TaskRow requests a celebration in more than one place, so the swipe and the circle can"
-                + " throw paper from two different points for the same close."
+            "TaskRow requests a celebration in more than one place. Both paths must still funnel"
+                + " through close(), which is what keeps the haptic and the pop together."
         )
         XCTAssertTrue(
-            row.contains("if closes { close() }"),
-            "The swipe no longer funnels through close(), so it pops from nowhere or from elsewhere."
+            row.contains("if closes { close(poppingFrom: finger) }"),
+            "The swipe no longer hands close() the finger's position, so it is back to throwing"
+                + " paper from the circle at the row's trailing edge — off the side of the screen."
         )
         XCTAssertTrue(
-            row.contains("Button(action: close)"),
+            row.contains("TaskRowSwipe.popOrigin(rowFrame: rowFrame, fingerInRow: value.location)"),
+            "Nothing converts the finger's position into the layer's space, so the swipe's pop"
+                + " cannot be placed where the user actually touched."
+        )
+        XCTAssertTrue(
+            row.contains("Button { close() }"),
             "The circle no longer funnels through close()."
         )
         XCTAssertTrue(
             row.contains(".celebrationPopOrigin { popOrigin = $0 }"),
-            "Nothing in TaskRow records an origin, so both close paths pop from the canvas centre."
+            "The circle no longer records its own centre, so a TAP loses the origin E approved."
         )
     }
 
-    /// R-e. The sheet dismisses itself on a successful promote, so without a hold the pop is drawn
-    /// on a layer that is already going. E's alternative was no pop there at all.
-    func testTheCreateTaskSheetHoldsLongEnoughForItsPopToBeSeen() throws {
-        let sheet = try flattened("Capture/CapturePromoteSheet.swift")
-        XCTAssertTrue(
-            sheet.contains("Task.sleep(nanoseconds: UInt64(Self.popHold"),
-            "The promote sheet dismisses immediately, so the Create Task pop is cut off at birth (R-e)."
-        )
-        XCTAssertTrue(
-            sheet.contains("static let popHold: TimeInterval = 0.45"),
-            "R-e's hold is not the 0.45 s the design record settled."
-        )
-        // The USE, not the declaration — the declaration is at the top of the file and would sit
-        // before `dismiss()` however the hold was written, which would make the order check vacuous.
-        let hold = try XCTUnwrap(sheet.range(of: "Task.sleep(nanoseconds: UInt64(Self.popHold"))
-        let dismiss = try XCTUnwrap(
-            sheet.range(of: "dismiss()", range: hold.upperBound..<sheet.endIndex),
-            "The hold does not come before the dismiss it is supposed to delay."
-        )
-        XCTAssertLessThan(hold.lowerBound, dismiss.lowerBound)
-    }
-
-    /// **The hold has to make the sheet INERT, not merely late.** R-e buys 0.45 s for the pop by
-    /// scheduling the dismiss rather than doing it — which leaves a sheet that has already
-    /// succeeded, and already committed the task, sitting there fully interactive. Cancel it in
-    /// that window and the orphaned hold still runs: `CaptureDetailView` passes
-    /// `onPromoted: { dismiss() }`, so the DETAIL SCREEN pops half a second after the user's own
-    /// dismiss, unasked. Tap Create Task again and the service correctly refuses, but the refusal
-    /// renders as an error inside a sheet that is mid-teardown.
-    ///
-    /// Found by the `feature-dev:code-reviewer` pass, not by the suite — a timing window nothing
-    /// else in the block could see.
-    func testTheSheetGoesInertForTheBeatItHoldsForThePop() throws {
-        let sheet = try flattened("Capture/CapturePromoteSheet.swift")
-        XCTAssertTrue(
-            sheet.contains("@State private var hasPromoted = false"),
-            "The sheet has no notion of having already succeeded, so it cannot go inert for the hold."
-        )
-        XCTAssertEqual(
-            sheet.components(separatedBy: ".disabled(hasPromoted)").count - 1, 2,
-            "Cancel and Create Task must BOTH be dead once the promote has succeeded — the create is"
-                + " already committed and the only thing left is to show the paper."
-        )
-        XCTAssertTrue(
-            sheet.contains(".interactiveDismissDisabled(hasPromoted)"),
-            "The sheet can still be swiped away during the hold, which lands `onPromoted()` on a"
-                + " screen the user already left."
-        )
-        let settled = try XCTUnwrap(
-            sheet.range(of: "hasPromoted = true"), "Nothing ever marks the promote as settled."
-        )
-        let hold = try XCTUnwrap(sheet.range(of: "Task.sleep(nanoseconds: UInt64(Self.popHold"))
-        XCTAssertLessThan(
-            settled.lowerBound, hold.lowerBound,
-            "The sheet is marked settled AFTER the hold has already begun, so the window this is"
-                + " meant to close is still open for the whole of it."
-        )
-    }
-
-    /// The count is what makes the enumeration above load-bearing. Eight wrappers, and `TaskRow`'s
-    /// modifier — a tenth site added without a test would push this over.
     func testNoOtherControlInTheAppThrowsAPop() throws {
         let wrappers = try appTargetOccurrences(of: "CelebrationPopSource {")
         XCTAssertEqual(

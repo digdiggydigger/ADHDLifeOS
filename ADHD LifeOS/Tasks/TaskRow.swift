@@ -24,8 +24,10 @@ struct TaskRow: View {
     var onStartFocus: () -> Void = {}
 
     @State private var dragOffset: CGFloat = 0
-    /// The close-circle's centre in GLOBAL coordinates — where the mini confetti pop leaves from.
+    /// The close-circle's centre in GLOBAL coordinates — where a TAP's confetti pop leaves from.
     @State private var popOrigin: CGPoint?
+    /// The row's own frame in GLOBAL coordinates, so a SWIPE can pop from the finger instead.
+    @State private var rowFrame: CGRect = .zero
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.celebrate) private var celebrate
 
@@ -39,11 +41,17 @@ struct TaskRow: View {
     /// **This is the one site of the nine that does not use `CelebrationPopSource`, and the reason
     /// is right here.** The wrapper reports the centre of whatever it wraps, and the swipe lives on
     /// the whole row — so wrapping enough of the row to catch the gesture would throw the paper
-    /// from the middle of the row. Recording the CIRCLE's centre instead gives both paths one
-    /// origin (E's design) and makes it the circle, which is the origin E approved by looking.
-    private func close() {
+    /// from the middle of the row.
+    ///
+    /// **The two paths no longer share ONE origin, and that is E's call from the device.** The tap
+    /// pops from the circle, which is the origin E approved by looking. The swipe pops from the
+    /// FINGER: it used to borrow the circle's origin, and since the circle sits at the row's
+    /// trailing edge, a swipe threw most of its paper off the right of the screen once the pop's
+    /// throw grew to 208 pt. What the two paths still share is this method, so the haptic and the
+    /// pop can never be attached to one and forgotten on the other.
+    private func close(poppingFrom origin: CGPoint? = nil) {
         Haptics.play(.taskClose)
-        celebrate.request(.pop, at: popOrigin)
+        celebrate.request(.pop, at: origin ?? popOrigin)
         onClose()
     }
 
@@ -52,6 +60,10 @@ struct TaskRow: View {
             revealLayer
             rowContent
                 .offset(x: dragOffset)
+                // The row's own position, so a swipe's pop can be placed from the finger. Measured
+                // on the SAME view the gesture is attached to, so the drag offset is in both or
+                // neither and the two cannot disagree.
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { rowFrame = $0 }
                 .gesture(isClosed ? nil : dragGesture)
         }
         .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: dragOffset)
@@ -59,7 +71,7 @@ struct TaskRow: View {
         .accessibilityIdentifier("taskRow-\(task.id.uuidString)")
         .accessibilityActions {
             if !isClosed {
-                Button("Close task", action: close)
+                Button("Close task") { close() }
                 if showsSprintStart {
                     Button("Start focus sprint", action: onStartFocus)
                 }
@@ -118,7 +130,7 @@ struct TaskRow: View {
                     .frame(width: 44, height: 44)
                     .accessibilityHidden(true)
             } else {
-                Button(action: close) {
+                Button { close() } label: {
                     Image(systemName: "circle")
                         .font(.title3)
                         .foregroundStyle(Color("LabelTertiary"))
@@ -163,8 +175,9 @@ struct TaskRow: View {
             }
             .onEnded { value in
                 let closes = TaskRowSwipe.closes(forTranslation: value.translation.width)
+                let finger = TaskRowSwipe.popOrigin(rowFrame: rowFrame, fingerInRow: value.location)
                 dragOffset = 0
-                if closes { close() }
+                if closes { close(poppingFrom: finger) }
             }
     }
 }
@@ -175,6 +188,22 @@ struct TaskRow: View {
 enum TaskRowSwipe {
     static let threshold: CGFloat = 75
     static let elasticLimit: CGFloat = 140
+
+    /// Where a SWIPE's confetti pop leaves from, in global coordinates.
+    ///
+    /// **E found this on the phone** (2026-09-12): the swipe used to share the circle's recorded
+    /// origin, and the circle sits at the row's TRAILING edge — so once the pop's throw grew to
+    /// 208 pt, a swipe threw most of its paper off the right-hand side of the screen. E:
+    /// *"make the animation origin at the tap location of the 'swipe to complete'."*
+    ///
+    /// The gesture reports the finger in the row's OWN space and the layer draws in the window's,
+    /// so the row's measured global frame is what joins them. `.zero` means the row has not been
+    /// measured yet, and `nil` is the honest answer there: the layer centres an origin-less burst,
+    /// which is a sane pop, where a fabricated point would be a pop from somewhere nobody touched.
+    static func popOrigin(rowFrame: CGRect, fingerInRow location: CGPoint) -> CGPoint? {
+        guard rowFrame != .zero else { return nil }
+        return CGPoint(x: rowFrame.minX + location.x, y: rowFrame.minY + location.y)
+    }
 
     static func closes(forTranslation translation: CGFloat) -> Bool {
         translation > threshold

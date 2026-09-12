@@ -56,7 +56,6 @@ final class CelebrationCenterTests: XCTestCase {
         let center = centre(at: Clock(launch), celebrationsEnabled: false)
         XCTAssertEqual(center.request(.confirm(clearedStack: false), at: nil), .nothing)
         XCTAssertTrue(center.bursts.isEmpty)
-        XCTAssertNil(center.lastFullScreenAt, "A refused Confirm still stamped the cooldown.")
     }
 
     func testWithTheSwitchOffAPopIsStillEnqueued() {
@@ -79,24 +78,7 @@ final class CelebrationCenterTests: XCTestCase {
         XCTAssertEqual(Set(center.bursts.map(\.id)).count, 3)
     }
 
-    /// R-c: Confirm counts toward the cooldown. A pop does not — it is not a full-screen
-    /// celebration and cooling a milestone down because someone closed a task would be wrong.
-    func testAFullScreenStampsTheCooldownAndAPopDoesNot() {
-        let clock = Clock(launch)
-        let center = centre(at: clock)
-        center.request(.pop, at: .zero)
-        XCTAssertNil(center.lastFullScreenAt)
-        center.request(.confirm(clearedStack: false), at: nil)
-        XCTAssertEqual(center.lastFullScreenAt, launch)
-        clock.advance(1)
-        XCTAssertEqual(
-            center.request(.milestone(.inboxZero), at: nil), .inPlace,
-            "A milestone one second after a Confirm played in full. R-c makes Confirm count toward"
-                + " the cooldown even though it is never cooled down itself."
-        )
-    }
-
-    // MARK: - Surfaces
+// MARK: - Surfaces
 
     func testABurstIsTaggedWithWhicheverSurfaceIsFrontmost() {
         let center = centre(at: Clock(launch))
@@ -164,14 +146,15 @@ final class CelebrationCenterTests: XCTestCase {
     }
 
     /// **A DOWNGRADED daily goal keeps its feel**, which is the same argument R-h makes for the
-    /// fallback pop: inside the cooldown, or with E's switch off, this milestone would otherwise be
-    /// the one moment in the app that happens with no feedback whatsoever.
+    /// fallback pop: with E's switch off this milestone would otherwise be the one moment in the
+    /// app that happens with no feedback whatsoever.
+    ///
+    /// **The switch is now the ONLY way to reach the downgrade.** This test used to drive it with
+    /// the cooldown, which E removed entirely on 2026-09-12 — so it was rewritten rather than
+    /// deleted, because what it pins (R-d surviving a downgrade) is untouched by that decision.
     func testADowngradedDailyGoalStillGetsItsFeel() {
-        let clock = Clock(launch)
         var felt: [HapticFeel] = []
-        let center = centre(at: clock, feel: { felt.append($0) })
-        center.request(.confirm(clearedStack: false), at: nil)
-        clock.advance(1)
+        let center = centre(at: Clock(launch), celebrationsEnabled: false, feel: { felt.append($0) })
         XCTAssertEqual(center.request(.milestone(.dailyGoal), at: nil), .inPlace)
         XCTAssertEqual(felt, [.success])
     }

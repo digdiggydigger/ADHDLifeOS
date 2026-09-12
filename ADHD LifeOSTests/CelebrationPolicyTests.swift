@@ -23,35 +23,19 @@ final class CelebrationPolicyTests: XCTestCase {
     /// "haptics and in-place feedback stay" — verbatim. The switch is over the full-screen
     /// celebrations alone, so a pop is never refused, whatever else is true.
     func testAPopAlwaysPlaysInPlaceEvenWithTheCelebrationsSwitchOff() {
-        XCTAssertEqual(
-            CelebrationPolicy.outcome(
-                for: .pop, lastFullScreenAt: launch, now: launch, celebrationsEnabled: false
-            ),
-            .inPlace
-        )
-        XCTAssertEqual(
-            CelebrationPolicy.outcome(
-                for: .pop, lastFullScreenAt: nil, now: launch, celebrationsEnabled: true
-            ),
-            .inPlace
-        )
+        XCTAssertEqual(CelebrationPolicy.outcome(for: .pop, celebrationsEnabled: false), .inPlace)
+        XCTAssertEqual(CelebrationPolicy.outcome(for: .pop, celebrationsEnabled: true), .inPlace)
     }
 
-    // MARK: - Confirm (R-c)
+    // MARK: - Confirm
 
     func testAConfirmIsFullScreenWithTheSwitchOnAndNothingAtAllWithItOff() {
         XCTAssertEqual(
-            CelebrationPolicy.outcome(
-                for: .confirm(clearedStack: false), lastFullScreenAt: nil, now: launch,
-                celebrationsEnabled: true
-            ),
+            CelebrationPolicy.outcome(for: .confirm(clearedStack: false), celebrationsEnabled: true),
             .fullScreen
         )
         XCTAssertEqual(
-            CelebrationPolicy.outcome(
-                for: .confirm(clearedStack: true), lastFullScreenAt: nil, now: launch,
-                celebrationsEnabled: false
-            ),
+            CelebrationPolicy.outcome(for: .confirm(clearedStack: true), celebrationsEnabled: false),
             .nothing,
             "A Confirm with the switch off falls back to an in-place celebration. E's #3 turns the"
                 + " full-screen celebration OFF; it does not swap it for a smaller one, and the site"
@@ -59,64 +43,37 @@ final class CelebrationPolicyTests: XCTestCase {
         )
     }
 
-    /// R-c: Confirm keeps "every time" (E's #6). A Confirm one instant after another full-screen
-    /// celebration still plays in full — it is the one kind the cooldown never touches.
-    func testAConfirmIsNeverCooledDownHoweverRecentlyAnythingElsePlayed() {
-        XCTAssertEqual(
-            CelebrationPolicy.outcome(
-                for: .confirm(clearedStack: false), lastFullScreenAt: launch,
-                now: launch.addingTimeInterval(0.01), celebrationsEnabled: true
-            ),
-            .fullScreen
-        )
-    }
+    // MARK: - Milestones: never downgraded by anything but E's switch
 
-    // MARK: - Milestones (E's #6, R-h)
-
-    func testTheFirstMilestoneOfTheLaunchIsNeverCooledDown() {
-        XCTAssertEqual(
-            CelebrationPolicy.outcome(
-                for: .milestone(.inboxZero), lastFullScreenAt: nil, now: launch,
-                celebrationsEnabled: true
-            ),
-            .fullScreen
-        )
-    }
-
-    func testAMilestoneInsideTheCooldownGetsTheInPlaceCelebrationInstead() {
-        XCTAssertEqual(
-            CelebrationPolicy.outcome(
-                for: .milestone(.streakSeven), lastFullScreenAt: launch,
-                now: launch.addingTimeInterval(CelebrationPolicy.milestoneCooldown - 0.01),
-                celebrationsEnabled: true
-            ),
-            .inPlace,
-            "A milestone inside the cooldown is silenced rather than downgraded. E's #6 says it"
-                + " 'gets the in-place celebration', so the moment is never unmarked."
-        )
-    }
-
-    /// The boundary is the moment the cooldown has EXPIRED, not the last instant inside it.
-    func testAMilestoneExactlyAtTheCooldownPlaysInFull() {
-        XCTAssertEqual(
-            CelebrationPolicy.outcome(
-                for: .milestone(.dailyGoal), lastFullScreenAt: launch,
-                now: launch.addingTimeInterval(CelebrationPolicy.milestoneCooldown),
-                celebrationsEnabled: true
-            ),
-            .fullScreen
-        )
+    /// **E removed the cooldown entirely on 2026-09-12**, having shipped it at 5 s to try it:
+    /// *"Remove the cooldown entirely."* So a milestone's outcome depends on ONE thing — whether
+    /// E's Celebrations switch is on — and nothing about what played before it can change that.
+    ///
+    /// **This is the test that would have to change to bring a cooldown back**, and it is the
+    /// whole rule in one assertion: every milestone, asked for any number of times in a row,
+    /// plays in full.
+    func testAMilestoneIsNeverDowngradedByAnythingThatPlayedBeforeIt() {
+        for milestone in CelebrationMilestone.allCases {
+            for _ in 0..<3 {
+                XCTAssertEqual(
+                    CelebrationPolicy.outcome(
+                        for: .milestone(milestone), celebrationsEnabled: true
+                    ),
+                    .fullScreen,
+                    "\(milestone) was downgraded. E removed the cooldown; a milestone now plays in"
+                        + " full every time the switch is on."
+                )
+            }
+        }
     }
 
     /// R-h: with the switch off a milestone still gets its fallback pop, because several milestone
-    /// sites (the ring, the Completed button) have no pop of their own.
+    /// sites (the ring, the Completed button) have no pop of their own. **R-h survives the
+    /// cooldown's removal** — it was never about the cooldown, it is about the switch.
     func testAMilestoneWithTheSwitchOffFallsBackToTheInPlaceCelebration() {
         for milestone in CelebrationMilestone.allCases {
             XCTAssertEqual(
-                CelebrationPolicy.outcome(
-                    for: .milestone(milestone), lastFullScreenAt: nil, now: launch,
-                    celebrationsEnabled: false
-                ),
+                CelebrationPolicy.outcome(for: .milestone(milestone), celebrationsEnabled: false),
                 .inPlace,
                 "\(milestone) is silenced entirely with the switch off. E's switch covers the"
                     + " full-screen celebration; R-h keeps the in-place one."
@@ -124,15 +81,30 @@ final class CelebrationPolicyTests: XCTestCase {
         }
     }
 
-    // MARK: - The constant
+    // MARK: - The rule is now the WHOLE of the policy
 
-    /// **E, verbatim (F9): "please reduce that '30-minute cooldown' to 5 seconds for now so i can
-    /// test it properly. i am undecided about the cooldown at the moment anyway."**
-    ///
-    /// It is a TESTING value, and it is E's to change after `F-CTACelebrations-5` — including to
-    /// zero, or away entirely. Do not "restore" it to the 30 minutes the design proposed: that
-    /// number was never E's.
-    func testTheCooldownIsTheFiveSecondsEChoseForTesting() {
-        XCTAssertEqual(CelebrationPolicy.milestoneCooldown, 5)
+    /// A guard against the cooldown creeping back in as a constant nobody reads. `outcome` takes
+    /// two arguments and neither is a clock; if a future block needs frequency control it has to
+    /// be a deliberate decision with E, not a revived private constant.
+    func testThePolicyHasNoClockAndNoCooldownConstant() throws {
+        let source = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("ADHD LifeOS/Celebrations/CelebrationPolicy.swift"),
+            encoding: .utf8
+        )
+        let code = source
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        XCTAssertFalse(
+            code.contains("milestoneCooldown"),
+            "The cooldown constant is back in CelebrationPolicy. E removed it deliberately."
+        )
+        XCTAssertFalse(
+            code.contains("Date"),
+            "CelebrationPolicy reads a clock again; its answer no longer depends on time."
+        )
     }
 }

@@ -82,7 +82,7 @@ final class CelebrationCenterHeldBurstTests: XCTestCase {
         XCTAssertTrue(center.bursts.isEmpty)
     }
 
-    // MARK: - When a held burst stamps the cooldown and chimes (`F-CTACelebrations-5`)
+    // MARK: - When a held burst chimes (`F-CTACelebrations-5`)
     //
     // **The defect these close was LATENT until this block.** `request(_:at:)` stamped
     // `lastFullScreenAt` and fired the chime the moment the outcome was `.fullScreen` — BEFORE the
@@ -93,26 +93,7 @@ final class CelebrationCenterHeldBurstTests: XCTestCase {
     // The register (§B.00b) named the two consequences and the gap: `CelebrationCenterTests` had
     // no test of held-burst stamp or chime timing at all.
 
-    /// A celebration that has not been drawn has not played, so it cannot have started a cooldown.
-    func testAHeldBurstStampsTheCooldownOnlyWhenItIsReleased() {
-        let clock = Clock(launch)
-        let center = centre(at: clock)
-        center.surfacePresented(.promoteSheet)
-        center.request(.milestone(.inboxZero), at: nil)
-        XCTAssertNil(
-            center.lastFullScreenAt,
-            "A burst still waiting behind the sheet stamped the cooldown, so a milestone that"
-                + " follows it is cooled down by a celebration nobody has seen."
-        )
-        clock.advance(0.45)
-        center.surfaceDismissed(.promoteSheet)
-        XCTAssertEqual(
-            center.lastFullScreenAt, launch.addingTimeInterval(0.45),
-            "The cooldown must run from the moment the paper actually starts falling."
-        )
-    }
-
-    /// F5's chime belongs to the celebration, not to the request: chiming while the Create Task
+/// F5's chime belongs to the celebration, not to the request: chiming while the Create Task
     /// sheet is still up is a sound with nothing on screen to explain it.
     func testAHeldBurstChimesWhenItPlaysAndNotWhileItWaits() {
         let clock = Clock(launch)
@@ -128,7 +109,7 @@ final class CelebrationCenterHeldBurstTests: XCTestCase {
 
     /// R-g drops a burst that has waited more than a minute. It never appeared, so it must leave
     /// nothing behind it either — no chime, and above all no cooldown.
-    func testAHeldBurstDroppedAtSixtySecondsNeitherStampsNorChimes() {
+    func testAHeldBurstDroppedAtSixtySecondsNeverChimes() {
         let clock = Clock(launch)
         var chimed: [CelebrationKind] = []
         let center = centre(at: clock, chime: { chimed.append($0) })
@@ -137,47 +118,10 @@ final class CelebrationCenterHeldBurstTests: XCTestCase {
         clock.advance(CelebrationCenter.heldLifetime + 0.01)
         center.surfaceDismissed(.promoteSheet)
         XCTAssertTrue(center.bursts.isEmpty)
-        XCTAssertNil(center.lastFullScreenAt)
         XCTAssertTrue(chimed.isEmpty)
     }
 
-    /// **The cooldown must run from when a held burst PLAYED, not from when it was asked for** —
-    /// and the difference is exactly R-e's 0.45 s hold. Stamped at the request, a milestone 5.2 s
-    /// later reads as out of the cooldown while the held celebration is still raining on screen.
-    func testAMilestoneIsCooledDownFromWhenAHeldBurstPlayedNotFromWhenItWasAsked() {
-        let clock = Clock(launch)
-        let center = centre(at: clock)
-        center.surfacePresented(.promoteSheet)
-        center.request(.milestone(.inboxZero), at: nil)
-        clock.advance(0.45)
-        center.surfaceDismissed(.promoteSheet)
-        clock.advance(CelebrationPolicy.milestoneCooldown - 0.25)
-        XCTAssertEqual(
-            center.request(.milestone(.dailyGoal), at: nil), .inPlace,
-            "A second milestone played in full while the held one was still on screen: 5.2 s after"
-                + " the request, but only 4.75 s after it started."
-        )
-    }
-
-    /// **A burst that is WAITING still counts against the cooldown**, even though it has not
-    /// stamped it. Without this, two milestones asked for while the sheet is up would both be
-    /// promised a full screen and both be released at the same instant — two 5.4 s washes stacked,
-    /// which is the opposite of what E's #6 cooldown is for.
-    func testASecondMilestoneAskedForWhileOneIsHeldGetsThePopInstead() {
-        let clock = Clock(launch)
-        let center = centre(at: clock)
-        center.surfacePresented(.promoteSheet)
-        XCTAssertEqual(center.request(.milestone(.inboxZero), at: nil), .fullScreen)
-        clock.advance(0.2)
-        XCTAssertEqual(center.request(.milestone(.dailyGoal), at: nil), .inPlace)
-        center.surfaceDismissed(.promoteSheet)
-        XCTAssertEqual(
-            center.bursts.filter(\.isFullScreen).count, 1,
-            "Both milestones were released as full-screen celebrations at one instant."
-        )
-    }
-
-    /// A cover that does NOT dismiss itself draws on its own layer — that is the point of E's
+/// A cover that does NOT dismiss itself draws on its own layer — that is the point of E's
     /// per-surface choice, and holding there would mean the routine screen never celebrated.
     func testAFullScreenOnASurfaceThatStaysOpenIsNotHeld() {
         let center = centre(at: Clock(launch))
@@ -187,25 +131,22 @@ final class CelebrationCenterHeldBurstTests: XCTestCase {
         XCTAssertEqual(center.bursts[0].surface, .routineCover)
     }
 
-    /// **And it must hold for as long as the burst WAITS, not merely for the cooldown's length.**
-    /// A held burst's `start` is its REQUEST time, so an anchor that simply reports it lets the
-    /// cooldown "expire" while the burst is still sitting there unplayed — and `releaseHeld` then
-    /// starts both at one instant, which is the stacking this exists to prevent. `heldLifetime` is
-    /// 60 s, twelve times the cooldown, so the window is not a corner.
+    /// **E removed the cooldown on 2026-09-12, and this is its most visible consequence.** Two
+    /// milestones asked for while the sheet is up are BOTH promised a full screen and both released
+    /// when it closes — they overlap, exactly as two quick Confirms have always been allowed to
+    /// (the Confirm record's R1, `CelebrationQueue.fullScreenCap` of 3).
     ///
-    /// Found by the `feature-dev:code-reviewer` pass over this block's own fix.
-    func testASecondMilestoneIsStillRefusedAfterTheCooldownHasElapsedWhileOneWaits() {
+    /// The cooldown used to downgrade the second one. Nothing does now, by E's decision, so this
+    /// test exists to make that visible rather than to defend it: if the overlap reads badly on the
+    /// phone, this is the test that changes.
+    func testTwoHeldMilestonesAreBothReleasedNowThatThereIsNoCooldown() {
         let clock = Clock(launch)
         let center = centre(at: clock)
         center.surfacePresented(.promoteSheet)
         XCTAssertEqual(center.request(.milestone(.inboxZero), at: nil), .fullScreen)
-        clock.advance(CelebrationPolicy.milestoneCooldown + 1)
-        XCTAssertEqual(
-            center.request(.milestone(.dailyGoal), at: nil), .inPlace,
-            "The first burst has not played yet — it is still waiting behind the sheet — so the"
-                + " cooldown cannot have expired."
-        )
+        clock.advance(0.2)
+        XCTAssertEqual(center.request(.milestone(.dailyGoal), at: nil), .fullScreen)
         center.surfaceDismissed(.promoteSheet)
-        XCTAssertEqual(center.bursts.filter(\.isFullScreen).count, 1)
+        XCTAssertEqual(center.bursts.filter(\.isFullScreen).count, 2)
     }
 }
