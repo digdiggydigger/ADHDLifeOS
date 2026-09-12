@@ -126,16 +126,28 @@ final class CTAHapticTidyCallSiteTests: XCTestCase {
     }
 
     /// The transition only plays if EVERY write to `celebratedTask` is animated. Three writers move
-    /// it — the celebration card's Next, the close-from-Home success and Undo — so the guard is that
-    /// exactly one of them is a bare assignment, and that one is inside the animated setter.
+    /// it today — the celebration card's Next, the close-from-Home success and Undo — so the guard
+    /// is that exactly one bare assignment exists, and that it is the one inside the animated
+    /// setter.
+    ///
+    /// Swept over the WHOLE app target, not just the sections file: `celebratedTask` is internal on
+    /// `HomeView`, so any of that type's extension files could write it, and a guard that read one
+    /// file would have called itself "every write" while watching a third of them.
     func testEveryWriteToTheCelebratedTaskGoesThroughTheAnimatedSetter() throws {
-        let sections = try Self.appCode("Home/HomeMomentumSections.swift")
-        let bareWrites = sections.components(separatedBy: "celebratedTask = ").count - 1
+        var bareWrites = 0
+        var writingFiles: [String] = []
+        for file in try Self.everyAppSourceFile() {
+            let occurrences = try Self.appCode(file).components(separatedBy: "celebratedTask = ").count - 1
+            if occurrences > 0 {
+                bareWrites += occurrences
+                writingFiles.append("\(file) x\(occurrences)")
+            }
+        }
         XCTAssertEqual(
             bareWrites, 1,
-            "There are \(bareWrites) bare writes to `celebratedTask`, not the single one inside"
-                + " `setCelebratedTask`. A writer that bypasses the setter makes the card appear"
-                + " or vanish with no animation at all."
+            "There are \(bareWrites) bare writes to `celebratedTask` (\(writingFiles.joined(separator: ", ")))"
+                + ", not the single one inside `setCelebratedTask`. A writer that bypasses the"
+                + " setter makes the card appear or vanish with no animation at all."
         )
         let setter = try Self.closure(
             in: "Home/HomeMomentumSections.swift",
@@ -177,14 +189,30 @@ final class CTAHapticTidyCallSiteTests: XCTestCase {
         return String(source[start.upperBound..<end.lowerBound])
     }
 
-    /// The same source with every comment line removed, because these files document the very
-    /// feels and anti-patterns the assertions look for.
-    private static func appCode(_ relativePath: String) throws -> String {
-        let url = URL(fileURLWithPath: #filePath)
+    /// Every Swift file in the app target, as paths relative to `ADHD LifeOS/`.
+    private static func everyAppSourceFile() throws -> [String] {
+        let root = appRoot()
+        guard let walker = FileManager.default.enumerator(atPath: root.path) else {
+            throw CTAHapticSourceError.unreadable(root.path)
+        }
+        let files = walker.compactMap { $0 as? String }.filter { $0.hasSuffix(".swift") }
+        guard files.count > 100 else {
+            throw CTAHapticSourceError.unreadable("\(root.path) yielded only \(files.count) Swift files")
+        }
+        return files
+    }
+
+    private static func appRoot() -> URL {
+        URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()   // ADHD LifeOSTests
             .deletingLastPathComponent()   // repo root
             .appendingPathComponent("ADHD LifeOS")
-            .appendingPathComponent(relativePath)
+    }
+
+    /// The same source with every comment line removed, because these files document the very
+    /// feels and anti-patterns the assertions look for.
+    private static func appCode(_ relativePath: String) throws -> String {
+        let url = appRoot().appendingPathComponent(relativePath)
         guard let text = try? String(contentsOf: url, encoding: .utf8) else {
             throw CTAHapticSourceError.unreadable(url.path)
         }
