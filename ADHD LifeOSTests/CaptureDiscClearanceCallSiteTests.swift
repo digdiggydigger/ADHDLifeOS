@@ -129,7 +129,10 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
             .map { $0.path.lastPathComponent }
             .sorted()
         XCTAssertEqual(
-            trailing, ["CaptureInboxSections.swift"],
+            // `CaptureInboxUndoSections.swift` since `F-CTACelebrations-4`: the undo section that
+            // holds both call sites moved out of `CaptureInboxSections.swift` to make room for the
+            // Sorted and Journal it pop wrappers. The measurement did not change; its file did.
+            trailing, ["CaptureInboxUndoSections.swift"],
             "The trailing clearance moved. It lifts a PINNED BAR's controls out from under the"
                 + " disc — `JournalView` names its own copy `captureDiscClearance` — and is not"
                 + " interchangeable with the bottom form."
