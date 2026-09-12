@@ -3,8 +3,10 @@
 //  ADHD LifeOS
 //
 //  F-ConfirmCelebration-1: the full-screen celebration a Confirm sets off — the done-green glow,
-//  then confetti raining from the top and fired from both bottom corners. E's design, every number
-//  and the why: `handoff/SESSION-OPENER-confirm-celebration-design.md`.
+//  then confetti raining from the top and fired from both bottom corners. F-ConfirmCelebration-2
+//  adds what the STACK-CLEARING Confirm gets on top: 14 fireworks, and in light appearance a dim
+//  beneath everything for their duration. E's design, every number and the why:
+//  `handoff/SESSION-OPENER-confirm-celebration-design.md`.
 //
 //  **Reduce Motion is not read anywhere in here, on purpose.** E waived CLAUDE.md §7.2 for this one
 //  moment ("B AND C": with Reduce Motion ON, the glow AND real falling confetti), so it plays the
@@ -62,8 +64,8 @@ struct ConfirmCelebrationOverlay: View {
 /// The live bursts on a frame clock. Built only while something is in the air, so
 /// `TimelineView(.animation)` asks for frames only then.
 ///
-/// Each burst's 220 pieces are generated here, once per change to the live list, never inside the
-/// per-frame closure.
+/// Each burst's 220 pieces — and, for a stack-clearing Confirm, its 14 shells and 880 sparks —
+/// are generated here, once per change to the live list, never inside the per-frame closure.
 struct ConfirmCelebrationStage: View {
     let bursts: [ConfirmCelebrationBurst]
     let canvas: CGSize
@@ -71,7 +73,9 @@ struct ConfirmCelebrationStage: View {
     var body: some View {
         let scenes = bursts.map { burst in
             ConfirmCelebrationScene(
-                burst: burst, confetti: ConfettiRecipe.everyConfirm(canvas: canvas, ordinal: burst.ordinal)
+                burst: burst,
+                confetti: ConfettiRecipe.everyConfirm(canvas: canvas, ordinal: burst.ordinal),
+                fireworks: burst.clearedStack ? ConfirmFireworks(canvas: canvas) : nil
             )
         }
         TimelineView(.animation) { timeline in
@@ -80,23 +84,41 @@ struct ConfirmCelebrationStage: View {
     }
 }
 
-/// One burst with the pieces it launched.
+/// One burst with the pieces it launched. `fireworks` is set only for a stack-clearing Confirm
+/// (E's decision 2: the fireworks ARE the bigger burst; the confetti is identical on both).
 struct ConfirmCelebrationScene {
     let burst: ConfirmCelebrationBurst
     let confetti: [ConfettiPiece]
+    var fireworks: ConfirmFireworks?
+
+    init(burst: ConfirmCelebrationBurst, confetti: [ConfettiPiece], fireworks: ConfirmFireworks? = nil) {
+        self.burst = burst
+        self.confetti = confetti
+        self.fireworks = fireworks
+    }
 }
 
 /// One frame of the celebration at an explicit instant — what the stage draws on each tick, and
 /// what previews and render probes draw at any `date` they choose.
 ///
-/// Back to front: the glow, then the confetti. Block 2 adds the dim beneath the glow and the
-/// fireworks between the glow and the confetti.
+/// Back to front, the record's order: the dim (light appearance, stack-clearing bursts only), the
+/// glow, the fireworks, then the confetti — so the green wash reads over the night sky and the
+/// paper stays in front of the sparks.
 struct ConfirmCelebrationFrame: View {
     let scenes: [ConfirmCelebrationScene]
     let date: Date
 
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
+        let dim = ConfirmCelebrationDim.strongestEnvelope(of: scenes.map(\.burst), at: date)
         ZStack {
+            // Light only (E, #7: "for light-mode display views"); dark does not dim (R6). Gated on
+            // the envelope too, so an every-Confirm frame carries no extra layer at all.
+            if colorScheme == .light, dim > 0 {
+                Color(ConfirmCelebrationDim.colorName).opacity(ConfirmCelebrationDim.peakOpacity * dim)
+            }
+
             RadialGradient(
                 colors: [
                     Color(ConfirmCelebrationGlow.colorName).opacity(ConfirmCelebrationGlow.peakOpacity),
@@ -109,13 +131,17 @@ struct ConfirmCelebrationFrame: View {
             .opacity(ConfirmCelebrationGlow.strongestEnvelope(of: scenes.map(\.burst), at: date))
 
             Canvas { context, _ in
-                // The seven token shadings, resolved once per frame rather than once per piece.
+                // The nine token shadings (the confetti's seven plus the fireworks' two), resolved
+                // once per frame rather than once per piece.
                 var shadings: [String: GraphicsContext.Shading] = [:]
-                for name in ConfettiRecipe.palette {
+                for name in ConfirmFireworksSchedule.palette {
                     shadings[name] = context.resolve(.color(Color(name)))
                 }
                 for scene in scenes {
                     let elapsed = ConfirmCelebrationQueue.choreographyTime(of: scene.burst, at: date)
+                    if let fireworks = scene.fireworks {
+                        ConfirmFireworksDrawing.draw(fireworks, in: context, at: elapsed, shadings: shadings)
+                    }
                     for piece in scene.confetti {
                         guard let state = ConfettiPhysics.state(of: piece, at: elapsed) else { continue }
                         var pieceContext = context
@@ -138,10 +164,12 @@ struct ConfirmCelebrationFrame: View {
 
 // MARK: - Previews
 
-/// A Confirm 1.2 s in — glow at full strength, rain halfway down, the cannons' pieces at their
-/// peak — over the page background, in both appearances.
+/// A Confirm 1.2 s of choreography in — glow at full strength, rain halfway down, the cannons'
+/// pieces at their peak — over the page background, in both appearances. With `clearedStack` the
+/// first four shells are up (two burst, one bursting, one climbing) and, in light, the dim is on.
 private struct ConfirmCelebrationFramePreview: View {
     private static let start = Date(timeIntervalSince1970: 1_800_000_000)
+    var clearedStack = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -150,11 +178,12 @@ private struct ConfirmCelebrationFramePreview: View {
                 ConfirmCelebrationFrame(
                     scenes: [
                         ConfirmCelebrationScene(
-                            burst: ConfirmCelebrationBurst(ordinal: 1, clearedStack: false, start: Self.start),
-                            confetti: ConfettiRecipe.everyConfirm(canvas: proxy.size, ordinal: 1)
+                            burst: ConfirmCelebrationBurst(ordinal: 1, clearedStack: clearedStack, start: Self.start),
+                            confetti: ConfettiRecipe.everyConfirm(canvas: proxy.size, ordinal: 1),
+                            fireworks: clearedStack ? ConfirmFireworks(canvas: proxy.size) : nil
                         )
                     ],
-                    date: Self.start.addingTimeInterval(1.2)
+                    date: Self.start.addingTimeInterval(1.2 / ConfirmCelebrationQueue.pace)
                 )
             }
         }
@@ -169,5 +198,15 @@ private struct ConfirmCelebrationFramePreview: View {
 
 #Preview("Dark") {
     ConfirmCelebrationFramePreview()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Stack cleared · Light") {
+    ConfirmCelebrationFramePreview(clearedStack: true)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Stack cleared · Dark") {
+    ConfirmCelebrationFramePreview(clearedStack: true)
         .preferredColorScheme(.dark)
 }

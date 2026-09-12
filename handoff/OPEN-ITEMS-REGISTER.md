@@ -90,11 +90,9 @@ site fades (E's #7).
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **Review the design record** (`handoff/SESSION-OPENER-cta-celebrations-design.md`) and rule on
-      **R-a…R-h** (discard excluded from inbox zero; streak at exactly 7; Confirm counts toward the
-      cooldown; the centre plays the daily-goal haptic; the 0.45 s sheet hold; auto-only routines
-      complete quietly; held bursts drop after 60 s; fallback pops with the switch off). The build
-      does not start until E has read the record — the brainstorming gate. (NEW)
+- [x] **Review the design record** and rule on **R-a…R-h** — E, at the start of the build session
+      2026-09-11, asked in one message with each default listed: **"yes"**. The record is approved
+      and all eight recommendations stand as the build's defaults. (CLOSED)
 - [ ] **The milestone cooldown.** E: *"i am undecided about the cooldown at the moment anyway."* It
       ships at **5 s for testing**; whether it exists and at what value is E's call on the phone
       after `F-CTACelebrations-5`. (NEW)

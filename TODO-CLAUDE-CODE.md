@@ -3664,13 +3664,38 @@ On E's phone 09:54 BST. **Closes on E's device verdict.**
 
 **Device verdict PASSED 2026-09-11 — E: "i have done the animation checks on my iphone with Reduce Motion ON and OFF and it works correctly in both states."**
 
-### FEATURE: F-ConfirmCelebration-2 — the stack-clearing fireworks and the light-mode dim  [ ] OPEN
+### FEATURE: F-ConfirmCelebration-2 — the stack-clearing fireworks and the light-mode dim  [x] COMPLETED
 
 14 shells in 9 tokens (single / two-tone / ring-in-ring; big / medium / small; two-shell finale) on
 the record's schedule, only when `clearedStack`; `Scrim` at 0.85 in LIGHT appearance only, in 0.35 s,
 held to 0.4 s before the last spark, out 0.6 s. Pure model + schedule + dim tests, call-site test
-that both play only on a cleared stack, renders light + dark, device verdict. **Not started until E's
-verdict on block 1.**
+that both play only on a cleared stack, renders light + dark, device verdict.
+
+**Completed 2026-09-12 on `feature/confirm-celebration-2`** (`ff30ddf`/`d68e006`/`9e1154b` red,
+`29c6267` green). Built as specified, on the same stretch (E's decision 1): `length(of:)` is
+`5.0 / pace` ≈ 6.43 s for a cleared stack, 5.4 s otherwise. New files
+`Focus/ConfirmFireworksSchedule.swift`, `Focus/ConfirmFireworksPhysics.swift`,
+`Focus/ConfirmFireworksDrawing.swift` (the Canvas ops and `ConfirmCelebrationDim`); a
+`ConfettiPhysics.state(of:at:gravity:drag:)` overload at 150 / 2.4 that the confetti's own
+`state(of:at:)` now forwards to; the frame draws dim → glow → fireworks → confetti and reads
+`colorScheme` for the light-only dim. The per-spark speed hash is `ConfettiRandom` seeded per
+(shell, spark); the schedule itself is fixed (E chose those bursts in those places).
+
+**Tests:** 31 new — `ConfirmFireworksScheduleTests` 9, `ConfirmFireworksPhysicsTests` 13,
+`ConfirmCelebrationDimTests` 4, +2 in `ConfirmCelebrationTimingTests`, +3 in
+`ConfirmCelebrationCallSiteTests`; the waiver pin lists the three new files.
+**Red, predicted in writing and observed exactly:** `Executed 2741 tests, with 74 failures
+(0 unexpected)`, **31 tests**. **Red-check on the committed tree** (four breakages — fireworks for
+every burst, the dim's `clearedStack` filter, `length(of:)` back to 5.4 s, the light gate — predicted
+by name): 2,741 / 8 assertions, exactly the **5 predicted tests**.
+**Green:** 2,741 / 0 (emulator UP, 0 `9099`); lint 0 / 757; app 27.07 % (12,635/46,678).
+
+**Renders** (`screenshots/confirm-celebration-block-2/`): a real Confirm on the last card fires it
+all through the real overlay and leaves 0 pixels behind at 6.65 s light / 6.22 s dark; the four
+stills light beside dark; the 6.6 s mp4; a NON-clearing Confirm's frame pixel-diffed against block
+1's own rendering (a worktree at `b5fe8c8`): **0 / 1,339,344, light and dark**.
+
+**Closes on E's device verdict.**
 
 ## The CTA celebrations arc — E's design, settled 2026-09-11; NOT BUILT (build starts in a fresh session, E's instruction)
 
@@ -3682,7 +3707,7 @@ recommendations overruled; every decision, number and constraint is in
 terminal session." The record's recommendations R-a…R-h are NOT yet ruled on — ask E before block 1.
 Eight blocks, strictly in order, each closing on E's device verdict.*
 
-### FEATURE: F-ConfirmCelebration-2 — (see the block above; E's decision 1: the fireworks take the same even stretch, ≈ 6.43 s on a stack-clearing Confirm; built FIRST, E's decision 2)  [ ] OPEN
+### FEATURE: F-ConfirmCelebration-2 — (see the block above; E's decision 1: the fireworks take the same even stretch, ≈ 6.43 s on a stack-clearing Confirm; built FIRST, E's decision 2)  [x] COMPLETED 2026-09-12 — see the block above; device verdict pending
 
 Unchanged in scope from the block above. Adds: `length(of:)` → `5.0 / pace` for a cleared stack;
 three files `Focus/ConfirmFireworksSchedule.swift` / `ConfirmFireworksPhysics.swift` /

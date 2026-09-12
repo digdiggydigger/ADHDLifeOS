@@ -120,4 +120,48 @@ final class ConfirmCelebrationTimingTests: XCTestCase {
         )
         XCTAssertNil(queue.nextExpiry(of: []))
     }
+
+    // MARK: - The stack-clearing Confirm (block 2; E's decision 1: "Same stretch")
+
+    /// The fireworks and the dim ride the SAME stretched clock as the confetti, so the 5.0 s
+    /// choreography (the dim gone at 4.99 s) plays over 5.0 / pace ≈ 6.43 s. Every Confirm stays
+    /// 5.4 s: the confetti is identical on both, and only the stack-clearing one runs longer.
+    func testAStackClearingConfirmPlaysItsFireworksOnTheSameStretch() {
+        let queue = ConfirmCelebrationQueue.self
+        let cleared = ConfirmCelebrationBurst(ordinal: 1, clearedStack: true, start: launch)
+        XCTAssertEqual(queue.stackClearingChoreographyLength, 5.0, accuracy: 1e-9)
+        XCTAssertEqual(
+            queue.length(of: cleared), 5.0 / queue.pace, accuracy: 1e-9,
+            "The fireworks keep their own clock. E chose \"Same stretch\"."
+        )
+        XCTAssertEqual(queue.length(of: cleared), 6.43, accuracy: 0.005)
+        XCTAssertEqual(queue.length(of: burst(1)), 5.4, accuracy: 1e-9, "An every-Confirm is now longer than E saw.")
+        let end = launch.addingTimeInterval(queue.length(of: cleared))
+        XCTAssertEqual(
+            queue.choreographyTime(of: cleared, at: end), 5.0, accuracy: 1e-6,
+            "The whole stack-clearing choreography does not fit its burst exactly."
+        )
+    }
+
+    /// The burst lasts until the dim has lifted, and the last spark dies inside that; the layer is
+    /// told the SOONEST expiry, which is the shorter every-Confirm's when both are live.
+    func testAStackClearingBurstOutlivesItsLastSparkAndItsDim() {
+        let queue = ConfirmCelebrationQueue.self
+        XCTAssertLessThanOrEqual(ConfirmFireworksSchedule.lastSparkTime, queue.stackClearingChoreographyLength)
+        XCTAssertLessThanOrEqual(
+            ConfirmCelebrationDim.goneBy, queue.stackClearingChoreographyLength,
+            "The burst ends with the dim still on the screen, so it snaps off."
+        )
+        XCTAssertGreaterThan(ConfirmCelebrationDim.goneBy, 4.9, "The premise: the dim really does lift at about 5.0 s.")
+        let cleared = ConfirmCelebrationBurst(ordinal: 1, clearedStack: true, start: launch)
+        XCTAssertEqual(
+            queue.pruned([cleared], now: launch.addingTimeInterval(6.42)).count, 1,
+            "A stack-clearing burst is removed while its dim is still lifting."
+        )
+        XCTAssertEqual(queue.pruned([cleared], now: launch.addingTimeInterval(6.44)).count, 0)
+        XCTAssertEqual(
+            queue.nextExpiry(of: [cleared, burst(2)])?.timeIntervalSince(launch) ?? 0, 5.4, accuracy: 1e-6,
+            "The soonest expiry is the every-Confirm's, not the longer stack-clearing one's."
+        )
+    }
 }

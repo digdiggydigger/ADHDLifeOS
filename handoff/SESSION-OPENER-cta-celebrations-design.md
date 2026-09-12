@@ -12,8 +12,13 @@ the design.*
 it without E.** Where a line says E chose, E was shown the options as text and picked; where the
 answer is visual (the pop's look, the congratulation view, the chime) the build renders options
 first and E picks by looking or listening, as the Confirm prototypes were chosen. **"Claude Code's
-recommendations" (R-a … R-h) are NOT E's decisions**; they are here so E can accept or change them
-in review, and they are marked as such.
+recommendations" (R-a … R-h) were NOT E's decisions when this was written; E reviewed them at the
+start of the build session (below).**
+
+**Reviewed by E at the start of the build session, 2026-09-11.** Asked in one message whether the
+record is approved and how R-a…R-h are ruled, each listed with the default it takes, E answered
+**"yes"**: the record is approved and **R-a…R-h stand as the build's defaults**. E can still change
+any of them at a device verdict without that counting as re-litigating.
 
 ---
 
@@ -337,9 +342,10 @@ layers per surface.
 
 ---
 
-## Claude Code's recommendations — for E's review, NOT decisions
+## Claude Code's recommendations — reviewed by E 2026-09-11: "yes", all eight stand as defaults
 
-Each is the default the build takes unless E changes it.
+Each is the default the build takes unless E changes it. **E approved the record and these
+defaults in one word at the start of the build session ("yes").**
 
 - **R-a · Discard, Skip and undo-seen never count toward inbox zero.** E named the three doing verbs
   (Sorted, Journal it, Create Task); binning the last capture is tidying, not doing.
