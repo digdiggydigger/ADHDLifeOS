@@ -160,6 +160,28 @@ extension SettingsView {
             ))
             .accessibilityIdentifier("settingsHapticsToggle")
 
+            // Straight after Haptics, because these two govern the app's OWN feedback; the
+            // notification row below them governs what iOS plays for a scheduled reminder.
+            Toggle("Celebrations", isOn: Binding(
+                get: { momentumPreferences.celebrationsEnabled },
+                set: { newValue in
+                    momentumPreferences.celebrationsEnabled = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
+                }
+            ))
+            .accessibilityIdentifier("settingsCelebrationsToggle")
+
+            Toggle("Celebration sounds", isOn: Binding(
+                get: { momentumPreferences.celebrationSoundsEnabled },
+                set: { newValue in
+                    momentumPreferences.celebrationSoundsEnabled = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
+                }
+            ))
+            .accessibilityIdentifier("settingsCelebrationSoundsToggle")
+
             Toggle("Notification sounds", isOn: Binding(
                 get: { momentumPreferences.soundEnabled },
                 set: { newValue in
@@ -201,14 +223,22 @@ extension SettingsView {
         } header: {
             Text("Feedback")
         } footer: {
+            // The sentences run in ROW order, not in the order they were written: appended at the
+            // end, the celebration ones sit four rows below the switches they explain, and a
+            // VoiceOver user swiping the section linearly reaches them last of all.
             Text(
                 "Haptics are the app's tactile confirmations — saving, promoting, starting a "
-                    + "sprint. Notification sounds only covers the reminders this app schedules; "
-                    + "your iOS notification settings are untouched. Remembering where things "
-                    + "happen records the spot a capture was made, and only ever while iOS has "
-                    + "granted location access — turning it off here stops it regardless. "
-                    + "Arrival nudges is the master switch over every place's nudges: one flip "
-                    + "silences them all, and the per-place choices are kept for when it comes back on."
+                    + "sprint. Celebrations covers every full-screen moment — the confetti when you "
+                    + "confirm a finished sprint, and the milestone celebrations still to come; "
+                    + "haptics and the small in-place flourishes are left alone either way. "
+                    + "Celebration sounds will add one soft chime to those moments, and does nothing "
+                    + "until the chime arrives in a later update. Notification sounds only covers "
+                    + "the reminders this app schedules; your iOS notification settings are "
+                    + "untouched. Remembering where things happen records the spot a capture was "
+                    + "made, and only ever while iOS has granted location access — turning it off "
+                    + "here stops it regardless. Arrival nudges is the master switch over every "
+                    + "place's nudges: one flip silences them all, and the per-place choices are "
+                    + "kept for when it comes back on."
             )
         }
     }

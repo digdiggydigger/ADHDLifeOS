@@ -3744,7 +3744,7 @@ block 1: 0 pixels). Device verdict.
   width: full narrows to 340–346 pt against a settled 370 pt and recovers by ≈ 0.29 s; reduced
   never leaves 369.5–370 pt. Device verdict by feel.
 
-### FEATURE: F-CTACelebrations-2 — the two switches; Celebrations live on Confirm  [ ] OPEN
+### FEATURE: F-CTACelebrations-2 — the two switches; Celebrations live on Confirm  [x] COMPLETED
 
 - `MomentumPreferences`: `celebrationsEnabled` (true) and `celebrationSoundsEnabled` (false), each
   the FOUR-place edit (stored property, memberwise default, `decodeIfPresent ?? default`,

@@ -8,6 +8,9 @@
 //  beneath everything for their duration. E's design, every number and the why:
 //  `handoff/SESSION-OPENER-confirm-celebration-design.md`.
 //
+//  `F-CTACelebrations-2` adds the one gate: E's Settings "Celebrations" switch, read at FIRE time,
+//  so the row is never a lie about the only full-screen celebration that exists yet.
+//
 //  **Reduce Motion is not read anywhere in here, on purpose.** E waived CLAUDE.md §7.2 for this one
 //  moment ("B AND C": with Reduce Motion ON, the glow AND real falling confetti), so it plays the
 //  same either way. `testTheConfirmCelebrationIgnoresReduceMotionByDesign` pins that.
@@ -27,6 +30,11 @@ import SwiftUI
 /// the frame clock has to stop when the last burst ends.
 struct ConfirmCelebrationOverlay: View {
     @ObservedObject var focusService: FocusSessionService
+    /// E's Celebrations switch (#3), consulted as each Confirm lands rather than read once —
+    /// `Haptics.play(gate:)`'s arrangement, so flipping it in Settings takes effect on the very next
+    /// Confirm with no relaunch. Injected so a render probe can show the switched-off state without
+    /// writing the simulator's own `UserDefaults`.
+    var celebrationsGate: () -> Bool = { AppFeedback.celebrationsEnabled() }
     @State private var bursts: [ConfirmCelebrationBurst] = []
 
     var body: some View {
@@ -40,6 +48,10 @@ struct ConfirmCelebrationOverlay: View {
         .accessibilityHidden(true)
         .onChange(of: focusService.latestConfirmation) { confirmation in
             guard let confirmation else { return }
+            // Before the burst is appended, never after: on the list it is already drawing and the
+            // frame clock is already running. The haptic is NOT gated — it fires from
+            // `RootBottomOverlay`, because E's switch covers the full-screen celebration alone.
+            guard celebrationsGate() else { return }
             let now = Date()
             bursts = ConfirmCelebrationQueue.adding(
                 ConfirmCelebrationBurst(confirmation: confirmation, start: now), to: bursts, now: now

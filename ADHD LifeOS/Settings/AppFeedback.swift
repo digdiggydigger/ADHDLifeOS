@@ -6,8 +6,9 @@
 import Foundation
 import UserNotifications
 
-/// The two feedback gates Settings controls (E's 2026-08-25 audit): haptics and notification
-/// sound. One home, consulted at FIRE time — a preference flipped mid-session takes effect on
+/// The feedback gates Settings controls (E's 2026-08-25 audit, and the CTA celebrations arc's
+/// two switches): haptics, notification sound, location stamping, arrival nudges, and the two
+/// celebration switches. One home, consulted at FIRE time — a preference flipped mid-session takes effect on
 /// the very next tap or schedule, no relaunch, no plumbing through every view.
 enum AppFeedback {
     static func hapticsEnabled(
@@ -32,6 +33,24 @@ enum AppFeedback {
         store: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) -> Bool {
         store.read().arrivalNudgesEnabled
+    }
+
+    /// E's #3: the master switch over every FULL-SCREEN celebration. Read at FIRE time, so a flip
+    /// takes effect on the very next Confirm with no relaunch and nothing plumbed through the view
+    /// tree. Haptics and the in-place flourishes are deliberately NOT gated on this.
+    static func celebrationsEnabled(
+        store: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+    ) -> Bool {
+        store.read().celebrationsEnabled
+    }
+
+    /// E's F5: whether those full-screen celebrations carry their one soft chime. Read at fire time
+    /// for the same reason. **Nothing consults this yet** — the player ships in
+    /// `F-CTACelebrations-7`, and the Settings footer says so rather than implying a sound exists.
+    static func celebrationSoundsEnabled(
+        store: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+    ) -> Bool {
+        store.read().celebrationSoundsEnabled
     }
 
     /// What a scheduled notification's `content.sound` should be — `.default` or silent. Only
