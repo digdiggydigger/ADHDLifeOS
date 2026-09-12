@@ -4,14 +4,14 @@
 terminal. Written 2026-09-12 at the close of the session that built `F-CTACelebrations-3`. **The
 session that writes this arc's next opener archives this file in the same move.***
 
-**STATUS.** Blocks 1–4 of the arc are MERGED. `F-ConfirmCelebration-2`, `F-CTACelebrations-1` and
-`-2` all PASSED E's device verdict. **`F-CTACelebrations-3` (the centre and the shared layer,
-PR #90) is merged and INSTALLED on E's phone, and its verdict is OUTSTANDING** — register §A, first
-item. The app code is `main` @ `c10813d`. Check `git log --oneline -1 origin/main` for today's tip
-rather than trusting a SHA written here.
+**STATUS.** Blocks 1–4 of the arc are MERGED and **all four PASSED E's device verdict.**
+`F-CTACelebrations-3` (the centre and the shared layer, PR #90) passed on 2026-09-12 — E: **"it
+passes, looks exactly the same"**, which was the right answer to a deliberately negative test.
+**Nothing is owed from it; start this one.** The app code is `main` @ `0fd4b29`. Check
+`git log --oneline -1 origin/main` for today's tip rather than trusting a SHA written here.
 
-**If E has not yet given the verdict on `-3`, ask for it before building.** It is a deliberately
-NEGATIVE test — nothing new is visible, and "it looks exactly like yesterday" is the pass.
+**E's standing instruction, given again at the close of block 4: each block is built in a FRESH
+Claude Code terminal session.** This file is how that session starts.
 
 ## Read first, in this order
 
