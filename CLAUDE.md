@@ -656,6 +656,20 @@ the rewrite, not what justifies it; the rule outlived the fact.) The skill-prece
   said so; the honest default line is now **"Reduced: run on sim (injected); NOT on device."**
   Injection still proves the code runs and which branch is chosen — it cannot show how the fade
   reads on the device, which is exactly the thing E's setting used to cover for free.
+- **THE RM-ON DEVICE PASS — E's call, 2026-09-12, and it is now part of the bar.** Asked how the
+  reduced path should get device time, E chose it explicitly over accepting sim-injection-only:
+  **a block that adds or changes a REDUCED site is not done until E has also looked at it on the
+  phone with Reduce Motion turned ON.** It costs E a few seconds in Settings → Accessibility →
+  Motion, and it is the only thing that produces real device evidence for the path users with
+  motion sensitivity actually get. How to run it:
+  - **Only when the block ADDS or CHANGES a reduced site.** A block of pure logic, a settings
+    toggle, or a haptic tidy owes nothing — do not ask E to toggle for a block that cannot look
+    different either way, and say in the report why none was owed.
+  - **Ask for both passes in one message** (RM off, then RM on), so E flips the setting once.
+  - **A `#7.2`-waived site is exempt and must be named as such.** The Confirm celebration ignores
+    Reduce Motion by design, so it renders identically and an RM-on pass proves nothing about it.
+  - The "Verified paths" line then reads **"Reduced: run on sim (injected) + E's phone (RM on)"**,
+    and it may only say that if E actually toggled and said so.
 - **Every block that adds or changes an `#available` site carries a "Verified paths" line** in its
   report, and in its `screenshots/` README when it has one. There is one entry per tier actually
   shipped, for example:
