@@ -106,7 +106,16 @@ are mostly pure logic (`DailyGoalTracker`, `CelebrationDayMarking`, `NudgeStreak
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **THE DEVICE SITTING — one sitting, TWO passes, covering `F-CTACelebrations-4` AND `-5`.**
+- [x] **THE DEVICE SITTING — DONE 2026-09-12, and BOTH blocks PASSED with Reduce Motion OFF *and*
+      ON.** E, verbatim: *"both of those tests work correctly!"*, and confirmed when asked
+      precisely that the passes included Reduce Motion turned on. So `F-CTACelebrations-4` (the
+      nine pops) and `F-CTACelebrations-5` (the three milestones) are both verified on device, and
+      **both blocks' Verified-paths lines may now read "Reduced: run on sim (injected) + E's phone
+      (RM on)"** — the first time in this arc that line is earned rather than owed. E also sent a
+      16.7 s screen recording of the whole showcase.
+      **What came out of it is a new block, not a defect:** E asked for the pop to be bigger. See
+      `F-CTACelebrations-PopScale`, built and merged the same day. (CLOSED)
+- [ ] ~~**THE DEVICE SITTING — one sitting, TWO passes, covering `F-CTACelebrations-4` AND `-5`.**~~
       E deferred `-4`'s passes until after this block (2026-09-12, verbatim: *"I will push the
       device passes off until after the next block."*), so both are owed now and both are landed,
       green and installed on the phone from `main`. **Ask once, and say which sites belong to which
