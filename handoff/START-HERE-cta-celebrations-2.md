@@ -119,7 +119,12 @@ Then `F-FocusCard-Corners`.
   recipe: `xcodebuild build -destination 'platform=iOS,id=<udid>' -allowProvisioningUpdates`, then
   `xcrun devicectl device install app --device <udid> "<…>.app"` and
   `… process launch --device <udid> --terminate-existing com.ethananthony.ADHD-LifeOS`.
-- **A stray untracked `AGENTS.md`** (a Codex copy of CLAUDE.md) sits in the repo root. E,
-  2026-09-12: *"ignore the codex copy files for now."* Never `git add -A`; add paths explicitly.
+- **The stray `AGENTS.md` is GONE — deleted 2026-09-12 on E's instruction**, after E asked for the
+  Codex-added files to be listed and confirmed first. It was a mechanical find-and-replace copy of
+  CLAUDE.md frozen at 01:23 that day, with no unique content, and it had already gone stale and
+  misleading: it still asserted "E runs with Reduce Motion ON" and pointed at `Codex.md` and
+  `TODO-Codex.md`, neither of which exists. **The working tree is now completely clean** — `git
+  status --untracked-files=all` is empty. Keep adding paths explicitly rather than `git add -A`
+  anyway; it is the habit, not a workaround for that file.
 - **Baseline at close** (`844daae`): suite 2,747 / 0, lint 0 / 760, app coverage 27.07 %
   (12,643/46,702).
