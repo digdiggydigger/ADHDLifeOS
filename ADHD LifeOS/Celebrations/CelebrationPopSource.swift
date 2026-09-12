@@ -38,6 +38,29 @@ struct CelebrationPopSource<Content: View>: View {
     }
 }
 
+/// Whether a recorded origin is still a place a pop can leave FROM.
+///
+/// **`AppTabContent` parks a hidden tab 10,000 pt off screen, and that offset reaches a `.global`
+/// frame reading** — measured with the block's render probe, 2026-09-12: a view reporting
+/// **(196.5, 451.0)** on the visible tab reports **(10196.5, 451.0)** once its tab is parked.
+///
+/// That matters for exactly one site, and it is the site this was written for. The other origins
+/// belong to controls the user is looking at when they tap them, so they are never parked. The
+/// daily goal is E's "any tab" milestone (F7): it fires from Home while the user may be on Tasks,
+/// and handing over Home's parked ring would throw R-h's fallback pop 10,000 pt off screen —
+/// leaving the milestone silent in exactly the case R-h exists to prevent.
+///
+/// `nil` is the right answer rather than a clamp: the layer centres an origin-less burst, so the
+/// pop lands in the middle of the screen the user is actually on.
+enum CelebrationPopOrigin {
+    static func onScreen(
+        _ origin: CGPoint?, parkedAt offset: CGFloat = AppTabContentLayout.hiddenTabOffset
+    ) -> CGPoint? {
+        guard let origin, origin.x < offset, origin.y < offset else { return nil }
+        return origin
+    }
+}
+
 extension View {
     /// Reports this view's centre in GLOBAL coordinates whenever it moves, so a pop thrown from it
     /// lands where the user's thumb was and not where the view used to be.

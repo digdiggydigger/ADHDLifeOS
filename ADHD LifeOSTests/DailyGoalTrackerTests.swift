@@ -20,6 +20,7 @@
 //  false positive, and one they cannot dismiss.
 //
 
+import CoreGraphics
 import XCTest
 @testable import ADHD_LifeOS
 
@@ -179,6 +180,26 @@ final class DailyGoalTrackerTests: XCTestCase {
                 .inboxZero, uid: "abc", asOf: noon, calendar: calendar, in: store
             )
         )
+    }
+
+    // MARK: - An origin recorded while its tab was parked off screen
+
+    /// **Measured, not reasoned about** (render probe, 2026-09-12): a `.celebrationPopOrigin` on a
+    /// view inside a tab that `AppTabContent` has parked reports **(10196.5, 451.0)** where the
+    /// visible tab reports **(196.5, 451.0)**. `.offset` reaches a `.global` frame reading.
+    ///
+    /// That matters here and nowhere else in the app, because the daily goal is the only site that
+    /// fires from a tab the user is not looking at (E's F7, "any tab"). Handing that origin over
+    /// would throw R-h's fallback pop 10,000 pt off screen — the milestone would be silent in
+    /// exactly the case R-h exists to prevent.
+    func testAnOriginRecordedWhileItsTabWasParkedIsNotAPlaceToPopFrom() {
+        XCTAssertNil(CelebrationPopOrigin.onScreen(CGPoint(x: 10_196.5, y: 451)))
+        XCTAssertNil(CelebrationPopOrigin.onScreen(CGPoint(x: 196.5, y: 10_451)))
+    }
+
+    func testAnOriginOnTheVisibleTabIsHandedOverUnchanged() {
+        XCTAssertEqual(CelebrationPopOrigin.onScreen(CGPoint(x: 196.5, y: 451)), CGPoint(x: 196.5, y: 451))
+        XCTAssertNil(CelebrationPopOrigin.onScreen(nil))
     }
 
     // MARK: - What VoiceOver is told (E's call, 2026-09-12)

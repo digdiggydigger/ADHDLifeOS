@@ -65,8 +65,11 @@ extension HomeView {
         else { return }
         CelebrationDayMarking.markCelebrated(.dailyGoal, uid: uid)
         // R-h: with E's switch off, or inside the cooldown, this becomes a pop — and the ring is
-        // one of the two sites with no pop of its own, so it hands over where it is.
-        celebrate.request(.milestone(.dailyGoal), at: ringOrigin)
+        // one of the two sites with no pop of its own, so it hands over where it is. Through
+        // `onScreen` because this is the one site that fires from a tab the user may not be
+        // looking at: `AppTabContent` parks a hidden tab 10,000 pt away, and that offset reaches
+        // the recorded origin (measured, see `CelebrationPopOrigin`).
+        celebrate.request(.milestone(.dailyGoal), at: CelebrationPopOrigin.onScreen(ringOrigin))
         // E's call, 2026-09-12: the daily goal is the ONE milestone that announces itself. The
         // celebration is `accessibilityHidden`; this site has no haptic of its own (R-d puts that
         // in the centre) and no guaranteed on-screen change, because it can fire on any tab.

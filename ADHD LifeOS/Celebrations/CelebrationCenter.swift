@@ -64,15 +64,24 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     var frontmost: CelebrationSurface { presented.last ?? .root }
 
     /// What the cooldown is measured from: the last full-screen celebration to have STARTED, or
-    /// one that is still waiting to.
+    /// NOW while one is still waiting to.
     ///
     /// **The held half is not bookkeeping — it is the rule.** A waiting burst has stamped nothing,
     /// because it has not played; but if a second milestone arriving while it waits were promised a
     /// full screen too, the sheet's dismissal would release both at one instant and stack two 5.4 s
     /// washes, which is the exact thing E's #6 cooldown exists to prevent. So a pending burst
     /// counts against the cooldown without having started it, and the second moment gets the pop.
+    ///
+    /// **It answers `now()` rather than the waiting burst's own `start`, and the difference is a
+    /// defect this block shipped and then fixed.** A held burst's `start` is its REQUEST time, so
+    /// reporting it let the cooldown "expire" after five seconds while the burst was still sitting
+    /// there unplayed — and `releaseHeld` would then start both at one instant. `heldLifetime` is
+    /// 60 s, twelve times the cooldown, so that window is not a corner. Unreachable today only
+    /// because the one self-dismissing surface holds for `CapturePromoteSheet.popHold` (0.45 s);
+    /// it would go live on a longer-holding surface, or on a shorter cooldown — and E is
+    /// undecided about the cooldown. Found by the `feature-dev:code-reviewer` pass.
     private var cooldownAnchor: Date? {
-        [lastFullScreenAt, held.map(\.start).max()].compactMap { $0 }.max()
+        held.isEmpty ? lastFullScreenAt : now()
     }
 
     /// The bursts one layer should draw.

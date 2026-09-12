@@ -131,9 +131,12 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
     func testADowngradedDailyGoalPopsFromTheRingItself() throws {
         let observer = try flattened("Home/HomeView+DailyGoal.swift")
         XCTAssertTrue(
-            observer.contains("celebrate.request(.milestone(.dailyGoal), at: ringOrigin)"),
-            "The daily goal is requested with no origin, so R-h's fallback pop leaves from the"
-                + " centre of the screen instead of from the ring."
+            observer.contains(
+                "celebrate.request(.milestone(.dailyGoal), at: CelebrationPopOrigin.onScreen(ringOrigin))"
+            ),
+            "The daily goal is requested without the ring's origin, guarded. Unguarded it throws"
+                + " R-h's fallback pop 10,000 pt off screen whenever Home is not the visible tab;"
+                + " with no origin at all it leaves from the middle of the screen, not the ring."
         )
         XCTAssertTrue(
             try flattened("Home/MomentumScoreboardViews.swift").contains(".celebrationPopOrigin("),
@@ -171,6 +174,35 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
         XCTAssertLessThan(
             marked.lowerBound, requested.lowerBound,
             "The day is marked after the request rather than before it."
+        )
+    }
+
+    /// **Every ring input must read its Settings toggle in the SAME render as its count**, or the
+    /// tracker's rules-re-baseline is defeated by arriving one tick early.
+    ///
+    /// `nudgesDismissedToday` already does: it is computed and reads `countNudges` live.
+    /// `capturesClearedToday` did not — it was `@State`, written only by an async two-fetch
+    /// refresh. So flipping "count cleared captures" moved the RULES immediately and the COUNT
+    /// only when the next `DataChangeSignal` refresh landed: the first observation re-baselined
+    /// on the stale count (correctly refusing to celebrate), and the second arrived with rules
+    /// already matching and a count that had jumped — a full-screen celebration for a Settings
+    /// toggle. Found by the `feature-dev:code-reviewer` pass.
+    func testTheRingsCaptureContributionReadsItsToggleInTheSameRenderAsItsCount() throws {
+        XCTAssertFalse(
+            try flattened("Home/HomeView.swift").contains("var capturesClearedToday = 0"),
+            "`capturesClearedToday` is stored, so a Settings toggle moves the ring's RULES now and"
+                + " its COUNT on some later refresh — and the tracker cannot tell that apart from"
+                + " work the user did."
+        )
+        let sections = try flattened("Home/HomeMomentumSections.swift")
+        XCTAssertTrue(
+            sections.contains("var capturesClearedToday: Int {"),
+            "Nothing computes the ring's capture contribution."
+        )
+        XCTAssertTrue(
+            sections.contains("momentumPreferences.countClearedCaptures ? inboxHandledToday : 0"),
+            "The gated count is not derived from the ungated one, so the toggle and the number"
+                + " still cannot move together."
         )
     }
 

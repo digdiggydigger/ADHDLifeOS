@@ -85,9 +85,6 @@ struct HomeView: View {
     @State var inboxHandledToday = 0
     /// A peek row's pushed capture — the card's rows are doors straight into their capture.
     @State var inspectingHomeCapture: Capture?
-    /// M7: captures whose exit stamp is today, feeding the ring when the Settings toggle counts
-    /// them. Refreshed with the inbox count; 0 whenever the toggle is off.
-    @State var capturesClearedToday = 0
     /// Whether BOTH capture fetches behind `capturesClearedToday` last succeeded. 0 is a real
     /// count as well as the value a failed `try?` leaves, so without this the daily goal cannot
     /// tell a quiet day from a dropped connection. Internal: `HomeView+DailyGoal` reads it.
