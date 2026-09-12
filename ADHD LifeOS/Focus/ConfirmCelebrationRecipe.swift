@@ -130,39 +130,26 @@ enum ConfirmCelebrationGlow {
         return max(0, 1 - (time - holdUntil) / (goneBy - holdUntil))
     }
 
-    /// Overlapping Confirms share ONE glow at the strongest envelope, rather than stacking three
-    /// washes of 0.32 into something much heavier than anything E saw.
-    static func strongestEnvelope(of bursts: [ConfirmCelebrationBurst], at date: Date) -> Double {
-        bursts.map { envelope(at: ConfirmCelebrationQueue.choreographyTime(of: $0, at: date)) }.max() ?? 0
+    /// Overlapping full-screen celebrations share ONE glow at the strongest envelope, rather than
+    /// stacking three washes of 0.32 into something much heavier than anything E saw.
+    ///
+    /// A pop never glows: E's F6 made it a flourish at the tap point, not a wash over the screen.
+    static func strongestEnvelope(of bursts: [CelebrationBurst], at date: Date) -> Double {
+        bursts.filter(\.isFullScreen)
+            .map { envelope(at: CelebrationQueue.choreographyTime(of: $0, at: date)) }
+            .max() ?? 0
     }
 }
 
-/// One Confirm's celebration on screen.
-struct ConfirmCelebrationBurst: Equatable, Identifiable {
-    let ordinal: Int
-    let clearedStack: Bool
-    let start: Date
-
-    var id: Int { ordinal }
-
-    init(ordinal: Int, clearedStack: Bool, start: Date) {
-        self.ordinal = ordinal
-        self.clearedStack = clearedStack
-        self.start = start
-    }
-
-    init(confirmation: FocusConfirmation, start: Date) {
-        self.init(ordinal: confirmation.ordinal, clearedStack: confirmation.clearedStack, start: start)
-    }
-}
-
-/// The live bursts (E's approved R1): quick Confirms OVERLAP rather than restart, at most
-/// `liveCap` at once with the oldest dropped, and every burst is removed the moment it ends — so
-/// the layer stops drawing, and stops asking for frames, when nothing is left in the air.
-enum ConfirmCelebrationQueue {
-    static let liveCap = 3
+/// The Confirm celebration's CLOCK — the numbers E approved by video, and nothing else.
+///
+/// **This was `ConfirmCelebrationQueue` until `F-CTACelebrations-3`.** Its live-burst behaviour
+/// (the cap, the pruning, the expiry) moved to `CelebrationQueue`, which serves every kind of
+/// celebration; what could not move is this, because every number in the physics, the recipe, the
+/// glow and the fireworks is on THIS clock and E chose them by watching it.
+enum ConfirmCelebrationClock {
     /// The prototype's choreography E chose from: the last rain piece can launch at 0.6 s and live
-    /// 3.6 s. Every number in the physics, the recipe and the glow is on THIS clock.
+    /// 3.6 s.
     static let choreographyLength: TimeInterval = 4.2
     /// **E, after watching block 1 (2026-09-11): "extend the animation length by 1.2 seconds".**
     /// Added by STRETCHING the choreography evenly rather than by tacking on a tail, so every piece,
@@ -174,41 +161,10 @@ enum ConfirmCelebrationQueue {
     /// stretch"** — it plays at the same `pace` as the confetti, so it is on screen for
     /// `5.0 / pace` ≈ 6.43 s rather than keeping a clock of its own.
     static let stackClearingChoreographyLength: TimeInterval = 5.0
-    /// How long an every-Confirm celebration is on screen.
+    /// How long an every-Confirm celebration is on screen — and, since E's F8, every milestone too.
     static var everyConfirmLength: TimeInterval { choreographyLength + extraLength }
     /// How long a stack-clearing celebration is on screen.
     static var stackClearingLength: TimeInterval { stackClearingChoreographyLength / pace }
     /// How fast the choreography plays against the wall clock.
     static var pace: Double { choreographyLength / everyConfirmLength }
-
-    /// Where `burst` is in its choreography at `date`: wall-clock seconds since the Confirm, at `pace`.
-    static func choreographyTime(of burst: ConfirmCelebrationBurst, at date: Date) -> TimeInterval {
-        date.timeIntervalSince(burst.start) * pace
-    }
-
-    /// How long a burst stays in the air: until its last confetti lands, or, when it cleared the
-    /// stack, until its dim has lifted.
-    static func length(of burst: ConfirmCelebrationBurst) -> TimeInterval {
-        burst.clearedStack ? stackClearingLength : everyConfirmLength
-    }
-
-    static func adding(
-        _ burst: ConfirmCelebrationBurst, to bursts: [ConfirmCelebrationBurst], now: Date
-    ) -> [ConfirmCelebrationBurst] {
-        Array((pruned(bursts, now: now) + [burst]).suffix(liveCap))
-    }
-
-    /// Only the bursts still in the air at `now`. A burst ends exactly at its length.
-    static func pruned(_ bursts: [ConfirmCelebrationBurst], now: Date) -> [ConfirmCelebrationBurst] {
-        bursts.filter { now < end(of: $0) }
-    }
-
-    /// When the soonest-ending live burst ends, or `nil` with nothing live.
-    static func nextExpiry(of bursts: [ConfirmCelebrationBurst]) -> Date? {
-        bursts.map { end(of: $0) }.min()
-    }
-
-    private static func end(of burst: ConfirmCelebrationBurst) -> Date {
-        burst.start.addingTimeInterval(length(of: burst))
-    }
 }

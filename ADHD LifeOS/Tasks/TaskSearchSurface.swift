@@ -40,6 +40,9 @@ struct TaskSearchSurface: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.pageBackground.ignoresSafeArea())
+        // A full-screen cover over the root layer, and its rows close tasks — so it draws its
+        // own celebrations (E's ARCH answer: one layer per surface).
+        .overlay { CelebrationLayer(surface: .tasksSearch) }
         // The keyboard belongs HERE, not to the row that opened this. Raising it on appear is the
         // whole reason a full-screen surface beats an in-place filter: one tap, and you are typing.
         .task { isFieldFocused = true }

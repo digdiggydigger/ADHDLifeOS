@@ -46,19 +46,19 @@ final class CelebrationMountCallSiteTests: XCTestCase {
     private static let dismissals = [
         Dismissal(
             surface: ".routineCover", file: "RootView.swift",
-            presenter: ".fullScreenCover(item: $presentedRoutineRun"
+            presenter: ".fullScreenCover( item: $presentedRoutineRun"
         ),
         Dismissal(
             surface: ".tasksSearch", file: "Tasks/TaskListView.swift",
-            presenter: ".fullScreenCover(isPresented: searchModel.surfacePresentation"
+            presenter: ".fullScreenCover( isPresented: searchModel.surfacePresentation"
         ),
         Dismissal(
             surface: ".promoteSheet", file: "Capture/CaptureInboxView.swift",
-            presenter: ".sheet(item: $promotingCapture"
+            presenter: ".sheet( item: $promotingCapture"
         ),
         Dismissal(
             surface: ".promoteSheet", file: "Capture/CaptureDetailView.swift",
-            presenter: ".sheet(isPresented: $isPresentingPromoteSheet"
+            presenter: ".sheet( isPresented: $isPresentingPromoteSheet"
         )
     ]
 
@@ -96,8 +96,10 @@ final class CelebrationMountCallSiteTests: XCTestCase {
         for dismissal in Self.dismissals {
             let presenter = try Self.slice(
                 in: dismissal.file,
+                // Each presenter is written over several lines since this block gave it an
+                // `onDismiss:`, so the source is read with its line breaks collapsed.
                 from: dismissal.presenter,
-                to: ") {",
+                to: "content:",
                 missing: "\(dismissal.file) no longer presents \(dismissal.surface) the way this test expects."
             )
             XCTAssertTrue(
@@ -109,7 +111,9 @@ final class CelebrationMountCallSiteTests: XCTestCase {
     }
 
     func testNothingElseInTheAppDismissesASurface() throws {
-        let occurrences = try Self.appTargetOccurrences(of: "surfaceDismissed(")
+        // `surfaceDismissed(.` — a CALL passing a surface. The protocol requirement, the inert
+        // requester's no-op and the centre's implementation all spell it `surfaceDismissed(_ surface:`.
+        let occurrences = try Self.appTargetOccurrences(of: "surfaceDismissed(.")
         XCTAssertEqual(
             occurrences.count, Self.dismissals.count,
             "The app reports \(occurrences.count) surface dismissals, not \(Self.dismissals.count)."
@@ -221,7 +225,7 @@ final class CelebrationMountCallSiteTests: XCTestCase {
     private static func slice(
         in relativePath: String, from opening: String, to closing: String, missing: String
     ) throws -> String {
-        let source = try appCode(relativePath)
+        let source = try flattened(relativePath)
         guard let start = source.range(of: opening) else {
             throw CelebrationMountSourceError.anchorMissing(relativePath, opening, missing)
         }
@@ -229,6 +233,16 @@ final class CelebrationMountCallSiteTests: XCTestCase {
             throw CelebrationMountSourceError.anchorMissing(relativePath, closing, missing)
         }
         return String(source[start.upperBound..<end.lowerBound])
+    }
+
+    /// The same source on one line, each line trimmed and joined by a single space, so an anchor
+    /// does not have to know how a call was wrapped. A modifier's arguments are laid out by line
+    /// length, which changes whenever one is added.
+    private static func flattened(_ relativePath: String) throws -> String {
+        try appCode(relativePath)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .joined(separator: " ")
     }
 
     private static func appCode(_ relativePath: String) throws -> String {

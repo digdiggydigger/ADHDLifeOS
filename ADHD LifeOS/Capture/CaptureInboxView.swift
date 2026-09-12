@@ -47,6 +47,9 @@ struct CaptureInboxView: View {
     /// a `LazyVStack` inside Home's existing stack.
     @State var inspectingCapture: Capture?
     @State private var isPresentingQuickCapture = false
+    /// The celebration centre, so this screen can tell it when the surface it presents has
+    /// gone. `\.celebrate` defaults to an inert requester, so a preview needs nothing.
+    @Environment(\.celebrate) private var celebrate
     /// The top card's "Task it" — the existing promote sheet over the first waiting capture.
     @State var promotingCapture: Capture?
     @State var momentumPreferences: MomentumPreferences = .default
@@ -150,16 +153,19 @@ struct CaptureInboxView: View {
         } message: {
             Text(service.triageErrorMessage ?? "")
         }
-        .sheet(item: $promotingCapture) { capture in
-            CapturePromoteSheet(
-                capture: capture,
-                lifeAreaId: capture.lifeAreaId,
-                service: service
-            ) {
-                Task { await service.refresh() }
+        .sheet(
+            item: $promotingCapture,
+            onDismiss: { celebrate.surfaceDismissed(.promoteSheet) },
+            content: { capture in
+                CapturePromoteSheet(
+                    capture: capture,
+                    lifeAreaId: capture.lifeAreaId,
+                    service: service,
+                    onPromoted: { Task { await service.refresh() } }
+                )
+                .keyboardDismissal()
             }
-            .keyboardDismissal()
-        }
+        )
     }
 
     /// The web original's masthead: an eyebrow, the real title, and — the part that matters — a line

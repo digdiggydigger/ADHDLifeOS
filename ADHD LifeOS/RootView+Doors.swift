@@ -113,6 +113,9 @@ extension RootView {
                 activity: routineActivityPresenter(),
                 recorder: FirebaseRoutineRunRecorder()
             )
+            // This cover sits ABOVE the root layer, so a celebration started on the routine
+            // screen needs a layer of its own to be seen at all (E's ARCH answer).
+            .overlay { CelebrationLayer(surface: .routineCover) }
         }
     }
 }

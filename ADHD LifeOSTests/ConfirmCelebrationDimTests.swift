@@ -54,10 +54,10 @@ final class ConfirmCelebrationDimTests: XCTestCase {
     /// Only a stack-clearing Confirm dims; overlapping ones share one dim at the strongest, on the
     /// stretched clock — the glow's rule, so the screen never goes darker than anything E saw.
     func testOnlyStackClearingConfirmsDimAndOverlappingOnesShareTheStrongest() {
-        let pace = ConfirmCelebrationQueue.pace
+        let pace = ConfirmCelebrationClock.pace
         let dim = ConfirmCelebrationDim.self
-        let every = ConfirmCelebrationBurst(ordinal: 1, clearedStack: false, start: launch)
-        let cleared = ConfirmCelebrationBurst(ordinal: 2, clearedStack: true, start: launch.addingTimeInterval(1))
+        let every = Self.burst(1, clearedStack: false, at: launch)
+        let cleared = Self.burst(2, clearedStack: true, at: launch.addingTimeInterval(1))
         XCTAssertEqual(
             dim.strongestEnvelope(of: [every], at: launch.addingTimeInterval(1)), 0, accuracy: 1e-9,
             "An every-Confirm dims the screen. Only the stack-clearing one does."
@@ -68,8 +68,8 @@ final class ConfirmCelebrationDimTests: XCTestCase {
             "The dim is not on the stretched choreography clock."
         )
         let halfLifted = launch.addingTimeInterval(4.69 / pace)
-        let older = ConfirmCelebrationBurst(ordinal: 3, clearedStack: true, start: launch)
-        let newer = ConfirmCelebrationBurst(ordinal: 4, clearedStack: true, start: halfLifted)
+        let older = Self.burst(3, clearedStack: true, at: launch)
+        let newer = Self.burst(4, clearedStack: true, at: halfLifted)
         XCTAssertEqual(dim.strongestEnvelope(of: [older, newer], at: halfLifted), 0.5, accuracy: 1e-6)
         let newerComingIn = halfLifted.addingTimeInterval(0.175 / pace)
         XCTAssertEqual(
@@ -77,5 +77,14 @@ final class ConfirmCelebrationDimTests: XCTestCase {
             "Two dims do not share the strongest envelope."
         )
         XCTAssertEqual(dim.strongestEnvelope(of: [], at: launch), 0, accuracy: 1e-9)
+    }
+
+    /// A Confirm burst on the shared model (`F-CTACelebrations-3` replaced `ConfirmCelebrationBurst`
+    /// with `CelebrationBurst`, which carries its kind rather than a flag).
+    private static func burst(_ ordinal: Int, clearedStack: Bool, at start: Date) -> CelebrationBurst {
+        CelebrationBurst(
+            ordinal: ordinal, kind: .confirm(clearedStack: clearedStack), surface: .root,
+            start: start, origin: nil
+        )
     }
 }

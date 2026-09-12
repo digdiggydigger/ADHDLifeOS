@@ -169,6 +169,9 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
 struct ADHD_LifeOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var authService: AuthService
+    /// `F-CTACelebrations-3`: the app's one celebration owner, held here rather than in
+    /// `RootView` so it outlives every auth-state swap and every tab switch.
+    @StateObject private var celebrationCenter = CelebrationCenter()
     private let homeClient: HomeClientAdapting
     private let tasksClient: TasksClientAdapting
     private let taskCreateClient: TaskCreateClientAdapting
@@ -201,6 +204,7 @@ struct ADHD_LifeOSApp: App {
         WindowGroup {
             RootView(
                 authService: authService,
+                celebrationCenter: celebrationCenter,
                 homeClient: homeClient,
                 tasksClient: tasksClient,
                 taskCreateClient: taskCreateClient,

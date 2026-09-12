@@ -8,6 +8,11 @@ import UIKit
 
 struct RootView: View {
     @ObservedObject var authService: AuthService
+    /// The app's one celebration owner (`F-CTACelebrations-3`). Owned by the App, like
+    /// `authService`: built here it would be rebuilt on every auth-state swap, dropping
+    /// whatever was in the air, and a `@StateObject` cannot live in an extension file —
+    /// which this one needs for the 400-line bar.
+    @ObservedObject var celebrationCenter: CelebrationCenter
     let homeClient: HomeClientAdapting
     let tasksClient: TasksClientAdapting
     let taskCreateClient: TaskCreateClientAdapting
@@ -227,12 +232,18 @@ struct RootView: View {
                         onOpenSearch: { searchModel.open() }
                     )
                 }
-                // F-ConfirmCelebration-1: the full-screen Confirm celebration, over the card and the
-                // bar and under the covers. Always mounted; see the file for why.
-                .overlay { ConfirmCelebrationOverlay(focusService: focusService) }
-                .fullScreenCover(item: $presentedRoutineRun) { run in
-                    routineCover(run)
-                }
+                // F-ConfirmCelebration-1, generalised in `F-CTACelebrations-3`: the root
+                // celebration layer, over the card and the bar and under the covers — the same
+                // position the Confirm overlay held, so the record's R3 still holds. The covers
+                // above it mount layers of their own (E's ARCH answer: one layer per surface).
+                .overlay { CelebrationLayer(surface: .root) }
+                .fullScreenCover(
+                    item: $presentedRoutineRun,
+                    onDismiss: { celebrationCenter.surfaceDismissed(.routineCover) },
+                    content: { run in
+                        routineCover(run)
+                    }
+                )
                 .fullScreenCover(item: $composerKind) { kind in
                     QuickCaptureView(
                         client: captureClient,
@@ -248,6 +259,12 @@ struct RootView: View {
                 .task {
                     await focusService.restorePersistedSprint()
                 }
+                // Applied OUTSIDE the covers above, so every presented surface inherits the
+                // centre — the reason `.environmentObject(searchModel)` sits here too. A layer
+                // that cannot see the centre draws nothing and says nothing about it, so the
+                // position is asserted by `CelebrationMountCallSiteTests`.
+                .environment(\.celebrate, celebrationCenter)
+                .environment(\.celebrationCenter, celebrationCenter)
                 .environmentObject(searchModel)
                 .environmentObject(tabNavigation)
                 .task { await refreshCaptureInboxCount() }

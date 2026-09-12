@@ -228,8 +228,11 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
             resolver.range(of: "if case .confirm = kind { return .full }"),
             "The resolver has no Confirm branch, so E's waived celebration is chosen like any other."
         )
+        // The parameter's own name comes first, unavoidably; what must not come first is the
+        // place the setting is USED to choose a rendering.
         let setting = try XCTUnwrap(
-            resolver.range(of: "reduceMotion"), "The resolver never reads Reduce Motion at all."
+            resolver.range(of: "return reduceMotion ?"),
+            "The resolver never uses Reduce Motion to choose a rendering at all."
         )
         XCTAssertLessThan(
             confirm.lowerBound, setting.lowerBound,

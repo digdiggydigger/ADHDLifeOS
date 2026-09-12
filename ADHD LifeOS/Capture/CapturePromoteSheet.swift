@@ -69,6 +69,11 @@ struct CapturePromoteSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        // A sheet sits above the root layer, so a celebration asked for from Create Task needs a
+        // layer here to be seen at all. In practice this one draws the POP: a full-screen
+        // celebration requested while this sheet is frontmost is HELD by the centre, because the
+        // sheet dismisses itself on a successful promote and would cut a 5.4 s burst short.
+        .overlay { CelebrationLayer(surface: .promoteSheet) }
     }
 
     private var titlePreview: some View {
