@@ -11,25 +11,38 @@
 //  every tap on the screen for four seconds, and a stage drawn while nothing is live asks for a
 //  frame at display rate for as long as the app runs.
 //
+//  **`F-CTACelebrations-3` re-pointed these at the shared layer.** `ConfirmCelebrationOverlay.swift`
+//  is deleted: its drawing moved to `Celebrations/CelebrationFrame.swift` and its mounting to
+//  `Celebrations/CelebrationLayer.swift`, and the Confirm listener became a BRIDGE on
+//  `RootBottomOverlay` that asks the centre rather than starting a burst itself. Every property
+//  these tests pinned survives; only the file each one reads has moved, and the split matters —
+//  the layer reads Reduce Motion by design, the frame must not (§7.2's waiver).
+//
 
 import XCTest
 @testable import ADHD_LifeOS
 
 final class ConfirmCelebrationCallSiteTests: XCTestCase {
 
-    private static let layerFile = "Focus/ConfirmCelebrationOverlay.swift"
+    /// Mounting, hit-testing and the frame clock.
+    private static let layerFile = "Celebrations/CelebrationLayer.swift"
+    /// Drawing at one instant. Reduce Motion arrives here as a PARAMETER, never from the
+    /// environment, which is what keeps it on the §7.2 waiver's RM-free list.
+    private static let frameFile = "Celebrations/CelebrationFrame.swift"
+    /// The always-mounted view the Confirm haptic and the Confirm bridge share.
+    private static let bridgeFile = "RootBottomOverlay.swift"
 
     // MARK: - Where the layer is mounted
 
     /// Above the bottom furniture, so the confetti falls over the card and the tab bar; before the
     /// covers, so a sheet or full-screen cover still presents above it (R3). One line with no `if`,
-    /// because the layer's `.onChange` must already be listening when the first Confirm lands.
+    /// because the layer must already be mounted when the first Confirm lands.
     func testRootViewMountsTheLayerAboveTheFurnitureAndBelowTheCovers() throws {
         let root = try Self.appCode("RootView.swift")
         let furniture = try XCTUnwrap(root.range(of: "RootBottomOverlay("))
         let layer = try XCTUnwrap(
-            root.range(of: ".overlay { ConfirmCelebrationOverlay(focusService: focusService) }"),
-            "RootView does not mount the celebration unconditionally, so a Confirm plays nothing."
+            root.range(of: ".overlay { CelebrationLayer(surface: .root) }"),
+            "RootView does not mount the root celebration layer unconditionally, so a Confirm plays nothing."
         )
         let covers = try XCTUnwrap(root.range(of: ".fullScreenCover("))
         XCTAssertLessThan(
@@ -42,19 +55,32 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
         )
     }
 
-    /// The listener sits on the layer's outermost view, after the modifiers that close the
-    /// `GeometryReader` — never inside the `if` that only exists while a burst is live.
-    func testTheLayerListensForConfirmsOnItsAlwaysPresentView() throws {
-        let layer = try Self.appCode(Self.layerFile)
-        let hidden = try XCTUnwrap(layer.range(of: ".accessibilityHidden(true)"))
+    /// The bridge sits beside the Confirm haptic on `RootBottomOverlay`, which is mounted
+    /// unconditionally and outlives the card stack — the trap `testTheHapticListenerOutlivesTheStack`
+    /// records. It ASKS the centre; it never decides, and it never starts a burst itself.
+    func testTheConfirmBridgeListensBesideTheHapticOnTheAlwaysMountedOverlay() throws {
+        let overlay = try Self.appCode(Self.bridgeFile)
         let listener = try XCTUnwrap(
-            layer.range(of: ".onChange(of: focusService.latestConfirmation)"),
-            "The layer never listens for the Confirm stamp, so nothing starts a burst."
+            overlay.range(of: ".onChange(of: focusService.latestConfirmation)"),
+            "Nothing bridges the Confirm stamp into the celebration centre, so a Confirm plays nothing."
         )
-        XCTAssertLessThan(
-            hidden.lowerBound, listener.lowerBound,
-            "The Confirm listener is inside the conditional content, so it is not there to hear the"
-                + " first Confirm."
+        let haptic = try XCTUnwrap(
+            overlay.range(of: ".haptic(.success, trigger: focusService.confirmationCount)"),
+            "The Confirm haptic has left the always-mounted overlay."
+        )
+        XCTAssertTrue(
+            overlay[listener.lowerBound...].contains(
+                "celebrate.request(.confirm(clearedStack: confirmation.clearedStack), at: nil)"
+            ),
+            "The bridge does not ask the centre for a Confirm celebration, so nothing is enqueued."
+        )
+        // Both hang off the same modifier run on the same always-present view: nothing between
+        // them re-opens a conditional, so the bridge cannot be mounted later than the haptic.
+        let between = overlay[min(listener.lowerBound, haptic.lowerBound)..<max(listener.lowerBound, haptic.lowerBound)]
+        XCTAssertFalse(
+            between.contains("\n            if ") || between.contains("\n        if "),
+            "The Confirm bridge and the Confirm haptic are separated by a conditional, so one of them"
+                + " can be absent when the first Confirm lands."
         )
     }
 
@@ -72,21 +98,21 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
     }
 
     /// `TimelineView(.animation)` asks for every frame while it exists. It must exist only while a
-    /// burst is live, and bursts must be pruned when they end.
+    /// burst is live on THIS surface, and bursts must be pruned when they end.
     func testNothingRedrawsOnceTheLastBurstHasEnded() throws {
         let layer = try Self.appCode(Self.layerFile)
         let gate = try XCTUnwrap(
             layer.range(of: "if !bursts.isEmpty {"),
             "The stage is built whether or not anything is live."
         )
-        let stage = try XCTUnwrap(layer.range(of: "ConfirmCelebrationStage("))
+        let stage = try XCTUnwrap(layer.range(of: "CelebrationStage("))
         XCTAssertLessThan(gate.lowerBound, stage.lowerBound, "The stage is built outside the live-burst gate.")
         XCTAssertEqual(
             layer.components(separatedBy: "TimelineView(.animation)").count - 1, 1,
             "More than one frame clock drives the celebration."
         )
         XCTAssertTrue(
-            layer.contains("ConfirmCelebrationQueue.pruned("),
+            layer.contains("center.prune("),
             "Finished bursts are never removed, so the frame clock runs for ever after the first Confirm."
         )
     }
@@ -95,9 +121,9 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
     /// on the stretched clock. Reverting to raw elapsed time would play the old 4.2 s inside a 5.4 s
     /// burst, then show nothing for the last 1.2 s.
     func testTheFrameDrawsOnTheStretchedClock() throws {
-        let layer = try Self.appCode(Self.layerFile)
         XCTAssertTrue(
-            layer.contains("ConfirmCelebrationQueue.choreographyTime(of: scene.burst, at: date)"),
+            try Self.appCode(Self.frameFile)
+                .contains("CelebrationQueue.choreographyTime(of: scene.burst, at: date)"),
             "The confetti is placed on raw elapsed time, not on the stretched choreography clock."
         )
     }
@@ -108,13 +134,15 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
     /// is identical on both. So the display is built only for a burst whose stamp cleared the
     /// stack, and the dim is driven by the same live bursts (which know which of them cleared it).
     func testTheFireworksAndTheDimPlayOnlyOnAStackClearingConfirm() throws {
-        let layer = try Self.appCode(Self.layerFile)
         XCTAssertTrue(
-            layer.contains("fireworks: burst.clearedStack ? ConfirmFireworks(canvas: canvas) : nil"),
-            "The fireworks are built for every Confirm, or for none. They belong to the stack-clearing one only."
+            try Self.appCode(Self.layerFile)
+                .contains("fireworks: burst.clearedStack ? ConfirmFireworks(canvas: canvas) : nil"),
+            "The fireworks are built for every burst, or for none. They belong to the stack-clearing"
+                + " Confirm only."
         )
         XCTAssertTrue(
-            layer.contains("ConfirmCelebrationDim.strongestEnvelope(of: scenes.map(\\.burst), at: date)"),
+            try Self.appCode(Self.frameFile)
+                .contains("ConfirmCelebrationDim.strongestEnvelope(of: scenes.map(\\.burst), at: date)"),
             "The dim is not driven by the live bursts, so it cannot follow a stack-clearing Confirm."
         )
     }
@@ -122,15 +150,15 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
     /// E (#7): "for light-mode display views, a background dim". Dark appearance does not dim
     /// (R6: the glow shows in both; only the dim is light-only).
     func testTheDimIsLightAppearanceOnly() throws {
-        let layer = try Self.appCode(Self.layerFile)
+        let frame = try Self.appCode(Self.frameFile)
         XCTAssertTrue(
-            layer.contains("@Environment(\\.colorScheme) private var colorScheme"),
+            frame.contains("@Environment(\\.colorScheme) private var colorScheme"),
             "The frame never reads the appearance, so the dim plays in dark too."
         )
         let gate = try XCTUnwrap(
-            layer.range(of: "if colorScheme == .light"), "The dim is not gated on the light appearance."
+            frame.range(of: "if colorScheme == .light"), "The dim is not gated on the light appearance."
         )
-        let dim = try XCTUnwrap(layer.range(of: "Color(ConfirmCelebrationDim.colorName)"), "The frame draws no dim.")
+        let dim = try XCTUnwrap(frame.range(of: "Color(ConfirmCelebrationDim.colorName)"), "The frame draws no dim.")
         XCTAssertLessThan(gate.lowerBound, dim.lowerBound, "The dim is drawn outside the light-appearance gate.")
     }
 
@@ -139,14 +167,14 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
     /// keep the paper in front of the sparks. And the fireworks are placed at `elapsed`, the
     /// stretched choreography time, never at raw wall-clock time (E's "Same stretch").
     func testTheFrameDrawsDimThenGlowThenFireworksThenConfettiOnTheStretchedClock() throws {
-        let layer = try Self.appCode(Self.layerFile)
-        let dim = try XCTUnwrap(layer.range(of: "Color(ConfirmCelebrationDim.colorName)"), "The frame draws no dim.")
-        let glow = try XCTUnwrap(layer.range(of: "RadialGradient("))
+        let frame = try Self.appCode(Self.frameFile)
+        let dim = try XCTUnwrap(frame.range(of: "Color(ConfirmCelebrationDim.colorName)"), "The frame draws no dim.")
+        let glow = try XCTUnwrap(frame.range(of: "RadialGradient("))
         let fireworks = try XCTUnwrap(
-            layer.range(of: "ConfirmFireworksDrawing.draw(fireworks, in: context, at: elapsed"),
+            frame.range(of: "ConfirmFireworksDrawing.draw(fireworks, in: context, at: elapsed"),
             "The frame draws no fireworks, or draws them off the stretched clock."
         )
-        let confetti = try XCTUnwrap(layer.range(of: "for piece in scene.confetti"))
+        let confetti = try XCTUnwrap(frame.range(of: "for piece in scene.confetti"))
         XCTAssertLessThan(dim.lowerBound, glow.lowerBound, "The dim is drawn over the glow.")
         XCTAssertLessThan(glow.lowerBound, fireworks.lowerBound, "The fireworks are drawn under the glow.")
         XCTAssertLessThan(fireworks.lowerBound, confetti.lowerBound, "The fireworks are drawn over the confetti.")
@@ -156,9 +184,13 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
 
     /// On the overlay beside the completion haptic, keyed on the Confirm ordinal — never on the
     /// card or the stack (`testTheHapticListenerOutlivesTheStack` already bans those).
+    ///
+    /// **The centre's ordinal never reaches this line.** `ordinal` did three jobs in the Confirm
+    /// build (SwiftUI id, confetti seed, haptic trigger); block 3 gave the first two to the centre's
+    /// counter and left the third on the service's, so a pop can never buzz a Confirm.
     func testEveryConfirmFiresTheSuccessHapticFromTheOverlay() throws {
         XCTAssertTrue(
-            try Self.appCode("RootBottomOverlay.swift")
+            try Self.appCode(Self.bridgeFile)
                 .contains(".haptic(.success, trigger: focusService.confirmationCount)"),
             "Confirm buzzes nothing. E chose the success haptic on every Confirm."
         )
@@ -166,12 +198,20 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
 
     // MARK: - The §7.2 waiver
 
-    /// **E's waiver of CLAUDE.md §7.2, 2026-09-11: "B AND C".** With Reduce Motion ON — E's own
-    /// setting — Confirm shows the glow AND real falling confetti, identical to Reduce Motion OFF.
-    /// Pinned so a later Reduce Motion sweep cannot quietly turn E's celebration into a fade.
+    /// **E's waiver of CLAUDE.md §7.2, 2026-09-11: "B AND C".** With Reduce Motion ON, Confirm shows
+    /// the glow AND real falling confetti, identical to Reduce Motion OFF. Pinned so a later Reduce
+    /// Motion sweep cannot quietly turn E's celebration into a fade.
+    ///
+    /// **Block 3 changed this pin's SHAPE, not its meaning** (the block's own instruction: it
+    /// "becomes 'the Confirm files are RM-free AND the resolver returns `.full` for Confirm'").
+    /// `ConfirmCelebrationOverlay.swift` no longer exists, so the sixth file on the list is the
+    /// frame it became; and with one shared layer for every celebration, "this file reads no Reduce
+    /// Motion" is no longer sufficient on its own — the resolver that picks the rendering has to
+    /// answer `.full` for a Confirm before it ever looks at the setting. The behavioural half of
+    /// that claim is `CelebrationMotionTests`; the half here is that the branch is REACHED first.
     func testTheConfirmCelebrationIgnoresReduceMotionByDesign() throws {
         for file in [
-            "Focus/ConfettiPhysics.swift", "Focus/ConfirmCelebrationRecipe.swift", Self.layerFile,
+            "Focus/ConfettiPhysics.swift", "Focus/ConfirmCelebrationRecipe.swift", Self.frameFile,
             "Focus/ConfirmFireworksSchedule.swift", "Focus/ConfirmFireworksPhysics.swift",
             "Focus/ConfirmFireworksDrawing.swift"
         ] {
@@ -182,6 +222,20 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
                     + " Motion ON it plays in full. Changing that is E's call, not a sweep's."
             )
         }
+
+        let resolver = try Self.appCode("Celebrations/CelebrationMotion.swift")
+        let confirm = try XCTUnwrap(
+            resolver.range(of: "if case .confirm = kind { return .full }"),
+            "The resolver has no Confirm branch, so E's waived celebration is chosen like any other."
+        )
+        let setting = try XCTUnwrap(
+            resolver.range(of: "reduceMotion"), "The resolver never reads Reduce Motion at all."
+        )
+        XCTAssertLessThan(
+            confirm.lowerBound, setting.lowerBound,
+            "The resolver reads Reduce Motion BEFORE it answers for Confirm, so a reordering could"
+                + " route E's waived celebration down the reduced path."
+        )
     }
 
     // MARK: - The stamp (R2)

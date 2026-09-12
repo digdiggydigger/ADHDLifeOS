@@ -23,7 +23,8 @@ import XCTest
 final class CelebrationSwitchCallSiteTests: XCTestCase {
 
     private static let settingsFile = "Settings/SettingsPreferenceSections.swift"
-    private static let layerFile = "Focus/ConfirmCelebrationOverlay.swift"
+    /// Where the decision is made since `F-CTACelebrations-3` — see the gate test below.
+    private static let centreFile = "Celebrations/CelebrationCenter.swift"
 
     // MARK: - The two rows (E's #3, F5)
 
@@ -120,35 +121,40 @@ final class CelebrationSwitchCallSiteTests: XCTestCase {
 
     // MARK: - Confirm reads the switch at FIRE time
 
-    /// The `hapticsEnabled()` arrangement (`Haptics.play(gate:)`): the switch is consulted in the
-    /// listener, as the Confirm lands, so flipping it takes effect on the very next Confirm with no
-    /// relaunch and nothing plumbed through `RootView`.
+    /// The `hapticsEnabled()` arrangement (`Haptics.play(gate:)`): the switch is consulted as the
+    /// Confirm lands, so flipping it takes effect on the very next Confirm with no relaunch and
+    /// nothing plumbed through `RootView`.
     ///
-    /// The gate must sit BEFORE the burst is appended. Read after it, the celebration would already
-    /// be on the list and the frame clock already running.
+    /// **`F-CTACelebrations-3` MOVED this gate, and kept the guard by name rather than deleting
+    /// it.** Block 2 put it on `ConfirmCelebrationOverlay` as an injectable `celebrationsGate`
+    /// consulted inside the layer's own `.onChange`. Block 3 routes every celebration through
+    /// `CelebrationCenter`, so the layer no longer decides anything and the gate belongs where the
+    /// decision is made. The PROPERTY is unchanged and is still the whole point: the switch is read
+    /// BEFORE anything is enqueued. Read after, the celebration would already be on the list and
+    /// the frame clock already running.
     func testTheConfirmLayerGatesOnTheCelebrationsSwitchBeforeStartingABurst() throws {
-        let listener = try Self.closure(
-            in: Self.layerFile,
-            from: ".onChange(of: focusService.latestConfirmation)",
-            to: ".task(id: bursts)",
-            missing: "The Confirm listener is not where this test expects it."
+        let request = try Self.closure(
+            in: Self.centreFile,
+            from: "func request(_ kind: CelebrationKind, at origin: CGPoint?) -> CelebrationOutcome {",
+            to: "\n    func ",
+            missing: "The centre has no `request`, so nothing consults the Celebrations switch."
         )
         let gate = try XCTUnwrap(
-            listener.range(of: "guard celebrationsGate() else { return }"),
-            "The Confirm listener never consults the Celebrations switch, so the Settings row is a lie."
+            request.range(of: "celebrationsGate()"),
+            "The centre never consults the Celebrations switch, so the Settings row is a lie."
         )
-        let adding = try XCTUnwrap(
-            listener.range(of: "ConfirmCelebrationQueue.adding("),
-            "The Confirm listener no longer starts a burst."
+        let enqueue = try XCTUnwrap(
+            request.range(of: "CelebrationQueue.adding("),
+            "The centre no longer starts a burst."
         )
         XCTAssertLessThan(
-            gate.lowerBound, adding.lowerBound,
+            gate.lowerBound, enqueue.lowerBound,
             "The switch is read after the burst has already been added, so the celebration plays anyway."
         )
         XCTAssertTrue(
-            try Self.appCode(Self.layerFile)
-                .contains("var celebrationsGate: () -> Bool = { AppFeedback.celebrationsEnabled() }"),
-            "The gate does not default to the Settings switch, so the mounted layer reads something else."
+            try Self.appCode(Self.centreFile)
+                .contains("celebrationsGate: @escaping () -> Bool = { AppFeedback.celebrationsEnabled() }"),
+            "The gate does not default to the Settings switch, so the app's centre reads something else."
         )
     }
 
