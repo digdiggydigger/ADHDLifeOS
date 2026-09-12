@@ -113,6 +113,9 @@ struct HomeView: View {
     /// Foregrounding refreshes the routine card — see `refreshLiveRoutine` for why nothing
     /// else covers that case.
     @Environment(\.scenePhase) private var homeScenePhase
+    /// Internal, not private: the closure card's arrival is built in `HomeMomentumSections`,
+    /// and §7.2 has the PARENT read the setting rather than each leaf reaching for it.
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
     let routineRunStore: RoutineRunStoring = UserDefaultsRoutineRunStore()
 
     init(

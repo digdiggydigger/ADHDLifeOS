@@ -140,6 +140,10 @@ struct FocusTimerBar: View {
                 titleVisibility: .visible
             ) {
                 Button(FocusStopConfirmation.confirmTitle, role: .destructive) {
+                    // Stepping back from a sprint is a decision, not a completion (E's #5),
+                    // so `.light` — and here rather than on the toolbar's Stop, which only
+                    // raises this dialog and may still be cancelled.
+                    Haptics.play(.light)
                     Task { await service.stop() }
                 }
                 Button(FocusStopConfirmation.cancelTitle, role: .cancel) {}

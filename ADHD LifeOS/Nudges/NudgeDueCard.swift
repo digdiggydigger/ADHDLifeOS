@@ -32,7 +32,7 @@ struct NudgeDueCard: View {
                 streak(dates)
             }
             Button("Done for now") {
-                Haptics.play(.light)
+                Haptics.play(.success)
                 Task { await onDismiss() }
             }
             .buttonStyle(MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo")))

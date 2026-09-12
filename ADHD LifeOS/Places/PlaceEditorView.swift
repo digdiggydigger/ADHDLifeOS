@@ -290,6 +290,9 @@ struct PlaceEditorView: View {
         ) else { return }
 
         if await onSave(place) {
+            // AFTER the write lands, never before: `onSave` returns false when it failed,
+            // and a buzz on the way in would report a save that never happened.
+            Haptics.play(.solid)
             dismiss()
         }
     }

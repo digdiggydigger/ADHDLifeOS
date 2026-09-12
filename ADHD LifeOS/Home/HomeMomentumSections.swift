@@ -32,8 +32,9 @@ extension HomeView {
                         )?.focusDurationSeconds
                     ),
                     onUndo: { Task { await undoClose(celebrated) } },
-                    onNext: { celebratedTask = nil }
+                    onNext: { setCelebratedTask(nil) }
                 )
+                .transition(reduceMotion ? .opacity : .scale(scale: 0.9).combined(with: .opacity))
             } else {
                 bestNextMoveSection
             }
@@ -207,6 +208,25 @@ extension HomeView {
         .accessibilityIdentifier("homeDueNowRow-\(task.id)")
     }
 
+    // MARK: - The closure card's arrival
+
+    /// E's #8: the card springs in instead of appearing unanimated. The house pattern is
+    /// `Capture/CaptureFanOverlay.swift:89-97` — under Reduce Motion the spring is replaced by
+    /// a plain ease, not removed, because §7.2's rule for something that APPEARS is to swap
+    /// motion for a fade rather than to strip the feedback. Paired with the card's
+    /// opacity-only transition, the first reduced frame is already at final geometry and only
+    /// the fade travels (the opening-pose rule).
+    var closureCardAnimation: Animation {
+        reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8)
+    }
+
+    /// The ONLY writer of `celebratedTask`. Three paths move it — the card's Next, a close
+    /// from Home, and Undo — and a transition only runs if every one of them is animated, so
+    /// they share a setter rather than each remembering to wrap itself.
+    func setCelebratedTask(_ task: TaskSummary?) {
+        withAnimation(closureCardAnimation) { celebratedTask = task }
+    }
+
     // MARK: - Close-from-Home
 
     func closeTask(_ task: TaskSummary) async {
@@ -215,7 +235,7 @@ extension HomeView {
         defer { isClosingTask = false }
         do {
             _ = try await taskDetailClient.updateStatus(id: task.id, status: .done)
-            celebratedTask = task
+            setCelebratedTask(task)
             await homeService.load()
         } catch {
             closeTaskErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -225,7 +245,7 @@ extension HomeView {
     func undoClose(_ task: TaskSummary) async {
         do {
             _ = try await taskDetailClient.updateStatus(id: task.id, status: .open)
-            celebratedTask = nil
+            setCelebratedTask(nil)
             await homeService.load()
         } catch {
             closeTaskErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
