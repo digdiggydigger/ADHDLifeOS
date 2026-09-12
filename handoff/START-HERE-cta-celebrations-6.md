@@ -4,20 +4,30 @@
 terminal. Written 2026-09-12 at the close of the session that built `F-CTACelebrations-5`. **The
 session that writes this arc's next opener archives this file in the same move.***
 
-**STATUS.** Blocks 1–6 of the arc are MERGED, and **ALL SIX have PASSED E's device verdict** —
-`-4` and `-5` together on 2026-09-12, with Reduce Motion **OFF and ON** (E, verbatim: *"both of
-those tests work correctly!"*, confirmed when asked precisely about RM). **Nothing is owed from any
-shipped block.** That sitting is also the first time in this arc a Verified-paths line has earned
-*"Reduced: run on sim (injected) + E's phone (RM on)"* rather than owing it.
+**STATUS.** Blocks 1–6 of the arc are MERGED and **every shipped block has PASSED E's device
+verdict** — `-4` and `-5` together on 2026-09-12 with Reduce Motion **OFF and ON** (E: *"both of
+those tests work correctly!"*, confirmed when asked precisely about RM).
 
-**One block shipped OUT of that sitting: `F-CTACelebrations-PopScale`** (PR #99). E asked for the
-pop to be bigger; four variants were rendered in situ and E picked C, so
-`CelebrationRecipes.popScale = 1.6` now carries piece size, throw speed and count together.
-**Do not tune it down** — it is E's by-sight value, the `peekStep` precedent, and
-`testThePopScaleIsTheValueEChoseByLooking` pins it. **It owes an RM-on device pass of its own**
-(the still pop is a reduced site and it changed), which can ride along with this block's.
+**Three follow-on blocks came out of that sitting and are also merged:**
+- **`PopScale`** — E asked for a bigger pop; `CelebrationRecipes.popScale = 1.6` carries piece size,
+  throw speed and count together. **Do not tune it down**; it is E's by-sight value.
+- **`NoCooldown`** — **E removed the milestone cooldown entirely.** Milestones now play every time
+  the Celebrations switch is on, and two that land together OVERLAP (capped at three). Do not
+  reintroduce a frequency rule without E; `testThePolicyHasNoClockAndNoCooldownConstant` guards it.
+- **`SwipeOrigin`** — a swipe pops from the FINGER, the circle from itself. E reported the defect
+  from the phone.
 
-The app code is `main` @ `107e2ee`; check `git log --oneline -1 origin/main` for today's tip rather
+**Nothing is owed from any shipped block except three unhurried device looks** (register §A): the
+swipe's new origin, the no-cooldown overlap, and one Reduce-Motion-ON look at the scaled still pop.
+E has passed everything before them, so **do NOT treat any of it as unverified work to redo.**
+
+**E's other decisions from that sitting, all settled — do not re-litigate:** the VoiceOver
+announcement stays "daily goal only" (re-asked on corrected facts, E kept it); the Celebrations
+switch still does not gate pops; the airplane-mode + pull-to-refresh check has been RUN and PASSED.
+**Photosensitivity is DEFERRED by E and is now a launch blocker by E's own instruction** — §A and
+§D both carry it, and neither may be closed without E.
+
+The app code is `main` @ `8ea13d8`; check `git log --oneline -1 origin/main` for today's tip rather
 than trusting a SHA written here.
 
 **E's standing instruction: each block is built in a FRESH Claude Code terminal session.** This
@@ -149,5 +159,6 @@ it.
   `xcodebuild build -destination 'platform=iOS,id=<udid>' -allowProvisioningUpdates`, then
   `xcrun devicectl device install app --device <udid> "<…>.app"` and
   `… process launch --device <udid> --terminate-existing com.ethananthony.ADHD-LifeOS`.
-- **Baseline at close** (`main` `107e2ee`, after the pop-scale block): suite **2,888 / 0**, lint
-  **0 / 791**, app coverage **27.41 % (13,063/47,659)**.
+- **Baseline at close** (`main` `8ea13d8`): suite **2,882 / 0**, lint **0 / 791**, app coverage
+  **27.39 % (13,058/47,668)**. The suite count FELL because `NoCooldown` removed seven tests that
+  pinned a rule E deleted — that is the expected shape, not a regression.

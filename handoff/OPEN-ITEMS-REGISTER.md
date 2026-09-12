@@ -71,6 +71,17 @@ are mostly pure logic (`DailyGoalTracker`, `CelebrationDayMarking`, `NudgeStreak
     burst's `start`, which is its REQUEST time, so the cooldown "expired" after five seconds while
     the burst was still waiting unplayed — and `releaseHeld` would start both at one instant, the
     exact stacking the anchor was added to prevent. (NEW)
+- **TWO CORRECT DECISIONS CAN COLLIDE, and neither block could have seen it alone.** `-4` gave the
+  row's circle and its swipe ONE origin for good reasons; `PopScale` took the throw to 208 pt at
+  E's request, also for good reasons. Together they threw a swipe's paper off the screen. **Nothing
+  in 2,884 tests caught it and no review pass did** — E found it in seconds on the phone. The lesson
+  is not "test harder": a change to a shared CONSTANT deserves a re-look at every site that
+  constant reaches, and E's device pass is load-bearing rather than ceremonial. (NEW)
+- **When E reverses a rule, REVERSE the test that pinned it — never delete it.**
+  `testTheSwipeAndTheCircleClosePopFromOneOrigin` became
+  `testTheCirclePopsFromItselfAndTheSwipePopsFromTheFinger`, carrying E's reason inside it. The
+  seven cooldown tests went the same way, each named in its commit. A deleted test leaves no trace
+  of the decision that removed it. (NEW)
 - **A guard that reads the wrong text is worse than no guard, because it fails in the believable
   direction — and this block wrote two of them.** One sliced a call's arguments "up to the next
   `)`", which for `HomeView(…)` lands inside `onToggleSprintPause: { focusService.togglePause() }`
@@ -106,87 +117,84 @@ are mostly pure logic (`DailyGoalTracker`, `CelebrationDayMarking`, `NudgeStreak
 
 ## A · Decisions only E can make — minutes each
 
-- [x] **THE DEVICE SITTING — DONE 2026-09-12, and BOTH blocks PASSED with Reduce Motion OFF *and*
-      ON.** E, verbatim: *"both of those tests work correctly!"*, and confirmed when asked
-      precisely that the passes included Reduce Motion turned on. So `F-CTACelebrations-4` (the
-      nine pops) and `F-CTACelebrations-5` (the three milestones) are both verified on device, and
-      **both blocks' Verified-paths lines may now read "Reduced: run on sim (injected) + E's phone
-      (RM on)"** — the first time in this arc that line is earned rather than owed. E also sent a
-      16.7 s screen recording of the whole showcase.
-      **What came out of it is a new block, not a defect:** E asked for the pop to be bigger. See
-      `F-CTACelebrations-PopScale`, built and merged the same day. (CLOSED)
-- [ ] **ONE device pass owed: `F-CTACelebrations-PopScale`, with Reduce Motion ON.** The block
-      shipped after the sitting above, and it changes a REDUCED site — `stillPopSpread` scales with
-      the pop, 48 → 76.8 pt — so §7.3 owes it a look with the setting on. Its RM-OFF half is what E
-      is judging anyway when they next close a task. Until E answers, this block's Verified-paths
-      line reads *"Reduced: run on sim; NOT on device."* (NEW)
-- [ ] **THE ACCESSIBILITY ANSWER NEEDS RE-ASKING, because one of the three options I put to E
-      rested on a premise that is FALSE.** E chose "the daily goal only" on the stated grounds that
-      the other two milestones leave the user on a screen that states the outcome. The
-      `apple:hig-reviewer` pass checked that, and I verified it: **`NudgesService.dismiss` sets
-      `lastFiredAt`, `NudgeDueness.isNudgeDue` then measures the next fire from it, and the card is
-      removed from the due list immediately** — exactly as on every other day. There is no
-      "7 of 7 days" left on screen, the haptic is the same `.success` every dismissal plays, and the
-      card vanishes identically whether the streak just hit 1 or 7. **So a VoiceOver user reaching
-      day seven gets nothing that distinguishes it from any other day.** The inbox-zero half of the
-      premise holds on the Captures tab (its `emptyState` is real) but was not traced for the
-      pushed-detail doors. Nothing was changed: adding the streak announcement is one line and it is
-      E's call, not a correction to make silently. (NEW)
-- [ ] **PHOTOSENSITIVITY — the fireworks' flash rate, and this one is a launch-safety question, not
-      a polish one.** The 14 shells' burst flashes land at **5 inside one second** (from ≈ 2.00 s),
-      against **WCAG 2.3.1's threshold of 3**. Each flash is a radial gradient growing 40 → 240 pt
-      at up to 0.35 alpha, over 0.35 s.
-      **What is NOT claimed:** whether the luminance delta and the screen area also cross the
-      guideline's thresholds is **unmeasured** — the flash COUNT alone is what crosses. There is no
-      app-readable API for iOS's "Dim Flashing Lights", so this cannot be gated in code.
-      **This block's HIG pass re-confirmed the finding does NOT extend to the three new
-      milestones**: `CelebrationLayer` sets `fireworks` only for `burst.clearedStack`, and none of
-      `inboxZero` / `streakSeven` / `dailyGoal` is a `.confirm`. The finding is the stack-clearing
-      Confirm's alone. **It is E's call**: measure the luminance properly, thin the two clusters, or
-      accept it. (carried, re-confirmed)
-- [ ] **The milestone cooldown — E's call is DUE NOW.** E: *"i am undecided about the cooldown at
-      the moment anyway."* It ships at **5 s for testing**; whether it exists and at what value was
-      to be settled on the phone **after `F-CTACelebrations-5`**, which is this sitting. Note one
-      thing that was not true before: the cooldown now also governs how a held burst behaves, so
-      lowering it further would make §B.00b's second defect live again were it not fixed. (carried,
-      now due)
-- [ ] **The pop is not gated by the Celebrations switch, and the HIG pass asks whether that should
-      stay.** It is E's #3, decided deliberately, and the Settings footer says so out loud. What the
-      pass names is the consequence: a user who wants ZERO decorative motion on a rapid closing
-      streak has no path to it except Reduce Motion, which stills the pop rather than removing it.
-      Options: leave it, let the Celebrations switch cover pops too, or add a third switch.
-      (carried)
+**E settled four of these at the device sitting on 2026-09-12/13. What remains is one deferral E
+asked to be held, and two housekeeping items.**
+
+- [ ] **DEVICE CHECK OWED on the three follow-on blocks, whenever E is next on the phone.** All
+      three are landed, green and installed from `main`; none is urgent, and E has already passed
+      everything that came before them.
+      - **The swipe's pop** (`SwipeOrigin`) — swipe a task closed and confirm the paper now leaves
+        from the finger rather than off the right-hand edge. **This is the one that replaces a
+        defect E reported**, so it is the only check with a known "before".
+      - **The overlap** (`NoCooldown`) — clear the last capture and cross the daily goal close
+        together; two full-screen celebrations now OVERLAP rather than the second being downgraded.
+        That is the direct consequence of removing the cooldown and it is E's decision; it is worth
+        a look only to confirm it does not read badly.
+      - **Reduce Motion ON** (`PopScale`) — the still pop's scatter scaled 48 → 76.8 pt with the
+        pop, so §7.3 owes it one RM-on look. Until then that block's Verified-paths line reads
+        *"Reduced: run on sim; NOT on device."* (NEW)
+- [ ] **PHOTOSENSITIVITY — E POSTPONED this on 2026-09-13, and asked in the same breath that it be
+      brought back before public launch.** E, verbatim: *"Can we postpone this decision for later
+      date? But we must come back to this before shipping to the public."*
+      **So this is now a LAUNCH BLOCKER by E's own instruction, not an open polish item** — it is
+      listed in §D as well, and neither entry may be closed without E.
+      The finding, unchanged: the stack-clearing Confirm's 14 shells flash **5 times inside one
+      second** (from ≈ 2.00 s) against **WCAG 2.3.1's threshold of 3**. Each flash is a radial
+      gradient growing 40 → 240 pt at up to 0.35 alpha over 0.35 s. **Unmeasured:** whether the
+      luminance delta and screen area also cross the guideline — the flash COUNT alone is what
+      crosses. There is no app-readable API for iOS's "Dim Flashing Lights", so it cannot be gated
+      in code. The finding does NOT extend to the pops or the milestones (both re-confirmed).
+      The options remain: measure the luminance properly, thin the two clusters, or accept it with
+      eyes open. (DEFERRED BY E, carried to §D)
 - [ ] **Install an older simulator runtime** via Xcode → Settings → Components. E, 2026-09-11:
       *"In a number of days in the future, I will install this."* Until then every `#available`
       fallback is compile-only by policy (§7.3). (carried)
 - [ ] **Optional, still not decided: an `.accessibilityHint` on the Celebration sounds row only.**
       (carried)
-- [x] **E's device verdicts on `F-CTACelebrations-1`, `-2`, `-3` and `F-ConfirmCelebration-2`** —
-      all PASSED 2026-09-12. (CLOSED)
-- [x] **An accessibility announcement for the milestones** — E chose **"the daily goal only"**,
-      2026-09-12, and it shipped. **Re-opened above on a false premise, not on the decision.**
-      (CLOSED, superseded)
+- [x] **THE DEVICE SITTING — DONE 2026-09-12, and BOTH blocks PASSED with Reduce Motion OFF *and*
+      ON.** E, verbatim: *"both of those tests work correctly!"*, confirmed when asked precisely
+      about RM. So `F-CTACelebrations-4` and `-5` are verified on device and **both blocks'
+      Verified-paths lines read "Reduced: run on sim (injected) + E's phone (RM on)"** — the first
+      time in this arc that line is earned rather than owed. (CLOSED)
+- [x] **The milestone cooldown — E REMOVED IT ENTIRELY, 2026-09-13.** Verbatim: *"Remove the
+      cooldown entirely."* It was E's own 5 s testing value from the start, so this closes the
+      question rather than reversing a settled answer. Shipped in `F-CTACelebrations-NoCooldown`;
+      the consequence to watch on device is the overlap, above. (CLOSED)
+- [x] **The VoiceOver announcement on the streak — E: leave as shipped, 2026-09-13.** E was told
+      that the premise behind the original answer was wrong (the nudge card VANISHES on dismissal,
+      so day seven leaves nothing on screen that distinguishes it) and chose to keep the shipped
+      behaviour anyway: the daily goal announces, the other two do not. **Decided with the correct
+      facts in hand, which is what the re-ask was for.** (CLOSED)
+- [x] **Whether the Celebrations switch should also gate pops — E: leave as shipped, 2026-09-13.**
+      So the switch covers full-screen celebrations only, the Settings footer continues to say so,
+      and a user wanting zero decorative motion has Reduce Motion (which stills the pop rather than
+      removing it). Raised by the `apple:hig-reviewer` pass; E has now ruled. (CLOSED)
+- [x] **An accessibility announcement for the milestones** — E chose "the daily goal only",
+      2026-09-12, re-confirmed 2026-09-13 on corrected facts. (CLOSED)
 - [x] **How does the reduced path get DEVICE time now that E runs with Reduce Motion OFF?** —
       **E chose (a), 2026-09-12**, written into CLAUDE.md §7.3. (CLOSED)
 
 ## B · Real work, ready to start — recommended order
 
-**00. THE CTA CELEBRATIONS ARC — blocks 1–6 of 8 BUILT and MERGED; the next is
-   `F-CTACelebrations-6`, the routine Completed flow.** The record is
-   `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener is the session's own
-   `handoff/START-HERE-*`; the blocks are in `TODO-CLAUDE-CODE.md`.
+**00. THE CTA CELEBRATIONS ARC — blocks 1–6 of 8 BUILT, MERGED and all PASSED on device, plus
+   three follow-on blocks from E's device pass. The next is `F-CTACelebrations-6`, the routine
+   Completed flow.** The record is `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener
+   is `handoff/START-HERE-cta-celebrations-6.md`; the blocks are in `TODO-CLAUDE-CODE.md`.
    **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ → ~~`F-CTACelebrations-1`~~ →
-   ~~`-2`~~ → ~~`-3`~~ (centre + layers) → ~~`-4`~~ (the nine pops) → ~~`-5`~~ (the three
-   milestones) → **`-6`** (the routine Completed flow, R1–R5) → `-7` (the chime).
-   **For block 6, four things this block leaves it:**
-   - **Render the congratulation view FIRST** (light, dark, Reduce Motion, the switch-off beat)
-     and send it to E before wiring anything. That is in the block as written.
+   ~~`-2`~~ → ~~`-3`~~ → ~~`-4`~~ → ~~`-5`~~ → **`-6`** (the routine Completed flow, R1–R5) →
+   `-7` (the chime). Plus, out of the device pass and not in the original plan:
+   ~~`PopScale`~~, ~~`NoCooldown`~~, ~~`SwipeOrigin`~~.
+   **For block 6, four things this session leaves it:**
+   - **Render the congratulation view FIRST** (light, dark, Reduce Motion, the switch-off beat) and
+     send it to E before wiring anything. That is in the block as written, and it is how the pop
+     and the pop's SCALE were both settled.
    - **It REVERSES an E-settled rule** — "leaving a fully-resolved run ends it". Every test that
      pins the old rule is updated BY NAME, and each is named in the block report.
    - **Room first:** `PlaceRoutineScreen.swift` is at 384 of 400.
    - **The Completed button is the second site R-h names** (no pop of its own), so it records a
      `.celebrationPopOrigin` and `CelebrationPopCallSiteTests`' hand-recorded origin count moves
-     **3 → 4**. Update the count and its message deliberately. The wrapper count stays 9. (NEW)
+     **3 → 4**. The wrapper count stays 9. **And note `SwipeOrigin`'s lesson**: think about where
+     that origin sits relative to the 208 pt throw before trusting it. (updated)
 
 **0b. Two surfaces question, raised by the HIG pass and NOT closed: a full-screen celebration can
    play entirely unseen behind an untracked sheet or cover.** Only four surfaces call
@@ -224,8 +232,10 @@ are mostly pure logic (`DailyGoalTracker`, `CelebrationDayMarking`, `NudgeStreak
    - **Two RM sites that remove the press affordance entirely** (`AppTabBar.swift:266`,
      `AppSearchRow.swift:71`), and `RootView.swift`'s declared-but-unread `reduceMotion`.
 
-1. **E's one un-run device check: airplane mode + pull-to-refresh on Home.** `F-HomeTasksLastKnown`
-   (`8b5f740`) should keep the last-known task set rather than emptying it. (carried)
+1. ~~**E's one un-run device check: airplane mode + pull-to-refresh on Home.**~~ **RUN AND PASSED
+   2026-09-13** — E: *"Airplane mode ON check has been run and was successful."* Home keeps the
+   last-known task set rather than emptying it, which is what `F-HomeTasksLastKnown` (`8b5f740`)
+   exists to do. **Nothing is outstanding here.** (CLOSED)
 
 2. **`F-FocusCard-Corners` — after the arc (E: "Round them").** Round the collapsed card's bottom
    corners AND give `FocusBarCardShape.roundsBottomCorners` `animatableData`. (carried)
@@ -250,8 +260,19 @@ are mostly pure logic (`DailyGoalTracker`, `CelebrationDayMarking`, `NudgeStreak
 - **LA interactive buttons**, **time-of-day triggers**, **smart skip**. (carried)
 - **`OfflineSprintSummaryCard`** — E ruled it out of the focus-card arc explicitly. (carried)
 
-## C2 · Noticed, below the bar, worth E's eye on device
+## C2 · Noticed, below the bar — **E asked explicitly that these be KEPT, 2026-09-13**
 
+*E, verbatim: "Don't forget Your flagged points, So we can come back to them later." So nothing in
+this section is dropped for age, and none of it may be quietly closed as stale. Each is something
+this session or an earlier one noticed and judged below the bar for its own block — not something
+that was tried and dismissed.*
+
+
+- **A shared constant reaches more sites than the block that changes it.** The swipe's pop went
+  off-screen because `PopScale` moved a throw distance that a DIFFERENT block had built an origin
+  decision around. Fixed in `F-CTACelebrations-SwipeOrigin`, but the shape recurs: the next time a
+  celebration constant moves, re-read every site that constant reaches rather than trusting the
+  suite. (NEW)
 - **The daily goal is the one celebration the user did not just cause with their thumb.** Raised by
   the HIG pass. Inbox zero and the streak both fire from a tap, so a wash starting under the thumb
   is no surprise; the daily goal can land about a second after ANY action, anywhere — including
@@ -277,8 +298,11 @@ are mostly pure logic (`DailyGoalTracker`, `CelebrationDayMarking`, `NudgeStreak
   install fails on it, E re-signs in Xcode → Settings → Accounts. (carried)
 - **Sign in with Apple** built but dormant. (carried)
 - **Photosensitivity: the stack-clearing Confirm's fireworks flash 5 times in one second** against
-  WCAG 2.3.1's 3. Full detail in §A — including this block's re-confirmation that the finding does
-  not extend to the three new milestones. (carried)
+  WCAG 2.3.1's 3. **E POSTPONED the decision on 2026-09-13 and asked in the same breath that it come
+  back before launch** — verbatim: *"Can we postpone this decision for later date? But we must come
+  back to this before shipping to the public."* So it sits here by E's own instruction rather than
+  by anyone's judgement, and **it may not be closed without E**. Full detail, and what is and is not
+  claimed, in §A. The finding does not extend to the pops or the milestones. (DEFERRED BY E)
 
 ## E · Known, not work
 

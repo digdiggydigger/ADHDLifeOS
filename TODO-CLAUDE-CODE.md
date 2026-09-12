@@ -3905,6 +3905,31 @@ pieces, 5,590 px, 208 pt) agrees with the variant E approved (29 / 6,100 / 208).
 
 **Owes an RM-on device pass** — the still pop is a reduced site and it changed.
 
+### FEATURE: F-CTACelebrations-NoCooldown — E removed the milestone cooldown  [x] COMPLETED
+
+E, 2026-09-13, after living with it on the phone: *"Remove the cooldown entirely."* It shipped at
+E's own 5 s testing value (F9), so this closes the question rather than reversing a settled answer.
+`CelebrationPolicy.outcome` now takes no clock; `milestoneCooldown`, `lastFullScreenAt` and
+`cooldownAnchor` are gone rather than left unread. **R-c goes with it; R-h does not** — the
+switch-off fallback pop was never about the cooldown.
+
+**The consequence, and it is E's decision:** two milestones that land together OVERLAP instead of
+the second being downgraded — the rule E already approved for quick Confirms, still capped at three
+by `CelebrationQueue.fullScreenCap`. Seven tests removed or rewritten, each named in the commit.
+
+### FEATURE: F-CTACelebrations-SwipeOrigin — a swipe pops from the finger  [x] COMPLETED
+
+E recorded the defect on the phone: swiping a task closed threw the confetti off the right of the
+screen. **Two correct decisions collided.** `-4` gave the circle and the swipe ONE origin (they
+share `close()`; wrapping the row would throw from its middle), and that origin is the CIRCLE's, at
+the row's trailing edge — fine at the original throw, off-screen once `PopScale` took it to 208 pt.
+Neither block could have seen it alone, no test caught it and no review pass did.
+
+Two origins now, still one `close()`. `TaskRowSwipe.popOrigin(rowFrame:fingerInRow:)` is pure and
+tested; the frame is measured on the same view the gesture is attached to so the drag offset is in
+both or neither; the finger is resolved BEFORE `dragOffset` resets.
+`testTheSwipeAndTheCircleClosePopFromOneOrigin` is REVERSED, not deleted.
+
 ### FEATURE: F-CTACelebrations-6 — the routine Completed flow (R1–R5)  [ ] OPEN
 
 - **Render FIRST:** `PlaceRoutineCongratulationView` light, dark, RM, the switch-off beat; send it.
