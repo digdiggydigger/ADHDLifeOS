@@ -81,6 +81,31 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The streak on 7: one listener, in the service
+
+    /// **Both `NudgeDueCard` hosts share Today's one service** — the section on Home and the
+    /// pushed `NudgesView` — so the listener is the service's. In the card it would fire twice or
+    /// once depending on which copy the user happened to tap.
+    func testHomeHandsItsNudgesServiceTheCentre() throws {
+        try assertPasses(
+            "celebrate: celebrationCenter", toCall: "HomeView(", in: "RootView.swift",
+            because: "Home owns the nudges service AND the ring that crosses the daily goal"
+        )
+        try assertPasses(
+            "celebrate: celebrate", toCall: "NudgesService(", in: "Home/HomeView.swift",
+            because: "Home holds the centre and the service that dismisses nudges never sees it"
+        )
+    }
+
+    func testTheStreakMilestoneIsAskedForFromExactlyOnePlace() throws {
+        let asks = try appTargetOccurrences(of: ".milestone(.streakSeven)")
+        XCTAssertEqual(
+            asks.count, 1,
+            "\(asks.count) places ask for the streak milestone, not 1."
+                + " Asked in: \(asks.map(\.file).sorted().joined(separator: ", "))."
+        )
+    }
+
     // MARK: - Reading the tree
 
     private func assertPasses(
@@ -88,13 +113,39 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
         line: UInt = #line
     ) throws {
         try assertAnchorIsUnique(call, in: file, line: line)
-        let arguments = try slice(in: file, from: call, to: ")")
+        let arguments = try argumentList(ofCall: call, in: file)
         XCTAssertTrue(
             arguments.contains(argument),
             "\(file) builds \(call)…) without `\(argument)`, so it gets the INERT default and"
                 + " celebrates nothing — \(reason).",
             line: line
         )
+    }
+
+    /// **A call's arguments, to its MATCHING close paren** — depth-tracked, not "up to the next
+    /// `)`".
+    ///
+    /// The naive version cost a run and is worth recording: `HomeView(…)` carries
+    /// `onToggleSprintPause: { focusService.togglePause() }`, so the first `)` after the call falls
+    /// inside a closure a dozen arguments early, and the guard reported an argument missing that
+    /// was plainly there. A guard that reads the wrong text is worse than no guard, because it
+    /// fails in the believable direction.
+    private func argumentList(ofCall call: String, in file: String) throws -> String {
+        let source = try flattened(file)
+        guard let start = source.range(of: call) else {
+            throw MilestoneSiteError.anchorMissing(file, call)
+        }
+        var depth = 1
+        var index = start.upperBound
+        while index < source.endIndex {
+            if source[index] == "(" { depth += 1 }
+            if source[index] == ")" {
+                depth -= 1
+                if depth == 0 { return String(source[start.upperBound..<index]) }
+            }
+            index = source.index(after: index)
+        }
+        throw MilestoneSiteError.anchorMissing(file, "the closing paren of \(call)")
     }
 
     /// A guard anchored on a string that appears twice is a guard on whichever comes first.

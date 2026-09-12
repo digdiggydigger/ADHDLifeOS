@@ -74,6 +74,29 @@ enum NudgeStreak {
         return "\(week) of 7 days · best \(best)"
     }
 
+    /// **R-b: exactly seven.** Whether 14 and 21 also fire is E's call and is parked in the
+    /// register; this is not "the run is at least seven".
+    static let milestoneRun = 7
+
+    /// Whether the "Done for now" that produced `after` is the one that LANDED the run on seven —
+    /// E's second full-screen milestone (F3; F4 settled that it is the streak and not every
+    /// dismissal).
+    ///
+    /// **A crossing, so both sides are needed, and that is not defensive coding.** `markFired`
+    /// stamps a completion whenever it is called, including on a day that already has one, and
+    /// `currentRun` counts DAYS — so a second Done for now on day seven leaves the run at seven.
+    /// Reading `after` alone would celebrate on every extra tap for the rest of the day.
+    static func landsOnSeven(
+        before: [Date],
+        after: [Date],
+        asOf now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Bool {
+        let previous = currentRun(dates: before, asOf: now, calendar: calendar)
+        let current = currentRun(dates: after, asOf: now, calendar: calendar)
+        return previous < milestoneRun && current == milestoneRun
+    }
+
     private static func daySet(_ dates: [Date], calendar: Calendar) -> Set<Date> {
         Set(dates.map { calendar.startOfDay(for: $0) })
     }

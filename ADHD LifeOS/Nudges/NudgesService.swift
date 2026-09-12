@@ -112,6 +112,13 @@ final class NudgesService: ObservableObject {
                 id: nudge.id, existingCompletionDates: nudge.completionDates ?? []
             )
             replace(updated)
+            // E's second milestone (F3, F4): full-screen only when the run LANDS on seven — not on
+            // every Done for now, which F4 settled and which is parked as its own animation.
+            if NudgeStreak.landsOnSeven(
+                before: nudge.completionDates ?? [], after: updated.completionDates ?? []
+            ) {
+                celebrate.request(.milestone(.streakSeven), at: nil)
+            }
             return true
         } catch {
             errorMessage = Self.message(for: error)
