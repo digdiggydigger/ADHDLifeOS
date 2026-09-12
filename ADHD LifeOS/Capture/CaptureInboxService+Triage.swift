@@ -49,6 +49,7 @@ extension CaptureInboxService {
             )
             removeCapture(id: capture.id)
             await refreshCountsAfterExit()
+            await celebrateIfInboxCleared(capture)   // E's F3, doing verb 1 of 3
             record(
                 .sorted(captureId: capture.id, previousLifeAreaId: capture.lifeAreaId),
                 sortedInto: lifeAreaId
@@ -198,6 +199,7 @@ extension CaptureInboxService {
             try await client.markProcessed(captureId: capture.id)
             removeCapture(id: capture.id)
             await refreshCountsAfterExit()
+            await celebrateIfInboxCleared(capture)   // E's F3, doing verb 2 of 3
             record(.journaled(captureId: capture.id, logId: entry.id), sortedInto: nil)
             return true
         } catch {

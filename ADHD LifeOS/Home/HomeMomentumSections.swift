@@ -45,6 +45,21 @@ extension HomeView {
         TaskCompletionStamp.completedTasks(in: homeService.allTasks)
     }
 
+    /// M7: captures whose exit stamp is today, feeding the ring when the Settings toggle counts
+    /// them — 0 whenever it is off.
+    ///
+    /// **Computed, not stored, and that is the whole point.** It was `@State`, written only by
+    /// `refreshClearedCaptureCount`'s two fetches; so flipping "count cleared captures" moved the
+    /// ring's RULES immediately and its COUNT only when the next `DataChangeSignal` refresh landed.
+    /// `DailyGoalTracker` re-baselines when the rules change, which is right — but on that first
+    /// tick the count was still the stale one, and the refresh arriving afterwards looked like a
+    /// rise across the goal under rules that already matched. A Settings toggle then bought a
+    /// full-screen celebration. Reading the toggle here, off the ungated `inboxHandledToday`, puts
+    /// the rule and the number in the same render — exactly as `nudgesDismissedToday` already did.
+    var capturesClearedToday: Int {
+        momentumPreferences.countClearedCaptures ? inboxHandledToday : 0
+    }
+
     /// The ring's nudge contribution (M9): derived straight from the nudge list Home already
     /// observes — no extra fetch, and a failed load reads as 0 extra, like every scoreboard
     /// input. Recomputes live when a dismissal lands because `NudgesService` republishes.
@@ -98,7 +113,8 @@ extension HomeView {
             weekFlags: MomentumScoreboard.trailingWeekClosureFlags(tasks: homeService.allTasks),
             nextEffortLabel: MomentumScoreboard.effortLabel(
                 seconds: MomentumScoreboard.bestNextMove(in: homeService.openTasks)?.focusDurationSeconds
-            )
+            ),
+            onRingOrigin: { ringOrigin = $0 }
         )
         // Un-carded, so nothing holds it apart from the cards above and below: 8 here plus
         // Today's 16 stack gap is §2's 24pt macro separation on both sides (E, round-2 walk).
@@ -268,10 +284,14 @@ extension HomeView {
     func refreshClearedCaptureCount() async {
         async let seen = captureClient.fetchSeenCaptures()
         async let processed = captureClient.fetchProcessedCaptures()
-        let cleared = ((try? await seen) ?? []) + ((try? await processed) ?? [])
-        let handledToday = MomentumScoreboard.clearedToday(captures: cleared)
-        inboxHandledToday = handledToday
-        capturesClearedToday = momentumPreferences.countClearedCaptures ? handledToday : 0
+        let seenCaptures = try? await seen
+        let processedCaptures = try? await processed
+        let cleared = (seenCaptures ?? []) + (processedCaptures ?? [])
+        inboxHandledToday = MomentumScoreboard.clearedToday(captures: cleared)
+        // The card keeps showing whatever it can, exactly as before — but the daily goal has to
+        // know the difference between "nothing cleared today" and "the fetch failed", because a
+        // dip and its recovery look like a rise across the goal.
+        hasLoadedClearedCaptures = seenCaptures != nil && processedCaptures != nil
     }
 
     /// Variation B's resolution (block 4c): one When-In-Use fix, applied to the card ALREADY

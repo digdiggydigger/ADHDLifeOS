@@ -110,6 +110,11 @@ struct MomentumRingCard: View {
     let weekFlags: [Bool]
     /// The shortest due task's effort ("15 min"), feeding the counterweight line.
     let nextEffortLabel: String?
+    /// Where the RING is, globally (`F-CTACelebrations-5`). Reported rather than read, because the
+    /// daily goal is requested from `HomeView` and R-h's fallback pop has to leave from the ring
+    /// and not from the middle of a card that spans the screen. Defaulted, so every preview and
+    /// every existing call site is unchanged.
+    var onRingOrigin: (CGPoint) -> Void = { _ in }
 
     private var countColor: Color {
         closedToday > 0 ? Color("StateGo") : Color("LabelPrimary")
@@ -134,6 +139,7 @@ struct MomentumRingCard: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .celebrationPopOrigin(onRingOrigin)
             VStack(alignment: .leading, spacing: 4) {
                 if streak > 0 {
                     Text("Streak")

@@ -108,7 +108,8 @@ struct RootView: View {
                             widgetSprint: focusService.widgetSprint,
                             onToggleSprintPause: { focusService.togglePause() },
                             onOpenCaptures: { selectedTab = .captures },
-                            taskCreateClient: taskCreateClient
+                            taskCreateClient: taskCreateClient,
+                            celebrate: celebrationCenter
                         )
                     case .tasks:
                         TaskListView(
@@ -150,7 +151,8 @@ struct RootView: View {
                             CaptureInboxView(
                                 client: captureClient,
                                 journalClient: journalClient,
-                                homeClient: homeClient
+                                homeClient: homeClient,
+                                celebrate: celebrationCenter
                             )
                         }
                     case .tools:

@@ -229,11 +229,16 @@ final class CelebrationPopCallSiteTests: XCTestCase {
                 + " E chose nine in-place moments; Sorted is two files, and TaskRow uses"
                 + " .celebrationPopOrigin instead because its circle and swipe share one close()."
         )
-        let origins = try appTargetOccurrences(of: ".celebrationPopOrigin {")
+        // The needle has no brace: `F-CTACelebrations-5` added a site that passes a closure by
+        // NAME (`.celebrationPopOrigin(onRingOrigin)`) rather than writing one inline, and a
+        // count that could not see it would have gone on reading 2 for ever.
+        let origins = try appTargetOccurrences(of: ".celebrationPopOrigin")
         XCTAssertEqual(
-            origins.count, 2,
-            "The app records \(origins.count) pop origins by hand, not 2 (the wrapper's own, and"
-                + " TaskRow's circle). Recorded in: \(origins.map(\.file).sorted().joined(separator: ", "))."
+            origins.count, 3,
+            "The app records \(origins.count) pop origins by hand, not 3 (the wrapper's own,"
+                + " TaskRow's circle, and — since `F-CTACelebrations-5` — the Momentum ring, which"
+                + " R-h's fallback pop leaves from when the daily goal is downgraded)."
+                + " Recorded in: \(origins.map(\.file).sorted().joined(separator: ", "))."
         )
     }
 

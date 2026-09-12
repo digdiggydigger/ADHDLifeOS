@@ -324,12 +324,18 @@ struct JournalCaptureDoor: View {
         captureId: UUID,
         lifeAreas: [LifeArea],
         client: CaptureClientAdapting,
-        journalClient: JournalClientAdapting?
+        journalClient: JournalClientAdapting?,
+        // `F-CTACelebrations-5`: this door's service holds no LIST, so inbox zero costs it one
+        // fetch — but it reaches the same three doing verbs the Captures tab does, so it has to
+        // hold the same centre. Both hosts read `\.celebrate` in their body and pass it here.
+        celebrate: any CelebrationRequesting = InertCelebrationRequester()
     ) {
         self.captureId = captureId
         self.lifeAreas = lifeAreas
         _service = StateObject(
-            wrappedValue: CaptureInboxService(client: client, journalClient: journalClient)
+            wrappedValue: CaptureInboxService(
+                client: client, journalClient: journalClient, celebrate: celebrate
+            )
         )
     }
 

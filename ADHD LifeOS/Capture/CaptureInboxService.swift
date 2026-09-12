@@ -92,6 +92,13 @@ final class CaptureInboxService: ObservableObject {
     /// fetched — not even for the decoration counts.
     let availableFilters: [Filter]
 
+    /// **The inbox-zero milestone's door** (`F-CTACelebrations-5`, E's F3). A defaulted `init`
+    /// parameter rather than an `@Environment` read, because the listener is the SERVICE's — all
+    /// five screens that host one call the same three verbs, and a per-screen listener would be
+    /// five copies of one rule plus a silent gap wherever a sixth door appeared. The default is
+    /// inert, so every other host builds the service exactly as before.
+    let celebrate: any CelebrationRequesting
+
     /// Where a capture happened. A closure rather than a stamper + places client threaded through
     /// the constructor: the default does the real work, and a test hands over a fixed stamp
     /// without needing CoreLocation or Firestore.
@@ -105,8 +112,10 @@ final class CaptureInboxService: ObservableObject {
         transcriber: VoiceTranscribing? = nil,
         availableFilters: [Filter] = [.unprocessed],
         locationStamp: (@MainActor () async -> LocationStamp?)? = nil,
-        placesClient: PlacesClientAdapting? = nil
+        placesClient: PlacesClientAdapting? = nil,
+        celebrate: any CelebrationRequesting = InertCelebrationRequester()
     ) {
+        self.celebrate = celebrate
         self.client = client
         self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
         self.journalClient = journalClient
@@ -255,57 +264,15 @@ final class CaptureInboxService: ObservableObject {
             // exits did, on the most-used verb of the five.
             removeCapture(id: capture.id)
             await refreshCountsAfterExit()
+            // E's F3, one of the three DOING verbs that can empty the inbox. From the Create Task
+            // sheet the burst is HELD until the sheet closes itself, so it plays over the empty
+            // inbox rather than being cut off (design §3).
+            await celebrateIfInboxCleared(capture)
             return true
         } catch {
             pendingTaskIdsByCapture[capture.id] = taskId
             warningMessage = "Task created, but couldn't mark the capture as processed."
             return false
-        }
-    }
-
-    /// Assigns (or clears, via `lifeAreaId: nil`) a capture's Life Area. Updates the loaded list
-    /// in place on success so the row reflects the change without a full reload.
-    @discardableResult
-    func updateLifeArea(capture: Capture, lifeAreaId: UUID?) async -> Bool {
-        triageErrorMessage = nil
-        do {
-            let updated = try await client.updateCapture(
-                id: capture.id, changes: CaptureUpdate(lifeAreaId: .some(lifeAreaId))
-            )
-            replaceCapture(updated)
-            return true
-        } catch {
-            triageErrorMessage = Self.message(for: error)
-            return false
-        }
-    }
-
-    /// The detail screen's re-fetch (the `TaskDetailView` precedent: the push carries an id, the
-    /// screen re-reads the server's document rather than trusting a possibly stale list row).
-    /// Throws rather than publishing a message — the failure belongs to the detail screen's own
-    /// local state, not to the list behind it.
-    func fetchCaptureDetail(id: UUID) async throws -> Capture {
-        try await client.fetchCapture(id: id)
-    }
-
-    /// Saves (or, for whitespace-only input, clears) the user's annotation. Returns the server's
-    /// re-read document so the detail screen can adopt it; the loaded list gets the same copy so
-    /// the row behind the detail agrees without a reload. `nil` means the write failed and
-    /// `triageErrorMessage` says why.
-    @discardableResult
-    func saveNotes(capture: Capture, notes: String) async -> Capture? {
-        triageErrorMessage = nil
-        let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-        do {
-            let updated = try await client.updateCapture(
-                id: capture.id,
-                changes: CaptureUpdate(notes: trimmed.isEmpty ? .some(nil) : .some(trimmed))
-            )
-            replaceCapture(updated)
-            return updated
-        } catch {
-            triageErrorMessage = Self.message(for: error)
-            return nil
         }
     }
 
@@ -325,7 +292,11 @@ final class CaptureInboxService: ObservableObject {
         counts[filter] = remaining.count
     }
 
-    private func replaceCapture(_ updated: Capture) {
+    /// Internal rather than private for the `+Triage` reason: its two callers moved to
+    /// `CaptureInboxService+Notes.swift` in `F-CTACelebrations-5`'s room-first commit, and it
+    /// could not follow them — it writes `state`, whose `private(set)` setter keeps every writer
+    /// in this file.
+    func replaceCapture(_ updated: Capture) {
         guard case .loaded(let captures) = state else { return }
         state = .loaded(captures.map { $0.id == updated.id ? updated : $0 })
     }

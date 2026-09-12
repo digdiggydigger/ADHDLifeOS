@@ -43,19 +43,46 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     /// F5's seam. `F-CTACelebrations-7` supplies the player; until then the hook is a no-op, and
     /// the Celebration sounds switch it will read is already live in Settings.
     private let chime: (CelebrationKind) -> Void
+    /// **R-d's exception to the single-owner rule.** Injected rather than called directly so a test
+    /// can watch it without a `UIFeedbackGenerator`; the default is the house helper, which reads
+    /// E's Haptics switch at fire time.
+    private let feel: (HapticFeel) -> Void
 
     init(
         now: @escaping () -> Date = Date.init,
         celebrationsGate: @escaping () -> Bool = { AppFeedback.celebrationsEnabled() },
-        chime: @escaping (CelebrationKind) -> Void = { _ in }
+        chime: @escaping (CelebrationKind) -> Void = { _ in },
+        feel: @escaping (HapticFeel) -> Void = { Haptics.play($0) }
     ) {
         self.now = now
         self.celebrationsGate = celebrationsGate
         self.chime = chime
+        self.feel = feel
     }
 
     /// Whichever surface is in front of the user right now.
     var frontmost: CelebrationSurface { presented.last ?? .root }
+
+    /// What the cooldown is measured from: the last full-screen celebration to have STARTED, or
+    /// NOW while one is still waiting to.
+    ///
+    /// **The held half is not bookkeeping — it is the rule.** A waiting burst has stamped nothing,
+    /// because it has not played; but if a second milestone arriving while it waits were promised a
+    /// full screen too, the sheet's dismissal would release both at one instant and stack two 5.4 s
+    /// washes, which is the exact thing E's #6 cooldown exists to prevent. So a pending burst
+    /// counts against the cooldown without having started it, and the second moment gets the pop.
+    ///
+    /// **It answers `now()` rather than the waiting burst's own `start`, and the difference is a
+    /// defect this block shipped and then fixed.** A held burst's `start` is its REQUEST time, so
+    /// reporting it let the cooldown "expire" after five seconds while the burst was still sitting
+    /// there unplayed — and `releaseHeld` would then start both at one instant. `heldLifetime` is
+    /// 60 s, twelve times the cooldown, so that window is not a corner. Unreachable today only
+    /// because the one self-dismissing surface holds for `CapturePromoteSheet.popHold` (0.45 s);
+    /// it would go live on a longer-holding surface, or on a shorter cooldown — and E is
+    /// undecided about the cooldown. Found by the `feature-dev:code-reviewer` pass.
+    private var cooldownAnchor: Date? {
+        held.isEmpty ? lastFullScreenAt : now()
+    }
 
     /// The bursts one layer should draw.
     func bursts(on surface: CelebrationSurface) -> [CelebrationBurst] {
@@ -71,11 +98,19 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
         // is already drawing and the frame clock is already running.
         let outcome = CelebrationPolicy.outcome(
             for: kind,
-            lastFullScreenAt: lastFullScreenAt,
+            lastFullScreenAt: cooldownAnchor,
             now: moment,
             celebrationsEnabled: celebrationsGate()
         )
         guard outcome != .nothing else { return .nothing }
+
+        // **R-d, and it fires HERE rather than when the burst starts, unlike the chime.** The
+        // chime accompanies the confetti (E's F5 is about sound over a celebration); this
+        // accompanies the ACHIEVEMENT, which is the daily goal being reached — a moment with no
+        // other feedback anywhere in the app, because it has no site. So a downgraded one keeps
+        // it (R-h's argument exactly) and a held one buzzes at once rather than half a second
+        // after the sheet closes. Every other milestone rides a site that already buzzed.
+        if case .milestone(.dailyGoal) = kind { feel(.success) }
 
         ordinal += 1
         let burst = CelebrationBurst(
@@ -88,19 +123,35 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
             origin: origin
         )
 
-        if outcome == .fullScreen {
+        if outcome == .fullScreen, frontmost.dismissesItself {
+            // Drawn on a sheet that is about to close itself, it would be cut off after a
+            // fraction of a second. Held, and released over whatever is behind it — and it
+            // stamps NOTHING until then, because it has not played.
+            held.append(burst)
+            return outcome
+        }
+        start(burst, at: moment)
+        return outcome
+    }
+
+    /// **The one place a burst begins**, so a held release and a direct enqueue cannot disagree
+    /// about when the cooldown starts or when the chime sounds.
+    ///
+    /// Both used to disagree, and it was a LATENT defect until `F-CTACelebrations-5` (register
+    /// §B.00b): `request` stamped `lastFullScreenAt` and chimed before the held branch, and
+    /// `releaseHeld` did neither. So a burst waiting behind the Create Task sheet chimed with
+    /// nothing on screen to explain it, cooled down the milestone that followed it before anyone
+    /// had seen it, and — dropped at R-g's sixty seconds — left a cooldown behind for a
+    /// celebration that never appeared. Unreachable while the only full-screen request was the
+    /// Confirm bridge, which sits below every sheet; inbox zero through the promote sheet is
+    /// exactly the held path.
+    private func start(_ burst: CelebrationBurst, at moment: Date) {
+        if burst.isFullScreen {
             // R-c: Confirm counts toward the cooldown. A pop never does.
             lastFullScreenAt = moment
-            chime(kind)
-            if frontmost.dismissesItself {
-                // Drawn on a sheet that is about to close itself, it would be cut off after a
-                // fraction of a second. Held, and released over whatever is behind it.
-                held.append(burst)
-                return outcome
-            }
+            chime(burst.kind)
         }
         bursts = CelebrationQueue.adding(burst, to: bursts, now: moment)
-        return outcome
     }
 
     // MARK: - Surfaces
@@ -136,14 +187,16 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
         let fresh = held.filter { moment.timeIntervalSince($0.start) <= Self.heldLifetime }
         held = []
         for burst in fresh {
-            let released = CelebrationBurst(
-                ordinal: burst.ordinal,
-                kind: burst.kind,
-                surface: frontmost,
-                start: moment,
-                origin: burst.origin
+            start(
+                CelebrationBurst(
+                    ordinal: burst.ordinal,
+                    kind: burst.kind,
+                    surface: frontmost,
+                    start: moment,
+                    origin: burst.origin
+                ),
+                at: moment
             )
-            bursts = CelebrationQueue.adding(released, to: bursts, now: moment)
         }
     }
 }

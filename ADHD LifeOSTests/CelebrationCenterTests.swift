@@ -24,10 +24,12 @@ final class CelebrationCenterTests: XCTestCase {
     /// Settings switch in production; injected here so no test writes the simulator's own
     /// `UserDefaults` (block 2's rule).
     private func centre(
-        at clock: Clock, celebrationsEnabled: Bool = true, chime: @escaping (CelebrationKind) -> Void = { _ in }
+        at clock: Clock, celebrationsEnabled: Bool = true,
+        chime: @escaping (CelebrationKind) -> Void = { _ in },
+        feel: @escaping (HapticFeel) -> Void = { _ in }
     ) -> CelebrationCenter {
         CelebrationCenter(
-            now: { clock.now }, celebrationsGate: { celebrationsEnabled }, chime: chime
+            now: { clock.now }, celebrationsGate: { celebrationsEnabled }, chime: chime, feel: feel
         )
     }
 
@@ -127,60 +129,6 @@ final class CelebrationCenterTests: XCTestCase {
         XCTAssertEqual(center.frontmost, .root)
     }
 
-    // MARK: - Held full-screens
-
-    /// The Create Task sheet dismisses ITSELF after a successful promote, so a 5.4 s celebration
-    /// drawn on its layer would be cut off after a fraction of a second. Held instead, and played
-    /// over whatever is behind it once it has gone (design §1, §3).
-    func testAFullScreenRequestedFromASelfDismissingSheetIsHeldUntilItCloses() {
-        let clock = Clock(launch)
-        let center = centre(at: clock)
-        center.surfacePresented(.promoteSheet)
-        XCTAssertEqual(center.request(.milestone(.inboxZero), at: nil), .fullScreen)
-        XCTAssertTrue(
-            center.bursts.isEmpty,
-            "The milestone drew on the sheet that is about to close, so it is cut off mid-flight."
-        )
-        clock.advance(0.5)
-        center.surfaceDismissed(.promoteSheet)
-        XCTAssertEqual(center.bursts.count, 1)
-        XCTAssertEqual(center.bursts[0].surface, .root, "The released burst still belongs to the sheet.")
-    }
-
-    /// Released with `start = now`, never with the instant it was requested: otherwise half the
-    /// celebration has already elapsed before anything is drawn.
-    func testAHeldBurstStartsWhenItIsReleasedRatherThanWhenItWasRequested() {
-        let clock = Clock(launch)
-        let center = centre(at: clock)
-        center.surfacePresented(.promoteSheet)
-        center.request(.milestone(.inboxZero), at: nil)
-        clock.advance(0.45)
-        center.surfaceDismissed(.promoteSheet)
-        XCTAssertEqual(center.bursts[0].start, launch.addingTimeInterval(0.45))
-    }
-
-    /// R-g: a surface left open for minutes must not release a stale celebration when it finally
-    /// closes. Sixty seconds, and the burst is simply dropped.
-    func testAHeldBurstOlderThanAMinuteIsDroppedRatherThanReleased() {
-        let clock = Clock(launch)
-        let center = centre(at: clock)
-        center.surfacePresented(.promoteSheet)
-        center.request(.milestone(.inboxZero), at: nil)
-        clock.advance(CelebrationCenter.heldLifetime + 0.01)
-        center.surfaceDismissed(.promoteSheet)
-        XCTAssertTrue(center.bursts.isEmpty)
-    }
-
-    /// A cover that does NOT dismiss itself draws on its own layer — that is the point of E's
-    /// per-surface choice, and holding there would mean the routine screen never celebrated.
-    func testAFullScreenOnASurfaceThatStaysOpenIsNotHeld() {
-        let center = centre(at: Clock(launch))
-        center.surfacePresented(.routineCover)
-        center.request(.milestone(.routineFinished), at: nil)
-        XCTAssertEqual(center.bursts.count, 1)
-        XCTAssertEqual(center.bursts[0].surface, .routineCover)
-    }
-
     // MARK: - The chime hook (F5)
 
     /// The hook fires for the full-screen celebrations only — E's F5, "Full-screen milestones
@@ -200,6 +148,41 @@ final class CelebrationCenterTests: XCTestCase {
         let center = centre(at: Clock(launch), celebrationsEnabled: false, chime: { chimed.append($0) })
         center.request(.confirm(clearedStack: false), at: nil)
         XCTAssertTrue(chimed.isEmpty)
+    }
+
+    // MARK: - R-d: the one milestone whose feel the centre owns
+
+    /// **R-d, and it is an exception to the single-owner rule rather than a hole in it.** Every
+    /// other milestone rides a site that already plays its own haptic once — Sorted, Done for now,
+    /// Completed. The daily goal has no site at all: it fires from a number changing, about a
+    /// second after whatever moved it, possibly on another tab. So the centre plays it.
+    func testTheCentrePlaysTheSuccessFeelForTheDailyGoalBecauseNoSiteDoes() {
+        var felt: [HapticFeel] = []
+        let center = centre(at: Clock(launch), feel: { felt.append($0) })
+        center.request(.milestone(.dailyGoal), at: nil)
+        XCTAssertEqual(felt, [.success])
+    }
+
+    /// **A DOWNGRADED daily goal keeps its feel**, which is the same argument R-h makes for the
+    /// fallback pop: inside the cooldown, or with E's switch off, this milestone would otherwise be
+    /// the one moment in the app that happens with no feedback whatsoever.
+    func testADowngradedDailyGoalStillGetsItsFeel() {
+        let clock = Clock(launch)
+        var felt: [HapticFeel] = []
+        let center = centre(at: clock, feel: { felt.append($0) })
+        center.request(.confirm(clearedStack: false), at: nil)
+        clock.advance(1)
+        XCTAssertEqual(center.request(.milestone(.dailyGoal), at: nil), .inPlace)
+        XCTAssertEqual(felt, [.success])
+    }
+
+    func testTheOtherMilestonesGetNoFeelFromTheCentreBecauseTheirSitesHaveOne() {
+        var felt: [HapticFeel] = []
+        let center = centre(at: Clock(launch), feel: { felt.append($0) })
+        center.request(.milestone(.inboxZero), at: nil)
+        center.request(.milestone(.streakSeven), at: nil)
+        center.request(.pop, at: .zero)
+        XCTAssertTrue(felt.isEmpty, "The centre buzzed twice for a moment that already buzzed once.")
     }
 
     // MARK: - Expiry

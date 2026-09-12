@@ -54,4 +54,51 @@ final class NudgeStreakTests: XCTestCase {
         )
         XCTAssertNil(NudgeStreak.line(dates: [], asOf: now, calendar: calendar))
     }
+
+    // MARK: - Landing on seven (`F-CTACelebrations-5`, E's F3 + R-b)
+
+    /// **A CROSSING, not a value.** The milestone is the run arriving at seven, so the arithmetic
+    /// needs both sides: `markFired` will stamp a second completion on a day that already has one,
+    /// and a run that is 7 before and 7 after has landed on nothing.
+    func testLandsOnSeven_isTrueOnlyWhenTheRunArrivesAtSeven() {
+        let sixEndingYesterday = (1...6).map { day($0) }
+        XCTAssertTrue(
+            NudgeStreak.landsOnSeven(
+                before: sixEndingYesterday, after: sixEndingYesterday + [day(0)],
+                asOf: now, calendar: calendar
+            )
+        )
+    }
+
+    func testLandsOnSeven_isFalseWhenTheRunOnlyReachesSix() {
+        let fiveEndingYesterday = (1...5).map { day($0) }
+        XCTAssertFalse(
+            NudgeStreak.landsOnSeven(
+                before: fiveEndingYesterday, after: fiveEndingYesterday + [day(0)],
+                asOf: now, calendar: calendar
+            )
+        )
+    }
+
+    /// R-b: exactly seven. Day eight is not a second milestone, and 14 and 21 are parked for E.
+    func testLandsOnSeven_isFalseWhenTheRunPassesStraightToEight() {
+        let sevenEndingYesterday = (1...7).map { day($0) }
+        XCTAssertFalse(
+            NudgeStreak.landsOnSeven(
+                before: sevenEndingYesterday, after: sevenEndingYesterday + [day(0)],
+                asOf: now, calendar: calendar
+            )
+        )
+    }
+
+    /// The same day stamped twice: seven before, seven after, nothing landed.
+    func testLandsOnSeven_isFalseWhenSevenWasAlreadyReachedToday() {
+        let alreadySeven = (0...6).map { day($0) }
+        XCTAssertFalse(
+            NudgeStreak.landsOnSeven(
+                before: alreadySeven, after: alreadySeven + [day(0)],
+                asOf: now, calendar: calendar
+            )
+        )
+    }
 }

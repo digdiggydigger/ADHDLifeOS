@@ -23,10 +23,21 @@ final class NudgesService: ObservableObject {
 
     private let client: NudgesClientAdapting
     private let notificationSchedulingClient: NudgeNotificationSchedulingAdapting
+    /// **The streak milestone's door** (`F-CTACelebrations-5`, E's F3 + R-b). The listener is the
+    /// SERVICE's rather than the card's because both `NudgeDueCard` hosts — Today's section and the
+    /// pushed `NudgesView` — share Today's one service, so a listener in the card would fire twice
+    /// or once depending on which copy the user tapped. Defaulted inert, so every preview and every
+    /// existing test builds this service unchanged.
+    private let celebrate: any CelebrationRequesting
 
-    init(client: NudgesClientAdapting, notificationSchedulingClient: NudgeNotificationSchedulingAdapting) {
+    init(
+        client: NudgesClientAdapting,
+        notificationSchedulingClient: NudgeNotificationSchedulingAdapting,
+        celebrate: any CelebrationRequesting = InertCelebrationRequester()
+    ) {
         self.client = client
         self.notificationSchedulingClient = notificationSchedulingClient
+        self.celebrate = celebrate
     }
 
     var nudges: [Nudge] {
@@ -101,6 +112,13 @@ final class NudgesService: ObservableObject {
                 id: nudge.id, existingCompletionDates: nudge.completionDates ?? []
             )
             replace(updated)
+            // E's second milestone (F3, F4): full-screen only when the run LANDS on seven — not on
+            // every Done for now, which F4 settled and which is parked as its own animation.
+            if NudgeStreak.landsOnSeven(
+                before: nudge.completionDates ?? [], after: updated.completionDates ?? []
+            ) {
+                celebrate.request(.milestone(.streakSeven), at: nil)
+            }
             return true
         } catch {
             errorMessage = Self.message(for: error)
