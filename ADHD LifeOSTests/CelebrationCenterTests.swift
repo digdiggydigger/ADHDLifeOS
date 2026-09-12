@@ -24,10 +24,12 @@ final class CelebrationCenterTests: XCTestCase {
     /// Settings switch in production; injected here so no test writes the simulator's own
     /// `UserDefaults` (block 2's rule).
     private func centre(
-        at clock: Clock, celebrationsEnabled: Bool = true, chime: @escaping (CelebrationKind) -> Void = { _ in }
+        at clock: Clock, celebrationsEnabled: Bool = true,
+        chime: @escaping (CelebrationKind) -> Void = { _ in },
+        feel: @escaping (HapticFeel) -> Void = { _ in }
     ) -> CelebrationCenter {
         CelebrationCenter(
-            now: { clock.now }, celebrationsGate: { celebrationsEnabled }, chime: chime
+            now: { clock.now }, celebrationsGate: { celebrationsEnabled }, chime: chime, feel: feel
         )
     }
 
@@ -295,6 +297,41 @@ final class CelebrationCenterTests: XCTestCase {
         let center = centre(at: Clock(launch), celebrationsEnabled: false, chime: { chimed.append($0) })
         center.request(.confirm(clearedStack: false), at: nil)
         XCTAssertTrue(chimed.isEmpty)
+    }
+
+    // MARK: - R-d: the one milestone whose feel the centre owns
+
+    /// **R-d, and it is an exception to the single-owner rule rather than a hole in it.** Every
+    /// other milestone rides a site that already plays its own haptic once — Sorted, Done for now,
+    /// Completed. The daily goal has no site at all: it fires from a number changing, about a
+    /// second after whatever moved it, possibly on another tab. So the centre plays it.
+    func testTheCentrePlaysTheSuccessFeelForTheDailyGoalBecauseNoSiteDoes() {
+        var felt: [HapticFeel] = []
+        let center = centre(at: Clock(launch), feel: { felt.append($0) })
+        center.request(.milestone(.dailyGoal), at: nil)
+        XCTAssertEqual(felt, [.success])
+    }
+
+    /// **A DOWNGRADED daily goal keeps its feel**, which is the same argument R-h makes for the
+    /// fallback pop: inside the cooldown, or with E's switch off, this milestone would otherwise be
+    /// the one moment in the app that happens with no feedback whatsoever.
+    func testADowngradedDailyGoalStillGetsItsFeel() {
+        let clock = Clock(launch)
+        var felt: [HapticFeel] = []
+        let center = centre(at: clock, feel: { felt.append($0) })
+        center.request(.confirm(clearedStack: false), at: nil)
+        clock.advance(1)
+        XCTAssertEqual(center.request(.milestone(.dailyGoal), at: nil), .inPlace)
+        XCTAssertEqual(felt, [.success])
+    }
+
+    func testTheOtherMilestonesGetNoFeelFromTheCentreBecauseTheirSitesHaveOne() {
+        var felt: [HapticFeel] = []
+        let center = centre(at: Clock(launch), feel: { felt.append($0) })
+        center.request(.milestone(.inboxZero), at: nil)
+        center.request(.milestone(.streakSeven), at: nil)
+        center.request(.pop, at: .zero)
+        XCTAssertTrue(felt.isEmpty, "The centre buzzed twice for a moment that already buzzed once.")
     }
 
     // MARK: - Expiry

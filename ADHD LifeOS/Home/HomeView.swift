@@ -88,6 +88,16 @@ struct HomeView: View {
     /// M7: captures whose exit stamp is today, feeding the ring when the Settings toggle counts
     /// them. Refreshed with the inbox count; 0 whenever the toggle is off.
     @State var capturesClearedToday = 0
+    /// Whether BOTH capture fetches behind `capturesClearedToday` last succeeded. 0 is a real
+    /// count as well as the value a failed `try?` leaves, so without this the daily goal cannot
+    /// tell a quiet day from a dropped connection. Internal: `HomeView+DailyGoal` reads it.
+    @State var hasLoadedClearedCaptures = false
+    /// Home's memory of the ring between reloads (`F-CTACelebrations-5`, E's F7). `@State`, so it
+    /// starts again on relaunch — the once-per-day rule is `CelebrationDayMarking`'s, not this.
+    @State var dailyGoalTracker = DailyGoalTracker()
+    /// Where the closure ring is, in global coordinates, so R-h's fallback pop leaves from the
+    /// ring rather than the middle of the screen. `nil` until the ring has been laid out.
+    @State var ringOrigin: CGPoint?
     /// Home's mode-scoped reorder state. `isArranging` swaps the grid for an `.onMove` `List` (E's
     /// settled mechanism); `arrangeAreas` is the live, optimistic ordering the drag mutates. This is
     /// NOT the parked `List`→`LazyVStack` container item — it is a new, separate container.
@@ -293,6 +303,9 @@ struct HomeView: View {
                 // so the grid reflects that order rather than the one the backend refused.
                 if message != nil { isArranging = false }
             }
+            // E's F7, and BOTH inputs are load-bearing — see `HomeView+DailyGoal`.
+            .onChange(of: ringCount) { _ in observeDailyGoal() }
+            .onChange(of: ringSettled) { _ in observeDailyGoal() }
             .onChange(of: homeScenePhase) { phase in
                 // Cheap and synchronous — one UserDefaults read, no network. See the property.
                 if phase == .active { refreshLiveRoutine() }

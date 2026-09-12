@@ -98,7 +98,8 @@ extension HomeView {
             weekFlags: MomentumScoreboard.trailingWeekClosureFlags(tasks: homeService.allTasks),
             nextEffortLabel: MomentumScoreboard.effortLabel(
                 seconds: MomentumScoreboard.bestNextMove(in: homeService.openTasks)?.focusDurationSeconds
-            )
+            ),
+            onRingOrigin: { ringOrigin = $0 }
         )
         // Un-carded, so nothing holds it apart from the cards above and below: 8 here plus
         // Today's 16 stack gap is §2's 24pt macro separation on both sides (E, round-2 walk).
@@ -268,10 +269,16 @@ extension HomeView {
     func refreshClearedCaptureCount() async {
         async let seen = captureClient.fetchSeenCaptures()
         async let processed = captureClient.fetchProcessedCaptures()
-        let cleared = ((try? await seen) ?? []) + ((try? await processed) ?? [])
+        let seenCaptures = try? await seen
+        let processedCaptures = try? await processed
+        let cleared = (seenCaptures ?? []) + (processedCaptures ?? [])
         let handledToday = MomentumScoreboard.clearedToday(captures: cleared)
         inboxHandledToday = handledToday
         capturesClearedToday = momentumPreferences.countClearedCaptures ? handledToday : 0
+        // The card keeps showing whatever it can, exactly as before — but the daily goal has to
+        // know the difference between "nothing cleared today" and "the fetch failed", because a
+        // dip and its recovery look like a rise across the goal.
+        hasLoadedClearedCaptures = seenCaptures != nil && processedCaptures != nil
     }
 
     /// Variation B's resolution (block 4c): one When-In-Use fix, applied to the card ALREADY

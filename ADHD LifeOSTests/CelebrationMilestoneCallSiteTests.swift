@@ -98,10 +98,87 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
     }
 
     func testTheStreakMilestoneIsAskedForFromExactlyOnePlace() throws {
-        let asks = try appTargetOccurrences(of: ".milestone(.streakSeven)")
+        let asks = try appTargetOccurrences(of: "request(.milestone(.streakSeven)")
         XCTAssertEqual(
             asks.count, 1,
             "\(asks.count) places ask for the streak milestone, not 1."
+                + " Asked in: \(asks.map(\.file).sorted().joined(separator: ", "))."
+        )
+    }
+
+    // MARK: - The daily goal: the milestone with no site
+
+    /// **Both inputs, and the second is the one a reader would drop.** The count alone is not
+    /// enough: Home's ring is a sum over three reloading sources, and the settle flag is what
+    /// stops a failed fetch's dip — and the recovery from it — reading as a crossing. If only the
+    /// count were observed, the tracker's guard would never see the transition back to settled.
+    func testTheDailyGoalIsObservedFromHomeOnBothTheCountAndTheSettleFlag() throws {
+        let home = try flattened("Home/HomeView.swift")
+        XCTAssertTrue(
+            home.contains(".onChange(of: ringCount)"),
+            "Home never watches the ring's count, so the daily goal can never fire."
+        )
+        XCTAssertTrue(
+            home.contains(".onChange(of: ringSettled)"),
+            "Home never watches the settle flag, so the first observation after a failed fetch"
+                + " recovers silently and the crossing it hid is lost."
+        )
+    }
+
+    /// **R-h.** With E's switch off — or inside the cooldown — a milestone gets the fallback pop,
+    /// and this is the one milestone site with no pop of its own. Passing the ring's measured
+    /// origin is what makes that pop come from the ring rather than the middle of the screen.
+    func testADowngradedDailyGoalPopsFromTheRingItself() throws {
+        let observer = try flattened("Home/HomeView+DailyGoal.swift")
+        XCTAssertTrue(
+            observer.contains("celebrate.request(.milestone(.dailyGoal), at: ringOrigin)"),
+            "The daily goal is requested with no origin, so R-h's fallback pop leaves from the"
+                + " centre of the screen instead of from the ring."
+        )
+        XCTAssertTrue(
+            try flattened("Home/MomentumScoreboardViews.swift").contains(".celebrationPopOrigin("),
+            "The ring never records where it is, so `ringOrigin` is always nil."
+        )
+        XCTAssertTrue(
+            try flattened("Home/HomeMomentumSections.swift").contains("onRingOrigin:"),
+            "Home never asks the ring card for its origin, so nothing reaches `ringOrigin`."
+        )
+    }
+
+    /// **E's call, 2026-09-12: the daily goal only.** The celebration itself is
+    /// `accessibilityHidden`, and this milestone's site has neither a haptic of its own nor a
+    /// guaranteed on-screen change — it can fire on any tab.
+    func testTheDailyGoalAnnouncesItselfToVoiceOver() throws {
+        let observer = try flattened("Home/HomeView+DailyGoal.swift")
+        XCTAssertTrue(
+            observer.contains("UIAccessibility.post(notification: .announcement"),
+            "A VoiceOver user is never told the daily goal was reached — the celebration is hidden"
+                + " from them and this site has no haptic and no guaranteed on-screen change."
+        )
+        XCTAssertTrue(observer.contains("DailyGoalAnnouncement.text("))
+    }
+
+    /// **F7's "once per day" is only true if the day is marked BEFORE the request**, because
+    /// nothing downstream marks it — a request that fired and then failed to mark would replay on
+    /// the next crossing, and an undo-and-recross is exactly that.
+    func testTheDayIsMarkedBeforeTheDailyGoalIsRequested() throws {
+        let observer = try flattened("Home/HomeView+DailyGoal.swift")
+        let marked = try XCTUnwrap(
+            observer.range(of: "CelebrationDayMarking.markCelebrated("),
+            "Nothing marks the day, so F7's once-per-day is not enforced at all."
+        )
+        let requested = try XCTUnwrap(observer.range(of: "celebrate.request(.milestone(.dailyGoal)"))
+        XCTAssertLessThan(
+            marked.lowerBound, requested.lowerBound,
+            "The day is marked after the request rather than before it."
+        )
+    }
+
+    func testTheDailyGoalMilestoneIsAskedForFromExactlyOnePlace() throws {
+        let asks = try appTargetOccurrences(of: "request(.milestone(.dailyGoal)")
+        XCTAssertEqual(
+            asks.count, 1,
+            "\(asks.count) places ask for the daily goal, not 1."
                 + " Asked in: \(asks.map(\.file).sorted().joined(separator: ", "))."
         )
     }

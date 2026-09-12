@@ -43,15 +43,21 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     /// F5's seam. `F-CTACelebrations-7` supplies the player; until then the hook is a no-op, and
     /// the Celebration sounds switch it will read is already live in Settings.
     private let chime: (CelebrationKind) -> Void
+    /// **R-d's exception to the single-owner rule.** Injected rather than called directly so a test
+    /// can watch it without a `UIFeedbackGenerator`; the default is the house helper, which reads
+    /// E's Haptics switch at fire time.
+    private let feel: (HapticFeel) -> Void
 
     init(
         now: @escaping () -> Date = Date.init,
         celebrationsGate: @escaping () -> Bool = { AppFeedback.celebrationsEnabled() },
-        chime: @escaping (CelebrationKind) -> Void = { _ in }
+        chime: @escaping (CelebrationKind) -> Void = { _ in },
+        feel: @escaping (HapticFeel) -> Void = { Haptics.play($0) }
     ) {
         self.now = now
         self.celebrationsGate = celebrationsGate
         self.chime = chime
+        self.feel = feel
     }
 
     /// Whichever surface is in front of the user right now.
@@ -88,6 +94,14 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
             celebrationsEnabled: celebrationsGate()
         )
         guard outcome != .nothing else { return .nothing }
+
+        // **R-d, and it fires HERE rather than when the burst starts, unlike the chime.** The
+        // chime accompanies the confetti (E's F5 is about sound over a celebration); this
+        // accompanies the ACHIEVEMENT, which is the daily goal being reached — a moment with no
+        // other feedback anywhere in the app, because it has no site. So a downgraded one keeps
+        // it (R-h's argument exactly) and a held one buzzes at once rather than half a second
+        // after the sheet closes. Every other milestone rides a site that already buzzed.
+        if case .milestone(.dailyGoal) = kind { feel(.success) }
 
         ordinal += 1
         let burst = CelebrationBurst(
