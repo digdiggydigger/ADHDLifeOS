@@ -3842,7 +3842,7 @@ block 1: 0 pixels). Device verdict.
   move at all and the denominator gained 236, because every line this block adds is inside a SwiftUI
   view body — the structural gap CLAUDE.md already records for 108 files at 0 %.
 
-### FEATURE: F-CTACelebrations-5 — inbox zero, the streak on 7, the daily goal  [ ] OPEN
+### FEATURE: F-CTACelebrations-5 — inbox zero, the streak on 7, the daily goal  [x] COMPLETED
 
 - **Room first, own commit:** `CaptureInboxService.swift:266-310` → `CaptureInboxService+Notes.swift`.
 - Inbox zero in `CaptureInboxService+Celebrations.swift` after `removeCapture` in `sort`,
@@ -3858,6 +3858,28 @@ block 1: 0 pixels). Device verdict.
   `screenshots/cta-celebrations-block-5/`: the milestone over the empty inbox light/dark; the still
   field under RM; a daily-goal burst over the Tasks tab; a downgraded milestone showing only the
   pop. Device verdict — **and E's call on the cooldown** (5 s for testing).
+
+**Six ways the build differed from the block as written, each deliberate:**
+
+1. **E's accessibility answer is "the daily goal only"** (asked at the start, as the register
+   required). It announces itself; inbox zero and the streak do not. **But the premise behind
+   that answer was partly wrong — see the register §A: the nudge card VANISHES on dismissal, so
+   the streak does not leave "7 of 7 days" on screen. Back with E.**
+2. **`DailyGoalTracker.observe` takes `DailyGoalRules`, not a bare goal.** The block said "a goal
+   lowered under the count"; the two Settings toggles move the ring the same way with one tap, so
+   the rules travel with the count and any change to them re-baselines.
+3. **`ringSettled` needed a fourth stored flag**, `hasLoadedClearedCaptures`: 0 is both a real
+   count and what a failed `try?` leaves, so "has the captures fetch succeeded" could not be read
+   off the number.
+4. **`CelebrationPopOrigin.onScreen` is new and was not in the plan.** `AppTabContent` parks a
+   hidden tab 10,000 pt away and that offset reaches a `.global` reading (measured), so the daily
+   goal — the one site that fires from a tab the user is not on — was throwing R-h's fallback pop
+   off screen.
+5. **`capturesClearedToday` became computed**, and **`cooldownAnchor` answers `now()` while
+   anything is held**. Both are `feature-dev:code-reviewer` findings; the second is a defect in
+   this block's own §B.00b fix.
+6. **Tests: 60 added (2,824 → 2,884), not the predicted ~17**, across seven files plus a
+   `RecordingCelebrationRequester` double and a `CelebrationCenterHeldBurstTests` split.
 
 ### FEATURE: F-CTACelebrations-6 — the routine Completed flow (R1–R5)  [ ] OPEN
 
