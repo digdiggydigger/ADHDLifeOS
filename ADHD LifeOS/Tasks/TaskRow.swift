@@ -24,15 +24,26 @@ struct TaskRow: View {
     var onStartFocus: () -> Void = {}
 
     @State private var dragOffset: CGFloat = 0
+    /// The close-circle's centre in GLOBAL coordinates — where the mini confetti pop leaves from.
+    @State private var popOrigin: CGPoint?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.celebrate) private var celebrate
 
     private var isClosed: Bool { task.status == .done }
 
     /// Both close paths — the tap-circle and the swipe — funnel here, so closing feels identical
     /// however you did it and the haptic can't be attached to one and forgotten on the other.
-    /// E chose the celebratory success feel for this (2026-08-27).
+    /// E chose the celebratory success feel for this (2026-08-27), and `F-CTACelebrations-4` hung
+    /// the pop off the same line for the same reason.
+    ///
+    /// **This is the one site of the nine that does not use `CelebrationPopSource`, and the reason
+    /// is right here.** The wrapper reports the centre of whatever it wraps, and the swipe lives on
+    /// the whole row — so wrapping enough of the row to catch the gesture would throw the paper
+    /// from the middle of the row. Recording the CIRCLE's centre instead gives both paths one
+    /// origin (E's design) and makes it the circle, which is the origin E approved by looking.
     private func close() {
         Haptics.play(.taskClose)
+        celebrate.request(.pop, at: popOrigin)
         onClose()
     }
 
@@ -115,6 +126,7 @@ struct TaskRow: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .celebrationPopOrigin { popOrigin = $0 }
                 .accessibilityLabel("Close task")
                 .accessibilityIdentifier("taskCheckbox-\(task.id.uuidString)")
             }

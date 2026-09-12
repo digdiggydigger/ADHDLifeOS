@@ -31,13 +31,18 @@ struct NudgeDueCard: View {
             if showStreaks, let dates = nudge.completionDates, !dates.isEmpty {
                 streak(dates)
             }
-            Button("Done for now") {
-                Haptics.play(.success)
-                Task { await onDismiss() }
+            CelebrationPopSource { handle in
+                Button("Done for now") {
+                    Haptics.play(.success)
+                    handle.pop()
+                    Task { await onDismiss() }
+                }
+                .buttonStyle(
+                    MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo"))
+                )
+                .accessibilityLabel("Dismiss \(nudge.label)")
+                .accessibilityIdentifier("nudgeDismissButton-\(nudge.id)")
             }
-            .buttonStyle(MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo")))
-            .accessibilityLabel("Dismiss \(nudge.label)")
-            .accessibilityIdentifier("nudgeDismissButton-\(nudge.id)")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         // Urgent, not plain: since the nudges door below became a real card (E, 2026-08-28), a due

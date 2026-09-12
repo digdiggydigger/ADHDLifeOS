@@ -50,22 +50,25 @@ struct AreaTaskRow: View {
                     .frame(width: 44, height: 44)
                     .accessibilityHidden(true)
             } else {
-                Button {
-                    Haptics.play(.taskClose)
-                    onTick()
-                } label: {
-                    if isToggling {
-                        ProgressView()
-                    } else {
-                        Image(systemName: "circle")
-                            .font(.title3)
-                            .foregroundStyle(Color("LabelTertiary"))
+                CelebrationPopSource { handle in
+                    Button {
+                        Haptics.play(.taskClose)
+                        handle.pop()
+                        onTick()
+                    } label: {
+                        if isToggling {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "circle")
+                                .font(.title3)
+                                .foregroundStyle(Color("LabelTertiary"))
+                        }
                     }
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Close \(task.title)")
+                    .accessibilityIdentifier("lifeAreaDetailTick-\(task.id)")
                 }
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-                .accessibilityLabel("Close \(task.title)")
-                .accessibilityIdentifier("lifeAreaDetailTick-\(task.id)")
             }
         }
         .padding(.horizontal, 16)

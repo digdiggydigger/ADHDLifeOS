@@ -90,22 +90,27 @@ extension TaskDetailView {
             // Closing is one-way since F-V3-Tasks-rebuild (E's addendum): an open task gets the
             // close button; a closed one gets a quiet, display-only confirmation. No Reopen.
             if task.status == .open {
-                Button {
-                    Haptics.play(.taskClose)
-                    Task { await service.close() }
-                } label: {
-                    Label(
-                        MomentumTaskContext.closeButtonLabel(streak: momentumContext.streak),
-                        systemImage: "checkmark.circle.fill"
-                    )
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                CelebrationPopSource { handle in
+                    Button {
+                        Haptics.play(.taskClose)
+                        handle.pop()
+                        Task { await service.close() }
+                    } label: {
+                        Label(
+                            MomentumTaskContext.closeButtonLabel(streak: momentumContext.streak),
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    }
+                    .buttonStyle(MomentumSolidButtonStyle(
+                        fill: Color("StateGo"),
+                        foreground: Color("OnStateGo")
+                    ))
+                    .accessibilityIdentifier("taskDetailStatusToggle")
                 }
-                .buttonStyle(MomentumSolidButtonStyle(
-                    fill: Color("StateGo"),
-                    foreground: Color("OnStateGo")
-                ))
-                .accessibilityIdentifier("taskDetailStatusToggle")
+                // On the WRAPPER, not the button: the Form lays out this row's content, and the
+                // wrapper is now what the row contains.
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             } else {
                 Label("Closed", systemImage: "checkmark.circle.fill")

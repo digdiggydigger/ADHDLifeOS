@@ -283,30 +283,33 @@ struct CaptureDetailActions: View {
     // 52pt matches B6's circle exactly; it is a control dimension (multiple of 4, over the 44pt
     // floor), not a spacing token.
     private var sortedButton: some View {
-        Button {
-            Haptics.play(.success)
-            onSort()
-        } label: {
-            if isSorting {
-                ProgressView()
-                    .frame(width: 52, height: 52)
-            } else {
-                // The triage card's glyph, deliberately: one verb, one mark. `archivebox` said
-                // "filed away" for a state the rest of the app calls Sorted.
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(canSort ? Color("StateGo") : Color.secondary)
-                    .frame(width: 52, height: 52)
+        CelebrationPopSource { handle in
+            Button {
+                Haptics.play(.success)
+                handle.pop()
+                onSort()
+            } label: {
+                if isSorting {
+                    ProgressView()
+                        .frame(width: 52, height: 52)
+                } else {
+                    // The triage card's glyph, deliberately: one verb, one mark. `archivebox` said
+                    // "filed away" for a state the rest of the app calls Sorted.
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(canSort ? Color("StateGo") : Color.secondary)
+                        .frame(width: 52, height: 52)
+                }
             }
+            .background(Color.cardSurface, in: Circle())
+            .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 0.5))
+            .contentShape(Circle())
+            .buttonStyle(.plain)
+            .disabled(isSorting || !canSort)
+            .accessibilityLabel("Sorted")
+            .accessibilityHint(CaptureDetailPresentation.sortHint(canSort: canSort))
+            .accessibilityIdentifier("captureDetailSortedButton")
         }
-        .background(Color.cardSurface, in: Circle())
-        .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 0.5))
-        .contentShape(Circle())
-        .buttonStyle(.plain)
-        .disabled(isSorting || !canSort)
-        .accessibilityLabel("Sorted")
-        .accessibilityHint(CaptureDetailPresentation.sortHint(canSort: canSort))
-        .accessibilityIdentifier("captureDetailSortedButton")
     }
 }
 

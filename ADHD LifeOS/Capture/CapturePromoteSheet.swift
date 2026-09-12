@@ -10,6 +10,15 @@
 import SwiftUI
 
 struct CapturePromoteSheet: View {
+    /// **R-e.** This sheet closes itself the moment a promote succeeds, and it draws its own
+    /// celebration layer — so without a beat here the Create Task pop is thrown onto a surface that
+    /// is already leaving, and the user sees nothing at all. E's design record put the alternative
+    /// plainly: hold briefly, or have no pop on Create Task.
+    ///
+    /// The pop is 1.0 s long, so this shows roughly the first half of it. That is the trade R-e
+    /// makes: a sheet that lingers a full second after a create reads as unresponsive.
+    static let popHold: TimeInterval = 0.45
+
     let capture: Capture
     /// The Filed-in card's committed value at the moment the sheet opened — the area the new task
     /// inherits.
@@ -219,8 +228,14 @@ struct CapturePromoteSheet: View {
             focusDurationSeconds: effortSeconds
         )
         if succeeded {
-            dismiss()
-            onPromoted()
+            // Scheduled rather than awaited: `create(popping:)` is still waiting on this call to
+            // return before it pops, so holding the await here would delay the paper by the hold
+            // instead of the dismiss, and the sheet would still be gone first.
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(Self.popHold * 1_000_000_000))
+                dismiss()
+                onPromoted()
+            }
         }
         return succeeded
     }

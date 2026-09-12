@@ -152,12 +152,15 @@ extension CaptureInboxView {
             .buttonStyle(MomentumSolidButtonStyle(fill: .accentColor, foreground: AreaPalette.work.onColor))
             .accessibilityIdentifier("captureInboxTaskItButton")
             HStack(spacing: 8) {
-                Button("Journal it") {
-                    Haptics.play(.success)
-                    Task { await service.logToJournal(capture: capture) }
+                CelebrationPopSource { handle in
+                    Button("Journal it") {
+                        Haptics.play(.success)
+                        handle.pop()
+                        Task { await service.logToJournal(capture: capture) }
+                    }
+                    .buttonStyle(MomentumBorderedButtonStyle())
+                    .accessibilityIdentifier("captureInboxJournalItButton")
                 }
-                .buttonStyle(MomentumBorderedButtonStyle())
-                .accessibilityIdentifier("captureInboxJournalItButton")
                 // Skip took the Bin's slot (BUG-b8 → SUGG-b9, E's calls): triage is for
                 // deciding, and "not now" is a decision — the card goes to the back of the
                 // queue, nothing is written. Binning lives on the full-screen capture view,
@@ -180,19 +183,22 @@ extension CaptureInboxView {
     @ViewBuilder
     private func sortedButton(_ capture: Capture, area: UUID?) -> some View {
         let isReady = CaptureTriage.emphasis(area: area) == .ready
-        Button {
-            guard let area else { return }
-            Haptics.play(.success)
-            Task {
-                if await service.sort(capture: capture, into: area) { sortSelection = nil }
+        CelebrationPopSource { handle in
+            Button {
+                guard let area else { return }
+                Haptics.play(.success)
+                handle.pop()
+                Task {
+                    if await service.sort(capture: capture, into: area) { sortSelection = nil }
+                }
+            } label: {
+                Label("Sorted", systemImage: "checkmark.circle.fill")
             }
-        } label: {
-            Label("Sorted", systemImage: "checkmark.circle.fill")
+            .buttonStyle(SortedButtonStyle(isReady: isReady))
+            .disabled(!isReady)
+            .accessibilityIdentifier("captureInboxSortedButton")
+            .accessibilityHint(isReady ? "Files it and clears the inbox" : "Pick a life area first")
         }
-        .buttonStyle(SortedButtonStyle(isReady: isReady))
-        .disabled(!isReady)
-        .accessibilityIdentifier("captureInboxSortedButton")
-        .accessibilityHint(isReady ? "Files it and clears the inbox" : "Pick a life area first")
     }
 
     func summaryHeader(_ captures: [Capture]) -> some View {

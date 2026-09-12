@@ -25,31 +25,38 @@ struct CreateTaskButton: View {
     @State private var successHapticTrigger = false
 
     var body: some View {
-        Button {
-            Task { await create() }
-        } label: {
-            if isCreatingTask {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .tint(.secondary)
-                    Text("Creating Task…")
+        CelebrationPopSource { handle in
+            Button {
+                Task { await create(popping: handle) }
+            } label: {
+                if isCreatingTask {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .tint(.secondary)
+                        Text("Creating Task…")
+                    }
+                } else {
+                    Text("Create Task")
                 }
-            } else {
-                Text("Create Task")
             }
+            .buttonStyle(PrimaryActionButtonStyle())
+            .disabled(isCreatingTask)
+            .haptic(.success, trigger: successHapticTrigger)
+            .accessibilityIdentifier("captureCreateTaskButton")
         }
-        .buttonStyle(PrimaryActionButtonStyle())
-        .disabled(isCreatingTask)
-        .haptic(.success, trigger: successHapticTrigger)
-        .accessibilityIdentifier("captureCreateTaskButton")
     }
 
-    private func create() async {
+    /// The one pop of the nine that is not thrown from the button's own closure, and it is E's
+    /// principle rather than a mechanical exception: a celebration marks something that HAPPENED,
+    /// and a create can fail. So it goes exactly where the success haptic already goes — after the
+    /// await, inside the same branch — and a failed promote gets neither.
+    private func create(popping handle: CelebrationPopHandle) async {
         isCreatingTask = true
         let succeeded = await onCreateTask(lifeAreaId, priority, dueDate)
         isCreatingTask = false
         if succeeded {
             successHapticTrigger.toggle()
+            handle.pop()
         }
     }
 }

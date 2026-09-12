@@ -257,20 +257,25 @@ struct BestNextMoveCard: View {
                     .accessibilityLabel("Focus logged: \(loggedTodayLabel)")
                     .accessibilityIdentifier("homeFocusLoggedChip")
                 }
-                Button {
-                    Haptics.play(.taskClose)
-                    onClose()
-                } label: {
-                    if isClosing {
-                        ProgressView()
-                            .tint(Color("OnStateGo"))
-                    } else {
-                        Label("Close it", systemImage: "checkmark.circle.fill")
+                CelebrationPopSource { handle in
+                    Button {
+                        Haptics.play(.taskClose)
+                        handle.pop()
+                        onClose()
+                    } label: {
+                        if isClosing {
+                            ProgressView()
+                                .tint(Color("OnStateGo"))
+                        } else {
+                            Label("Close it", systemImage: "checkmark.circle.fill")
+                        }
                     }
+                    .buttonStyle(
+                        MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo"))
+                    )
+                    .disabled(isClosing)
+                    .accessibilityIdentifier("homeCloseTaskButton")
                 }
-                .buttonStyle(MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo")))
-                .disabled(isClosing)
-                .accessibilityIdentifier("homeCloseTaskButton")
                 if showsStartSession {
                     Button(action: onStartSession) {
                         // "another" is the tracking half of b10: the button itself confirms a

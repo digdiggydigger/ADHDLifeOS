@@ -84,7 +84,11 @@ final class CelebrationPopCallSiteTests: XCTestCase {
     func testTheCaptureDetailsSortedButtonPops() throws {
         try assertPops(
             in: "Capture/CaptureDetailComponents.swift",
-            afterHaptic: "private var sortedButton: some View { Button { Haptics.play(.success)",
+            // Named all the way down from `sortedButton`, because `Button { Haptics.play(.success)`
+            // on its own matches this file TWICE — the other one is "Make a task", which is an
+            // ADDING verb and deliberately has no pop.
+            afterHaptic: "private var sortedButton: some View { CelebrationPopSource { handle in"
+                + " Button { Haptics.play(.success)",
             upTo: "} label: {", pop: "handle.pop()",
             because: "Sorted from the full capture is the same verb reached another way"
         )
@@ -160,14 +164,16 @@ final class CelebrationPopCallSiteTests: XCTestCase {
     func testTheCreateTaskSheetHoldsLongEnoughForItsPopToBeSeen() throws {
         let sheet = try flattened("Capture/CapturePromoteSheet.swift")
         XCTAssertTrue(
-            sheet.contains("CapturePromoteSheet.popHold"),
+            sheet.contains("Task.sleep(nanoseconds: UInt64(Self.popHold"),
             "The promote sheet dismisses immediately, so the Create Task pop is cut off at birth (R-e)."
         )
         XCTAssertTrue(
             sheet.contains("static let popHold: TimeInterval = 0.45"),
             "R-e's hold is not the 0.45 s the design record settled."
         )
-        let hold = try XCTUnwrap(sheet.range(of: "CapturePromoteSheet.popHold"))
+        // The USE, not the declaration — the declaration is at the top of the file and would sit
+        // before `dismiss()` however the hold was written, which would make the order check vacuous.
+        let hold = try XCTUnwrap(sheet.range(of: "Task.sleep(nanoseconds: UInt64(Self.popHold"))
         let dismiss = try XCTUnwrap(
             sheet.range(of: "dismiss()", range: hold.upperBound..<sheet.endIndex),
             "The hold does not come before the dismiss it is supposed to delay."
