@@ -63,7 +63,12 @@ struct CaptureInboxView: View {
     init(
         client: CaptureClientAdapting,
         journalClient: JournalClientAdapting? = nil,
-        homeClient: HomeClientAdapting
+        homeClient: HomeClientAdapting,
+        // `F-CTACelebrations-5`: threaded by hand rather than read from `\.celebrate`, because the
+        // service is a `@StateObject` built HERE and an `@Environment` value is not available in an
+        // `init`. `RootView` holds the centre and passes it; the default is inert, so every preview
+        // builds this screen unchanged.
+        celebrate: any CelebrationRequesting = InertCelebrationRequester()
     ) {
         _service = StateObject(
             wrappedValue: CaptureInboxService(
@@ -71,7 +76,8 @@ struct CaptureInboxView: View {
                 journalClient: journalClient,
                 // All three slices on one screen. The decision card and the health chart already
                 // gate themselves on `.unprocessed`, so the other two render as plain lists.
-                availableFilters: [.unprocessed, .seen, .promoted]
+                availableFilters: [.unprocessed, .seen, .promoted],
+                celebrate: celebrate
             )
         )
         self.captureClient = client

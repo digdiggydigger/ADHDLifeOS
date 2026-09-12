@@ -45,6 +45,8 @@ struct JournalView: View {
     @State var collapsedDays: Set<Date> = []
     /// Honoured by the fold animation — §5's Reduce Motion rule.
     @Environment(\.accessibilityReduceMotion) var reduceMotion
+    /// `F-CTACelebrations-5`: handed to the pushed capture door, whose service can empty the inbox.
+    @Environment(\.celebrate) private var celebrate
 
     init(
         client: JournalClientAdapting,
@@ -164,7 +166,8 @@ struct JournalView: View {
                         captureId: capture.id,
                         lifeAreas: journalService.lifeAreas,
                         client: captureClient,
-                        journalClient: journalClient
+                        journalClient: journalClient,
+                        celebrate: celebrate
                     )
                 }
             }

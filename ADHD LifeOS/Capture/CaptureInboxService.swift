@@ -92,6 +92,13 @@ final class CaptureInboxService: ObservableObject {
     /// fetched — not even for the decoration counts.
     let availableFilters: [Filter]
 
+    /// **The inbox-zero milestone's door** (`F-CTACelebrations-5`, E's F3). A defaulted `init`
+    /// parameter rather than an `@Environment` read, because the listener is the SERVICE's — all
+    /// five screens that host one call the same three verbs, and a per-screen listener would be
+    /// five copies of one rule plus a silent gap wherever a sixth door appeared. The default is
+    /// inert, so every other host builds the service exactly as before.
+    let celebrate: any CelebrationRequesting
+
     /// Where a capture happened. A closure rather than a stamper + places client threaded through
     /// the constructor: the default does the real work, and a test hands over a fixed stamp
     /// without needing CoreLocation or Firestore.
@@ -105,8 +112,10 @@ final class CaptureInboxService: ObservableObject {
         transcriber: VoiceTranscribing? = nil,
         availableFilters: [Filter] = [.unprocessed],
         locationStamp: (@MainActor () async -> LocationStamp?)? = nil,
-        placesClient: PlacesClientAdapting? = nil
+        placesClient: PlacesClientAdapting? = nil,
+        celebrate: any CelebrationRequesting = InertCelebrationRequester()
     ) {
+        self.celebrate = celebrate
         self.client = client
         self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
         self.journalClient = journalClient
@@ -255,6 +264,10 @@ final class CaptureInboxService: ObservableObject {
             // exits did, on the most-used verb of the five.
             removeCapture(id: capture.id)
             await refreshCountsAfterExit()
+            // E's F3, one of the three DOING verbs that can empty the inbox. From the Create Task
+            // sheet the burst is HELD until the sheet closes itself, so it plays over the empty
+            // inbox rather than being cut off (design §3).
+            await celebrateIfInboxCleared(capture)
             return true
         } catch {
             pendingTaskIdsByCapture[capture.id] = taskId

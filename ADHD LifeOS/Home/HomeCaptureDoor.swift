@@ -27,7 +27,8 @@ extension HomeView {
                 captureId: capture.id,
                 lifeAreas: homeService.lifeAreas,
                 client: captureClient,
-                journalClient: journalClient
+                journalClient: journalClient,
+                celebrate: celebrate
             )
         }
     }

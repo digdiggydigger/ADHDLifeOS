@@ -117,6 +117,12 @@ struct HomeView: View {
     /// and §7.2 has the PARENT read the setting rather than each leaf reaching for it.
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     let routineRunStore: RoutineRunStoring = UserDefaultsRoutineRunStore()
+    /// **The centre, threaded by hand rather than read from `\.celebrate`** (`F-CTACelebrations-5`).
+    /// Home builds its `NudgesService` as a `@StateObject` in `init`, where an `@Environment` value
+    /// is not available — and the same value has three more jobs here: the daily-goal request, and
+    /// the pushed capture door in `HomeCaptureDoor`. Internal, not private: those live in the
+    /// extension files this type is split across.
+    let celebrate: any CelebrationRequesting
 
     init(
         authService: AuthService,
@@ -135,8 +141,10 @@ struct HomeView: View {
         onOpenCaptures: (() -> Void)? = nil,
         taskCreateClient: TaskCreateClientAdapting? = nil,
         widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher(),
-        momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+        momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore(),
+        celebrate: any CelebrationRequesting = InertCelebrationRequester()
     ) {
+        self.celebrate = celebrate
         self.momentumPreferencesStore = momentumPreferencesStore
         self.authService = authService
         self.captureClient = captureClient
@@ -154,7 +162,9 @@ struct HomeView: View {
         _homeService = StateObject(wrappedValue: HomeService(client: homeClient))
         _nudgesService = StateObject(
             wrappedValue: NudgesService(
-                client: nudgesClient, notificationSchedulingClient: nudgeNotificationSchedulingClient
+                client: nudgesClient,
+                notificationSchedulingClient: nudgeNotificationSchedulingClient,
+                celebrate: celebrate
             )
         )
     }
