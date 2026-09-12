@@ -9,17 +9,24 @@ session that writes this arc's next opener archives this file in the same move.*
 `F-CTACelebrations-1` (the four haptic tidies + the closure card's spring-in, PR #80, `main` @
 `49c78d9`): **PASSED 2026-09-12 BY FEEL**, E: *"it feels good, all five work as you described."*
 Nothing is owed from block 2 — start this one. E's phone runs the block-2 build.
-No gate question is owed; E approved the record and R-a…R-h on 2026-09-12.
+No gate question is owed; E approved the record and R-a…R-h on 2026-09-12. **E's instruction for
+this session, verbatim: *"go with (a), start block 3 in a fresh Claude code terminal session"*** —
+(a) is the RM-on device pass, now settled in §7.3 and closed in register §A.
 
 **READ THIS BEFORE WRITING A REDUCED PATH. E TURNED REDUCE MOTION OFF ON 2026-09-12**
 (*"I no longer run with reduce motion on"*), reversing a fact this project designed around for
 months. **CLAUDE.md §7.2's rule is UNCHANGED** — it rests on Apple's guidance and the public-launch
-intent, not on E's setting, so keep writing complete reduced branches. What changed is COVERAGE:
-the reduced path used to be exercised daily on a real phone by the person reviewing every block,
-and now is exercised only where a test injects it. Per §7.3, this block's report may NOT claim a
-reduced path was verified on device unless E toggles the setting on for that check — the honest
-line is *"Reduced: run on sim (injected); NOT on device."* Register §A carries E's open question
-about how the reduced path gets device time from here.
+intent, not on E's setting, so keep writing complete reduced branches and keep testing both paths
+by string (§7.4). What changed is COVERAGE: the reduced path used to be exercised daily on a real
+phone by the person reviewing every block, and now runs only where a test injects it.
+
+**E's call, 2026-09-12 — the RM-ON DEVICE PASS is now part of the bar (§7.3):** a block that adds or
+changes a REDUCED site is not done until E has also looked at it on the phone with Reduce Motion
+turned ON. Ask for both passes in ONE message so E flips the setting once. **THIS BLOCK OWES NO
+RM-ON PASS** — two switches, a preferences round-trip and a fire-time gate add no new reduced
+rendering, and the one thing they gate (the Confirm celebration) is §7.2's waiver and renders
+identically either way. **Say in the report why none was owed**, rather than silently omitting it.
+The first block that owes one is `F-CTACelebrations-4`, the nine pops.
 
 ## Read first, in this order
 

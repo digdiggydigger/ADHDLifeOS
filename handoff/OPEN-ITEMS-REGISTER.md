@@ -152,17 +152,17 @@ the blocks, and now is exercised only by injection. §7.3 carries the consequenc
       by injection only. The §C2 sibling-reflow question is a REDUCED-path effect, so E did not see
       it and it cannot be treated as having drawn no complaint. The block is CLOSED; the next is
       `F-CTACelebrations-2`, the two switches. (CLOSED)
-- [ ] **How does the reduced path get DEVICE time now that E runs with Reduce Motion OFF?** Until
-      2026-09-12 every reduced branch was tried on a real phone daily, for free, by the person
-      reviewing the blocks. That coverage is gone. Injection proves the code runs and which branch
-      is chosen; it cannot show how a fade READS on the device, and this app ships to users who
-      will have the setting on. Three options, none of them started: **(a)** E toggles Reduce
-      Motion on for the device check of any block that adds a reduced site — a few seconds per
-      block, and the only one that gives real device evidence; **(b)** reduced paths are accepted
-      as sim-injection-only and every report says so (§7.3's new default line); **(c)** a UI
-      journey runs with the setting forced, which costs a simulator erase per run and still is not
-      a phone. Recommend **(a)**, because the reduced path is the one users with motion sensitivity
-      get. E's call. (NEW)
+- [x] **How does the reduced path get DEVICE time now that E runs with Reduce Motion OFF?** —
+      **E chose (a), 2026-09-12: *"go with (a)"***. E toggles Reduce Motion ON for the device check
+      of any block that adds or changes a reduced site, chosen over accepting sim-injection-only
+      (b) or a setting-forced UI journey (c). **Now part of the bar, written into CLAUDE.md §7.3**
+      with how to run it: only for blocks that actually add or change a reduced site; both passes
+      asked for in ONE message so E flips the setting once; §7.2-waived sites (the Confirm
+      celebration) exempt and named as such; and the "Verified paths" line may say
+      "E's phone (RM on)" only if E actually toggled and said so. **First block it bites is
+      `F-CTACelebrations-4`, the nine pops** — `-2` (switches) and `-3` (the centre and layers) add
+      no new reduced rendering, so neither owes an RM-on pass, and each report should say why not.
+      (CLOSED)
 - [ ] **E has still never seen the focus card's completion celebration** (`F-FocusCard-4` — the
       ring burst and the tick that springs from 0.6, after a 0.3 s pre-beat). It was built and
       approved while E's phone had Reduce Motion ON, so E judged a hard cut plus a haptic and the
