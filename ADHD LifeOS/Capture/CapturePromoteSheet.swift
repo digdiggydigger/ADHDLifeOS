@@ -10,6 +10,15 @@
 import SwiftUI
 
 struct CapturePromoteSheet: View {
+    /// **R-e.** This sheet closes itself the moment a promote succeeds, and it draws its own
+    /// celebration layer — so without a beat here the Create Task pop is thrown onto a surface that
+    /// is already leaving, and the user sees nothing at all. E's design record put the alternative
+    /// plainly: hold briefly, or have no pop on Create Task.
+    ///
+    /// The pop is 1.0 s long, so this shows roughly the first half of it. That is the trade R-e
+    /// makes: a sheet that lingers a full second after a create reads as unresponsive.
+    static let popHold: TimeInterval = 0.45
+
     let capture: Capture
     /// The Filed-in card's committed value at the moment the sheet opened — the area the new task
     /// inherits.
@@ -24,6 +33,16 @@ struct CapturePromoteSheet: View {
     @State private var dueDate: Date?
     /// S2's effort chip — lands on the task's `focus_duration_seconds`. `nil` = skipped.
     @State private var effortSeconds: Int?
+    /// True from the instant a promote succeeds until this sheet's own scheduled dismiss runs.
+    ///
+    /// **The hold has to make the sheet inert, not merely late.** `popHold` buys the pop 0.45 s by
+    /// SCHEDULING the dismiss, which would otherwise leave a sheet whose work is already committed
+    /// sitting there fully interactive: cancel or swipe it away in that window and the orphaned
+    /// hold still runs `onPromoted()`, which `CaptureDetailView` uses to pop the detail screen — so
+    /// the screen would leave half a second after the user's own dismiss, unasked. Tapping Create
+    /// Task again in that window is refused by the service, correctly, but renders the refusal as
+    /// an error inside a sheet that is mid-teardown.
+    @State private var hasPromoted = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -50,6 +69,7 @@ struct CapturePromoteSheet: View {
                     CreateTaskButton(
                         lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate, onCreateTask: promote
                     )
+                    .disabled(hasPromoted)
                     Text("The new task inherits this capture's life area, tags and notes.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -64,11 +84,15 @@ struct CapturePromoteSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .disabled(hasPromoted)
                         .accessibilityIdentifier("capturePromoteCancelButton")
                 }
             }
         }
         .presentationDetents([.medium, .large])
+        // Only for the beat the pop needs. A swipe here would land `onPromoted()` on a screen the
+        // user has already left.
+        .interactiveDismissDisabled(hasPromoted)
         // A sheet sits above the root layer, so a celebration asked for from Create Task needs a
         // layer here to be seen at all. In practice this one draws the POP: a full-screen
         // celebration requested while this sheet is frontmost is HELD by the centre, because the
@@ -219,8 +243,16 @@ struct CapturePromoteSheet: View {
             focusDurationSeconds: effortSeconds
         )
         if succeeded {
-            dismiss()
-            onPromoted()
+            // Before the hold, not inside it: the window this closes is the whole of the hold.
+            hasPromoted = true
+            // Scheduled rather than awaited: `create(popping:)` is still waiting on this call to
+            // return before it pops, so holding the await here would delay the paper by the hold
+            // instead of the dismiss, and the sheet would still be gone first.
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(Self.popHold * 1_000_000_000))
+                dismiss()
+                onPromoted()
+            }
         }
         return succeeded
     }

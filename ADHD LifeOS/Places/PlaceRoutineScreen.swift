@@ -198,11 +198,14 @@ struct PlaceRoutineScreen: View {
                     .font(.title2).bold()
                     .minimumScaleFactor(0.8)
             }
-            Button(title) {
-                Haptics.play(.solid)
-                perform(step.action, at: index)
+            CelebrationPopSource { handle in
+                Button(title) {
+                    Haptics.play(.solid)
+                    handle.pop()
+                    perform(step.action, at: index)
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
             }
-            .buttonStyle(PrimaryActionButtonStyle())
             Button {
                 Haptics.play(.light)
                 apply(.skipped, at: index)

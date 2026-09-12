@@ -3801,7 +3801,7 @@ block 1: 0 pixels). Device verdict.
   (12,949/47,221); the centre, the policy, the motion resolver, the recipes and the burst are all
   at **100 %**, and what is left at 0 % is view body.
 
-### FEATURE: F-CTACelebrations-4 — the nine mini confetti pops  [ ] OPEN
+### FEATURE: F-CTACelebrations-4 — the nine mini confetti pops  [x] COMPLETED 2026-09-12 — awaiting E's device verdict (RM off AND RM on — the first block that owes the RM-on pass)
 
 - **Render FIRST:** the pop in situ on a real `TaskRow`, two or three count/spread variants, full
   and still; send them; E picks by looking (E's F6). Then wire the nine sites, each wrapped in
@@ -3813,6 +3813,34 @@ block 1: 0 pixels). Device verdict.
   swipe and the circle pop from one origin". Predicted red 11 / 11. Evidence
   `screenshots/cta-celebrations-block-4/`: pops over a row, over the Form row (the root layer beats
   row clipping), inside the routine cover and the search surface; mp4. Device verdict RM ON and OFF.
+- **Shipped. E picked variant A ("as designed") from four rendered in situ on a real `TaskRow`, and
+  "keep rise-then-fall" for the still pop — so `CelebrationRecipes` and `CelebrationStillField` are
+  UNCHANGED and this block is call sites plus one constant.** Room first:
+  `CaptureInboxSections.swift` 390 → 270, the Undo section to `CaptureInboxUndoSections.swift` (136).
+- **Four ways the build differed from the written plan.** (1) **`TaskRow` does not use
+  `CelebrationPopSource`.** The wrapper reports the centre of what it wraps and the swipe lives on
+  the whole row, so wrapping enough of the row to catch the gesture would throw the paper from the
+  middle of it; it uses the file's other half instead — `.celebrationPopOrigin` on the circle, held
+  in `@State`, requested in the shared `close()`. Both close paths still pop from ONE origin, and
+  that origin is the circle E approved by looking. (2) **`CreateTaskButton` pops after the await**,
+  inside `if succeeded`, because a create can fail and a celebration marks something that happened.
+  (3) **R-e's hold is SCHEDULED, not awaited** (`Task { @MainActor in … }`): awaiting it would delay
+  the paper rather than the dismiss, because `create(popping:)` is still waiting on `promote` to
+  return before it pops. (4) **Thirteen tests, not eleven** — nine moments are ten code sites, plus
+  the one-origin rule, the sheet hold and a count guard.
+- **The red prediction was wrong the first time and the miss was a real defect, not a bad forecast.**
+  Predicted 17 assertion failures, got 20; the three extra were guards that anchored on
+  `Button { Haptics.play(…)` and then asserted the haptic was inside the slice, which starts AFTER
+  its anchor — they could not have gone green however correctly the site was wired. The haptic is
+  now part of the anchor and `assertAnchorIsUnique` stops a guard reading a different button. The
+  corrected prediction, 13 / 17, matched exactly.
+- **`CelebrationMountCallSiteTests`' open runtime question is CLOSED by this block's evidence.** A
+  layer inside a presented cover really does inherit the centre from outside it — 2,761 pixels drawn,
+  against a control where a wrong-surface layer draws 0. Both of block 3's probes had injected the
+  environment themselves, so nothing had shown it at runtime.
+- 2,810 → **2,823** tests. App coverage 27.42 % → **27.29 %** (12,949/47,457): the numerator did not
+  move at all and the denominator gained 236, because every line this block adds is inside a SwiftUI
+  view body — the structural gap CLAUDE.md already records for 108 files at 0 %.
 
 ### FEATURE: F-CTACelebrations-5 — inbox zero, the streak on 7, the daily goal  [ ] OPEN
 
