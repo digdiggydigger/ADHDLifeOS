@@ -64,6 +64,16 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// silences every fence at once; the per-place toggles are kept, so turning it back on
     /// restores exactly what was set up.
     var arrivalNudgesEnabled: Bool
+    /// E's #3 (the CTA celebrations arc): one switch over every FULL-SCREEN celebration — the
+    /// confetti a Confirm sets off and the milestones that follow it. On by default, because
+    /// playing them is what the app already does. Haptics and the in-place flourishes are outside
+    /// it on purpose; they are the feedback a switch like this should never take with it.
+    var celebrationsEnabled: Bool
+    /// E's F5: one soft chime on those full-screen celebrations, and nothing else. OFF by default —
+    /// a sound nobody asked for is the one kind of feedback that cannot be politely ignored. The
+    /// player arrives in `F-CTACelebrations-7`; until then the switch stores a choice and nothing
+    /// reads it, which is why its Settings footer says so.
+    var celebrationSoundsEnabled: Bool
 
     /// Every read path passes through this, so no writer — Stepper, old build, bad migration —
     /// can hand the ring a goal it would divide by zero on.
@@ -87,7 +97,9 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
             hapticsEnabled: hapticsEnabled,
             soundEnabled: soundEnabled,
             locationTaggingEnabled: locationTaggingEnabled,
-            arrivalNudgesEnabled: arrivalNudgesEnabled
+            arrivalNudgesEnabled: arrivalNudgesEnabled,
+            celebrationsEnabled: celebrationsEnabled,
+            celebrationSoundsEnabled: celebrationSoundsEnabled
         )
     }
 
@@ -105,7 +117,9 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         hapticsEnabled: Bool = true,
         soundEnabled: Bool = true,
         locationTaggingEnabled: Bool = true,
-        arrivalNudgesEnabled: Bool = true
+        arrivalNudgesEnabled: Bool = true,
+        celebrationsEnabled: Bool = true,
+        celebrationSoundsEnabled: Bool = false
     ) {
         self.dailyGoal = dailyGoal
         self.showStreaks = showStreaks
@@ -118,6 +132,8 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         self.soundEnabled = soundEnabled
         self.locationTaggingEnabled = locationTaggingEnabled
         self.arrivalNudgesEnabled = arrivalNudgesEnabled
+        self.celebrationsEnabled = celebrationsEnabled
+        self.celebrationSoundsEnabled = celebrationSoundsEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -135,6 +151,10 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
             .decodeIfPresent(Bool.self, forKey: .locationTaggingEnabled) ?? true
         arrivalNudgesEnabled = try container
             .decodeIfPresent(Bool.self, forKey: .arrivalNudgesEnabled) ?? true
+        celebrationsEnabled = try container
+            .decodeIfPresent(Bool.self, forKey: .celebrationsEnabled) ?? true
+        celebrationSoundsEnabled = try container
+            .decodeIfPresent(Bool.self, forKey: .celebrationSoundsEnabled) ?? false
     }
 }
 

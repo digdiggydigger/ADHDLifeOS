@@ -160,6 +160,28 @@ extension SettingsView {
             ))
             .accessibilityIdentifier("settingsHapticsToggle")
 
+            // Straight after Haptics, because these two govern the app's OWN feedback; the
+            // notification row below them governs what iOS plays for a scheduled reminder.
+            Toggle("Celebrations", isOn: Binding(
+                get: { momentumPreferences.celebrationsEnabled },
+                set: { newValue in
+                    momentumPreferences.celebrationsEnabled = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
+                }
+            ))
+            .accessibilityIdentifier("settingsCelebrationsToggle")
+
+            Toggle("Celebration sounds", isOn: Binding(
+                get: { momentumPreferences.celebrationSoundsEnabled },
+                set: { newValue in
+                    momentumPreferences.celebrationSoundsEnabled = newValue
+                    momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
+                }
+            ))
+            .accessibilityIdentifier("settingsCelebrationSoundsToggle")
+
             Toggle("Notification sounds", isOn: Binding(
                 get: { momentumPreferences.soundEnabled },
                 set: { newValue in
@@ -208,7 +230,11 @@ extension SettingsView {
                     + "happen records the spot a capture was made, and only ever while iOS has "
                     + "granted location access — turning it off here stops it regardless. "
                     + "Arrival nudges is the master switch over every place's nudges: one flip "
-                    + "silences them all, and the per-place choices are kept for when it comes back on."
+                    + "silences them all, and the per-place choices are kept for when it comes back on. "
+                    + "Celebrations covers the full-screen moments — the confetti a Confirm sets off "
+                    + "and the milestones that follow it; haptics and the small in-place flourishes "
+                    + "are left alone either way. Celebration sounds will add one soft chime to those "
+                    + "full-screen moments, and does nothing until the chime itself ships."
             )
         }
     }
