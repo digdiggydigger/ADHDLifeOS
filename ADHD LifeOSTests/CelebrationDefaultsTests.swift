@@ -46,8 +46,6 @@ final class CelebrationDefaultsTests: XCTestCase {
         let center = CelebrationCenter()
         let expected = CelebrationPolicy.outcome(
             for: .confirm(clearedStack: false),
-            lastFullScreenAt: nil,
-            now: Date(),
             celebrationsEnabled: AppFeedback.celebrationsEnabled()
         )
         XCTAssertEqual(

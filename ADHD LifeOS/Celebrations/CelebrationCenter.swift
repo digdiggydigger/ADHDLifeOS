@@ -25,9 +25,6 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
 
     /// What is on screen, across every surface. Each layer draws only its own.
     @Published private(set) var bursts: [CelebrationBurst] = []
-    /// When the last FULL-SCREEN celebration started — the cooldown's input. R-c: a Confirm stamps
-    /// this even though a Confirm is never cooled down itself.
-    private(set) var lastFullScreenAt: Date?
     /// Full-screens requested while a self-dismissing surface was frontmost, waiting for it to go.
     private(set) var held: [CelebrationBurst] = []
 
@@ -63,27 +60,6 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     /// Whichever surface is in front of the user right now.
     var frontmost: CelebrationSurface { presented.last ?? .root }
 
-    /// What the cooldown is measured from: the last full-screen celebration to have STARTED, or
-    /// NOW while one is still waiting to.
-    ///
-    /// **The held half is not bookkeeping — it is the rule.** A waiting burst has stamped nothing,
-    /// because it has not played; but if a second milestone arriving while it waits were promised a
-    /// full screen too, the sheet's dismissal would release both at one instant and stack two 5.4 s
-    /// washes, which is the exact thing E's #6 cooldown exists to prevent. So a pending burst
-    /// counts against the cooldown without having started it, and the second moment gets the pop.
-    ///
-    /// **It answers `now()` rather than the waiting burst's own `start`, and the difference is a
-    /// defect this block shipped and then fixed.** A held burst's `start` is its REQUEST time, so
-    /// reporting it let the cooldown "expire" after five seconds while the burst was still sitting
-    /// there unplayed — and `releaseHeld` would then start both at one instant. `heldLifetime` is
-    /// 60 s, twelve times the cooldown, so that window is not a corner. Unreachable today only
-    /// because the one self-dismissing surface holds for `CapturePromoteSheet.popHold` (0.45 s);
-    /// it would go live on a longer-holding surface, or on a shorter cooldown — and E is
-    /// undecided about the cooldown. Found by the `feature-dev:code-reviewer` pass.
-    private var cooldownAnchor: Date? {
-        held.isEmpty ? lastFullScreenAt : now()
-    }
-
     /// The bursts one layer should draw.
     func bursts(on surface: CelebrationSurface) -> [CelebrationBurst] {
         bursts.filter { $0.surface == surface }
@@ -96,12 +72,7 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
         let moment = now()
         // The gate is read BEFORE anything is enqueued, never after: on the list the celebration
         // is already drawing and the frame clock is already running.
-        let outcome = CelebrationPolicy.outcome(
-            for: kind,
-            lastFullScreenAt: cooldownAnchor,
-            now: moment,
-            celebrationsEnabled: celebrationsGate()
-        )
+        let outcome = CelebrationPolicy.outcome(for: kind, celebrationsEnabled: celebrationsGate())
         guard outcome != .nothing else { return .nothing }
 
         // **R-d, and it fires HERE rather than when the burst starts, unlike the chime.** The
@@ -138,17 +109,15 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     /// about when the cooldown starts or when the chime sounds.
     ///
     /// Both used to disagree, and it was a LATENT defect until `F-CTACelebrations-5` (register
-    /// §B.00b): `request` stamped `lastFullScreenAt` and chimed before the held branch, and
-    /// `releaseHeld` did neither. So a burst waiting behind the Create Task sheet chimed with
-    /// nothing on screen to explain it, cooled down the milestone that followed it before anyone
-    /// had seen it, and — dropped at R-g's sixty seconds — left a cooldown behind for a
-    /// celebration that never appeared. Unreachable while the only full-screen request was the
-    /// Confirm bridge, which sits below every sheet; inbox zero through the promote sheet is
-    /// exactly the held path.
+    /// §B.00b): `request` chimed before the held branch and `releaseHeld` did not chime at all, so
+    /// a burst waiting behind the Create Task sheet sounded with nothing on screen to explain it,
+    /// and one dropped at R-g's sixty seconds had already sounded for a celebration that never
+    /// appeared. (It also stamped a cooldown, which mattered until E removed the cooldown
+    /// entirely on 2026-09-12.) Unreachable while the only full-screen request was the Confirm
+    /// bridge, which sits below every sheet; inbox zero through the promote sheet is the held
+    /// path.
     private func start(_ burst: CelebrationBurst, at moment: Date) {
         if burst.isFullScreen {
-            // R-c: Confirm counts toward the cooldown. A pop never does.
-            lastFullScreenAt = moment
             chime(burst.kind)
         }
         bursts = CelebrationQueue.adding(burst, to: bursts, now: moment)
