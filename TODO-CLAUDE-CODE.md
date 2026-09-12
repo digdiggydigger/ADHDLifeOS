@@ -3719,7 +3719,7 @@ dim draw only for a cleared stack. Evidence `screenshots/confirm-celebration-blo
 0.3 / 1.2 / 2.6 / 4.8 s light + dark, the 6.4 s mp4, an every-Confirm frame pixel-diffed against
 block 1: 0 pixels). Device verdict.
 
-### FEATURE: F-CTACelebrations-1 — the haptic tidy and the closure card's spring-in  [ ] OPEN
+### FEATURE: F-CTACelebrations-1 — the haptic tidy and the closure card's spring-in  [x] COMPLETED 2026-09-12 — awaiting E's device verdict by feel
 
 - **Room first, own commit:** `HomeView.swift:360-399` → `Home/HomeView+Refresh.swift`;
   `HomeMomentumSections.swift:235-329` → `Home/HomeLifeAreasSections.swift`.
@@ -3730,9 +3730,19 @@ block 1: 0 pixels). Device verdict.
   and `withAnimation(reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8))`
   around the three writers of `celebratedTask` (`HomeMomentumSections.swift`); the
   `CaptureFanOverlay` house pattern.
-- Tests: `CTAHapticTidyCallSiteTests`, five prose tests, both RM branches by string. Predicted red
-  5 / 5. Evidence `screenshots/cta-celebrations-block-1/`: the card at 0.1 s full vs reduced.
-  Device verdict by feel.
+- Tests: `CTAHapticTidyCallSiteTests` — **six** prose tests, not five: the no-bypass guard is a
+  separate property from the two RM branches by string, so it is its own test. Predicted red
+  6 / 6 tests, observed 6 / 6 (11 assertions); green 6 / 6. Each haptic test is scoped to ONE
+  closure, because three of the four files already hold the target feel at a different site that
+  must not move. Shipped: the three writers of `celebratedTask` share one `setCelebratedTask`
+  rather than each wrapping itself — which is what makes "no writer bypasses the animation" a
+  testable property; the guard sweeps the whole app target after a reviewer note, red-checked by
+  planting a bare write in another file.
+- Evidence `screenshots/cta-celebrations-block-1/`: three rows (before / full / reduced) × six
+  frames × light and dark, each tile labelled with its MEASURED second. The sheets cannot resolve
+  a 0.9 scale at the opacity the card is first visible at, so the probe MEASURES the rendered
+  width: full narrows to 340–346 pt against a settled 370 pt and recovers by ≈ 0.29 s; reduced
+  never leaves 369.5–370 pt. Device verdict by feel.
 
 ### FEATURE: F-CTACelebrations-2 — the two switches; Celebrations live on Confirm  [ ] OPEN
 
