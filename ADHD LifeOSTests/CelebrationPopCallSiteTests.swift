@@ -181,6 +181,43 @@ final class CelebrationPopCallSiteTests: XCTestCase {
         XCTAssertLessThan(hold.lowerBound, dismiss.lowerBound)
     }
 
+    /// **The hold has to make the sheet INERT, not merely late.** R-e buys 0.45 s for the pop by
+    /// scheduling the dismiss rather than doing it — which leaves a sheet that has already
+    /// succeeded, and already committed the task, sitting there fully interactive. Cancel it in
+    /// that window and the orphaned hold still runs: `CaptureDetailView` passes
+    /// `onPromoted: { dismiss() }`, so the DETAIL SCREEN pops half a second after the user's own
+    /// dismiss, unasked. Tap Create Task again and the service correctly refuses, but the refusal
+    /// renders as an error inside a sheet that is mid-teardown.
+    ///
+    /// Found by the `feature-dev:code-reviewer` pass, not by the suite — a timing window nothing
+    /// else in the block could see.
+    func testTheSheetGoesInertForTheBeatItHoldsForThePop() throws {
+        let sheet = try flattened("Capture/CapturePromoteSheet.swift")
+        XCTAssertTrue(
+            sheet.contains("@State private var hasPromoted = false"),
+            "The sheet has no notion of having already succeeded, so it cannot go inert for the hold."
+        )
+        XCTAssertEqual(
+            sheet.components(separatedBy: ".disabled(hasPromoted)").count - 1, 2,
+            "Cancel and Create Task must BOTH be dead once the promote has succeeded — the create is"
+                + " already committed and the only thing left is to show the paper."
+        )
+        XCTAssertTrue(
+            sheet.contains(".interactiveDismissDisabled(hasPromoted)"),
+            "The sheet can still be swiped away during the hold, which lands `onPromoted()` on a"
+                + " screen the user already left."
+        )
+        let settled = try XCTUnwrap(
+            sheet.range(of: "hasPromoted = true"), "Nothing ever marks the promote as settled."
+        )
+        let hold = try XCTUnwrap(sheet.range(of: "Task.sleep(nanoseconds: UInt64(Self.popHold"))
+        XCTAssertLessThan(
+            settled.lowerBound, hold.lowerBound,
+            "The sheet is marked settled AFTER the hold has already begun, so the window this is"
+                + " meant to close is still open for the whole of it."
+        )
+    }
+
     /// The count is what makes the enumeration above load-bearing. Eight wrappers, and `TaskRow`'s
     /// modifier — a tenth site added without a test would push this over.
     func testNoOtherControlInTheAppThrowsAPop() throws {
