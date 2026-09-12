@@ -31,6 +31,8 @@ struct RootBottomOverlay: View {
     var onOpenSearch: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The celebration centre, or the inert default outside the app (previews, snapshots).
+    @Environment(\.celebrate) private var celebrate
 
     /// E's 2026-08-31 margin pass lifted the stack a further 8pt off the tab bar (52 → 60),
     /// matching the trailing margin's 16 → 24 so `CaptureDiscMetrics.clearance` stays one number
@@ -153,5 +155,16 @@ struct RootBottomOverlay: View {
         // completion haptic for the same reason — the stack leaves with the last card, so a
         // listener on it would be gone before the Confirm that empties it could buzz.
         .haptic(.success, trigger: focusService.confirmationCount)
+        // F-CTACelebrations-3: the bridge from the Confirm stamp to the celebration centre,
+        // beside the haptic and for the same reason — this view is always mounted, and the
+        // card stack that a Confirm empties is gone before the Confirm lands.
+        //
+        // **It asks; it never decides.** The Celebrations switch, the cooldown and the queue
+        // all live in the centre, which is why E's #3 can keep the haptic above while
+        // silencing the celebration: nothing on this line knows the switch exists.
+        .onChange(of: focusService.latestConfirmation) { confirmation in
+            guard let confirmation else { return }
+            celebrate.request(.confirm(clearedStack: confirmation.clearedStack), at: nil)
+        }
     }
 }

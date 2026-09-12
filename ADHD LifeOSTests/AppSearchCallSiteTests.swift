@@ -63,7 +63,10 @@ final class AppSearchCallSiteTests: XCTestCase {
     /// because the root never learns the tab has gone deeper. The depth is what every tab root
     /// reports into `tabNavigation`, the coordinator block 1 built.
     func testRootViewDrivesTheScopeFromTheSelectedTabAndItsDepth() throws {
-        let root = try Self.appCode("RootView.swift")
+        // `RootView` has been two files since `F-CTACelebrations-3`'s room-first split, and the
+        // property asserted here belongs to the TYPE, not to one of its files: `searchScope`
+        // moved to `RootView+Furniture.swift` while its reader stayed in `RootView.swift`.
+        let root = try Self.appCode("RootView.swift") + Self.appCode("RootView+Furniture.swift")
         XCTAssertTrue(
             root.contains(
                 "AppSearchScope.scope(for: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))"

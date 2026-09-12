@@ -8,6 +8,11 @@ import UIKit
 
 struct RootView: View {
     @ObservedObject var authService: AuthService
+    /// The app's one celebration owner (`F-CTACelebrations-3`). Owned by the App, like
+    /// `authService`: built here it would be rebuilt on every auth-state swap, dropping
+    /// whatever was in the air, and a `@StateObject` cannot live in an extension file —
+    /// which this one needs for the 400-line bar.
+    @ObservedObject var celebrationCenter: CelebrationCenter
     let homeClient: HomeClientAdapting
     let tasksClient: TasksClientAdapting
     let taskCreateClient: TaskCreateClientAdapting
@@ -43,7 +48,9 @@ struct RootView: View {
     @State var selectedTab: AppTab = .today  // Internal, not private: RootView+Doors reaches it.
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
-    @State private var captureInboxCount = 0
+    /// Internal, not private: `RootView+Furniture`'s `refreshCaptureInboxCount()` writes it,
+    /// and `private` is file-scoped.
+    @State var captureInboxCount = 0
     /// A widget door that arrived before the signed-in tabs existed (dead launch: the URL is
     /// delivered while auth is still restoring). Held here and drained the moment the tabs mount.
     @State var pendingWidgetLink: AppDeepLink?  // Internal: RootView+Doors drains it.
@@ -69,28 +76,6 @@ struct RootView: View {
     @StateObject var focusService = FocusSessionService.withLiveActivityMirroring(
         logger: FirebaseFocusSessionAdapter()
     )
-
-    /// What the bottom row searches RIGHT NOW: the selected tab's scope, masked to `.none` while
-    /// that tab is deeper than its top-level page (F-TabDepth-2 — E's screenshot of a pushed
-    /// task detail with "Search tasks" still beside the disc). The depth is what every tab root
-    /// reports into the coordinator, so this file never learns how each tab pushes.
-    private var searchScope: AppSearchScope {
-        AppSearchScope.scope(for: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))
-    }
-
-    /// The pill is a STICKY scrolled-down state (F-PillStay, E's call 2026-08-31: "stay in
-    /// pill form until the page is scrolled upwards again"). An open fan forces the full disc:
-    /// its scrim blocks scrolling anyway, and the ✕ rotation reads as a disc, not a sliver.
-    private var showsPill: Bool {
-        discScrollActivity.prefersPill && !isFabOpen
-    }
-
-    /// The tab badge's one writer. A failure leaves the previous number standing rather than
-    /// dropping to zero: an offline moment is not an empty inbox.
-    private func refreshCaptureInboxCount() async {
-        guard let captures = try? await captureClient.fetchUnprocessedCaptures() else { return }
-        captureInboxCount = captures.count
-    }
 
     var body: some View {
         Group {
@@ -247,12 +232,18 @@ struct RootView: View {
                         onOpenSearch: { searchModel.open() }
                     )
                 }
-                // F-ConfirmCelebration-1: the full-screen Confirm celebration, over the card and the
-                // bar and under the covers. Always mounted; see the file for why.
-                .overlay { ConfirmCelebrationOverlay(focusService: focusService) }
-                .fullScreenCover(item: $presentedRoutineRun) { run in
-                    routineCover(run)
-                }
+                // F-ConfirmCelebration-1, generalised in `F-CTACelebrations-3`: the root
+                // celebration layer, over the card and the bar and under the covers — the same
+                // position the Confirm overlay held, so the record's R3 still holds. The covers
+                // above it mount layers of their own (E's ARCH answer: one layer per surface).
+                .overlay { CelebrationLayer(surface: .root) }
+                .fullScreenCover(
+                    item: $presentedRoutineRun,
+                    onDismiss: { celebrationCenter.surfaceDismissed(.routineCover) },
+                    content: { run in
+                        routineCover(run)
+                    }
+                )
                 .fullScreenCover(item: $composerKind) { kind in
                     QuickCaptureView(
                         client: captureClient,
@@ -268,6 +259,12 @@ struct RootView: View {
                 .task {
                     await focusService.restorePersistedSprint()
                 }
+                // Applied OUTSIDE the covers above, so every presented surface inherits the
+                // centre — the reason `.environmentObject(searchModel)` sits here too. A layer
+                // that cannot see the centre draws nothing and says nothing about it, so the
+                // position is asserted by `CelebrationMountCallSiteTests`.
+                .environment(\.celebrate, celebrationCenter)
+                .environment(\.celebrationCenter, celebrationCenter)
                 .environmentObject(searchModel)
                 .environmentObject(tabNavigation)
                 .task { await refreshCaptureInboxCount() }

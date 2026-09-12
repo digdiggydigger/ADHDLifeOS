@@ -12,6 +12,9 @@ struct TaskListView: View {
     /// capture disc app-level; the SURFACE is presented here, because the tasks are here.
     /// Defaulted through the environment so previews and the UI journeys need no extra wiring.
     @EnvironmentObject private var searchModel: AppSearchModel
+    /// The celebration centre, so this screen can tell it when the surface it presents has
+    /// gone. `\.celebrate` defaults to an inert requester, so a preview needs nothing.
+    @Environment(\.celebrate) private var celebrate
     private let taskCreateClient: TaskCreateClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
     /// Starts an app-level focus sprint from a resolved plan. Owned by `RootView` (which holds
@@ -94,13 +97,17 @@ struct TaskListView: View {
             // so the capsule stood alone UNDER the custom tab bar, where E photographed it and
             // where it could not be tapped. Search is ours now: the row lives beside the capture
             // disc in `RootBottomOverlay`, and this screen presents the surface it opens.
-            .fullScreenCover(isPresented: searchModel.surfacePresentation) {
-                TaskSearchSurface(
-                    service: tasksService,
-                    searchModel: searchModel,
-                    onInspect: { inspectingTask = $0 }
-                )
-            }
+            .fullScreenCover(
+                isPresented: searchModel.surfacePresentation,
+                onDismiss: { celebrate.surfaceDismissed(.tasksSearch) },
+                content: {
+                    TaskSearchSurface(
+                        service: tasksService,
+                        searchModel: searchModel,
+                        onInspect: { inspectingTask = $0 }
+                    )
+                }
+            )
             // One writer: the shared query drives this screen's filter, which still runs through
             // `TaskListRefinement` exactly as it did when `.searchable` fed it.
             .onChange(of: searchModel.query) { tasksService.searchText = $0 }

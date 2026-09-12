@@ -31,6 +31,9 @@ struct CaptureDetailView: View {
     @State private var isPresentingPhoto = false
     @State private var isSorting = false
     @Environment(\.dismiss) private var dismiss
+    /// The celebration centre, so this screen can tell it when the surface it presents has
+    /// gone. `\.celebrate` defaults to an inert requester, so a preview needs nothing.
+    @Environment(\.celebrate) private var celebrate
 
     var body: some View {
         Group {
@@ -82,15 +85,19 @@ struct CaptureDetailView: View {
             .padding(16)
         }
         .captureDiscClearance()
-        .sheet(isPresented: $isPresentingPromoteSheet) {
-            CapturePromoteSheet(
-                capture: capture,
-                lifeAreaId: selectedLifeAreaId,
-                service: service,
-                onPromoted: { dismiss() }
-            )
-            .keyboardDismissal()
-        }
+        .sheet(
+            isPresented: $isPresentingPromoteSheet,
+            onDismiss: { celebrate.surfaceDismissed(.promoteSheet) },
+            content: {
+                CapturePromoteSheet(
+                    capture: capture,
+                    lifeAreaId: selectedLifeAreaId,
+                    service: service,
+                    onPromoted: { dismiss() }
+                )
+                .keyboardDismissal()
+            }
+        )
         .fullScreenCover(isPresented: $isPresentingPhoto) {
             CapturePhotoLightbox(
                 url: capture.photoDisplayURL,

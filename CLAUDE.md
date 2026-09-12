@@ -498,6 +498,20 @@ before its push landed.
   (including `location_events` and `places`); `storage.rules` is semantically identical but the
   live copy carries no comment header, i.e. it was published from a pre-comment revision. Nothing
   is outstanding to republish.
+- **Celebrations go through ONE app-level owner, and are drawn by one layer PER PRESENTED SURFACE**
+  (`ADHD LifeOS/Celebrations/`, `F-CTACelebrations-3`; E's ARCH answer, chosen over a passthrough
+  `UIWindow`). `CelebrationCenter` is a `@StateObject` the **App** owns and hands to `RootView` the
+  way `authService` is — not built in `RootView`, which would rebuild it on every auth-state swap
+  and cannot hold a `@StateObject` in the extension files its 400-line bar needs. A site never
+  decides anything: it calls `celebrate.request(_:at:)` through the `\.celebrate` environment value
+  and the centre applies `CelebrationPolicy` (E's switch, E's cooldown), tags the burst with the
+  frontmost surface and publishes it. **Four mounts and four `onDismiss`es, enumerated and COUNTED
+  by `CelebrationMountCallSiteTests`**, because the failure mode of per-surface layers is silent: a
+  cover that hosts a site and mounts no layer draws nothing and passes every other test. Both
+  environment defaults are inert (`nil` centre, a requester that answers `.nothing`), so previews
+  and tests need no setup — which is also why the app's own wiring has to be asserted.
+  `ConfirmCelebrationClock` holds the Confirm's approved NUMBERS only; the live-burst behaviour is
+  `CelebrationQueue`, whose caps are counted per family so pops can never evict a Confirm.
 - Manual-step convention (same as web project): anything requiring the Xcode GUI beyond CLI builds — code signing, provisioning profiles, App Store Connect/TestFlight — is E's job, never attempted by Claude Code directly.
 - Lint: SwiftLint, config at `.swiftlint.yml` (default ruleset unless a rule is explicitly flagged as too noisy and adjusted).
 - Tests live in `ADHD LifeOSTests/` (XCTest), UI tests in `ADHD LifeOSUITests/`.
@@ -622,15 +636,29 @@ the rewrite, not what justifies it; the rule outlived the fact.) The skill-prece
 - **Haptics are unaffected**, because they are not motion. They fire under Reduce Motion as they
   always have.
 - **The ONE sanctioned waiver of this section, and it is a waiver rather than a loophole: the
-  Confirm celebration** (`Focus/ConfirmCelebrationOverlay.swift`, E's call, 2026-09-11). Asked
-  what Confirm should show with Reduce Motion ON, E was offered a still confetti that fades (the
-  policy answer, recommended), a glow, or real falling confetti as a named waiver, and answered
-  **"B AND C"**: the glow AND real falling confetti. So it plays identically with Reduce Motion ON
-  and OFF, and its files never read the setting. `testTheConfirmCelebrationIgnoresReduceMotionByDesign`
-  pins that. **Do not "fix" it in a Reduce Motion sweep** — that would silently undo E's decision.
-  E's accepted cost is recorded in the register (§D): people who turned Reduce Motion on for motion
-  sensitivity get full-screen confetti with no off switch, to revisit before launch. Like
-  `peekStep`'s waiver of §2, it covers that one site and nothing else.
+  Confirm celebration** (E's call, 2026-09-11). Asked what Confirm should show with Reduce Motion
+  ON, E was offered a still confetti that fades (the policy answer, recommended), a glow, or real
+  falling confetti as a named waiver, and answered **"B AND C"**: the glow AND real falling
+  confetti. So it plays identically with Reduce Motion ON and OFF.
+  `testTheConfirmCelebrationIgnoresReduceMotionByDesign` pins that. **Do not "fix" it in a Reduce
+  Motion sweep** — that would silently undo E's decision. E's accepted cost is recorded in the
+  register (§D): people who turned Reduce Motion on for motion sensitivity get full-screen confetti
+  with no off switch — **paid since `F-CTACelebrations-2`**, which put E's Celebrations switch one
+  tap away in Settings. Like `peekStep`'s waiver of §2, it covers that one site and nothing else.
+  - **The pin changed SHAPE in `F-CTACelebrations-3`, and the shape is the interesting part.**
+    While Confirm was the only celebration, "these files never read Reduce Motion" was the whole
+    guard, and `Focus/ConfirmCelebrationOverlay.swift` was on the list. That file is now DELETED:
+    every celebration is drawn by one shared layer, so the setting has to be read somewhere, and
+    "this file is clean" can no longer mean "this celebration is waived". The pin is therefore two
+    claims. **One:** six files stay free of the setting's name — `ConfettiPhysics`,
+    `ConfirmCelebrationRecipe`, the three `ConfirmFireworks*`, and
+    `Celebrations/CelebrationFrame.swift`, which takes the rendering as a PARAMETER (§7.2's rule
+    for a leaf that must be testable in both modes) rather than reading the environment. **Two:**
+    `CelebrationMotion.resolve` answers `.full` for a Confirm **before** it uses the setting, so no
+    reordering can route E's waived celebration down the reduced path. The behavioural half is
+    `CelebrationMotionTests`; the placement half is the call-site test named above. The reduced
+    path for everything else lives in `CelebrationStillField` — geometry pinned from the first
+    frame, opacity the only thing that travels.
 - **Symbol effects, `PhaseAnimator` and `keyframeAnimator` do NOT honour Reduce Motion themselves.**
   `SymbolEffectOptions` has no Reduce Motion option in the 26.5 SDK. Resolve RM FIRST and choose
   the tier second, so a reduced site can never reach a modern motion tier.

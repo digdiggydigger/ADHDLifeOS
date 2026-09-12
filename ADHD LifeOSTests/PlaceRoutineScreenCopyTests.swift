@@ -90,8 +90,15 @@ final class PlaceRoutineScreenCopyTests: XCTestCase {
             root.contains("PlaceRoutineNotificationRouter.shared.connect"),
             "nothing connects the router — pending taps would sit forever"
         )
+        // `F-CTACelebrations-3` gave this cover an `onDismiss:` — it tells the celebration centre
+        // its surface has gone — so the presenter is written over several lines now. Read flattened,
+        // because how a call is WRAPPED is not the property this guard is about.
+        let flattened = root
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .joined(separator: " ")
         XCTAssertTrue(
-            root.contains("fullScreenCover(item: $presentedRoutineRun"),
+            flattened.contains("fullScreenCover( item: $presentedRoutineRun"),
             "nothing presents the routine screen"
         )
         XCTAssertTrue(

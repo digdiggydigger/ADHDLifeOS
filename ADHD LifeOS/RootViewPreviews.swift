@@ -137,6 +137,7 @@ import SwiftUI
 
     return RootView(
         authService: AuthService(client: PreviewAuthClient()),
+        celebrationCenter: CelebrationCenter(),
         homeClient: PreviewHomeClient(),
         tasksClient: PreviewTasksClient(),
         taskCreateClient: PreviewTaskCreateClient(),

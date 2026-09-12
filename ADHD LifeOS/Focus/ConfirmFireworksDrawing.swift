@@ -36,9 +36,9 @@ enum ConfirmCelebrationDim {
 
     /// Only stack-clearing bursts dim, and overlapping ones share ONE dim at the strongest
     /// envelope — the glow's rule — so the screen never goes darker than anything E saw.
-    static func strongestEnvelope(of bursts: [ConfirmCelebrationBurst], at date: Date) -> Double {
+    static func strongestEnvelope(of bursts: [CelebrationBurst], at date: Date) -> Double {
         bursts.filter(\.clearedStack)
-            .map { envelope(at: ConfirmCelebrationQueue.choreographyTime(of: $0, at: date)) }
+            .map { envelope(at: CelebrationQueue.choreographyTime(of: $0, at: date)) }
             .max() ?? 0
     }
 }
