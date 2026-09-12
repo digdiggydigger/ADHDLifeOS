@@ -4,11 +4,11 @@
 terminal. Written 2026-09-12 at the close of the session that built `F-CTACelebrations-1`. **The
 session that writes this arc's next opener archives this file in the same move.***
 
-**STATUS.** Blocks 1 and 2 of the arc are MERGED. `F-ConfirmCelebration-2` (fireworks + light dim,
-`9a7b664`, PR #76) PASSED E's verdict. `F-CTACelebrations-1` (the four haptic tidies + the closure
-card's spring-in, PR #80) is on `main` @ **`49c78d9`** and on E's phone, **awaiting E's device
-verdict BY FEEL** — register §A lists the five taps and their prerequisites. **Read E's verdict
-before starting block 3**: if a feel is wrong, fixing it is this session's first job.
+**STATUS.** Blocks 1 and 2 of the arc are MERGED and **both PASSED E's device verdict**.
+`F-ConfirmCelebration-2` (fireworks + light dim, `9a7b664`, PR #76): *"it looks good."*
+`F-CTACelebrations-1` (the four haptic tidies + the closure card's spring-in, PR #80, `main` @
+`49c78d9`): **PASSED 2026-09-12 BY FEEL**, E: *"it feels good, all five work as you described."*
+Nothing is owed from block 2 — start this one. E's phone runs the block-2 build.
 No gate question is owed; E approved the record and R-a…R-h on 2026-09-12.
 
 ## Read first, in this order

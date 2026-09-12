@@ -20,8 +20,11 @@ card springs in", and §3's "The closure card's spring-in".
 > - **Reduced path:** run on the 26.5 simulator with Reduce Motion INJECTED as a parameter — the
 >   bottom row of each sheet. Not yet on E's phone.
 > - **Full path:** run on the 26.5 simulator — the middle row. Not yet on E's phone.
-> - **E's phone:** E runs Reduce Motion ON, so the device verdict will exercise the REDUCED path.
->   Pending at the time of writing.
+> - **E's phone:** installed from `main` @ `49c78d9`. E runs Reduce Motion ON, so the verdict
+>   exercised the REDUCED path — the card cross-fading at full size is what E approved, not a
+>   missing animation. **E's device verdict PASSED** on 2026-09-12: *"it feels good, all five work
+>   as you described."* All four haptics and the spring-in were judged by thumb, which is the only
+>   way a haptic can be judged — nothing in this folder could have settled them.
 > - **iOS 16–25:** behaviour is COMPILE-ONLY; no older runtime is installed.
 
 Nobody here can say "works on iOS 16" yet, and nothing in this folder does.
