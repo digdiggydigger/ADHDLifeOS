@@ -4,16 +4,20 @@
 terminal. Written 2026-09-12 at the close of the session that built `F-CTACelebrations-5`. **The
 session that writes this arc's next opener archives this file in the same move.***
 
-**STATUS.** Blocks 1–6 of the arc are MERGED. Blocks 1–4's verdicts all PASSED.
+**STATUS.** Blocks 1–6 of the arc are MERGED, and **ALL SIX have PASSED E's device verdict** —
+`-4` and `-5` together on 2026-09-12, with Reduce Motion **OFF and ON** (E, verbatim: *"both of
+those tests work correctly!"*, confirmed when asked precisely about RM). **Nothing is owed from any
+shipped block.** That sitting is also the first time in this arc a Verified-paths line has earned
+*"Reduced: run on sim (injected) + E's phone (RM on)"* rather than owing it.
 
-**`-4` AND `-5` both await ONE device sitting, and E owes it now.** E deferred `-4`'s passes until
-after `-5` (2026-09-12, verbatim: *"I will push the device passes off until after the next
-block."*), so the ask covering both was made at the close of `-5`. **If E has not answered when this
-session starts, do NOT re-ask and do NOT treat either block as unverified work to redo** — both are
-landed, green and installed on the phone from `main`. If E HAS answered, record the verdict in the
-register before doing anything else.
+**One block shipped OUT of that sitting: `F-CTACelebrations-PopScale`** (PR #99). E asked for the
+pop to be bigger; four variants were rendered in situ and E picked C, so
+`CelebrationRecipes.popScale = 1.6` now carries piece size, throw speed and count together.
+**Do not tune it down** — it is E's by-sight value, the `peekStep` precedent, and
+`testThePopScaleIsTheValueEChoseByLooking` pins it. **It owes an RM-on device pass of its own**
+(the still pop is a reduced site and it changed), which can ride along with this block's.
 
-The app code is `main` @ `5e10586`; check `git log --oneline -1 origin/main` for today's tip rather
+The app code is `main` @ `107e2ee`; check `git log --oneline -1 origin/main` for today's tip rather
 than trusting a SHA written here.
 
 **E's standing instruction: each block is built in a FRESH Claude Code terminal session.** This
@@ -145,5 +149,5 @@ it.
   `xcodebuild build -destination 'platform=iOS,id=<udid>' -allowProvisioningUpdates`, then
   `xcrun devicectl device install app --device <udid> "<…>.app"` and
   `… process launch --device <udid> --terminate-existing com.ethananthony.ADHD-LifeOS`.
-- **Baseline at close** (`2498c9b`, merged as `5e10586`): suite 2,884 / 0, lint 0 / 791, app
-  coverage 27.39 % (13,050/47,646).
+- **Baseline at close** (`main` `107e2ee`, after the pop-scale block): suite **2,888 / 0**, lint
+  **0 / 791**, app coverage **27.41 % (13,063/47,659)**.
