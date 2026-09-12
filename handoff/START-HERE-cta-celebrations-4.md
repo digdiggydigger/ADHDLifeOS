@@ -59,6 +59,14 @@ NEGATIVE test — nothing new is visible, and "it looks exactly like yesterday" 
   layer, which is exactly what beats row clipping — do not add a layer to the Form.
 - **The centre's ordinal is not a haptic trigger.** It drives SwiftUI identity and the confetti seed
   only; the focus service's own ordinal still drives the Confirm haptic. Keep them apart.
+- **The first pop on `TaskSearchSurface` is ALSO a wiring check.** Block 3 proved the layers draw,
+  but both its probes injected the environment themselves — nothing has yet shown at runtime that a
+  layer inside a `fullScreenCover` inherits the centre from `RootView`. The call-site test pins the
+  position of the two `.environment(...)` lines; your pop is the first thing that exercises it.
+- **There is a LATENT defect in `CelebrationCenter` waiting for `-5`/`-7`, register §B.00b:** the
+  cooldown stamp and the chime hook fire at REQUEST time, before the held branch, and `releaseHeld`
+  sets neither. Not yours to fix unless you make it reachable — read the register item before
+  touching the centre.
 
 ## Harness lessons worth a run each, from blocks 1–3
 
