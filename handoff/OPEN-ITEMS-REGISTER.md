@@ -115,22 +115,11 @@ are mostly pure logic (`DailyGoalTracker`, `CelebrationDayMarking`, `NudgeStreak
       16.7 s screen recording of the whole showcase.
       **What came out of it is a new block, not a defect:** E asked for the pop to be bigger. See
       `F-CTACelebrations-PopScale`, built and merged the same day. (CLOSED)
-- [ ] ~~**THE DEVICE SITTING — one sitting, TWO passes, covering `F-CTACelebrations-4` AND `-5`.**~~
-      E deferred `-4`'s passes until after this block (2026-09-12, verbatim: *"I will push the
-      device passes off until after the next block."*), so both are owed now and both are landed,
-      green and installed on the phone from `main`. **Ask once, and say which sites belong to which
-      block so a failure can be attributed.** Reduce Motion OFF first, then ON (Settings →
-      Accessibility → Motion).
-      **`-4`'s nine pops** — the Tasks **search surface** (a real `fullScreenCover`; the probe used
-      a synthetic one); **Create Task** from the promote sheet (R-e's 0.45 s hold — the top of the
-      pop is expected to clip at the sheet's edge, §C2, by design); the task detail's **Close it**;
-      a **routine step**; and a circle tap AND a swipe on the same row (one origin).
-      **`-5`'s three milestones** — clear the LAST capture (all three verbs reach it); a nudge's
-      seventh consecutive "Done for now"; and the ring crossing the daily goal **from another tab**,
-      which is the one that exercises the off-screen-origin fix.
-      **No waiver applies to any of them** — the Confirm's §7.2 waiver covers the Confirm alone.
-      Until E answers, both blocks' Verified-paths lines read *"Reduced: run on sim (injected);
-      NOT on device."* (NEW)
+- [ ] **ONE device pass owed: `F-CTACelebrations-PopScale`, with Reduce Motion ON.** The block
+      shipped after the sitting above, and it changes a REDUCED site — `stillPopSpread` scales with
+      the pop, 48 → 76.8 pt — so §7.3 owes it a look with the setting on. Its RM-OFF half is what E
+      is judging anyway when they next close a task. Until E answers, this block's Verified-paths
+      line reads *"Reduced: run on sim; NOT on device."* (NEW)
 - [ ] **THE ACCESSIBILITY ANSWER NEEDS RE-ASKING, because one of the three options I put to E
       rested on a premise that is FALSE.** E chose "the daily goal only" on the stated grounds that
       the other two milestones leave the user on a screen that states the outcome. The
