@@ -43,7 +43,9 @@ struct RootView: View {
     @State var selectedTab: AppTab = .today  // Internal, not private: RootView+Doors reaches it.
     /// The Captures tab's badge. Held here, not in a sixth `CaptureInboxService`: the tab bar
     /// outlives every screen, and this is one count, not a whole inbox.
-    @State private var captureInboxCount = 0
+    /// Internal, not private: `RootView+Furniture`'s `refreshCaptureInboxCount()` writes it,
+    /// and `private` is file-scoped.
+    @State var captureInboxCount = 0
     /// A widget door that arrived before the signed-in tabs existed (dead launch: the URL is
     /// delivered while auth is still restoring). Held here and drained the moment the tabs mount.
     @State var pendingWidgetLink: AppDeepLink?  // Internal: RootView+Doors drains it.
@@ -69,28 +71,6 @@ struct RootView: View {
     @StateObject var focusService = FocusSessionService.withLiveActivityMirroring(
         logger: FirebaseFocusSessionAdapter()
     )
-
-    /// What the bottom row searches RIGHT NOW: the selected tab's scope, masked to `.none` while
-    /// that tab is deeper than its top-level page (F-TabDepth-2 — E's screenshot of a pushed
-    /// task detail with "Search tasks" still beside the disc). The depth is what every tab root
-    /// reports into the coordinator, so this file never learns how each tab pushes.
-    private var searchScope: AppSearchScope {
-        AppSearchScope.scope(for: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))
-    }
-
-    /// The pill is a STICKY scrolled-down state (F-PillStay, E's call 2026-08-31: "stay in
-    /// pill form until the page is scrolled upwards again"). An open fan forces the full disc:
-    /// its scrim blocks scrolling anyway, and the ✕ rotation reads as a disc, not a sliver.
-    private var showsPill: Bool {
-        discScrollActivity.prefersPill && !isFabOpen
-    }
-
-    /// The tab badge's one writer. A failure leaves the previous number standing rather than
-    /// dropping to zero: an offline moment is not an empty inbox.
-    private func refreshCaptureInboxCount() async {
-        guard let captures = try? await captureClient.fetchUnprocessedCaptures() else { return }
-        captureInboxCount = captures.count
-    }
 
     var body: some View {
         Group {
