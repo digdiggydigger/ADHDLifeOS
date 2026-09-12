@@ -163,11 +163,12 @@ the blocks, and now is exercised only by injection. §7.3 carries the consequenc
       `F-CTACelebrations-4`, the nine pops** — `-2` (switches) and `-3` (the centre and layers) add
       no new reduced rendering, so neither owes an RM-on pass, and each report should say why not.
       (CLOSED)
-- [ ] **E has still never seen the focus card's completion celebration** (`F-FocusCard-4` — the
-      ring burst and the tick that springs from 0.6, after a 0.3 s pre-beat). It was built and
-      approved while E's phone had Reduce Motion ON, so E judged a hard cut plus a haptic and the
-      arc closed on *"the pre-beat reads fine"*. **With the setting off it will now actually play.**
-      Nothing to build; finish a sprint and look at it, and say if it is wrong. (NEW)
+- [x] **The focus card's completion celebration (`F-FocusCard-4`) — E has SEEN it with Reduce
+      Motion off, and the existing sign-off stands.** E, 2026-09-12: *"I've already checked it. My
+      current sign off still stands."* This item was opened the same day on the inference that
+      turning the setting off must mean E had never seen the animation play; E had. **The arc's
+      verdict — *"the pre-beat reads fine"* — is not provisional and is not owed a re-check.**
+      (CLOSED)
 - [x] **E's device verdict on `F-ConfirmCelebration-2`** — PASSED 2026-09-12, E: *"it looks good.
       It looks as if it's working as as you specified."* The block is CLOSED. E also said to ignore
       the stray Codex `AGENTS.md` for now. (CLOSED)
