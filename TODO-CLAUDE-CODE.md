@@ -3758,7 +3758,7 @@ block 1: 0 pixels). Device verdict.
   Predicted red 5 / 5. Evidence: the Feedback section light + dark (`RenderPreview`); Confirm with
   the switch off pixel-identical to a never-mounted window. Device verdict.
 
-### FEATURE: F-CTACelebrations-3 — the centre, the shared layer, the four surfaces, Confirm re-routed  [x] COMPLETED 2026-09-12 — awaiting E's device verdict
+### FEATURE: F-CTACelebrations-3 — the centre, the shared layer, the four surfaces, Confirm re-routed  [x] COMPLETED 2026-09-12 — device verdict PASSED (E: "it passes, looks exactly the same" — the right answer to a negative test)
 
 - **Room first, own commit:** `RootView.swift:73-93` → `RootView+Furniture.swift`.
 - New `ADHD LifeOS/Celebrations/`: `CelebrationRequesting` (kinds, surfaces, outcome, the protocol,

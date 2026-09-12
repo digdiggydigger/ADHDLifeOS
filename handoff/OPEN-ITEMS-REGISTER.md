@@ -1,4 +1,4 @@
-# Open items register — 2026-09-12 (thirty-fourth edition; `F-CTACelebrations-3`, the centre and the shared layer, is BUILT and MERGED and **awaits E's device verdict**; **four blocks of the arc remain**)
+# Open items register — 2026-09-12 (thirty-fourth edition, amended; `F-CTACelebrations-3`, the centre and the shared layer, is BUILT, MERGED and **PASSED E's device verdict**; **four blocks of the arc remain**)
 
 *The close-out of the fourth build session of the CTA celebrations arc. E's ask this session,
 verbatim and restated mid-session: *"Remember that you should make use of ANY skills, MCPs, Plugins
@@ -16,7 +16,7 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `c10813d`** (PR #90, `F-CTACelebrations-3`). `firestore.rules` is untouched, so there
+**`main` @ `0fd4b29`** (PR #90 `F-CTACelebrations-3`, then the close-out PRs #91 and #92). `firestore.rules` is untouched, so there
 is **nothing for E to republish**.
 
 **Verified at `2a441db`** (the block's last commit; the merge adds nothing):
@@ -70,7 +70,8 @@ honest floor.
 - **`F-CTACelebrations-3`** — E's ARCH answer built: one App-owned `CelebrationCenter`, one
   `CelebrationLayer(surface:)` per presented surface, and Confirm re-routed through the centre with
   `ConfirmCelebrationOverlay.swift` deleted. Room first (`RootView.swift` 394 → 374). 53 tests.
-  Evidence `screenshots/cta-celebrations-block-3/`. **Awaits E's device verdict.** (NEW)
+  Evidence `screenshots/cta-celebrations-block-3/`. **E's device verdict PASSED** 2026-09-12 —
+  *"it passes, looks exactly the same"*. (NEW)
 - **Four ways the build differed from the written design, all recorded in `TODO-CLAUDE-CODE.md`:**
   four `onDismiss`es not three (`CapturePromoteSheet` has two presenters); no `originOffset` on the
   frame (the stage resolves it, so the frame stays a pure function of scenes + date); the §7.2
@@ -130,14 +131,17 @@ honest floor.
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **E's device verdict on `F-CTACelebrations-3`.** The app is installed and launched on the
-      phone from `main` @ `c10813d`. **What to check, and it is deliberately a NEGATIVE test:**
-      finish a focus sprint and Confirm it — **the celebration should look exactly as it did
-      yesterday**, glow and confetti, with the stack-clearing Confirm still getting its fireworks
-      and (in light mode) its dim. Then turn **Celebrations off** in Settings → Feedback and Confirm
-      again: nothing should play, and the phone should still buzz. Nothing NEW is visible in this
-      block; if anything looks different, that is the bug. **No Reduce Motion pass is owed or
-      asked for** (§7.3): the block adds no reduced site. (NEW)
+- [x] **E's device verdict on `F-CTACelebrations-3` — PASSED 2026-09-12.** E ran it on the phone
+      from `main` and answered **"it passes, looks exactly the same"**. That is the pass the block
+      was shaped to earn: it was a deliberately NEGATIVE test, in which "nothing changed" is the
+      only correct outcome, because the whole block rebuilt the Confirm celebration's plumbing —
+      a new centre, a shared frame, four layers, and `ConfirmCelebrationOverlay.swift` deleted —
+      underneath a celebration E had already approved. The pixel evidence said the drawing was
+      within one 8-bit level; E's eye confirmed it on the device the drawing is for.
+      **No Reduce Motion pass was owed and none was asked for** (§7.3): the block adds no reduced
+      site, and the only celebration that exists today is §7.2's named waiver. **The block is
+      CLOSED.** The next block is `F-CTACelebrations-4`, and **E's instruction is that it is built
+      in a FRESH Claude Code terminal session**, as this one was. (NEW)
 - [ ] **PHOTOSENSITIVITY — the fireworks' flash rate, and this one is a launch-safety question, not
       a polish one.** The `apple:hig-reviewer` pass raised it and the arithmetic was re-derived
       independently here from `ConfirmFireworksSchedule` and `ConfirmFireworksPhysics`: the 14
@@ -185,7 +189,7 @@ honest floor.
    `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener is the session's own
    `handoff/START-HERE-*`; the blocks are in `TODO-CLAUDE-CODE.md`.
    **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ → ~~`F-CTACelebrations-1`~~ →
-   ~~`-2`~~ (all three verdicts PASSED) → ~~`-3`~~ (centre + layers; **verdict pending**) →
+   ~~`-2`~~ → ~~`-3`~~ (centre + layers) — **all four verdicts PASSED** →
    **`-4`** (the nine pops; render on a real `TaskRow` FIRST, E picks by looking) →
    `-5` (inbox zero, streak, daily goal) → `-6` (the routine Completed flow) → `-7` (the chime).
    **For block 4, four things this block leaves it:**
