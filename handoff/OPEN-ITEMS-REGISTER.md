@@ -1,4 +1,4 @@
-# Open items register — 2026-09-12 (thirty-second edition; the CTA celebrations arc's block 2, `F-CTACelebrations-1`, is BUILT and MERGED; six blocks remain)
+# Open items register — 2026-09-12 (thirty-second edition; the CTA celebrations arc's block 2, `F-CTACelebrations-1`, is BUILT, MERGED and PASSED E's device verdict BY FEEL; six blocks remain)
 
 *The close-out of the second build session of the CTA celebrations arc. E's asks this session,
 verbatim: *"Start from handoff/START-HERE-cta-celebrations-1.md. Read it, then the register and the
@@ -52,8 +52,8 @@ the numerator by about as much as it moves the denominator.)
   the success branch; Stop sprint gains `.light` on the confirmation's destructive button, not the
   toolbar Stop that merely raises the dialog) and the closure card's spring-in. Six tests, not the
   five the block predicted; red 6 / 6 tests predicted and observed (11 assertions); green 6 / 6.
-  Evidence `screenshots/cta-celebrations-block-1/`. **Awaiting E's device verdict BY FEEL** (§A).
-  (NEW)
+  Evidence `screenshots/cta-celebrations-block-1/`. **E's device verdict PASSED** 2026-09-12 BY
+  FEEL — *"it feels good, all five work as you described"* (§A). (NEW)
 - **The room-first split**, its own commit: `HomeView.swift` 399 → 362 (`Home/HomeView+Refresh.swift`)
   and `HomeMomentumSections.swift` 399 → 303 (`Home/HomeLifeAreasSections.swift`). Four `private`
   declarations widened to internal, because `private` in an extension is scoped to the FILE the
@@ -136,16 +136,13 @@ site fades (E's #7).
 - [x] **Review the design record** and rule on **R-a…R-h** — E, at the start of the build session
       2026-09-11, asked in one message with each default listed: **"yes"**. The record is approved
       and all eight recommendations stand as the build's defaults. (CLOSED)
-- [ ] **E's device verdict on `F-CTACelebrations-1` — BY FEEL, not by looking.** Haptics cannot
-      be photographed, so this block closes on E's thumb. Five taps, and each has a prerequisite:
-      **Sorted** on a CAPTURE'S DETAIL SCREEN (needs an unprocessed, unseen capture with a life
-      area — the triage screen's Sorted is the one that already felt right); **Done for now** on a
-      due nudge; **Save** in the place editor (the buzz should land when the write does, not when
-      the button is pressed); **Stop** on a running sprint, then CONFIRM (nothing should buzz when
-      the dialog merely appears); and **Close it** on Home's Best-next-move, where the closure card
-      should now arrive rather than appear. E runs Reduce Motion ON, so the card will CROSS-FADE at
-      full size — that is the designed reduced path, not a missing animation. The build is on the
-      phone. (NEW)
+- [x] **E's device verdict on `F-CTACelebrations-1`** — **PASSED 2026-09-12**, E: *"it feels
+      good, all five work as you described."* All five taps confirmed by thumb — Sorted on the
+      capture detail screen, Done for now, Save a place, the sprint Stop CONFIRMATION, and the
+      closure card's arrival from Home's Best-next-move. E runs Reduce Motion ON, so the approved
+      experience is the card CROSS-FADING at full size; the §C2 sibling-reflow question drew no
+      complaint and stays a note rather than work. The block is CLOSED; the next is
+      `F-CTACelebrations-2`, the two switches. (CLOSED)
 - [x] **E's device verdict on `F-ConfirmCelebration-2`** — PASSED 2026-09-12, E: *"it looks good.
       It looks as if it's working as as you specified."* The block is CLOSED. E also said to ignore
       the stray Codex `AGENTS.md` for now. (CLOSED)
@@ -196,7 +193,7 @@ site fades (E's #7).
       an inert default; one `CelebrationLayer(surface:)` per presented surface (root, the routine
       cover, the Tasks search surface, the Create Task sheet).
    **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ (DONE 2026-09-12, verdict PASSED) →
-   ~~`F-CTACelebrations-1`~~ (DONE 2026-09-12, verdict PENDING) → `-2` (switches) → `-3` (centre + layers,
+   ~~`F-CTACelebrations-1`~~ (DONE 2026-09-12, verdict PASSED) → `-2` (switches) → `-3` (centre + layers,
    Confirm re-routed) → `-4` (pops; render first, E picks) → `-5` (inbox zero, streak, daily goal)
    → `-6` (Completed flow; render the congratulation first) → `-7` (chime; E picks by ear).
    **For block 3 note:** the shared `CelebrationFrame` now has to carry the fireworks and the dim
