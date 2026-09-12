@@ -25,7 +25,11 @@ chime".
 > **No `#available` site is added or changed by this block, and no tier was passed over.** The two
 > `Toggle`s, the preferences round-trip and the fire-time gate are all iOS 13–15 API; §7.1's filter
 > asks whether a later tier shows the user something the tier below cannot, and here none does.
-> - **Full path:** run on the 26.5 simulator (00–04 below) and on E's phone from `main`.
+> - **Full path:** run on the 26.5 simulator (00–04 below) and on E's phone from `main` @
+>   `2efd705`. **E's device verdict PASSED 2026-09-12** — "All correct — passes", *"They were both
+>   successful."* With Celebrations OFF the Confirm confetti did not play **and the phone still
+>   buzzed**, which is the half of E's #3 no render in this folder could have settled: a haptic
+>   cannot be photographed.
 > - **iOS 16–25:** behaviour is COMPILE-ONLY; no older runtime is installed.
 >
 > **No RM-on device pass is owed, and this is the reason** (§7.3, E's call 2026-09-12). A block owes

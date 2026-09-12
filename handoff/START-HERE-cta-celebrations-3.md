@@ -6,11 +6,12 @@ session that writes this arc's next opener archives this file in the same move.*
 
 **STATUS.** Blocks 1–3 of the arc are MERGED. `F-ConfirmCelebration-2` (`9a7b664`, PR #76) and
 `F-CTACelebrations-1` (`49c78d9`, PR #80) both PASSED E's device verdict.
-**`F-CTACelebrations-2` (the two switches, PR #87, `main` @ `2efd705`) is BUILT, MERGED, and
-INSTALLED on E's phone — its verdict is OUTSTANDING.** Read §A of the register for exactly what E
-was asked to check. **If E has not given that verdict yet, ASK FOR IT FIRST and wait**; block 3
-re-routes the very gate block 2 added, so building on top of an unjudged switch risks doing the work
-twice.
+**`F-CTACelebrations-2` (the two switches, PR #87) also PASSED, 2026-09-12** — E: "All correct —
+passes", *"They were both successful."* With Celebrations off the Confirm confetti did not play and
+the phone still buzzed. **Nothing is owed from it; start this one.** The app code is `main` @ `2efd705`
+(PR #87), which is the build E judged and the one running on E's phone; the verdict itself
+landed as a docs-only PR on top. Check `git log --oneline -1 origin/main` for today's tip
+rather than trusting a SHA written here.
 
 **No RM-on device pass is owed by block 3 either** (§7.3), for the same reason block 2 owed none: the
 centre and the layers add no reduced rendering, and Confirm is §7.2's waiver. **Say so in the
