@@ -102,8 +102,19 @@ final class CelebrationSwitchCallSiteTests: XCTestCase {
         )
         XCTAssertTrue(
             footer.contains("until"),
-            "The footer does not say the sound switch does nothing UNTIL the chime ships, so the row"
+            "The footer does not say the sound switch does nothing UNTIL the chime arrives, so the row"
                 + " promises something that is not built yet."
+        )
+
+        // Raised by the HIG review pass, 2026-09-12: the sentences must run in ROW order. Appended
+        // at the end instead, they sit four rows below the toggles they explain — and a VoiceOver
+        // user swiping the section linearly reaches them last, after the rows they do NOT describe.
+        let celebrations = try XCTUnwrap(footer.range(of: "Celebrations covers"))
+        let notifications = try XCTUnwrap(footer.range(of: "Notification sounds"))
+        XCTAssertLessThan(
+            celebrations.lowerBound, notifications.lowerBound,
+            "The footer explains the celebration rows AFTER the rows that sit below them, so each"
+                + " sentence is read beside the wrong switch."
         )
     }
 
@@ -171,6 +182,8 @@ final class CelebrationSwitchCallSiteTests: XCTestCase {
             )
         }
         let tail = source[footer.upperBound...]
+        // Bounded at the next declaration rather than the end of the file: `feedbackSection` is the
+        // last `var` here today, so without this a section appended after it would be swept in too.
         let end = tail.range(of: "\n    var ")?.lowerBound ?? tail.endIndex
         return String(tail[..<end])
     }
