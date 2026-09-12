@@ -1,4 +1,4 @@
-# Open items register — 2026-09-12 (thirty-third edition; `F-CTACelebrations-2`, the two switches, is BUILT and MERGED and awaits E's device verdict; **five blocks of the arc remain**)
+# Open items register — 2026-09-12 (thirty-third edition; `F-CTACelebrations-2`, the two switches, is BUILT, MERGED and **PASSED E's device verdict**; **five blocks of the arc remain**)
 
 *The close-out of the third build session of the CTA celebrations arc. E's asks this session,
 verbatim: the opener's instruction, *"go with (a), start block 3 in a fresh Claude code terminal
@@ -61,7 +61,8 @@ which any test calls — `HapticsTests` injects a `gate:` closure instead of goi
   `ConfirmCelebrationOverlay` gating on the switch inside its listener, before the burst is
   appended, through an injectable `celebrationsGate` defaulting to `AppFeedback`. Ten tests, not the
   five the block predicted; the prediction was written down in two parts and both matched. Evidence
-  `screenshots/cta-celebrations-block-2/`. **Awaiting E's device verdict.** (NEW)
+  `screenshots/cta-celebrations-block-2/`. **E's device verdict PASSED** 2026-09-12 — the gate
+  holds on the phone and the haptic survives it. (NEW)
 - **No room-first commit was needed** and this was checked BEFORE editing, not after: the two target
   files were 172 and 215 lines against the 400 ceiling. They are 192 and 245 now. (NEW)
 
@@ -135,15 +136,15 @@ which any test calls — `HapticsTests` injects a `gate:` closure instead of goi
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **E's device verdict on `F-CTACelebrations-2`** — installed from `main` @ `2efd705`. **What to
-      check, in one pass:** Settings → Feedback now has **Celebrations** (on) and **Celebration
-      sounds** (off) straight after Haptics. Turn **Celebrations off**, finish a sprint and tap
-      Confirm: **the confetti must not play, and the phone must still buzz.** Turn it back on and
-      Confirm again: the celebration returns unchanged. Flipping either switch must stick across a
-      relaunch. **The Celebration sounds switch does nothing yet** — its footer says so, and its
-      player is block 7. **No Reduce Motion pass is owed for this block** (§7.3): it adds no reduced
-      site, and the Confirm celebration is §7.2's waiver, which renders identically either way.
-      (NEW)
+- [x] **E's device verdict on `F-CTACelebrations-2` — PASSED 2026-09-12.** E ran the checks on the
+      phone from `main` @ `2efd705` and answered **"All correct — passes"**, adding: *"They were
+      both successful."* That covers the pass as asked: the two rows present and in place; with
+      **Celebrations off** the Confirm confetti did NOT play **and the phone still buzzed** (E's #3
+      holding on device, not just in a test); with it back on the celebration returned unchanged;
+      and the switches stuck across the relaunch. **The block is CLOSED.** No Reduce Motion pass was
+      owed and none was asked for (§7.3): the block adds no reduced site, and the Confirm
+      celebration is §7.2's waiver, which renders identically either way. The next block is
+      `F-CTACelebrations-3`. (NEW)
 - [ ] **The milestone cooldown.** E: *"i am undecided about the cooldown at the moment anyway."* It
       ships at **5 s for testing**; whether it exists and at what value is E's call on the phone
       after `F-CTACelebrations-5`. (carried; untouched this session)
@@ -174,12 +175,13 @@ which any test calls — `HapticsTests` injects a `gate:` closure instead of goi
 
 ## B · Real work, ready to start — recommended order
 
-**00. THE CTA CELEBRATIONS ARC — blocks 1, 2 and 3 of 8 BUILT and MERGED; the next is
+**00. THE CTA CELEBRATIONS ARC — blocks 1, 2 and 3 of 8 BUILT, MERGED and all three PASSED
+   E's device verdict; the next is
    `F-CTACelebrations-3`, the centre and the shared layer.** The record is
    `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener is the session's own
    `handoff/START-HERE-*`; the blocks are in `TODO-CLAUDE-CODE.md`.
    **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ (verdict PASSED) →
-   ~~`F-CTACelebrations-1`~~ (verdict PASSED) → ~~`-2`~~ (switches; **verdict pending**) →
+   ~~`F-CTACelebrations-1`~~ (verdict PASSED) → ~~`-2`~~ (switches; verdict PASSED) →
    **`-3`** (centre + layers, Confirm re-routed) → `-4` (pops; render first, E picks) →
    `-5` (inbox zero, streak, daily goal) → `-6` (Completed flow; render the congratulation first)
    → `-7` (chime; E picks by ear).
