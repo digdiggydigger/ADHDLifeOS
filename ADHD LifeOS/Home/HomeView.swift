@@ -36,7 +36,8 @@ struct HomeView: View {
     /// the two answer different questions: the hero only needs "is THIS task's sprint running", the
     /// widget needs the whole deadline-derived payload. Kept deadline-derived and therefore stable
     /// while a sprint merely counts down, so `onChange` fires on real events, not on every tick.
-    private let widgetSprint: FocusWidgetSnapshot.ActiveSprint?
+    /// Internal, not private: `HomeView+Refresh` republishes with it.
+    let widgetSprint: FocusWidgetSnapshot.ActiveSprint?
     private let onToggleSprintPause: () -> Void
     /// Crosses to the Captures tab — the inbox peek card's header and "Clear the deck" both
     /// select it rather than pushing Home's own private copy of the inbox. Wired by `RootView`
@@ -46,11 +47,14 @@ struct HomeView: View {
     private let taskCreateClient: TaskCreateClientAdapting?
     /// Publishes the Home Screen widget's snapshot. Home is the right owner: it is the one screen
     /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
-    private let widgetPublisher: FocusWidgetPublishing
+    /// Internal, not private: `HomeView+Refresh` publishes through it.
+    let widgetPublisher: FocusWidgetPublishing
     /// The most recent history read, kept so a life-areas reload can republish without refetching.
     /// Internal, not private: the week review reads it from `HomeMomentumSections`.
     @State var publishedHistory: [CompletedFocusSession] = []
-    @State private var pullRefreshCount = 0
+    /// Internal, not private: `HomeView+Refresh` bumps it to fold the analytics section
+    /// into every reload.
+    @State var pullRefreshCount = 0
     /// Internal, not private: the v3 header lives in `HomeMomentumSections.swift`.
     @State var showSettings = false
     /// Re-read each time Settings closes — the sheet is the only writer. Internal for
@@ -355,45 +359,4 @@ struct HomeView: View {
     /// The reorder mode's `List` with `.onMove`, forced into edit mode so the drag grabbers appear.
     /// Chosen over a hand-rolled grid drag because `.onMove` supplies native drag, auto-scroll,
     /// haptics and VoiceOver's reorder rotor for free — and can be driven by `idb` for device proof.
-}
-
-extension HomeView {
-    /// Every Home data source in parallel — the pull gesture and the app-wide `DataChangeSignal`
-    /// run the same reload, so the two paths can never drift. Bumping `pullRefreshCount` folds
-    /// the analytics section (and its widget republish) into both.
-    func refreshEverything() async {
-        pullRefreshCount += 1
-        async let home: Void = homeService.load()
-        async let nudges: Void = nudgesService.load()
-        async let inbox: Void = refreshInboxCount()
-        _ = await (home, nudges, inbox)
-        // After the parallel block, so the card is built from the tasks that just landed.
-        await refreshArrivalSurface()
-        publishWidgetSnapshot(sprint: widgetSprint)
-    }
-
-    /// Rebuilds and publishes the Home Screen widget's payload. Cheap, pure and idempotent, so
-    /// calling it from every path that changes either half beats working out which half moved.
-    /// The sprint is passed in rather than read off `self` — and required, not defaulted, because
-    /// "no sprint" is a real value here (a sprint ENDING is exactly when the live section must
-    /// disappear) and a default would quietly re-read the stale stored property instead.
-    private func publishWidgetSnapshot(sprint: FocusWidgetSnapshot.ActiveSprint?) {
-        widgetPublisher.publish(
-            FocusWidgetSnapshotBuilder.snapshot(
-                activeGoal: homeService.activeGoal,
-                lifeAreas: homeService.lifeAreas,
-                sessions: publishedHistory,
-                activeSprint: sprint,
-                dailyGoalMinutes: momentumPreferences.focusDailyGoalMinutes,
-                defaultSprintSeconds: momentumPreferences.defaultSprintMinutes * 60
-            )
-        )
-        widgetPublisher.publishLifeAreas(
-            LifeAreasWidgetSnapshotBuilder.snapshot(
-                lifeAreas: homeService.lifeAreas,
-                openTasks: homeService.openTasks
-            )
-        )
-    }
-
 }
