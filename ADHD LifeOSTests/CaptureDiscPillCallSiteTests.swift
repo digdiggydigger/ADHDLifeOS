@@ -26,8 +26,11 @@ final class CaptureDiscPillCallSiteTests: XCTestCase {
     }
 
     func testRootViewReadsTheActivityModel() throws {
+        // Both halves of `RootView`: `showsPill` moved to `RootView+Furniture.swift` in
+        // `F-CTACelebrations-3`'s room-first split, and this guard is about the type, not the file.
         XCTAssertTrue(
-            try Self.appSource("RootView.swift").contains(".prefersPill"),
+            try (Self.appSource("RootView.swift") + Self.appSource("RootView+Furniture.swift"))
+                .contains(".prefersPill"),
             "The disc never reads `prefersPill`, so the model can change all it likes and the"
                 + " 60pt circle stays a 60pt circle over the content E reported."
         )
