@@ -1,12 +1,14 @@
-# Open items register — 2026-09-12 (thirty-third edition; `F-CTACelebrations-2`, the two switches, is BUILT, MERGED and **PASSED E's device verdict**; **five blocks of the arc remain**)
+# Open items register — 2026-09-12 (thirty-fourth edition; `F-CTACelebrations-3`, the centre and the shared layer, is BUILT and MERGED and **awaits E's device verdict**; **four blocks of the arc remain**)
 
-*The close-out of the third build session of the CTA celebrations arc. E's asks this session,
-verbatim: the opener's instruction, *"go with (a), start block 3 in a fresh Claude code terminal
-session"*, and mid-session *"Remember that you should make use of ANY skills, MCPs, Plugins and
-subagents to assist you"*.
+*The close-out of the fourth build session of the CTA celebrations arc. E's ask this session,
+verbatim and restated mid-session: *"Remember that you should make use of ANY skills, MCPs, Plugins
+and subagents to assist you in your work"* — the TDD skill, the `xcode` MCP bridge, a
+`feature-dev:code-reviewer` pass and an `apple:hig-reviewer` pass all ran; what each returned is
+below.
 
-The opener `handoff/START-HERE-cta-celebrations-2.md` is SPENT — it is archived in the same move
-that writes this edition and the next session's opener. Supersedes the thirty-two earlier editions.*
+The opener `handoff/START-HERE-cta-celebrations-3.md` is SPENT — it is archived in the same move
+that writes this edition and the next session's opener. Supersedes the thirty-three earlier
+editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -14,187 +16,189 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `2efd705`** (PR #87, `F-CTACelebrations-2`). `firestore.rules` is untouched, so there
+**`main` @ `c10813d`** (PR #90, `F-CTACelebrations-3`). `firestore.rules` is untouched, so there
 is **nothing for E to republish**.
 
-**Verified at `f31ec6d`** (the block's last commit; the merge adds nothing):
-- unit suite **2,757 / 0** (2,747 + this block's ten), emulator UP, **0** `127.0.0.1:9099` hits;
-- SwiftLint **0 / 762**;
-- sim `** BUILD SUCCEEDED **`; device build and install at the close.
+**Verified at `2a441db`** (the block's last commit; the merge adds nothing):
+- unit suite **2,810 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+- SwiftLint **0 / 778**;
+- sim `** BUILD SUCCEEDED **`; device build, install and launch at the close.
 
-Coverage, measured at `f31ec6d`:
+Coverage, measured at `2a441db`:
 
 ```
-ADHD LifeOS.app              27.05%  (12659/46799)
-ADHD LifeOSTests.xctest      94.87%  (44329/46725)
+ADHD LifeOS.app              27.42%  (12949/47221)
+ADHD LifeOSTests.xctest      94.83%  (45333/47806)
 ADHD LifeOSUITests.xctest     0.00%  (0/2962)       ← skipped in the standard run by design
 FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testable surface, not this
 ```
 
-**Comparable with the previous edition's 27.07 % (12,643/46,702), and the two-hundredths of a point
-is real rather than noise.** The denominator moved by 97 lines because the TREE grew by this block's
-production lines, and both runs measured 100 % of the app target — CLAUDE.md's test for
-comparability. The ratio fell because **most of what this block added is view body**: the two
-`Toggle`s and the rewritten footer live in `SettingsPreferenceSections.swift`, which is 0 % (0/547)
-and structurally out of a unit test's reach, while the logic that CAN be reached went to 100 %.
+**Comparable with the previous edition's 27.05 % (12,659/46,799), and the rise is real.** The
+denominator moved by 422 lines because the TREE grew — this block's production lines — and both
+runs measured 100 % of the app target, which is CLAUDE.md's test for comparability. The numerator
+grew faster than the denominator (+290 against +422 on a base that is only 27 % covered), which is
+what a block whose logic is all pure and all tested looks like.
 
-Per-file, the honest picture:
+Per-file, the honest picture — everything that is not a view body is at 100 %:
 
 ```
-MomentumPreferences.swift        100.00% (81/81)     ← every line of the four-place edit
-AppFeedback.swift                 66.67% (12/18)     ← was 6/12 (50%) before this block
-SettingsPreferenceSections.swift   0.00% (0/547)     ← view body
-ConfirmCelebrationOverlay.swift    0.00% (0/265)     ← view body
+Celebrations/CelebrationCenter.swift      100.00% (87/87)
+Celebrations/CelebrationPolicy.swift      100.00% (15/15)
+Celebrations/CelebrationMotion.swift      100.00% (4/4)
+Celebrations/CelebrationRecipes.swift     100.00% (135/135)
+Celebrations/CelebrationBurst.swift       100.00% (51/51)
+Focus/ConfirmCelebrationRecipe.swift      100.00% (99/99)
+Celebrations/CelebrationRequesting.swift   50.00% (4/8)     ← the two environment get/set pairs
+Celebrations/CelebrationFrame.swift         0.00% (0/211)   ← view body
+Celebrations/CelebrationLayer.swift         0.00% (0/109)   ← view body
+Celebrations/CelebrationPopSource.swift     0.00% (0/21)    ← view body, and no call site until -4
 ```
 
-**`AppFeedback`'s six uncovered lines are not this block's.** Read with
-`xcrun xccov view --archive --file`, the two new gates are hit (3 and 2 times); the uncovered pairs
-are `hapticsEnabled()` and `notificationSound()`, both of which predate this block and neither of
-which any test calls — `HapticsTests` injects a `gate:` closure instead of going through
-`AppFeedback`. Noted, not fixed: it is a real gap in *those two* accessors, not in these.
+**The centre reached 100 % because the coverage report was READ, not assumed.** At first pass it
+was 96.55 %, and the three uncovered lines were the init's three production DEFAULT arguments —
+`Date.init`, `AppFeedback.celebrationsEnabled()` and the no-op chime. Every test injected all
+three, so the ones the APP uses had never been evaluated: live, shipped, unexercised paths, exactly
+the `F-AdapterDrift` lesson. `CelebrationDefaultsTests` closes them, plus
+`InertCelebrationRequester` (the shipped default of `\.celebrate`, which runs in every preview and
+was called by nothing), and was red-checked by planting four faults — 4 / 4 tests red, restored
+with `git checkout --` and proved by rebuilding. The four lines left in `CelebrationRequesting` are
+the environment getters and setters, reachable only through SwiftUI's environment; they are the
+honest floor.
 
 ### Landed this session
 
-- **`F-CTACelebrations-2`** — `celebrationsEnabled` (true) and `celebrationSoundsEnabled` (false) as
-  the four-place edit; `AppFeedback.celebrationsEnabled(store:)` / `.celebrationSoundsEnabled(store:)`
-  read at fire time; two Toggles straight after Haptics with their ids; and
-  `ConfirmCelebrationOverlay` gating on the switch inside its listener, before the burst is
-  appended, through an injectable `celebrationsGate` defaulting to `AppFeedback`. Ten tests, not the
-  five the block predicted; the prediction was written down in two parts and both matched. Evidence
-  `screenshots/cta-celebrations-block-2/`. **E's device verdict PASSED** 2026-09-12 — the gate
-  holds on the phone and the haptic survives it. (NEW)
-- **No room-first commit was needed** and this was checked BEFORE editing, not after: the two target
-  files were 172 and 215 lines against the 400 ceiling. They are 192 and 245 now. (NEW)
+- **`F-CTACelebrations-3`** — E's ARCH answer built: one App-owned `CelebrationCenter`, one
+  `CelebrationLayer(surface:)` per presented surface, and Confirm re-routed through the centre with
+  `ConfirmCelebrationOverlay.swift` deleted. Room first (`RootView.swift` 394 → 374). 53 tests.
+  Evidence `screenshots/cta-celebrations-block-3/`. **Awaits E's device verdict.** (NEW)
+- **Four ways the build differed from the written design, all recorded in `TODO-CLAUDE-CODE.md`:**
+  four `onDismiss`es not three (`CapturePromoteSheet` has two presenters); no `originOffset` on the
+  frame (the stage resolves it, so the frame stays a pure function of scenes + date); the §7.2
+  waiver pin kept its NAME but not its body, because it read the file the block deletes; and
+  `CelebrationPopSource` / `.pop` / the three new recipes have **no production call site until
+  `-4`/`-5`**. (NEW)
 
 ### What this session established
 
-- **The red prediction has to be written in TWO parts when a block introduces a symbol, because a
-  test that names a symbol that does not exist yet cannot fail — the target cannot BUILD, and the
-  harness prints no count at all.** Part 1 was the four source-reading tests, which compile against
-  today's tree: predicted 3 red of 4 (the fourth a pin, green on arrival), observed exactly that,
-  as `Executed 4 tests, with 6 failures` — the 6 being assertions, which the prediction had already
-  said to expect. Part 2 was the six symbol tests: predicted a build failure naming
-  `celebrationsEnabled`, observed exactly that. A single "predicted red N/N" would have been wrong
-  about both halves. (NEW)
-- **Asserting a field's own DEFAULT value is a vacuous round-trip test, and the block's own wording
-  invited it.** The design says "`normalized()` keeps both OFF" — but `celebrationSoundsEnabled`
-  ships OFF, so a `normalized()` that forgets the field resets it to `false` and the assertion
-  stays green. Both round-trip tests therefore set the switches AWAY from their defaults and to
-  OPPOSITE states, which also catches a swap between the two fields. Planting the omission proved
-  it: three tests failed. (NEW)
-- **The closure-scoped guard earned its keep a second time.** `feedbackSection` holds six Toggles of
-  the identical shape, three of which persist correctly. Deleting only the Celebrations row's
-  `momentumPreferencesStore.write(...)` failed the test — a whole-file `contains()` would have been
-  green. (NEW)
-- **A "nothing drew" probe is worth nothing without its control, and the control belongs in the
-  evidence folder.** The Confirm-with-the-switch-off render is byte-identical to a window that never
-  mounted the overlay — same SHA-256, 0 differing pixels of 943,200. That claim is equally true of a
-  probe that forgot to stamp a Confirm, so the same harness renders a third time with the gate
-  forced ON (943,200 of 943,200 pixels differ, because the glow washes the screen) and asserts the
-  control FIRST. (NEW)
-- **Stamp the state change AFTER mount, or the probe does not exercise the thing it is testing.**
-  Writing `latestConfirmation` before hosting would bring the layer up with the burst already
-  present and never run `.onChange` — the gate's actual site. Mount, pump ~0.25 s, then stamp. (NEW)
-- **The `apple:hig-reviewer` subagent found two real copy defects the code reviewer did not**, both
-  taken: the two new footer sentences had been appended to the END of the footer, four rows below
-  the switches they explain — a VoiceOver user swiping the section linearly reaches them last, after
-  the rows they do not describe; and "the confetti a Confirm sets off" / "until the chime itself
-  ships" were developer vocabulary in user-facing copy. The reorder is now pinned by an assertion,
-  red-checked against the appended version. **It also declined twice to recommend undoing settled
-  design** (renaming the row "Full-screen celebrations", splitting the rows into their own Section),
-  flagging both under §7.5 rather than silently acting. (NEW)
-- **`feature-dev:code-reviewer` found nothing at its bar** and confirmed two things worth having in
-  writing: adding a stored closure property to a `View` struct does not break `RootView`'s
-  memberwise call site (the `TaskRow.onStartFocus` precedent already compiles that shape), and
-  `ConfirmCelebrationOverlay` is mounted exactly once with no other listener on
-  `latestConfirmation`, so there is no path that bypasses the new gate. (NEW)
-- **A stale `TestResults.xcresult` fails the suite before a single test runs**, with
-  `xcodebuild: error: Existing file at -resultBundlePath`. It is gitignored, so it survives a clean
-  checkout and a branch switch; delete it as part of the run rather than reading the exit code as a
-  test failure. (NEW)
-- **The `xcode` MCP bridge was DOWN this session** (`CONNECTION_CLOSED` at startup), so
-  `RenderPreview` was unavailable and the stills came from the run-loop-pumping probe instead. That
-  is the sanctioned fallback and it cost nothing here — but the bridge needs Xcode open BEFORE the
-  session starts, which it was not. (NEW)
+- **A room-first commit can pass lint and the build and still break the suite, and only the suite
+  says so.** Moving `searchScope`, `showsPill` and `refreshCaptureInboxCount()` out of
+  `RootView.swift` broke `AppSearchCallSiteTests` and `CaptureDiscPillCallSiteTests`, which read
+  that file for members that had moved. Both now read BOTH halves of the type, which is the
+  property they were always asserting. **Run the suite after a room-first commit, not just lint and
+  the build.** (NEW)
+- **A pixel-identity claim needs the harness proved deterministic FIRST, and then the difference
+  explained rather than asserted.** The moved frame differed from the shipped one in up to 109,847
+  pixels — alarming until measured: every difference was **one 8-bit level in one channel**, and in
+  an otherwise-empty frame it was a single full-width row. The decisive control was rendering the
+  *same unchanged code* in a different process, which reproduced the identical counts. Diagnose
+  where and by how much before concluding anything about what changed. (NEW)
+- **`TimelineView` draws at the REAL instant, so a burst dated in the future renders an empty
+  canvas — and two empty canvases agree with each other.** The Reduce Motion comparison passed
+  VACUOUSLY the first time for exactly this reason; the only tell was the PNG being byte-for-byte
+  the size of the empty-frame baseline. Compare at a fixed `date` through the frame, and give every
+  "identical" claim a control that proves the comparison can see a real difference. (NEW)
+- **Guess bounds last.** The forced-still control was written as `> 100_000` and failed at 62,996
+  with the code entirely correct. A still field is 120 pieces at rest against 220 in flight. (NEW)
+- **Capture the "before" BEFORE deleting the file.** Twelve renders of the shipped
+  `ConfirmCelebrationFrame` were taken and kept outside the repo in the same session, ahead of the
+  deleting commit. Once the file was gone there would have been no "today" left to diff. (NEW)
+- **`feature-dev:code-reviewer` found nothing at its bar** and confirmed four things worth having in
+  writing: `releaseHeld()` clears `held` before iterating, so a redundant `surfaceDismissed` cannot
+  double-release; a released burst reuses its own ordinal and was never in `bursts` before, so it
+  cannot collide; release targets `frontmost` computed AFTER the dismissed surface is removed; and
+  `FocusConfirmation` carries an incrementing ordinal, so `.onChange` fires for back-to-back
+  Confirms and the bridge cannot silently miss one. (NEW)
+- **`apple:hig-reviewer` found no violations** and called it ready to merge, confirming the
+  decorative treatment (`accessibilityHidden` + `allowsHitTesting(false)`) is correct for VoiceOver,
+  Switch Control and Full Keyboard Access across all four simultaneous mounts. **Two findings were
+  carried to this register rather than acted on** — §A below — and it correctly declined to
+  recommend touching E's Reduce Motion waiver. (NEW)
 
 ### Carried from the design session
 
-- **E's design answers are the spec.** Seven of the recommendations were overruled (a Finish button;
-  a streak milestone and the daily goal; a chime; the mini confetti pop over the halo; the
+- **E's design answers are the spec.** Seven recommendations were overruled (a Finish button; a
+  streak milestone and the daily goal; a chime; the mini confetti pop over the halo; the
   congratulation view; the display name; the 5 s cooldown). Record them, do not re-derive them.
-- **Two full-screen covers host celebration sites** — the routine screen and the Tasks search
-  surface — and the Create Task sheet hosts a third; the shipped root overlay sits below all of
-  them. That is why the design mounts one layer per surface (E's choice over a `UIWindow`).
-- **Only two `ObservableObject`s are app-level** (`AuthService`, `FocusSessionService`); every other
-  service is screen-scoped, and `AppTabContent` builds tabs lazily and KEEPS them.
-- **`onGeometryChange(for:of:action:)` is back-deployed to iOS 16.0** in the 26.5 SDK, so the pop's
-  origin needs no `#available`.
-- **Three files remain at or near the 400-line ceiling** and need room-first commits before their
-  blocks: `RootView.swift` 394, `CaptureInboxService.swift` 397, `PlaceRoutineScreen.swift` 379.
+- **Only two `ObservableObject`s were app-level** (`AuthService`, `FocusSessionService`); as of this
+  block there are **three** — `CelebrationCenter` joined them, owned by the App.
+- **`onGeometryChange(for:of:action:)` is back-deployed to iOS 16.0** in the 26.5 SDK.
+- **Two files remain at or near the 400-line ceiling** and need room-first commits before their
+  blocks: `CaptureInboxService.swift` 397, `PlaceRoutineScreen.swift` 379. (`RootView.swift` is
+  handled — 374.)
 - **The Completed flow reverses an E-settled rule** (the routine-record arc's "a run ends when you
   LEAVE the screen"). The tests that pin the old rule must be updated by name, not silently.
 
 ## A · Decisions only E can make — minutes each
 
-- [x] **E's device verdict on `F-CTACelebrations-2` — PASSED 2026-09-12.** E ran the checks on the
-      phone from `main` @ `2efd705` and answered **"All correct — passes"**, adding: *"They were
-      both successful."* That covers the pass as asked: the two rows present and in place; with
-      **Celebrations off** the Confirm confetti did NOT play **and the phone still buzzed** (E's #3
-      holding on device, not just in a test); with it back on the celebration returned unchanged;
-      and the switches stuck across the relaunch. **The block is CLOSED.** No Reduce Motion pass was
-      owed and none was asked for (§7.3): the block adds no reduced site, and the Confirm
-      celebration is §7.2's waiver, which renders identically either way. The next block is
-      `F-CTACelebrations-3`. (NEW)
+- [ ] **E's device verdict on `F-CTACelebrations-3`.** The app is installed and launched on the
+      phone from `main` @ `c10813d`. **What to check, and it is deliberately a NEGATIVE test:**
+      finish a focus sprint and Confirm it — **the celebration should look exactly as it did
+      yesterday**, glow and confetti, with the stack-clearing Confirm still getting its fireworks
+      and (in light mode) its dim. Then turn **Celebrations off** in Settings → Feedback and Confirm
+      again: nothing should play, and the phone should still buzz. Nothing NEW is visible in this
+      block; if anything looks different, that is the bug. **No Reduce Motion pass is owed or
+      asked for** (§7.3): the block adds no reduced site. (NEW)
+- [ ] **PHOTOSENSITIVITY — the fireworks' flash rate, and this one is a launch-safety question, not
+      a polish one.** The `apple:hig-reviewer` pass raised it and the arithmetic was re-derived
+      independently here from `ConfirmFireworksSchedule` and `ConfirmFireworksPhysics`: the 14
+      shells' burst flashes land at **5 inside one second** (the window from ≈ 2.00 s), against
+      **WCAG 2.3.1's threshold of 3**. Each flash is a radial gradient growing 40 → 240 pt at up to
+      0.35 alpha, over 0.35 s.
+      **What is NOT claimed:** whether the luminance delta and the screen area also cross the
+      guideline's thresholds is **unmeasured** — the flash COUNT alone is what crosses. And there is
+      no app-readable API for iOS's "Dim Flashing Lights", so this cannot be gated in code; it is a
+      design-level number.
+      **Nothing was changed**, deliberately: the schedule is E's, chosen by watching video at 85 %
+      dim, and only the stack-clearing Confirm plays it. **It is E's call**, and the options are to
+      measure the luminance properly, to thin the two clusters, or to accept it. Related to the
+      accepted cost §D has recorded since 2026-09-11. (NEW)
+- [ ] **An accessibility ANNOUNCEMENT for the milestones, owed before `F-CTACelebrations-5` wires
+      the first one.** The HIG pass's point is sound: a full-screen celebration is
+      `accessibilityHidden`, which is right for Confirm (the completion card already changes on
+      screen) but leaves a VoiceOver user with **nothing at all** for a milestone whose site has no
+      pop and no haptic of its own — R-h names the ring and the Completed button as exactly those.
+      The house precedent is `TaskDetailFormSections.swift:265`
+      (`UIAccessibility.post(notification: .announcement, …)`, queued behind what VoiceOver is
+      already reading). **Nothing was added in this block**, because no milestone site exists yet
+      and an unused hook is dead code — but `-5` should not ship without deciding it. (NEW)
 - [ ] **The milestone cooldown.** E: *"i am undecided about the cooldown at the moment anyway."* It
       ships at **5 s for testing**; whether it exists and at what value is E's call on the phone
       after `F-CTACelebrations-5`. (carried; untouched this session)
 - [ ] **Install an older simulator runtime** via Xcode → Settings → Components. E, 2026-09-11:
       *"In a number of days in the future, I will install this."* Until then every `#available`
       fallback is compile-only by policy (§7.3). (carried)
-- [ ] **Optional, and flagged rather than decided: an `.accessibilityHint` on the Celebration sounds
-      row only.** The HIG pass noted it is the one toggle in the app whose ON state produces no
-      observable effect today, so a hint like *"Doesn't play anything yet — saves your choice for
-      when the sound ships"* is defensible; so is leaving it, since none of the other nine toggles
-      in that file carries a hint and the hint would need deleting again when block 7 lands. Nothing
-      was added. (NEW)
+- [ ] **Optional, still not decided: an `.accessibilityHint` on the Celebration sounds row only.**
+      Defensible either way; nothing was added. (carried)
+- [x] **E's device verdict on `F-CTACelebrations-2` — PASSED 2026-09-12.** "All correct — passes",
+      *"They were both successful."* (CLOSED)
 - [x] **How does the reduced path get DEVICE time now that E runs with Reduce Motion OFF?** —
-      **E chose (a), 2026-09-12.** Written into CLAUDE.md §7.3. **First block it bites is
-      `F-CTACelebrations-4`, the nine pops** — `-2` (this one) and `-3` add no reduced rendering,
-      and this block's report and README both say why none was owed. (CLOSED)
+      **E chose (a), 2026-09-12**, written into CLAUDE.md §7.3. **The first block it bites is
+      `F-CTACelebrations-4`**, the nine pops. (CLOSED)
 - [x] **Review the design record** and rule on **R-a…R-h** — E: **"yes"**. (CLOSED)
-- [x] **E's device verdict on `F-CTACelebrations-1`** — **PASSED 2026-09-12** on the FULL path,
-      E: *"it feels good, all five work as you described."* (CLOSED)
-- [x] **E's device verdict on `F-ConfirmCelebration-2`** — PASSED 2026-09-12, E: *"it looks good."*
-      (CLOSED)
-- [x] **The focus card's completion celebration (`F-FocusCard-4`)** — E has seen it with Reduce
-      Motion off; the sign-off stands. (CLOSED)
-- [x] **The widget extension's `MARKETING_VERSION`** → 1.3. **The widget's view-only files
-      testable?** → "Leave it". **The collapsed card's square bottom corners** → "Round them"
-      (now `F-FocusCard-Corners`, §B.2). **E's SECOND change** → "There is no second change".
-      (all CLOSED)
+- [x] **E's device verdicts on `F-CTACelebrations-1` and `F-ConfirmCelebration-2`** — both PASSED
+      2026-09-12. (CLOSED)
 
 ## B · Real work, ready to start — recommended order
 
-**00. THE CTA CELEBRATIONS ARC — blocks 1, 2 and 3 of 8 BUILT, MERGED and all three PASSED
-   E's device verdict; the next is
-   `F-CTACelebrations-3`, the centre and the shared layer.** The record is
+**00. THE CTA CELEBRATIONS ARC — blocks 1–4 of 8 BUILT and MERGED; the next is
+   `F-CTACelebrations-4`, the nine mini confetti pops.** The record is
    `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener is the session's own
    `handoff/START-HERE-*`; the blocks are in `TODO-CLAUDE-CODE.md`.
-   **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ (verdict PASSED) →
-   ~~`F-CTACelebrations-1`~~ (verdict PASSED) → ~~`-2`~~ (switches; verdict PASSED) →
-   **`-3`** (centre + layers, Confirm re-routed) → `-4` (pops; render first, E picks) →
-   `-5` (inbox zero, streak, daily goal) → `-6` (Completed flow; render the congratulation first)
-   → `-7` (chime; E picks by ear).
-   **For block 3, three things this block leaves it:**
-   - **Room first — `RootView.swift` is at 394.**
-   - The shared `CelebrationFrame` has to carry the fireworks and the dim too
-     (`ConfirmCelebrationScene.fireworks`, `ConfirmCelebrationDim`, `ConfirmFireworksDrawing`); the
-     waiver pin lists **six** Confirm files.
-   - **`celebrationsGate` moves.** Block 3 re-routes Confirm through the `CelebrationCenter`, so the
-     gate belongs in the centre, not on the overlay — and
-     `testTheConfirmLayerGatesOnTheCelebrationsSwitchBeforeStartingABurst` must be updated BY NAME
-     when it does, never deleted. The two tests that must survive the move unchanged are
-     `testTheCelebrationsSwitchNeverSilencesTheConfirmHaptic` and the §7.2 waiver pin. (NEW)
+   **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ → ~~`F-CTACelebrations-1`~~ →
+   ~~`-2`~~ (all three verdicts PASSED) → ~~`-3`~~ (centre + layers; **verdict pending**) →
+   **`-4`** (the nine pops; render on a real `TaskRow` FIRST, E picks by looking) →
+   `-5` (inbox zero, streak, daily goal) → `-6` (the routine Completed flow) → `-7` (the chime).
+   **For block 4, four things this block leaves it:**
+   - **It is the first block that owes an RM-on DEVICE pass** (§7.3, E's call). Ask for both passes
+     in one message so E flips the setting once.
+   - **`CelebrationPopSource` and `CelebrationRecipes.pop`/`stillPop` exist and nothing calls
+     them.** Block 4 is where the reachability guard belongs — `CelebrationPopCallSiteTests`, one
+     prose test per site.
+   - **The still pop has NO hold at full opacity**: `fadeIn` 0.3 + `fadeOut` 0.7 = `popLength` 1.0
+     exactly, so it rises and immediately falls. The HIG pass flagged it as probably intentional
+     rather than a typo. **Judge it when E looks at the render, and say it is a rise-then-fall.**
+   - The pop's origin is recorded GLOBAL and converted in `CelebrationStage`; a `TaskDetail` Form
+     row is drawn by the ROOT layer, which is what beats row clipping. (NEW)
 
 **0. Follow-ups to the modern-iOS pilot — only what E asks for.** (carried)
    - **RM arrival fade for the bottom furniture**, only if E likes the cross-fade.
@@ -204,40 +208,33 @@ which any test calls — `HapticsTests` injects a `gate:` closure instead of goi
        sheets.
      - **Needs 17:** `ContentUnavailableView` in four empty states;
        `.contentTransition(.symbolEffect(.replace))`; interactive widgets and routine Live Activity
-       check-off; the `@Observable` migration (27 classes); TipKit.
+       check-off; the `@Observable` migration (now 28 classes); TipKit.
      - **Needs 18/26:** `Tab`/`.tabBarMinimizeBehavior` and `.glassEffect`, both constrained by the
        custom `AppTabBar` (adoption means replacing it).
    - **Two RM sites that remove the press affordance entirely** (`AppTabBar.swift:266`,
-     `AppSearchRow.swift:71`), and `RootView.swift:63`'s declared-but-unread `reduceMotion`.
+     `AppSearchRow.swift:71`), and `RootView.swift`'s declared-but-unread `reduceMotion`.
 
 1. **E's one un-run device check: airplane mode + pull-to-refresh on Home.** `F-HomeTasksLastKnown`
    (`8b5f740`) should keep the last-known task set rather than emptying it. (carried)
 
 2. **`F-FocusCard-Corners` — after the arc (E: "Round them").** Round the collapsed card's bottom
-   corners AND give `FocusBarCardShape.roundsBottomCorners` `animatableData`, so the corner morph
-   stops SNAPPING inside the 350 ms spring. In `TODO-CLAUDE-CODE.md`. (carried)
-   - Still open, none blocking: the card's `.accessibilityAction(named:)` may attach to nothing;
-     `FocusTimerBarContent` has no `#Preview`; a slow location fix delays the completion CARD; the
-     stack has no UI journey. (carried)
+   corners AND give `FocusBarCardShape.roundsBottomCorners` `animatableData`. (carried)
 
-3. **`AppFeedback.hapticsEnabled()` and `.notificationSound()` have no test that calls them** — both
-   are 0-hit, found in this block's coverage read. Everything that consults them injects a closure
-   or a fake instead. Two small tests, no production change. (NEW, below the bar for this block)
+3. **`AppFeedback.hapticsEnabled()` and `.notificationSound()` have no test that calls them.** Two
+   small tests, no production change. Note the same species was just closed for the celebration
+   centre's defaults, so the pattern is proven worth closing. (carried)
 
 4. **Two more dead design tokens, and two dead helpers.** `BarSurface` is defined, unit-tested and
    used by nothing; `AppTabBarPresentation.slotWidth` / `restingSlotWidth` have ZERO production call
    sites and disagree about their input. (carried)
-5. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops after #32.**
-   (carried)
+5. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops.** (carried)
 6. **Arc 2 — first-class routines + the "at a time" trigger.** (carried)
 7. **`F-Search-3-Journal`** — recommendation is still to kill the block. (carried)
 8. **The Live Activity design review** E parked. (carried)
 
 ## C · Parked on E's instruction — do not start unprompted
 
-- **A nudge-specific screen animation for EVERY "Done for now".** E, 2026-09-11: *"every 'done for
-  now' must be given a different screen animation - We can handle this later."* Not designed; not in
-  this arc. Ask E when the arc has shipped. (carried)
+- **A nudge-specific screen animation for EVERY "Done for now".** E, 2026-09-11. (carried)
 - **14- and 21-day streak milestones** (R-b): the arc fires at exactly 7. (carried)
 - **Places backgrounding dismiss bug** — waiting on E's iOS update. (carried)
 - **App connections** — real two-way sync; Apple Notes has no iOS API. (carried)
@@ -247,53 +244,54 @@ which any test calls — `HapticsTests` injects a `gate:` closure instead of goi
 ## C2 · Noticed, below the bar, worth E's eye on device
 
 - **Under Reduce Motion the closure card's `withAnimation(.default)` also animates the SIBLING
-  sections reflowing beneath it** (life areas, Due now, nudges), because they share the VStack and
-  the transaction. It only matters if `ClosureCelebrationCard` and `bestNextMoveSection` differ much
-  in height. **It is a REDUCED-path effect, and E now runs with Reduce Motion OFF, so E's passing
-  verdict did not see it.** It stays open and unjudged until someone looks with the setting on —
-  which, under §7.3's RM-on pass, will next happen naturally at `F-CTACelebrations-4`. (updated)
-- **The Feedback section's footer is now a thirteen-line paragraph** covering six switches. Nothing
-  clips and it reads in row order, but it is long. The HIG pass considered recommending the two
-  celebration rows be split into their own `Section` with their own short footer, and declined
-  because that would undo E's settled placement (#3 puts them in the Feedback section). Worth E's
-  eye on the phone: if the paragraph reads as a wall, splitting the section is the fix and it is
-  E's call, not a sweep's. (NEW)
+  sections reflowing beneath it.** A REDUCED-path effect, and E now runs with Reduce Motion OFF, so
+  E's passing verdict did not see it. It stays open and unjudged until someone looks with the
+  setting on — which, under §7.3's RM-on pass, happens naturally at `F-CTACelebrations-4`. (carried)
+- **The Feedback section's footer is a thirteen-line paragraph** covering six switches. If it reads
+  as a wall on the phone, splitting the two celebration rows into their own `Section` is the fix,
+  and it is E's call. (carried)
+- **The promote sheet's celebration layer is sized to the SHEET, not the screen.** Harmless today
+  and by design — a full-screen celebration requested while that sheet is frontmost is HELD and
+  released over whatever is behind it, so the only thing that layer ever draws is a pop. Noted
+  because it would matter if `dismissesItself` were ever turned off for that surface. (NEW)
 
 ## D · Launch blockers — no conversation opened yet
 
 - **Free dev account** → 7-day profiles; the current one is valid to **2026-09-17**. When a device
   install fails on it, E re-signs in Xcode → Settings → Accounts. (carried)
 - **Sign in with Apple** built but dormant. (carried)
-- **A way to turn the Confirm confetti off — SHIPPED, `F-CTACelebrations-2`, `main` @ `2efd705`.**
-  The Celebrations switch is live on Confirm today, on by default. The accepted cost recorded here
-  since 2026-09-11 — that people who turned Reduce Motion on for motion sensitivity get full-screen
-  confetti with no escape — **is now paid**: there is an escape, and it is one tap in Settings.
-  §7.2's waiver is unchanged and still covers only how the celebration renders when it DOES play.
-  (CLOSED)
+- **Photosensitivity: the stack-clearing Confirm's fireworks flash 5 times in one second** against
+  WCAG 2.3.1's 3. Full detail, and what is and is not claimed, in §A. **This supersedes the shape
+  of the old "accepted cost" line here:** the Reduce Motion half of that cost was PAID by
+  `F-CTACelebrations-2`'s Celebrations switch — there is an off switch now, one tap away — but a
+  photosensitivity risk is a different axis from motion sensitivity, it is not answered by that
+  switch being available, and it is unresolved. (NEW)
 
 ## E · Known, not work
 
-- **The `xcode` MCP bridge was DOWN this session** — `CONNECTION_CLOSED` in the startup reminder,
-  because Xcode was not open before the session began. `RenderPreview` was therefore unavailable and
-  the stills came from the probe instead. Open Xcode BEFORE starting a session that wants the
-  bridge; there is no in-session recovery. (updated)
-- **A stale `TestResults.xcresult` fails the whole suite before a test runs** —
-  `xcodebuild: error: Existing file at -resultBundlePath`. Gitignored, so it survives everything;
-  delete it as part of the run. (NEW)
+- **The `xcode` MCP bridge was UP this session** (Xcode was open before it started), but
+  `RenderPreview` returned `The data couldn't be read because it is missing.` for both preview
+  indices of the target file, twice. Not diagnosed further — the run-loop-pumping probe is the
+  sanctioned fallback and was used instead. `XcodeListWindows` and `XcodeLS` worked normally, so
+  the bridge itself was healthy. (NEW)
+- **A stale `TestResults.xcresult` fails the whole suite before a test runs.** Gitignored, so it
+  survives everything; delete it as part of the run. (carried)
 - **A green suite cannot see a `View`'s appearance.** Render to PNG from a unit test before the
-  device build: `UIHostingController` + `UIGraphicsImageRenderer` + `drawHierarchy(afterScreenUpdates: true)`
-  in a scene-attached `UIWindow`, a synchronous test pumping `RunLoop.main`; render IN SITU, and
-  always render the CONTROL. The probes live outside the repo and are rebuilt from the evidence
-  READMEs. (updated)
+  device build; render IN SITU, and always render the CONTROL. **And prove the harness is
+  deterministic before making any pixel claim** — one scene rendered twice in the same run must come
+  back identical, or a cross-run difference says nothing. (updated)
 - **`Executed N tests, with M failures` counts failed ASSERTIONS, not failing TESTS.** Predict in
-  TESTS, then reconcile — and when a block introduces a symbol, predict the BUILD FAILURE
-  separately, because that half prints no count at all. (updated)
-- **SwiftLint's 400-line file, 250-line `type_body_length` and 40-character `type_name` ceilings.**
-  `RootView.swift` 394, `CaptureInboxService.swift` 397 and `PlaceRoutineScreen.swift` 379 remain.
-  **Moving an extension to a new file ends same-file `private` access.** (carried)
+  TESTS, and when a block introduces a symbol, predict the BUILD FAILURE separately — that half
+  prints no count at all. Both halves matched exactly again this session. (carried)
+- **SwiftLint's 400-line file ceiling.** `CaptureInboxService.swift` 397 and
+  `PlaceRoutineScreen.swift` 379 remain. **Moving an extension to a new file ends same-file
+  `private` access** — and breaks any call-site test that reads the old file. (updated)
+- **`multiple_closures_with_trailing_closure`**: adding `onDismiss:` to a `.sheet` or
+  `.fullScreenCover` means the content must become an explicit `content:` argument, which rewraps
+  the call over several lines and breaks any test anchored on the one-line form. Two were, and they
+  now read the source flattened. (NEW)
 - **A `devicectl` launch denied with `Security` right after a re-issued profile is TRANSIENT — retry
-  once.** The three species: `Locked` (unlock), `Security` + valid profile (retry), `Security` +
-  expired profile or "No Accounts" (E signs in via Xcode → Settings → Accounts). (carried)
+  once.** (carried)
 - **A UI-target run poisons the simulator; erase it before the next unit run**
   (`xcrun simctl erase 9181EBF9-0F54-4A4D-A19C-19945D1BF155`). No UI target was run this session.
   (carried)
