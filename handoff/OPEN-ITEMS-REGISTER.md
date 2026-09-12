@@ -1,4 +1,4 @@
-# Open items register — 2026-09-12 (thirty-fifth edition; `F-CTACelebrations-4`, the nine mini confetti pops, is BUILT and MERGED and **awaiting E's device verdict — the first block that owes an RM-ON pass**; **three blocks of the arc remain**)
+# Open items register — 2026-09-12 (thirty-fifth edition, amended; `F-CTACelebrations-4`, the nine mini confetti pops, is BUILT and MERGED, and **E has DEFERRED its device verdict until after `-5`**, so the RM-on pass will cover two blocks at once; **three blocks of the arc remain**)
 
 *The close-out of the fifth build session of the CTA celebrations arc. E's standing ask — use any
 skills, MCPs, plugins and subagents that help — was followed: the render probe, the `xcode` bridge's
@@ -114,11 +114,18 @@ never evaluated by a unit test, so reachability had to be asserted by reading th
 
 ## A · Decisions only E can make — minutes each
 
-- [ ] **E's device verdict on `F-CTACelebrations-4`, and it needs TWO passes in one sitting**
-      (§7.3, E's own call 2026-09-12 — **this is the first block that owes the RM-on pass**). The
-      app is installed and launched on the phone from `main`. Pass one with Reduce Motion OFF, pass
-      two with it ON (Settings → Accessibility → Motion). What to exercise, because the simulator
-      could not prove these:
+- [ ] **E's device verdict on `F-CTACelebrations-4` — DEFERRED BY E until after `F-CTACelebrations-5`**
+      (2026-09-12, verbatim: *"I will push the device passes off until after the next block."*).
+      **This is a scheduling decision, not an outstanding failure**: `-4` is landed, green and
+      installed on the phone from `main`. Do not re-ask before `-5` is built, and do not treat `-4`
+      as unverified work to redo.
+      **The consequence to plan for:** `-5` adds reduced sites of its own, so the passes when they
+      happen cover BOTH blocks. Ask once, at the close of `-5`, naming which sites belong to which
+      block so a failure can be attributed. Until then both blocks' Verified-paths lines read
+      *"Reduced: run on sim (injected); NOT on device."*
+      It still needs TWO passes in one sitting (§7.3, E's own call): Reduce Motion OFF, then ON
+      (Settings → Accessibility → Motion). What to exercise for `-4`, because the simulator could
+      not prove these:
       the Tasks **search surface** (a real `fullScreenCover` — the probe used a synthetic one);
       **Create Task** from the promote sheet (R-e's 0.45 s hold — the top of the pop is expected to
       clip at the sheet's edge, §C2, by design); the task detail's **Close it** (the root layer

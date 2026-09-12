@@ -4,11 +4,23 @@
 terminal. Written 2026-09-12 at the close of the session that built `F-CTACelebrations-4`. **The
 session that writes this arc's next opener archives this file in the same move.***
 
-**STATUS.** Blocks 1–5 of the arc are MERGED. Blocks 1–4's verdicts all PASSED; **`-4`'s verdict is
-PENDING** — E was asked for it at the close of that session and the app is installed on the phone
-from `main`. **Check whether E has answered before starting.** If `-4` failed anything, fix that
-first: a block is not closed until E says so. The app code is `main` @ `1b80cee`; check
-`git log --oneline -1 origin/main` for today's tip rather than trusting a SHA written here.
+**STATUS.** Blocks 1–5 of the arc are MERGED. Blocks 1–4's verdicts all PASSED.
+
+**`-4`'s device verdict is DEFERRED, not missing, and that is E's own call** (2026-09-12, verbatim:
+*"I will push the device passes off until after the next block."*). E was asked for both passes —
+Reduce Motion OFF then ON — at the close of `-4`, and chose to do them after THIS block instead.
+**Do not re-ask at the start of this session, and do not treat `-4` as unverified work to redo.**
+The app is installed on the phone from `main` and `-4` is landed and green.
+
+**What that means for this block, and it is the operative consequence:** `-5` adds reduced sites of
+its own (the still confetti field under Reduce Motion), so when E does sit down with the phone they
+will be judging **both blocks at once**. Ask for the two passes at the close of this block covering
+`-4`'s nine pops AND `-5`'s milestones together, in ONE message, and say which sites belong to which
+block so a failure can be attributed. Until E answers, BOTH blocks' Verified-paths lines read
+*"Reduced: run on sim (injected); NOT on device."*
+
+The app code is `main` @ `5d472cb`; check `git log --oneline -1 origin/main` for today's tip rather
+than trusting a SHA written here.
 
 **E's standing instruction: each block is built in a FRESH Claude Code terminal session.** This
 file is how that session starts.
