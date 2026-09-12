@@ -34,7 +34,7 @@ final class ConfirmCelebrationDimTests: XCTestCase {
         XCTAssertEqual(dim.envelope(at: 0.175), 0.5, accuracy: 1e-9, "The dim does not come in over 0.35 s.")
         XCTAssertEqual(dim.envelope(at: 0.35), 1, accuracy: 1e-9)
         XCTAssertEqual(dim.envelope(at: 2.6), 1, accuracy: 1e-9, "The dim lifts while shells are still launching.")
-        XCTAssertEqual(dim.envelope(at: 4.39), 1, accuracy: 1e-9, "The dim lifts earlier than 0.4 s before the last spark.")
+        XCTAssertEqual(dim.envelope(at: 4.39), 1, accuracy: 1e-9, "The dim lifts before 0.4 s ahead of the last spark.")
         XCTAssertEqual(dim.envelope(at: 4.69), 0.5, accuracy: 1e-9, "The dim does not lift over 0.6 s.")
         XCTAssertEqual(dim.envelope(at: 4.99), 0, accuracy: 1e-9)
         XCTAssertEqual(dim.envelope(at: 5.5), 0, accuracy: 1e-9)
@@ -62,15 +62,18 @@ final class ConfirmCelebrationDimTests: XCTestCase {
             dim.strongestEnvelope(of: [every], at: launch.addingTimeInterval(1)), 0, accuracy: 1e-9,
             "An every-Confirm dims the screen. Only the stack-clearing one does."
         )
+        let comingIn = launch.addingTimeInterval(1 + 0.175 / pace)
         XCTAssertEqual(
-            dim.strongestEnvelope(of: [every, cleared], at: launch.addingTimeInterval(1 + 0.175 / pace)), 0.5, accuracy: 1e-6,
+            dim.strongestEnvelope(of: [every, cleared], at: comingIn), 0.5, accuracy: 1e-6,
             "The dim is not on the stretched choreography clock."
         )
+        let halfLifted = launch.addingTimeInterval(4.69 / pace)
         let older = ConfirmCelebrationBurst(ordinal: 3, clearedStack: true, start: launch)
-        let newer = ConfirmCelebrationBurst(ordinal: 4, clearedStack: true, start: launch.addingTimeInterval(4.69 / pace))
-        XCTAssertEqual(dim.strongestEnvelope(of: [older, newer], at: launch.addingTimeInterval(4.69 / pace)), 0.5, accuracy: 1e-6)
+        let newer = ConfirmCelebrationBurst(ordinal: 4, clearedStack: true, start: halfLifted)
+        XCTAssertEqual(dim.strongestEnvelope(of: [older, newer], at: halfLifted), 0.5, accuracy: 1e-6)
+        let newerComingIn = halfLifted.addingTimeInterval(0.175 / pace)
         XCTAssertEqual(
-            dim.strongestEnvelope(of: [older, newer], at: launch.addingTimeInterval((4.69 + 0.175) / pace)), 0.5, accuracy: 1e-6,
+            dim.strongestEnvelope(of: [older, newer], at: newerComingIn), 0.5, accuracy: 1e-6,
             "Two dims do not share the strongest envelope."
         )
         XCTAssertEqual(dim.strongestEnvelope(of: [], at: launch), 0, accuracy: 1e-9)

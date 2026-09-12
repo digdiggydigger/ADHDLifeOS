@@ -169,9 +169,15 @@ enum ConfirmCelebrationQueue {
     /// path and beat E approved is kept, with no extra drawing. It simply plays at `pace` (~78%).
     /// A tail at the same speed would have either drawn off-screen or thinned the confetti.
     static let extraLength: TimeInterval = 1.2
-    static let stackClearingChoreographyLength: TimeInterval = 0
-    /// How long a celebration is on screen.
+    /// The stack-clearing Confirm's choreography (block 2): the fireworks' last spark dies at
+    /// 4.79 s and the light-mode dim has lifted by 4.99 s. **E's decision 1 for block 2: "Same
+    /// stretch"** — it plays at the same `pace` as the confetti, so it is on screen for
+    /// `5.0 / pace` ≈ 6.43 s rather than keeping a clock of its own.
+    static let stackClearingChoreographyLength: TimeInterval = 5.0
+    /// How long an every-Confirm celebration is on screen.
     static var everyConfirmLength: TimeInterval { choreographyLength + extraLength }
+    /// How long a stack-clearing celebration is on screen.
+    static var stackClearingLength: TimeInterval { stackClearingChoreographyLength / pace }
     /// How fast the choreography plays against the wall clock.
     static var pace: Double { choreographyLength / everyConfirmLength }
 
@@ -180,9 +186,10 @@ enum ConfirmCelebrationQueue {
         date.timeIntervalSince(burst.start) * pace
     }
 
-    /// How long a burst stays in the air.
+    /// How long a burst stays in the air: until its last confetti lands, or, when it cleared the
+    /// stack, until its dim has lifted.
     static func length(of burst: ConfirmCelebrationBurst) -> TimeInterval {
-        everyConfirmLength
+        burst.clearedStack ? stackClearingLength : everyConfirmLength
     }
 
     static func adding(

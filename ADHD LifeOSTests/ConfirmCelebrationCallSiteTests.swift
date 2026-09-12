@@ -127,7 +127,9 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
             layer.contains("@Environment(\\.colorScheme) private var colorScheme"),
             "The frame never reads the appearance, so the dim plays in dark too."
         )
-        let gate = try XCTUnwrap(layer.range(of: "if colorScheme == .light"), "The dim is not gated on the light appearance.")
+        let gate = try XCTUnwrap(
+            layer.range(of: "if colorScheme == .light"), "The dim is not gated on the light appearance."
+        )
         let dim = try XCTUnwrap(layer.range(of: "Color(ConfirmCelebrationDim.colorName)"), "The frame draws no dim.")
         XCTAssertLessThan(gate.lowerBound, dim.lowerBound, "The dim is drawn outside the light-appearance gate.")
     }
@@ -141,7 +143,7 @@ final class ConfirmCelebrationCallSiteTests: XCTestCase {
         let dim = try XCTUnwrap(layer.range(of: "Color(ConfirmCelebrationDim.colorName)"), "The frame draws no dim.")
         let glow = try XCTUnwrap(layer.range(of: "RadialGradient("))
         let fireworks = try XCTUnwrap(
-            layer.range(of: "ConfirmFireworksDrawing.draw(fireworks, in: &context, at: elapsed"),
+            layer.range(of: "ConfirmFireworksDrawing.draw(fireworks, in: context, at: elapsed"),
             "The frame draws no fireworks, or draws them off the stretched clock."
         )
         let confetti = try XCTUnwrap(layer.range(of: "for piece in scene.confetti"))

@@ -35,8 +35,8 @@ final class ConfirmFireworksScheduleTests: XCTestCase {
         ]
         XCTAssertEqual(shells.count, expected.count, "The schedule is not the record's 14 shells.")
         for (shell, apex) in zip(shells, expected) {
-            XCTAssertEqual(shell.apex.x, apex.x, accuracy: 1e-9, "The shell at \(shell.launch) s bursts at the wrong x.")
-            XCTAssertEqual(shell.apex.y, apex.y, accuracy: 1e-9, "The shell at \(shell.launch) s bursts at the wrong y.")
+            XCTAssertEqual(shell.apex.x, apex.x, accuracy: 1e-9, "The shell at \(shell.launch) s bursts at the wrong x")
+            XCTAssertEqual(shell.apex.y, apex.y, accuracy: 1e-9, "The shell at \(shell.launch) s bursts at the wrong y")
         }
     }
 
@@ -92,7 +92,9 @@ final class ConfirmFireworksScheduleTests: XCTestCase {
     func testTheShellsUseNineRealTokensAndNeverGreyOrRisk() {
         let used = Set(shells.flatMap(\.colorNames))
         XCTAssertEqual(used.count, 9, "E asked for other colours; the record adds two tokens to the confetti's seven.")
-        XCTAssertEqual(used, Set(ConfirmFireworksSchedule.palette), "The palette does not list exactly the tokens the shells use.")
+        XCTAssertEqual(
+            used, Set(ConfirmFireworksSchedule.palette), "The palette does not list exactly the tokens the shells use."
+        )
         XCTAssertEqual(
             Set(ConfirmFireworksSchedule.palette), Set(ConfettiRecipe.palette + ["AreaAdminVivid", "AreaRedVivid"]),
             "The nine are the confetti's seven plus `AreaAdminVivid` and `AreaRedVivid`."

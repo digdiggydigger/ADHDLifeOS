@@ -79,7 +79,7 @@ final class ConfirmFireworksPhysicsTests: XCTestCase {
         )
         let atBurst = try XCTUnwrap(physics.shellPosition(of: fired, at: 1.725, canvas: canvas))
         XCTAssertEqual(atBurst.y, 0.3 * 852, accuracy: 1e-6, "The shell is not at its apex when it bursts.")
-        XCTAssertNil(physics.shellPosition(of: fired, at: 1.7251, canvas: canvas), "A shell is still drawn after it has burst.")
+        XCTAssertNil(physics.shellPosition(of: fired, at: 1.7251, canvas: canvas), "Drawn after it has burst.")
     }
 
     // MARK: - The sparks
@@ -130,7 +130,7 @@ final class ConfirmFireworksPhysicsTests: XCTestCase {
     func testSingleShellsBurstInOneColourAndTwoToneShellsAlternate() {
         let physics = ConfirmFireworksPhysics.self
         let single = physics.sparks(of: shell(burst: .single, colorNames: ["AreaWorkVivid"]), index: 0, canvas: canvas)
-        XCTAssertEqual(Set(single.map(\.colorName)), ["AreaWorkVivid"], "A single shell bursts in more than one colour.")
+        XCTAssertEqual(Set(single.map(\.colorName)), ["AreaWorkVivid"], "A single shell bursts in more than one colour")
         let twoTone = physics.sparks(
             of: shell(burst: .twoTone, colorNames: ["AreaGrowthVivid", "AreaHealthVivid"]), index: 0, canvas: canvas
         )
@@ -162,7 +162,10 @@ final class ConfirmFireworksPhysicsTests: XCTestCase {
         XCTAssertTrue(inner.map(speed).allSatisfy { innerSpeeds.contains($0) }, "The inner ring is not at 0.55× speed.")
         let step = 2 * Double.pi / 36
         for (index, spark) in outer.enumerated() {
-            XCTAssertEqual(angleDistance(angle(of: spark), step * Double(index)), 0, accuracy: 1e-6, "Outer spark \(index) is off its step.")
+            XCTAssertEqual(
+                angleDistance(angle(of: spark), step * Double(index)), 0, accuracy: 1e-6,
+                "Outer spark \(index) is off its step."
+            )
         }
         for (index, spark) in inner.enumerated() {
             XCTAssertEqual(
@@ -175,7 +178,9 @@ final class ConfirmFireworksPhysicsTests: XCTestCase {
     func testTheSameShellBurstsTheSameWayEveryTime() {
         let fired = shell(burst: .twoTone, colorNames: ["AreaRedVivid", "StateWarnVivid"], size: .small)
         let physics = ConfirmFireworksPhysics.self
-        XCTAssertEqual(physics.sparks(of: fired, index: 7, canvas: canvas), physics.sparks(of: fired, index: 7, canvas: canvas))
+        XCTAssertEqual(
+            physics.sparks(of: fired, index: 7, canvas: canvas), physics.sparks(of: fired, index: 7, canvas: canvas)
+        )
         XCTAssertNotEqual(
             physics.sparks(of: fired, index: 7, canvas: canvas), physics.sparks(of: fired, index: 8, canvas: canvas),
             "Two shells' sparks are hashed identically."
@@ -201,12 +206,14 @@ final class ConfirmFireworksPhysicsTests: XCTestCase {
         let damping: Double = 1 - exp(-2.4)
         let expectedDrop: Double = -terminal / 2.4 * damping + terminal
         let expectedAcross: Double = 100 + 200 / 2.4 * damping
-        XCTAssertEqual(light.position.y, 300 + expectedDrop, accuracy: 1e-6, "The spark does not fall under gravity 150 with drag 2.4.")
+        XCTAssertEqual(light.position.y, 300 + expectedDrop, accuracy: 1e-6, "The spark does not fall at 150 / 2.4.")
         XCTAssertEqual(light.position.x, expectedAcross, accuracy: 1e-6)
         XCTAssertGreaterThan(paper.position.y, light.position.y, "A spark falls as fast as paper.")
         XCTAssertEqual(
             paper,
-            try XCTUnwrap(ConfettiPhysics.state(of: spark, at: 1, gravity: ConfettiPhysics.gravity, drag: ConfettiPhysics.drag)),
+            try XCTUnwrap(
+                ConfettiPhysics.state(of: spark, at: 1, gravity: ConfettiPhysics.gravity, drag: ConfettiPhysics.drag)
+            ),
             "The confetti's own flight is not the overload at its defaults."
         )
         XCTAssertNil(ConfettiPhysics.state(of: spark, at: 2.01, gravity: 150, drag: 2.4), "A spark outlives its life.")
@@ -216,8 +223,11 @@ final class ConfirmFireworksPhysicsTests: XCTestCase {
     /// reads as embers rather than a shrinking disc. Nothing before the burst or after the life.
     func testASparkFadesOnThePowerCurve() {
         let physics = ConfirmFireworksPhysics.self
-        XCTAssertEqual(physics.sparkOpacity(life: 1.45, sinceBurst: 0), 1, accuracy: 1e-9, "A spark is not bright at its burst.")
-        XCTAssertEqual(physics.sparkOpacity(life: 1.45, sinceBurst: 0.725), pow(0.5, 1.4), accuracy: 1e-9, "The fade is not the 1.4 power curve.")
+        XCTAssertEqual(physics.sparkOpacity(life: 1.45, sinceBurst: 0), 1, accuracy: 1e-9, "Not bright at the burst.")
+        XCTAssertEqual(
+            physics.sparkOpacity(life: 1.45, sinceBurst: 0.725), pow(0.5, 1.4), accuracy: 1e-9,
+            "The fade is not the 1.4 power curve."
+        )
         XCTAssertEqual(physics.sparkOpacity(life: 1.45, sinceBurst: 1.45), 0, accuracy: 1e-9)
         XCTAssertEqual(physics.sparkOpacity(life: 1.45, sinceBurst: 2), 0, accuracy: 1e-9)
         XCTAssertEqual(physics.sparkOpacity(life: 1.45, sinceBurst: -0.1), 0, accuracy: 1e-9)

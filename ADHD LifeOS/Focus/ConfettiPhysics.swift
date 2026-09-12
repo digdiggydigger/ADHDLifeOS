@@ -74,13 +74,16 @@ enum ConfettiPhysics {
     ///
     ///     x(t) = x₀ + vₓ/k · (1 − e^(−k·t)) + flutter(t)
     ///     y(t) = y₀ + (v_y − g/k)/k · (1 − e^(−k·t)) + (g/k)·t
+    static func state(of piece: ConfettiPiece, at time: TimeInterval) -> ConfettiPieceState? {
+        state(of: piece, at: time, gravity: gravity, drag: drag)
+    }
+
+    /// The same flight under another gravity and drag — a firework spark is lighter than paper
+    /// (F-ConfirmCelebration-2: 150 / 2.4). The confetti's own `state(of:at:)` is this at the
+    /// defaults above.
     static func state(
         of piece: ConfettiPiece, at time: TimeInterval, gravity: Double, drag: Double
     ) -> ConfettiPieceState? {
-        nil
-    }
-
-    static func state(of piece: ConfettiPiece, at time: TimeInterval) -> ConfettiPieceState? {
         let flight = time - piece.delay
         guard flight >= 0, flight <= piece.lifetime else { return nil }
         let damping = 1 - exp(-drag * flight)

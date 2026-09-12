@@ -136,8 +136,9 @@ final class ConfirmCelebrationTimingTests: XCTestCase {
         )
         XCTAssertEqual(queue.length(of: cleared), 6.43, accuracy: 0.005)
         XCTAssertEqual(queue.length(of: burst(1)), 5.4, accuracy: 1e-9, "An every-Confirm is now longer than E saw.")
+        let end = launch.addingTimeInterval(queue.length(of: cleared))
         XCTAssertEqual(
-            queue.choreographyTime(of: cleared, at: launch.addingTimeInterval(queue.length(of: cleared))), 5.0, accuracy: 1e-6,
+            queue.choreographyTime(of: cleared, at: end), 5.0, accuracy: 1e-6,
             "The whole stack-clearing choreography does not fit its burst exactly."
         )
     }
