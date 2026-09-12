@@ -19,10 +19,30 @@ import CoreGraphics
 import Foundation
 
 enum CelebrationRecipes {
-    /// E's F6, verbatim: "12 to 20 pieces".
-    static let popCount = 12...20
+    /// **How much bigger the pop is than the paper E first approved — E's call, 2026-09-12, made
+    /// by LOOKING**, the way the pop's family was chosen in `F-CTACelebrations-4`.
+    ///
+    /// E saw the shipped pop on their own phone: *"I think that the scaling of the 'pop' needs to
+    /// be increased slightly"*, then *"bigger spread too, not just bigger pieces"* and *"maybe
+    /// slightly increase the amount of confetti pieces"*. All three ride this ONE constant, and E
+    /// picked variant C (1.6×) from A (as shipped) / B (1.3×) / C / D (2.0×) rendered in situ on a
+    /// real `TaskRow`. Measured at the pop's most legible instant: 18 → 29 pieces, 2,087 → 6,100
+    /// painted pixels, and a furthest piece at 400 ms of 140 → 208 pt.
+    ///
+    /// **Do not "tune" it back down** — it is not a guess at what reads well, it is the value E
+    /// approved by sight. `testThePopScaleIsTheValueEChoseByLooking` pins it and says why, the
+    /// `FocusCompletionStackLayout.peekStep` precedent.
+    ///
+    /// **It governs the POP alone.** The milestone's 120-piece still field is a different moment at
+    /// a different size and keeps the Confirm's own paper — the shared `piece(...)` builder would
+    /// otherwise have carried this into it silently, which is why a test asserts it does not.
+    static let popScale: CGFloat = 1.6
+
+    /// E's F6 was "12 to 20 pieces"; scaled by `popScale` at E's device pass.
+    static let popCount = 19...32
     /// A still pop cannot travel, so it arrives already scattered — within this far of the tap.
-    static let stillPopSpread: CGFloat = 48
+    /// Scales with the pop, so E's bigger pop and its Reduce Motion counterpart cannot drift apart.
+    static let stillPopSpread: CGFloat = 48 * popScale
     /// E's #7 for a reduced milestone: 120 pieces at rest across the canvas, the rain's count.
     static let stillFieldCount = 120
 
@@ -36,12 +56,16 @@ enum CelebrationRecipes {
             // Radial, with each piece's own angle rather than an even fan: a fan reads as a
             // mechanism, a scatter reads as a pop.
             let radians = random.uniform(0, .pi * 2)
-            let speed = random.uniform(250, 450)
+            // E's "bigger spread too": the throw scales with the paper. `ConfettiPhysics` gives
+            // a piece linear drag of 2.2/s, so its travel can never exceed `velocity / drag` —
+            // scaling the speed scales that ceiling with it.
+            let speed = random.uniform(250, 450) * Double(popScale)
             return piece(
                 index: index,
                 origin: origin,
                 velocity: CGVector(dx: cos(radians) * speed, dy: sin(radians) * speed),
                 lifetime: random.uniform(0.7, 1.0),
+                sizeScale: popScale,
                 using: &random
             )
         }
@@ -62,6 +86,7 @@ enum CelebrationRecipes {
                 ),
                 velocity: .zero,
                 lifetime: 0,
+                sizeScale: popScale,
                 using: &random
             )
         }
@@ -86,11 +111,15 @@ enum CelebrationRecipes {
     }
 
     /// The Confirm's look, drawn in the Confirm's order so a seed always means the same paper.
+    /// `sizeScale` defaults to 1 so the MILESTONE's still field keeps the Confirm's own paper —
+    /// only the two pop paths pass `popScale`. A shared builder that scaled everything would have
+    /// changed a celebration E never asked to change.
     private static func piece(
         index: Int,
         origin: CGPoint,
         velocity: CGVector,
         lifetime: TimeInterval,
+        sizeScale: CGFloat = 1,
         using random: inout ConfettiRandom
     ) -> ConfettiPiece {
         let colorName = ConfettiRecipe.palette[index % ConfettiRecipe.palette.count]
@@ -98,10 +127,13 @@ enum CelebrationRecipes {
         let size: CGSize
         if random.unit() < 0.75 {
             shape = .rectangle
-            size = CGSize(width: random.uniform(7, 10), height: random.uniform(4, 6))
+            size = CGSize(
+                width: random.uniform(7, 10) * Double(sizeScale),
+                height: random.uniform(4, 6) * Double(sizeScale)
+            )
         } else {
             shape = .circle
-            size = CGSize(width: 6, height: 6)
+            size = CGSize(width: 6 * sizeScale, height: 6 * sizeScale)
         }
         return ConfettiPiece(
             origin: origin,

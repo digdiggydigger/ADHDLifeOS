@@ -26,29 +26,92 @@ final class CelebrationRecipeTests: XCTestCase {
 
     // MARK: - The pop (E's F6)
 
-    func testAPopIsBetweenTwelveAndTwentyPieces() {
+    /// **E's call, 2026-09-12, made by LOOKING at four variants rendered in situ on a real
+    /// `TaskRow`** — the same way E chose the pop's family in `F-CTACelebrations-4`.
+    ///
+    /// E saw the shipped pop on their own phone and said the scaling "needs to be increased
+    /// slightly", then asked for a wider spread and more pieces in turn. Variant C carried all
+    /// three at 1.6× and E picked it from A (shipped) / B (1.3×) / C / D (2.0×).
+    ///
+    /// **Do not "tune" this back down.** It is not a guess at what reads well — it is the value E
+    /// approved by sight, and the evidence is `screenshots/cta-celebrations-pop-scale/`. The
+    /// `FocusCompletionStackLayout.peekStep` precedent exactly.
+    func testThePopScaleIsTheValueEChoseByLooking() {
+        XCTAssertEqual(CelebrationRecipes.popScale, 1.6)
+    }
+
+    /// Was 12 to 20 — E's F6 — until E asked for more paper on the device. The range is the
+    /// original scaled by `popScale`, so one number governs all three dimensions.
+    func testAPopIsBetweenNineteenAndThirtyTwoPieces() {
+        XCTAssertEqual(CelebrationRecipes.popCount, 19...32)
         for ordinal in 1...40 {
             let pieces = CelebrationRecipes.pop(at: tap, ordinal: ordinal)
             XCTAssertTrue(
                 CelebrationRecipes.popCount.contains(pieces.count),
-                "Ordinal \(ordinal) threw \(pieces.count) pieces; E chose 12 to 20."
+                "Ordinal \(ordinal) threw \(pieces.count) pieces; E's scaled pop is 19 to 32."
             )
         }
     }
 
+    /// The throw scales with the paper (E: "bigger spread too, not just bigger pieces"), so the
+    /// speeds are the original 250–450 scaled. Asserted as a band across the whole pop rather than
+    /// per piece, so a regression reports one clear failure instead of thirty.
     func testAPopLeavesFromTheTapPointAndIsGoneWithinASecond() {
-        for piece in CelebrationRecipes.pop(at: tap, ordinal: 1) {
+        let pieces = CelebrationRecipes.pop(at: tap, ordinal: 1)
+        let speeds = pieces.map {
+            ($0.velocity.dx * $0.velocity.dx + $0.velocity.dy * $0.velocity.dy).squareRoot()
+        }
+        for piece in pieces {
             XCTAssertEqual(piece.origin.x, tap.x, accuracy: 0.0001)
             XCTAssertEqual(piece.origin.y, tap.y, accuracy: 0.0001)
-            XCTAssertTrue(
-                (0.7...1.0).contains(piece.lifetime),
-                "A pop piece lives \(piece.lifetime) s; E's pop lives 0.7 to 1.0 s."
-            )
-            let speed = (piece.velocity.dx * piece.velocity.dx + piece.velocity.dy * piece.velocity.dy).squareRoot()
-            XCTAssertTrue(
-                (250.0...450.0).contains(speed),
-                "A pop piece leaves at \(speed) pt/s; E's pop is 250 to 450."
-            )
+        }
+        XCTAssertTrue(
+            pieces.allSatisfy { (0.7...1.0).contains($0.lifetime) },
+            "A pop piece must still live 0.7 to 1.0 s — E scaled the paper, not the timing."
+        )
+        XCTAssertGreaterThanOrEqual(
+            speeds.min() ?? 0, 250 * CelebrationRecipes.popScale - 0.001,
+            "The slowest piece leaves at \(speeds.min() ?? 0) pt/s; E's scaled pop throws from 400."
+        )
+        XCTAssertLessThanOrEqual(
+            speeds.max() ?? .greatestFiniteMagnitude, 450 * CelebrationRecipes.popScale + 0.001,
+            "The fastest piece leaves at \(speeds.max() ?? 0) pt/s; E's scaled pop tops out at 720."
+        )
+    }
+
+    /// The pieces themselves are the Confirm's paper, scaled — same shapes and proportions, just
+    /// bigger. 7–10 × 4–6 and a 6 pt circle become 11.2–16 × 6.4–9.6 and a 9.6 pt circle.
+    func testAPopsPiecesAreTheConfirmsPaperScaledUp() {
+        let scale = CelebrationRecipes.popScale
+        for piece in CelebrationRecipes.pop(at: tap, ordinal: 3) {
+            switch piece.shape {
+            case .rectangle:
+                XCTAssertTrue(
+                    (7 * scale - 0.001...10 * scale + 0.001).contains(piece.size.width),
+                    "A pop rectangle is \(piece.size.width) pt wide; scaled it must be 11.2 to 16."
+                )
+                XCTAssertTrue((4 * scale - 0.001...6 * scale + 0.001).contains(piece.size.height))
+            case .circle:
+                XCTAssertEqual(piece.size.width, 6 * scale, accuracy: 0.001)
+            }
+        }
+    }
+
+    /// **The milestone's still field is NOT scaled**, and that is the point of asserting it. E
+    /// asked for a bigger POP; the 120-piece field behind a full-screen milestone is a different
+    /// moment at a different size, and the shared `piece(...)` builder would have carried the
+    /// scale into it silently.
+    func testTheMilestonesStillFieldKeepsTheConfirmsOwnPaperSize() {
+        for piece in CelebrationRecipes.stillField(canvas: canvas, ordinal: 3) {
+            switch piece.shape {
+            case .rectangle:
+                XCTAssertTrue(
+                    (7.0...10.0).contains(piece.size.width),
+                    "A still-field rectangle is \(piece.size.width) pt wide; the field is unscaled."
+                )
+            case .circle:
+                XCTAssertEqual(piece.size.width, 6, accuracy: 0.001)
+            }
         }
     }
 
@@ -72,6 +135,12 @@ final class CelebrationRecipeTests: XCTestCase {
     }
 
     // MARK: - The still pop and the still field (E's #7)
+
+    /// The reduced pop is the SAME pop at rest, so its scatter has to follow the pop's throw —
+    /// otherwise E's bigger pop and its Reduce Motion counterpart drift apart in size.
+    func testTheStillPopsSpreadScalesWithThePop() {
+        XCTAssertEqual(CelebrationRecipes.stillPopSpread, 48 * CelebrationRecipes.popScale)
+    }
 
     func testTheStillPopIsTheSameCountAtRestNearTheTapPoint() {
         for ordinal in 1...20 {

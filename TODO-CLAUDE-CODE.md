@@ -3881,6 +3881,30 @@ block 1: 0 pixels). Device verdict.
 6. **Tests: 60 added (2,824 → 2,884), not the predicted ~17**, across seven files plus a
    `RecordingCelebrationRequester` double and a `CelebrationCenterHeldBurstTests` split.
 
+### FEATURE: F-CTACelebrations-PopScale — the pop at the size E chose on device  [x] COMPLETED
+
+E's device pass on `-4` and `-5` PASSED both blocks with Reduce Motion OFF and ON. E then asked for
+the pop itself to be bigger, in three messages: *"the scaling of the 'pop' needs to be increased
+slightly"*, *"bigger spread too, not just bigger pieces"*, *"maybe slightly increase the amount of
+confetti pieces"*.
+
+Four variants rendered in situ on a real `TaskRow` (A as shipped / B 1.3× / C 1.6× / D 2.0×, all
+three dimensions moving together); **E picked C**. One constant, `CelebrationRecipes.popScale = 1.6`,
+carries size, throw speed and count so they cannot drift apart: `popCount` 12...20 → 19...32,
+`stillPopSpread` 48 → 76.8, piece sizes and launch speeds × 1.6.
+
+**The milestone's 120-piece still field is deliberately NOT scaled** — `piece(...)` is shared, so
+`sizeScale` defaults to 1 and only the two pop paths pass `popScale`. Pinned by
+`testTheMilestonesStillFieldKeepsTheConfirmsOwnPaperSize`, which stayed green through the red-check
+that turned every other scale-dependent test red.
+
+Red: naive 1.0 → 2 failures; the constant set to 1.6 but applied NOWHERE → 4 tests / 29 assertions,
+which is what proves each dependent test load-bearing. Evidence
+`screenshots/cta-celebrations-pop-scale/`, including a measured check that the shipped pop (28
+pieces, 5,590 px, 208 pt) agrees with the variant E approved (29 / 6,100 / 208).
+
+**Owes an RM-on device pass** — the still pop is a reduced site and it changed.
+
 ### FEATURE: F-CTACelebrations-6 — the routine Completed flow (R1–R5)  [ ] OPEN
 
 - **Render FIRST:** `PlaceRoutineCongratulationView` light, dark, RM, the switch-off beat; send it.
