@@ -180,6 +180,63 @@ final class MomentumPreferencesTests: XCTestCase {
         XCTAssertFalse(normalized.arrivalNudgesEnabled, "off must survive normalization")
     }
 
+    // MARK: - The celebration switches (F-CTACelebrations-2; E's #3 and F5)
+
+    /// E's #3: the full-screen celebrations are ON by default, because playing them is what the app
+    /// already does and the switch exists to turn that off. F5: the chime is OFF by default — a
+    /// sound nobody asked for is the one kind of feedback that cannot be politely ignored.
+    func testDefaults_celebrationsOnAndCelebrationSoundsOff() {
+        XCTAssertTrue(MomentumPreferences.default.celebrationsEnabled)
+        XCTAssertFalse(MomentumPreferences.default.celebrationSoundsEnabled)
+    }
+
+    /// Every preferences blob already on a phone predates both keys, so both have to arrive at
+    /// their defaults with the rest of the document untouched. `celebrationsEnabled` must come back
+    /// TRUE: spelled `?? false`, the upgrade would silently turn the celebrations off for everyone
+    /// who already has the app — the one direction a migration bug here can go unnoticed.
+    func testDecode_preCelebrationPayloadKeepsChoicesAndGainsTheSwitchDefaults() throws {
+        let legacy = #"{"dailyGoal":7,"showStreaks":false,"hapticsEnabled":false,"soundEnabled":false}"#
+        let decoded = try JSONDecoder().decode(MomentumPreferences.self, from: Data(legacy.utf8))
+
+        XCTAssertEqual(decoded.dailyGoal, 7, "existing choices must survive the upgrade")
+        XCTAssertFalse(decoded.hapticsEnabled, "and so must the switches the user already turned off")
+        XCTAssertTrue(decoded.celebrationsEnabled, "a missing key must read as ON, never as Bool's zero value")
+        XCTAssertFalse(decoded.celebrationSoundsEnabled)
+    }
+
+    /// `testNormalized_preservesTheLocationSwitches`' bug in its general form, and the reason the
+    /// record calls this a FOUR-place edit: `normalized()` rebuilds the struct field by field, so a
+    /// field it forgets silently resets on every read AND write.
+    ///
+    /// Both switches are set AWAY from their defaults on purpose. Asserting a field's own default
+    /// value proves nothing, because the omission this test exists to catch resets it to exactly
+    /// that — an assertion that `celebrationSoundsEnabled` is still `false` would be green on the
+    /// broken tree.
+    func testNormalized_preservesBothCelebrationSwitchesAwayFromTheirDefaults() {
+        var preferences = MomentumPreferences.default
+        preferences.celebrationsEnabled = false
+        preferences.celebrationSoundsEnabled = true
+
+        let normalized = preferences.normalized()
+
+        XCTAssertFalse(normalized.celebrationsEnabled, "off must survive normalization")
+        XCTAssertTrue(normalized.celebrationSoundsEnabled, "on must survive normalization")
+    }
+
+    /// The same property through the real store, which normalizes on both sides — so this is the
+    /// end-to-end version of the row actually sticking where the user left it.
+    func testStore_roundTripsBothCelebrationSwitchesAwayFromTheirDefaults() {
+        let (store, _) = makeStore()
+        var prefs = MomentumPreferences.default
+        prefs.celebrationsEnabled = false
+        prefs.celebrationSoundsEnabled = true
+
+        store.write(prefs)
+
+        XCTAssertFalse(store.read().celebrationsEnabled)
+        XCTAssertTrue(store.read().celebrationSoundsEnabled)
+    }
+
     func testStore_roundTripsTheLocationSwitchesOff() {
         let (store, _) = makeStore()
         var prefs = MomentumPreferences.default
