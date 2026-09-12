@@ -3719,7 +3719,7 @@ dim draw only for a cleared stack. Evidence `screenshots/confirm-celebration-blo
 0.3 / 1.2 / 2.6 / 4.8 s light + dark, the 6.4 s mp4, an every-Confirm frame pixel-diffed against
 block 1: 0 pixels). Device verdict.
 
-### FEATURE: F-CTACelebrations-1 — the haptic tidy and the closure card's spring-in  [x] COMPLETED 2026-09-12 — device verdict PASSED (E: "it feels good, all five work as you described")
+### FEATURE: F-CTACelebrations-1 — the haptic tidy and the closure card's spring-in  [x] COMPLETED 2026-09-12 — device verdict PASSED on the FULL path (E: "it feels good, all five work as you described"; E turned Reduce Motion OFF the same day, so the reduced path is verified by injection only)
 
 - **Room first, own commit:** `HomeView.swift:360-399` → `Home/HomeView+Refresh.swift`;
   `HomeMomentumSections.swift:235-329` → `Home/HomeLifeAreasSections.swift`.

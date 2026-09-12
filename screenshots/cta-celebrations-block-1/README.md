@@ -17,14 +17,18 @@ card springs in", and §3's "The closure card's spring-in".
 > **A single implementation, no `#available`**: `.transition`, `.scale`, `.opacity` and
 > `withAnimation` are all iOS 13, and no later tier renders this better (§7.1 — a tier ships only
 > when it shows the user something the tier below cannot).
+> - **Full path:** run on the 26.5 simulator (the middle row of each sheet) **and on E's phone**,
+>   which is what E's verdict judged.
 > - **Reduced path:** run on the 26.5 simulator with Reduce Motion INJECTED as a parameter — the
->   bottom row of each sheet. Not yet on E's phone.
-> - **Full path:** run on the 26.5 simulator — the middle row. Not yet on E's phone.
-> - **E's phone:** installed from `main` @ `49c78d9`. E runs Reduce Motion ON, so the verdict
->   exercised the REDUCED path — the card cross-fading at full size is what E approved, not a
->   missing animation. **E's device verdict PASSED** on 2026-09-12: *"it feels good, all five work
->   as you described."* All four haptics and the spring-in were judged by thumb, which is the only
->   way a haptic can be judged — nothing in this folder could have settled them.
+>   bottom row of each sheet. **NOT on device.**
+> - **E's phone:** installed from `main` @ `49c78d9`. **E's device verdict PASSED** on 2026-09-12:
+>   *"it feels good, all five work as you described."* All four haptics were judged by thumb, which
+>   is the only way a haptic can be judged — nothing in this folder could have settled them.
+> - **Which path that verdict judged, corrected 2026-09-12:** this README first recorded it as the
+>   REDUCED path, on the standing fact that E's phone ran Reduce Motion ON. **E turned Reduce Motion
+>   OFF earlier the same day** and confirmed it was already off for this test, so **the verdict
+>   judged the FULL path — the spring, with the 0.9 scale measured below.** The reduced path is
+>   verified by injection on the simulator only. See CLAUDE.md §7.2 and §7.3.
 > - **iOS 16–25:** behaviour is COMPILE-ONLY; no older runtime is installed.
 
 Nobody here can say "works on iOS 16" yet, and nothing in this folder does.

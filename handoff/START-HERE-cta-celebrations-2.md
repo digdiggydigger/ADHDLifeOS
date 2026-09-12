@@ -11,6 +11,16 @@ session that writes this arc's next opener archives this file in the same move.*
 Nothing is owed from block 2 — start this one. E's phone runs the block-2 build.
 No gate question is owed; E approved the record and R-a…R-h on 2026-09-12.
 
+**READ THIS BEFORE WRITING A REDUCED PATH. E TURNED REDUCE MOTION OFF ON 2026-09-12**
+(*"I no longer run with reduce motion on"*), reversing a fact this project designed around for
+months. **CLAUDE.md §7.2's rule is UNCHANGED** — it rests on Apple's guidance and the public-launch
+intent, not on E's setting, so keep writing complete reduced branches. What changed is COVERAGE:
+the reduced path used to be exercised daily on a real phone by the person reviewing every block,
+and now is exercised only where a test injects it. Per §7.3, this block's report may NOT claim a
+reduced path was verified on device unless E toggles the setting on for that check — the honest
+line is *"Reduced: run on sim (injected); NOT on device."* Register §A carries E's open question
+about how the reduced path gets device time from here.
+
 ## Read first, in this order
 
 1. CLAUDE.md's start-of-session checklist: `claudecode.md`, "Architecture notes", and **§7**.

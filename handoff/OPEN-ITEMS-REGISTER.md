@@ -1,4 +1,4 @@
-# Open items register — 2026-09-12 (thirty-second edition; the CTA celebrations arc's block 2, `F-CTACelebrations-1`, is BUILT, MERGED and PASSED E's device verdict BY FEEL; six blocks remain)
+# Open items register — 2026-09-12 (thirty-second edition; the CTA celebrations arc's block 2, `F-CTACelebrations-1`, is BUILT, MERGED and PASSED E's device verdict BY FEEL on the FULL path; **E turned Reduce Motion OFF the same day**, which changes the project's verification coverage but not §7.2's rule; six blocks remain)
 
 *The close-out of the second build session of the CTA celebrations arc. E's asks this session,
 verbatim: *"Start from handoff/START-HERE-cta-celebrations-1.md. Read it, then the register and the
@@ -53,7 +53,8 @@ the numerator by about as much as it moves the denominator.)
   toolbar Stop that merely raises the dialog) and the closure card's spring-in. Six tests, not the
   five the block predicted; red 6 / 6 tests predicted and observed (11 assertions); green 6 / 6.
   Evidence `screenshots/cta-celebrations-block-1/`. **E's device verdict PASSED** 2026-09-12 BY
-  FEEL — *"it feels good, all five work as you described"* (§A). (NEW)
+  FEEL — *"it feels good, all five work as you described"* — on the **FULL** path; the reduced one
+  is verified by injection only (§A). (NEW)
 - **The room-first split**, its own commit: `HomeView.swift` 399 → 362 (`Home/HomeView+Refresh.swift`)
   and `HomeMomentumSections.swift` 399 → 303 (`Home/HomeLifeAreasSections.swift`). Four `private`
   declarations widened to internal, because `private` in an extension is scoped to the FILE the
@@ -127,9 +128,14 @@ the numerator by about as much as it moves the denominator.)
 
 ### How the Reduce Motion story got here (carried in brief)
 
-E's phone runs **Reduce Motion ON (and Prefer Cross-Fade Transitions ON)**. CLAUDE.md §7 is the
-rule; the Confirm celebration is its ONE waiver, and this arc's design does not extend it: every new
-site fades (E's #7).
+E's phone ran **Reduce Motion ON (and Prefer Cross-Fade Transitions ON)** from the start of this
+story until **2026-09-12, when E turned it OFF** (E, unprompted: *"I no longer run with reduce
+motion on"*). CLAUDE.md §7 is the rule and it is UNCHANGED — it rests on Apple's guidance and on the
+public-launch intent, never on E's own setting. The Confirm celebration is its ONE waiver, and this
+arc's design does not extend it: every new site fades (E's #7). **What the change costs is coverage,
+not policy:** the reduced path used to be tried on a real phone every day by the person reviewing
+the blocks, and now is exercised only by injection. §7.3 carries the consequence for reports, and
+§A carries E's open question about how the reduced path gets device time from here.
 
 ## A · Decisions only E can make — minutes each
 
@@ -139,10 +145,29 @@ site fades (E's #7).
 - [x] **E's device verdict on `F-CTACelebrations-1`** — **PASSED 2026-09-12**, E: *"it feels
       good, all five work as you described."* All five taps confirmed by thumb — Sorted on the
       capture detail screen, Done for now, Save a place, the sprint Stop CONFIRMATION, and the
-      closure card's arrival from Home's Best-next-move. E runs Reduce Motion ON, so the approved
-      experience is the card CROSS-FADING at full size; the §C2 sibling-reflow question drew no
-      complaint and stays a note rather than work. The block is CLOSED; the next is
+      closure card's arrival from Home's Best-next-move. **Corrected 2026-09-12:** this item first
+      said the verdict exercised the REDUCED path, on the then-standing fact that E's phone ran
+      Reduce Motion ON. E turned it OFF earlier the same day and confirmed it was already off for
+      this test, so **what E approved is the FULL path — the spring**. The reduced path is verified
+      by injection only. The §C2 sibling-reflow question is a REDUCED-path effect, so E did not see
+      it and it cannot be treated as having drawn no complaint. The block is CLOSED; the next is
       `F-CTACelebrations-2`, the two switches. (CLOSED)
+- [ ] **How does the reduced path get DEVICE time now that E runs with Reduce Motion OFF?** Until
+      2026-09-12 every reduced branch was tried on a real phone daily, for free, by the person
+      reviewing the blocks. That coverage is gone. Injection proves the code runs and which branch
+      is chosen; it cannot show how a fade READS on the device, and this app ships to users who
+      will have the setting on. Three options, none of them started: **(a)** E toggles Reduce
+      Motion on for the device check of any block that adds a reduced site — a few seconds per
+      block, and the only one that gives real device evidence; **(b)** reduced paths are accepted
+      as sim-injection-only and every report says so (§7.3's new default line); **(c)** a UI
+      journey runs with the setting forced, which costs a simulator erase per run and still is not
+      a phone. Recommend **(a)**, because the reduced path is the one users with motion sensitivity
+      get. E's call. (NEW)
+- [ ] **E has still never seen the focus card's completion celebration** (`F-FocusCard-4` — the
+      ring burst and the tick that springs from 0.6, after a 0.3 s pre-beat). It was built and
+      approved while E's phone had Reduce Motion ON, so E judged a hard cut plus a haptic and the
+      arc closed on *"the pre-beat reads fine"*. **With the setting off it will now actually play.**
+      Nothing to build; finish a sprint and look at it, and say if it is wrong. (NEW)
 - [x] **E's device verdict on `F-ConfirmCelebration-2`** — PASSED 2026-09-12, E: *"it looks good.
       It looks as if it's working as as you specified."* The block is CLOSED. E also said to ignore
       the stray Codex `AGENTS.md` for now. (CLOSED)
@@ -254,8 +279,10 @@ site fades (E's #7).
   the transaction. §7.2 treats continuous re-layout as the one case where no animation is correct,
   and a single transaction cannot both fade the card in place and hard-cut the reflow under it.
   It only matters if `ClosureCelebrationCard` and `bestNextMoveSection` differ much in height.
-  Raised by the reviewer subagent, below its reporting bar; judge it on the phone with RM on, and
-  only act if E notices it. (NEW)
+  Raised by the reviewer subagent, below its reporting bar. **It is a REDUCED-path effect, and E
+  now runs with Reduce Motion OFF, so E's passing verdict did not see it** — this cannot be
+  written off as "tried and not noticed". It stays open and unjudged until someone looks with the
+  setting on (§A). (updated)
 
 ## D · Launch blockers — no conversation opened yet
 
