@@ -1,15 +1,16 @@
-# Open items register — 2026-09-12 (thirty-first edition; the CTA celebrations arc's block 1, `F-ConfirmCelebration-2`, is BUILT, MERGED and PASSED E's device verdict; seven blocks remain)
+# Open items register — 2026-09-12 (thirty-second edition; the CTA celebrations arc's block 2, `F-CTACelebrations-1`, is BUILT and MERGED; six blocks remain)
 
-*The close-out of the first build session of the CTA celebrations arc. E's asks this session,
-verbatim: *"Start from handoff/START-HERE-cta-celebrations-build.md. Read it, then the design
-record … and the register. Before building anything, ask me in one message whether the record is
-approved and how R-a to R-h are ruled. Then build F-ConfirmCelebration-2 test-first and stop for my
-device verdict. The cooldown stays at 5 s."* — and, mid-session, *"remember that you should use any
-skills, MCPs, plugins or subagents to help your work."* E answered the gate question **"yes"**.
+*The close-out of the second build session of the CTA celebrations arc. E's asks this session,
+verbatim: *"Start from handoff/START-HERE-cta-celebrations-1.md. Read it, then the register and the
+design record's 'Haptic only' and 'closure card's spring-in' sections. No gate question is owed. Do
+the room-first commit on HomeView.swift and HomeMomentumSections.swift, then build
+F-CTACelebrations-1 test-first with a written red prediction, and stop for my device verdict by
+feel. The cooldown stays at 5 s. Ignore the untracked AGENTS.md."* — and, mid-session, *"Remember
+that you should make use of ANY skills, MCPs, Plugins and subagents to assist your work"* and
+*"the previous sessions emulator is probably still open, use that if you can"*.
 
-The opener `handoff/START-HERE-cta-celebrations-build.md` stays LIVE: it covers the whole arc and
-the next session starts block 2 (`F-CTACelebrations-1`) from it once E's verdict on block 1 is in.
-Supersedes the thirty earlier editions.*
+The opener `handoff/START-HERE-cta-celebrations-1.md` is SPENT — it is archived in the same move
+that writes this edition and the next session's opener. Supersedes the thirty-one earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -17,60 +18,91 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `9a7b664`** (PR #76, `F-ConfirmCelebration-2`). `firestore.rules` is untouched, so there
+**`main` @ `49c78d9`** (PR #80, `F-CTACelebrations-1`). `firestore.rules` is untouched, so there
 is **nothing for E to republish**.
 
-**E's phone: `main @ 9a7b664` installed and launched from the CLI at the close of this session**
-(see the session report for the install log; the profile is valid to 2026-09-17).
+**E's phone: built, installed and launched from the CLI at the close of this session** — the
+device build ran `** BUILD SUCCEEDED **` against `3DBC979A-3255-5456-8C30-172DB19B99B3`
+(`wishwashwacky15`, an iPhone **15** Pro — the opener did not say the model), installed to bundle
+`com.ethananthony.ADHD-LifeOS` and launched. The profile is valid to 2026-09-17.
 
-**Verified at `29c6267` (the block's green commit; PR #76 adds only evidence and the TODO tick):**
-- unit suite **2,741 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
-- SwiftLint **0 / 757**;
-- sim `** BUILD SUCCEEDED **`; device build at the close (session report).
+**Verified at `844daae`** (the block's green commit; the PR adds only the TODO tick):
+- unit suite **2,747 / 0** (2,741 + this block's six), emulator UP, **0** `127.0.0.1:9099` hits;
+- SwiftLint **0 / 760**;
+- sim `** BUILD SUCCEEDED **`; device build at the close.
 
-Coverage, measured at `29c6267`:
+Coverage, measured at `844daae`:
 
 ```
-ADHD LifeOS.app              27.07%  (12635/46678)
-ADHD LifeOSTests.xctest      94.99%  (43903/46220)
+ADHD LifeOS.app              27.07%  (12643/46702)
+ADHD LifeOSTests.xctest      94.94%  (44066/46415)
 ADHD LifeOSUITests.xctest     0.00%  (0/2962)       ← skipped in the standard run by design
 FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testable surface, not this
 ```
 
-(Comparable with the 26.87 % (12,470/46,405) of the previous edition: the tree grew by this block's
-three files and the numerator by their tests — `ConfirmFireworksPhysics` 100 %, `Schedule` 96 %,
-`Drawing` 19 % because its Canvas operations are view territory, proved by the renders.)
+(Comparable with the previous edition's 27.07 % (12,635/46,678): the denominator moved by 24 lines
+because the TREE grew by this block's production lines, and both runs measured 100 % of the app
+target. The ratio is unchanged to four figures — a block of call-site guards over view code moves
+the numerator by about as much as it moves the denominator.)
 
 ### Landed this session
 
-- **`F-ConfirmCelebration-2`** — the stack-clearing fireworks (14 shells in 9 tokens on the record's
-  fixed schedule) and the light-only 85 % dim, on the SAME stretch as the confetti (E's decision 1):
-  a stack-clearing Confirm is on screen ≈ 6.43 s, every other Confirm stays 5.4 s and is
-  pixel-identical to block 1 (0 / 1,339,344, diffed against block 1's own rendering from a
-  throwaway worktree). 31 tests; red 2,741 / 31 tests predicted and observed; red-check 5 / 5 by
-  name; green 2,741 / 0. Evidence `screenshots/confirm-celebration-block-2/`. **Awaiting E's device
-  verdict** (§A). (NEW)
-- **E's approval of the CTA design record and R-a…R-h** ("yes"), recorded in the record and here.
+- **`F-CTACelebrations-1`** — the four haptic tidies (Sorted on the capture DETAIL screen
+  `.solid` → `.success`; "Done for now" `.light` → `.success`; Save a place gains `.solid` INSIDE
+  the success branch; Stop sprint gains `.light` on the confirmation's destructive button, not the
+  toolbar Stop that merely raises the dialog) and the closure card's spring-in. Six tests, not the
+  five the block predicted; red 6 / 6 tests predicted and observed (11 assertions); green 6 / 6.
+  Evidence `screenshots/cta-celebrations-block-1/`. **Awaiting E's device verdict BY FEEL** (§A).
   (NEW)
+- **The room-first split**, its own commit: `HomeView.swift` 399 → 362 (`Home/HomeView+Refresh.swift`)
+  and `HomeMomentumSections.swift` 399 → 303 (`Home/HomeLifeAreasSections.swift`). Four `private`
+  declarations widened to internal, because `private` in an extension is scoped to the FILE the
+  extension is written in — `widgetSprint`, `widgetPublisher`, `pullRefreshCount`,
+  `publishWidgetSnapshot`. **Two of the five near-ceiling files listed in the thirtieth edition are
+  now clear**; `RootView.swift` 394, `CaptureInboxService.swift` 397 and `PlaceRoutineScreen.swift`
+  379 remain, and blocks `-3` and `-5` each carry their own room-first commit. (NEW)
 
 ### What this session established
 
-- **A render probe that drives the app on the real clock must be a SYNCHRONOUS test.** The first
-  live run captured nothing: an `async` test method runs inside a main-queue block, and a nested
-  `RunLoop.main.run(until:)` cannot drain the main queue from there, so the `Task` holding the
-  Confirm never ran. §E already said "a synchronous test pumping `RunLoop.main`"; this is why.
-  A 1.0 s settle before the reference captures also removes a 69-pixel tab-bar selection-spring
-  artefact. (NEW)
-- **The pixel-diff against block 1 was rendered by block 1's code, not by this tree with the
-  feature off** — a `git worktree` at `b5fe8c8` with a two-appearance baseline probe. A diff
-  against one's own tree proves only that the gate is closed, not that the drawing is unchanged.
-  (NEW)
-- **The reviewer subagent (`feature-dev:code-reviewer`) found nothing at its bar** and re-derived
-  the 4.79 s last spark independently; it noted (below threshold) that a stack-clearing Confirm
-  builds 220 pieces + 880 sparks synchronously at the busiest instant, a one-time cost that is
-  E's phone's to measure. (NEW)
-- A stray untracked `AGENTS.md` (a Codex copy of CLAUDE.md, not written by this session) appeared
-  in the repo root mid-session; it was left out of every commit. E to decide whether it stays. (NEW)
+- **The three writers of `celebratedTask` share one `setCelebratedTask` rather than each carrying
+  its own `withAnimation(...)`** — a deliberate deviation from the record's wording, and the reason
+  is testability: "no writer bypasses the animation" is a property a test can hold only if there is
+  one writer to point at. The record's literal animation string is still present and pinned. (NEW)
+- **A call-site guard must be scoped to its CLOSURE, not its file.** Three of this block's four
+  files already held the target feel at a different site that must not move — `CaptureDetail\
+  Components` plays `.solid` on the notes save, `PlaceEditorView` plays `.solid` when an address
+  suggestion drops the pin, `FocusTimerBar` plays `.light` on expand/collapse. A whole-file
+  `contains(".light")` on `FocusTimerBar` would have been GREEN on a tree where the stop
+  confirmation buzzed nothing at all. The tests extract one closure between two unique anchors and
+  throw loudly if an anchor has moved. (NEW)
+- **The reviewer subagent (`feature-dev:code-reviewer`) found nothing at its bar and one thing
+  worth fixing below it:** the no-bypass guard read ONE file while its name claimed "EVERY write",
+  and `celebratedTask` is internal on `HomeView`, so any of that type's eight extension files could
+  have bypassed the setter unseen. The guard now sweeps every Swift file in the app target and
+  names the offenders; red-checked by planting a bare write in `HomeLifeAreasSections.swift`
+  (2 != 1, the file named in the failure), tree restored with `git checkout --`. It also confirmed
+  the one path that could have silently defeated the whole animation: `HomeService.load()` guards
+  its `.loading` state, so the `await homeService.load()` following `setCelebratedTask(task)` does
+  NOT bounce `HomeView.body`'s switch and tear down the in-flight transition. (NEW)
+- **A rendered sheet could not settle whether `.scale(0.9)` was applied at all** — both new rows
+  read as a cross-fade, because at the instant the scale is 0.9 the opacity is still ≈ 0 and there
+  is nothing to see. The probe therefore MEASURES the card's rendered width off the `CGImage`:
+  against a settled **370 pt**, the full path narrows to **340–346 pt** (0.92 ×) at t ≈ 0.11 s and
+  recovers by ≈ 0.29 s, while the reduced path never leaves **369.5–370 pt**. Reproduced over three
+  consecutive runs. **When a sheet cannot resolve the property, measure it and publish the number**
+  — §7.2's opening-pose rule is a claim about geometry, not about how something looks. (NEW)
+- **Two probe harnesses were wrong before one was right, and both failures looked like app bugs.**
+  (a) The first scan band sat in the hosting controller's ~59 pt safe-area inset and returned zero
+  width for EVERY row — including the control row that cannot move. *A measurement that reports
+  nothing for a control that cannot move is measuring the wrong pixels.* (b) A card-alone harness
+  (empty else-branch) failed to render the inserted card at all in some runs and showed it at
+  ≈ 0.83 s in others, from identical code; it was DISCARDED as unreliable rather than reported as
+  inconclusive, and no number in the evidence comes from it. The harness that works keeps content
+  in both branches. (NEW)
+- **The emulator suite from the PREVIOUS session was still up** (java on 8080/9099/9199), and
+  `./scripts/emulators.sh` failed with "port taken" rather than reusing it. E: *"use that if you
+  can."* Checking the hub (`curl 127.0.0.1:4400/emulators`) is the cheap way to tell a stale
+  harness from a broken one. (NEW)
 
 ### Carried from the design session (thirtieth edition)
 
@@ -104,9 +136,19 @@ site fades (E's #7).
 - [x] **Review the design record** and rule on **R-a…R-h** — E, at the start of the build session
       2026-09-11, asked in one message with each default listed: **"yes"**. The record is approved
       and all eight recommendations stand as the build's defaults. (CLOSED)
+- [ ] **E's device verdict on `F-CTACelebrations-1` — BY FEEL, not by looking.** Haptics cannot
+      be photographed, so this block closes on E's thumb. Five taps, and each has a prerequisite:
+      **Sorted** on a CAPTURE'S DETAIL SCREEN (needs an unprocessed, unseen capture with a life
+      area — the triage screen's Sorted is the one that already felt right); **Done for now** on a
+      due nudge; **Save** in the place editor (the buzz should land when the write does, not when
+      the button is pressed); **Stop** on a running sprint, then CONFIRM (nothing should buzz when
+      the dialog merely appears); and **Close it** on Home's Best-next-move, where the closure card
+      should now arrive rather than appear. E runs Reduce Motion ON, so the card will CROSS-FADE at
+      full size — that is the designed reduced path, not a missing animation. The build is on the
+      phone. (NEW)
 - [x] **E's device verdict on `F-ConfirmCelebration-2`** — PASSED 2026-09-12, E: *"it looks good.
-      It looks as if it's working as as you specified."* The block is CLOSED; the next is
-      `F-CTACelebrations-1`. E also said to ignore the stray Codex `AGENTS.md` for now. (CLOSED)
+      It looks as if it's working as as you specified."* The block is CLOSED. E also said to ignore
+      the stray Codex `AGENTS.md` for now. (CLOSED)
 - [ ] **The milestone cooldown.** E: *"i am undecided about the cooldown at the moment anyway."* It
       ships at **5 s for testing**; whether it exists and at what value is E's call on the phone
       after `F-CTACelebrations-5`. (carried; untouched this session, as E instructed)
@@ -125,10 +167,11 @@ site fades (E's #7).
 
 ## B · Real work, ready to start — recommended order
 
-**00. THE CTA CELEBRATIONS ARC — block 1 of 8 BUILT and MERGED (`F-ConfirmCelebration-2`, PR #76);
-   the next is `F-CTACelebrations-1` once E's verdict is in.** The record is
-   `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener is
-   `handoff/START-HERE-cta-celebrations-build.md`; the blocks are in `TODO-CLAUDE-CODE.md`.
+**00. THE CTA CELEBRATIONS ARC — blocks 1 and 2 of 8 BUILT and MERGED (`F-ConfirmCelebration-2`
+   PR #76 verdict PASSED; `F-CTACelebrations-1` PR #80 awaiting the verdict by feel); the next is
+   `F-CTACelebrations-2`, the two switches.** The record is
+   `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener is the session's own
+   `handoff/START-HERE-*`; the blocks are in `TODO-CLAUDE-CODE.md`.
    **E's decisions, all settled** (the record has them verbatim):
    1. **Fireworks take the same +1.2 s stretch** (≈ 6.43 s on a stack-clearing Confirm), built FIRST
       as `F-ConfirmCelebration-2`.
@@ -153,7 +196,7 @@ site fades (E's #7).
       an inert default; one `CelebrationLayer(surface:)` per presented surface (root, the routine
       cover, the Tasks search surface, the Create Task sheet).
    **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ (DONE 2026-09-12, verdict PASSED) →
-   `F-CTACelebrations-1` (haptic tidy + spring-in) → `-2` (switches) → `-3` (centre + layers,
+   ~~`F-CTACelebrations-1`~~ (DONE 2026-09-12, verdict PENDING) → `-2` (switches) → `-3` (centre + layers,
    Confirm re-routed) → `-4` (pops; render first, E picks) → `-5` (inbox zero, streak, daily goal)
    → `-6` (Completed flow; render the congratulation first) → `-7` (chime; E picks by ear).
    **For block 3 note:** the shared `CelebrationFrame` now has to carry the fireworks and the dim
@@ -207,6 +250,16 @@ site fades (E's #7).
 - **`OfflineSprintSummaryCard`** — E ruled it out of the focus-card arc explicitly; "Got it" stays
   without a celebration (#5). (carried)
 
+## C2 · Noticed, below the bar, worth E's eye on device
+
+- **Under Reduce Motion the closure card's `withAnimation(.default)` also animates the SIBLING
+  sections reflowing beneath it** (life areas, Due now, nudges), because they share the VStack and
+  the transaction. §7.2 treats continuous re-layout as the one case where no animation is correct,
+  and a single transaction cannot both fade the card in place and hard-cut the reflow under it.
+  It only matters if `ClosureCelebrationCard` and `bestNextMoveSection` differ much in height.
+  Raised by the reviewer subagent, below its reporting bar; judge it on the phone with RM on, and
+  only act if E notices it. (NEW)
+
 ## D · Launch blockers — no conversation opened yet
 
 - **Free dev account** → 7-day profiles; the current one is valid to **2026-09-17**. When a device
@@ -230,7 +283,11 @@ site fades (E's #7).
 - **`Executed N tests, with M failures` counts failed ASSERTIONS, not failing TESTS.** Predict in
   TESTS, then reconcile. (carried)
 - **SwiftLint's 400-line file, 250-line `type_body_length` and 40-character `type_name` ceilings.**
-  Five files near the first are listed above. (updated)
+  Two of the five near-ceiling files were cleared by this block's room-first commit; `RootView.swift`
+  394, `CaptureInboxService.swift` 397 and `PlaceRoutineScreen.swift` 379 remain, and blocks `-3`
+  and `-5` carry their own room-first commits for the first two. **Moving an extension to a new file
+  ends same-file `private` access** — budget for widening every `private` the moved code touches.
+  (updated)
 - **A `devicectl` launch denied with `Security` right after a re-issued profile is TRANSIENT — retry
   once.** The three species: `Locked` (unlock), `Security` + valid profile (retry), `Security` +
   expired profile or "No Accounts" (E signs in via Xcode → Settings → Accounts). (carried)
