@@ -1,67 +1,78 @@
-# Open items register — 2026-09-11 (thirtieth edition; the CTA celebrations arc is DESIGNED and recorded; NOTHING of it is built; the build starts in a fresh session)
+# Open items register — 2026-09-12 (thirty-first edition; the CTA celebrations arc's block 1, `F-ConfirmCelebration-2`, is BUILT and MERGED, awaiting E's device verdict; seven blocks remain)
 
-*The close-out of the design session for celebrations on the app's other call-to-action buttons.
-E's asks this session, verbatim:
-- *"Start from handoff/START-HERE-cta-celebrations.md. Before any design or build, ask me the
-  numbered questions … one at a time, with options and your recommendation, and record my answers
-  in the register. Then we design celebrations for the app's other buttons."*
-- *"I think you should ask me some more questions to enhance your understanding"* — nine more were
-  asked and answered;
-- *"reduce that "30-minute cooldown" to 5 seconds for now so i can test it properly. i am undecided
-  about the cooldown"*;
-- the routine **Completed** flow (five questions, §B.00);
-- **"YOU MUST NOT BUILD IT IN THIS SESSION"** and **"You must start building this in a fresh claude
-  code terminal session."**
+*The close-out of the first build session of the CTA celebrations arc. E's asks this session,
+verbatim: *"Start from handoff/START-HERE-cta-celebrations-build.md. Read it, then the design
+record … and the register. Before building anything, ask me in one message whether the record is
+approved and how R-a to R-h are ruled. Then build F-ConfirmCelebration-2 test-first and stop for my
+device verdict. The cooldown stays at 5 s."* — and, mid-session, *"remember that you should use any
+skills, MCPs, plugins or subagents to help your work."* E answered the gate question **"yes"**.
 
-The next session's opener is **`handoff/START-HERE-cta-celebrations-build.md`**. The consumed
-`START-HERE-cta-celebrations.md` is archived in the same move. Supersedes the twenty-nine earlier
-editions.*
+The opener `handoff/START-HERE-cta-celebrations-build.md` stays LIVE: it covers the whole arc and
+the next session starts block 2 (`F-CTACelebrations-1`) from it once E's verdict on block 1 is in.
+Supersedes the thirty earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
 update rather than improvising a list in chat.
 
-Every figure below is carried from the twenty-ninth edition unless marked; this session changed no
-Swift and ran no suite.
-
 ## State
 
-**`main` @ this edition's merge (the design PR; its last code commit is `ec0f5ee` + this PR).** The
-only non-document change in this PR is the widget extension's `MARKETING_VERSION` 1.0 → 1.3 (E's
-call, §A), verified by a simulator build pasted in the session report. `firestore.rules` is
-untouched, so there is **nothing for E to republish**.
+**`main` @ `9a7b664`** (PR #76, `F-ConfirmCelebration-2`). `firestore.rules` is untouched, so there
+is **nothing for E to republish**.
 
-**E's phone runs `967472a`'s app code** (carried; installed 10:26 BST on 2026-09-11). Nothing in
-this PR changes the app's behaviour.
+**E's phone: `main @ 9a7b664` installed and launched from the CLI at the close of this session**
+(see the session report for the install log; the profile is valid to 2026-09-17).
 
-**Verified at the last code change** (carried from the twenty-ninth edition, `967472a`):
-- unit suite **2,710 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
-- SwiftLint **0 / 751**;
-- sim and device `** BUILD SUCCEEDED **`.
+**Verified at `29c6267` (the block's green commit; PR #76 adds only evidence and the TODO tick):**
+- unit suite **2,741 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+- SwiftLint **0 / 757**;
+- sim `** BUILD SUCCEEDED **`; device build at the close (session report).
 
-Coverage, last measured at `F-ConfirmCelebration-1`'s block 1 (carried):
+Coverage, measured at `29c6267`:
 
 ```
-ADHD LifeOS.app              26.87%  (12470/46405)
-ADHD LifeOSTests.xctest      95.09%  (43131/45358)
+ADHD LifeOS.app              27.07%  (12635/46678)
+ADHD LifeOSTests.xctest      94.99%  (43903/46220)
 ADHD LifeOSUITests.xctest     0.00%  (0/2962)       ← skipped in the standard run by design
 FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testable surface, not this
 ```
 
+(Comparable with the 26.87 % (12,470/46,405) of the previous edition: the tree grew by this block's
+three files and the numerator by their tests — `ConfirmFireworksPhysics` 100 %, `Schedule` 96 %,
+`Drawing` 19 % because its Canvas operations are view territory, proved by the renders.)
+
 ### Landed this session
 
-- **The design record `handoff/SESSION-OPENER-cta-celebrations-design.md`** (permanent): E's
-  twenty-seven answers verbatim (the eight carried questions, nine follow-ups, the five Completed-flow
-  questions, the architecture choice, four lower-priority items), what they add up to, the design
-  (the app-level `CelebrationCenter`, one drawing layer per presented surface, the recipes, the
-  triggers, the switches, the chime), the numbers, the engineering constraints, the eight blocks in
-  order, and eight recommendations R-a…R-h that E has NOT yet ruled on. (NEW)
-- **The eight blocks in `TODO-CLAUDE-CODE.md`** under `# ⚠ CLAUDE CODE ADDITIONS`, after
-  `F-ConfirmCelebration-2`, all `[ ] OPEN`. (NEW)
-- **The widget's `MARKETING_VERSION` is 1.3**, matching the app. (NEW, E's call)
-- A project memory `cta-celebrations-arc.md`. (NEW)
+- **`F-ConfirmCelebration-2`** — the stack-clearing fireworks (14 shells in 9 tokens on the record's
+  fixed schedule) and the light-only 85 % dim, on the SAME stretch as the confetti (E's decision 1):
+  a stack-clearing Confirm is on screen ≈ 6.43 s, every other Confirm stays 5.4 s and is
+  pixel-identical to block 1 (0 / 1,339,344, diffed against block 1's own rendering from a
+  throwaway worktree). 31 tests; red 2,741 / 31 tests predicted and observed; red-check 5 / 5 by
+  name; green 2,741 / 0. Evidence `screenshots/confirm-celebration-block-2/`. **Awaiting E's device
+  verdict** (§A). (NEW)
+- **E's approval of the CTA design record and R-a…R-h** ("yes"), recorded in the record and here.
+  (NEW)
 
 ### What this session established
+
+- **A render probe that drives the app on the real clock must be a SYNCHRONOUS test.** The first
+  live run captured nothing: an `async` test method runs inside a main-queue block, and a nested
+  `RunLoop.main.run(until:)` cannot drain the main queue from there, so the `Task` holding the
+  Confirm never ran. §E already said "a synchronous test pumping `RunLoop.main`"; this is why.
+  A 1.0 s settle before the reference captures also removes a 69-pixel tab-bar selection-spring
+  artefact. (NEW)
+- **The pixel-diff against block 1 was rendered by block 1's code, not by this tree with the
+  feature off** — a `git worktree` at `b5fe8c8` with a two-appearance baseline probe. A diff
+  against one's own tree proves only that the gate is closed, not that the drawing is unchanged.
+  (NEW)
+- **The reviewer subagent (`feature-dev:code-reviewer`) found nothing at its bar** and re-derived
+  the 4.79 s last spark independently; it noted (below threshold) that a stack-clearing Confirm
+  builds 220 pieces + 880 sparks synchronously at the busiest instant, a one-time cost that is
+  E's phone's to measure. (NEW)
+- A stray untracked `AGENTS.md` (a Codex copy of CLAUDE.md, not written by this session) appeared
+  in the repo root mid-session; it was left out of every commit. E to decide whether it stays. (NEW)
+
+### Carried from the design session (thirtieth edition)
 
 - **E's design answers are the spec.** Seven of the recommendations were overruled (a Finish
   button; a streak milestone and the daily goal; a chime; the mini confetti pop over the halo; the
@@ -93,9 +104,13 @@ site fades (E's #7).
 - [x] **Review the design record** and rule on **R-a…R-h** — E, at the start of the build session
       2026-09-11, asked in one message with each default listed: **"yes"**. The record is approved
       and all eight recommendations stand as the build's defaults. (CLOSED)
+- [ ] **E's device verdict on `F-ConfirmCelebration-2`** — the stack-clearing fireworks and the
+      light-mode dim, on the phone from `main @ 9a7b664`, light AND dark, Reduce Motion ON (E's
+      setting; the waiver makes it identical to OFF). The block is ticked; the verdict closes it and
+      opens `F-CTACelebrations-1`. (NEW)
 - [ ] **The milestone cooldown.** E: *"i am undecided about the cooldown at the moment anyway."* It
       ships at **5 s for testing**; whether it exists and at what value is E's call on the phone
-      after `F-CTACelebrations-5`. (NEW)
+      after `F-CTACelebrations-5`. (carried; untouched this session, as E instructed)
 - [ ] **Install an older simulator runtime** via Xcode → Settings → Components. E, 2026-09-11:
       *"In a number of days in the future, I will install this."* Until then every `#available`
       fallback is compile-only by policy (§7.3). (updated)
@@ -111,8 +126,8 @@ site fades (E's #7).
 
 ## B · Real work, ready to start — recommended order
 
-**00. THE CTA CELEBRATIONS ARC — designed, recorded, NOT built. Build in a FRESH session (E's
-   instruction), block by block, each on E's device verdict.** The record is
+**00. THE CTA CELEBRATIONS ARC — block 1 of 8 BUILT and MERGED (`F-ConfirmCelebration-2`, PR #76);
+   the next is `F-CTACelebrations-1` once E's verdict is in.** The record is
    `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener is
    `handoff/START-HERE-cta-celebrations-build.md`; the blocks are in `TODO-CLAUDE-CODE.md`.
    **E's decisions, all settled** (the record has them verbatim):
@@ -138,10 +153,13 @@ site fades (E's #7).
    9. **Architecture:** one App-owned `CelebrationCenter`, reached through an environment value with
       an inert default; one `CelebrationLayer(surface:)` per presented surface (root, the routine
       cover, the Tasks search surface, the Create Task sheet).
-   **The blocks, in order:** `F-ConfirmCelebration-2` → `F-CTACelebrations-1` (haptic tidy + spring-in)
-   → `-2` (switches) → `-3` (centre + layers, Confirm re-routed) → `-4` (pops; render first, E
-   picks) → `-5` (inbox zero, streak, daily goal) → `-6` (Completed flow; render the congratulation
-   first) → `-7` (chime; E picks by ear). (NEW)
+   **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ (DONE 2026-09-12, verdict pending) →
+   `F-CTACelebrations-1` (haptic tidy + spring-in) → `-2` (switches) → `-3` (centre + layers,
+   Confirm re-routed) → `-4` (pops; render first, E picks) → `-5` (inbox zero, streak, daily goal)
+   → `-6` (Completed flow; render the congratulation first) → `-7` (chime; E picks by ear).
+   **For block 3 note:** the shared `CelebrationFrame` now has to carry the fireworks and the dim
+   too (`ConfirmCelebrationScene.fireworks`, `ConfirmCelebrationDim`, `ConfirmFireworksDrawing`);
+   the waiver pin lists six Confirm files, not three. (updated)
 
 **0. Follow-ups to the modern-iOS pilot — only what E asks for.** (carried)
    - **RM arrival fade for the bottom furniture** (`RootBottomOverlay`'s three nil animations + the
@@ -203,8 +221,9 @@ site fades (E's #7).
 
 ## E · Known, not work
 
-- **Xcode's MCP bridge was UP this session** (Xcode open before launch). `RenderPreview` is available
-  for stills when the build starts; the bar is still pasted `xcodebuild` output. (updated)
+- **Xcode's MCP bridge was UP this session** (Xcode open before launch). `RenderPreview` rendered
+  the new "Stack cleared · Light" preview in ~2 min and it matched the probe's still; the bar is
+  still pasted `xcodebuild` output. (updated)
 - **A green suite cannot see a `View`'s appearance.** Render to PNG from a unit test before the
   device build: `UIHostingController` + `UIGraphicsImageRenderer` + `drawHierarchy(afterScreenUpdates: true)`
   in a scene-attached `UIWindow`, a synchronous test pumping `RunLoop.main`; render IN SITU. The
