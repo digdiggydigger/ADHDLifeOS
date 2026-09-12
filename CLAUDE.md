@@ -567,9 +567,10 @@ Implement layouts as an elite Apple Design Engineer. Every view must look handcr
 Skills — Precedence and Known Conflicts", and read together with the design records it amounted to
 a ban: nothing above iOS 16.0, and `reduceMotion ? nil : …` as the answer to Reduce Motion. Two
 things overturned that on the same day. **E's direction:** keep the 16.0 floor, but give users on
-recent iOS (the majority) the modern experience. **And E's own phone runs Reduce Motion ON**, so
+recent iOS (the majority) the modern experience. **And E's own phone ran Reduce Motion ON at the time**, so
 the focus card's celebration (`F-FocusCard-4`) had never once played for its author: E saw a hard
-cut plus a haptic. The skill-precedence rules are unchanged in substance and now live in §7.5.
+cut plus a haptic. (**E turned Reduce Motion OFF on 2026-09-12** — see §7.2. That is what prompted
+the rewrite, not what justifies it; the rule outlived the fact.) The skill-precedence rules are unchanged in substance and now live in §7.5.
 
 #### 7.1 The rule — the best API per site, and a complete floor path beside it
 
@@ -600,9 +601,14 @@ cut plus a haptic. The skill-precedence rules are unchanged in substance and now
 
 #### 7.2 Reduce Motion — replace motion with a fade, never remove feedback
 
-- **E runs with Reduce Motion ON** (and Prefer Cross-Fade Transitions). The reduced path is the
-  author's primary experience of this app, not an edge case, and it is judged on E's phone with the
-  setting ON.
+- **E ran with Reduce Motion ON until 2026-09-12, and now runs with it OFF** (E, unprompted:
+  *"I no longer run with reduce motion on"*). **This changes nothing about the rule below.** The
+  reduced path was never correct *because* it was the author's own experience — it is correct
+  because it is Apple's guidance and because this app is headed for a public launch where some
+  users will have the setting on for motion sensitivity. What the old fact bought was an accident
+  of coverage: every reduced path was exercised daily by the one person who reviews this app.
+  **That safety net is gone**, and §7.3 says what reports must now do about it. Do NOT read this
+  as licence to relax §7.2, to delete a reduced branch, or to stop writing one.
 - **`reduceMotion ? nil : …` is correct only for continuous re-layout**, such as a VStack
   reflowing or a bar resizing, where the tween IS the motion and the instant change loses nothing.
   **For anything that appears, disappears or celebrates it is a hard cut, and it is WRONG.**
@@ -642,6 +648,14 @@ cut plus a haptic. The skill-precedence rules are unchanged in substance and now
   26.5 by injecting the mode it would select. It is **never run ON a 16 or 17 OS, and that is
   compile-only by policy, not by oversight** (E's call, 2026-09-11) until an older simulator
   runtime is installed (register §A, E's GUI job).
+- **Since 2026-09-12 the reduced path is no longer verified incidentally.** While E ran Reduce
+  Motion ON, every reduced branch was tried on a real phone by the person reviewing the block,
+  whether or not anyone planned it. With the setting off, a reduced path is exercised ONLY where a
+  test injects it or someone deliberately toggles the setting. So a report may no longer say a
+  reduced path was "verified on E's phone" unless E toggled Reduce Motion ON for that check and
+  said so; the honest default line is now **"Reduced: run on sim (injected); NOT on device."**
+  Injection still proves the code runs and which branch is chosen — it cannot show how the fade
+  reads on the device, which is exactly the thing E's setting used to cover for free.
 - **Every block that adds or changes an `#available` site carries a "Verified paths" line** in its
   report, and in its `screenshots/` README when it has one. There is one entry per tier actually
   shipped, for example:
