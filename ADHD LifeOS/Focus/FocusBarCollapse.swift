@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 /// Reads a drag on the focus bar's card as an intent (F-FocusCard-1).
 ///
@@ -67,21 +66,78 @@ struct FocusBarCardShape: Shape, InsettableShape {
 
     func path(in rect: CGRect) -> Path {
         let bounds = rect.insetBy(dx: insetAmount, dy: insetAmount)
-        let radius = max(0, cornerRadius - insetAmount)
-        let corners: UIRectCorner = bottomCornerRadius > 0 ? .allCorners : [.topLeft, .topRight]
-        return Path(
-            UIBezierPath(
-                roundedRect: bounds,
-                byRoundingCorners: corners,
-                cornerRadii: CGSize(width: radius, height: radius)
-            ).cgPath
+        var path = FocusBarCardOutline.path(
+            in: bounds,
+            topRadius: FocusBarCardOutline.clamped(cornerRadius - insetAmount, in: bounds),
+            bottomRadius: FocusBarCardOutline.clamped(bottomCornerRadius - insetAmount, in: bounds)
         )
+        // Closing draws the flat bottom RUN. It is the only difference between this fill and the
+        // collapsed keyline, which leaves that one run out.
+        path.closeSubpath()
+        return path
     }
 
     func inset(by amount: CGFloat) -> FocusBarCardShape {
         var inset = self
         inset.insetAmount += amount
         return inset
+    }
+}
+
+/// The card's silhouette, shared by the fill and the keyline.
+///
+/// **Two radii, because the collapsed card's bottom corners are their own number.**
+/// `UIBezierPath(roundedRect:byRoundingCorners:cornerRadii:)`, which this replaced, applies ONE
+/// radius to whichever corners are selected — fine for a flag, useless for a morph, and the morph
+/// is half of `F-FocusCard-Corners`.
+///
+/// Angles follow SwiftUI's flipped Y, the convention the keyline already used: 180° is left, 270°
+/// top, 0°/360° right, 90° bottom, and `clockwise: false` walks them in increasing order.
+enum FocusBarCardOutline {
+    /// A radius that cannot exceed the box it is cutting. Without this a 24pt corner on a card
+    /// shorter than 48pt produces a self-crossing path rather than a pill.
+    static func clamped(_ radius: CGFloat, in bounds: CGRect) -> CGFloat {
+        max(0, min(radius, min(bounds.width, bounds.height) / 2))
+    }
+
+    /// From the bottom-left corner's end, up the left side, across the top, and down to the
+    /// bottom-right corner's end. **The flat bottom RUN is never part of it** — the fill closes the
+    /// path to get one, the collapsed keyline leaves it open to go without.
+    static func path(in bounds: CGRect, topRadius: CGFloat, bottomRadius: CGFloat) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: bounds.minX + bottomRadius, y: bounds.maxY))
+        addCorner(
+            to: &path, centre: CGPoint(x: bounds.minX + bottomRadius, y: bounds.maxY - bottomRadius),
+            radius: bottomRadius, from: 90, through: 180
+        )
+        path.addLine(to: CGPoint(x: bounds.minX, y: bounds.minY + topRadius))
+        addCorner(
+            to: &path, centre: CGPoint(x: bounds.minX + topRadius, y: bounds.minY + topRadius),
+            radius: topRadius, from: 180, through: 270
+        )
+        path.addLine(to: CGPoint(x: bounds.maxX - topRadius, y: bounds.minY))
+        addCorner(
+            to: &path, centre: CGPoint(x: bounds.maxX - topRadius, y: bounds.minY + topRadius),
+            radius: topRadius, from: 270, through: 360
+        )
+        path.addLine(to: CGPoint(x: bounds.maxX, y: bounds.maxY - bottomRadius))
+        addCorner(
+            to: &path, centre: CGPoint(x: bounds.maxX - bottomRadius, y: bounds.maxY - bottomRadius),
+            radius: bottomRadius, from: 0, through: 90
+        )
+        return path
+    }
+
+    /// A zero radius is a real state here — it is the floor of the morph and the shape that
+    /// shipped — so it draws the square corner rather than a degenerate arc.
+    private static func addCorner(
+        to path: inout Path, centre: CGPoint, radius: CGFloat, from: Double, through: Double
+    ) {
+        guard radius > 0 else { return path.addLine(to: centre) }
+        path.addArc(
+            center: centre, radius: radius,
+            startAngle: .degrees(from), endAngle: .degrees(through), clockwise: false
+        )
     }
 }
 
@@ -103,30 +159,20 @@ struct FocusBarCardBorder: Shape {
 
     func path(in rect: CGRect) -> Path {
         let bounds = rect.insetBy(dx: lineWidth / 2, dy: lineWidth / 2)
-        let radius = max(0, cornerRadius - lineWidth / 2)
-        var path = Path()
-
-        guard omitsBottomEdge else {
-            path.addRoundedRect(
-                in: bounds, cornerSize: CGSize(width: radius, height: radius), style: .continuous
-            )
-            return path
-        }
-
-        // Up the left side, around both top corners, back down the right side — and stop. The
-        // bottom edge is never drawn, so the two ends simply meet the tab bar.
-        path.move(to: CGPoint(x: bounds.minX, y: bounds.maxY))
-        path.addLine(to: CGPoint(x: bounds.minX, y: bounds.minY + radius))
-        path.addArc(
-            center: CGPoint(x: bounds.minX + radius, y: bounds.minY + radius), radius: radius,
-            startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false
+        // **The same silhouette the FILL is cut from.** Rounding one and not the other was the
+        // trap in `F-FocusCard-Corners`: a keyline still tracing square bottom corners runs 24pt
+        // past a curve the card no longer has. Sharing the outline makes that impossible rather
+        // than merely tested.
+        var path = FocusBarCardOutline.path(
+            in: bounds,
+            topRadius: FocusBarCardOutline.clamped(cornerRadius - lineWidth / 2, in: bounds),
+            bottomRadius: FocusBarCardOutline.clamped(bottomCornerRadius - lineWidth / 2, in: bounds)
         )
-        path.addLine(to: CGPoint(x: bounds.maxX - radius, y: bounds.minY))
-        path.addArc(
-            center: CGPoint(x: bounds.maxX - radius, y: bounds.minY + radius), radius: radius,
-            startAngle: .degrees(270), endAngle: .degrees(0), clockwise: false
-        )
-        path.addLine(to: CGPoint(x: bounds.maxX, y: bounds.maxY))
+        // Closed, the flat bottom run is drawn; open, it is not. E removed that run on 2026-09-09
+        // — *"REMOVE the bottom border on the collapsed card tab"* — and rounding the corners does
+        // not reverse it: the keyline now sweeps around both bottom corners and stops where the
+        // run would begin, so it follows the card and still leaves no hairline on the join.
+        if !omitsBottomEdge { path.closeSubpath() }
         return path
     }
 }
