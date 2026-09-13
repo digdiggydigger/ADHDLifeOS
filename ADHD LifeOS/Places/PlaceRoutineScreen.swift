@@ -282,26 +282,6 @@ struct PlaceRoutineScreen: View {
         }
     }
 
-    private func openExternally(_ url: URL, failureBody: String) {
-        PlaceLinkOpener(
-            open: { url, universalLinksOnly, completion in
-                UIApplication.shared.open(
-                    url,
-                    options: universalLinksOnly ? [.universalLinksOnly: true] : [:],
-                    completionHandler: completion
-                )
-            },
-            notifyFailure: { body in
-                Task {
-                    await NotificationCenterImmediateNotifier().post(
-                        title: "That didn't open", body: body,
-                        identifier: "placeActionOpenFailure"
-                    )
-                }
-            }
-        ).run(PlaceLinkOpenPlan.plan(for: url), failureBody: failureBody)
-    }
-
     /// Leaving the screen is the moment a finished run ENDS — not the final tap, which is
     /// what keeps Undo available until then. Idempotent: `end(runId:)` only matches the run
     /// this screen owns, so calling it twice, or after a newer run replaced this one, is a
