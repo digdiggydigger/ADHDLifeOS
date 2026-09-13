@@ -342,8 +342,16 @@ struct PlaceRoutineScreen: View {
         activity.ended()
         DataChangeSignal.post()
         withAnimation(entrance.animation) { confirmedAt = now }
-        // R-f decides whether this becomes confetti or a quiet pop; the origin is the Completed
-        // button's own measured centre, handed up by the card.
+        // **R-f, E's approved build default, and it is asked HERE because nowhere else can ask
+        // it.** A celebration needs at least one step the USER tapped done; a run resolved only
+        // by its automatic steps, or only by skipping, still ends and is still recorded
+        // `completed` — it simply completes quietly, with the congratulation and no confetti
+        // (E's answer 1). This is a different question from R-h's downgrade, which is the
+        // CENTRE's to make when E's switch is off or the cooldown is live: that one asks how
+        // loudly to celebrate, this one asks whether there is anything of the person's to
+        // celebrate at all.
+        guard PlaceRoutineProgress.earnedCelebration(run) else { return }
+        // The origin is the Completed button's own measured centre, handed up by the card.
         celebrate.request(.milestone(.routineFinished), at: origin)
     }
 

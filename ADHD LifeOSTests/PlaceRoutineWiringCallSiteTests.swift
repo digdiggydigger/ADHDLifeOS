@@ -142,6 +142,39 @@ final class PlaceRoutineWiringCallSiteTests: XCTestCase {
         )
     }
 
+    /// **R-f had no call site either, and only the journey's screenshot said so.** E's build
+    /// default — a celebration needs at least one step the USER tapped done — was written, unit
+    /// tested across four shapes, and consulted by nobody, so the first wiring of `complete()`
+    /// threw full-screen confetti over a run of one auto step and three skips. Every guard in
+    /// this file passed while it did; the picture is what caught it.
+    ///
+    /// It is asked at this site because no later one can: `CelebrationCenter` sees a
+    /// `CelebrationKind`, not a `RoutineRun`, so by the time a request reaches R-h's downgrade
+    /// the fact that nothing was earned is gone.
+    func testAnUnearnedRunGetsTheCongratulationAndNoConfetti() throws {
+        let swap = try slice(
+            of: "Places/PlaceRoutineScreen.swift",
+            from: "private func complete(from origin: CGPoint?)", to: "private func leaveScreen()"
+        )
+        let gate = try XCTUnwrap(
+            swap.range(of: "guard PlaceRoutineProgress.earnedCelebration(run) else { return }"),
+            "nothing consults R-f, so a run resolved by automatic steps and skips alone —"
+                + " which is exactly what both UI journeys drive — celebrates as loudly as one"
+                + " the user actually worked through"
+        )
+        let request = try XCTUnwrap(swap.range(of: "celebrate.request(.milestone(.routineFinished)"))
+        XCTAssertLessThan(
+            gate.lowerBound, request.lowerBound,
+            "R-f is consulted after the request, so it changes nothing"
+        )
+        let confirmed = try XCTUnwrap(swap.range(of: "confirmedAt = now"))
+        XCTAssertLessThan(
+            confirmed.lowerBound, gate.lowerBound,
+            "the R-f gate returns early, so anything after it is skipped on an unearned run —"
+                + " the congratulation itself must be shown BEFORE it, never behind it"
+        )
+    }
+
     /// The origin is the Completed BUTTON's measured centre, handed up by the card — the ring
     /// pattern, because `CelebrationPopSource`'s handle only ever requests `.pop`. Requesting at
     /// `nil` would throw the paper from the middle of the screen instead of the thing pressed.
