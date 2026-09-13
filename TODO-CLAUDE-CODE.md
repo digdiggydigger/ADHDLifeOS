@@ -3930,7 +3930,7 @@ tested; the frame is measured on the same view the gesture is attached to so the
 both or neither; the finger is resolved BEFORE `dragOffset` resets.
 `testTheSwipeAndTheCircleClosePopFromOneOrigin` is REVERSED, not deleted.
 
-### FEATURE: F-CTACelebrations-6 — the routine Completed flow (R1–R5)  [ ] OPEN
+### FEATURE: F-CTACelebrations-6 — the routine Completed flow (R1–R5)  [x] COMPLETED
 
 - **Render FIRST:** `PlaceRoutineCongratulationView` light, dark, RM, the switch-off beat; send it.
 - `PlaceRoutineCompletedCard` in the next-step slot once nothing is pending and the run is fully
@@ -3986,14 +3986,30 @@ number written in advance.
 
 ---
 
-## ⚠ PARTLY BUILT, 2026-09-13 — C1–C5 done on `feature/cta-celebrations-6`, C6–C9 OPEN
+## ⚠ BUILT IN FULL, 2026-09-13 — C1–C9 done, awaiting E's DEVICE VERDICT
 
-**`main` is deliberately untouched: C5's `PlaceRoutineCompletedCard` is reachable by nothing until
-C6 wires it, and merging that would ship the dead-shared-component shape on purpose.** The live
-pointer is `handoff/START-HERE-cta-celebrations-6-part2.md`, which carries C6–C9 in full.
+**C6–C9 finished in a second session.** Suite **2,958 / 0** (emulator up, 0 `9099` hits), lint
+**0 / 801**, sim build green, **both UI journeys green** — the reversed one first run. The block is
+on `feature/cta-celebrations-6` behind a PR; nothing is on E's phone yet, and **§7.3's RM-on device
+pass is OWED** because C6 adds this block's reduced site (the congratulation's entrance).
 
-Branch `0ea2154`, thirteen commits, suite **2,941 / 0**, lint **0 / 801**, sim build green. UI
-journeys NOT run; nothing on a device yet.
+**The one thing worth carrying forward, and it is not a layout.** `PlaceRoutineProgress.earnedCelebration`
+— E's R-f build default, unit-tested across four shapes — **had no call site**, so the first wiring
+of `complete()` threw full-screen confetti over a run of 1 auto step and 3 skips: exactly the run
+E's answer 1 says completes quietly. Ten call-site guards, 2,957 unit tests and both journeys were
+GREEN while it did. What caught it was looking at the journey's own screenshot. Seventh recorded
+instance of this repo's most repeated defect, and the first found by the `screenshots/` practice
+rather than by a later block tripping over it.
+
+**Three more things the plan said that turned out otherwise:**
+- **The `leaveScreen()` count stayed 5, not 3.** The plan predicted it would drop; the scenePhase
+  hook did go, but the congratulation's own tap-to-close replaced it. The plan's real instruction —
+  `grep -c` and set the number to what is THERE — is what mattered, not either prediction.
+- **No haptic in `complete()`.** The plan's order list opened with `Haptics.play(.success)`, but C5
+  had already put it on the Completed button itself, where the press is. A second would double-buzz.
+- **Type-body headroom was never the binding constraint it was billed as.** The screen landed
+  comfortably inside 250; what actually broke the bar was the TEST files — two call-site classes and
+  the UI journey all crossed a length rule and needed splitting.
 
 **E ADDED A FEATURE MID-BLOCK and answered NINE more questions — five reverse something settled,
 two of them E's own earlier answers. All nine are built.** E: *"i want to add a small section within
