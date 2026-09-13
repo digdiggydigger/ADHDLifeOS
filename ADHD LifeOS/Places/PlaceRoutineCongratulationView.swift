@@ -125,11 +125,25 @@ struct PlaceRoutineCongratulationView: View {
 #if DEBUG
 @available(iOS 17.0, *)
 enum PlaceRoutineCongratulationPreviewFixture {
+    /// A real spread of action KINDS, not eight `openApp`s: `PlaceActionRowLabel` prefixes
+    /// "Open " to an app action, so a fixture of nothing but apps renders "Open Open Snapchat"
+    /// and every render becomes a picture of the fixture's bug rather than of the view. Caught
+    /// by looking at the first render, which is what renders are for.
+    private static let kinds: [PlaceAction.Kind] = [
+        .journalLine(body: "Leg day"),
+        .openApp(scheme: "snapchat", displayName: "Snapchat"),
+        .startSprint(minutes: 25),
+        .openLink(
+            displayName: "Gym Music on Spotify",
+            link: "https://open.spotify.com/playlist/abc", scheme: "spotify"
+        ),
+        .openApp(scheme: "strava", displayName: "Strava"),
+        .textContact(contactName: "Sam", phoneNumber: "+447000000000", messageBody: "Heading home"),
+        .createCapture(text: "New bench PB"),
+        .openApp(scheme: "notes", displayName: "Notes")
+    ]
+
     static func run(steps: Int, name: String = "Gym 🏋️") -> RoutineRun {
-        let titles = [
-            "Journal the session", "Open Snapchat", "Open Gym", "Gym Music on Spotify",
-            "Start a 25 minute sprint", "Open Strava", "Log your weight", "Open Notes"
-        ]
         let states: [RoutineStepState] = [.autoDone, .done, .skipped, .done]
         return RoutineRun(
             id: UUID(), placeId: UUID(), direction: .arrival,
@@ -138,11 +152,7 @@ enum PlaceRoutineCongratulationPreviewFixture {
             steps: (0..<steps).map { index in
                 RoutineRun.Step(
                     action: PlaceAction(
-                        id: UUID(), direction: .arrival,
-                        kind: .openApp(
-                            scheme: "app\(index)",
-                            displayName: titles[index % titles.count]
-                        )
+                        id: UUID(), direction: .arrival, kind: kinds[index % kinds.count]
                     ),
                     state: states[index % states.count]
                 )
