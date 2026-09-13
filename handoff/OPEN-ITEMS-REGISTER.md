@@ -1,13 +1,8 @@
-# Open items register — 2026-09-13 (thirty-ninth edition; **`F-CTACelebrations-6` is BUILT to C5 on a branch, NOT merged**, and E added a whole feature mid-block)
+# Open items register — 2026-09-13 (fortieth edition; **`F-CTACelebrations-6` is DONE and MERGED**, and the block's own screenshot caught a defect ten guards missed)
 
-*The close-out of a BUILD session that stopped for context, not for a problem. Thirteen commits on
-`feature/cta-celebrations-6`, all pushed, tree clean. **`main` is deliberately untouched** — C5
-landed a component that nothing reaches until C6 wires it, and merging that would ship this repo's
-most-repeated defect shape on purpose.*
-
-*E added `PlaceRoutineCongratulationDetails` mid-build and answered **nine more questions**, five of
-which REVERSE something already settled — including two of E's own earlier answers. All nine are
-built and landed. Supersedes the thirty-eight earlier editions.*
+*The close-out of the BUILD session that finished the block at C6–C9. `main` is no longer held back:
+the pieces C1–C5 landed deliberately unreachable are wired, and the arc's next two blocks
+(`-7`, `-Surfaces`) are unblocked. Supersedes the thirty-nine earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -15,82 +10,95 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `8c6cfc0`, unchanged.** The work is on **`feature/cta-celebrations-6` @ `0ea2154`**,
-thirteen commits ahead and pushed. `firestore.rules` is untouched, so there is **nothing for E to
-republish**.
+**`main` @ `8a74d7d`** (PR #106, merged; `feature/cta-celebrations-6` deleted). `firestore.rules` is
+untouched, so there is **nothing for E to republish**.
 
-Measured on the branch tip this session, not carried forward:
-- unit suite **2,941 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+Measured on `main` this session, not carried forward:
+- unit suite **2,958 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
 - SwiftLint **0 / 801**;
-- sim `** BUILD SUCCEEDED **`.
-- **UI journeys NOT run. Device NOT installed.** E has seen renders only.
+- sim `** BUILD SUCCEEDED **`;
+- **both UI journeys GREEN** — `RoutineJourneyUITests` (reversed and renamed) and
+  `RoutineRecordJourneyUITests`, first run each time; simulator ERASED in the same command chain
+  after every UI run, per CLAUDE.md.
+- app-target coverage **27.34% (13,208 / 48,302)** over 2,958 tests. **Comparable to the 24.72%
+  (11,114 / 44,961) of 2026-09-07 in the sense CLAUDE.md's rule asks for: the denominator moved
+  because the TREE GREW** (44,961 → 48,302 executable, +7.4%), not because the measurement extent
+  changed — both runs measured 100% of the app target. The numerator grew **+18.8%** against that,
+  so coverage again outpaced the code.
+- **Device: NOT installed. Nothing in `F-CTACelebrations-6` has been on E's phone.**
 
-`PlaceRoutineScreen`'s type body is **209 of 250** after three room commits — 41 lines of headroom
-for C6. (It was 235 at the start; C1 bought 0 body lines, C2 bought 19, C3's `subline` move 7.)
+### Landed this session — C6 to C9, and the block is closed
 
-### Landed this session — C1 to C5, plus E's detail section
+Six commits, merged as PR #106.
 
-Thirteen commits. The block's own plan covered C1–C9; **C1–C5 are done and C6–C9 remain**, with the
-whole of C6's shape written into `handoff/START-HERE-cta-celebrations-6-part2.md`.
-
-- **C1/C2/C3-room** — the preview block, `openExternally` and `subline` out of the screen. The last
-  of those made a rule testable that had never been asserted: E's own words lead the subline, and a
-  whitespace-only message used to open the line with empty quotes. (NEW)
-- **C3** — the pure layer: `earnedCelebration` (R-f), the copy enum, the entrance, the density
-  table. (NEW)
-- **C4** — `PlaceRoutineCongratulationView` + a sizeable `PlaceRoutineStepCircle`. (NEW)
-- **E'S DETAIL SECTION** — `PlaceRoutineRunTimeline`, `PlaceRoutineStepDuration`,
-  `PlaceRoutineComparison`, `PlaceRoutineTimeFormatting`, `PlaceRoutineCongratulationDetails`. (NEW)
-- **C5** — `PlaceRoutineCompletedCard`, **deliberately unreachable until C6**. (NEW)
-
-### E's nine decisions this session — the spec, not to be re-derived
-
-1. "Started" is **BOTH** the crossing and the tap. 2. "Finished" is **BOTH** the last step and the
-Completed tap. 3. The facts are the total, **per-step times** and a **comparison with the usual**.
-4. A long list **SCROLLS** — *reverses E's own answer 6*. 5. The view **stays until dismissed** —
-*reverses R5's auto-leave*. 6. The detail block is **pinned above the scroller**. 7. The light-mode
-wash is **0.40**, chosen by sight; dark stays 0.14. 8. Clocks are **"1:00 pm"** — 12-hour, no
-seconds — *reverses E's own `hh:mm:ss`*. 9. The detail card takes a **done-green border**;
-"Longer than usual" is **accent blue**. Plus the rows reworded to `Done in 2m` / `Skipped after 2m` /
-`Auto`.
+- **C6** — the wiring. `PlaceRoutineCompletedCard` in the next-step slot; `complete(from:)`;
+  `leaveScreen()` gutted; the scenePhase auto-end DELETED; the body swap a **`ZStack`** so `.task`
+  cannot re-fire and restart the Live Activity `complete()` just ended; `displayName` and `history`
+  threaded through `RootView+Doors`. (NEW)
+- **C7** — `continueLabel` → `continueLabel(for:)`; "Finish routine" once everything is resolved.
+  (NEW)
+- **C8** — both journeys. `RoutineJourneyUITests` asserted the rule E's R1 overturned in its NAME as
+  well as its body, and now asserts the opposite. (NEW)
+- **C9** — `screenshots/cta-celebrations-block-6/` + README, the TODO tick, this register. (NEW)
 
 ### What this session established
 
-- **Three defects were found that no assertion could have caught, and two of them were found by
-  LOOKING at a render.** (NEW)
-  - **The run being celebrated was its own history.** `complete()` writes the ending
-    fire-and-forget and the congratulation then fetches every run, so the run in hand was usually
-    already there carrying the very time being compared. It would have been its own fastest, so
-    **"Your fastest yet" could essentially never have fired** — and because its presence depended on
-    whether a network write landed first, the verdict was **timing-dependent**. Found by review,
-    fixed test-first in `7300c36`.
-  - **The preview fixture could not be rendered twice.** Built from `.now`, two renders of one scene
-    differed by **819 pixels**. The harness's own determinism check failed loudly rather than
-    letting a pixel claim rest on it — block 3's rule earning its keep a second time.
-  - **The fixture used one action kind**, so every early render read "Open Open Snapchat". The
-    strings were correct and the FIXTURE was wrong; no test could see it.
-- **A guard that reads the wrong text failed in the believable direction again — the third instance
-  in this arc.** Its needle carried a trailing `)` the real call does not have, so it stayed red
-  against correct code. **The red PREDICTION is what caught it**, and it was fixed by making the
-  guard STRONGER (it now pins `, onSkip)` too), never laxer. (NEW)
-- **Every red prediction this session matched, and the misses were the useful part.** 14/25, 16/29,
-  7/7, 11/15, 2/3, 1/1, 6/7, 4/4, 5/8 — test-for-test. Two predictions were "wrong" because a test
-  passed VACUOUSLY against its stub (`nil` matching `nil`, `.noHistory` matching `.noHistory`), and
-  each was then proven load-bearing by a **naive pass** rather than left as decoration. (NEW)
-- **A pure layer can invent a SECOND TRUTH, and the fix is to find the first one.**
-  `RoutineRunRecord.timeSpentSeconds` already defined a run's length as activation → last
-  interaction, with the reason written beside it. Deriving the congratulation's total from the
-  Completed tap would have had one run reporting two lengths — here and in the Journal. **Search for
-  an existing definition before writing a new one.** (NEW)
-- **When E reverses a rule, REVERSE the test — never delete it.** Applied four times this session
-  (R5's three length tests → one named reversal; the 21-step ceiling → a scrolling guard;
-  `testTheStepListNeverScrolls` → its opposite; the locale clock → the 12-hour rule). A deleted test
-  leaves no trace of the decision that removed it. (NEW)
+- **R-f HAD NO CALL SITE, and only the picture said so — the single most important thing to carry
+  out of this block.** `PlaceRoutineProgress.earnedCelebration` is E's approved build default (a
+  celebration needs at least one step the USER tapped done), written, unit-tested across four
+  shapes, and consulted by nobody. The first wiring of `complete()` therefore threw full-screen
+  confetti over the journey's run of 1 auto step and 3 skips — precisely the run E's answer 1 says
+  completes quietly. **Ten call-site guards, 2,957 unit tests and both UI journeys were GREEN while
+  it did.** What caught it was looking at the journey's own screenshot. Seventh recorded instance of
+  this repo's most-repeated defect, and the **first found by the `screenshots/` practice** rather
+  than by a later block tripping over it. (NEW)
+- **A reachability guard can only assert a call it knows to look for, which is the limit of the
+  whole `*CallSiteTests` technique.** The block had ten of them and they were all correct. Nothing
+  in a source-reading guard can notice an absence nobody thought of; a rendered screen can.
+  **Corollary, cheap and worth doing: before writing the guards for a block, list the block's pure
+  helpers and `grep` each for a call site.** A three-line sweep would have found this one. (NEW)
+- **The evidence was nearly lost by tidying.** The confetti screenshot was exported to a scratch
+  directory and deleted before the defect was understood, so the folder's best artefact exists only
+  as prose. **Export a journey's attachments INTO `screenshots/<block>/` first and choose
+  afterwards.** (NEW)
+- **A red-check is worth running even on source-reading guards.** Three lines reverted → **5
+  assertion failures across 3 tests**, then restored from a clean tree. Cheap, and the alternative
+  is a set of guards nobody has ever seen bite. (NEW)
+- **The §7.2 guard's first draft banned the pattern outright and reddened on the site §7.2
+  sanctions.** `reduceMotion ? nil` is CORRECT for `apply(_:at:)`'s step re-layout — the tween IS
+  the motion there — and wrong for the congratulation's appearance. The two read identically a few
+  lines apart in one type. The guard now slices `complete(from:)` and pins the legitimate site at a
+  count of exactly one. **A §7.2 sweep that greps for the pattern will get this wrong.** (NEW)
+- **Three of the plan's own predictions were wrong, and the plan's instruction survived all three.**
+  (NEW)
+  - The **`leaveScreen()` count stayed 5**, not the predicted 3: the scenePhase hook went, but the
+    congratulation's tap-to-close replaced it. The plan said "grep and set the number to what is
+    THERE, do not trust 4 or 3 in advance" — that was the load-bearing part, not the number.
+  - **`complete()` takes no haptic.** The plan's order list opened with `Haptics.play(.success)`;
+    C5 had already put it on the Completed button, where the press is. A second is a double buzz.
+  - **Type-body headroom was never the binding constraint.** Three commits bought 41 lines for a
+    change that needed ~15. What actually broke a length bar was the TEST side: two call-site
+    classes and the UI journey all crossed one and needed splitting.
 
 ## A · Decisions only E can make — minutes each
 
-**E settled four of these at the device sitting on 2026-09-12/13. What remains is one deferral E
-asked to be held, and two housekeeping items.**
+**E settled four of these at the device sitting on 2026-09-12/13. What remains is `F-CTACelebrations-6`'s
+own device verdict, one deferral E asked to be held, and two housekeeping items.**
+
+- [ ] **`F-CTACelebrations-6`'s DEVICE VERDICT — the newest item, and the block's last owed thing.**
+      Nothing in this block has been on E's phone; E has approved the congratulation **by render
+      only**. Two passes, asked for in one message so the setting is flipped once:
+      - **Reduce Motion OFF** — resolve a routine's steps, Close, confirm Today's card SURVIVES and
+        reads **"Finish routine"**, reopen through it, tap **Completed**, and look at the
+        congratulation over a real fetch: the four 12-hour times, the done-green border at the 0.40
+        light wash, the step rows' new wording, and whether tapping a step ROW closes it.
+      - **Reduce Motion ON** — §7.3's RM-on pass, **OWED because C6 adds this block's reduced site**
+        (the congratulation's entrance: an opacity-only cross-fade whose first frame is already at
+        final geometry). Until E toggles and says so, the block's Verified-paths line may only read
+        *"Reduced: run on sim (injected); NOT on device."*
+      - **A caveat worth stating before E looks:** the journey's routine is resolved by skips, so it
+        is R-f-unearned and shows **no confetti by design**. To see the confetti path E must tap at
+        least one step DONE rather than skipping it. (NEW)
 
 - [ ] **DEVICE CHECK OWED on the three follow-on blocks, whenever E is next on the phone.** All
       three are landed, green and installed from `main`; none is urgent, and E has already passed
