@@ -1,8 +1,8 @@
-# Open items register — 2026-09-13 (forty-second edition; **`F-CTACelebrations-7` is DONE, MERGED and PASSED ON DEVICE**, and a green asset test turned out not to touch the asset)
+# Open items register — 2026-09-13 (forty-third edition; **`F-CTACelebrations-Surfaces` is DONE and MERGED**, awaiting only E's device pass)
 
-*The close-out of the session that finished `F-CTACelebrations-6` at C6–C9, got its device verdict,
-then built and shipped `-7` in the same stretch. Two blocks landed and both passed on E's phone.
-Supersedes the forty-one earlier editions.*
+*Updated mid-session by the one that settled `-Surfaces`' design question with E and built it.
+Supersedes the forty-two earlier editions. **The previous edition's `-6` / `-7` entries stand
+unchanged and nothing is owed on either** — see "Landed" below.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -10,17 +10,16 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `eade58a`** (PR #110). `firestore.rules` untouched — **nothing for E to republish**.
+**`main` @ `a472f28`** (PR #112). `firestore.rules` untouched — **nothing for E to republish**.
 Every feature branch is merged and deleted; `origin` carries `main` alone.
 
-Measured on `main` this session:
-- unit suite **2,975 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
-- SwiftLint **0 / 806 files**;
+Measured on `main`:
+- unit suite **3,001 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+- SwiftLint **0 / 812 files**;
 - sim `** BUILD SUCCEEDED **`;
-- **both UI journeys GREEN** (run for `-6`), simulator erased in the same command chain after;
-- **device: ON MAIN, and BOTH blocks passed.** `-6`: *"both work correctly"* (Reduce Motion off
-  and on). `-7`: *"both work correctly"* (chime under music without pausing it; silent with the
-  ring switch off).
+- **both UI journeys GREEN** (run for `-6`, not re-run for `-Surfaces` — it touches no UI);
+- **device: ON MAIN as of `-7`. `-6` and `-7` both PASSED; nothing is owed on either.**
+  **`-Surfaces` has NOT had its device pass** — that is the one thing outstanding.
 
 ### Landed this session
 
@@ -31,6 +30,14 @@ forty-first edition's detail; nothing about it is outstanding.
 "Celebration sounds" had been in Settings since `-3` storing a choice nothing read. Five candidates
 went to E as `.wav`, peak-normalised to the same −3.0 dBFS so the comparison was of timbre; E picked
 the first ElevenLabs generation by ear and **reserved the second for future use**. (NEW)
+
+**`F-CTACelebrations-Surfaces`** — hold a celebration behind any unknown sheet (PR #112). E's
+design call, taken before a line of it was written: asked to choose between a house modifier on all
+26 `.sheet`/`.fullScreenCover` presenters and asking UIKit, **E chose asking UIKit**, plus holding
+behind alerts / dialogs / system pickers and leaving a pop alone. `KeyWindowPresentationProbe`
+walks the key window; `isBlocked` is the single predicate behind the hold and the release; a hold
+watch replaces the `onDismiss` an untracked sheet never sends, and R-g is enforced by time rather
+than by the next dismissal. **Owed: E's device pass** (§A below). (NEW)
 
 ### What this session established
 
@@ -67,8 +74,18 @@ the first ElevenLabs generation by ear and **reserved the second for future use*
 ## A · Decisions only E can make — minutes each
 
 **E settled four of these at the device sitting on 2026-09-12/13, then `F-CTACelebrations-6`'s and
-`-7`'s verdicts on 2026-09-13. What remains is one deferral E asked to be held, and two
-housekeeping items — nothing in the merged arc is waiting on E.**
+`-7`'s verdicts on 2026-09-13. What remains is ONE new device pass, one deferral E asked to be
+held, and two housekeeping items.**
+
+- [ ] **`F-CTACelebrations-Surfaces`' DEVICE PASS — the one thing outstanding.** Everything the
+      simulator can prove is proved: the probe finds real SwiftUI sheets, covers, alerts and
+      dialogs, and the real centre holds and releases over a real one end to end. **What no test
+      can reach is the app's own five request sites firing while a sheet is up.** The check is two
+      minutes: open **Quick Capture** (the FAB) and clear the last waiting capture from inside it,
+      or sit on Settings while the ring crosses the daily goal — the celebration should appear
+      **after** the sheet closes rather than not at all. **No RM-on pass is owed** (§7.3): the
+      block adds no `#available` site and no Reduce Motion site, so the reduced path cannot look
+      different either way. (NEW)
 
 - [x] **`F-CTACelebrations-7`'s DEVICE VERDICT — PASSED, 2026-09-13, both checks.** E, verbatim:
       ***"both work correctly"*** — the chime plays UNDER music without pausing it
@@ -172,10 +189,12 @@ housekeeping items — nothing in the merged arc is waiting on E.**
    2026-09-13 — and it is now a BLOCK, not a question.** Offered "add Quick Capture only", "hold
    behind any unknown sheet", "accept it and close the item" or "defer and ask again", E chose
    **hold a full-screen celebration behind ANY unknown sheet**. Written up as
-   **`F-CTACelebrations-Surfaces`** in `TODO-CLAUDE-CODE.md`, queued after `-7`. **The hard part is
-   the whole block:** iOS hands the app no signal that a sheet is up, so the detection needs a
-   deliberate seam — that design question is OPEN and is the first thing the block must settle.
-   The existing R-g 60 s drop applies to the held burst unchanged. (CLOSED as a question)
+   **`F-CTACelebrations-Surfaces`** in `TODO-CLAUDE-CODE.md`. **BUILT AND MERGED 2026-09-13**
+   (`a472f28`, PR #112). The design question it flagged was settled with E FIRST, as the spec
+   demanded: two options put to them with catches, misses, cost and what keeps each honest, and E
+   chose the UIKit probe. R-g applies unchanged in substance, and is now enforced by time rather
+   than by a dismissal that an untracked sheet never sends. **Nothing is outstanding here but E's
+   device pass.** (CLOSED as a question; CLOSED as a block bar the verdict)
 
 **0c. The daily-goal announcement is an INTERRUPT, and nothing here has been checked on a real
    VoiceOver device.** `UIAccessibility.post(notification: .announcement,)` speaks over whatever
