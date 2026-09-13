@@ -43,16 +43,34 @@ struct PlaceRoutineCongratulationDetails: View {
             if let verdict = comparisonLine {
                 Text(verdict)
                     .font(.footnote.weight(.semibold))
+                    // E, 2026-09-13: a record keeps the done-green; every other verdict is
+                    // the accent, so it is clearly COLOURED without borrowing a status meaning
+                    // it does not have. Grey read as an afterthought; green read as praise for
+                    // having taken 43 minutes.
                     .foregroundStyle(
                         comparison.isCelebratory
-                            ? AnyShapeStyle(Color(ConfirmCelebrationGlow.colorName))
-                            : AnyShapeStyle(.secondary)
+                            ? Color(ConfirmCelebrationGlow.colorName) : Color.accentColor
                     )
                     .minimumScaleFactor(0.8)
             }
         }
         .bentoCard()
+        // E, 2026-09-13: *"add a clear full-border around that section."* The shared card
+        // treatment already draws a 1pt `CardBorder` stroke — it is simply too low-contrast to
+        // read, especially in light mode against the wash. E chose a done-green tint over a
+        // stronger neutral, which ties the panel to the celebration it belongs to.
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(
+                    Color(ConfirmCelebrationGlow.colorName).opacity(Self.borderOpacity),
+                    lineWidth: 1.5
+                )
+        )
     }
+
+    /// E chose the done-green border by name; this is the weight that makes it read against
+    /// both the light wash and the dark page without becoming a second headline.
+    private static let borderOpacity: Double = 0.55
 
     /// `nil` draws nothing at all — and that covers BOTH "this routine has no history" and
     /// "the fetch has not answered yet", so the block never flashes a line into place a beat

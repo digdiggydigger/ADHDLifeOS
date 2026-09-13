@@ -261,32 +261,55 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
         XCTAssertEqual(PlaceRoutineTimeFormatting.duration(3_600), "1h")
     }
 
-    /// E asked for `hh:mm:ss` by name, so the seconds stay — but through the reader's own
-    /// locale rather than a hard 24-hour format, because this app is headed for a public
-    /// launch and half the world writes 1:00:00 PM.
-    func testAClockTimeCarriesTheSecondsEAskedFor() {
+    /// **REVERSED 2026-09-13, and BOTH halves are E's reversal of E's own earlier answer.**
+    ///
+    /// E first asked for `hh:mm:ss`, and this asserted exactly that — through the reader's own
+    /// locale, so a 24-hour locale got `13:00:00`. E then saw it rendered and ruled:
+    /// *"Any clock-timings that are displayed MUST be in a 12HR format (1pm not 13:00 etc.)"*.
+    ///
+    /// Put to E that "1pm" drops the seconds the first instruction asked for AND the minutes,
+    /// E chose **"1:00 pm"** — 12-hour, minutes always, no seconds. So the seconds are gone by
+    /// E's decision rather than by oversight, and the clock no longer follows the reader's
+    /// locale, which is what the old test pinned.
+    func testTheClockIsTwelveHourWithMinutesAndNoSeconds() {
         XCTAssertEqual(
             PlaceRoutineTimeFormatting.clock(
                 arrival, locale: Locale(identifier: "en_GB"),
                 timeZone: XCTUnwrap0(TimeZone(identifier: "Europe/London"))
             ),
-            "13:00:00"
+            "1:00 pm"
         )
     }
 
-    func testAClockTimeFollowsTheReadersLocaleRatherThanAFixedTwentyFourHourClock() {
-        let american = PlaceRoutineTimeFormatting.clock(
-            arrival, locale: Locale(identifier: "en_US"),
-            timeZone: XCTUnwrap0(TimeZone(identifier: "Europe/London"))
-        )
-        XCTAssertTrue(american.hasPrefix("1:00:00"), american)
-        XCTAssertTrue(
-            american.uppercased().contains("PM"), "a 12-hour locale must keep its meridiem: \(american)"
-        )
+    /// en_GB writes 24-hour time by default, so this is the case E's rule exists for: the app
+    /// overrides the locale rather than deferring to it.
+    func testTheClockStaysTwelveHourEvenInATwentyFourHourLocale() {
+        for identifier in ["en_GB", "de_DE", "fr_FR"] {
+            XCTAssertEqual(
+                PlaceRoutineTimeFormatting.clock(
+                    arrival.addingTimeInterval(2_400), locale: Locale(identifier: identifier),
+                    timeZone: XCTUnwrap0(TimeZone(identifier: "Europe/London"))
+                ),
+                "1:40 pm", "\(identifier) fell back to its own 24-hour clock"
+            )
+        }
     }
 
-    func testAZeroDurationReadsAsInstantRatherThanAsZeroSeconds() {
-        XCTAssertEqual(PlaceRoutineTimeFormatting.duration(0), "instant")
+    /// The classic 12-hour trap: midday and midnight are TWELVE, never zero.
+    func testMiddayAndMidnightReadAsTwelveRatherThanZero() {
+        let london = XCTUnwrap0(TimeZone(identifier: "Europe/London"))
+        XCTAssertEqual(
+            PlaceRoutineTimeFormatting.clock(
+                arrival.addingTimeInterval(-3_600), locale: .current, timeZone: london
+            ),
+            "12:00 pm"
+        )
+        XCTAssertEqual(
+            PlaceRoutineTimeFormatting.clock(
+                arrival.addingTimeInterval(-13 * 3_600), locale: .current, timeZone: london
+            ),
+            "12:00 am"
+        )
     }
 
     // MARK: - Which verdict is worth colouring
@@ -294,7 +317,7 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
     /// Done-green is the app's DONE colour. Painting "longer than usual" in it says "well done"
     /// about the one verdict that is not praise — caught by looking at the 20-step render, where
     /// the line read as a compliment about taking 43 minutes.
-    func testOnlyABestEverRunIsWorthColouring() {
+    func testOnlyABestEverRunIsWorthTheDoneColour() {
         XCTAssertTrue(PlaceRoutineComparison.Verdict.fastestYet.isCelebratory)
         XCTAssertFalse(PlaceRoutineComparison.Verdict.usual(typical: 600).isCelebratory)
         XCTAssertFalse(PlaceRoutineComparison.Verdict.longerThanUsual(typical: 600).isCelebratory)

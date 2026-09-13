@@ -152,19 +152,27 @@ enum PlaceRoutineComparison {
 
 /// The words for a length of time.
 enum PlaceRoutineTimeFormatting {
-    /// A wall-clock time. **E asked for `hh:mm:ss` by name, so the seconds stay** — but
-    /// through the reader's own locale rather than a hard 24-hour format, because this app is
-    /// headed for a public launch and half the world writes 1:00:00 PM. `.medium` is exactly
-    /// "the short time, with seconds" in every locale.
+    /// A wall-clock time, **always 12-hour, minutes always, no seconds**.
+    ///
+    /// **E ruled this on 2026-09-13 after seeing it rendered**: *"Any clock-timings that are
+    /// displayed MUST be in a 12HR format (1pm not 13:00 etc.)"* — reversing E's own earlier
+    /// `hh:mm:ss`. Asked whether "1pm" meant dropping the seconds AND the minutes, E chose
+    /// **"1:00 pm"**: minutes always, seconds gone.
+    ///
+    /// **The locale is deliberately overridden rather than deferred to**, which is the whole
+    /// point of the rule: `en_GB`, `de_DE` and `fr_FR` all write 24-hour time by default, and
+    /// those are exactly the readers E's "MUST" is about. `en_US_POSIX` fixes the pattern so a
+    /// device region can never reintroduce a 24-hour clock; the meridiem is lowercased to match
+    /// the way E wrote it.
     static func clock(
         _ date: Date, locale: Locale = .current, timeZone: TimeZone = .current
     ) -> String {
+        _ = locale
         let formatter = DateFormatter()
-        formatter.locale = locale
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = timeZone
-        formatter.dateStyle = .none
-        formatter.timeStyle = .medium
-        return formatter.string(from: date)
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date).lowercased()
     }
 
     /// Seconds below a minute, because a routine step is often that quick and "0 min" would
