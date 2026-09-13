@@ -192,6 +192,19 @@ final class PlaceRoutineWiringCallSiteTests: XCTestCase {
         )
     }
 
+    /// C8's tap target. The journeys dismiss the congratulation by tapping a step ROW, because
+    /// that is the only thing that exercises E's reversal of answer 6 — a TAP reaching the
+    /// parent's gesture through the scroller while a DRAG goes to the scroller. Tapping the
+    /// greeting would prove the gesture works and say nothing about the scroller under it.
+    func testEveryStepRowIsAddressableSoAJourneyCanTapThroughTheScroller() throws {
+        XCTAssertTrue(
+            try flattened("Places/PlaceRoutineCongratulationView.swift")
+                .contains("accessibilityIdentifier(\"routineCongratulationStep-\\(index)\")"),
+            "no step row is addressable, so a journey can only dismiss by tapping the greeting —"
+                + " which is outside the ScrollView and proves nothing about tapping through it"
+        )
+    }
+
     // MARK: - Reading the tree
 
     private func flattened(_ relativePath: String) throws -> String {

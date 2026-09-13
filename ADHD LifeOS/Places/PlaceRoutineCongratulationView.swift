@@ -72,6 +72,11 @@ struct PlaceRoutineCongratulationView: View {
                     let durations = PlaceRoutineStepDuration.durations(for: run)
                     ForEach(run.steps.indices, id: \.self) { index in
                         stepRow(run.steps[index], took: durations[index], density: density)
+                            // Addressable so a journey can tap a ROW rather than the greeting.
+                            // That tap is the only thing that exercises E's reversal of answer 6
+                            // — a TAP reaching the parent's gesture THROUGH the scroller, while
+                            // a DRAG goes to the scroller — and a still can never show it.
+                            .accessibilityIdentifier("routineCongratulationStep-\(index)")
                     }
                 }
             }

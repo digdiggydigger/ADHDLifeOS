@@ -26,7 +26,12 @@ final class RoutineJourneyUITests: XCTestCase {
 
     // MARK: - The seeded place
 
-    private let placeId = UUID()
+    /// `internal`, not `private`, and that is a consequence rather than a choice: Swift's
+    /// `private` is FILE-scoped, and `fireCrossing` moved to `+Plumbing.swift` when E's R1 grew
+    /// this file past the 400-line bar. The `PlaceRoutineScreen+Opening.openExternally`
+    /// precedent, recorded in the register — an extension that leaves its type's file leaves
+    /// same-file `private` access behind with it.
+    let placeId = UUID()
     private let journalId = UUID()
     private let snapchatId = UUID()
     private let gymAppId = UUID()
@@ -85,8 +90,15 @@ final class RoutineJourneyUITests: XCTestCase {
 
     // MARK: - The journey
 
+    /// **RENAMED with the rule it asserts.** This was
+    /// `testARoutineIsReachableFromTodayAndEndsWhenItIsFinished`, and "finished" meant CLOSED:
+    /// resolving every step and leaving ended the run. E's R1 reversed that — *"the user must
+    /// have to confirm by manually tapping a 'Completed' button before any actions such as
+    /// logging it to the Journal or running the animation etc are run"* — so a Close now leaves
+    /// the run live and its card on Today, and only the tap ends it. A name asserting the old
+    /// rule would be a trap for the next reader, so it moved with the behaviour.
     @MainActor
-    func testARoutineIsReachableFromTodayAndEndsWhenItIsFinished() throws {
+    func testARoutineIsReachableFromTodayAndEndsOnlyWhenItIsConfirmed() throws {
         try UITestEmulator.skipUnlessRunning()
 
         let account = try UITestSession.createAccount(label: "routine")
@@ -144,9 +156,18 @@ final class RoutineJourneyUITests: XCTestCase {
         )
         attach(app, "5-all-steps-resolved")
 
-        // 6. A fully-resolved run ends when the screen is LEFT, not at the final tap — which
-        //    is what keeps Undo available until then. So closing it takes the card with it,
-        //    and the card is the run's only pull surface: its absence IS the run ending.
+        // 6-8. E's R1: a Close leaves the run LIVE, and only the Completed tap ends it.
+        closeThenComeBackAndConfirm(app, continueButton: continueButton)
+    }
+
+    /// **The half of this journey that used to assert the opposite.** Closing a fully-resolved
+    /// routine ended it, so the old shape was Close → card gone. Under E's R1 nothing is written
+    /// and nothing celebrates without a deliberate Completed tap, so a Close now leaves the run
+    /// live, its card on Today, and its label swapped to "Finish routine".
+    @MainActor
+    private func closeThenComeBackAndConfirm(
+        _ app: XCUIApplication, continueButton: XCUIElement
+    ) {
         // `untilGone:` must name something still ON the screen. Naming the Skip button —
         // which had just been asserted ABSENT — made this return true without ever tapping
         // Close, leaving the cover up and every later assertion reading the screen beneath it.
@@ -154,11 +175,61 @@ final class RoutineJourneyUITests: XCTestCase {
             UITestSession.tap(app.buttons["Close"], untilGone: named("routineProgress", app)),
             "Close did not dismiss the routine screen"
         )
+        openTab("Today", in: app)
+        XCTAssertTrue(
+            scrollUntilFound(continueButton, in: app),
+            "Closing a fully-resolved routine took its card with it. Under E's R1 the run is"
+                + " still live — nothing has been confirmed — and Today's card is its only way"
+                + " back: losing it here strands a routine one tap from finished."
+        )
+        XCTAssertEqual(
+            continueButton.label, "Finish routine",
+            "the card still offers to CONTINUE a routine with nothing left to continue (E's"
+                + " answer 8 — the label is the difference between a chore and a finish line)"
+        )
+        attach(app, "6-resolved-but-unconfirmed")
+
+        // 7. Back in through the card, and THIS time confirm it. The Completed card takes the
+        //    slot the next step would have had.
+        XCTAssertTrue(
+            UITestSession.tap(continueButton, untilExists: app.buttons["routineCompletedButton"]),
+            "Reopening a fully-resolved routine never offered the Completed card"
+        )
+        attach(app, "7-completed-card")
+        finishAndDismissTheCongratulation(app)
+
+        // 8. Only NOW is the run over, so only now does the card go.
         XCTAssertTrue(
             waitForGone(continueButton, in: app),
-            "A finished routine left its card on Today — the run never ended"
+            "A confirmed routine left its card on Today — the run never ended"
         )
-        attach(app, "6-after-completion")
+        attach(app, "8-after-completion")
+    }
+
+    /// Taps Completed, waits on the GREETING, and dismisses by tapping a step ROW.
+    ///
+    /// **It waits on the greeting rather than on confetti, and that is not a preference.** Both
+    /// journeys resolve the gym as 1 auto + 3 skipped, so R-f is not earned and neither ever
+    /// sees a single piece of paper. A journey waiting on paper that is never coming hangs to
+    /// the timeout and reads exactly like a render failure.
+    ///
+    /// **And it taps a ROW, not the greeting.** The row is inside the `ScrollView` E asked for
+    /// when they reversed answer 6, so this tap is the only thing that exercises the claim that
+    /// a TAP reaches the parent's gesture while a DRAG goes to the scroller. Tapping the
+    /// greeting — which sits outside it — would prove the gesture works and nothing else.
+    @MainActor
+    private func finishAndDismissTheCongratulation(_ app: XCUIApplication) {
+        let greeting = named("routineCongratulationGreeting", app)
+        XCTAssertTrue(
+            UITestSession.tap(app.buttons["routineCompletedButton"], untilExists: greeting),
+            "The Completed tap never produced the congratulation"
+        )
+        attach(app, "7b-congratulation")
+        XCTAssertTrue(
+            UITestSession.tap(named("routineCongratulationStep-0", app), untilGone: greeting),
+            "Tapping a step row did not close the congratulation — a tap inside the step list"
+                + " is being swallowed by the scroller instead of reaching the parent's gesture"
+        )
     }
 
     // MARK: - Helpers
@@ -253,113 +324,5 @@ final class RoutineJourneyUITests: XCTestCase {
             app.buttons["Open Snapchat"].waitForExistence(timeout: UITestSession.timeout),
             "the routine screen did not survive a trip to the background"
         )
-    }
-
-    /// Taps a tab until it is actually SELECTED. A tab tap taken while the previous screen is
-    /// still settling is a silent no-op — the lesson `SignedInJourneySupport.openTab` records,
-    /// and the exact way this journey failed on its first run.
-    @MainActor
-    private func openTab(_ name: String, in app: XCUIApplication) {
-        let tab = UITestSession.tabButton(name, in: app)
-        XCTAssertTrue(
-            tab.waitForExistence(timeout: UITestSession.timeout),
-            "The \(name) tab is missing from the tab bar"
-        )
-        for attempt in 1...4 {
-            if tab.isSelected { return }
-            // A plain `.tap()` goes through hittability resolution, which a just-dismissed
-            // full-screen cover can still be interfering with — that is exactly where this
-            // journey's second Tools tap died. From the second attempt, tap the COORDINATE,
-            // which bypasses that resolution entirely.
-            if attempt == 1 {
-                tab.tap()
-            } else {
-                tab.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-            }
-            // A FRESH expectation per attempt: XCTest allows an expectation to be waited on
-            // exactly once, and reusing one across retries raises an API violation rather than
-            // retrying — which is how this journey failed on its second Tools tap.
-            let selected = XCTNSPredicateExpectation(
-                predicate: NSPredicate(format: "isSelected == true"), object: tab
-            )
-            if XCTWaiter().wait(for: [selected], timeout: 4) == .completed { return }
-        }
-        XCTAssertTrue(tab.isSelected, "The \(name) tab never became selected")
-    }
-
-    /// Places live on the Tools tab since F-Tools-3-Page. Every tap here is race-proofed: the
-    /// first run of this journey died on a swallowed tab tap.
-    @MainActor
-    private func fireCrossing(_ app: XCUIApplication, named button: String) {
-        openTab("Tools", in: app)
-        let fire = app.buttons["placeTestFireButton-\(placeId)"]
-        // A tab keeps its navigation stack, so the SECOND visit lands back inside Places with
-        // no door to tap. Waiting for the door there hangs to the timeout and reads exactly
-        // like a render failure — the sibling journey's trap, and this journey now fires twice.
-        if !fire.exists {
-            let placesDoor = app.buttons["toolsCard.places"]
-            XCTAssertTrue(
-                placesDoor.waitForExistence(timeout: UITestSession.timeout),
-                "The Tools tab never showed the Places door"
-            )
-            XCTAssertTrue(
-                UITestSession.tap(placesDoor, untilExists: fire),
-                "The seeded place never appeared in the Places list"
-            )
-        }
-        let choice = app.buttons[button]
-        XCTAssertTrue(
-            UITestSession.tap(fire, untilExists: choice),
-            "The test-fire dialog never offered \(button)"
-        )
-        XCTAssertTrue(
-            UITestSession.tap(choice, untilGone: choice),
-            "The test-fire dialog never dismissed"
-        )
-    }
-
-    /// Today is a `LazyVStack`, so a row below the fold does not merely fail to be hittable —
-    /// it does not EXIST. The card sits at the very top, but a tab can be restored mid-scroll.
-    @MainActor
-    private func scrollUntilFound(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
-        // WAIT first: the card arrives on the app-wide change signal, which is debounced, so
-        // swiping immediately would decide "absent" before it could ever be present.
-        if element.waitForExistence(timeout: UITestSession.timeout) { return true }
-        for _ in 0..<8 {
-            app.swipeDown()
-            if element.waitForExistence(timeout: 2) { return true }
-        }
-        return element.exists
-    }
-
-    @MainActor
-    private func waitForGone(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
-        let gone = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "exists == false"), object: element
-        )
-        if XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout) == .completed {
-            return true
-        }
-        for _ in 0..<8 {
-            if !element.exists { return true }
-            app.swipeDown()
-        }
-        return !element.exists
-    }
-
-    /// Addresses an element by identifier without asserting its TYPE. A SwiftUI element
-    /// built with `.accessibilityElement(children: .combine)` is exposed as whatever type the
-    /// framework picks — guessing `otherElements` cost this journey a run.
-    @MainActor
-    private func named(_ identifier: String, _ app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-    }
-
-    @MainActor
-    private func attach(_ app: XCUIApplication, _ name: String) {
-        let shot = XCTAttachment(screenshot: app.screenshot())
-        shot.name = name
-        shot.lifetime = .keepAlways
-        add(shot)
     }
 }

@@ -149,8 +149,14 @@ final class RoutineRecordJourneyUITests: XCTestCase {
 
     // MARK: - Helpers
 
-    /// Fires the gym arrival, opens its banner, skips every tap-step and closes — the run ends
-    /// `completed` with "1 of 4 done" (the auto step), which is what the Journal row must say.
+    /// Fires the gym arrival, opens its banner, skips every tap-step and CONFIRMS — the run
+    /// ends `completed` with "1 of 4 done" (the auto step), which is what the Journal row must
+    /// say.
+    ///
+    /// **It taps Completed, not Close, and that changed in `F-CTACelebrations-6`.** Under E's R1
+    /// closing leaves the run live and writes nothing, so every Journal and Tools assertion this
+    /// journey makes downstream would read a routine that never ended — three of them silently
+    /// asserting the absence of rows that were simply not written yet.
     @MainActor
     private func takeAndFinishTheGymRoutine(_ app: XCUIApplication) {
         fireCrossing(app, placeId: gymId, named: "Simulate arrival")
@@ -166,9 +172,19 @@ final class RoutineRecordJourneyUITests: XCTestCase {
             _ = app.buttons["Open Spotify"].waitForExistence(timeout: 2)
         }
         XCTAssertFalse(skip.exists, "every step should be resolved")
+        // The greeting, never confetti: this run is 1 auto + 3 skipped, so R-f is not earned and
+        // no paper is ever coming. Waiting on it would hang to the timeout and read like a
+        // render failure.
+        let greeting = named("routineCongratulationGreeting", app)
         XCTAssertTrue(
-            UITestSession.tap(app.buttons["Close"], untilGone: named("routineProgress", app)),
-            "Close did not dismiss the routine screen"
+            UITestSession.tap(app.buttons["routineCompletedButton"], untilExists: greeting),
+            "The Completed tap never produced the congratulation"
+        )
+        // A step ROW rather than the greeting — the tap-through-the-scroller claim (E's reversal
+        // of answer 6), which no still can show.
+        XCTAssertTrue(
+            UITestSession.tap(named("routineCongratulationStep-0", app), untilGone: greeting),
+            "Tapping a step row did not close the congratulation"
         )
     }
 
