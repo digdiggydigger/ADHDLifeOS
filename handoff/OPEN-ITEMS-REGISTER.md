@@ -1,14 +1,13 @@
-# Open items register — 2026-09-13 (thirty-seventh edition; `F-CTACelebrations-5` shipped, E's device sitting PASSED everything, and E's four decisions from it are all settled — **two blocks of the arc remain**)
+# Open items register — 2026-09-13 (thirty-eighth edition; **`F-CTACelebrations-6` is PLANNED IN FULL and not yet built**, E answered nine open questions and closed §0b)
 
-*The close-out of the sixth build session of the CTA celebrations arc, plus the three follow-on
-blocks E asked for from the phone. E's standing ask — use any skills, MCPs, plugins and subagents
-that help — was followed: the TDD skill, render probes, a `feature-dev:code-reviewer` pass and an
-`apple:hig-reviewer` pass. Both review passes found real defects, one of them in this session's own
-fix; a third was found by LOOKING at a render; and a fourth was found by E on the phone, which no
-test could have caught.
+*The close-out of a PLANNING-ONLY session. No feature code, no tests, no branch — the whole output
+is a plan, a rewritten opener and this register. E's standing instruction is that each block is
+BUILT in a fresh Claude Code terminal, so this session deliberately stopped at the plan.*
 
-The opener `handoff/START-HERE-cta-celebrations-5.md` is SPENT and archived. Supersedes the
-thirty-six earlier editions.*
+*Nine questions were put to E and answered; **five of the nine are E's own wording or a reversal of
+what was offered**, so they cannot be re-derived from the design record. Three exploration passes
+and one design pass mapped every test the block touches and corrected three things the design record
+and the previous opener got wrong. Supersedes the thirty-seven earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -16,47 +15,44 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `210d931`** (PR #103). `firestore.rules` is untouched, so there is **nothing for E to
-republish**.
+**`main` @ `b5a55cf`** (PR #104) plus this session's docs-only commit. `firestore.rules` is
+untouched, so there is **nothing for E to republish**.
 
-**Verified at `706728e`** (the last code commit; the merges and the close-out add no code):
+**NO CODE CHANGED THIS SESSION.** It was planning only — the plan, a rewritten opener, the TODO
+block and this register. So the figures below are **carried forward unverified from the
+thirty-seventh edition, not re-measured**, and saying which is the point: nothing here is a claim
+about a run that happened today.
+
+Carried from `706728e` (the last code commit):
 - unit suite **2,882 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
 - SwiftLint **0 / 791**;
-- sim `** BUILD SUCCEEDED **`; device build, install and launch from `main` at the close.
-
-Coverage, measured at `706728e`:
+- sim `** BUILD SUCCEEDED **`; device build, install and launch from `main`.
 
 ```
 ADHD LifeOS.app              27.39%  (13058/47668)
 ```
 
-**Comparable with the thirty-sixth edition's 27.39 % (13,050/47,646)** — both runs measured 100 % of
-the app target. Flat, and honestly so: the three follow-on blocks are a constant, a policy
-simplification and a coordinate, not new logic.
+**One new measurement WAS taken, and it corrects a number this file has repeated for weeks:**
+`PlaceRoutineScreen`'s **type body is 235 lines against SwiftLint's `type_body_length` ceiling of
+250** — so the real headroom is **15 body lines**, not the 18 file lines the design record's
+"384 of 400" implies. `.swiftlint.yml` overrides neither metric. See §B.00.
 
-**The suite count FELL, 2,888 → 2,882, and that is the expected shape rather than a regression:**
-`NoCooldown` removed seven tests that pinned a rule E deleted, and added two.
+### Landed this session — documentation only
 
-### Landed this session
+**No code, no tests, no feature branch.** E's standing instruction is that each block is BUILT in a
+fresh terminal, so this session planned `F-CTACelebrations-6` and stopped.
 
-- **`F-CTACelebrations-5`** — E's three remaining full-screen milestones: **inbox zero**, **the
-  streak on 7**, and **the daily goal**. Room first: `CaptureInboxService.swift` 397 → 355. 60
-  tests. Evidence `screenshots/cta-celebrations-block-5/`. **PASSED E's device pass, with Reduce
-  Motion off and on.** (NEW)
-- **Register §B.00b's latent defect is CLOSED.** A held burst now chimes when it PLAYS rather than
-  when it was asked for, and one dropped at R-g's sixty seconds never chimes at all.
-  `CelebrationCenterHeldBurstTests` closes the test gap the register named. (NEW)
-- **`F-CTACelebrations-PopScale`** (PR #99) — E saw the pop on the phone and asked for it bigger, in
-  three messages covering size, spread and count. Four variants rendered in situ; **E picked C**.
-  One constant, `CelebrationRecipes.popScale = 1.6`, carries all three: 18 → 28 pieces, 2,087 →
-  5,590 painted px, furthest piece 140 → 208 pt. Evidence
-  `screenshots/cta-celebrations-pop-scale/`. **Do not tune it down** — it is E's by-sight value. (NEW)
-- **`F-CTACelebrations-NoCooldown`** (PR #102) — **E removed the milestone cooldown entirely.**
-  `CelebrationPolicy.outcome` takes no clock; `milestoneCooldown`, `lastFullScreenAt` and
-  `cooldownAnchor` are gone rather than left unread. (NEW)
-- **`F-CTACelebrations-SwipeOrigin`** (PR #102) — **a swipe now pops from the finger.** E recorded
-  the defect on the phone: the swipe shared the circle's origin, the circle sits at the row's
-  trailing edge, and the 1.6× throw put most of the paper off the right of the screen. (NEW)
+- **`handoff/START-HERE-cta-celebrations-6.md` REWRITTEN.** It is no longer a thin pointer: it
+  carries E's nine answers, the nine-commit plan, the test map, the three booby-traps, the red
+  prediction and the risks. **It also corrects three things its own previous version got wrong** —
+  the probe README it pointed at, the claim that a probe copy could be recovered, and the room-first
+  move. (NEW)
+- **`TODO-CLAUDE-CODE.md`** — the `F-CTACelebrations-6` block now carries E's nine answers and the
+  three corrections; **`F-CTACelebrations-Surfaces` added** as its own block from E's §0b answer. (NEW)
+- **This register** — thirty-eighth edition. (NEW)
+
+*The previous session's landed work (`F-CTACelebrations-5`, the held-burst chime fix, `PopScale`,
+`NoCooldown`, `SwipeOrigin`) is recorded in the thirty-seventh edition and is unchanged.*
 
 ### What this session established
 
@@ -181,39 +177,48 @@ asked to be held, and two housekeeping items.**
 
 ## B · Real work, ready to start — recommended order
 
-**00. THE CTA CELEBRATIONS ARC — blocks 1–6 of 8 BUILT, MERGED and all PASSED on device, plus
-   three follow-on blocks from E's device pass. The next is `F-CTACelebrations-6`, the routine
-   Completed flow.** The record is `handoff/SESSION-OPENER-cta-celebrations-design.md`; the opener
-   is `handoff/START-HERE-cta-celebrations-6.md`; the blocks are in `TODO-CLAUDE-CODE.md`.
-   **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ → ~~`F-CTACelebrations-1`~~ →
-   ~~`-2`~~ → ~~`-3`~~ → ~~`-4`~~ → ~~`-5`~~ → **`-6`** (the routine Completed flow, R1–R5) →
-   `-7` (the chime). Plus, out of the device pass and not in the original plan:
-   ~~`PopScale`~~, ~~`NoCooldown`~~, ~~`SwipeOrigin`~~.
-   **For block 6, four things this session leaves it:**
-   - **Render the congratulation view FIRST** (light, dark, Reduce Motion, the switch-off beat) and
-     send it to E before wiring anything. That is in the block as written, and it is how the pop
-     and the pop's SCALE were both settled.
-   - **It REVERSES an E-settled rule** — "leaving a fully-resolved run ends it". Every test that
-     pins the old rule is updated BY NAME, and each is named in the block report.
-   - **Room first:** `PlaceRoutineScreen.swift` is at 384 of 400.
-   - **The Completed button is the second site R-h names** (no pop of its own), so it records a
-     `.celebrationPopOrigin` and `CelebrationPopCallSiteTests`' hand-recorded origin count moves
-     **3 → 4**. The wrapper count stays 9. **And note `SwipeOrigin`'s lesson**: think about where
-     that origin sits relative to the 208 pt throw before trusting it. (updated)
+**00. THE CTA CELEBRATIONS ARC — blocks 1–6 of 8 BUILT and MERGED, all PASSED on device, plus
+   three follow-on blocks. `F-CTACelebrations-6` is now PLANNED IN FULL but NOT BUILT.** The record
+   is `handoff/SESSION-OPENER-cta-celebrations-design.md`; the plan is
+   `handoff/START-HERE-cta-celebrations-6.md` (rewritten 2026-09-13 and no longer a thin pointer —
+   it carries the whole plan); the blocks are in `TODO-CLAUDE-CODE.md`.
+   **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ → ~~`F-CTACelebrations-1`~~ → ~~`-2`~~ →
+   ~~`-3`~~ → ~~`-4`~~ → ~~`-5`~~ → **`-6`** (planned, unbuilt) → `-7` (the chime) →
+   `F-CTACelebrations-Surfaces` (NEW, E's §0b answer). Plus ~~`PopScale`~~, ~~`NoCooldown`~~,
+   ~~`SwipeOrigin`~~.
 
-**0b. Two surfaces question, raised by the HIG pass and NOT closed: a full-screen celebration can
-   play entirely unseen behind an untracked sheet or cover.** Only four surfaces call
-   `surfacePresented` (root, routine cover, Tasks search, promote sheet). Every other `.sheet` /
-   `.fullScreenCover` in the app — **Quick Capture** (`RootView.swift`, arguably the most-opened
-   full-screen surface in the app), Settings, Add Task, the Journal composer, the focus detail, add
-   nudge, the Life Area / Place / Tag editors — leaves `frontmost` reading `.root`, so a milestone
-   requested then is drawn on the root layer BELOW the sheet: invisible, while still consuming the
-   cooldown, marking the day and firing the haptic and the announcement.
-   **The design record raised this for Settings alone** (*"acceptable, or add a `.settings` surface
-   if E minds"*) and it was never answered; the gap is much wider than that one sentence. Options:
-   accept it, add the one or two surfaces that matter (Quick Capture first), or hold a full-screen
-   celebration behind ANY unknown presentation. **E's call, and it is cheap to defer — but it should
-   be a decision rather than an oversight.** (NEW)
+   **What the planning session established, and none of it should be re-derived:**
+   - **E's nine answers**, tabled in the opener and the TODO block. Five are E's own wording.
+   - **The binding lint ceiling is `type_body_length` 250, not `file_length` 400.**
+     `PlaceRoutineScreen`'s body is at **235** — 15 lines of headroom, not 18. The `#if DEBUG`
+     preview block sits OUTSIDE the type body, so moving it buys 61 *file* lines and **zero** body
+     lines: **both** room moves are needed and it still lands at ≈251. **And the design record's
+     suggested `+Completion.swift` for `complete()` cannot work** — `private` is file-scoped.
+   - **Three booby-traps**, each breaking a currently-green test: the `store.end` → `record`
+     **adjacency**; the **unique anchor** `"Button(title) { Haptics.play(.solid)"`; and the raw
+     **`leaveScreen()` == 5** count that drops to 4.
+   - **The full test map** — four tests reversed/updated by name, six sites that read
+     `PlaceRoutineScreen.swift` as a string, and the large set of `reason: .completed` tests at the
+     store/record/reconciler layer that are **UNAFFECTED** and must not be "fixed".
+   - **The probe recipe base is `screenshots/cta-celebrations-block-2/README.md`, not block 3**
+     (block 3 says so itself), and **no probe code survives anywhere** — the scratchpad copies both
+     READMEs cite are gone, so the probe is re-implemented from prose.
+   - **Two design answers settled:** "shrink to fit" is a pure, testable density table rather than
+     `ViewThatFits` (and `PlaceRoutineStepCircle` must gain a `size`, because 20 rows is 560 pt of
+     glyph alone); and the body swap is a **`ZStack`** — a `Group` would re-fire
+     `.task { activity.started(run) }` and restart the Live Activity moments after `complete()`
+     ended it, which **no test could see**.
+   - **Red prediction: 27 tests / 48 assertions**, plus three single-assertion flips, and five
+     named naive-first-passes.
+
+~~**0b. Two surfaces question, raised by the HIG pass and NOT closed.**~~ **ANSWERED BY E,
+   2026-09-13 — and it is now a BLOCK, not a question.** Offered "add Quick Capture only", "hold
+   behind any unknown sheet", "accept it and close the item" or "defer and ask again", E chose
+   **hold a full-screen celebration behind ANY unknown sheet**. Written up as
+   **`F-CTACelebrations-Surfaces`** in `TODO-CLAUDE-CODE.md`, queued after `-7`. **The hard part is
+   the whole block:** iOS hands the app no signal that a sheet is up, so the detection needs a
+   deliberate seam — that design question is OPEN and is the first thing the block must settle.
+   The existing R-g 60 s drop applies to the held burst unchanged. (CLOSED as a question)
 
 **0c. The daily-goal announcement is an INTERRUPT, and nothing here has been checked on a real
    VoiceOver device.** `UIAccessibility.post(notification: .announcement,)` speaks over whatever
@@ -273,6 +278,13 @@ this session or an earlier one noticed and judged below the bar for its own bloc
 that was tried and dismissed.*
 
 
+- **A fully-ticked routine that is never confirmed will be recorded as `dayEnded`, not
+  `completed`.** Found while planning `-6`. An arrival run stays live until **end of day**
+  (`RoutineRun.swift:96-102`) and `RoutineRunReconciliation` then stamps `.dayEnded` /
+  `.windowLapsed` (`:40-42`), so R1's *"Completed can be tapped later"* has a deadline: midnight.
+  Tick every step, swipe away, come back tomorrow — the Journal shows a lapsed run. **This is
+  exactly what E asked for** (*"nothing is recorded as completed without the tap"*), so it is
+  intended rather than a defect, but E has not seen it stated. (NEW)
 - **A shared constant reaches more sites than the block that changes it.** The swipe's pop went
   off-screen because `PopScale` moved a throw distance that a DIFFERENT block had built an origin
   decision around. Fixed in `F-CTACelebrations-SwipeOrigin`, but the shape recurs: the next time a

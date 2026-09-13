@@ -3949,6 +3949,39 @@ both or neither; the finger is resolved BEFORE `dragOffset` resets.
   `screenshots/cta-celebrations-block-6/`: the Completed card; the congratulation with confetti
   (full + still); the Today recovery card showing a live fully-ticked run. Device verdict.
 
+**PLANNED IN FULL 2026-09-13 — see `handoff/START-HERE-cta-celebrations-6.md`.** A planning-only
+session put the nine open questions to E, mapped every test the block touches and corrected three
+things the design record got wrong. **Do not re-derive it.**
+
+**E's nine answers (five are E's own wording or a reversal of what was offered):**
+1. R-f's "completes quietly" = **the congratulation, no confetti, ≈2 s**; the run still ends and
+   still records. Same beat as the switch-OFF case.
+2. The congratulation carries a **per-step list** under the summary line, naming every step.
+3. The Completed card's title is E's own wording: **`"4 of 4 done - Ready to finish?"`**
+4. An auto-done step is distinguished by a **word**, not a second glyph.
+5. The summary line is **done-of-total, always** ("3 of 4 steps"), so it can never disagree with the
+   list beneath it.
+6. A long list **shows every step and shrinks to fit** — E: *"showing every step as outlined is
+   appropriate"*. No scrolling (it would fight tap-to-skip).
+7. The short ≈2 s beat is the **same view, just shorter** — full list, no confetti.
+8. Today's card **swaps its button label** when nothing is pending: "Finish routine" /
+   "Continue routine".
+9. The step list **reuses `PlaceRoutineStepCircle` exactly as the resolved rows draw it** — accent
+   circle + `checkmark` for done *and* auto-done, `cardBorder` circle + `minus` for skipped, plus a
+   state word. **No `✗`**: the app uses `xmark` only as a Close button.
+
+**Three corrections the plan carries:**
+- **The binding ceiling is `type_body_length` 250, not `file_length` 400.** The body is at **235**
+  (15 lines of headroom). The `#if DEBUG` preview block is OUTSIDE the body, so moving it buys 61
+  *file* lines and **zero** body lines — **both** moves are needed, and it still lands ≈251.
+- **A `+Completion.swift` for `complete()` CANNOT WORK** — `private` is file-scoped.
+- **The probe recipe is `screenshots/cta-celebrations-block-2/README.md`, not block 3**, and no
+  probe code survives anywhere: it is re-implemented from a spec.
+
+**Three booby-traps:** the `store.end` → `record` **adjacency** (nothing between them); the **unique
+anchor** `"Button(title) { Haptics.play(.solid)"`; and the **`leaveScreen()` == 5** raw-source count
+that drops to 4. Red prediction: **27 tests / 48 assertions**, plus three single-assertion flips.
+
 ### FEATURE: F-CTACelebrations-7 — the chime  [ ] OPEN
 
 - `CelebrationSound.swift`: `CelebrationSoundPlaying` (+ inert); one `AVAudioPlayer` from
@@ -3960,6 +3993,28 @@ both or neither; the finger is resolved BEFORE `dragOffset` resets.
 - Tests: the asset resolves; the session is set ambient + mixing before every play; a missing asset
   degrades to silence. Predicted red 3 / 3. Closes on E's pick and a device verdict with music
   playing and the silent switch on.
+
+### FEATURE: F-CTACelebrations-Surfaces — hold a celebration behind any unknown sheet  [ ] OPEN
+
+**E's call, 2026-09-13**, answering register §0b (raised by the `apple:hig-reviewer` pass on `-5`
+and never closed). Offered "add Quick Capture only", "hold behind any unknown sheet", "accept it"
+or "defer", E chose **hold behind any unknown sheet**.
+
+**The problem.** Only four surfaces call `surfacePresented` (root, routine cover, Tasks search,
+promote sheet). Every other `.sheet` / `.fullScreenCover` in the app — **Quick Capture**
+(`RootView.swift`, arguably the most-opened full-screen surface), Settings, Add Task, the Journal
+composer, the focus detail, add nudge, the Life Area / Place / Tag editors — leaves `frontmost`
+reading `.root`, so a milestone requested then is drawn on the root layer BELOW the sheet:
+invisible, while still marking the day and firing the haptic and the announcement.
+
+**The rule:** a full-screen celebration requested while ANY untracked presentation is up is HELD and
+released when it closes — the mechanism `.promoteSheet` already uses (`CelebrationSurface.dismissesItself`
+plus the centre's `held` list), and the existing **R-g 60 s drop** applies unchanged.
+
+**The hard part, and it is the whole block: knowing a sheet is up.** iOS hands us no such signal, so
+this needs a deliberate seam rather than a guess. That design question is OPEN and is the first
+thing the block must settle — do not start by writing the hold.
+
 
 ### FEATURE: F-FocusCard-Corners — round the collapsed card's bottom corners (E: "Round them", 2026-09-11)  [ ] OPEN
 
