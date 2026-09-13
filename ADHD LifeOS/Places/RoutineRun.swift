@@ -18,7 +18,7 @@ import Foundation
 /// Where one step of a live run stands. `autoDone` is minted at creation for the kinds the
 /// crossing runs itself (the screen shows them pre-ticked, E's settled call #4); `done` and
 /// `skipped` are the screen's verbs (block 3); everything else starts `pending`.
-enum RoutineStepState: String, Codable, Equatable, Sendable {
+enum RoutineStepState: String, Codable, Equatable, Sendable, CaseIterable {
     case autoDone
     case pending
     case done

@@ -215,6 +215,20 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The routine's milestone (`F-CTACelebrations-6`)
+
+    /// **`.routineFinished` shipped as a `CelebrationKind` with ZERO production call sites** —
+    /// declared, defaulted-on, unit-tested through the centre and the queue, and impossible for
+    /// a user to reach. C6 is the site. This is the guard that keeps it one.
+    func testTheFinishedRoutineMilestoneIsAskedForFromExactlyOnePlace() throws {
+        let asks = try appTargetOccurrences(of: "request(.milestone(.routineFinished)")
+        XCTAssertEqual(
+            asks.count, 1,
+            "\(asks.count) places ask for the finished-routine milestone, not 1."
+                + " Asked in: \(asks.map(\.file).sorted().joined(separator: ", "))."
+        )
+    }
+
     // MARK: - Reading the tree
 
     private func assertPasses(

@@ -265,9 +265,13 @@ final class RoutineRunStoreTests: XCTestCase {
     }
 
     /// The EXACT sequence the routine screen performs: open a run, resolve every step through
-    /// `updateMatching`, then end it on leaving. Reproduced against a real store because the
-    /// journey showed a finished routine keeping its Today card, and this isolates whether the
-    /// store half or the view half is at fault.
+    /// `updateMatching`, then end it. Reproduced against a real store because the journey showed
+    /// a finished routine keeping its Today card, and this isolates whether the store half or
+    /// the view half is at fault.
+    ///
+    /// **The trigger for that last `end` moved in `F-CTACelebrations-6`** — it was leaving the
+    /// screen and is now E's R1 Completed tap. The STORE's half is untouched by that, which is
+    /// the point of testing it here rather than through the view.
     func testStore_theScreensFullSequence_endsTheRun() {
         let defaults = scratchDefaults()
         let store = UserDefaultsRoutineRunStore(defaults: defaults, calendar: utcCalendar, userScope: { "tester" })
@@ -288,7 +292,7 @@ final class RoutineRunStoreTests: XCTestCase {
 
         XCTAssertNil(
             store.readLiveRun(now: noonUTC),
-            "leaving a finished routine must end it — the Today card is the run's only pull"
+            "confirming a finished routine must end it — the Today card is the run's only pull"
                 + " surface, so a run that survives here is a card that never goes away"
         )
     }

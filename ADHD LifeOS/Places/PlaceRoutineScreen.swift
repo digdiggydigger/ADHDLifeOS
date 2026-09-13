@@ -27,13 +27,24 @@ struct PlaceRoutineScreen: View {
     /// The routine RECORD (F-RoutineRecord-1): every step change and the completion go to
     /// Firestore from here, on a Task nothing on screen waits for.
     private let recorder: RoutineRunRecording
-    /// Every deliberate exit ends the run itself and `onDisappear` does it again as a net,
-    /// which is right for the idempotent local end and wrong for the record: the journey found
-    /// the completion written TWICE. Recorded once.
+    /// E's R4: the greeting says the ACCOUNT display name, the one Settings' account row shows.
+    /// Defaulted, because `nil` is ordinary — email/password sign-up does not require a name —
+    /// which is exactly why `RoutineRecordCallSiteTests` has to read the DOOR for it: a door
+    /// that forgot to pass it would compile and greet everyone anonymously forever.
+    private let displayName: String?
+    /// The congratulation's "compare to your usual" line reads the record back through this.
+    private let history: RoutineRunHistoryReading
+    /// Guards against a second ending: the Completed tap is the only thing that writes one, and
+    /// the journey once found a completion written TWICE. Recorded once.
     @State private var hasRecordedEnd = false
+    /// Non-nil from the Completed tap onwards, which is both the moment the congratulation
+    /// shows and the moment it displays. **Captured once, never read as `.now` from `body`:**
+    /// E reversed R5's auto-leave, so this view can sit on screen indefinitely and a live clock
+    /// would tick its four times apart in front of the reader.
+    @State private var confirmedAt: Date?
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.celebrate) private var celebrate
 
     init(
         run: RoutineRun,
@@ -45,7 +56,11 @@ struct PlaceRoutineScreen: View {
         activity: RoutineActivityPresenting,
         // NOT defaulted either: the default would be `FirebaseRoutineRunRecorder()`, which
         // reaches `FirebaseManager.shared` inside every preview. The door passes the real one.
-        recorder: RoutineRunRecording
+        recorder: RoutineRunRecording,
+        displayName: String? = nil,
+        // NOT defaulted for the recorder's exact reason: `FirebaseRoutineRunHistoryAdapter()`
+        // reaches `FirebaseManager.shared`. Previews pass `InertRoutineRunHistoryReader()`.
+        history: RoutineRunHistoryReading
     ) {
         _run = State(initialValue: run)
         self.store = store
@@ -53,24 +68,27 @@ struct PlaceRoutineScreen: View {
         self.onStartSprint = onStartSprint
         self.activity = activity
         self.recorder = recorder
+        self.displayName = displayName
+        self.history = history
     }
 
+    /// **A `ZStack`, and it is load-bearing rather than stylistic.** A `Group` re-runs `.task`
+    /// when its branch changes, which would restart the Live Activity moments after
+    /// `complete()` ended it — and no test could see that, because the Activity guards only
+    /// assert the `.task` string exists. So the lifecycle hangs on the stack and the branches
+    /// carry nothing but their transition.
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                header
-                progress
-                if !resolvedIndices.isEmpty {
-                    resolvedCard
-                }
-                if let nextIndex = PlaceRoutineProgress.nextPendingIndex(run) {
-                    nextCard(at: nextIndex)
-                }
-                if !upcomingIndices.isEmpty {
-                    upcomingCard
-                }
+        ZStack {
+            if let confirmedAt {
+                PlaceRoutineCongratulationView(
+                    run: run, displayName: displayName, confirmedAt: confirmedAt,
+                    history: history, onClose: { leaveScreen(); dismiss() }
+                )
+                .transition(entrance.transition)
+            } else {
+                checklist
+                    .transition(entrance.transition)
             }
-            .padding(16)
         }
         .background(Color.pageBackground)
         .task { activity.started(run) }
@@ -81,15 +99,42 @@ struct PlaceRoutineScreen: View {
         // cover (caught by the routine journey — a finished routine kept its Today card), so
         // every deliberate exit calls `leaveScreen()` itself. Idempotent, so both firing is
         // harmless and neither firing is impossible.
+        //
+        // **It no longer ENDS the run, and the scenePhase hook that used to is gone.** Under
+        // E's R1 only the Completed tap finishes a routine, so backgrounding a fully-resolved
+        // checklist must leave it exactly where it was — finishing it there would end a run
+        // the user never confirmed, silently, from another app.
         .onDisappear { leaveScreen() }
-        .onChange(of: scenePhase) { _, phase in
-            // Leaving the app with everything resolved ends the run (the settled rule: the
-            // run ends when you LEAVE the screen, not at the final tap — Undo lives until
-            // then).
-            if phase == .background, PlaceRoutineProgress.isFullyResolved(run) {
-                leaveScreen()
-                dismiss()
+    }
+
+    /// §7.2, resolved HERE rather than in the leaf: `accessibilityReduceMotion` cannot be
+    /// injected through `.environment(\.)`, so the leaf takes what it needs as parameters and
+    /// the one decision lives at the one place that reads the setting.
+    private var entrance: PlaceRoutineCongratulationEntrance {
+        PlaceRoutineCongratulationEntrance.resolve(reduceMotion: reduceMotion)
+    }
+
+    private var checklist: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                header
+                progress
+                if !resolvedIndices.isEmpty {
+                    resolvedCard
+                }
+                if let nextIndex = PlaceRoutineProgress.nextPendingIndex(run) {
+                    nextCard(at: nextIndex)
+                } else if PlaceRoutineProgress.isFullyResolved(run) {
+                    // E's R2: the Completed card takes the slot the next step would have had,
+                    // never a place beside it — a card offering to finish a routine while a
+                    // live step is still pending is the one shape R1 cannot allow.
+                    PlaceRoutineCompletedCard(run: run, onComplete: complete(from:))
+                }
+                if !upcomingIndices.isEmpty {
+                    upcomingCard
+                }
             }
+            .padding(16)
         }
     }
 
@@ -120,7 +165,7 @@ struct PlaceRoutineScreen: View {
                     .font(.largeTitle).bold()
                     .tracking(-0.5)
                     .minimumScaleFactor(0.8)
-                subline
+                PlaceRoutineSubline.text(for: run)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -131,14 +176,6 @@ struct PlaceRoutineScreen: View {
             .accessibilityAddTraits(.isHeader)
             .accessibilityIdentifier("routineHeader")
         }
-    }
-
-    private var subline: Text {
-        let moment = Text("\(PlaceRoutineScreenCopy.momentPrefix(for: run.direction)) ")
-            + Text(run.startedAt, style: .relative)
-            + Text(" ago")
-        guard let message = run.customMessage else { return moment }
-        return Text("\u{201C}\(message)\u{201D} · ") + moment
     }
 
     // MARK: - Progress
@@ -282,101 +319,49 @@ struct PlaceRoutineScreen: View {
         }
     }
 
-    private func openExternally(_ url: URL, failureBody: String) {
-        PlaceLinkOpener(
-            open: { url, universalLinksOnly, completion in
-                UIApplication.shared.open(
-                    url,
-                    options: universalLinksOnly ? [.universalLinksOnly: true] : [:],
-                    completionHandler: completion
-                )
-            },
-            notifyFailure: { body in
-                Task {
-                    await NotificationCenterImmediateNotifier().post(
-                        title: "That didn't open", body: body,
-                        identifier: "placeActionOpenFailure"
-                    )
-                }
-            }
-        ).run(PlaceLinkOpenPlan.plan(for: url), failureBody: failureBody)
+    /// **The Completed tap, and it is the ONLY thing that finishes a routine** (E's R1,
+    /// unprompted: *"the user must have to confirm by manually tapping a 'Completed' button
+    /// before any actions such as logging it to the Journal or running the animation etc are
+    /// run"*). Resolving every step and closing the screen leaves the run live and its card on
+    /// Today, which is what the reversed journey now asserts.
+    ///
+    /// No haptic here: `PlaceRoutineCompletedCard` plays `.success` on the button itself, where
+    /// the press is, and a second one would be a double buzz.
+    ///
+    /// **One `Date` for both writes.** The record's timestamp and the "Confirmed" line the
+    /// reader sees are the same moment, so the Journal row and the screen cannot disagree by
+    /// the width of a Task hop.
+    private func complete(from origin: CGPoint?) {
+        guard !hasRecordedEnd else { return }
+        hasRecordedEnd = true
+        let now = Date.now
+        store.end(runId: run.id)
+        record { try await recorder.ended(runId: run.id, reason: .completed, at: now) }
+        // The Activity is the SCREEN's and the run is over, so it goes now rather than at the
+        // dismiss — leaving a live card for a routine that has already been congratulated.
+        activity.ended()
+        DataChangeSignal.post()
+        withAnimation(entrance.animation) { confirmedAt = now }
+        // **R-f, E's approved build default, and it is asked HERE because nowhere else can ask
+        // it.** A celebration needs at least one step the USER tapped done; a run resolved only
+        // by its automatic steps, or only by skipping, still ends and is still recorded
+        // `completed` — it simply completes quietly, with the congratulation and no confetti
+        // (E's answer 1). This is a different question from R-h's downgrade, which is the
+        // CENTRE's to make when E's switch is off or the cooldown is live: that one asks how
+        // loudly to celebrate, this one asks whether there is anything of the person's to
+        // celebrate at all.
+        guard PlaceRoutineProgress.earnedCelebration(run) else { return }
+        // The origin is the Completed button's own measured centre, handed up by the card.
+        celebrate.request(.milestone(.routineFinished), at: origin)
     }
 
-    /// Leaving the screen is the moment a finished run ENDS — not the final tap, which is
-    /// what keeps Undo available until then. Idempotent: `end(runId:)` only matches the run
-    /// this screen owns, so calling it twice, or after a newer run replaced this one, is a
-    /// no-op. Always announces, so Today re-reads whether the run ended or merely moved on.
+    /// Leaving the screen is no longer the moment a run ends — E's R1 moved that to the tap
+    /// above, and this now only tidies up after the screen itself. Idempotent and always
+    /// announcing, so Today re-reads whether the run ended or is merely waiting to be finished.
     private func leaveScreen() {
-        if PlaceRoutineProgress.isFullyResolved(run), !hasRecordedEnd {
-            hasRecordedEnd = true
-            store.end(runId: run.id)
-            record { try await recorder.ended(runId: run.id, reason: .completed, at: .now) }
-        }
         // The Activity is the SCREEN's, not the run's: it cannot be restarted from the
         // background, so leaving without it would strand a card nothing could ever update.
         activity.ended()
         DataChangeSignal.post()
     }
 }
-
-#if DEBUG
-/// Preview scaffolding only. Built outside the `#Preview` body because a result-builder
-/// closure cannot carry an explicit `return`, and the fixture needs a mutation.
-@available(iOS 17.0, *)
-enum PlaceRoutineScreenPreviewFixture {
-    static var run: RoutineRun {
-        let gymId = UUID()
-        let actions = [
-            PlaceAction(id: UUID(), direction: .arrival, kind: .journalLine(body: "Leg day")),
-            PlaceAction(
-                id: UUID(), direction: .arrival,
-                kind: .openApp(scheme: "snapchat", displayName: "Snapchat")
-            ),
-            PlaceAction(
-                id: UUID(), direction: .arrival,
-                kind: .openApp(scheme: "gym", displayName: "Gym")
-            ),
-            PlaceAction(id: UUID(), direction: .arrival, kind: .openLink(
-                displayName: "Gym Music on Spotify",
-                link: "https://open.spotify.com/playlist/abc", scheme: "spotify"
-            ))
-        ]
-        var run = RoutineRun.make(
-            event: PlaceTriggerEvent(
-                placeId: gymId, kind: .arrival, occurredAt: .now.addingTimeInterval(-120)
-            ),
-            entry: AtPlaceSnapshot.PlaceEntry(
-                placeId: gymId, displayName: "Gym 🏋️", openTaskTitles: [],
-                arrivalMessage: "Time to train", actions: actions,
-                latitude: nil, longitude: nil
-            ),
-            plan: PlaceRoutinePlan.make(actions, for: .arrival)
-        )
-        // One tapped step, so the preview shows the Undo chip and a part-filled bar.
-        run.steps[1].state = .done
-        return run
-    }
-}
-
-@available(iOS 17.0, *)
-#Preview("Routine — light and dark") {
-    HStack(spacing: 0) {
-        PlaceRoutineScreen(
-            run: PlaceRoutineScreenPreviewFixture.run,
-            store: UserDefaultsRoutineRunStore(defaults: nil),
-            onOpenTab: { _ in }, onStartSprint: { _ in },
-            activity: InertRoutineActivityPresenter(),
-            recorder: InertRoutineRunRecorder()
-        )
-        .environment(\.colorScheme, .light)
-        PlaceRoutineScreen(
-            run: PlaceRoutineScreenPreviewFixture.run,
-            store: UserDefaultsRoutineRunStore(defaults: nil),
-            onOpenTab: { _ in }, onStartSprint: { _ in },
-            activity: InertRoutineActivityPresenter(),
-            recorder: InertRoutineRunRecorder()
-        )
-        .environment(\.colorScheme, .dark)
-    }
-}
-#endif

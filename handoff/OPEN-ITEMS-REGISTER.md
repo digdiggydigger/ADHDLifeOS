@@ -1,13 +1,13 @@
-# Open items register — 2026-09-13 (thirty-eighth edition; **`F-CTACelebrations-6` is PLANNED IN FULL and not yet built**, E answered nine open questions and closed §0b)
+# Open items register — 2026-09-13 (thirty-ninth edition; **`F-CTACelebrations-6` is BUILT to C5 on a branch, NOT merged**, and E added a whole feature mid-block)
 
-*The close-out of a PLANNING-ONLY session. No feature code, no tests, no branch — the whole output
-is a plan, a rewritten opener and this register. E's standing instruction is that each block is
-BUILT in a fresh Claude Code terminal, so this session deliberately stopped at the plan.*
+*The close-out of a BUILD session that stopped for context, not for a problem. Thirteen commits on
+`feature/cta-celebrations-6`, all pushed, tree clean. **`main` is deliberately untouched** — C5
+landed a component that nothing reaches until C6 wires it, and merging that would ship this repo's
+most-repeated defect shape on purpose.*
 
-*Nine questions were put to E and answered; **five of the nine are E's own wording or a reversal of
-what was offered**, so they cannot be re-derived from the design record. Three exploration passes
-and one design pass mapped every test the block touches and corrected three things the design record
-and the previous opener got wrong. Supersedes the thirty-seven earlier editions.*
+*E added `PlaceRoutineCongratulationDetails` mid-build and answered **nine more questions**, five of
+which REVERSE something already settled — including two of E's own earlier answers. All nine are
+built and landed. Supersedes the thirty-eight earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -15,106 +15,77 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `b5a55cf`** (PR #104) plus this session's docs-only commit. `firestore.rules` is
-untouched, so there is **nothing for E to republish**.
+**`main` @ `8c6cfc0`, unchanged.** The work is on **`feature/cta-celebrations-6` @ `0ea2154`**,
+thirteen commits ahead and pushed. `firestore.rules` is untouched, so there is **nothing for E to
+republish**.
 
-**NO CODE CHANGED THIS SESSION.** It was planning only — the plan, a rewritten opener, the TODO
-block and this register. So the figures below are **carried forward unverified from the
-thirty-seventh edition, not re-measured**, and saying which is the point: nothing here is a claim
-about a run that happened today.
+Measured on the branch tip this session, not carried forward:
+- unit suite **2,941 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+- SwiftLint **0 / 801**;
+- sim `** BUILD SUCCEEDED **`.
+- **UI journeys NOT run. Device NOT installed.** E has seen renders only.
 
-Carried from `706728e` (the last code commit):
-- unit suite **2,882 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
-- SwiftLint **0 / 791**;
-- sim `** BUILD SUCCEEDED **`; device build, install and launch from `main`.
+`PlaceRoutineScreen`'s type body is **209 of 250** after three room commits — 41 lines of headroom
+for C6. (It was 235 at the start; C1 bought 0 body lines, C2 bought 19, C3's `subline` move 7.)
 
-```
-ADHD LifeOS.app              27.39%  (13058/47668)
-```
+### Landed this session — C1 to C5, plus E's detail section
 
-**One new measurement WAS taken, and it corrects a number this file has repeated for weeks:**
-`PlaceRoutineScreen`'s **type body is 235 lines against SwiftLint's `type_body_length` ceiling of
-250** — so the real headroom is **15 body lines**, not the 18 file lines the design record's
-"384 of 400" implies. `.swiftlint.yml` overrides neither metric. See §B.00.
+Thirteen commits. The block's own plan covered C1–C9; **C1–C5 are done and C6–C9 remain**, with the
+whole of C6's shape written into `handoff/START-HERE-cta-celebrations-6-part2.md`.
 
-### Landed this session — documentation only
+- **C1/C2/C3-room** — the preview block, `openExternally` and `subline` out of the screen. The last
+  of those made a rule testable that had never been asserted: E's own words lead the subline, and a
+  whitespace-only message used to open the line with empty quotes. (NEW)
+- **C3** — the pure layer: `earnedCelebration` (R-f), the copy enum, the entrance, the density
+  table. (NEW)
+- **C4** — `PlaceRoutineCongratulationView` + a sizeable `PlaceRoutineStepCircle`. (NEW)
+- **E'S DETAIL SECTION** — `PlaceRoutineRunTimeline`, `PlaceRoutineStepDuration`,
+  `PlaceRoutineComparison`, `PlaceRoutineTimeFormatting`, `PlaceRoutineCongratulationDetails`. (NEW)
+- **C5** — `PlaceRoutineCompletedCard`, **deliberately unreachable until C6**. (NEW)
 
-**No code, no tests, no feature branch.** E's standing instruction is that each block is BUILT in a
-fresh terminal, so this session planned `F-CTACelebrations-6` and stopped.
+### E's nine decisions this session — the spec, not to be re-derived
 
-- **`handoff/START-HERE-cta-celebrations-6.md` REWRITTEN.** It is no longer a thin pointer: it
-  carries E's nine answers, the nine-commit plan, the test map, the three booby-traps, the red
-  prediction and the risks. **It also corrects three things its own previous version got wrong** —
-  the probe README it pointed at, the claim that a probe copy could be recovered, and the room-first
-  move. (NEW)
-- **`TODO-CLAUDE-CODE.md`** — the `F-CTACelebrations-6` block now carries E's nine answers and the
-  three corrections; **`F-CTACelebrations-Surfaces` added** as its own block from E's §0b answer. (NEW)
-- **This register** — thirty-eighth edition. (NEW)
-
-*The previous session's landed work (`F-CTACelebrations-5`, the held-burst chime fix, `PopScale`,
-`NoCooldown`, `SwipeOrigin`) is recorded in the thirty-seventh edition and is unchanged.*
+1. "Started" is **BOTH** the crossing and the tap. 2. "Finished" is **BOTH** the last step and the
+Completed tap. 3. The facts are the total, **per-step times** and a **comparison with the usual**.
+4. A long list **SCROLLS** — *reverses E's own answer 6*. 5. The view **stays until dismissed** —
+*reverses R5's auto-leave*. 6. The detail block is **pinned above the scroller**. 7. The light-mode
+wash is **0.40**, chosen by sight; dark stays 0.14. 8. Clocks are **"1:00 pm"** — 12-hour, no
+seconds — *reverses E's own `hh:mm:ss`*. 9. The detail card takes a **done-green border**;
+"Longer than usual" is **accent blue**. Plus the rows reworded to `Done in 2m` / `Skipped after 2m` /
+`Auto`.
 
 ### What this session established
 
-- **Three defects were found AFTER the suite was green, and not one of them was reachable by an
-  assertion.** This is the block that makes the pattern undeniable:
-  - **Looking at a render found one.** The downgraded-pop render raised the question "where does
-    that origin come from when the user is not on Home?", and the probe MEASURED the answer:
-    `AppTabContent` parks a hidden tab 10,000 pt away and the offset reaches a `.global` frame
-    reading — **(196.5, 451.0) visible → (10196.5, 451.0) parked**. R-h's fallback pop was being
-    thrown off screen for the one milestone that fires from a tab the user is not on. The
-    `apple:hig-reviewer` pass reached the same defect independently, from the other direction.
-  - **A review pass found a Settings toggle that could buy a celebration.** `capturesClearedToday`
-    was stored and refreshed asynchronously while `nudgesDismissedToday` read its toggle live, so
-    flipping "count cleared captures" moved the ring's RULES one tick before its COUNT, and the
-    catch-up read as a crossing under rules that already matched.
-  - **And a review pass found a defect in this block's own fix.** `cooldownAnchor` used a held
-    burst's `start`, which is its REQUEST time, so the cooldown "expired" after five seconds while
-    the burst was still waiting unplayed — and `releaseHeld` would start both at one instant, the
-    exact stacking the anchor was added to prevent. (NEW)
-- **TWO CORRECT DECISIONS CAN COLLIDE, and neither block could have seen it alone.** `-4` gave the
-  row's circle and its swipe ONE origin for good reasons; `PopScale` took the throw to 208 pt at
-  E's request, also for good reasons. Together they threw a swipe's paper off the screen. **Nothing
-  in 2,884 tests caught it and no review pass did** — E found it in seconds on the phone. The lesson
-  is not "test harder": a change to a shared CONSTANT deserves a re-look at every site that
-  constant reaches, and E's device pass is load-bearing rather than ceremonial. (NEW)
-- **When E reverses a rule, REVERSE the test that pinned it — never delete it.**
-  `testTheSwipeAndTheCircleClosePopFromOneOrigin` became
-  `testTheCirclePopsFromItselfAndTheSwipePopsFromTheFinger`, carrying E's reason inside it. The
-  seven cooldown tests went the same way, each named in its commit. A deleted test leaves no trace
-  of the decision that removed it. (NEW)
-- **A guard that reads the wrong text is worse than no guard, because it fails in the believable
-  direction — and this block wrote two of them.** One sliced a call's arguments "up to the next
-  `)`", which for `HomeView(…)` lands inside `onToggleSprintPause: { focusService.togglePause() }`
-  a dozen arguments early and reported an argument missing that was plainly there (now depth-tracked
-  to the matching paren). The other closed a slice on a COMMENT line, which `stripped` removes
-  before the slice is cut, so the anchor read as missing and the test threw instead of asserting.
-  Both were caught only because the red PREDICTION missed. (NEW)
-- **A COUNT cannot see a SWAP.** The deliberate regression moved the inbox-zero call from
-  "Journal it" onto `discard` — nine tests went red, and
-  `testExactlyTheThreeDoingVerbsAskForInboxZero` was not one of them, because three is still three.
-  The named `testDiscardingACaptureNeverAsksForInboxZero` is what caught it. Keep both shapes. (NEW)
-- **Predicting in TESTS and ASSERTIONS separately paid off five times**, and the one deliberate
-  regression matched exactly: **9 tests / 11 assertions predicted, 9 / 11 observed**, test for test.
-  The two misses were both guard defects, above. (NEW)
-- **A "naive first pass" is how you prove a guard load-bearing without waiting for a real
-  regression.** The centre's stamp fix, the daily-goal tracker and the day marker were each written
-  wrong ON PURPOSE first — the naive fix turned exactly the intended tests red, and only then were
-  they written properly. `testASecondMilestoneAskedForWhileOneIsHeldGetsThePopInstead` is green on
-  the ORIGINAL code and red on the naive fix, so nothing but this technique would have shown it
-  meant anything. (NEW)
-
-### Carried from the design session
-
-- **E's design answers are the spec.** Seven recommendations were overruled (a Finish button; a
-  streak milestone and the daily goal; a chime; the mini confetti pop over the halo; the
-  congratulation view; the display name; the 5 s cooldown). Record them, do not re-derive them.
-- **Three app-level `ObservableObject`s**: `AuthService`, `FocusSessionService`, `CelebrationCenter`.
-- **The Completed flow reverses an E-settled rule** (the routine-record arc's "a run ends when you
-  LEAVE the screen"). The tests that pin the old rule must be updated by name, not silently.
-- **`PlaceRoutineScreen.swift` is at 384** and `-6` adds to it; the design names the split
-  (`PlaceRoutineCompletedCard.swift`, `PlaceRoutineCongratulationView.swift`, and a
-  `+Completion.swift` extension if the screen nears 400).
+- **Three defects were found that no assertion could have caught, and two of them were found by
+  LOOKING at a render.** (NEW)
+  - **The run being celebrated was its own history.** `complete()` writes the ending
+    fire-and-forget and the congratulation then fetches every run, so the run in hand was usually
+    already there carrying the very time being compared. It would have been its own fastest, so
+    **"Your fastest yet" could essentially never have fired** — and because its presence depended on
+    whether a network write landed first, the verdict was **timing-dependent**. Found by review,
+    fixed test-first in `7300c36`.
+  - **The preview fixture could not be rendered twice.** Built from `.now`, two renders of one scene
+    differed by **819 pixels**. The harness's own determinism check failed loudly rather than
+    letting a pixel claim rest on it — block 3's rule earning its keep a second time.
+  - **The fixture used one action kind**, so every early render read "Open Open Snapchat". The
+    strings were correct and the FIXTURE was wrong; no test could see it.
+- **A guard that reads the wrong text failed in the believable direction again — the third instance
+  in this arc.** Its needle carried a trailing `)` the real call does not have, so it stayed red
+  against correct code. **The red PREDICTION is what caught it**, and it was fixed by making the
+  guard STRONGER (it now pins `, onSkip)` too), never laxer. (NEW)
+- **Every red prediction this session matched, and the misses were the useful part.** 14/25, 16/29,
+  7/7, 11/15, 2/3, 1/1, 6/7, 4/4, 5/8 — test-for-test. Two predictions were "wrong" because a test
+  passed VACUOUSLY against its stub (`nil` matching `nil`, `.noHistory` matching `.noHistory`), and
+  each was then proven load-bearing by a **naive pass** rather than left as decoration. (NEW)
+- **A pure layer can invent a SECOND TRUTH, and the fix is to find the first one.**
+  `RoutineRunRecord.timeSpentSeconds` already defined a run's length as activation → last
+  interaction, with the reason written beside it. Deriving the congratulation's total from the
+  Completed tap would have had one run reporting two lengths — here and in the Journal. **Search for
+  an existing definition before writing a new one.** (NEW)
+- **When E reverses a rule, REVERSE the test — never delete it.** Applied four times this session
+  (R5's three length tests → one named reversal; the 21-step ceiling → a scrolling guard;
+  `testTheStepListNeverScrolls` → its opposite; the locale clock → the 12-hour rule). A deleted test
+  leaves no trace of the decision that removed it. (NEW)
 
 ## A · Decisions only E can make — minutes each
 
@@ -177,39 +148,23 @@ asked to be held, and two housekeeping items.**
 
 ## B · Real work, ready to start — recommended order
 
-**00. THE CTA CELEBRATIONS ARC — blocks 1–6 of 8 BUILT and MERGED, all PASSED on device, plus
-   three follow-on blocks. `F-CTACelebrations-6` is now PLANNED IN FULL but NOT BUILT.** The record
-   is `handoff/SESSION-OPENER-cta-celebrations-design.md`; the plan is
-   `handoff/START-HERE-cta-celebrations-6.md` (rewritten 2026-09-13 and no longer a thin pointer —
-   it carries the whole plan); the blocks are in `TODO-CLAUDE-CODE.md`.
-   **The blocks, in order:** ~~`F-ConfirmCelebration-2`~~ → ~~`F-CTACelebrations-1`~~ → ~~`-2`~~ →
-   ~~`-3`~~ → ~~`-4`~~ → ~~`-5`~~ → **`-6`** (planned, unbuilt) → `-7` (the chime) →
-   `F-CTACelebrations-Surfaces` (NEW, E's §0b answer). Plus ~~`PopScale`~~, ~~`NoCooldown`~~,
-   ~~`SwipeOrigin`~~.
+**00. THE CTA CELEBRATIONS ARC — `F-CTACelebrations-6` is BUILT TO C5 ON A BRANCH.** The record is
+   `handoff/SESSION-OPENER-cta-celebrations-design.md`; **the live pointer is
+   `handoff/START-HERE-cta-celebrations-6-part2.md`**, which carries C6–C9 in full. The first
+   opener is archived.
+   **The blocks:** ~~`F-ConfirmCelebration-2`~~ → ~~`-1`~~ → ~~`-2`~~ → ~~`-3`~~ → ~~`-4`~~ →
+   ~~`-5`~~ → **`-6` (C1–C5 built, C6–C9 open)** → `-7` (the chime) →
+   `F-CTACelebrations-Surfaces`. Plus ~~`PopScale`~~, ~~`NoCooldown`~~, ~~`SwipeOrigin`~~.
 
-   **What the planning session established, and none of it should be re-derived:**
-   - **E's nine answers**, tabled in the opener and the TODO block. Five are E's own wording.
-   - **The binding lint ceiling is `type_body_length` 250, not `file_length` 400.**
-     `PlaceRoutineScreen`'s body is at **235** — 15 lines of headroom, not 18. The `#if DEBUG`
-     preview block sits OUTSIDE the type body, so moving it buys 61 *file* lines and **zero** body
-     lines: **both** room moves are needed and it still lands at ≈251. **And the design record's
-     suggested `+Completion.swift` for `complete()` cannot work** — `private` is file-scoped.
-   - **Three booby-traps**, each breaking a currently-green test: the `store.end` → `record`
-     **adjacency**; the **unique anchor** `"Button(title) { Haptics.play(.solid)"`; and the raw
-     **`leaveScreen()` == 5** count that drops to 4.
-   - **The full test map** — four tests reversed/updated by name, six sites that read
-     `PlaceRoutineScreen.swift` as a string, and the large set of `reason: .completed` tests at the
-     store/record/reconciler layer that are **UNAFFECTED** and must not be "fixed".
-   - **The probe recipe base is `screenshots/cta-celebrations-block-2/README.md`, not block 3**
-     (block 3 says so itself), and **no probe code survives anywhere** — the scratchpad copies both
-     READMEs cite are gone, so the probe is re-implemented from prose.
-   - **Two design answers settled:** "shrink to fit" is a pure, testable density table rather than
-     `ViewThatFits` (and `PlaceRoutineStepCircle` must gain a `size`, because 20 rows is 560 pt of
-     glyph alone); and the body swap is a **`ZStack`** — a `Group` would re-fire
-     `.task { activity.started(run) }` and restart the Live Activity moments after `complete()`
-     ended it, which **no test could see**.
-   - **Red prediction: 27 tests / 48 assertions**, plus three single-assertion flips, and five
-     named naive-first-passes.
+   **What remains, and the one trap that changed shape:**
+   - **C6** the wiring + the R1 reversal, **C7** Today's swapped label, **C8** the two journeys,
+     **C9** evidence and close-out.
+   - **The `leaveScreen()` raw count is 5 and does NOT simply become 4.** One of the five is inside
+     the `:77-83` COMMENT that C6 rewrites, and C6 also deletes the scenePhase hook — so it lands at
+     **3**. `grep -c` after the edits and set the number to what is actually there. The old plan
+     said 4 and would have been wrong.
+   - The adjacency trap and the unique-anchor trap are unchanged.
+   - **`main` must not be merged until C6** — C5's card is reachable by nothing.
 
 ~~**0b. Two surfaces question, raised by the HIG pass and NOT closed.**~~ **ANSWERED BY E,
    2026-09-13 — and it is now a BLOCK, not a question.** Offered "add Quick Capture only", "hold

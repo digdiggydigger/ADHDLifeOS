@@ -3930,7 +3930,7 @@ tested; the frame is measured on the same view the gesture is attached to so the
 both or neither; the finger is resolved BEFORE `dragOffset` resets.
 `testTheSwipeAndTheCircleClosePopFromOneOrigin` is REVERSED, not deleted.
 
-### FEATURE: F-CTACelebrations-6 — the routine Completed flow (R1–R5)  [ ] OPEN
+### FEATURE: F-CTACelebrations-6 — the routine Completed flow (R1–R5)  [x] COMPLETED
 
 - **Render FIRST:** `PlaceRoutineCongratulationView` light, dark, RM, the switch-off beat; send it.
 - `PlaceRoutineCompletedCard` in the next-step slot once nothing is pending and the run is fully
@@ -3980,7 +3980,68 @@ things the design record got wrong. **Do not re-derive it.**
 
 **Three booby-traps:** the `store.end` → `record` **adjacency** (nothing between them); the **unique
 anchor** `"Button(title) { Haptics.play(.solid)"`; and the **`leaveScreen()` == 5** raw-source count
-that drops to 4. Red prediction: **27 tests / 48 assertions**, plus three single-assertion flips.
+— which drops to **3, not 4**: one of the five occurrences is inside the `:77-83` COMMENT that C6
+rewrites, and C6 also deletes the scenePhase hook. `grep -c` after the edits rather than trusting a
+number written in advance.
+
+---
+
+## ⚠ BUILT IN FULL, 2026-09-13 — C1–C9 done, awaiting E's DEVICE VERDICT
+
+**C6–C9 finished in a second session.** Suite **2,958 / 0** (emulator up, 0 `9099` hits), lint
+**0 / 801**, sim build green, **both UI journeys green** — the reversed one first run. The block is
+on `feature/cta-celebrations-6` behind a PR; nothing is on E's phone yet, and **§7.3's RM-on device
+pass is OWED** because C6 adds this block's reduced site (the congratulation's entrance).
+
+**The one thing worth carrying forward, and it is not a layout.** `PlaceRoutineProgress.earnedCelebration`
+— E's R-f build default, unit-tested across four shapes — **had no call site**, so the first wiring
+of `complete()` threw full-screen confetti over a run of 1 auto step and 3 skips: exactly the run
+E's answer 1 says completes quietly. Ten call-site guards, 2,957 unit tests and both journeys were
+GREEN while it did. What caught it was looking at the journey's own screenshot. Seventh recorded
+instance of this repo's most repeated defect, and the first found by the `screenshots/` practice
+rather than by a later block tripping over it.
+
+**Three more things the plan said that turned out otherwise:**
+- **The `leaveScreen()` count stayed 5, not 3.** The plan predicted it would drop; the scenePhase
+  hook did go, but the congratulation's own tap-to-close replaced it. The plan's real instruction —
+  `grep -c` and set the number to what is THERE — is what mattered, not either prediction.
+- **No haptic in `complete()`.** The plan's order list opened with `Haptics.play(.success)`, but C5
+  had already put it on the Completed button itself, where the press is. A second would double-buzz.
+- **Type-body headroom was never the binding constraint it was billed as.** The screen landed
+  comfortably inside 250; what actually broke the bar was the TEST files — two call-site classes and
+  the UI journey all crossed a length rule and needed splitting.
+
+**E ADDED A FEATURE MID-BLOCK and answered NINE more questions — five reverse something settled,
+two of them E's own earlier answers. All nine are built.** E: *"i want to add a small section within
+the empty-space on the cards that display detailed data and info about that specific routine that
+was run."*
+
+1. "Started" is **BOTH** the crossing (`Arrived`) and the tap (`Started`) — the model holds both and
+   they can be forty minutes apart.
+2. "Finished" is **BOTH** the last step and the Completed tap — E's own R1 is what makes them differ.
+3. The facts are the **total**, the **time per step**, and a **comparison with your usual** (which
+   needed a Firestore history fetch threaded into the cover).
+4. A long step list **SCROLLS** — **reverses E's answer 6** ("shrink to fit, no scrolling").
+5. The view **STAYS UNTIL DISMISSED** — **reverses R5's auto-leave**. `hold(for:)` and `quietBeat`
+   are deleted; "Skip" becomes "Close"; **E's answers 1 and 7 now survive only in the confetti
+   dimension**, because "shorter" no longer exists.
+6. The detail block is **pinned above the scroller** — inside it, a 20-step routine would hide the
+   times behind the very scrolling they must survive.
+7. The light-mode wash is **0.40**, picked by sight from a rendered ladder; **dark stays 0.14** and
+   was never part of the question. Pinned like `peekStep` — do not tidy them into one number.
+8. Clocks are **"1:00 pm"** — 12-hour, minutes always, **no seconds** — **reverses E's own
+   `hh:mm:ss`**. The locale is deliberately OVERRIDDEN: `en_GB`/`de_DE`/`fr_FR` all default to
+   24-hour, and those readers are what E's "MUST" is about.
+9. The detail card takes a **done-green border** (it already had a 1pt one — the problem was
+   contrast, not absence); "Longer than usual" is **accent blue**, because grey read as an
+   afterthought and green read as praise for taking 43 minutes.
+
+Plus, on seeing the render: *"reword the 'Skipped 2m'"* → rows read `Done in 2m` /
+`Skipped after 2m` / `Auto` (no number — an auto step always resolves instantly).
+
+**A defect worth remembering: the run being celebrated was in its own fetched history**, so it was
+always its own fastest and the verdict was timing-dependent on whether a network write had landed.
+Fixed test-first in `7300c36`; `excluding runId:` is required rather than defaulted.
 
 ### FEATURE: F-CTACelebrations-7 — the chime  [ ] OPEN
 

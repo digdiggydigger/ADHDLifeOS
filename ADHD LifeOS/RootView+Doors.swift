@@ -111,7 +111,13 @@ extension RootView {
                     startFocus(PlaceActionSprint.plan(minutes: minutes, defaultMinutes: fallback))
                 },
                 activity: routineActivityPresenter(),
-                recorder: FirebaseRoutineRunRecorder()
+                recorder: FirebaseRoutineRunRecorder(),
+                // E's R4: the greeting says the ACCOUNT display name, the one Settings' account
+                // row shows — not the routine's. Defaulted `nil` on the screen, so forgetting it
+                // here would compile and greet everyone anonymously; `RoutineRecordCallSiteTests`
+                // reads this line for exactly that reason.
+                displayName: authService.signedInUser?.displayName,
+                history: FirebaseRoutineRunHistoryAdapter()
             )
             // This cover sits ABOVE the root layer, so a celebration started on the routine
             // screen needs a layer of its own to be seen at all (E's ARCH answer).

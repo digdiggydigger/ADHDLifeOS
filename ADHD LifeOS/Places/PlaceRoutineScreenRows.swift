@@ -9,6 +9,22 @@
 
 import SwiftUI
 
+/// The routine screen's relative-time line. Moved out of `PlaceRoutineScreen` in
+/// `F-CTACelebrations-6` for the type-body budget — it takes the run as a PARAMETER, so
+/// nothing on the screen had to be relaxed from `private` to let it go.
+@available(iOS 17.0, *)
+enum PlaceRoutineSubline {
+    static func text(for run: RoutineRun) -> Text {
+        let moment = Text("\(PlaceRoutineScreenCopy.momentPrefix(for: run.direction)) ")
+            + Text(run.startedAt, style: .relative)
+            + Text(" ago")
+        guard let prefix = PlaceRoutineScreenCopy.sublineMessagePrefix(for: run.customMessage) else {
+            return moment
+        }
+        return Text(prefix) + moment
+    }
+}
+
 @available(iOS 17.0, *)
 struct PlaceRoutineResolvedRow: View {
     let step: RoutineRun.Step
@@ -77,6 +93,15 @@ struct PlaceRoutineUpcomingRow: View {
 @available(iOS 17.0, *)
 struct PlaceRoutineStepCircle: View {
     let state: RoutineStepState
+    /// **Defaulted, and the default is what keeps "reuse the existing circle" true.** E's
+    /// answer 9 asked the congratulation's step list to draw the routine screen's OWN rows, and
+    /// both rows above build the circle by state alone — so neither changed when
+    /// `F-CTACelebrations-6` made it sizeable.
+    ///
+    /// It has to be sizeable at all because `.minimumScaleFactor` scales `Text` and never a
+    /// `Circle`: twenty rows of a hard 28×28 is 560 pt of glyph alone, and E's answer 6 was
+    /// "show every step, shrink to fit". `PlaceRoutineCongratulationDensity` chooses the value.
+    var size: CGFloat = 28
 
     var body: some View {
         ZStack {
@@ -95,7 +120,7 @@ struct PlaceRoutineStepCircle: View {
                 Circle().strokeBorder(Color.cardBorder, lineWidth: 1.5)
             }
         }
-        .frame(width: 28, height: 28)
+        .frame(width: size, height: size)
         .accessibilityHidden(true) // the subtitle words carry the state — never colour alone
     }
 }

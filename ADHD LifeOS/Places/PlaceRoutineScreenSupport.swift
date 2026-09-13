@@ -34,6 +34,17 @@ enum PlaceRoutineProgress {
         run.steps.firstIndex { $0.state == .pending }
     }
 
+    /// **R-f, approved by E as a build default:** a celebration needs at least one step the
+    /// USER tapped done. A run resolved only by its automatic steps, or only by skipping, still
+    /// ends and is still recorded `completed` — it simply completes quietly (E's answer 1: the
+    /// congratulation, no confetti, the ≈2 s beat).
+    ///
+    /// `autoDone` is deliberately excluded: nothing of the person's was done, so there is
+    /// nothing of theirs to celebrate.
+    static func earnedCelebration(_ run: RoutineRun) -> Bool {
+        run.steps.contains { $0.state == .done }
+    }
+
     static func progressLabel(_ run: RoutineRun) -> String {
         "\(doneCount(run)) of \(run.steps.count) done"
     }
@@ -88,6 +99,15 @@ enum PlaceRoutineScreenCopy {
     /// crossing: the step runs when the routine STARTS, which is the tap that opened this
     /// screen. That is the same moment in both directions, so the direction goes with it.
     static let autoRanSubtitle = "Ran by itself when you started"
+
+    /// E's own words for a crossing, leading the subline in quotes. `nil` when there are
+    /// none — and a message of nothing but whitespace counts as none, which is what stops the
+    /// line opening on a pair of empty quotes.
+    static func sublineMessagePrefix(for message: String?) -> String? {
+        let trimmed = message?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return nil }
+        return "\u{201C}\(trimmed)\u{201D} · "
+    }
 
     static func nextEyebrow(stepNumber: Int, of total: Int) -> String {
         "NEXT — STEP \(stepNumber) OF \(total)"
