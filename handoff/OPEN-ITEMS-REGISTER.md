@@ -1,12 +1,14 @@
-# Open items register — 2026-09-12 (thirty-sixth edition; `F-CTACelebrations-5`, the three full-screen milestones, is BUILT and MERGED; **two blocks of the arc remain**, and E now owes ONE device sitting covering `-4` AND `-5` together)
+# Open items register — 2026-09-13 (thirty-seventh edition; `F-CTACelebrations-5` shipped, E's device sitting PASSED everything, and E's four decisions from it are all settled — **two blocks of the arc remain**)
 
-*The close-out of the sixth build session of the CTA celebrations arc. E's standing ask — use any
-skills, MCPs, plugins and subagents that help — was followed: the TDD skill, the render probe, a
-`feature-dev:code-reviewer` pass and an `apple:hig-reviewer` pass. **Both review passes found real
-defects, and one of them was in this block's own fix.** What each returned is below.
+*The close-out of the sixth build session of the CTA celebrations arc, plus the three follow-on
+blocks E asked for from the phone. E's standing ask — use any skills, MCPs, plugins and subagents
+that help — was followed: the TDD skill, render probes, a `feature-dev:code-reviewer` pass and an
+`apple:hig-reviewer` pass. Both review passes found real defects, one of them in this session's own
+fix; a third was found by LOOKING at a render; and a fourth was found by E on the phone, which no
+test could have caught.
 
-The opener `handoff/START-HERE-cta-celebrations-5.md` is SPENT — archived in the same move that
-writes this edition and the next session's opener. Supersedes the thirty-five earlier editions.*
+The opener `handoff/START-HERE-cta-celebrations-5.md` is SPENT and archived. Supersedes the
+thirty-six earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -14,44 +16,47 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `5e10586`** (PR #97, `F-CTACelebrations-5`). `firestore.rules` is untouched, so there is
-**nothing for E to republish**.
+**`main` @ `210d931`** (PR #103). `firestore.rules` is untouched, so there is **nothing for E to
+republish**.
 
-**Verified at `2498c9b`** (the block's last commit; the merge adds nothing):
-- unit suite **2,884 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+**Verified at `706728e`** (the last code commit; the merges and the close-out add no code):
+- unit suite **2,882 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
 - SwiftLint **0 / 791**;
 - sim `** BUILD SUCCEEDED **`; device build, install and launch from `main` at the close.
 
-Coverage, measured at `2498c9b`:
+Coverage, measured at `706728e`:
 
 ```
-ADHD LifeOS.app              27.39%  (13050/47646)
-ADHD LifeOSTests.xctest      94.73%  (46522/49109)
-ADHD LifeOSUITests.xctest     0.00%  (0/2962)       ← skipped in the standard run by design
-FocusTimerWidgetExtension    10.30%  (228/2214)     ← read the 233-line testable surface, not this
+ADHD LifeOS.app              27.39%  (13058/47668)
 ```
 
-**Comparable with the previous edition's 27.29 % (12,949/47,457), and it ROSE.** Both runs measured
-100 % of the app target, which is CLAUDE.md's test for comparability. The denominator gained 189
-because the tree grew; the numerator gained 101. So coverage grew slightly faster than the code —
-the opposite of last block, where every line added was inside a view body. This block's additions
-are mostly pure logic (`DailyGoalTracker`, `CelebrationDayMarking`, `NudgeStreak.landsOnSeven`,
-`CaptureInboxZero`, `CelebrationPopOrigin`), which is exactly the code a unit test can reach.
+**Comparable with the thirty-sixth edition's 27.39 % (13,050/47,646)** — both runs measured 100 % of
+the app target. Flat, and honestly so: the three follow-on blocks are a constant, a policy
+simplification and a coordinate, not new logic.
+
+**The suite count FELL, 2,888 → 2,882, and that is the expected shape rather than a regression:**
+`NoCooldown` removed seven tests that pinned a rule E deleted, and added two.
 
 ### Landed this session
 
-- **`F-CTACelebrations-5`** — E's three remaining full-screen milestones: **inbox zero** (the
-  Sorted / Journal it / Create Task that empties the capture inbox), **the streak on 7**, and **the
-  daily goal**. Room first: `CaptureInboxService.swift` 397 → 355. **60 tests** (2,824 → 2,884).
-  Evidence `screenshots/cta-celebrations-block-5/`. **Awaiting E's device verdict**, together with
-  `-4`'s. (NEW)
-- **Register §B.00b's latent defect is CLOSED.** A burst held behind the Create Task sheet used to
-  stamp the cooldown and fire the chime at REQUEST time, and `releaseHeld` set neither. Both paths
-  now go through one `start(_:at:)`, and `CelebrationCenterHeldBurstTests` closes the test gap the
-  register named. (NEW)
-- **E's accessibility decision, asked at the start of the session as this register required:
-  "the daily goal only".** It posts `UIAccessibility.post(notification: .announcement, …)`; the
-  other two milestones do not. **The premise behind that answer was partly wrong — see §A.** (NEW)
+- **`F-CTACelebrations-5`** — E's three remaining full-screen milestones: **inbox zero**, **the
+  streak on 7**, and **the daily goal**. Room first: `CaptureInboxService.swift` 397 → 355. 60
+  tests. Evidence `screenshots/cta-celebrations-block-5/`. **PASSED E's device pass, with Reduce
+  Motion off and on.** (NEW)
+- **Register §B.00b's latent defect is CLOSED.** A held burst now chimes when it PLAYS rather than
+  when it was asked for, and one dropped at R-g's sixty seconds never chimes at all.
+  `CelebrationCenterHeldBurstTests` closes the test gap the register named. (NEW)
+- **`F-CTACelebrations-PopScale`** (PR #99) — E saw the pop on the phone and asked for it bigger, in
+  three messages covering size, spread and count. Four variants rendered in situ; **E picked C**.
+  One constant, `CelebrationRecipes.popScale = 1.6`, carries all three: 18 → 28 pieces, 2,087 →
+  5,590 painted px, furthest piece 140 → 208 pt. Evidence
+  `screenshots/cta-celebrations-pop-scale/`. **Do not tune it down** — it is E's by-sight value. (NEW)
+- **`F-CTACelebrations-NoCooldown`** (PR #102) — **E removed the milestone cooldown entirely.**
+  `CelebrationPolicy.outcome` takes no clock; `milestoneCooldown`, `lastFullScreenAt` and
+  `cooldownAnchor` are gone rather than left unread. (NEW)
+- **`F-CTACelebrations-SwipeOrigin`** (PR #102) — **a swipe now pops from the finger.** E recorded
+  the defect on the phone: the swipe shared the circle's origin, the circle sits at the row's
+  trailing edge, and the 1.6× throw put most of the paper off the right of the screen. (NEW)
 
 ### What this session established
 
