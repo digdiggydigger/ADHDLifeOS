@@ -3980,7 +3980,52 @@ things the design record got wrong. **Do not re-derive it.**
 
 **Three booby-traps:** the `store.end` → `record` **adjacency** (nothing between them); the **unique
 anchor** `"Button(title) { Haptics.play(.solid)"`; and the **`leaveScreen()` == 5** raw-source count
-that drops to 4. Red prediction: **27 tests / 48 assertions**, plus three single-assertion flips.
+— which drops to **3, not 4**: one of the five occurrences is inside the `:77-83` COMMENT that C6
+rewrites, and C6 also deletes the scenePhase hook. `grep -c` after the edits rather than trusting a
+number written in advance.
+
+---
+
+## ⚠ PARTLY BUILT, 2026-09-13 — C1–C5 done on `feature/cta-celebrations-6`, C6–C9 OPEN
+
+**`main` is deliberately untouched: C5's `PlaceRoutineCompletedCard` is reachable by nothing until
+C6 wires it, and merging that would ship the dead-shared-component shape on purpose.** The live
+pointer is `handoff/START-HERE-cta-celebrations-6-part2.md`, which carries C6–C9 in full.
+
+Branch `0ea2154`, thirteen commits, suite **2,941 / 0**, lint **0 / 801**, sim build green. UI
+journeys NOT run; nothing on a device yet.
+
+**E ADDED A FEATURE MID-BLOCK and answered NINE more questions — five reverse something settled,
+two of them E's own earlier answers. All nine are built.** E: *"i want to add a small section within
+the empty-space on the cards that display detailed data and info about that specific routine that
+was run."*
+
+1. "Started" is **BOTH** the crossing (`Arrived`) and the tap (`Started`) — the model holds both and
+   they can be forty minutes apart.
+2. "Finished" is **BOTH** the last step and the Completed tap — E's own R1 is what makes them differ.
+3. The facts are the **total**, the **time per step**, and a **comparison with your usual** (which
+   needed a Firestore history fetch threaded into the cover).
+4. A long step list **SCROLLS** — **reverses E's answer 6** ("shrink to fit, no scrolling").
+5. The view **STAYS UNTIL DISMISSED** — **reverses R5's auto-leave**. `hold(for:)` and `quietBeat`
+   are deleted; "Skip" becomes "Close"; **E's answers 1 and 7 now survive only in the confetti
+   dimension**, because "shorter" no longer exists.
+6. The detail block is **pinned above the scroller** — inside it, a 20-step routine would hide the
+   times behind the very scrolling they must survive.
+7. The light-mode wash is **0.40**, picked by sight from a rendered ladder; **dark stays 0.14** and
+   was never part of the question. Pinned like `peekStep` — do not tidy them into one number.
+8. Clocks are **"1:00 pm"** — 12-hour, minutes always, **no seconds** — **reverses E's own
+   `hh:mm:ss`**. The locale is deliberately OVERRIDDEN: `en_GB`/`de_DE`/`fr_FR` all default to
+   24-hour, and those readers are what E's "MUST" is about.
+9. The detail card takes a **done-green border** (it already had a 1pt one — the problem was
+   contrast, not absence); "Longer than usual" is **accent blue**, because grey read as an
+   afterthought and green read as praise for taking 43 minutes.
+
+Plus, on seeing the render: *"reword the 'Skipped 2m'"* → rows read `Done in 2m` /
+`Skipped after 2m` / `Auto` (no number — an auto step always resolves instantly).
+
+**A defect worth remembering: the run being celebrated was in its own fetched history**, so it was
+always its own fastest and the verdict was timing-dependent on whether a network write had landed.
+Fixed test-first in `7300c36`; `excluding runId:` is required rather than defaulted.
 
 ### FEATURE: F-CTACelebrations-7 — the chime  [ ] OPEN
 
