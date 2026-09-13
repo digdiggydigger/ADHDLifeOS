@@ -37,6 +37,14 @@ final class CelebrationProbeSwiftUISheetTests: XCTestCase {
         )
         previousKeyWindow = scene.keyWindow
         window = UIWindow(windowScene: scene)
+        // **A known-clear baseline, and it is not ceremony.** The probe reads the whole key
+        // window, so a presentation left standing by the class that ran before would answer the
+        // positive tests here without this file's own host ever presenting anything — and would
+        // fail the control for the same reason. Starting from proven-clear means any `true` seen
+        // afterwards belongs to this test.
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        try await settle("the window to start clear") { !self.probe.isAnythingPresented }
     }
 
     override func tearDown() async throws {
@@ -73,42 +81,65 @@ final class CelebrationProbeSwiftUISheetTests: XCTestCase {
     /// The control: the same host with nothing presented reads clear, so the four above are
     /// detecting the presentation rather than the hosting.
     func testTheProbeReadsClearForTheSameHostWithNothingPresented() async throws {
-        try await host(AnyView(NothingHost()))
+        host(AnyView(NothingHost()))
+        // Pumped for as long as a real presentation takes to appear, so "clear" means the probe is
+        // reading presentations rather than that nothing has had time to happen. The window was
+        // proved clear in `setUp`, so this is the control for all four tests above.
+        await pump(0.4)
         XCTAssertFalse(probe.isAnythingPresented)
     }
 
     // MARK: - Hosting
 
     private func assertProbeSees(_ view: AnyView, line: UInt = #line) async throws {
-        try await host(view)
-        let seen = await settle { self.probe.isAnythingPresented }
-        XCTAssertTrue(
-            seen,
-            "SwiftUI seated this presentation somewhere the key-window walk does not reach, so the "
-                + "centre holds nothing and every celebration behind it is invisible again.",
-            line: line
-        )
+        host(view)
+        do {
+            try await settle("the probe to see the presentation") { self.probe.isAnythingPresented }
+        } catch {
+            XCTFail(
+                "SwiftUI seated this presentation somewhere the key-window walk does not reach, so "
+                    + "the centre holds nothing and every celebration behind it is invisible again.",
+                line: line
+            )
+        }
     }
 
-    private func host(_ view: AnyView) async throws {
+    private func host(_ view: AnyView) {
         window.rootViewController = UIHostingController(rootView: view)
-        window.makeKeyAndVisible()
         window.layoutIfNeeded()
-        await settle { false }
     }
 
     /// SwiftUI presents on a later turn of the run loop, so the answer is polled rather than read
-    /// once. Returns as soon as the condition holds, and at the deadline otherwise.
-    @discardableResult
-    private func settle(_ condition: @MainActor () -> Bool) async -> Bool {
-        for _ in 0..<40 {
-            if condition() { return true }
-            await Task.yield()
+    /// once.
+    ///
+    /// **Deadline-based, not a fixed iteration count.** The count version budgeted 40 × 20 ms of
+    /// wall clock, which is ample on an idle machine and not ample inside a 3,000-test suite —
+    /// the sibling composition file timed out once for no better reason than a busier run.
+    private func settle(_ what: String, _ condition: @MainActor () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline {
+            if condition() { return }
             _ = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { continuation.resume(returning: true) }
             }
         }
-        return condition()
+        throw ProbeWaitTimeout(what: what)
+    }
+
+    /// Turns the run loop for a fixed stretch without asserting anything — for the control, which
+    /// is waiting to see that nothing happens.
+    private func pump(_ seconds: TimeInterval) async {
+        let deadline = Date().addingTimeInterval(seconds)
+        while Date() < deadline {
+            _ = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) { continuation.resume(returning: true) }
+            }
+        }
+    }
+
+    private struct ProbeWaitTimeout: Error, CustomStringConvertible {
+        let what: String
+        var description: String { "Waited 5 s for \(what) and it never happened." }
     }
 
     // MARK: - Hosts
