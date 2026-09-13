@@ -37,6 +37,8 @@ final class CelebrationUnknownSheetCompositionTests: XCTestCase {
     /// A reference the SwiftUI host reads, so the sheet can be taken down from the test body.
     private final class SheetFlag: ObservableObject {
         @Published var isUp = true
+        /// What the probe answered from inside SwiftUI's own `onDismiss`. See the test below.
+        var probeInsideOnDismiss: Bool?
     }
 
     override func setUp() async throws {
@@ -102,6 +104,31 @@ final class CelebrationUnknownSheetCompositionTests: XCTestCase {
         XCTAssertTrue(center.held.isEmpty)
     }
 
+    /// **The shipped path this block could have slowed down, and the fact that says it did not.**
+    ///
+    /// `surfaceDismissed` used to release a held burst unconditionally; it now asks `isBlocked`
+    /// first, so that a tracked surface closing cannot put the burst under an untracked one that
+    /// is still up. The Create Task sheet's inbox-zero celebration — shipped in
+    /// `F-CTACelebrations-5`, verified on E's phone — goes through exactly that line, and if
+    /// SwiftUI ran `onDismiss` while the presentation was still standing, that celebration would
+    /// have quietly started waiting for the 0.25 s watch instead of playing at once.
+    ///
+    /// It does not: `onDismiss` runs after the teardown, so the probe reads clear inside it and
+    /// the release is immediate. That is a fact about SwiftUI rather than about this app, which is
+    /// why it is pinned here — the day it changes, the sheet path gets slower and nothing else in
+    /// the suite would notice.
+    func testSwiftUIRunsOnDismissAfterTheSheetIsAlreadyTornDown() async throws {
+        try await waitUntil { KeyWindowPresentationProbe().isAnythingPresented }
+        isSheetUp.isUp = false
+        try await waitUntil { self.isSheetUp.probeInsideOnDismiss != nil }
+        XCTAssertEqual(
+            isSheetUp.probeInsideOnDismiss, false,
+            "SwiftUI now runs `onDismiss` while the presentation still stands, so every burst held "
+                + "behind a self-dismissing sheet waits for the hold watch instead of playing at "
+                + "once. `releaseHeldIfClear` is the line to look at."
+        )
+    }
+
     // MARK: - Support
 
     private final class Clock {
@@ -114,7 +141,13 @@ final class CelebrationUnknownSheetCompositionTests: XCTestCase {
         @ObservedObject var flag: SheetFlag
 
         var body: some View {
-            Color.clear.sheet(isPresented: $flag.isUp) { Text("an untracked sheet") }
+            Color.clear.sheet(
+                isPresented: $flag.isUp,
+                onDismiss: {
+                    flag.probeInsideOnDismiss = KeyWindowPresentationProbe().isAnythingPresented
+                },
+                content: { Text("an untracked sheet") }
+            )
         }
     }
 
