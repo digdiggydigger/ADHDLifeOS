@@ -1,8 +1,9 @@
-# Open items register — 2026-09-13 (fortieth edition; **`F-CTACelebrations-6` is DONE and MERGED**, and the block's own screenshot caught a defect ten guards missed)
+# Open items register — 2026-09-13 (forty-first edition; **`F-CTACelebrations-6` is DONE, MERGED and PASSED ON DEVICE — nothing owed**, and the block's own screenshot caught a defect ten guards missed)
 
-*The close-out of the BUILD session that finished the block at C6–C9. `main` is no longer held back:
-the pieces C1–C5 landed deliberately unreachable are wired, and the arc's next two blocks
-(`-7`, `-Surfaces`) are unblocked. Supersedes the thirty-nine earlier editions.*
+*The close-out of the BUILD session that finished the block at C6–C9, installed it on E's phone and
+got the verdict. `main` is no longer held back: the pieces C1–C5 landed deliberately unreachable are
+wired, and the arc's next two blocks (`-7`, `-Surfaces`) are unblocked. Supersedes the forty earlier
+editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -25,7 +26,10 @@ Measured on `main` this session, not carried forward:
   because the TREE GREW** (44,961 → 48,302 executable, +7.4%), not because the measurement extent
   changed — both runs measured 100% of the app target. The numerator grew **+18.8%** against that,
   so coverage again outpaced the code.
-- **Device: NOT installed. Nothing in `F-CTACelebrations-6` has been on E's phone.**
+- **Device: INSTALLED at `4b0f0ad`, 09:46, and PASSED.** Build, install and launch clean in one
+  pass, wirelessly. E, verbatim, on an enumerated two-pass ask: ***"both work correctly"*** — so
+  Reduce Motion OFF and Reduce Motion ON are both confirmed and **§7.3's RM-on pass is EARNED
+  rather than owed**. The phone is ON MAIN, so device behaviour is main's behaviour.
 
 ### Landed this session — C6 to C9, and the block is closed
 
@@ -58,6 +62,13 @@ Six commits, merged as PR #106.
   animation and transition that case carries, which were written, shipped and never called. The
   getters now have tests. **Before writing that line, name the exact functions a test executed.**
   (NEW)
+- **The provisioning "fastest check" FALSE-ALARMED, and acting on it would have cost E a pointless
+  GUI trip.** `defaults read com.apple.dt.Xcode DVTDeveloperAccountManagerAppleIDLists` returned an
+  EMPTY `IDE.Identifiers.Prod` — which two memories call *the* tell for the signing blocker — and
+  the device build then signed perfectly and installed. **On Xcode 26 that check is not evidence of
+  anything.** Revised order: run the build, then read its LOG (`No Accounts` / `profile has
+  expired`), and confirm on the artefact (`security cms -D … ExpirationDate`, `codesign --verify`).
+  Escalate to E only on a real log hit. (NEW)
 - **A reachability guard can only assert a call it knows to look for, which is the limit of the
   whole `*CallSiteTests` technique.** The block had ten of them and they were all correct. Nothing
   in a source-reading guard can notice an absence nobody thought of; a rendered screen can.
@@ -88,23 +99,22 @@ Six commits, merged as PR #106.
 
 ## A · Decisions only E can make — minutes each
 
-**E settled four of these at the device sitting on 2026-09-12/13. What remains is `F-CTACelebrations-6`'s
-own device verdict, one deferral E asked to be held, and two housekeeping items.**
+**E settled four of these at the device sitting on 2026-09-12/13 and `F-CTACelebrations-6`'s verdict
+on 2026-09-13. What remains is one deferral E asked to be held, and two housekeeping items —
+nothing in the merged arc is waiting on E.**
 
-- [ ] **`F-CTACelebrations-6`'s DEVICE VERDICT — the newest item, and the block's last owed thing.**
-      Nothing in this block has been on E's phone; E has approved the congratulation **by render
-      only**. Two passes, asked for in one message so the setting is flipped once:
-      - **Reduce Motion OFF** — resolve a routine's steps, Close, confirm Today's card SURVIVES and
-        reads **"Finish routine"**, reopen through it, tap **Completed**, and look at the
-        congratulation over a real fetch: the four 12-hour times, the done-green border at the 0.40
-        light wash, the step rows' new wording, and whether tapping a step ROW closes it.
-      - **Reduce Motion ON** — §7.3's RM-on pass, **OWED because C6 adds this block's reduced site**
-        (the congratulation's entrance: an opacity-only cross-fade whose first frame is already at
-        final geometry). Until E toggles and says so, the block's Verified-paths line may only read
-        *"Reduced: run on sim (injected); NOT on device."*
-      - **A caveat worth stating before E looks:** the journey's routine is resolved by skips, so it
-        is R-f-unearned and shows **no confetti by design**. To see the confetti path E must tap at
-        least one step DONE rather than skipping it. (NEW)
+- [x] **`F-CTACelebrations-6`'s DEVICE VERDICT — PASSED, 2026-09-13, BOTH passes.** Installed at
+      `4b0f0ad` (build, install, launch clean in one wireless pass). E, verbatim: ***"both work
+      correctly"***, answering an ask that enumerated the two checks separately — Reduce Motion OFF
+      (Close leaves the card, it reads "Finish routine", reopening offers Completed, the
+      congratulation over a real fetch, a step ROW closes it) and then Reduce Motion ON. **So
+      §7.3's RM-on pass is EARNED for this block**, and its Verified-paths line reads *"Reduced: run
+      on sim (injected) + E's phone (RM on)"* — the second time in this arc that line is earned
+      rather than owed. **Nothing in the block is outstanding.** (CLOSED)
+      - **Shipped but NOT approved, and worth knowing:** under `.spring` the checklist scales down
+        to 0.9 as the congratulation scales in. The plan specified the entrance only; the symmetric
+        exit was the implementer's call, was flagged to E in the same message, and drew no comment
+        either way. Overrulable. (NEW)
 
 - [ ] **DEVICE CHECK OWED on the three follow-on blocks, whenever E is next on the phone.** All
       three are landed, green and installed from `main`; none is urgent, and E has already passed

@@ -3,7 +3,11 @@
 **Environment:** iPhone 17 Pro simulator, iOS 26.5, Firebase **emulator** (Auth + Firestore on
 `127.0.0.1`), a fresh throwaway account created by the journey harness, **2026-09-13**. Every image
 is an `XCUIScreenshot` taken by `RoutineJourneyUITests` on the run at `0e07c39`, exported from the
-result bundle and converted to JPEG. **Nothing here has been on E's phone** — see "Still owed".
+result bundle and converted to JPEG.
+
+**The block PASSED on E's phone the same day** — `main @ 4b0f0ad`, installed 09:46, both passes.
+E, verbatim: ***"both work correctly"***, in answer to an enumerated ask for Reduce Motion OFF and
+then Reduce Motion ON. So nothing here is owed; see "Verified paths".
 
 **Throwaway data:** the harness creates its own account per run and seeds one place ("Gym 🏋️") into
 that account's own Firestore subtree, all inside the emulator. Nothing touches the live project, and
@@ -57,8 +61,8 @@ carry it.
 
 ## Verified paths
 
-> `26 path: run on sim + NOT on device. Reduced: run on sim (injected) — the resolver AND both`
-> `animation/transition getters; NOT on device.`
+> `26 path: run on sim + E's phone (RM off). Reduced: run on sim (injected) — the resolver AND both`
+> `animation/transition getters — + E's phone (RM on).`
 > `16 path: code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY — no 16 runtime installed.`
 
 **What "injected" covers here, precisely.** `resolve(reduceMotion: true) == .fade` and, since
@@ -67,11 +71,20 @@ this line was written when only the resolver had ever been executed, which made 
 choice and false of the motion. What no test can reach is how the fade READS: that is what the
 RM-on device pass below is for, and nothing here substitutes for it.
 
-## Still owed
+## Nothing owed — and the RM-on half was EARNED, not assumed
 
-- **§7.3's RM-on device pass.** C6 adds this block's reduced site — the congratulation's entrance,
-  `PlaceRoutineCongratulationEntrance.fade`, an opacity-only cross-fade whose first frame is already
-  at final geometry. Since E turned Reduce Motion **off** on 2026-09-12 that path is no longer
-  exercised incidentally, so it needs E to toggle Reduce Motion ON and look once. Until then this
-  folder may not claim device evidence for it.
-- **Nothing in this block has been on E's phone at all**, reduced path or not.
+**§7.3's RM-on device pass is done.** C6 adds this block's reduced site — the congratulation's
+entrance, `PlaceRoutineCongratulationEntrance.fade`, an opacity-only cross-fade whose first frame is
+already at final geometry. Since E turned Reduce Motion **off** on 2026-09-12 that path stopped
+being exercised incidentally, so it needed E to toggle the setting ON deliberately and look. E did,
+and passed it.
+
+**Why the wording of the ask mattered.** The two passes were enumerated separately in one message —
+RM off, then Settings → Accessibility → Motion → RM on — so E's *"both work correctly"* attaches to
+two named checks rather than to a vague "does it work". That is the same care the 2026-09-12 sitting
+recorded, and it is what makes this line quotable a month from now.
+
+**One thing E did NOT comment on, so it is shipped rather than approved:** under `.spring` the
+checklist scales down to 0.9 as the congratulation scales in. The plan specified the entrance only;
+the symmetric exit was the implementer's call, was flagged to E, and drew no response either way.
+Treat it as overrulable.
