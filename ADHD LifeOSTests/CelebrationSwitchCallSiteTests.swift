@@ -83,10 +83,12 @@ final class CelebrationSwitchCallSiteTests: XCTestCase {
         )
     }
 
-    /// One sentence each, and the sound row's sentence has to say it does nothing yet: the player
-    /// arrives in `F-CTACelebrations-7`, and a row that claims to add a chime before any chime
-    /// exists is the lie this block is shaped to avoid.
-    func testTheFeedbackFooterExplainsBothSwitchesAndSaysTheSoundIsNotLiveYet() throws {
+    /// **REVERSED in `F-CTACelebrations-7`, and the old name carried the claim.** This was
+    /// `…AndSaysTheSoundIsNotLiveYet`, and it required the footer to admit the sound switch did
+    /// nothing — correct for as long as no chime existed, and a lie the moment E picked one by
+    /// ear on 2026-09-13. Reversed rather than deleted (the house rule): a deleted test leaves no
+    /// trace of the decision that removed it.
+    func testTheFeedbackFooterExplainsBothSwitchesAndTheChimeThatIsNowLive() throws {
         let footer = try Self.feedbackFooter()
         XCTAssertTrue(
             footer.contains("Celebrations"),
@@ -101,10 +103,17 @@ final class CelebrationSwitchCallSiteTests: XCTestCase {
             footer.contains("chime"),
             "The footer never mentions the chime the sound switch adds."
         )
+        XCTAssertFalse(
+            footer.contains("until the chime arrives"),
+            "The footer still says the sound switch does nothing until the chime arrives. It has"
+                + " arrived — E picked it by ear on 2026-09-13 and it is in the catalog."
+        )
         XCTAssertTrue(
-            footer.contains("until"),
-            "The footer does not say the sound switch does nothing UNTIL the chime arrives, so the row"
-                + " promises something that is not built yet."
+            footer.contains("mixes under"),
+            "The footer does not tell the user what E's `.ambient` + `.mixWithOthers` choice"
+                + " actually buys them — a chime that plays under their music rather than"
+                + " stopping it, and stays quiet on silent. The row is the only place they learn"
+                + " it."
         )
 
         // Raised by the HIG review pass, 2026-09-12: the sentences must run in ROW order. Appended

@@ -157,8 +157,12 @@ final class CelebrationMountCallSiteTests: XCTestCase {
     /// auth-state swap, dropping whatever was in the air.
     func testTheAppOwnsTheCentreAndHandsItToRootView() throws {
         let app = try Self.appCode("ADHD_LifeOSApp.swift")
+        // **Loosened in `F-CTACelebrations-7`, and only in the ARGUMENTS.** The centre gained the
+        // chime closure, so the initialiser is no longer empty parentheses; what this guard is
+        // actually about — that the APP owns it as a `@StateObject`, not `RootView`, so it
+        // survives every auth-state swap and tab switch — is unchanged and still pinned.
         XCTAssertTrue(
-            app.contains("@StateObject private var celebrationCenter = CelebrationCenter()"),
+            app.contains("@StateObject private var celebrationCenter = CelebrationCenter("),
             "The App does not own the celebration centre, so nothing outlives a tab swap."
         )
         XCTAssertTrue(
