@@ -14,7 +14,7 @@ update rather than improvising a list in chat.
 untouched, so there is **nothing for E to republish**.
 
 Measured on `main` this session, not carried forward:
-- unit suite **2,958 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+- unit suite **2,960 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
 - SwiftLint **0 / 801**;
 - sim `** BUILD SUCCEEDED **`;
 - **both UI journeys GREEN** — `RoutineJourneyUITests` (reversed and renamed) and
@@ -52,6 +52,12 @@ Six commits, merged as PR #106.
   it did.** What caught it was looking at the journey's own screenshot. Seventh recorded instance of
   this repo's most-repeated defect, and the **first found by the `screenshots/` practice** rather
   than by a later block tripping over it. (NEW)
+- **"Run on sim (injected)" is a claim about a code PATH, and it is easy to overstate by one
+  level.** The block's Verified-paths line said the reduced path had been run by injection when
+  only `resolve(reduceMotion:)` had ever executed — true of which CASE was chosen, false of the
+  animation and transition that case carries, which were written, shipped and never called. The
+  getters now have tests. **Before writing that line, name the exact functions a test executed.**
+  (NEW)
 - **A reachability guard can only assert a call it knows to look for, which is the limit of the
   whole `*CallSiteTests` technique.** The block had ten of them and they were all correct. Nothing
   in a source-reading guard can notice an absence nobody thought of; a rendered screen can.

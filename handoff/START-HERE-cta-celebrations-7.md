@@ -34,7 +34,11 @@ Motion once** (§7.3), and say the caveat up front:
   fetch.
 - **RM ON** — §7.3's pass, **owed because C6 added the block's reduced site** (the congratulation's
   entrance, an opacity-only cross-fade). Until E toggles and says so, the Verified-paths line reads
-  *"Reduced: run on sim (injected); NOT on device."*
+  *"Reduced: run on sim (injected) — the resolver AND both animation/transition getters; NOT on
+  device."* **The qualifier is there because the first draft overstated it:** only
+  `resolve(reduceMotion:)` had ever been executed, so the line was true of which case was chosen and
+  false of the motion that case carries. Tests for the getters landed in `67f0d4a`. What still
+  cannot be reached by any test is how the fade READS.
 - **The caveat:** the routine E is most likely to drive is resolved by SKIPS, and a skipped-only run
   is R-f-unearned, so it shows **no confetti by design**. To see the confetti path E has to tap at
   least one step DONE. Say this before E looks, or a correct build reads as a broken one.

@@ -57,8 +57,15 @@ carry it.
 
 ## Verified paths
 
-> `26 path: run on sim + NOT on device. Reduced: run on sim (injected); NOT on device.`
+> `26 path: run on sim + NOT on device. Reduced: run on sim (injected) — the resolver AND both`
+> `animation/transition getters; NOT on device.`
 > `16 path: code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY — no 16 runtime installed.`
+
+**What "injected" covers here, precisely.** `resolve(reduceMotion: true) == .fade` and, since
+`67f0d4a`, the `.fade`/`.spring` **animations and transitions** themselves — the first version of
+this line was written when only the resolver had ever been executed, which made it true of the
+choice and false of the motion. What no test can reach is how the fade READS: that is what the
+RM-on device pass below is for, and nothing here substitutes for it.
 
 ## Still owed
 

@@ -196,6 +196,34 @@ final class PlaceRoutineCompletionTests: XCTestCase {
         XCTAssertEqual(PlaceRoutineCongratulationEntrance.resolve(reduceMotion: true), .fade)
     }
 
+    /// **§7.2's actual claim, and until this existed nothing ran it.** `resolve` returning
+    /// `.fade` says only which CASE was chosen; what makes the reduced path correct rather than a
+    /// hard cut is the animation that case carries, and a `nil` there would be the named bug.
+    /// The two getters were written, shipped and never executed — so a report saying "the reduced
+    /// path was run on sim by injection" was true of the resolver and false of the motion.
+    func testBothEntrancesCarryARealAnimationAndNeitherIsAHardCut() {
+        XCTAssertEqual(
+            PlaceRoutineCongratulationEntrance.fade.animation, .easeOut(duration: 0.25),
+            "the reduced entrance must FADE. §5's ban on plain easing carries the clause that"
+                + " exempts exactly this — the point of the reduced path is that nothing springs"
+        )
+        XCTAssertEqual(
+            PlaceRoutineCongratulationEntrance.spring.animation,
+            .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0),
+            "the full entrance must reuse the SCREEN's own existing spring — no new motion"
+                + " vocabulary for one view"
+        )
+    }
+
+    /// `AnyTransition` is not `Equatable`, so this cannot assert WHICH transition — which is why
+    /// the enum exists at all. It can still prove both getters RUN and neither traps, and that
+    /// is the difference between a code path exercised by injection and one merely compiled.
+    func testBothEntrancesProduceATransitionWithoutTrapping() {
+        for entrance in [PlaceRoutineCongratulationEntrance.spring, .fade] {
+            _ = entrance.transition
+        }
+    }
+
     // MARK: - E's answer 6: show every step, shrink to fit
 
     func testAShortRoutineGetsTheRoomiestRowsAndTheFullSizeGlyph() {
