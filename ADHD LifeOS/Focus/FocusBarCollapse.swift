@@ -213,7 +213,7 @@ enum FocusBarMetrics {
     static let cornerRadius: CGFloat = 24
 
     /// The COLLAPSED card's bottom corners. **E's call, 2026-09-11: *"Round them"*.**
-    static let collapsedBottomCornerRadius: CGFloat = cornerRadius
+    static var collapsedBottomCornerRadius: CGFloat = cornerRadius  // TEMP var for the render probe
 
     /// The drag handle. 36x5 is the iOS sheet grabber's own size, so the affordance reads as the
     /// system one users already know rather than as a decoration.
