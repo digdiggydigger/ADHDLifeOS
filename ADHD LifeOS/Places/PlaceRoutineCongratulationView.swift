@@ -178,11 +178,17 @@ enum PlaceRoutineCongratulationPreviewFixture {
         .openApp(scheme: "notes", displayName: "Notes")
     ]
 
-    static func run(steps: Int, name: String = "Gym 🏋️") -> RoutineRun {
+    /// `startedAt` is a PARAMETER so a render probe can be deterministic. Defaulting it to
+    /// `.now` and leaving it at that made two renders of the same scene differ by 819 pixels —
+    /// the clock times had moved between them — which the harness's own determinism check
+    /// caught before any pixel claim was made on top of it.
+    static func run(
+        steps: Int, name: String = "Gym 🏋️", startedAt: Date = .now.addingTimeInterval(-1_800)
+    ) -> RoutineRun {
         let states: [RoutineStepState] = [.autoDone, .done, .skipped, .done]
         return RoutineRun(
             id: UUID(), placeId: UUID(), direction: .arrival,
-            startedAt: .now.addingTimeInterval(-1_800),
+            startedAt: startedAt,
             displayName: name, customMessage: nil,
             steps: (0..<steps).map { index in
                 RoutineRun.Step(

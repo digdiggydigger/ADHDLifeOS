@@ -43,7 +43,11 @@ struct PlaceRoutineCongratulationDetails: View {
             if let verdict = comparisonLine {
                 Text(verdict)
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color(ConfirmCelebrationGlow.colorName))
+                    .foregroundStyle(
+                        comparison.isCelebratory
+                            ? AnyShapeStyle(Color(ConfirmCelebrationGlow.colorName))
+                            : AnyShapeStyle(.secondary)
+                    )
                     .minimumScaleFactor(0.8)
             }
         }

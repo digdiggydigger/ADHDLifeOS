@@ -288,4 +288,16 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
     func testAZeroDurationReadsAsInstantRatherThanAsZeroSeconds() {
         XCTAssertEqual(PlaceRoutineTimeFormatting.duration(0), "instant")
     }
+
+    // MARK: - Which verdict is worth colouring
+
+    /// Done-green is the app's DONE colour. Painting "longer than usual" in it says "well done"
+    /// about the one verdict that is not praise — caught by looking at the 20-step render, where
+    /// the line read as a compliment about taking 43 minutes.
+    func testOnlyABestEverRunIsWorthColouring() {
+        XCTAssertTrue(PlaceRoutineComparison.Verdict.fastestYet.isCelebratory)
+        XCTAssertFalse(PlaceRoutineComparison.Verdict.usual(typical: 600).isCelebratory)
+        XCTAssertFalse(PlaceRoutineComparison.Verdict.longerThanUsual(typical: 600).isCelebratory)
+        XCTAssertFalse(PlaceRoutineComparison.Verdict.noHistory.isCelebratory)
+    }
 }

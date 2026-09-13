@@ -87,6 +87,16 @@ enum PlaceRoutineComparison {
         case fastestYet
         case usual(typical: TimeInterval)
         case longerThanUsual(typical: TimeInterval)
+
+        /// Whether this verdict is PRAISE, and so worth the app's done-green.
+        ///
+        /// Only a record is. "Longer than usual" drawn in the DONE colour reads as a compliment
+        /// about having taken 43 minutes — caught by looking at the 20-step render, not by any
+        /// assertion.
+        var isCelebratory: Bool {
+            if case .fastestYet = self { return true }
+            return false
+        }
     }
 
     /// How wide "about the same" is: a fifth of the usual length, and never less than a minute,
