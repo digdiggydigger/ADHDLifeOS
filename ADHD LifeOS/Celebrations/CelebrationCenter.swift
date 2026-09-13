@@ -23,6 +23,11 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     /// it finally closes.
     static let heldLifetime: TimeInterval = 60
 
+    /// How often the hold watch asks whether the way is clear. Fast enough that a celebration
+    /// released by closing a sheet still feels like a consequence of closing it, and it runs ONLY
+    /// while something is held — a few dozen property reads, rarely.
+    static let holdPollInterval: TimeInterval = 0.25
+
     /// What is on screen, across every surface. Each layer draws only its own.
     @Published private(set) var bursts: [CelebrationBurst] = []
     /// Full-screens requested while a self-dismissing surface was frontmost, waiting for it to go.
@@ -44,18 +49,36 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     /// can watch it without a `UIFeedbackGenerator`; the default is the house helper, which reads
     /// E's Haptics switch at fire time.
     private let feel: (HapticFeel) -> Void
+    /// `F-CTACelebrations-Surfaces`: how the centre learns that a sheet it was never told about is
+    /// up. E chose asking UIKit over tagging all 26 presenters (`CelebrationPresentationProbe`).
+    private let probe: PresentationProbing
+    /// The hold watch's wait, injected so the loop itself is tested rather than only one tick of it.
+    private let sleep: (TimeInterval) async -> Void
+
+    /// The running hold watch, or `nil` with nothing held. Exposed for the same reason `held` is:
+    /// a test awaits it rather than sleeping for real seconds.
+    private(set) var holdWatch: Task<Void, Never>?
 
     init(
         now: @escaping () -> Date = Date.init,
         celebrationsGate: @escaping () -> Bool = { AppFeedback.celebrationsEnabled() },
         chime: @escaping (CelebrationKind) -> Void = { _ in },
-        feel: @escaping (HapticFeel) -> Void = { Haptics.play($0) }
+        feel: @escaping (HapticFeel) -> Void = { Haptics.play($0) },
+        probe: PresentationProbing = KeyWindowPresentationProbe(),
+        sleep: @escaping (TimeInterval) async -> Void = { seconds in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+        }
     ) {
         self.now = now
         self.celebrationsGate = celebrationsGate
         self.chime = chime
         self.feel = feel
+        self.probe = probe
+        self.sleep = sleep
     }
+
+    /// One tick of the hold watch. Exposed so the RULE can be tested without the loop around it.
+    func pollHeldBursts() {}
 
     /// Whichever surface is in front of the user right now.
     var frontmost: CelebrationSurface { presented.last ?? .root }
