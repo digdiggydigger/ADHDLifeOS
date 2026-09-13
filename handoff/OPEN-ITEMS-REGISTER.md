@@ -1,7 +1,7 @@
-# Open items register — 2026-09-13 (forty-third edition; **`F-CTACelebrations-Surfaces` is DONE and MERGED**, awaiting only E's device pass)
+# Open items register — 2026-09-13 (forty-fourth edition; **`F-CTACelebrations-Surfaces` AND `F-FocusCard-Corners` are both DONE and MERGED**, each awaiting one device check)
 
-*Updated mid-session by the one that settled `-Surfaces`' design question with E and built it.
-Supersedes the forty-two earlier editions. **The previous edition's `-6` / `-7` entries stand
+*Close-out of the session that settled two design questions with E and built both blocks.
+Supersedes the forty-three earlier editions. **The previous edition's `-6` / `-7` entries stand
 unchanged and nothing is owed on either** — see "Landed" below.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
@@ -10,16 +10,18 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `a472f28`** (PR #112). `firestore.rules` untouched — **nothing for E to republish**.
+**`main` @ `598da3b`** (PR #116). `firestore.rules` untouched — **nothing for E to republish**.
 Every feature branch is merged and deleted; `origin` carries `main` alone.
 
 Measured on `main`:
-- unit suite **3,001 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+- unit suite **3,008 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
 - SwiftLint **0 / 812 files**;
 - sim `** BUILD SUCCEEDED **`;
-- **both UI journeys GREEN** (run for `-6`, not re-run for `-Surfaces` — it touches no UI);
+- **both UI journeys GREEN** (run for `-6`; not re-run for `-Surfaces`, which touches no UI, nor
+  for `-Corners`, which changes a shape no UI test asserts);
 - **device: ON MAIN as of `-7`. `-6` and `-7` both PASSED; nothing is owed on either.**
-  **`-Surfaces` has NOT had its device pass** — that is the one thing outstanding.
+  **`-Surfaces` and `-Corners` have NOT had their device checks** — those are the two things
+  outstanding, both in §A, and neither is urgent.
 
 ### Landed this session
 
@@ -40,6 +42,12 @@ watch replaces the `onDismiss` an untracked sheet never sends, and R-g is enforc
 than by the next dismissal. **It is a PREVENTIVE block** — the five milestone sites were traced and
 none of them can be reached from inside an untracked sheet as the tree stands, so what it closes is
 the class rather than a live defect. **Owed: one regression check on device** (§A below). (NEW)
+
+**`F-FocusCard-Corners`** — the collapsed card's bottom corners (PR #116). E's *"Round them"* was
+a word, not a number, so the four radii went to E as a render and E chose **24 — "match the top"**
+("leave it square after all" was offered and not chosen). `FocusBarCardOutline` now cuts BOTH the
+fill and the keyline from one silhouette, so they cannot disagree about where the corner is; the
+`Bool` became a `CGFloat` on `animatableData`. **Owed: E's device verdict** (§A). (NEW)
 
 ### What this session established
 
@@ -76,8 +84,9 @@ the class rather than a live defect. **Owed: one regression check on device** (�
 ## A · Decisions only E can make — minutes each
 
 **E settled four of these at the device sitting on 2026-09-12/13, then `F-CTACelebrations-6`'s and
-`-7`'s verdicts on 2026-09-13. What remains is ONE new device pass, one deferral E asked to be
-held, and two housekeeping items.**
+`-7`'s verdicts on 2026-09-13. What remains is TWO device checks from the blocks that landed after
+those, one deferral E asked to be held, and two housekeeping items. Neither device check is urgent
+and they can be done in one sitting.**
 
 - [ ] **`F-CTACelebrations-Surfaces`' DEVICE PASS — and read what it is FOR before running it,
       because the obvious version of this check cannot fire.** All five milestone sites were
@@ -95,6 +104,14 @@ held, and two housekeeping items.**
       `F-CTACelebrations-5`, and it is the only place this block could have made something worse.
       **No RM-on pass is owed** (§7.3): no `#available` site and no Reduce Motion site is added or
       changed, so the reduced path cannot look different either way. (NEW)
+
+- [ ] **`F-FocusCard-Corners`' DEVICE VERDICT — the second of the two outstanding, and it is a
+      look rather than a test.** Start a sprint, collapse the card, and look at where its bottom
+      corners meet the tab bar; then expand it again. E chose 24pt from a simulator render
+      (`screenshots/focus-card-bottom-corners/`), and what a render cannot show is how the notch
+      between card and bar reads on glass at arm's length. **No RM-on pass is owed** (§7.3): no
+      `#available` site is added, and the only Reduce Motion interaction is the existing collapse
+      animation, untouched. (NEW)
 
 - [x] **`F-CTACelebrations-7`'s DEVICE VERDICT — PASSED, 2026-09-13, both checks.** E, verbatim:
       ***"both work correctly"*** — the chime plays UNDER music without pausing it
@@ -232,8 +249,12 @@ held, and two housekeeping items.**
    last-known task set rather than emptying it, which is what `F-HomeTasksLastKnown` (`8b5f740`)
    exists to do. **Nothing is outstanding here.** (CLOSED)
 
-2. **`F-FocusCard-Corners` — after the arc (E: "Round them").** Round the collapsed card's bottom
-   corners AND give `FocusBarCardShape.roundsBottomCorners` `animatableData`. (carried)
+2. ~~**`F-FocusCard-Corners` — after the arc (E: "Round them").**~~ **BUILT AND MERGED 2026-09-13**
+   (`598da3b`, PR #116). E chose **24pt, "match the top"** from a four-way render. Note for anyone
+   reading the old line: the `animatableData` half is DONE and is currently **inert**, because
+   E's radius equals the expanded one — the snap is gone because the difference is gone. That is
+   recorded in the code rather than glossed. **Nothing outstanding but the device verdict** (§A).
+   (CLOSED)
 
 3. **`AppFeedback.hapticsEnabled()` and `.notificationSound()` have no test that calls them.** Two
    small tests, no production change. (carried)
