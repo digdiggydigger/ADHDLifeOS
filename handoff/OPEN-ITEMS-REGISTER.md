@@ -1,9 +1,8 @@
-# Open items register — 2026-09-13 (forty-first edition; **`F-CTACelebrations-6` is DONE, MERGED and PASSED ON DEVICE — nothing owed**, and the block's own screenshot caught a defect ten guards missed)
+# Open items register — 2026-09-13 (forty-second edition; **`F-CTACelebrations-7` is DONE, MERGED and PASSED ON DEVICE**, and a green asset test turned out not to touch the asset)
 
-*The close-out of the BUILD session that finished the block at C6–C9, installed it on E's phone and
-got the verdict. `main` is no longer held back: the pieces C1–C5 landed deliberately unreachable are
-wired, and the arc's next two blocks (`-7`, `-Surfaces`) are unblocked. Supersedes the forty earlier
-editions.*
+*The close-out of the session that finished `F-CTACelebrations-6` at C6–C9, got its device verdict,
+then built and shipped `-7` in the same stretch. Two blocks landed and both passed on E's phone.
+Supersedes the forty-one earlier editions.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -11,97 +10,76 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `8a74d7d`** (PR #106, merged; `feature/cta-celebrations-6` deleted). `firestore.rules` is
-untouched, so there is **nothing for E to republish**.
+**`main` @ `eade58a`** (PR #110). `firestore.rules` untouched — **nothing for E to republish**.
+Every feature branch is merged and deleted; `origin` carries `main` alone.
 
-Measured on `main` this session, not carried forward:
-- unit suite **2,960 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
-- SwiftLint **0 / 801**;
+Measured on `main` this session:
+- unit suite **2,975 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
+- SwiftLint **0 / 806 files**;
 - sim `** BUILD SUCCEEDED **`;
-- **both UI journeys GREEN** — `RoutineJourneyUITests` (reversed and renamed) and
-  `RoutineRecordJourneyUITests`, first run each time; simulator ERASED in the same command chain
-  after every UI run, per CLAUDE.md.
-- app-target coverage **27.34% (13,208 / 48,302)** over 2,958 tests. **Comparable to the 24.72%
-  (11,114 / 44,961) of 2026-09-07 in the sense CLAUDE.md's rule asks for: the denominator moved
-  because the TREE GREW** (44,961 → 48,302 executable, +7.4%), not because the measurement extent
-  changed — both runs measured 100% of the app target. The numerator grew **+18.8%** against that,
-  so coverage again outpaced the code.
-- **Device: INSTALLED at `4b0f0ad`, 09:46, and PASSED.** Build, install and launch clean in one
-  pass, wirelessly. E, verbatim, on an enumerated two-pass ask: ***"both work correctly"*** — so
-  Reduce Motion OFF and Reduce Motion ON are both confirmed and **§7.3's RM-on pass is EARNED
-  rather than owed**. The phone is ON MAIN, so device behaviour is main's behaviour.
+- **both UI journeys GREEN** (run for `-6`), simulator erased in the same command chain after;
+- **device: ON MAIN, and BOTH blocks passed.** `-6`: *"both work correctly"* (Reduce Motion off
+  and on). `-7`: *"both work correctly"* (chime under music without pausing it; silent with the
+  ring switch off).
 
-### Landed this session — C6 to C9, and the block is closed
+### Landed this session
 
-Six commits, merged as PR #106.
+**`F-CTACelebrations-6`** — C6–C9: the routine Completed flow wired (PRs #106–#109). See the
+forty-first edition's detail; nothing about it is outstanding.
 
-- **C6** — the wiring. `PlaceRoutineCompletedCard` in the next-step slot; `complete(from:)`;
-  `leaveScreen()` gutted; the scenePhase auto-end DELETED; the body swap a **`ZStack`** so `.task`
-  cannot re-fire and restart the Live Activity `complete()` just ended; `displayName` and `history`
-  threaded through `RootView+Doors`. (NEW)
-- **C7** — `continueLabel` → `continueLabel(for:)`; "Finish routine" once everything is resolved.
-  (NEW)
-- **C8** — both journeys. `RoutineJourneyUITests` asserted the rule E's R1 overturned in its NAME as
-  well as its body, and now asserts the opposite. (NEW)
-- **C9** — `screenshots/cta-celebrations-block-6/` + README, the TODO tick, this register. (NEW)
+**`F-CTACelebrations-7`** — the chime (PR #110). E's F5, and the block that made a switch true:
+"Celebration sounds" had been in Settings since `-3` storing a choice nothing read. Five candidates
+went to E as `.wav`, peak-normalised to the same −3.0 dBFS so the comparison was of timbre; E picked
+the first ElevenLabs generation by ear and **reserved the second for future use**. (NEW)
 
 ### What this session established
 
-- **R-f HAD NO CALL SITE, and only the picture said so — the single most important thing to carry
-  out of this block.** `PlaceRoutineProgress.earnedCelebration` is E's approved build default (a
-  celebration needs at least one step the USER tapped done), written, unit-tested across four
-  shapes, and consulted by nobody. The first wiring of `complete()` therefore threw full-screen
-  confetti over the journey's run of 1 auto step and 3 skips — precisely the run E's answer 1 says
-  completes quietly. **Ten call-site guards, 2,957 unit tests and both UI journeys were GREEN while
-  it did.** What caught it was looking at the journey's own screenshot. Seventh recorded instance of
-  this repo's most-repeated defect, and the **first found by the `screenshots/` practice** rather
-  than by a later block tripping over it. (NEW)
-- **"Run on sim (injected)" is a claim about a code PATH, and it is easy to overstate by one
-  level.** The block's Verified-paths line said the reduced path had been run by injection when
-  only `resolve(reduceMotion:)` had ever executed — true of which CASE was chosen, false of the
-  animation and transition that case carries, which were written, shipped and never called. The
-  getters now have tests. **Before writing that line, name the exact functions a test executed.**
+- **A GREEN test suite can leave the one thing users depend on unproven.** Every test in
+  `CelebrationSoundTests` injected `loadAsset`, so none of them touched the asset catalog —
+  and `assetutil` on the built `Assets.car` proves the bytes SHIP, not that `NSDataAsset(name:)`
+  resolves or that `AVAudioPlayer` accepts them. A dataset can be present and unreadable by name.
+  **One test using the DEFAULT loader closes it**, and the test target hosts the app so it costs
+  nothing. Generalises past audio: whenever a seam is injected everywhere for testability, ask
+  what exercises the REAL implementation. (NEW)
+- **Reversing a test is now a three-times-proven habit, and once it was the test NAME that lied.**
+  `testTheFeedbackFooterExplainsBothSwitchesAndSaysTheSoundIsNotLiveYet` had the reversed claim in
+  its own name. Also loosened — not deleted — a mount guard anchored on `CelebrationCenter()`'s
+  empty parentheses, in its ARGUMENTS only, so what it is really about (the App owning the centre)
+  stayed pinned. (NEW)
+- **Footer prose is checked by no compiler, and it had drifted twice.** The Settings footer said
+  the sound switch "does nothing until the chime arrives" AND that the milestone celebrations were
+  "still to come" — the second stale since `-4`, nothing to do with this block, and nobody had
+  noticed. **When a block touches user-facing copy, read the whole paragraph, not the clause.**
   (NEW)
-- **The provisioning "fastest check" FALSE-ALARMED, and acting on it would have cost E a pointless
-  GUI trip.** `defaults read com.apple.dt.Xcode DVTDeveloperAccountManagerAppleIDLists` returned an
-  EMPTY `IDE.Identifiers.Prod` — which two memories call *the* tell for the signing blocker — and
-  the device build then signed perfectly and installed. **On Xcode 26 that check is not evidence of
-  anything.** Revised order: run the build, then read its LOG (`No Accounts` / `profile has
-  expired`), and confirm on the artefact (`security cms -D … ExpirationDate`, `codesign --verify`).
-  Escalate to E only on a real log hit. (NEW)
-- **A reachability guard can only assert a call it knows to look for, which is the limit of the
-  whole `*CallSiteTests` technique.** The block had ten of them and they were all correct. Nothing
-  in a source-reading guard can notice an absence nobody thought of; a rendered screen can.
-  **Corollary, cheap and worth doing: before writing the guards for a block, list the block's pure
-  helpers and `grep` each for a call site.** A three-line sweep would have found this one. (NEW)
-- **The evidence was nearly lost by tidying.** The confetti screenshot was exported to a scratch
-  directory and deleted before the defect was understood, so the folder's best artefact exists only
-  as prose. **Export a journey's attachments INTO `screenshots/<block>/` first and choose
-  afterwards.** (NEW)
-- **A red-check is worth running even on source-reading guards.** Three lines reverted → **5
-  assertion failures across 3 tests**, then restored from a clean tree. Cheap, and the alternative
-  is a set of guards nobody has ever seen bite. (NEW)
-- **The §7.2 guard's first draft banned the pattern outright and reddened on the site §7.2
-  sanctions.** `reduceMotion ? nil` is CORRECT for `apply(_:at:)`'s step re-layout — the tween IS
-  the motion there — and wrong for the congratulation's appearance. The two read identically a few
-  lines apart in one type. The guard now slices `complete(from:)` and pins the legitimate site at a
-  count of exactly one. **A §7.2 sweep that greps for the pattern will get this wrong.** (NEW)
-- **Three of the plan's own predictions were wrong, and the plan's instruction survived all three.**
-  (NEW)
-  - The **`leaveScreen()` count stayed 5**, not the predicted 3: the scenePhase hook went, but the
-    congratulation's tap-to-close replaced it. The plan said "grep and set the number to what is
-    THERE, do not trust 4 or 3 in advance" — that was the load-bearing part, not the number.
-  - **`complete()` takes no haptic.** The plan's order list opened with `Haptics.play(.success)`;
-    C5 had already put it on the Completed button, where the press is. A second is a double buzz.
-  - **Type-body headroom was never the binding constraint.** Three commits bought 41 lines for a
-    change that needed ~15. What actually broke a length bar was the TEST side: two call-site
-    classes and the UI journey all crossed one and needed splitting.
+- **E reserved a rejected candidate, which is a case the "no dead assets" rule does not cover.**
+  `05-generated-b` is kept in the evidence folder as `.wav` and a ready-to-ship `.caf`, and
+  deliberately NOT in the asset catalog: an asset with no call site is weight in every build. Kept
+  where it is findable, added when a site exists. (NEW)
+- **The provisioning "fastest check" FALSE-ALARMED** — `defaults read … DVTDeveloperAccountManagerAppleIDLists`
+  returned an EMPTY `IDE.Identifiers.Prod` and the device build signed perfectly. On Xcode 26 that
+  key is not evidence of anything; run the build and read its LOG. (NEW)
+- **GitHub can report a merge as unmerged for the better part of an hour.** PR #109's merge landed
+  (`4451326`) while `gh pr merge` returned 502; the PR read `merged=false` through ~40 s of polling
+  and two more write attempts failed with 504/GraphQL errors. It reconciled itself later. **Verify
+  against `origin/main` — `git merge-base --is-ancestor` — and do not re-run `gh pr merge`**, which
+  would have put a second empty merge commit on `main`. (NEW)
 
 ## A · Decisions only E can make — minutes each
 
-**E settled four of these at the device sitting on 2026-09-12/13 and `F-CTACelebrations-6`'s verdict
-on 2026-09-13. What remains is one deferral E asked to be held, and two housekeeping items —
-nothing in the merged arc is waiting on E.**
+**E settled four of these at the device sitting on 2026-09-12/13, then `F-CTACelebrations-6`'s and
+`-7`'s verdicts on 2026-09-13. What remains is one deferral E asked to be held, and two
+housekeeping items — nothing in the merged arc is waiting on E.**
+
+- [x] **`F-CTACelebrations-7`'s DEVICE VERDICT — PASSED, 2026-09-13, both checks.** E, verbatim:
+      ***"both work correctly"*** — the chime plays UNDER music without pausing it
+      (`.mixWithOthers`) and stays silent with the ring switch off (`.ambient`). Neither is
+      provable on the simulator. **Nothing in the block is outstanding.** (CLOSED)
+      - **E reserved the runner-up sound** for use elsewhere: *"keep a hold of the sound 'el-b'
+        ... there is likely other locations that [it] Could be used."* Kept at
+        `screenshots/cta-celebrations-block-7/candidates/05-generated-b.{wav,caf}`, deliberately
+        out of the asset catalog until a real site exists. **This is a standing item for whoever
+        adds the next sound** — do not regenerate one. (NEW)
+
 
 - [x] **`F-CTACelebrations-6`'s DEVICE VERDICT — PASSED, 2026-09-13, BOTH passes.** Installed at
       `4b0f0ad` (build, install, launch clean in one wireless pass). E, verbatim: ***"both work
