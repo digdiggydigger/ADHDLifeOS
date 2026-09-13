@@ -77,11 +77,34 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
         self.sleep = sleep
     }
 
-    /// One tick of the hold watch. Exposed so the RULE can be tested without the loop around it.
-    func pollHeldBursts() {}
-
     /// Whichever surface is in front of the user right now.
     var frontmost: CelebrationSurface { presented.last ?? .root }
+
+    /// **Whether a full-screen celebration asked for right now would be drawn where nobody can see
+    /// it.** The one predicate behind both the hold and the release, so the two can never disagree
+    /// about what "in the way" means.
+    ///
+    /// Two ways it happens, and the app is told about only one of them:
+    ///
+    /// - A tracked surface that closes ITSELF (the Create Task sheet). A 5.4 s celebration on its
+    ///   layer is cut off a fraction of a second in.
+    /// - Anything the centre was never told about at all. Four surfaces call `surfacePresented`;
+    ///   the tree holds 26 `.sheet` / `.fullScreenCover` call sites, so `frontmost` reads `.root`
+    ///   under Quick Capture, Settings, the Journal composer and twenty more — and iOS hands the
+    ///   app no signal for any of them. `F-CTACelebrations-Surfaces` asks UIKit instead (E's call,
+    ///   2026-09-13; `CelebrationPresentationProbe` carries the why).
+    ///
+    /// **The probe is read only from `.root`, which is the simple form E chose** over reconciling
+    /// the probe's DEPTH against `presented.count`. Every other tracked surface IS a presented
+    /// controller, so an unconditional read would hold exactly the celebrations those surfaces
+    /// mount their own layers to draw. It is sound while none of them presents a sheet of its own,
+    /// which `CelebrationProbeCallSiteTests` is what keeps true — and the depth form is the way
+    /// out on the day one of them does.
+    private var isBlocked: Bool {
+        if frontmost.dismissesItself { return true }
+        guard frontmost == .root else { return false }
+        return probe.isAnythingPresented
+    }
 
     /// The bursts one layer should draw.
     func bursts(on surface: CelebrationSurface) -> [CelebrationBurst] {
@@ -117,11 +140,13 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
             origin: origin
         )
 
-        if outcome == .fullScreen, frontmost.dismissesItself {
-            // Drawn on a sheet that is about to close itself, it would be cut off after a
-            // fraction of a second. Held, and released over whatever is behind it — and it
-            // stamps NOTHING until then, because it has not played.
+        if outcome == .fullScreen, isBlocked {
+            // Drawn where it cannot be seen — cut off after a fraction of a second by a sheet
+            // that closes itself, or simply underneath one. Held, and released over whatever is
+            // in front once the way is clear — and it stamps NOTHING until then, because it has
+            // not played.
             held.append(burst)
+            beginHoldWatch()
             return outcome
         }
         start(burst, at: moment)
@@ -160,7 +185,14 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     /// `PlaceRoutineScreen` records as unreliable for that cover.
     func surfaceDismissed(_ surface: CelebrationSurface) {
         presented.removeAll { $0 == surface }
-        releaseHeld()
+        releaseHeldIfClear()
+    }
+
+    /// **One tick of the hold watch**, and the whole of the release rule: R-g first, then play if
+    /// the way is clear. Exposed rather than private so the rule can be tested without the loop
+    /// around it — the loop has a test of its own.
+    func pollHeldBursts() {
+        releaseHeldIfClear()
     }
 
     /// Removes every burst that has finished. Driven by the root layer's expiry sweep, which is the
@@ -171,14 +203,27 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     }
 
     /// A held burst plays over whatever is in front NOW, starting NOW — not from the instant it was
-    /// requested, which would have half of it elapsed before anything was drawn. R-g drops one that
-    /// has waited more than a minute rather than releasing it stale.
-    private func releaseHeld() {
+    /// requested, which would have half of it elapsed before anything was drawn.
+    ///
+    /// **Two things changed here in `F-CTACelebrations-Surfaces`, and both are consequences of the
+    /// same fact: an untracked sheet says nothing when it closes.**
+    ///
+    /// - It no longer releases unconditionally. A tracked surface closing while an untracked one
+    ///   is still up would otherwise put the burst under THAT — the same invisibility, one layer
+    ///   along. When the way is not clear it leaves the burst held and the watch picks it up.
+    /// - **R-g is enforced by TIME now rather than by the next dismissal.** It used to drop a
+    ///   stale burst only when something called this; behind a sheet nobody tracks, nothing ever
+    ///   would, and the burst waited indefinitely for a release that could not come.
+    private func releaseHeldIfClear() {
         guard !held.isEmpty else { return }
         let moment = now()
-        let fresh = held.filter { moment.timeIntervalSince($0.start) <= Self.heldLifetime }
+        held = held.filter { moment.timeIntervalSince($0.start) <= Self.heldLifetime }
+        guard !held.isEmpty else { return stopHoldWatch() }
+        guard !isBlocked else { return }
+        let releasing = held
         held = []
-        for burst in fresh {
+        stopHoldWatch()
+        for burst in releasing {
             start(
                 CelebrationBurst(
                     ordinal: burst.ordinal,
@@ -190,5 +235,35 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
                 at: moment
             )
         }
+    }
+
+    // MARK: - The hold watch
+
+    /// **The release side of E's answer, and the price of it.** Tagging every presenter would have
+    /// given an exact dismissal callback; asking UIKit gives none, so the centre has to look.
+    ///
+    /// It runs ONLY while something is held, ticks four times a second and cannot outlive R-g's
+    /// sixty — a few dozen property reads, on the rare occasion a milestone lands behind a sheet.
+    /// Pinned to the main actor because everything it touches is SwiftUI's.
+    private func beginHoldWatch() {
+        guard holdWatch == nil else { return }
+        holdWatch = Task { @MainActor [weak self] in
+            while let self, !self.held.isEmpty {
+                await self.sleep(Self.holdPollInterval)
+                guard !Task.isCancelled else { return }
+                self.releaseHeldIfClear()
+            }
+        }
+    }
+
+    /// Called from inside the tick as well as from outside it: cancelling the task one is running
+    /// in only sets the flag, and the `while` above has already seen `held` empty by then.
+    private func stopHoldWatch() {
+        holdWatch?.cancel()
+        holdWatch = nil
+    }
+
+    deinit {
+        holdWatch?.cancel()
     }
 }
