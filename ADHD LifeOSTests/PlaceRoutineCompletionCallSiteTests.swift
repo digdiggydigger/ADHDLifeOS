@@ -157,6 +157,51 @@ final class PlaceRoutineCompletionCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - C5: the Completed card
+
+    /// E's R2: the card takes the next-step slot once every step is resolved, and E's R1 named
+    /// the button on it.
+    func testTheCompletedCardCarriesEsButtonWithAnIdentifierAJourneyCanTap() throws {
+        let card = try flattened("Places/PlaceRoutineCompletedCard.swift")
+        XCTAssertTrue(card.contains("Button(PlaceRoutineCompletionCopy.completedButton)"))
+        XCTAssertTrue(
+            card.contains("accessibilityIdentifier(\"routineCompletedButton\")"),
+            "both journeys tap this button; without an identifier they can only tap by label"
+        )
+    }
+
+    /// **The RING pattern, not the wrapper pattern, and the difference is not cosmetic.**
+    /// `CelebrationPopSource`'s handle only ever requests `.pop` — this button needs a
+    /// MILESTONE — so it records its own centre and hands it up, exactly as the Momentum ring
+    /// does for R-h's fallback pop.
+    ///
+    /// **The origin goes on the BUTTON, never on the card.** An identifier on a container is
+    /// inherited by every child (the `HomeRoutineCard` lesson), and a centre measured on the
+    /// card is the middle of the whole bento, not the thing the thumb pressed.
+    func testTheCompletedCardMeasuresTheButtonRatherThanTheWholeCard() throws {
+        let card = try flattened("Places/PlaceRoutineCompletedCard.swift")
+        let button = try XCTUnwrap(card.range(of: "Button(PlaceRoutineCompletionCopy.completedButton)"))
+        let origin = try XCTUnwrap(
+            card.range(of: ".celebrationPopOrigin"),
+            "the Completed button never records where it is, so its milestone has no origin"
+        )
+        let bento = try XCTUnwrap(card.range(of: ".bentoCard()"))
+        XCTAssertLessThan(button.lowerBound, origin.lowerBound)
+        XCTAssertLessThan(
+            origin.lowerBound, bento.lowerBound,
+            "the origin is measured on the CARD, so the celebration would leave from the middle"
+                + " of the bento rather than from the button that was pressed"
+        )
+    }
+
+    /// `.success`, not the `.solid` a step's action plays: this is the moment the routine ends.
+    func testTheCompletedCardPlaysTheSuccessFeel() throws {
+        XCTAssertTrue(
+            try flattened("Places/PlaceRoutineCompletedCard.swift").contains("Haptics.play(.success)"),
+            "the run's completion feels like any other step"
+        )
+    }
+
     // MARK: - Reading the tree
 
     private func flattened(_ relativePath: String) throws -> String {

@@ -188,10 +188,12 @@ final class CelebrationPopCallSiteTests: XCTestCase {
         // count that could not see it would have gone on reading 2 for ever.
         let origins = try appTargetOccurrences(of: ".celebrationPopOrigin")
         XCTAssertEqual(
-            origins.count, 3,
-            "The app records \(origins.count) pop origins by hand, not 3 (the wrapper's own,"
-                + " TaskRow's circle, and — since `F-CTACelebrations-5` — the Momentum ring, which"
-                + " R-h's fallback pop leaves from when the daily goal is downgraded)."
+            origins.count, 4,
+            "The app records \(origins.count) pop origins by hand, not 4 (the wrapper's own,"
+                + " TaskRow's circle, the Momentum ring — which R-h's fallback pop leaves from"
+                + " when the daily goal is downgraded — and, since `F-CTACelebrations-6`, the"
+                + " routine's Completed button, whose milestone the wrapper could not carry"
+                + " because the wrapper's handle only ever requests `.pop`)."
                 + " Recorded in: \(origins.map(\.file).sorted().joined(separator: ", "))."
         )
     }
