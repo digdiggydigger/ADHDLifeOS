@@ -5,6 +5,22 @@ device verdicts once the phone was carrying them.
 Supersedes the forty-four earlier editions. **The previous edition's `-6` / `-7` entries stand
 unchanged and nothing is owed on either** — see "Landed" below.*
 
+> ## ⏸ EVERYTHING BELOW IS ON HOLD — E's instruction, 2026-09-13
+>
+> E paused the whole queue to start **a curated colour scheme for the app**: *"can we hold on
+> starting any of those above tasks. I would like to create a properly curated & developed colour
+> scheme that we will implement throughout the LifeOS application. lets start that planning in a
+> fresh claude code terminal session."*
+>
+> **Nothing in §A, §B or §C should be started, or offered, until E lifts the hold.** Nothing about
+> those items changed except priority — they are still accurate and still outstanding. The three
+> device looks in §A and the photosensitivity blocker in §D are unaffected as FACTS; they are
+> simply not to be chased.
+>
+> The colour arc has its own opener: **`handoff/START-HERE-colour-scheme.md`**, which carries a
+> measured inventory of the 63 colorsets and the five questions the arc must put to E first. It is
+> PLANNING first — no recolouring until there is a block E has seen.
+
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
 update rather than improvising a list in chat.
