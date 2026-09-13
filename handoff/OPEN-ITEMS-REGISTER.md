@@ -1,6 +1,7 @@
-# Open items register — 2026-09-13 (forty-fourth edition; **`F-CTACelebrations-Surfaces` AND `F-FocusCard-Corners` are both DONE and MERGED**, each awaiting one device check)
+# Open items register — 2026-09-13 (forty-fifth edition; **`F-CTACelebrations-Surfaces` AND `F-FocusCard-Corners` are DONE, MERGED and PASSED ON DEVICE** — nothing in any merged block is owed to E)
 
-*Close-out of the session that settled two design questions with E and built both blocks.
+*Close-out of the session that settled two design questions with E, built both blocks, and got both
+device verdicts once the phone was carrying them.
 Supersedes the forty-three earlier editions. **The previous edition's `-6` / `-7` entries stand
 unchanged and nothing is owed on either** — see "Landed" below.*
 
@@ -20,10 +21,9 @@ Measured on `main`:
 - **both UI journeys GREEN** (run for `-6`; not re-run for `-Surfaces`, which touches no UI, nor
   for `-Corners`, which changes a shape no UI test asserts);
 - **device: ON MAIN at `1920536`, installed 2026-09-13 22:29** — build, install and launch clean
-  in one wireless pass. `-6` and `-7` both PASSED; nothing is owed on either.
-  **`-Surfaces` and `-Corners` have not had their device checks yet, but the code for both IS now
-  on the phone** — it was NOT when they were first reported as owed, which cost E a wasted look
-  (see "What this session established").
+  in one wireless pass. **ALL FOUR blocks have passed on the phone**: `-6`, `-7`, `-Surfaces`
+  (*"you can mark a PASS"*) and `-Corners` (*"they look okay"*, with two screenshots filed).
+  **Nothing in any merged block is owed to E.**
 
 ### Landed this session
 
@@ -92,13 +92,17 @@ fill and the keyline from one silhouette, so they cannot disagree about where th
 
 ## A · Decisions only E can make — minutes each
 
-**E settled four of these at the device sitting on 2026-09-12/13, then `F-CTACelebrations-6`'s and
-`-7`'s verdicts on 2026-09-13. What remains is TWO device checks from the blocks that landed after
-those, one deferral E asked to be held, and two housekeeping items. Neither device check is urgent
-and they can be done in one sitting.**
+**Every device check is now CLEAR.** E settled four at the sitting on 2026-09-12/13, then
+`-6`'s and `-7`'s verdicts, then `-Surfaces`' and `-Corners`' on 2026-09-13 once the phone was
+finally carrying them. **Nothing in any merged block is waiting on E.** What remains here is one
+deferral E asked to be held and two housekeeping items.
 
-- [ ] **`F-CTACelebrations-Surfaces`' DEVICE PASS — and read what it is FOR before running it,
-      because the obvious version of this check cannot fire.** All five milestone sites were
+- [x] **`F-CTACelebrations-Surfaces`' DEVICE PASS — PASSED 2026-09-13.** E, on `main @ 1920536`:
+      ***"you can mark a PASS to 'the celebration hold' checklist item"***. **Nothing in the block
+      is outstanding.** The note below is kept because it is the reasoning, not the task:
+
+      ~~**read what it is FOR before running it, because the obvious version of this check cannot
+      fire.**~~ All five milestone sites were
       traced: `inboxZero`'s three doors, `streakSeven`'s "Done for now", `dailyGoal`'s ring and
       `routineFinished` are reachable only from `.root` or from the two tracked surfaces, and
       **Quick Capture creates captures rather than clearing them** — so as the tree stands today
@@ -114,8 +118,13 @@ and they can be done in one sitting.**
       **No RM-on pass is owed** (§7.3): no `#available` site and no Reduce Motion site is added or
       changed, so the reduced path cannot look different either way. (NEW)
 
-- [ ] **`F-FocusCard-Corners`' DEVICE VERDICT — the second of the two outstanding, and it is a
-      look rather than a test.** Start a sprint, collapse the card, and look at where its bottom
+- [x] **`F-FocusCard-Corners`' DEVICE VERDICT — PASSED 2026-09-13.** E: ***"they look okay"***,
+      with two device screenshots filed as
+      `screenshots/focus-card-bottom-corners/02-device-collapsed-light.jpeg` and
+      `03-device-collapsed-dark.jpeg` — the shipped 24pt corner on real glass, light and dark.
+      **Nothing in the block is outstanding.** The note below is kept as the reasoning:
+
+      ~~a look rather than a test.~~ Start a sprint, collapse the card, and look at where its bottom
       corners meet the tab bar; then expand it again. E chose 24pt from a simulator render
       (`screenshots/focus-card-bottom-corners/`), and what a render cannot show is how the notch
       between card and bar reads on glass at arm's length. **No RM-on pass is owed** (§7.3): no

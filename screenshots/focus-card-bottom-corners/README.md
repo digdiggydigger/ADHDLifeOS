@@ -1,6 +1,9 @@
 # The collapsed card's bottom corners — the options E was shown
 
-> ## ✅ ANSWERED 2026-09-13: **E chose 24pt — "match the top".**
+> ## ✅ ANSWERED **and PASSED ON DEVICE**, 2026-09-13: **E chose 24pt — "match the top".**
+>
+> E's device verdict, on `main @ 1920536` installed to their iPhone 15 Pro: ***"they look okay"***,
+> with the two device screenshots below. **Nothing is outstanding on this block.**
 >
 > E's answer to the register's lower-priority question, 2026-09-11, was **"Round them"** — a
 > direction, not a number. These renders are the number, and E picked from them by looking.
@@ -61,3 +64,22 @@ a morph that does not happen.
 | `light-r16.jpeg` | 16pt — two thirds of the top corners' radius. |
 | `light-r24.jpeg` | 24pt — matches the top corners exactly (`FocusBarMetrics.cornerRadius`). |
 | `dark-r00.jpeg` … `dark-r24.jpeg` | The same four in dark, where the keyline carries more of the shape. |
+| `02-device-collapsed-light.jpeg` | **E's phone, light.** The shipped 24pt corner on real glass — the collapsed card over Home, rounded into the tab bar. |
+| `03-device-collapsed-dark.jpeg` | **E's phone, dark.** The same, and the state E pointed at when choosing: it matches `dark-r24.jpeg`. |
+
+## The device pass, and the mistake that delayed it
+
+**E's first look found nothing** — *"i cant see any change on my iphone"* — because the phone was on
+`eade58a`, two PRs behind, and the block had been reported as "owed: E's device verdict" as though
+the code were already installed. It was not. The change was correct the whole time; the corner E
+then pointed at as the one they wanted (`dark-r24.jpeg`) was a render **of the code already on
+`main`**.
+
+**The rule that came out of it, now in the register and the live opener: *owed a device check* and
+*the code is on E's phone* are different facts.** Install as part of the close-out and write the SHA
+the phone carries. `device-build-lag` already said "don't leave the phone behind"; the register's
+wording is what made it easy to miss.
+
+Installed at `main @ 1920536`, 2026-09-13 22:29 — build, `devicectl install` and launch clean in
+one wireless pass, 0 signing tells, profile good to 2026-09-17, `codesign --verify --deep --strict`
+exit 0. E's verdict followed on that build.
