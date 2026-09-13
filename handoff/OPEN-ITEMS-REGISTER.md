@@ -19,9 +19,11 @@ Measured on `main`:
 - sim `** BUILD SUCCEEDED **`;
 - **both UI journeys GREEN** (run for `-6`; not re-run for `-Surfaces`, which touches no UI, nor
   for `-Corners`, which changes a shape no UI test asserts);
-- **device: ON MAIN as of `-7`. `-6` and `-7` both PASSED; nothing is owed on either.**
-  **`-Surfaces` and `-Corners` have NOT had their device checks** — those are the two things
-  outstanding, both in §A, and neither is urgent.
+- **device: ON MAIN at `1920536`, installed 2026-09-13 22:29** — build, install and launch clean
+  in one wireless pass. `-6` and `-7` both PASSED; nothing is owed on either.
+  **`-Surfaces` and `-Corners` have not had their device checks yet, but the code for both IS now
+  on the phone** — it was NOT when they were first reported as owed, which cost E a wasted look
+  (see "What this session established").
 
 ### Landed this session
 
@@ -50,6 +52,13 @@ fill and the keyline from one silhouette, so they cannot disagree about where th
 `Bool` became a `CGFloat` on `animatableData`. **Owed: E's device verdict** (§A). (NEW)
 
 ### What this session established
+
+- **"Owed a device check" and "the code is on E's phone" are DIFFERENT FACTS, and conflating them
+  wastes E's time.** Both blocks were reported as owing a device verdict while the phone was still
+  on `eade58a`, two PRs behind. E looked, saw nothing, and reported it — *"i cant see any change on
+  my iphone"* — about a change that was correct and simply not installed. The `device-build-lag`
+  note already said *"after a device-affecting block, push a device build too"*. **Install as part
+  of the close-out, and write the SHA the phone carries.**
 
 - **A GREEN test suite can leave the one thing users depend on unproven.** Every test in
   `CelebrationSoundTests` injected `loadAsset`, so none of them touched the asset catalog —

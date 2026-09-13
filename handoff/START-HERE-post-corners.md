@@ -22,7 +22,7 @@ git checkout main && git pull --ff-only
 | SwiftLint | **0 / 812 files** |
 | sim build | `** BUILD SUCCEEDED **` |
 | UI journeys | both GREEN (run for `-6`; neither block since touches UI a journey asserts) |
-| device | **ON MAIN as of `-7`.** `-6` and `-7` both PASSED — nothing owed on either. |
+| device | **ON MAIN at `1920536`** (installed 2026-09-13 22:29, clean one-pass). `-6` and `-7` PASSED; `-Surfaces` and `-Corners` are installed but unverified. |
 
 ## ⚠ THE WORK QUEUE IS EMPTY. Do not invent one.
 
@@ -51,6 +51,9 @@ Both are in register §A with the steps written out. In short:
    render; what a render cannot show is how that notch reads on glass.
 
 **Neither owes an RM-on pass** (§7.3), and the reports say why rather than leaving it implied.
+**Both are installed on the phone** — they were not when first reported as owed, which cost E a
+wasted look. **Install as part of close-out and say which SHA the phone carries**; "owed a device
+check" does not mean "the code is on the phone".
 
 **One standing item, carried:** E RESERVED the runner-up chime. *"keep a hold of the sound 'el-b'
 ... there is likely other locations that [it] Could be used."* It is at
