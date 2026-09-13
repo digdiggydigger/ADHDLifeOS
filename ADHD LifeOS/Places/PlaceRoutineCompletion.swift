@@ -14,6 +14,7 @@
 
 import CoreGraphics
 import Foundation
+import SwiftUI
 
 /// Every string the Completed card and the congratulation say.
 enum PlaceRoutineCompletionCopy {
@@ -67,6 +68,25 @@ enum PlaceRoutineCompletionCopy {
     ///
     /// `pending` cannot reach the list — it is only built for a fully-resolved run — but the
     /// function is total rather than optional so no caller has to decide what a gap means.
+    /// A step's state and its own stretch of time, worded so the number cannot be misread.
+    ///
+    /// **E, 2026-09-13, on seeing the render: "reword the 'Skipped 2m' so that it fits
+    /// accordingly."** The number is the time that ran BEFORE the step was resolved, so
+    /// "Skipped · 2m" read as though skipping had taken two minutes. Each state now says what
+    /// its own number means: a done step took it, a skipped step sat there for it.
+    ///
+    /// An automatic step never carries one at all — it resolves at the activation, so its
+    /// stretch is always instant and a number beside it would say nothing.
+    static func stateAndDuration(for state: RoutineStepState, took: TimeInterval?) -> String {
+        let word = stateWord(for: state)
+        guard state != .autoDone, let took, took > 0 else { return word }
+        switch state {
+        case .done: return "\(word) in \(PlaceRoutineTimeFormatting.duration(took))"
+        case .skipped: return "\(word) after \(PlaceRoutineTimeFormatting.duration(took))"
+        case .autoDone, .pending: return word
+        }
+    }
+
     static func stateWord(for state: RoutineStepState) -> String {
         switch state {
         case .done: return "Done"
@@ -74,6 +94,23 @@ enum PlaceRoutineCompletionCopy {
         case .skipped: return "Skipped"
         case .pending: return "To do"
         }
+    }
+}
+
+/// How strongly the congratulation's own done-green wash reads, per appearance.
+///
+/// **Both values were approved by E BY LOOKING, and they are deliberately different.** E asked
+/// to *"increase the visibility of the coloured Tint/Glow WHEN IN LIGHT-MODE on this view"*,
+/// was shown a rendered ladder of 0.14 / 0.22 / 0.30 / 0.40 / 0.50 on the finished layout, and
+/// chose **0.40**. Dark was never part of that question and keeps what it shipped with, because
+/// the same wash reads far stronger against a dark page — which is why light needed lifting and
+/// dark did not.
+///
+/// Like `FocusCompletionStackLayout.peekStep`, these are values chosen by sight.
+/// **Do not "tidy" them into one number**: that would silently undo a decision E made by eye.
+enum PlaceRoutineCongratulationWash {
+    static func opacity(for scheme: ColorScheme) -> Double {
+        scheme == .dark ? 0.14 : 0.40
     }
 }
 

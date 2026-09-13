@@ -37,6 +37,7 @@ struct PlaceRoutineCongratulationView: View {
     let onClose: () -> Void
 
     @State private var records: [RoutineRunRecord]?
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let density = PlaceRoutineCongratulationDensity.forStepCount(run.steps.count)
@@ -113,19 +114,13 @@ struct PlaceRoutineCongratulationView: View {
                 .minimumScaleFactor(0.8)
                 .lineLimit(1)
             Spacer(minLength: 8)
-            Text(stateAndDuration(step, took: duration))
+            Text(PlaceRoutineCompletionCopy.stateAndDuration(for: step.state, took: duration))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .layoutPriority(1)
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private func stateAndDuration(_ step: RoutineRun.Step, took duration: TimeInterval?) -> String {
-        let word = PlaceRoutineCompletionCopy.stateWord(for: step.state)
-        guard let duration else { return word }
-        return "\(word) · \(PlaceRoutineTimeFormatting.duration(duration))"
     }
 
     /// The done-green wash E's R3 asked for, under the page colour.
@@ -140,7 +135,8 @@ struct PlaceRoutineCongratulationView: View {
             Color.pageBackground
             RadialGradient(
                 colors: [
-                    Color(ConfirmCelebrationGlow.colorName).opacity(Self.washOpacity),
+                    Color(ConfirmCelebrationGlow.colorName)
+                        .opacity(PlaceRoutineCongratulationWash.opacity(for: colorScheme)),
                     Color(ConfirmCelebrationGlow.colorName).opacity(0)
                 ],
                 center: .bottom,
@@ -151,10 +147,6 @@ struct PlaceRoutineCongratulationView: View {
         .ignoresSafeArea()
     }
 
-    /// Deliberately under the layer glow's own 0.32 peak: for the first 2.4 s of a full
-    /// celebration the two are added together. **E is picking this value by sight** (the ladder
-    /// sent 2026-09-13); this is the shipped default until they do.
-    private static let washOpacity: Double = 0.14
 }
 
 #if DEBUG

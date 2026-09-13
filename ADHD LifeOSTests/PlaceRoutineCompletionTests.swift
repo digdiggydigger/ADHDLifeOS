@@ -12,6 +12,7 @@
 //  this app uses. Do not typographically "improve" it.
 //
 
+import SwiftUI
 import XCTest
 @testable import ADHD_LifeOS
 
@@ -243,5 +244,51 @@ final class PlaceRoutineCompletionTests: XCTestCase {
             "shrink-and-scroll was the reading taken of E's reversal: scrolling handles true"
                 + " overflow, shrinking keeps more steps on screen before it is needed"
         )
+    }
+
+    // MARK: - The wash, and the words for a step's own stretch
+
+    /// **E chose the LIGHT value by sight from a rendered ladder, 2026-09-13**, asked to
+    /// "increase the visibility of the coloured Tint/Glow WHEN IN LIGHT-MODE on this view".
+    /// Offered 0.14 (shipped), 0.22, 0.30, 0.40 and 0.50 on the finished layout, E picked
+    /// **0.40** — `140-light-wash-040.jpg`.
+    ///
+    /// **Dark was deliberately NOT part of that question and must not drift with it**: a done-
+    /// green wash reads far stronger against a dark page, which is why light needed lifting and
+    /// dark did not. Like `FocusCompletionStackLayout.peekStep`, this is a value approved by
+    /// looking — do not "tidy" the two into one number.
+    func testTheLightWashIsTheValueEChoseByLooking() {
+        XCTAssertEqual(PlaceRoutineCongratulationWash.opacity(for: .light), 0.40, accuracy: 0.001)
+        XCTAssertEqual(
+            PlaceRoutineCongratulationWash.opacity(for: .dark), 0.14, accuracy: 0.001,
+            "dark was not part of E's question and keeps the value it shipped with"
+        )
+    }
+
+    /// **E, 2026-09-13, on seeing the render: "reword the 'Skipped 2m' so that it fits
+    /// accordingly."** The number beside a step is the stretch BEFORE it was resolved, so
+    /// "Skipped · 2m" read as though skipping had taken two minutes. Each state now says what
+    /// its own number means.
+    func testASkippedStepSaysTheTimeRanBeforeItWasSkipped() {
+        XCTAssertEqual(
+            PlaceRoutineCompletionCopy.stateAndDuration(for: .skipped, took: 120),
+            "Skipped after 2m"
+        )
+    }
+
+    func testADoneStepSaysHowLongItTook() {
+        XCTAssertEqual(PlaceRoutineCompletionCopy.stateAndDuration(for: .done, took: 120), "Done in 2m")
+    }
+
+    /// An automatic step resolves AT the activation, so its stretch is always instant and a
+    /// duration beside it says nothing at all.
+    func testAnAutomaticStepCarriesNoDurationBecauseItAlwaysRanInstantly() {
+        XCTAssertEqual(PlaceRoutineCompletionCopy.stateAndDuration(for: .autoDone, took: 0), "Auto")
+        XCTAssertEqual(PlaceRoutineCompletionCopy.stateAndDuration(for: .autoDone, took: 900), "Auto")
+    }
+
+    func testAStepWithNoStampJustNamesItsState() {
+        XCTAssertEqual(PlaceRoutineCompletionCopy.stateAndDuration(for: .done, took: nil), "Done")
+        XCTAssertEqual(PlaceRoutineCompletionCopy.stateAndDuration(for: .skipped, took: nil), "Skipped")
     }
 }
