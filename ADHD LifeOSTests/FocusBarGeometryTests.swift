@@ -179,11 +179,19 @@ final class FocusBarGeometryTests: XCTestCase {
     /// the path itself answers nothing useful. Stroking it turns the keyline into a fillable
     /// region, and then "is there a border at the bottom edge?" is a real question.
     private func borderCoversBottomEdge(collapsed: Bool) -> Bool {
-        let rect = CGRect(x: 0, y: 0, width: 100, height: 100)
-        let stroked = FocusBarCardBorder(cornerRadius: 24, omitsBottomEdge: collapsed)
-            .path(in: rect)
-            .strokedPath(StrokeStyle(lineWidth: 2))
-        return stroked.contains(CGPoint(x: 50, y: 99.5))
+        strokedBorder(collapsed: collapsed).contains(CGPoint(x: 50, y: 99.5))
+    }
+
+    /// The collapsed card's bottom radius is E's *"Round them"* (`F-FocusCard-Corners`); the
+    /// expanded card has always been round on all four.
+    private func strokedBorder(collapsed: Bool, bottomCornerRadius: CGFloat = 24) -> Path {
+        FocusBarCardBorder(
+            cornerRadius: 24,
+            bottomCornerRadius: collapsed ? bottomCornerRadius : 24,
+            omitsBottomEdge: collapsed
+        )
+        .path(in: CGRect(x: 0, y: 0, width: 100, height: 100))
+        .strokedPath(StrokeStyle(lineWidth: 2))
     }
 
     func testTheCollapsedCardHasNoBottomKeyline() {
@@ -205,14 +213,42 @@ final class FocusBarGeometryTests: XCTestCase {
 
     func testTheBorderStillCoversTheTopEdgeInBothStates() {
         for collapsed in [true, false] {
-            let stroked = FocusBarCardBorder(cornerRadius: 24, omitsBottomEdge: collapsed)
-                .path(in: CGRect(x: 0, y: 0, width: 100, height: 100))
-                .strokedPath(StrokeStyle(lineWidth: 2))
             XCTAssertTrue(
-                stroked.contains(CGPoint(x: 50, y: 0.5)),
+                strokedBorder(collapsed: collapsed).contains(CGPoint(x: 50, y: 0.5)),
                 "The top keyline is missing (collapsed: \(collapsed)) — only the BOTTOM edge goes."
             )
         }
+    }
+
+    /// **`F-FocusCard-Corners`, and the coupling that is easy to miss.** Rounding only the FILL
+    /// leaves the keyline tracing the old square outline: two 24pt tails running down past the
+    /// curve to a corner the card no longer has. So the border rounds with it — and still omits
+    /// the flat bottom RUN, which is what E asked to remove in 2026-09-09 and did not reverse.
+    ///
+    /// Sampled on the bottom-left arc at 135°, which no square-cornered path passes near.
+    func testTheCollapsedBorderFollowsTheRoundedBottomCorners() {
+        XCTAssertTrue(
+            strokedBorder(collapsed: true).contains(CGPoint(x: 7.4, y: 92.6)),
+            "The keyline does not follow the rounded bottom corner, so it ends in mid-air where"
+                + " the fill has already curved away."
+        )
+        XCTAssertFalse(
+            strokedBorder(collapsed: true).contains(CGPoint(x: 0.5, y: 99)),
+            "The keyline still runs all the way down to the old square corner."
+        )
+    }
+
+    /// The floor of the morph, and the shape that shipped: at radius 0 the collapsed keyline is
+    /// exactly what it was before this block — down the left side to the square corner, and stop.
+    func testTheCollapsedBorderIsUnchangedAtRadiusZero() {
+        XCTAssertTrue(
+            strokedBorder(collapsed: true, bottomCornerRadius: 0).contains(CGPoint(x: 0.5, y: 99)),
+            "Radius 0 no longer reproduces the square-cornered keyline, so the morph has no floor."
+        )
+        XCTAssertFalse(
+            borderCoversBottomEdge(collapsed: true),
+            "The bottom RUN came back with the corners. E removed it and has not reversed that."
+        )
     }
 
     // MARK: - What the card actually measures

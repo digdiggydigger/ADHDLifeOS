@@ -55,7 +55,12 @@ enum FocusBarCollapseSwipe {
 /// collapsed state.
 struct FocusBarCardShape: Shape, InsettableShape {
     var cornerRadius: CGFloat
-    var roundsBottomCorners: Bool
+    var bottomCornerRadius: CGFloat
+
+    var animatableData: CGFloat {
+        get { bottomCornerRadius }
+        set { bottomCornerRadius = newValue }
+    }
     /// Accumulated by `inset(by:)`. It shrinks the rect **and** the radius, so an inset copy stays
     /// concentric with the original instead of bulging at the corners.
     var insetAmount: CGFloat = 0
@@ -63,7 +68,7 @@ struct FocusBarCardShape: Shape, InsettableShape {
     func path(in rect: CGRect) -> Path {
         let bounds = rect.insetBy(dx: insetAmount, dy: insetAmount)
         let radius = max(0, cornerRadius - insetAmount)
-        let corners: UIRectCorner = roundsBottomCorners ? .allCorners : [.topLeft, .topRight]
+        let corners: UIRectCorner = bottomCornerRadius > 0 ? .allCorners : [.topLeft, .topRight]
         return Path(
             UIBezierPath(
                 roundedRect: bounds,
@@ -91,6 +96,7 @@ struct FocusBarCardShape: Shape, InsettableShape {
 /// of a missing edge. Stroking an open path is the only way to omit one side.
 struct FocusBarCardBorder: Shape {
     var cornerRadius: CGFloat
+    var bottomCornerRadius: CGFloat
     var omitsBottomEdge: Bool
     /// Inset by half of this so the keyline lands INSIDE the bounds, the way `strokeBorder` would.
     var lineWidth: CGFloat = 1
@@ -159,6 +165,9 @@ enum FocusBarMetrics {
     /// not width, and the card still nests inside the bar (361 against 385 at rest, 377 scrolled).
     static let collapsedInset: CGFloat = 16
     static let cornerRadius: CGFloat = 24
+
+    /// The COLLAPSED card's bottom corners. **E's call, 2026-09-11: *"Round them"*.**
+    static let collapsedBottomCornerRadius: CGFloat = cornerRadius
 
     /// The drag handle. 36x5 is the iOS sheet grabber's own size, so the affordance reads as the
     /// system one users already know rather than as a decoration.
