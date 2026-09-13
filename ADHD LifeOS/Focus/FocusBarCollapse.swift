@@ -62,6 +62,16 @@ struct FocusBarCardShape: Shape, InsettableShape {
     var cornerRadius: CGFloat
     var bottomCornerRadius: CGFloat
 
+    /// **The block's second half, and it is honest to say it is currently inert.**
+    /// `roundsBottomCorners` was a `Bool`, and a flag cannot tween: mid-spring the corners flipped
+    /// from square to round in one frame while the card was still moving. Wiring the radius here
+    /// is what lets SwiftUI walk it instead.
+    ///
+    /// E then chose a collapsed radius EQUAL to the expanded one, so as it stands the two states
+    /// do not differ and nothing interpolates — the snap is gone because the difference is gone,
+    /// not because this is running. It stays because a `Shape` with a continuous parameter is
+    /// supposed to declare it, and because the day the two numbers differ again the corner morphs
+    /// rather than jumping. `testTheBottomCornerRadiusIsTheAnimatableData` holds it.
     var animatableData: CGFloat {
         get { bottomCornerRadius }
         set { bottomCornerRadius = newValue }
@@ -218,8 +228,17 @@ enum FocusBarMetrics {
     static let collapsedInset: CGFloat = 16
     static let cornerRadius: CGFloat = 24
 
-    /// The COLLAPSED card's bottom corners. **E's call, 2026-09-11: *"Round them"*.**
-    static var collapsedBottomCornerRadius: CGFloat = cornerRadius  // TEMP var for the render probe
+    /// The COLLAPSED card's bottom corners.
+    ///
+    /// **E's direction was *"Round them"* (2026-09-11); the NUMBER is E's pick of 2026-09-13**,
+    /// chosen by looking at the four rendered in `screenshots/focus-card-bottom-corners/` — 0 (what
+    /// shipped), 8, 16 and 24. E chose **24, matching the top**: one radius everywhere, so the
+    /// collapsed card reads as a card rather than as a slab seated on the bar.
+    ///
+    /// **Spelled as `cornerRadius` rather than as a literal 24**, because what E chose was
+    /// *"match the top"* — so if the card's radius ever moves, this follows it instead of
+    /// silently becoming a second, different number.
+    static let collapsedBottomCornerRadius: CGFloat = cornerRadius
 
     /// The drag handle. 36x5 is the iOS sheet grabber's own size, so the affordance reads as the
     /// system one users already know rather than as a decoration.

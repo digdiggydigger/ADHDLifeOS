@@ -1,9 +1,15 @@
 # The collapsed card's bottom corners — the options E was shown
 
-> ## ⏳ OPEN: E is choosing a radius. `F-FocusCard-Corners`.
+> ## ✅ ANSWERED 2026-09-13: **E chose 24pt — "match the top".**
 >
 > E's answer to the register's lower-priority question, 2026-09-11, was **"Round them"** — a
-> direction, not a number. These renders are the number.
+> direction, not a number. These renders are the number, and E picked from them by looking.
+> One radius everywhere, so the collapsed card reads as a card rather than as a slab seated on the
+> bar. **"Leave it square after all" was offered explicitly and was not chosen.**
+>
+> Shipped as `FocusBarMetrics.collapsedBottomCornerRadius`, spelled as `cornerRadius` rather than
+> as a literal 24 — what E chose was *match the top*, so it follows the top if that ever moves.
+> Pinned by `testTheCollapsedBottomRadiusIsTheValueEChoseByLooking`.
 
 **The question these settle.** The collapsed focus card is dropped **flush onto the tab bar**
 (`FocusBarMetrics.collapsedOffsetY`), and its square bottom corners were only ever correct
@@ -37,10 +43,14 @@ The zoom panel is what makes it a choice: at **0pt** the keyline runs straight d
 from **8pt** it turns inward; by **24pt** it is a full quarter-circle and the page reads through the
 notch between card and bar.
 
-**What no still can show is the other half of the block.** `roundsBottomCorners` was a `Bool`, and
-a flag cannot tween — mid-spring the corners flipped from square to round in a single frame while
-the card was still moving. It is a `CGFloat` wired to `animatableData` now, so the corner morphs
-across the 350 ms spring. **That is a device check, not a screenshot.**
+**The other half of the block, and E's choice resolved it in an unexpected way.**
+`roundsBottomCorners` was a `Bool`, and a flag cannot tween — mid-spring the corners flipped from
+square to round in a single frame while the card was still moving. The radius is a `CGFloat` wired
+to `animatableData` now, so SwiftUI can walk it. **But E chose a collapsed radius equal to the
+expanded one, so the two states no longer differ and nothing interpolates: the snap is gone because
+the DIFFERENCE is gone, not because the animation is running.** The wiring stays as insurance — a
+`Shape` with a continuous parameter should declare it — and the code says so rather than implying
+a morph that does not happen.
 
 | file | what it shows |
 |---|---|

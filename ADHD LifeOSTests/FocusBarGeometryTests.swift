@@ -173,6 +173,44 @@ final class FocusBarGeometryTests: XCTestCase {
         XCTAssertGreaterThan(FocusBarMetrics.grabberHitOverflow, 0)
     }
 
+    // MARK: - The radius E chose by looking (`F-FocusCard-Corners`)
+
+    /// **E picked this by sight, from a render, and it must not be "tidied" away** — the
+    /// `peekStep` precedent exactly (CLAUDE.md §2), minus the waiver, because 24 is on the grid.
+    ///
+    /// E was shown the collapsed card at 0 (what shipped), 8, 16 and 24pt against the real tab bar
+    /// and chose **24, matching the top corners**: `screenshots/focus-card-bottom-corners/`.
+    /// "Leave it square after all" was offered explicitly and was not chosen.
+    func testTheCollapsedBottomRadiusIsTheValueEChoseByLooking() {
+        XCTAssertEqual(
+            FocusBarMetrics.collapsedBottomCornerRadius, FocusBarMetrics.cornerRadius,
+            "E chose \"match the top\" from four rendered options. A different number here is not"
+                + " a tidy-up, it is a design decision nobody took."
+        )
+        XCTAssertGreaterThan(
+            FocusBarMetrics.collapsedBottomCornerRadius, 0,
+            "The collapsed card is square-bottomed again. E reversed that on 2026-09-11"
+                + " (\"Round them\") and confirmed the radius by looking on 2026-09-13."
+        )
+    }
+
+    /// The card and its keyline are cut from ONE silhouette, so they cannot disagree about where
+    /// the corner is. This asserts the consequence rather than the arrangement: the fill's edge and
+    /// the keyline meet at the same place on the bottom-left arc.
+    func testTheFillAndTheKeylineAgreeAboutTheBottomCorner() {
+        let rect = CGRect(x: 0, y: 0, width: 100, height: 100)
+        let fill = FocusBarCardShape(
+            cornerRadius: 24, bottomCornerRadius: FocusBarMetrics.collapsedBottomCornerRadius
+        ).path(in: rect)
+        let keyline = strokedBorder(collapsed: true)
+        // Just inside the fill's bottom-left arc, and under the keyline that traces it.
+        XCTAssertTrue(fill.contains(CGPoint(x: 9, y: 92)))
+        XCTAssertTrue(keyline.contains(CGPoint(x: 7.4, y: 92.6)))
+        // Outside both: the square corner the card no longer has.
+        XCTAssertFalse(fill.contains(CGPoint(x: 1, y: 99)))
+        XCTAssertFalse(keyline.contains(CGPoint(x: 1, y: 99)))
+    }
+
     // MARK: - The keyline (E, 2026-09-09: "REMOVE the bottom border on the collapsed card tab")
 
     /// Sampled through the STROKE, not the path: an open path has no interior, so `contains` on
