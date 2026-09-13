@@ -86,8 +86,9 @@ final class FocusBarCollapseCallSiteTests: XCTestCase {
         let source = try Self.appCode("Focus/FocusTimerBar.swift")
         XCTAssertTrue(
             source.contains("FocusBarMetrics.collapsedOffsetY"),
-            "Nothing drops the collapsed card onto the tab bar, so its square bottom corners hang"
-                + " 32pt above the bar in mid-air."
+            "Nothing drops the collapsed card onto the tab bar, so it floats 32pt above it. The"
+                + " corners are ROUNDED since `F-FocusCard-Corners` and the drop still stands —"
+                + " E reversed the corners and not the flush landing."
         )
         XCTAssertTrue(
             source.contains(".offset(y:"),

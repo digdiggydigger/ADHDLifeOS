@@ -38,14 +38,20 @@ enum FocusBarCollapseSwipe {
     }
 }
 
-/// The card's outline: a rounded rectangle whose BOTTOM corners round only when the card is
-/// floating.
+/// The card's outline: a rounded rectangle with a top radius and a bottom one, the bottom being
+/// the half that changes between states and the half that animates.
 ///
-/// E chose full-bleed-with-rounded-top for the collapsed card over a plain inset and over a
-/// squared-off strip; then, told that top-only rounding 100pt above the screen bottom would leave
-/// the square bottom corners hanging in mid-air, chose *"Drop it flush to the tab bar"*. So the
-/// two decisions are one shape: square bottom corners are only correct because they sit ON the
-/// bar, and `FocusBarMetrics.collapsedOffsetY` is what puts them there.
+/// **The history matters, because the reasoning that produced the square corners was sound and E
+/// overruled the conclusion anyway.** E chose full-bleed-with-rounded-top for the collapsed card
+/// over a plain inset and over a squared-off strip; then, told that top-only rounding 100pt above
+/// the screen bottom would leave the square bottom corners hanging in mid-air, chose *"Drop it
+/// flush to the tab bar"*. So the two were one shape: square bottom corners were correct only
+/// because they sat ON the bar, and `FocusBarMetrics.collapsedOffsetY` is what puts them there.
+///
+/// **E reversed the corner half on 2026-09-11 — *"Round them"* — and the flush drop STAYS.**
+/// They are separable after all: the card still lands on the bar, and the rounding simply lets the
+/// page read through the notch where the two meet. `F-FocusCard-Corners`, and
+/// `screenshots/focus-card-bottom-corners/` is the render E chose the radius from.
 ///
 /// **`InsettableShape` is not optional here.** The card is drawn twice — `.background` and an
 /// `.overlay(...strokeBorder...)` — and `strokeBorder` insets the shape by half the line width so
