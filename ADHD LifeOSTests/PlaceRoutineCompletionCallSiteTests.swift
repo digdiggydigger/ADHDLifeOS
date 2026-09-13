@@ -76,12 +76,13 @@ final class PlaceRoutineCompletionCallSiteTests: XCTestCase {
 
     // MARK: - The plan's risk 7: there is no Close button for up to 5.4 s
 
-    func testTheCongratulationCanAlwaysBeSkipped() throws {
+    func testTheCongratulationCanAlwaysBeClosed() throws {
         let view = try flattened("Places/PlaceRoutineCongratulationView.swift")
         XCTAssertTrue(
-            view.contains("accessibilityAction(named: Text(PlaceRoutineCompletionCopy.skipAction), onSkip)"),
-            "the congratulation takes the Close button off screen for up to 5.4 s, so for"
-                + " VoiceOver this action is the ONLY way out"
+            view.contains("accessibilityAction(named: Text(PlaceRoutineCompletionCopy.closeAction), onClose)"),
+            "the congratulation takes the screen's Close button away and, since E reversed R5,"
+                + " now stays until dismissed — so for VoiceOver this action is the only way out"
+                + " and no timer will rescue anyone who misses it"
         )
         XCTAssertFalse(
             view.contains("accessibilityHidden(true)"),
@@ -101,12 +102,58 @@ final class PlaceRoutineCompletionCallSiteTests: XCTestCase {
         )
     }
 
-    /// E's answer 6 chose "show every step, shrink to fit" over scrolling, and the reason is
-    /// mechanical: the whole view is one tap target, and a scroll gesture would fight it.
-    func testTheStepListNeverScrolls() throws {
-        XCTAssertFalse(
+    /// **REVERSED 2026-09-13.** This asserted the opposite — E's answer 6 chose "shrink to
+    /// fit" over scrolling, on the mechanical ground that a scroll gesture would fight the
+    /// tap-to-dismiss. E then reversed it: *"Long routines with many steps should turn the
+    /// overflow of a long routine steps list into a scrollable."*
+    ///
+    /// The mechanical worry turned out not to bite, and the reason is worth keeping: SwiftUI
+    /// routes a DRAG to the scroller and a TAP to the parent's gesture, so the two coexist.
+    /// `RoutineJourneyUITests` taps a list ROW rather than the greeting, so that coexistence is
+    /// exercised rather than assumed.
+    func testALongStepListScrollsRatherThanClipping() throws {
+        XCTAssertTrue(
             try flattened("Places/PlaceRoutineCongratulationView.swift").contains("ScrollView"),
-            "a ScrollView here would swallow the tap that skips the celebration"
+            "a long routine's steps clip off the bottom with no way to reach them"
+        )
+    }
+
+    /// **E reversed R5's auto-leave on 2026-09-13** — the screen now waits for a deliberate
+    /// dismissal. A timer left behind anywhere would yank it away mid-scroll, and the leaf and
+    /// the screen are both places one could hide.
+    func testNothingSelfDismissesTheCongratulationSinceEReversedR5() throws {
+        for file in [
+            "Places/PlaceRoutineCongratulationView.swift", "Places/PlaceRoutineScreen.swift"
+        ] {
+            let source = try flattened(file)
+            XCTAssertFalse(source.contains("Task.sleep"), "\(file) still times the congratulation out")
+            XCTAssertFalse(source.contains("asyncAfter"), "\(file) still times the congratulation out")
+        }
+    }
+
+    /// E chose "pinned under the summary" over "inside the scroller": on a twenty-step routine
+    /// anything below the list is invisible until you scroll, which is the case scrolling was
+    /// added FOR.
+    func testTheDetailBlockIsPinnedAboveTheScrollingList() throws {
+        let view = try flattened("Places/PlaceRoutineCongratulationView.swift")
+        let details = try XCTUnwrap(
+            view.range(of: "PlaceRoutineCongratulationDetails("),
+            "the congratulation no longer shows the detail block E asked for"
+        )
+        let scroller = try XCTUnwrap(view.range(of: "ScrollView"))
+        XCTAssertLessThan(
+            details.lowerBound, scroller.lowerBound,
+            "the times and the total have slipped INSIDE the scroller, where a long routine"
+                + " hides them behind exactly the scrolling they were meant to survive"
+        )
+    }
+
+    /// The defect fixed in `7300c36`, guarded at its one call site: the run being celebrated is
+    /// in its own fetched history, and counted there it can never beat its own time.
+    func testTheComparisonNeverCountsTheRunBeingCelebrated() throws {
+        XCTAssertTrue(
+            try flattened("Places/PlaceRoutineCongratulationView.swift").contains("excluding: run.id"),
+            "the congratulation compares this run against a history that still contains it"
         )
     }
 

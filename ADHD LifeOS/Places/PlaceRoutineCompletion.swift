@@ -21,11 +21,22 @@ enum PlaceRoutineCompletionCopy {
     static let completedEyebrow = "ALL DONE"
     /// E's R1 named this button, and it is what both UI journeys tap.
     static let completedButton = "Completed"
-    /// The congratulation removes the Close button for up to 5.4 s, so for VoiceOver this
-    /// action is the ONLY way out (the plan's risk 7). It sits on the view's root.
-    static let skipAction = "Skip"
-    /// …and a sighted user has no Close button either, so the view says so in words.
-    static let skipHint = "Tap anywhere to skip"
+    /// The congratulation takes the screen's Close button away, and since E reversed R5 on
+    /// 2026-09-13 it stays until dismissed — so for VoiceOver this action is the only way out
+    /// and no timer will rescue anyone who misses it. It sits on the view's root.
+    ///
+    /// "Close", not "Skip": with the auto-leave gone there is nothing left to skip.
+    static let closeAction = "Close"
+    /// …and a sighted user has no button either, so the view says so in words.
+    static let closeHint = "Tap anywhere to close"
+
+    /// The detail block's row labels — E's answers 1 and 2, which asked for BOTH moments in
+    /// each pair because the model holds four and they answer four different questions.
+    static let arrivedLabel = "Arrived"
+    static let startedLabel = "Started"
+    static let lastStepLabel = "Last step"
+    static let confirmedLabel = "Confirmed"
+    static let totalLabel = "Time on the routine"
 
     /// E's answer 3, verbatim: **"4 of 4 done - Ready to finish?"**.
     ///
@@ -63,20 +74,6 @@ enum PlaceRoutineCompletionCopy {
         case .skipped: return "Skipped"
         case .pending: return "To do"
         }
-    }
-}
-
-/// R5: how long the congratulation stays up.
-enum PlaceRoutineCongratulationLength {
-    /// **The one new duration this feature introduces.** E's answers 1 and 7 made the
-    /// switch-OFF case and R-f's unearned run the SAME beat — the same view, the full step
-    /// list, just shorter and with no confetti.
-    static let quietBeat: TimeInterval = 2.0
-
-    /// E's R5: "auto-leave when the confetti ends". A full celebration's length is
-    /// `ConfirmCelebrationClock.everyConfirmLength` and is never re-typed as a fresh `5.4`.
-    static func hold(for outcome: CelebrationOutcome) -> TimeInterval {
-        outcome == .fullScreen ? ConfirmCelebrationClock.everyConfirmLength : quietBeat
     }
 }
 
@@ -118,13 +115,6 @@ struct PlaceRoutineCongratulationDensity: Equatable {
     let rowSpacing: CGFloat
     let rowHeight: CGFloat
 
-    /// The list's vertical room on the SMALLEST screen the 16.0 floor reaches — the 667 pt
-    /// iPhone SE — with every other element on the congratulation subtracted by name:
-    ///
-    ///     667 − 20 status bar − 32 page margins − 41 greeting − 8 gap − 20 summary
-    ///         − 24 gap above − 24 gap below − 18 skip hint = 480
-    static let listBudget: CGFloat = 480
-
     /// Three tiers. Every spacing is on CLAUDE.md §2's 4/8/16/24 grid, which a density table is
     /// exactly the kind of place to quietly break.
     static func forStepCount(_ count: Int) -> PlaceRoutineCongratulationDensity {
@@ -138,11 +128,4 @@ struct PlaceRoutineCongratulationDensity: Equatable {
         }
     }
 
-    /// What the list will occupy at `count` steps, so the ceiling is a NAMED boundary rather
-    /// than something discovered on the phone: twenty steps fit, twenty-one do not.
-    static func estimatedHeight(forStepCount count: Int) -> CGFloat {
-        guard count > 0 else { return 0 }
-        let density = forStepCount(count)
-        return CGFloat(count) * density.rowHeight + CGFloat(count - 1) * density.rowSpacing
-    }
 }

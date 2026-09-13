@@ -145,42 +145,40 @@ final class PlaceRoutineCompletionTests: XCTestCase {
         )
     }
 
-    /// Risk 7 of the plan: the congratulation takes the Close button off screen for up to
-    /// 5.4 s, so for VoiceOver the ONLY way out is this action. It has to be named.
-    func testTheCongratulationOffersANamedWayToSkipItEarly() {
-        XCTAssertEqual(PlaceRoutineCompletionCopy.skipAction, "Skip")
+    /// Risk 7 of the plan, and MORE pressing since E reversed R5: the congratulation takes the
+    /// screen's Close button away and now stays until dismissed, so for VoiceOver this action is
+    /// the only way out and there is no timer to rescue anyone who misses it.
+    ///
+    /// The word is "Close", not "Skip": with the timer gone there is nothing left to skip.
+    func testTheCongratulationOffersANamedWayToCloseIt() {
+        XCTAssertEqual(PlaceRoutineCompletionCopy.closeAction, "Close")
         XCTAssertFalse(
-            PlaceRoutineCompletionCopy.skipHint.isEmpty,
-            "a sighted user gets no Close button either — the view must SAY that a tap skips it"
+            PlaceRoutineCompletionCopy.closeHint.isEmpty,
+            "a sighted user gets no button either — the view must SAY that a tap closes it"
         )
     }
 
-    // MARK: - R5: how long the congratulation holds
+    // MARK: - R5 REVERSED, 2026-09-13
 
-    func testAFullScreenOutcomeHoldsTheCongratulationForTheWholeCelebration() {
-        XCTAssertEqual(
-            PlaceRoutineCongratulationLength.hold(for: .fullScreen),
-            ConfirmCelebrationClock.everyConfirmLength,
-            "R5: it leaves when the confetti ends, so it is the celebration's own length —"
-                + " never a fresh 5.4 written out again"
-        )
-    }
-
-    /// E's answer 1 and answer 7 met here: R-f's unearned run and the Celebrations switch being
-    /// OFF are the SAME beat — the same view, just shorter, with no confetti.
-    func testTheQuietBeatIsTheSameLengthForAnUnearnedRunAndForTheSwitchBeingOff() {
-        XCTAssertEqual(PlaceRoutineCongratulationLength.hold(for: .inPlace), PlaceRoutineCongratulationLength.quietBeat)
-        XCTAssertEqual(PlaceRoutineCongratulationLength.hold(for: .nothing), PlaceRoutineCongratulationLength.quietBeat)
-    }
-
-    /// The plan's one new duration literal. `ConfirmCelebrationClock.everyConfirmLength` is the
-    /// 5.4 s symbol and is never re-typed; this is the only number the flow adds.
-    func testTheQuietBeatIsTheOnlyNewDurationThisFeatureIntroduces() {
-        XCTAssertEqual(PlaceRoutineCongratulationLength.quietBeat, 2.0)
-        XCTAssertNotEqual(
-            PlaceRoutineCongratulationLength.quietBeat,
-            ConfirmCelebrationClock.everyConfirmLength,
-            "if these ever collapse to one value the quiet beat has stopped being quiet"
+    /// **E reversed R5's auto-leave on 2026-09-13**, asked what the 5.4 s timer should do now
+    /// that the screen carries a scrollable step list, four clock times, per-step durations and
+    /// a comparison. E chose *"Stays until dismissed"*: the celebration plays over it, then it
+    /// waits.
+    ///
+    /// So `PlaceRoutineCongratulationLength` — `hold(for:)` and `quietBeat` — is GONE, and this
+    /// test stands where its three did. The three pinned a timer that no longer exists; deleting
+    /// them silently would have left no trace of the decision that removed them, which is the
+    /// register's rule after the swipe-origin reversal.
+    ///
+    /// **E's answers 1 and 7 survive, but only in the confetti dimension.** They made R-f's
+    /// unearned run and the Celebrations switch being OFF "the same view, just shorter" — the
+    /// SHORTER half is now meaningless, and what still distinguishes those cases is that no
+    /// confetti plays over them.
+    func testTheCongratulationNoLongerHasALengthBecauseEReversedR5() {
+        XCTAssertFalse(
+            PlaceRoutineCompletionCopy.closeHint.isEmpty,
+            "the view now waits for a deliberate dismissal, so it must SAY how to dismiss it —"
+                + " there is no timer left to rescue a user who cannot find the way out"
         )
     }
 
@@ -230,19 +228,20 @@ final class PlaceRoutineCompletionTests: XCTestCase {
         XCTAssertTrue(offGrid.isEmpty, "off-grid spacings: \(offGrid)")
     }
 
-    /// **The ceiling, named rather than discovered on the phone.** There is no cap on how many
-    /// actions a place can carry, so the table has a last tier and that tier has a last row
-    /// that fits. Twenty is it.
-    func testTwentyStepsFitTheSmallestScreenAndTwentyOneIsTheDocumentedCeiling() {
-        XCTAssertLessThanOrEqual(
-            PlaceRoutineCongratulationDensity.estimatedHeight(forStepCount: 20),
-            PlaceRoutineCongratulationDensity.listBudget
-        )
-        XCTAssertGreaterThan(
-            PlaceRoutineCongratulationDensity.estimatedHeight(forStepCount: 21),
-            PlaceRoutineCongratulationDensity.listBudget,
-            "a 21-step routine overflows the smallest screen. That is a boundary for E to know"
-                + " about, not a crash — but it must not be a surprise on the phone."
+    /// **E reversed answer 6's "no scrolling" on 2026-09-13:** *"Long routines with many steps
+    /// should turn the overflow of a long routine steps list into a scrollable."*
+    ///
+    /// So the 21-step ceiling this test used to name is no longer a ceiling, and
+    /// `estimatedHeight`/`listBudget` are gone with it — overflow scrolls instead of clipping.
+    /// **The density table stays**, and that is a judgement rather than a given: shrinking means
+    /// more steps are visible before anyone has to scroll at all, so the two work together.
+    /// Stated at the render for E to overrule.
+    func testTheDensityTableStillShrinksSoFewerRoutinesNeedScrollingAtAll() {
+        XCTAssertLessThan(
+            PlaceRoutineCongratulationDensity.forStepCount(20).rowHeight,
+            PlaceRoutineCongratulationDensity.forStepCount(4).rowHeight,
+            "shrink-and-scroll was the reading taken of E's reversal: scrolling handles true"
+                + " overflow, shrinking keeps more steps on screen before it is needed"
         )
     }
 }
