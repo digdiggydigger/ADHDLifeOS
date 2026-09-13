@@ -37,7 +37,9 @@ design call, taken before a line of it was written: asked to choose between a ho
 behind alerts / dialogs / system pickers and leaving a pop alone. `KeyWindowPresentationProbe`
 walks the key window; `isBlocked` is the single predicate behind the hold and the release; a hold
 watch replaces the `onDismiss` an untracked sheet never sends, and R-g is enforced by time rather
-than by the next dismissal. **Owed: E's device pass** (§A below). (NEW)
+than by the next dismissal. **It is a PREVENTIVE block** — the five milestone sites were traced and
+none of them can be reached from inside an untracked sheet as the tree stands, so what it closes is
+the class rather than a live defect. **Owed: one regression check on device** (§A below). (NEW)
 
 ### What this session established
 
@@ -77,15 +79,22 @@ than by the next dismissal. **Owed: E's device pass** (§A below). (NEW)
 `-7`'s verdicts on 2026-09-13. What remains is ONE new device pass, one deferral E asked to be
 held, and two housekeeping items.**
 
-- [ ] **`F-CTACelebrations-Surfaces`' DEVICE PASS — the one thing outstanding.** Everything the
-      simulator can prove is proved: the probe finds real SwiftUI sheets, covers, alerts and
-      dialogs, and the real centre holds and releases over a real one end to end. **What no test
-      can reach is the app's own five request sites firing while a sheet is up.** The check is two
-      minutes: open **Quick Capture** (the FAB) and clear the last waiting capture from inside it,
-      or sit on Settings while the ring crosses the daily goal — the celebration should appear
-      **after** the sheet closes rather than not at all. **No RM-on pass is owed** (§7.3): the
-      block adds no `#available` site and no Reduce Motion site, so the reduced path cannot look
-      different either way. (NEW)
+- [ ] **`F-CTACelebrations-Surfaces`' DEVICE PASS — and read what it is FOR before running it,
+      because the obvious version of this check cannot fire.** All five milestone sites were
+      traced: `inboxZero`'s three doors, `streakSeven`'s "Done for now", `dailyGoal`'s ring and
+      `routineFinished` are reachable only from `.root` or from the two tracked surfaces, and
+      **Quick Capture creates captures rather than clearing them** — so as the tree stands today
+      there is no user action that fires a milestone from inside an untracked sheet. **The block is
+      preventive, not a fix for a demonstrable bug**: it closes the class (every future sheet, plus
+      alerts, dialogs and iOS's own interruptions such as "Save Password?") and the composition
+      test is its proof.
+      **So the device check is the REGRESSION one, and it is two minutes.** Get the capture inbox
+      down to one waiting capture, open it, **Create Task**, promote. Inbox zero should celebrate
+      **immediately** as the sheet closes, exactly as it did before. That path is the one
+      `releaseHeldIfClear` now gates on the probe, it is shipped and E-verified from
+      `F-CTACelebrations-5`, and it is the only place this block could have made something worse.
+      **No RM-on pass is owed** (§7.3): no `#available` site and no Reduce Motion site is added or
+      changed, so the reduced path cannot look different either way. (NEW)
 
 - [x] **`F-CTACelebrations-7`'s DEVICE VERDICT — PASSED, 2026-09-13, both checks.** E, verbatim:
       ***"both work correctly"*** — the chime plays UNDER music without pausing it
