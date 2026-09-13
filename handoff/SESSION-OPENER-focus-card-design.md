@@ -18,6 +18,7 @@ because it is the record of what was asked, and this is the record of what was c
 | the record says | what actually shipped | who / when |
 |---|---|---|
 | collapsed card full-bleed to both screen edges | **inset 16pt** (361pt wide), 60pt tall — same inset as expanded, so collapsing changes height only | E, device, 2026-09-09 |
+| collapsed card rounded TOP corners only, square at the bottom because it sits ON the bar | **all four corners rounded** — E: *"Round them"*. The flush drop STAYS; the two turned out to be separable, and the page simply reads through the notch where card meets bar. The radius was chosen from a render (`screenshots/focus-card-bottom-corners/`), and the `Bool` became a `CGFloat` wired to `animatableData` so the corner no longer snaps mid-spring | E, 2026-09-11, built as `F-FocusCard-Corners` 2026-09-13 |
 | collapsed card has a chevron | **gone** collapsed; kept expanded | E, 2026-09-09 |
 | long-press opens the detail sheet | **single TAP**, in both states; long-press RETIRED | E, 2026-09-09 |
 | completion card shares the "full-bleed flush geometry" | **it floats** — inset 16, radius 24, all four corners, 76pt tall | E chose from three, 2026-09-09 |

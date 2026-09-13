@@ -67,12 +67,16 @@ final class FocusBarCollapseTests: XCTestCase {
     /// bottom-left one, a plain `Rectangle` fails the top-left one.
     private static let probe = CGRect(x: 0, y: 0, width: 100, height: 100)
 
-    func testCardShapeRoundsOnlyTheTopWhenCollapsed() {
-        let path = FocusBarCardShape(cornerRadius: 24, roundsBottomCorners: false).path(in: Self.probe)
-        XCTAssertTrue(
+    /// **REVERSED by E, 2026-09-11: *"Round them"*.** This test used to assert the opposite — that
+    /// the collapsed card's bottom-left corner was SQUARE, because the card is dropped flush onto
+    /// the tab bar and a rounded bottom would leave a notch of page showing through. E looked at
+    /// it and chose the rounding anyway (`F-FocusCard-Corners`). The claim is reversed rather than
+    /// deleted, and its name with it, so the history reads.
+    func testCardShapeRoundsTheCollapsedCardsBottomCornersToo() {
+        let path = FocusBarCardShape(cornerRadius: 24, bottomCornerRadius: 24).path(in: Self.probe)
+        XCTAssertFalse(
             path.contains(CGPoint(x: 1, y: 99)),
-            "The collapsed card's BOTTOM-left corner is rounded. It is dropped flush onto the tab"
-                + " bar, so a rounded bottom leaves a visible notch of page showing through."
+            "The collapsed card's BOTTOM-left corner is square again. E chose \"Round them\"."
         )
         XCTAssertFalse(
             path.contains(CGPoint(x: 1, y: 1)),
@@ -81,23 +85,75 @@ final class FocusBarCollapseTests: XCTestCase {
         )
     }
 
-    func testCardShapeRoundsAllFourWhenExpanded() {
-        // Proves the flag actually branches rather than being stored and ignored — the stub that
-        // always draws the collapsed shape passes the test above on its own.
-        let path = FocusBarCardShape(cornerRadius: 24, roundsBottomCorners: true).path(in: Self.probe)
-        XCTAssertFalse(
+    /// The square bottom is still REACHABLE, at radius 0 — it is the floor of the morph, and the
+    /// shape that shipped for two days. A shape that rounded unconditionally would pass every
+    /// other test here.
+    func testCardShapeLeavesTheBottomSquareAtRadiusZero() {
+        let path = FocusBarCardShape(cornerRadius: 24, bottomCornerRadius: 0).path(in: Self.probe)
+        XCTAssertTrue(
             path.contains(CGPoint(x: 1, y: 99)),
-            "`roundsBottomCorners` is being ignored — the expanded card is inset by 16pt on both"
-                + " sides and hangs in mid-air, so all four corners must be round."
+            "Radius 0 is rounding the bottom anyway, so nothing can animate FROM square."
         )
         XCTAssertFalse(path.contains(CGPoint(x: 1, y: 1)))
+    }
+
+    /// **The block's second half, and the reason a `Bool` had to go.** `roundsBottomCorners` was a
+    /// flag, and a flag cannot tween: mid-spring the corners flipped from square to round in one
+    /// frame while the card was still moving. The radius is a `CGFloat` now and SwiftUI walks it,
+    /// so an intermediate value has to describe an intermediate corner rather than snapping to one
+    /// end or the other.
+    ///
+    /// The two sample points discriminate: `(5, 95)` is inside a 12pt corner and outside a 24pt
+    /// one, and `(1, 99)` is inside a square corner and outside both.
+    func testCardShapeDescribesIntermediateBottomCorners() {
+        let half = FocusBarCardShape(cornerRadius: 24, bottomCornerRadius: 12).path(in: Self.probe)
+        XCTAssertFalse(
+            half.contains(CGPoint(x: 1, y: 99)),
+            "A half-way corner is still square, so the morph snaps at the end instead of tweening."
+        )
+        XCTAssertTrue(
+            half.contains(CGPoint(x: 5, y: 95)),
+            "A half-way corner is already cut to the full 24pt, so the morph snaps at the start."
+        )
+        XCTAssertFalse(
+            FocusBarCardShape(cornerRadius: 24, bottomCornerRadius: 24)
+                .path(in: Self.probe).contains(CGPoint(x: 5, y: 95)),
+            "The sample point does not discriminate — this test would pass on a frozen radius."
+        )
+    }
+
+    /// What SwiftUI actually drives. Without this the radius is an ordinary property and every
+    /// frame of the spring draws the destination shape.
+    func testTheBottomCornerRadiusIsTheAnimatableData() {
+        var shape = FocusBarCardShape(cornerRadius: 24, bottomCornerRadius: 0)
+        XCTAssertEqual(shape.animatableData, 0)
+        shape.animatableData = 15
+        XCTAssertEqual(
+            shape.bottomCornerRadius, 15,
+            "`animatableData` is not wired to the bottom radius, so SwiftUI interpolates a value"
+                + " that the path never reads."
+        )
+    }
+
+    /// The top corners are NOT the animatable half: they are 24 in both states, and making them
+    /// the `animatableData` would leave the bottom snapping exactly as the `Bool` did.
+    func testTheTopCornersAreUnaffectedByTheBottomRadius() {
+        for bottom in [CGFloat(0), 12, 24] {
+            let path = FocusBarCardShape(cornerRadius: 24, bottomCornerRadius: bottom)
+                .path(in: Self.probe)
+            XCTAssertFalse(
+                path.contains(CGPoint(x: 1, y: 1)),
+                "The top-left corner squared off at bottom radius \(bottom)."
+            )
+            XCTAssertTrue(path.contains(CGPoint(x: 50, y: 50)), "The shape lost its middle.")
+        }
     }
 
     func testInsetShrinksTheShape() {
         // `InsettableShape` is required so the existing `.overlay(shape.strokeBorder(...))` keeps
         // its 1pt border INSIDE the bounds. `inset(by:)` returning `self` — the plausible stub —
         // compiles, conforms, and puts half the stroke outside the card.
-        let shape = FocusBarCardShape(cornerRadius: 24, roundsBottomCorners: false)
+        let shape = FocusBarCardShape(cornerRadius: 24, bottomCornerRadius: 0)
         let full = shape.path(in: Self.probe).boundingRect
         let inset = shape.inset(by: 4).path(in: Self.probe).boundingRect
 

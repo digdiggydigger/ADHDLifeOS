@@ -53,7 +53,9 @@ struct FocusTimerBar: View {
     private var cardShape: FocusBarCardShape {
         FocusBarCardShape(
             cornerRadius: FocusBarMetrics.cornerRadius,
-            roundsBottomCorners: !isCollapsed
+            bottomCornerRadius: isCollapsed
+                ? FocusBarMetrics.collapsedBottomCornerRadius
+                : FocusBarMetrics.cornerRadius
         )
     }
 
@@ -85,7 +87,11 @@ struct FocusTimerBar: View {
             .background(.regularMaterial, in: cardShape)
             .overlay(
                 FocusBarCardBorder(
-                    cornerRadius: FocusBarMetrics.cornerRadius, omitsBottomEdge: isCollapsed
+                    cornerRadius: FocusBarMetrics.cornerRadius,
+                    bottomCornerRadius: isCollapsed
+                        ? FocusBarMetrics.collapsedBottomCornerRadius
+                        : FocusBarMetrics.cornerRadius,
+                    omitsBottomEdge: isCollapsed
                 )
                 .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
             )

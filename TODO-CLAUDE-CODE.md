@@ -4142,8 +4142,46 @@ test cannot; the hold is asserted). What tests cannot reach is the app's five re
 while a real sheet is up — that is the device check.
 
 
-### FEATURE: F-FocusCard-Corners — round the collapsed card's bottom corners (E: "Round them", 2026-09-11)  [ ] OPEN
+### FEATURE: F-FocusCard-Corners — round the collapsed card's bottom corners (E: "Round them", 2026-09-11)  [x] COMPLETED
 
 After the arc. Round the collapsed focus card's BOTTOM corners and give
 `FocusBarCardShape.roundsBottomCorners` `animatableData` so the corner morph stops snapping inside
 the 350 ms spring. Test-first; render before and after; device verdict.
+
+**DONE 2026-09-13.** Suite **3,008 / 0** (0 × `9099`), lint **0 / 812**, `** BUILD SUCCEEDED **`.
+
+**E's direction was a word; the number came from a render.** Told *"Round them"*, the block put the
+collapsed card at 0 / 8 / 16 / 24pt against the real `AppTabBar` and E chose **24 — "match the
+top"**, with "leave it square after all" offered explicitly and not chosen
+(`screenshots/focus-card-bottom-corners/`). It is spelled as `cornerRadius`, not as a literal 24,
+because what E chose was *match the top*.
+
+- `FocusBarCardOutline` builds the silhouette from a top radius and a bottom one, and **both the
+  fill and the keyline are cut from it**. That sharing is the point: rounding the fill alone leaves
+  the keyline tracing 24pt of a corner the card no longer has. The fill closes the path to get the
+  flat bottom run; the collapsed keyline leaves it open to go without, so E's 2026-09-09 *"REMOVE
+  the bottom border"* survives the rounding rather than being quietly reversed by it.
+- `UIBezierPath(roundedRect:byRoundingCorners:)` is gone — it applies ONE radius to whichever
+  corners are selected, fine for a flag and useless for a morph. Radius 0 draws the square corner
+  rather than a degenerate arc, because zero is a real state: the floor of the morph.
+
+**Three things worth carrying out of it:**
+- **E's pick made the block's own second half inert, and saying so is the point.** The brief asked
+  for `animatableData` so the corner would stop snapping mid-spring. With equal radii the two
+  states no longer differ and nothing interpolates — **the snap is gone because the DIFFERENCE is
+  gone**. The wiring stays (a `Shape` with a continuous parameter should declare it, and the day
+  the numbers differ again it morphs), and the code says it is currently inert rather than
+  implying a morph that does not happen.
+- **The render's first pass had the draw order backwards** — bar over card — and the whole question
+  is what shows through the notch where they meet. `RootView` mounts the bar as a `.safeAreaInset`
+  (`:203`) and `RootBottomOverlay` as an `.overlay` after it (`:229`), so the card is on top. A
+  probe that does not reproduce the app's z-order is answering a different question.
+- **Three places said the bottom corners were square and one argued at length that this was the
+  only correct answer.** The reasoning was sound and E overruled the conclusion. All three now
+  carry both, including the design record's postscript table — the specification above it stays as
+  written, which is what that table is for.
+
+**Owed: E's device verdict** — the card on the phone, collapsed and expanded, the corner at the bar
+join. **No RM-on pass is owed** (§7.3): no `#available` site is added, and the only Reduce Motion
+interaction is the existing `.animation(reduceMotion ? nil : .spring(...))` on the collapse, which
+this block does not touch.
