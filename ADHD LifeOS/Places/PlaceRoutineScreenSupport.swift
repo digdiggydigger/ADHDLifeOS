@@ -100,6 +100,15 @@ enum PlaceRoutineScreenCopy {
     /// screen. That is the same moment in both directions, so the direction goes with it.
     static let autoRanSubtitle = "Ran by itself when you started"
 
+    /// E's own words for a crossing, leading the subline in quotes. `nil` when there are
+    /// none — and a message of nothing but whitespace counts as none, which is what stops the
+    /// line opening on a pair of empty quotes.
+    static func sublineMessagePrefix(for message: String?) -> String? {
+        let trimmed = message?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return nil }
+        return "\u{201C}\(trimmed)\u{201D} · "
+    }
+
     static func nextEyebrow(stepNumber: Int, of total: Int) -> String {
         "NEXT — STEP \(stepNumber) OF \(total)"
     }

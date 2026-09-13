@@ -125,4 +125,24 @@ final class PlaceRoutineScreenCopyTests: XCTestCase {
         }
         return text
     }
+
+    // MARK: - The subline's one rule (moved out of the screen in `F-CTACelebrations-6`)
+
+    /// E's own words for a crossing lead the line when there are any, in quotes and separated
+    /// by the app's middot; otherwise the line opens on the moment itself. It lived inside the
+    /// screen's body as a `Text`, where nothing could read it.
+    func testEsOwnMessageLeadsTheSublineWhenTheCrossingCarriedOne() {
+        XCTAssertEqual(
+            PlaceRoutineScreenCopy.sublineMessagePrefix(for: "Time to train"),
+            "\u{201C}Time to train\u{201D} · "
+        )
+        XCTAssertNil(PlaceRoutineScreenCopy.sublineMessagePrefix(for: nil))
+    }
+
+    func testAMessageOfNothingButSpaceIsNoMessage() {
+        XCTAssertNil(
+            PlaceRoutineScreenCopy.sublineMessagePrefix(for: "   "),
+            "a whitespace-only custom message would otherwise open the line with empty quotes"
+        )
+    }
 }

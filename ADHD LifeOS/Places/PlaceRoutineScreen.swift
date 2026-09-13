@@ -120,7 +120,7 @@ struct PlaceRoutineScreen: View {
                     .font(.largeTitle).bold()
                     .tracking(-0.5)
                     .minimumScaleFactor(0.8)
-                subline
+                PlaceRoutineSubline.text(for: run)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -131,14 +131,6 @@ struct PlaceRoutineScreen: View {
             .accessibilityAddTraits(.isHeader)
             .accessibilityIdentifier("routineHeader")
         }
-    }
-
-    private var subline: Text {
-        let moment = Text("\(PlaceRoutineScreenCopy.momentPrefix(for: run.direction)) ")
-            + Text(run.startedAt, style: .relative)
-            + Text(" ago")
-        guard let message = run.customMessage else { return moment }
-        return Text("\u{201C}\(message)\u{201D} · ") + moment
     }
 
     // MARK: - Progress
