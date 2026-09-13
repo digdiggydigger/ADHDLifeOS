@@ -165,13 +165,41 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
     }
 }
 
+/// The app's single chime, built once and lazily.
+///
+/// A `static let` rather than a stored property on the App: the `chime` closure above is passed
+/// into a `@StateObject`'s initialiser, which cannot capture `self`. Lazy, so nothing is
+/// allocated and no asset is decoded until the first celebration actually sounds — a preview or
+/// a test that merely launches the app never touches `AVAudioSession`.
+enum AppCelebrationChime {
+    static let shared: CelebrationSoundPlaying = CelebrationSoundPlayer()
+}
+
 @main
 struct ADHD_LifeOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var authService: AuthService
     /// `F-CTACelebrations-3`: the app's one celebration owner, held here rather than in
     /// `RootView` so it outlives every auth-state swap and every tab switch.
-    @StateObject private var celebrationCenter = CelebrationCenter()
+    ///
+    /// **`F-CTACelebrations-7` hands it the chime here, and this is the only place that can.**
+    /// The player is built ONCE with the centre — an `AVAudioPlayer` per celebration would decode
+    /// on the main thread as the confetti starts.
+    @StateObject private var celebrationCenter = CelebrationCenter(
+        // E's F5 is "one soft chime", singular, so the kind is discarded deliberately: the seam
+        // carries it, but branching on it would invent per-celebration sounds E never asked for.
+        //
+        // The switch is read HERE, at fire time, rather than captured when the app launched —
+        // the arrangement `Haptics.play(gate:)` and the Celebrations switch both use, so flipping
+        // it takes effect on the very next celebration with no relaunch. (Which celebrations
+        // reach this closure at all is the CENTRE's business: only full-screen bursts chime, and
+        // E's Celebrations switch downgrades a refused one to a pop, so it silences the chime
+        // without a second gate.)
+        chime: { _ in
+            guard AppFeedback.celebrationSoundsEnabled() else { return }
+            AppCelebrationChime.shared.play()
+        }
+    )
     private let homeClient: HomeClientAdapting
     private let tasksClient: TasksClientAdapting
     private let taskCreateClient: TaskCreateClientAdapting
