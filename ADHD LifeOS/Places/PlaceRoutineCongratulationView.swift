@@ -1,0 +1,185 @@
+//
+//  PlaceRoutineCongratulationView.swift
+//  ADHD LifeOS
+//
+//  The routine Completed flow's congratulation (`F-CTACelebrations-6`, E's R3–R5 and answers
+//  1–9). E overruled "close the screen and celebrate over the app": the screen's own body is
+//  REPLACED by this, the celebration plays over it on the cover's own layer, and it leaves by
+//  itself when the confetti ends or on a tap anywhere.
+//
+//  **The leaf carries no motion of its own, and that is load-bearing rather than tidy.** The
+//  entrance is the SCREEN's decision (`PlaceRoutineCongratulationEntrance`, resolved from
+//  Reduce Motion and applied as the ZStack branch's `.transition`), so this view has no first
+//  frame for §7.2's opening-pose rule to be wrong in, and a render of it is deterministic
+//  evidence rather than a photograph of one moment.
+//
+//  **It is also identical on every path.** The full celebration and E's ≈2 s quiet beat differ
+//  in LENGTH and in whether confetti plays over the top — never in what this draws — so one
+//  render answers for both.
+//
+
+import SwiftUI
+
+@available(iOS 17.0, *)
+struct PlaceRoutineCongratulationView: View {
+    let run: RoutineRun
+    /// E's R4: the ACCOUNT display name, the one Settings' account row shows. `nil` is ordinary
+    /// — email/password sign-up does not require a name — and the greeting simply drops it.
+    let displayName: String?
+    let onSkip: () -> Void
+
+    var body: some View {
+        let density = PlaceRoutineCongratulationDensity.forStepCount(run.steps.count)
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(PlaceRoutineCompletionCopy.greeting(for: displayName))
+                    .font(.largeTitle).bold()
+                    .tracking(-0.5)
+                    .minimumScaleFactor(0.8)
+                    .accessibilityIdentifier("routineCongratulationGreeting")
+                Text(PlaceRoutineCompletionCopy.summary(for: run))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .minimumScaleFactor(0.8)
+            }
+            // E's answer 2: the per-step list, so the count above can be checked against the
+            // thing it counts. E's answer 6 chose every step over a cap, and shrinking over
+            // scrolling — a scroll gesture would fight the tap that skips this view.
+            VStack(alignment: .leading, spacing: density.rowSpacing) {
+                ForEach(run.steps.indices, id: \.self) { index in
+                    stepRow(run.steps[index], density: density)
+                }
+            }
+            Spacer(minLength: 24)
+            Text(PlaceRoutineCompletionCopy.skipHint)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(wash)
+        // R5: "tap to skip" is the whole screen, not a button — so the shape has to be the
+        // whole screen too.
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onSkip)
+        // The plan's risk 7: this removes the Close button for up to 5.4 s, so for VoiceOver
+        // the named action IS the way out. It sits on the root, and the view is never hidden.
+        .accessibilityAction(named: Text(PlaceRoutineCompletionCopy.skipAction), onSkip)
+    }
+
+    /// E's answer 9: the routine screen's EXISTING row glyphs, reused rather than re-drawn —
+    /// accent circle and `checkmark` for done *and* auto-done, `cardBorder` circle and `minus`
+    /// for skipped. E ruled out a cross by name: the app uses `xmark` only as a Close button,
+    /// so one here would read as "dismiss this" instead of "you skipped it".
+    ///
+    /// E's answer 4: what tells a tapped step from an automatic one is the WORD, never a second
+    /// glyph and never colour alone.
+    private func stepRow(
+        _ step: RoutineRun.Step, density: PlaceRoutineCongratulationDensity
+    ) -> some View {
+        HStack(spacing: 8) {
+            PlaceRoutineStepCircle(state: step.state, size: density.circleSize)
+            Text(PlaceActionRowLabel.title(for: step.action))
+                .font(.subheadline)
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Text(PlaceRoutineCompletionCopy.stateWord(for: step.state))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .layoutPriority(1)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// The done-green wash E's R3 asked for, under the page colour.
+    ///
+    /// **It is static, and it is the view's own.** On the full-screen path the cover's
+    /// celebration layer also draws `ConfirmCelebrationGlow` — but that one is GONE BY 2.4 s of
+    /// a 5.4 s celebration, so without this the screen would go flat for the last three
+    /// seconds; and on E's ≈2 s quiet beat no full-screen burst exists at all, so the layer
+    /// draws nothing and this wash is the only colour the moment has.
+    private var wash: some View {
+        ZStack {
+            Color.pageBackground
+            RadialGradient(
+                colors: [
+                    Color(ConfirmCelebrationGlow.colorName).opacity(Self.washOpacity),
+                    Color(ConfirmCelebrationGlow.colorName).opacity(0)
+                ],
+                center: .bottom,
+                startRadius: 0,
+                endRadius: ConfirmCelebrationGlow.radius
+            )
+        }
+        .ignoresSafeArea()
+    }
+
+    /// Deliberately well under the layer glow's own 0.32 peak: for the first 2.4 s of a full
+    /// celebration the two are added together, and this is the half that is still there
+    /// afterwards.
+    private static let washOpacity: Double = 0.14
+}
+
+#if DEBUG
+@available(iOS 17.0, *)
+enum PlaceRoutineCongratulationPreviewFixture {
+    static func run(steps: Int, name: String = "Gym 🏋️") -> RoutineRun {
+        let titles = [
+            "Journal the session", "Open Snapchat", "Open Gym", "Gym Music on Spotify",
+            "Start a 25 minute sprint", "Open Strava", "Log your weight", "Open Notes"
+        ]
+        let states: [RoutineStepState] = [.autoDone, .done, .skipped, .done]
+        return RoutineRun(
+            id: UUID(), placeId: UUID(), direction: .arrival,
+            startedAt: .now.addingTimeInterval(-1_800),
+            displayName: name, customMessage: nil,
+            steps: (0..<steps).map { index in
+                RoutineRun.Step(
+                    action: PlaceAction(
+                        id: UUID(), direction: .arrival,
+                        kind: .openApp(
+                            scheme: "app\(index)",
+                            displayName: titles[index % titles.count]
+                        )
+                    ),
+                    state: states[index % states.count]
+                )
+            }
+        )
+    }
+}
+
+@available(iOS 17.0, *)
+#Preview("Congratulation — light and dark") {
+    HStack(spacing: 0) {
+        PlaceRoutineCongratulationView(
+            run: PlaceRoutineCongratulationPreviewFixture.run(steps: 4),
+            displayName: "Ethan", onSkip: {}
+        )
+        .environment(\.colorScheme, .light)
+        PlaceRoutineCongratulationView(
+            run: PlaceRoutineCongratulationPreviewFixture.run(steps: 4),
+            displayName: "Ethan", onSkip: {}
+        )
+        .environment(\.colorScheme, .dark)
+    }
+}
+
+@available(iOS 17.0, *)
+#Preview("Congratulation — 20 steps, and no display name") {
+    HStack(spacing: 0) {
+        PlaceRoutineCongratulationView(
+            run: PlaceRoutineCongratulationPreviewFixture.run(steps: 20),
+            displayName: "Ethan", onSkip: {}
+        )
+        .environment(\.colorScheme, .light)
+        PlaceRoutineCongratulationView(
+            run: PlaceRoutineCongratulationPreviewFixture.run(steps: 4),
+            displayName: nil, onSkip: {}
+        )
+        .environment(\.colorScheme, .dark)
+    }
+}
+#endif
