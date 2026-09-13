@@ -59,16 +59,30 @@ peak-matched to the others. E heard and approved the trimmed files, which is wha
 The chime has no `#available` gate: `AVAudioSession` and `AVAudioPlayer` are available at the
 app's 16.0 floor, so there is one path and no floor branch is owed.
 
-> `Run on sim + E's phone. No tiered API, so no per-tier line.`
+> `Run on sim + E's phone (music playing, and on silent). No tiered API, so no per-tier line.`
+
+**"Run on sim" is earned rather than assumed, and it nearly wasn't.** Every unit test injects
+`loadAsset`, so none of them touches the catalog — `assetutil` showing the bytes inside
+`Assets.car` proves they are in the bundle and nothing more, since a dataset can be present and
+still unreadable by name, or hold something `AVAudioPlayer` refuses.
+`testTheRealCatalogAssetLoadsAndIsPlayable` builds the player through its DEFAULT loader against
+the real catalog and is what closes that gap.
 
 **Reduce Motion is not involved** — §7.2 is explicit that haptics are unaffected because they are
 not motion, and sound is the same shape. The chime plays identically with Reduce Motion on or off,
 so **this block owes no RM-on device pass**; the setting that governs it is E's own "Celebration
 sounds" switch, plus the phone's silent switch via `.ambient`.
 
-## Still owed
+## Nothing owed — the device verdict PASSED on both checks
 
-- **E's device verdict, with music playing and with the phone on silent.** Those are the two
-  behaviours the `.ambient` + `.mixWithOthers` choice buys, and neither can be proved on the
-  simulator: the chime must duck nothing and interrupt nothing, and must go quiet when the ring
-  switch is off.
+**2026-09-13, on `wishwashwacky15`.** E, verbatim: ***"both work correctly"***, answering an ask
+that named the two checks separately:
+
+1. **With music playing** — the chime sounds UNDER the track without pausing it. That is
+   `.mixWithOthers`, and it is the difference between a chime and the first celebration of the day
+   stopping whatever the user is listening to.
+2. **With the ring switch on silent** — no chime at all. That is `.ambient` rather than
+   `.playback`, and it is E's own wish from the design record.
+
+Neither could be proved on the simulator, which is exactly why the block was written to close on a
+device verdict rather than on a green suite.

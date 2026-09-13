@@ -4043,7 +4043,7 @@ Plus, on seeing the render: *"reword the 'Skipped 2m'"* → rows read `Done in 2
 always its own fastest and the verdict was timing-dependent on whether a network write had landed.
 Fixed test-first in `7300c36`; `excluding runId:` is required rather than defaulted.
 
-### FEATURE: F-CTACelebrations-7 — the chime  [ ] OPEN
+### FEATURE: F-CTACelebrations-7 — the chime  [x] COMPLETED
 
 - `CelebrationSound.swift`: `CelebrationSoundPlaying` (+ inert); one `AVAudioPlayer` from
   `Assets.xcassets/CelebrationChime.dataset` (`.caf` PCM), `.ambient` + `.mixWithOthers` re-asserted
@@ -4054,6 +4054,22 @@ Fixed test-first in `7300c36`; `excluding runId:` is required rather than defaul
 - Tests: the asset resolves; the session is set ambient + mixing before every play; a missing asset
   degrades to silence. Predicted red 3 / 3. Closes on E's pick and a device verdict with music
   playing and the silent switch on.
+
+**DONE 2026-09-13.** E picked by ear — *"'el-a.mp3' is a good Sound effect"* — and passed the
+device verdict on both checks: *"both work correctly"* (chime under music without pausing it;
+silent when the ring switch is off). Suite **2,975 / 0**, lint **0 / 806**.
+
+**Three things worth carrying out of it:**
+- **E RESERVED the runner-up.** *"keep a hold of the sound 'el-b' ... there is likely other
+  locations that [it] Could be used."* It lives in `screenshots/cta-celebrations-block-7/candidates/`
+  as `.wav` AND a ready-to-ship `.caf`, deliberately NOT in the asset catalog — an asset with no
+  call site is dead weight in every build.
+- **A green asset test can still not touch the asset.** Every unit test injected `loadAsset`, so
+  nothing proved `NSDataAsset(name:)` resolves at runtime; `assetutil` on `Assets.car` proves the
+  bytes ship and nothing else. The fix is one test that uses the DEFAULT loader.
+- **The Settings footer carried TWO stale claims**, and only one was this block's: the sound
+  "does nothing until the chime arrives", and the milestones being "still to come" when all four
+  have had call sites since `F-CTACelebrations-4`. Footer prose is checked by no compiler.
 
 ### FEATURE: F-CTACelebrations-Surfaces — hold a celebration behind any unknown sheet  [ ] OPEN
 
