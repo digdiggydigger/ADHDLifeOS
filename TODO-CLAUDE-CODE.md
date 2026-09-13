@@ -4071,7 +4071,7 @@ silent when the ring switch is off). Suite **2,975 / 0**, lint **0 / 806**.
   "does nothing until the chime arrives", and the milestones being "still to come" when all four
   have had call sites since `F-CTACelebrations-4`. Footer prose is checked by no compiler.
 
-### FEATURE: F-CTACelebrations-Surfaces — hold a celebration behind any unknown sheet  [ ] OPEN
+### FEATURE: F-CTACelebrations-Surfaces — hold a celebration behind any unknown sheet  [x] COMPLETED
 
 **E's call, 2026-09-13**, answering register §0b (raised by the `apple:hig-reviewer` pass on `-5`
 and never closed). Offered "add Quick Capture only", "hold behind any unknown sheet", "accept it"
@@ -4091,6 +4091,55 @@ plus the centre's `held` list), and the existing **R-g 60 s drop** applies uncha
 **The hard part, and it is the whole block: knowing a sheet is up.** iOS hands us no such signal, so
 this needs a deliberate seam rather than a guess. That design question is OPEN and is the first
 thing the block must settle — do not start by writing the hold.
+
+**DONE 2026-09-13.** Suite **3,001 / 0**, lint **0 / 812**, `** BUILD SUCCEEDED **`.
+
+**The design question, settled first as the spec demanded.** Two designs were put to E — a house
+modifier on all 26 `.sheet` / `.fullScreenCover` presenters, or asking UIKit — with the catches,
+the misses, the cost and what keeps each honest. **E chose asking UIKit**, and in the same answer
+chose that the hold covers alerts, confirmation dialogs and system pickers too, and that a pop is
+left alone.
+
+- `CelebrationPresentationProbe.swift`: `PresentationProbing`, the `KeyWindowPresentationProbe`
+  that walks `connectedScenes → keyWindow → rootViewController` recursing through `children`, and
+  the inert `NothingPresentedProbe` the tests default to.
+- `CelebrationCenter`: **`isBlocked` is the one predicate behind both the hold and the release**,
+  so they cannot disagree about what "in the way" means. The probe is read only from `.root` — the
+  simple form, chosen over reconciling probe DEPTH against `presented.count`, because every other
+  tracked surface IS a presented controller and an unconditional read would hold exactly what those
+  surfaces mount layers to draw.
+- **The release is the price of E's choice, and it was the only real cost.** Tagging presenters
+  would have given an exact `onDismiss`; an untracked sheet says nothing when it closes, so the
+  centre looks — a watch that runs ONLY while something is held, ticks four times a second and
+  cannot outlive R-g's sixty. **R-g is now enforced by TIME rather than by the next dismissal**,
+  which behind an untracked sheet would never have come.
+
+**Four things worth carrying out of it:**
+- **`F-CTACelebrations-7`'s lesson came back twice in one block, and the second time was sharper.**
+  Three green files proved three separate things — the centre holds when a probe says so, the probe
+  finds a UIKit presentation, the app gets the real probe — and none of them was the claim. The app
+  presents no UIKit modals. So: `CelebrationProbeSwiftUISheetTests` hosts real SwiftUI `.sheet`,
+  `.fullScreenCover`, `.alert` and `.confirmationDialog` in a real key window, and
+  `CelebrationUnknownSheetCompositionTests` runs the real centre with the real probe over a real
+  sheet with only the clock injected. **Ask what exercises the real seam — and then ask whether
+  that test is feeding it the real INPUT.**
+- **Every one of those tests passed first time, which is not evidence.** Both were mutation-checked
+  against the live probe: forced to `false`, 8 of the 11 fail; forced to `true`, exactly the 3
+  "reads clear" controls fail. No test survives both, and the control tests are what stop the
+  positive ones being vacuous.
+- **A measurement that corrected a comment before it shipped.** The walk's recursion was documented
+  as "the reason" it recurses; measured, SwiftUI seats a hosted `.sheet` on the ROOT hosting
+  controller, so on this SDK the one-line read would have done. The recursion is defensive, the
+  comment now says so, and the test keeps it capable.
+- **`onDismiss` runs AFTER SwiftUI has torn the sheet down**, so the shipped promote-sheet path
+  releases immediately rather than waiting 0.25 s for the watch. That is a fact about SwiftUI, not
+  about this app, and `testSwiftUIRunsOnDismissAfterTheSheetIsAlreadyTornDown` pins it — the day it
+  changes, a celebration E has already signed off gets slower and nothing else would notice.
+
+**Owed: E's device pass.** No `#available` site and no Reduce Motion site is added or changed, so
+**§7.3's RM-on pass is not owed** and no `screenshots/` folder is earned (the rule asserts what a
+test cannot; the hold is asserted). What tests cannot reach is the app's five request sites firing
+while a real sheet is up — that is the device check.
 
 
 ### FEATURE: F-FocusCard-Corners — round the collapsed card's bottom corners (E: "Round them", 2026-09-11)  [ ] OPEN

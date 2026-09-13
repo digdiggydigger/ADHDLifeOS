@@ -29,7 +29,12 @@ final class CelebrationCenterTests: XCTestCase {
         feel: @escaping (HapticFeel) -> Void = { _ in }
     ) -> CelebrationCenter {
         CelebrationCenter(
-            now: { clock.now }, celebrationsGate: { celebrationsEnabled }, chime: chime, feel: feel
+            now: { clock.now }, celebrationsGate: { celebrationsEnabled }, chime: chime, feel: feel,
+            // `F-CTACelebrations-Surfaces` made every full-screen request consult the probe, and
+            // the real one reads the HOST APP's window — so a test suite that left it in would
+            // hold or release depending on what the host happened to have on screen. Nothing here
+            // is about untracked sheets; that is `CelebrationUnknownSheetHoldTests`.
+            probe: NothingPresentedProbe()
         )
     }
 
