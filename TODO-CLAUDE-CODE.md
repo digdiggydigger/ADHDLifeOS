@@ -4136,10 +4136,13 @@ left alone.
   about this app, and `testSwiftUIRunsOnDismissAfterTheSheetIsAlreadyTornDown` pins it — the day it
   changes, a celebration E has already signed off gets slower and nothing else would notice.
 
-**Owed: E's device pass.** No `#available` site and no Reduce Motion site is added or changed, so
-**§7.3's RM-on pass is not owed** and no `screenshots/` folder is earned (the rule asserts what a
-test cannot; the hold is asserted). What tests cannot reach is the app's five request sites firing
-while a real sheet is up — that is the device check.
+~~**Owed: E's device pass.**~~ **PASSED ON DEVICE 2026-09-13** — E, on `main @ 1920536`:
+*"you can mark a PASS to 'the celebration hold' checklist item"*. **Nothing is outstanding.**
+No `#available` site and no Reduce Motion site is added or changed, so **§7.3's RM-on pass was not
+owed** and no `screenshots/` folder is earned (the rule asserts what a test cannot; the hold is
+asserted). What tests could not reach is the app's five request sites firing while a real sheet is
+up — that was the device check, and it needed the phone to be carrying the build, which it was not
+when this was first written (see `F-FocusCard-Corners` below).
 
 
 ### FEATURE: F-FocusCard-Corners — round the collapsed card's bottom corners (E: "Round them", 2026-09-11)  [x] COMPLETED
@@ -4181,7 +4184,18 @@ because what E chose was *match the top*.
   carry both, including the design record's postscript table — the specification above it stays as
   written, which is what that table is for.
 
-**Owed: E's device verdict** — the card on the phone, collapsed and expanded, the corner at the bar
-join. **No RM-on pass is owed** (§7.3): no `#available` site is added, and the only Reduce Motion
-interaction is the existing `.animation(reduceMotion ? nil : .spring(...))` on the collapse, which
-this block does not touch.
+~~**Owed: E's device verdict.**~~ **PASSED ON DEVICE 2026-09-13** — E: *"they look okay"*, with two
+screenshots filed as `screenshots/focus-card-bottom-corners/02-device-collapsed-light.jpeg` and
+`03-device-collapsed-dark.jpeg`. **Nothing is outstanding.** No RM-on pass was owed (§7.3): no
+`#available` site is added, and the only Reduce Motion interaction is the existing
+`.animation(reduceMotion ? nil : .spring(...))` on the collapse, which this block does not touch.
+
+**A fourth lesson, and it cost E a wasted look rather than a wasted build.** E's first device check
+found nothing — *"i cant see any change on my iphone"* — because the phone was still on `eade58a`,
+two PRs behind, while BOTH this block and `-Surfaces` had been reported as "owed: E's device
+verdict" as though the code were installed. The change was correct the whole time; the corner E
+then pointed at as the one they wanted was a render **of the code already on `main`**.
+***Owed a device check* and *the code is on E's phone* are different facts** — install as part of
+the close-out and write the SHA the phone carries. `device-build-lag` already said "don't leave the
+phone behind"; the register's own "device verdict owed" wording is what made it easy to miss, and
+both it and the live opener now say which.

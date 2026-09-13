@@ -1,4 +1,4 @@
-# START HERE — two blocks landed, two device checks owed, and **nothing is queued**
+# START HERE — everything landed and PASSED on device, and **nothing is queued**
 
 *A disposable pointer (CLAUDE.md, "Session handoff"): paste this path into a fresh Claude Code
 terminal. **WRITTEN 2026-09-13** by the session that settled `F-CTACelebrations-Surfaces`' design
@@ -22,7 +22,7 @@ git checkout main && git pull --ff-only
 | SwiftLint | **0 / 812 files** |
 | sim build | `** BUILD SUCCEEDED **` |
 | UI journeys | both GREEN (run for `-6`; neither block since touches UI a journey asserts) |
-| device | **ON MAIN at `1920536`** (installed 2026-09-13 22:29, clean one-pass). `-6` and `-7` PASSED; `-Surfaces` and `-Corners` are installed but unverified. |
+| device | **ON MAIN at `1920536`** (installed 2026-09-13 22:29, clean one-pass). **All four blocks PASSED**: `-6`, `-7`, `-Surfaces`, `-Corners`. **Nothing owed on any of them.** |
 
 ## ⚠ THE WORK QUEUE IS EMPTY. Do not invent one.
 
@@ -37,23 +37,16 @@ dead design tokens (`BarSurface`, `AppTabBarPresentation.slotWidth`/`restingSlot
 accuracy-aware arrival containment (**only if E still sees drops**), and Arc 2 — first-class
 routines. None is started.
 
-## Owed to E — two device checks, neither urgent, one sitting
+## Owed to E — NOTHING on any merged block
 
-Both are in register §A with the steps written out. In short:
+Both device checks that were outstanding when this file was first written have since **PASSED**:
 
-1. **`F-CTACelebrations-Surfaces`** — the REGRESSION check, and read §A before running it. The
-   obvious version of this check **cannot fire**: all five milestone sites were traced and none is
-   reachable from inside an untracked sheet, so the block is preventive. What to run is the path it
-   could have made worse — inbox down to one waiting capture, open it, **Create Task**, promote,
-   and inbox zero should celebrate **immediately** as the sheet closes.
-2. **`F-FocusCard-Corners`** — a look, not a test. Start a sprint, collapse the card, look at the
-   notch where its bottom corners meet the tab bar, expand again. E chose 24pt from a simulator
-   render; what a render cannot show is how that notch reads on glass.
+- **`F-CTACelebrations-Surfaces`** — E: *"you can mark a PASS to 'the celebration hold' checklist
+  item"*.
+- **`F-FocusCard-Corners`** — E: *"they look okay"*, with two device screenshots filed in
+  `screenshots/focus-card-bottom-corners/`.
 
-**Neither owes an RM-on pass** (§7.3), and the reports say why rather than leaving it implied.
-**Both are installed on the phone** — they were not when first reported as owed, which cost E a
-wasted look. **Install as part of close-out and say which SHA the phone carries**; "owed a device
-check" does not mean "the code is on the phone".
+**Do not re-ask for either.**
 
 **One standing item, carried:** E RESERVED the runner-up chime. *"keep a hold of the sound 'el-b'
 ... there is likely other locations that [it] Could be used."* It is at
@@ -83,6 +76,10 @@ ship-ready. **When a second sound gets a real site, use that file — do not gen
   `animatableData` to stop the corner snapping mid-spring; E then chose a collapsed radius equal to
   the expanded one, so nothing interpolates — the snap is gone because the difference is gone. The
   wiring stays and the code says it is currently inert rather than implying a morph.
+- **"Owed a device check" and "the code is on E's phone" are DIFFERENT FACTS.** Both blocks were
+  reported as owing a device verdict while the phone was two PRs behind. E looked, saw nothing, and
+  reported it — about a change that was correct and simply not installed. **Install as part of the
+  close-out and write the SHA the phone carries.** `device-build-lag` has the recipe.
 - **The suite ran at 41 s, then 140 s, then 91 s on the same tree.** 0 × `9099` and 0 `Compiling`
   lines each time, so it was machine load, not the poisoned-simulator failure CLAUDE.md describes.
   **Check those two numbers before diagnosing a slow run.**
