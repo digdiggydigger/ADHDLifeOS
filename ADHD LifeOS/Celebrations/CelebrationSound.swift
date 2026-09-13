@@ -29,7 +29,13 @@ protocol CelebrationSoundPlaying {
     func play()
 }
 
-/// Previews, tests and the 16.0 floor path: reaches no session and holds no player.
+/// Previews and tests: reaches no session and holds no player.
+///
+/// **Deliberately NOT a floor path.** `AVAudioSession.setCategory(_:options:)` and
+/// `AVAudioPlayer(data:)` are both available at the app's 16.0 target, so the chime has no
+/// `#available` gate and every user gets the same one — there is no tier for this to be the
+/// quiet half of. An earlier draft of this comment claimed otherwise and would have sent a
+/// reader hunting for a gate that does not exist.
 struct InertCelebrationSoundPlayer: CelebrationSoundPlaying {
     var hasSound: Bool { false }
     func play() {}

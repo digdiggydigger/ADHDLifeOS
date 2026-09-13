@@ -101,8 +101,9 @@ final class CelebrationSoundTests: XCTestCase {
 
     // MARK: - Degrading to silence
 
-    /// The state this block ships in until E picks a chime by ear, and the state any future
-    /// asset rename lands in. **Silence, never a crash and never a throw.**
+    /// The state any future asset rename or dropped dataset lands in — and the state this block
+    /// itself shipped in for one commit, before E picked a chime by ear on 2026-09-13.
+    /// **Silence, never a crash and never a throw.**
     func testAMissingAssetDegradesToSilence() {
         let session = SpySession()
         let sut = CelebrationSoundPlayer(session: session, loadAsset: { _ in nil })
@@ -162,6 +163,31 @@ final class CelebrationSoundTests: XCTestCase {
         })
 
         XCTAssertEqual(asked, ["CelebrationChime"])
+    }
+
+    // MARK: - The real asset, through the real loader
+
+    /// **Every other test in this file injects `loadAsset`, so none of them touches the catalog.**
+    /// That leaves the one thing a user actually depends on unproven: that
+    /// `NSDataAsset(name: "CelebrationChime")` RESOLVES at runtime and that `AVAudioPlayer`
+    /// accepts the CAF bytes the catalog hands back.
+    ///
+    /// Checking the compiled `Assets.car` with `assetutil` proves the bytes are in the bundle and
+    /// nothing more — a dataset can be present and still be unreadable by name, or hold something
+    /// `AVAudioPlayer` refuses. The unit-test target HOSTS the app, so the catalog is right there
+    /// and this costs nothing.
+    ///
+    /// If this ever goes red, E's "Celebration sounds" switch is a dead row again and the Settings
+    /// footer is lying — which is the exact state this block existed to end.
+    func testTheRealCatalogAssetLoadsAndIsPlayable() {
+        let sut = CelebrationSoundPlayer(session: SpySession())
+
+        XCTAssertTrue(
+            sut.hasSound,
+            "the chime did not load from the real asset catalog. Either the"
+                + " CelebrationChime.dataset is missing or renamed, or the file inside it is not"
+                + " something AVAudioPlayer can decode — and both fail SILENTLY in production."
+        )
     }
 
     // MARK: - The inert one
