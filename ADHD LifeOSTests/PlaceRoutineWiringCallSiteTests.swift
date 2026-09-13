@@ -85,16 +85,32 @@ final class PlaceRoutineWiringCallSiteTests: XCTestCase {
     /// a fade and never removes the feedback. `withAnimation(nil)` — or `reduceMotion ? nil :`
     /// around the swap — is the hard cut the section exists to forbid, and it is the shape 19 of
     /// the app's 20 RM-guarded sites had when the policy was written.
+    ///
+    /// **This file's ONE `reduceMotion ? nil` is correct and must stay.** `apply(_:at:)` moves a
+    /// step between the three cards, which is the continuous re-layout `nil` is right for — the
+    /// tween IS the motion there and the instant change loses nothing. The count guard exists
+    /// because the two cases are one line apart in the same type and read identically; the first
+    /// draft of this test banned the pattern outright and reddened on the legitimate site.
     func testTheReducedSwapFadesRatherThanCuttingHard() throws {
         let screen = try flattened("Places/PlaceRoutineScreen.swift")
         XCTAssertTrue(
             screen.contains("withAnimation(entrance.animation) { confirmedAt = now }"),
             "the swap must run under the RESOLVED animation — both cases of which are non-nil"
         )
+        let swap = try slice(
+            of: "Places/PlaceRoutineScreen.swift",
+            from: "private func complete(from origin: CGPoint?)", to: "private func leaveScreen()"
+        )
         XCTAssertFalse(
-            screen.contains("reduceMotion ? nil"),
+            swap.contains("nil"),
             "the congratulation's swap is an APPEARANCE, not the continuous re-layout `nil` is"
                 + " right for — a hard cut here is §7.2's named bug"
+        )
+        XCTAssertEqual(
+            screen.components(separatedBy: "reduceMotion ? nil").count - 1, 1,
+            "a second `reduceMotion ? nil` has appeared. Exactly one is sanctioned — the step"
+                + " re-layout in `apply(_:at:)`. Anything that appears, disappears or celebrates"
+                + " fades instead."
         )
     }
 
@@ -192,6 +208,18 @@ final class PlaceRoutineWiringCallSiteTests: XCTestCase {
             .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .joined(separator: " ")
+    }
+
+    /// One member's body, so a guard about `complete(from:)` cannot be answered by a line in
+    /// `apply(_:at:)` — the mistake this file's own §7.2 guard made on its first run.
+    private func slice(of relativePath: String, from opening: String, to closing: String) throws -> String {
+        let source = try flattened(relativePath)
+        let start = try XCTUnwrap(source.range(of: opening), "no \(opening) in \(relativePath)")
+        let end = try XCTUnwrap(
+            source.range(of: closing, range: start.upperBound..<source.endIndex),
+            "no \(closing) after \(opening) in \(relativePath)"
+        )
+        return String(source[start.upperBound..<end.lowerBound])
     }
 
     private enum WiringSourceError: Error, CustomStringConvertible {
