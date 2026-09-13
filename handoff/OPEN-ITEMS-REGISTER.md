@@ -2,7 +2,7 @@
 
 *Close-out of the session that settled two design questions with E, built both blocks, and got both
 device verdicts once the phone was carrying them.
-Supersedes the forty-three earlier editions. **The previous edition's `-6` / `-7` entries stand
+Supersedes the forty-four earlier editions. **The previous edition's `-6` / `-7` entries stand
 unchanged and nothing is owed on either** — see "Landed" below.*
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
@@ -11,7 +11,7 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `598da3b`** (PR #116). `firestore.rules` untouched — **nothing for E to republish**.
+**`main` @ `f2ed231`** (PR #119; `598da3b` was the last commit to touch app code). `firestore.rules` untouched — **nothing for E to republish**.
 Every feature branch is merged and deleted; `origin` carries `main` alone.
 
 Measured on `main`:
@@ -43,13 +43,15 @@ walks the key window; `isBlocked` is the single predicate behind the hold and th
 watch replaces the `onDismiss` an untracked sheet never sends, and R-g is enforced by time rather
 than by the next dismissal. **It is a PREVENTIVE block** — the five milestone sites were traced and
 none of them can be reached from inside an untracked sheet as the tree stands, so what it closes is
-the class rather than a live defect. **Owed: one regression check on device** (§A below). (NEW)
+the class rather than a live defect. **PASSED ON DEVICE 2026-09-13** (E: *"you can mark a PASS to
+'the celebration hold' checklist item"*). Nothing outstanding. (NEW)
 
 **`F-FocusCard-Corners`** — the collapsed card's bottom corners (PR #116). E's *"Round them"* was
 a word, not a number, so the four radii went to E as a render and E chose **24 — "match the top"**
 ("leave it square after all" was offered and not chosen). `FocusBarCardOutline` now cuts BOTH the
 fill and the keyline from one silhouette, so they cannot disagree about where the corner is; the
-`Bool` became a `CGFloat` on `animatableData`. **Owed: E's device verdict** (§A). (NEW)
+`Bool` became a `CGFloat` on `animatableData`. **PASSED ON DEVICE 2026-09-13** (E: *"they look
+okay"*, two screenshots filed). Nothing outstanding. (NEW)
 
 ### What this session established
 
@@ -92,10 +94,15 @@ fill and the keyline from one silhouette, so they cannot disagree about where th
 
 ## A · Decisions only E can make — minutes each
 
-**Every device check is now CLEAR.** E settled four at the sitting on 2026-09-12/13, then
-`-6`'s and `-7`'s verdicts, then `-Surfaces`' and `-Corners`' on 2026-09-13 once the phone was
-finally carrying them. **Nothing in any merged block is waiting on E.** What remains here is one
-deferral E asked to be held and two housekeeping items.
+**Every device check on the CTA-CELEBRATIONS ARC and the FOCUS CARD is clear** — E settled four at
+the sitting on 2026-09-12/13, then `-6`'s and `-7`'s verdicts, then `-Surfaces`' and `-Corners`' on
+2026-09-13 once the phone was finally carrying them.
+
+**"Nothing in any merged block is waiting on E" was written here and it was TOO STRONG — corrected
+2026-09-13.** Three earlier follow-on blocks (`SwipeOrigin`, `NoCooldown`, `PopScale`) still owe
+device looks; they are landed, green and installed, and the first of them replaces a defect E
+themselves reported, so it is the one with a known "before". The honest statement is: **nothing in
+the last four blocks is owed; three older ones still are, and none is urgent.**
 
 - [x] **`F-CTACelebrations-Surfaces`' DEVICE PASS — PASSED 2026-09-13.** E, on `main @ 1920536`:
       ***"you can mark a PASS to 'the celebration hold' checklist item"***. **Nothing in the block
@@ -211,23 +218,18 @@ deferral E asked to be held and two housekeeping items.
 
 ## B · Real work, ready to start — recommended order
 
-**00. THE CTA CELEBRATIONS ARC — `F-CTACelebrations-6` is BUILT TO C5 ON A BRANCH.** The record is
-   `handoff/SESSION-OPENER-cta-celebrations-design.md`; **the live pointer is
-   `handoff/START-HERE-cta-celebrations-6-part2.md`**, which carries C6–C9 in full. The first
-   opener is archived.
-   **The blocks:** ~~`F-ConfirmCelebration-2`~~ → ~~`-1`~~ → ~~`-2`~~ → ~~`-3`~~ → ~~`-4`~~ →
-   ~~`-5`~~ → **`-6` (C1–C5 built, C6–C9 open)** → `-7` (the chime) →
-   `F-CTACelebrations-Surfaces`. Plus ~~`PopScale`~~, ~~`NoCooldown`~~, ~~`SwipeOrigin`~~.
-
-   **What remains, and the one trap that changed shape:**
-   - **C6** the wiring + the R1 reversal, **C7** Today's swapped label, **C8** the two journeys,
-     **C9** evidence and close-out.
-   - **The `leaveScreen()` raw count is 5 and does NOT simply become 4.** One of the five is inside
-     the `:77-83` COMMENT that C6 rewrites, and C6 also deletes the scenePhase hook — so it lands at
-     **3**. `grep -c` after the edits and set the number to what is actually there. The old plan
-     said 4 and would have been wrong.
-   - The adjacency trap and the unique-anchor trap are unchanged.
-   - **`main` must not be merged until C6** — C5's card is reachable by nothing.
+~~**00. THE CTA CELEBRATIONS ARC — `F-CTACelebrations-6` is BUILT TO C5 ON A BRANCH.**~~
+   **THE WHOLE ARC IS FINISHED — corrected 2026-09-13, and this entry was badly stale.** It still
+   described `-6` as half-built on a branch and pointed at
+   `handoff/START-HERE-cta-celebrations-6-part2.md`, which has been ARCHIVED for days; C6–C9, `-7`
+   and `-Surfaces` have all landed and all passed on device since. Anyone following it would have
+   gone looking for a branch that no longer exists.
+   **Every block is merged:** `F-ConfirmCelebration-2` → `-1` → `-2` → `-3` → `-4` → `-5` → `-6`
+   → `-7` (the chime) → `F-CTACelebrations-Surfaces`, plus `PopScale`, `NoCooldown`, `SwipeOrigin`.
+   The design record — permanent, never archive — is
+   `handoff/SESSION-OPENER-cta-celebrations-design.md`. **Nothing in the arc is work any more**;
+   what survives it is the three device looks in §A and the photosensitivity blocker in §D.
+   (CLOSED)
 
 ~~**0b. Two surfaces question, raised by the HIG pass and NOT closed.**~~ **ANSWERED BY E,
    2026-09-13 — and it is now a BLOCK, not a question.** Offered "add Quick Capture only", "hold
