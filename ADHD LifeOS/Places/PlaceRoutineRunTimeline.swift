@@ -98,17 +98,25 @@ enum PlaceRoutineComparison {
     /// Only THIS routine's own finished runs count — the same place AND the same direction.
     /// Leaving the office says nothing about how long arriving at the gym takes.
     ///
+    /// **`excluding` is the run being celebrated, and it is required rather than defaulted.**
+    /// `complete()` writes the ending fire-and-forget and this screen then fetches every
+    /// routine run, so the run in hand is usually already in its own history carrying the very
+    /// time being compared. Counted, it is always its own `quickest` — "fastest yet" could
+    /// never fire — and it drags the median toward itself. And because its presence depends on
+    /// whether a network write landed first, the verdict would be TIMING-DEPENDENT: right on a
+    /// slow connection and wrong on a fast one, which is the worst way for this to be wrong.
+    ///
     /// A run that is much faster than usual but not a record reads as `usual` on purpose:
     /// "fastest yet" is the one claim worth making, and a second, weaker one competing with it
     /// would dilute it.
     static func verdict(
         worked: TimeInterval?, history: [RoutineRunRecord],
-        placeId: UUID, direction: PlaceTriggerEvent.Kind
+        placeId: UUID, direction: PlaceTriggerEvent.Kind, excluding runId: UUID
     ) -> Verdict {
         guard let worked else { return .noHistory }
         let mine = history
             .filter {
-                $0.placeId == placeId && $0.direction == direction
+                $0.id != runId && $0.placeId == placeId && $0.direction == direction
                     && $0.status == .ended && $0.timeSpentSeconds > 0
             }
             .map { TimeInterval($0.timeSpentSeconds) }

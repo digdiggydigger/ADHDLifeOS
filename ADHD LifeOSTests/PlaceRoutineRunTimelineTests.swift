@@ -136,10 +136,10 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
 
     // MARK: - E's answer 3: compare with your usual
 
-    private func record(worked seconds: Int, placeId: UUID) -> RoutineRunRecord {
+    private func record(worked seconds: Int, placeId: UUID, id: UUID = UUID()) -> RoutineRunRecord {
         var record = RoutineRunRecord.offered(
             RoutineRun(
-                id: UUID(), placeId: placeId, direction: .arrival,
+                id: id, placeId: placeId, direction: .arrival,
                 startedAt: arrival, displayName: "Gym 🏋️", customMessage: nil, steps: []
             ),
             now: arrival
@@ -152,7 +152,9 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
     func testWithNoPastRunsOfThisRoutineThereIsNothingToCompareWith() {
         let place = UUID()
         XCTAssertEqual(
-            PlaceRoutineComparison.verdict(worked: 600, history: [], placeId: place, direction: .arrival),
+            PlaceRoutineComparison.verdict(
+                worked: 600, history: [], placeId: place, direction: .arrival, excluding: UUID()
+            ),
             .noHistory
         )
     }
@@ -164,7 +166,7 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
         let other = record(worked: 60, placeId: UUID())
         XCTAssertEqual(
             PlaceRoutineComparison.verdict(
-                worked: 600, history: [other], placeId: place, direction: .arrival
+                worked: 600, history: [other], placeId: place, direction: .arrival, excluding: UUID()
             ),
             .noHistory,
             "another place's run leaked into this routine's history"
@@ -176,7 +178,7 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
         let history = [record(worked: 900, placeId: place), record(worked: 1_200, placeId: place)]
         XCTAssertEqual(
             PlaceRoutineComparison.verdict(
-                worked: 600, history: history, placeId: place, direction: .arrival
+                worked: 600, history: history, placeId: place, direction: .arrival, excluding: UUID()
             ),
             .fastestYet
         )
@@ -192,7 +194,7 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
         ]
         XCTAssertEqual(
             PlaceRoutineComparison.verdict(
-                worked: 610, history: history, placeId: place, direction: .arrival
+                worked: 610, history: history, placeId: place, direction: .arrival, excluding: UUID()
             ),
             .usual(typical: 600)
         )
@@ -206,9 +208,33 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
         ]
         XCTAssertEqual(
             PlaceRoutineComparison.verdict(
-                worked: 1_800, history: history, placeId: place, direction: .arrival
+                worked: 1_800, history: history, placeId: place, direction: .arrival, excluding: UUID()
             ),
             .longerThanUsual(typical: 600)
+        )
+    }
+
+    /// **The run being celebrated is in its OWN history, and that is not hypothetical.**
+    /// `complete()` writes `recorder.ended(...)` fire-and-forget, and the congratulation then
+    /// fetches every routine run — so this run's own record is usually already there, with the
+    /// very time being compared. Left in, it is always its own `quickest`, "fastest yet" could
+    /// essentially never fire, and it drags the median toward itself. Worse, whether it is
+    /// there at all depends on whether a network write landed first, so the verdict would be
+    /// TIMING-DEPENDENT — green on a fast connection and wrong on a slow one.
+    func testTheRunBeingCelebratedIsNeverItsOwnHistory() {
+        let place = UUID()
+        let runId = UUID()
+        let history = [
+            record(worked: 100, placeId: place, id: runId),
+            record(worked: 900, placeId: place)
+        ]
+        XCTAssertEqual(
+            PlaceRoutineComparison.verdict(
+                worked: 600, history: history, placeId: place,
+                direction: .arrival, excluding: runId
+            ),
+            .fastestYet,
+            "this run counted itself, so it can never beat its own time"
         )
     }
 
@@ -218,7 +244,7 @@ final class PlaceRoutineRunTimelineTests: XCTestCase {
         XCTAssertEqual(
             PlaceRoutineComparison.verdict(
                 worked: nil, history: [record(worked: 600, placeId: place)],
-                placeId: place, direction: .arrival
+                placeId: place, direction: .arrival, excluding: UUID()
             ),
             .noHistory
         )
