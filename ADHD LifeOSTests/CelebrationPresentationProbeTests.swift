@@ -63,10 +63,13 @@ final class CelebrationPresentationProbeTests: XCTestCase {
         XCTAssertTrue(probe.isAnythingPresented)
     }
 
-    /// **The reason the walk recurses.** A controller that defines its own presentation context
-    /// presents from where it stands, so the root's `presentedViewController` stays `nil` and the
-    /// one-line read — which is what this started as — reports the screen as clear while a modal is
-    /// covering it.
+    /// **What the walk's recursion buys, and an honest note about whether it is needed.** A
+    /// controller that defines its own presentation context presents from where it stands, so the
+    /// root's `presentedViewController` stays `nil` and the one-line read reports a clear screen
+    /// while a modal covers it. Measured 2026-09-13: SwiftUI seated a hosted `.sheet` on the ROOT
+    /// hosting controller, so on today's SDK the one-line read would have sufficed for the app's
+    /// own sheets. The recursion is therefore defensive — it costs a dozen pointer reads and it
+    /// removes a question nobody can answer for every SwiftUI presentation in every future SDK.
     func testTheProbeSeesAPresentationFromAChildRatherThanTheRoot() async throws {
         let root = try XCTUnwrap(window.rootViewController)
         let child = UIViewController()

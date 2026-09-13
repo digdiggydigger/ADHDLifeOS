@@ -42,9 +42,13 @@ final class CelebrationUnknownSheetHoldTests: XCTestCase {
         func advance(_ seconds: TimeInterval) { now = now.addingTimeInterval(seconds) }
     }
 
+    /// `nil` rather than a default `NothingPresentedProbe()`: a default argument is evaluated in a
+    /// nonisolated context, and the app target's default isolation is `MainActor`, so building one
+    /// there warns (an error in Swift 6). Built in the body instead, where the isolation is this
+    /// test class's.
     private func centre(
         at clock: Clock,
-        probe: PresentationProbing = NothingPresentedProbe(),
+        probe: PresentationProbing? = nil,
         chime: @escaping (CelebrationKind) -> Void = { _ in },
         feel: @escaping (HapticFeel) -> Void = { _ in }
     ) -> CelebrationCenter {
@@ -53,7 +57,7 @@ final class CelebrationUnknownSheetHoldTests: XCTestCase {
             celebrationsGate: { true },
             chime: chime,
             feel: feel,
-            probe: probe,
+            probe: probe ?? NothingPresentedProbe(),
             // Instant, so awaiting the watch runs the loop rather than the clock.
             sleep: { _ in await Task.yield() }
         )
