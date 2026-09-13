@@ -130,6 +130,28 @@ enum PlaceRoutineCongratulationEntrance: Equatable {
     static func resolve(reduceMotion: Bool) -> PlaceRoutineCongratulationEntrance {
         reduceMotion ? .fade : .spring
     }
+
+    /// The animation the SWAP runs under. **Neither case is `nil`, and that is the whole of
+    /// §7.2 for this block:** `reduceMotion ? nil : …` is right for continuous re-layout, where
+    /// the tween IS the motion, and wrong for anything that appears — which this is. §5 carries
+    /// the clause that lets the reduced case be a plain ease.
+    var animation: Animation {
+        switch self {
+        case .spring: return .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)
+        case .fade: return .easeOut(duration: 0.25)
+        }
+    }
+
+    /// §7.2's opening-pose rule, expressed as the only place it can be true: the reduced case
+    /// carries NO geometry, so the congratulation's first frame is already at final scale and
+    /// only opacity travels. A reduced path that opened at 0.9 and snapped to 1 would be the
+    /// bug the rule names, and it is one word away from here.
+    var transition: AnyTransition {
+        switch self {
+        case .spring: return .scale(scale: 0.9).combined(with: .opacity)
+        case .fade: return .opacity
+        }
+    }
 }
 
 /// E's answer 6: *"showing every step as outlined is appropriate"* — a long routine shows every

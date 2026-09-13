@@ -70,8 +70,9 @@ final class HomeRoutineCardTests: XCTestCase {
     }
 
     func testStepsLeftLine_whenEverythingIsResolved_saysSo() {
-        // A fully-resolved run stays live until the screen is left (the settled rule, so Undo
-        // survives) — so this state IS reachable on Today and must read honestly.
+        // A fully-resolved run stays live until the Completed tap (E's R1, so Undo survives
+        // and nothing is logged unconfirmed) — so this state is not merely reachable on Today,
+        // it is one a user can sit in indefinitely, and it must read honestly.
         XCTAssertEqual(
             HomeRoutineCardModel.stepsLeftLine(for: run([step(.done, "A"), step(.skipped, "B")])),
             "All steps done"
@@ -88,8 +89,27 @@ final class HomeRoutineCardTests: XCTestCase {
         XCTAssertNil(HomeRoutineCardModel.nextLine(for: run([step(.done, "A")])))
     }
 
-    func testContinueLabel() {
-        XCTAssertEqual(HomeRoutineCardModel.continueLabel, "Continue routine")
+    /// **E's answer 8, and it only became reachable in `F-CTACelebrations-6`.** Before E's R1
+    /// a fully-resolved run ended the moment the screen was left, so "everything resolved, card
+    /// still on Today" was a flicker. Under R1 it is a resting state a user can sit in for as
+    /// long as they like — and "Continue routine" then promises a step that does not exist.
+    func testContinueLabel_saysContinueWhileAStepIsStillPending() {
+        let subject = run([step(.done, "Snapchat"), step(.pending, "Gym")])
+
+        XCTAssertEqual(HomeRoutineCardModel.continueLabel(for: subject), "Continue routine")
+    }
+
+    /// A SKIPPED step is resolved, not done — so a run of nothing but skips is finishable too,
+    /// and the label must not wait for a done count it will never reach.
+    func testContinueLabel_saysFinishOnceEveryStepIsResolvedHoweverItWasResolved() {
+        let allDone = run([step(.done, "Snapchat"), step(.autoDone, "Journal")])
+        let allSkipped = run([step(.skipped, "Snapchat"), step(.skipped, "Gym")])
+
+        XCTAssertEqual(HomeRoutineCardModel.continueLabel(for: allDone), "Finish routine")
+        XCTAssertEqual(
+            HomeRoutineCardModel.continueLabel(for: allSkipped), "Finish routine",
+            "a skipped step is resolved: this run is waiting on its Completed tap like any other"
+        )
     }
 
     // MARK: - The ArrivalSurfaceCard collision — E VETOED the suppression (2026-09-04)

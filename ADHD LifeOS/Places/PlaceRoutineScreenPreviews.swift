@@ -61,7 +61,8 @@ enum PlaceRoutineScreenPreviewFixture {
             store: UserDefaultsRoutineRunStore(defaults: nil),
             onOpenTab: { _ in }, onStartSprint: { _ in },
             activity: InertRoutineActivityPresenter(),
-            recorder: InertRoutineRunRecorder()
+            recorder: InertRoutineRunRecorder(),
+            history: InertRoutineRunHistoryReader()
         )
         .environment(\.colorScheme, .light)
         PlaceRoutineScreen(
@@ -69,7 +70,8 @@ enum PlaceRoutineScreenPreviewFixture {
             store: UserDefaultsRoutineRunStore(defaults: nil),
             onOpenTab: { _ in }, onStartSprint: { _ in },
             activity: InertRoutineActivityPresenter(),
-            recorder: InertRoutineRunRecorder()
+            recorder: InertRoutineRunRecorder(),
+            history: InertRoutineRunHistoryReader()
         )
         .environment(\.colorScheme, .dark)
     }

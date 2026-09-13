@@ -17,16 +17,26 @@ import SwiftUI
 
 /// Every word on the card, pure so each is pinned by a test rather than living in a body.
 enum HomeRoutineCardModel {
-    static let continueLabel = "Continue routine"
+    /// **E's answer 8, and it only became reachable in `F-CTACelebrations-6`.** Before E's R1 a
+    /// fully-resolved run ended the moment the screen was left, so "everything resolved, card
+    /// still live" was a flicker nobody could read. Under R1 the run waits for a deliberate
+    /// Completed tap, so it is a resting state a user can sit in — and "Continue" would then
+    /// promise a step that does not exist.
+    ///
+    /// A skipped step is RESOLVED: a run of nothing but skips is finishable like any other.
+    static func continueLabel(for run: RoutineRun) -> String {
+        PlaceRoutineProgress.isFullyResolved(run) ? "Finish routine" : "Continue routine"
+    }
 
     static func headline(for run: RoutineRun) -> String {
         let moment = run.direction == .arrival ? "AT" : "LEAVING"
         return "\(moment) \(run.displayName.uppercased()) · ROUTINE LIVE"
     }
 
-    /// A fully-resolved run stays live until the screen is LEFT (so Undo survives the last
-    /// tap), which makes "everything done, still live" a reachable state Today must not lie
-    /// about.
+    /// A fully-resolved run stays live until the Completed tap (E's R1 — so Undo survives the
+    /// last step and nothing is logged without a deliberate confirmation), which makes
+    /// "everything done, still live" a state a user can REST in rather than pass through.
+    /// `continueLabel(for:)` is what stops the button lying about it.
     static func stepsLeftLine(for run: RoutineRun) -> String {
         let pending = run.steps.filter { $0.state == .pending }.count
         switch pending {
@@ -61,7 +71,7 @@ struct HomeRoutineCard: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
-            Button(HomeRoutineCardModel.continueLabel) {
+            Button(HomeRoutineCardModel.continueLabel(for: run)) {
                 Haptics.play(.solid)
                 onContinue()
             }

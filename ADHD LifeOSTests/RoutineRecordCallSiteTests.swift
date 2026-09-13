@@ -57,7 +57,13 @@ final class RoutineRecordCallSiteTests: XCTestCase {
         )
     }
 
-    func testLeavingAFinishedScreenRecordsCompletion() throws {
+    /// **RENAMED in `F-CTACelebrations-6`, and the old name was the claim.** This was
+    /// `testLeavingAFinishedScreenRecordsCompletion`, because LEAVING was what completed a run.
+    /// E's R1 moved that to a deliberate tap: *"the user must have to confirm by manually
+    /// tapping a 'Completed' button before any actions such as logging it to the Journal or
+    /// running the animation etc are run"*. A name asserting the reversed rule is a trap for the
+    /// next reader, so it moved with the behaviour.
+    func testTheCompletedTapRecordsCompletion() throws {
         let screen = try Self.code("Places/PlaceRoutineScreen.swift")
 
         XCTAssertTrue(
@@ -65,7 +71,8 @@ final class RoutineRecordCallSiteTests: XCTestCase {
                 "store.end(runId: run.id) record { try await recorder.ended(runId: run.id, reason: .completed"
             ),
             "ending the local run and recording `completed` must sit together, inside the"
-                + " fully-resolved branch — leaving an unfinished screen is not completion"
+                + " Completed tap's handler — nothing may separate them, not the haptic and not"
+                + " the state flag"
         )
     }
 
@@ -76,6 +83,29 @@ final class RoutineRecordCallSiteTests: XCTestCase {
             doors.contains("recorder: FirebaseRoutineRunRecorder()"),
             "the screen's recorder is injected, never defaulted (a default argument would"
                 + " touch FirebaseManager.shared in previews) — so the door must pass the real one"
+        )
+    }
+
+    /// The congratulation's "compare to your usual" line needs the RECORD read back, and the
+    /// reader is not defaulted for exactly the recorder's reason: `FirebaseRoutineRunHistoryAdapter()`
+    /// reaches `FirebaseManager.shared`, which a preview must never do.
+    func testTheDoorHandsTheScreenARealHistoryReader() throws {
+        XCTAssertTrue(
+            try Self.code("RootView+Doors.swift").contains("history: FirebaseRoutineRunHistoryAdapter()"),
+            "the screen gets no history reader, so the comparison line can never draw — the"
+                + " congratulation would silently lose a third of E's answer 3"
+        )
+    }
+
+    /// **E's R4 reachability, and it is the one a reader would drop.** `displayName` is
+    /// DEFAULTED to `nil`, so a door that forgets it compiles, passes every other guard, and
+    /// greets every user "Nice one" forever. Only this reads the door.
+    func testTheDoorHandsTheScreenTheAccountDisplayName() throws {
+        XCTAssertTrue(
+            try Self.code("RootView+Doors.swift")
+                .contains("displayName: authService.signedInUser?.displayName"),
+            "the greeting never learns the name, so E's R4 — the ACCOUNT display name, the one"
+                + " Settings' account row shows — is unreachable and the default nil always wins"
         )
     }
 

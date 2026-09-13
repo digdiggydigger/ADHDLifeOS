@@ -35,7 +35,12 @@ final class HomeRoutineCardCallSiteTests: XCTestCase {
     /// `onDisappear` did NOT fire reliably for this full-screen cover — the routine journey
     /// caught a finished routine keeping its Today card. So every deliberate exit calls
     /// `leaveScreen()` itself, and the lifecycle callback is only a net.
-    func testEveryExitFromTheScreenEndsTheRunItself() throws {
+    ///
+    /// **What `leaveScreen()` DOES changed in `F-CTACelebrations-6`, and the name of this test
+    /// now overstates it.** It no longer ends the run — E's R1 gave that to the Completed tap —
+    /// so what every exit still owes is the Activity's end and the `DataChangeSignal`, without
+    /// which Today keeps a stale card and the Live Activity outlives the screen that owns it.
+    func testEveryExitFromTheScreenTidiesUpAfterItself() throws {
         let screen = try Self.appSource("Places/PlaceRoutineScreen.swift")
 
         XCTAssertTrue(
@@ -43,12 +48,17 @@ final class HomeRoutineCardCallSiteTests: XCTestCase {
             "closing the screen must move Today — otherwise a finished routine leaves a stale"
                 + " card behind until something else happens to refresh"
         )
+        // **The SITES changed in `F-CTACelebrations-6` even though the count did not, and a
+        // reader who only checks the number will miss it.** The scenePhase hook is GONE — under
+        // E's R1 backgrounding a fully-resolved checklist must not finish the routine — and the
+        // congratulation's own close took its place. Recount after any edit here rather than
+        // trusting five: the count is a consequence, never the claim.
         XCTAssertEqual(
             screen.components(separatedBy: "leaveScreen()").count - 1, 5,
             "leaveScreen must be DECLARED once and called from all three exits — the Close"
-                + " button, the background hook, and onDisappear as the net (plus the mention"
-                + " in its own doc comment). Relying on onDisappear alone is fragile: it did"
-                + " not fire reliably for this cover."
+                + " button, the congratulation's tap-to-close, and onDisappear as the net (plus"
+                + " the mention in the body's own comment). Relying on onDisappear alone is"
+                + " fragile: it did not fire reliably for this cover."
         )
         XCTAssertTrue(
             screen.contains("leaveScreen()\n                    dismiss()"),
@@ -84,6 +94,19 @@ final class HomeRoutineCardCallSiteTests: XCTestCase {
         XCTAssertTrue(
             router.contains("func open("),
             "the router must expose the non-notification way in"
+        )
+    }
+
+    /// E's answer 8 is a pure function, and a pure function nothing calls is this repo's most
+    /// repeated defect. The card must ask it per RUN — a `static let` read once would be the
+    /// old constant wearing a new name.
+    func testTheCardAsksWhatToCallTheButtonForTheRunItIsShowing() throws {
+        let card = try Self.appSource("Home/HomeRoutineCard.swift")
+
+        XCTAssertTrue(
+            card.contains("Button(HomeRoutineCardModel.continueLabel(for: run))"),
+            "the card still hardcodes one label, so a fully-resolved run — a resting state since"
+                + " E's R1 — offers to \"Continue\" a routine with nothing left to continue"
         )
     }
 
