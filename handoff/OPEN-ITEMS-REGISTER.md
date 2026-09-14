@@ -1,9 +1,9 @@
-# Open items register — 2026-09-13 (forty-fifth edition; **`F-CTACelebrations-Surfaces` AND `F-FocusCard-Corners` are DONE, MERGED and PASSED ON DEVICE** — nothing in any merged block is owed to E)
+# Open items register — 2026-09-14 (forty-sixth edition; **the iOS 27 arc has opened and Phase A — the baseline — is CAPTURED. The gate is now E's: Xcode 27.**)
 
-*Close-out of the session that settled two design questions with E, built both blocks, and got both
-device verdicts once the phone was carrying them.
-Supersedes the forty-four earlier editions. **The previous edition's `-6` / `-7` entries stand
-unchanged and nothing is owed on either** — see "Landed" below.*
+*Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
+primary sources, and captured the pre-upgrade baseline.
+Supersedes the forty-five earlier editions. **Everything the forty-fifth recorded still stands** —
+nothing in any merged block is owed to E, and the three older device looks are still owed.*
 
 > ## ⏸ EVERYTHING BELOW IS ON HOLD — E's instruction, 2026-09-13
 >
@@ -17,9 +17,18 @@ unchanged and nothing is owed on either** — see "Landed" below.*
 > device looks in §A and the photosensitivity blocker in §D are unaffected as FACTS; they are
 > simply not to be chased.
 >
-> The colour arc has its own opener: **`handoff/START-HERE-colour-scheme.md`**, which carries a
-> measured inventory of the 63 colorsets and the five questions the arc must put to E first. It is
-> PLANNING first — no recolouring until there is a block E has seen.
+> **THE HOLD STANDS, AND E RE-CONFIRMED THE ORDER ON 2026-09-14: iOS 27 FIRST, colour arc still
+> held.** Asked directly where iOS 27 sat against it, E chose *"iOS 27 first, colour arc stays
+> held"*. There is a real dependency, and the research since has confirmed it: Apple's HIG
+> *Branding* page was revised **2026-09-09** to say brand colour belongs *"in the content layer,
+> where it scrolls beneath Liquid Glass controls and gets picked up dynamically"*. The curated
+> palette should be designed against iOS 27's guidance, not iOS 26's.
+>
+> The colour arc's opener has moved to **`handoff/archive/START-HERE-colour-scheme.md`** so this
+> folder keeps exactly ONE live opener (CLAUDE.md: *"If `handoff/` ever holds two live
+> `START-HERE-*` files, one of them is a trap"*). **Nothing about the arc changed — only the
+> pointer.** Its measured inventory of the 63 colorsets and the five questions for E are intact in
+> the archive, and it gets a fresh opener when E lifts the hold. It is still PLANNING first.
 
 **This file is THE outstanding list.** It is rewritten at every close-out (CLAUDE.md,
 "Session handoff"), and whenever E asks what is outstanding, so it is the thing to read and to
@@ -27,19 +36,36 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `f2ed231`** (PR #119; `598da3b` was the last commit to touch app code). `firestore.rules` untouched — **nothing for E to republish**.
-Every feature branch is merged and deleted; `origin` carries `main` alone.
+**`main` @ `855759c`** (PR #121). `firestore.rules` untouched — **nothing for E to republish**.
+**No app code has changed since `598da3b`** — this session and the two before it are documentation
+and baseline only.
 
-Measured on `main`:
-- unit suite **3,008 / 0**, emulator UP, **0** `127.0.0.1:9099` hits;
-- SwiftLint **0 / 812 files**;
-- sim `** BUILD SUCCEEDED **`;
+**THE iOS 27 BASELINE — measured 2026-09-14 at `855759c` on Xcode 26.6 / iOS 26.5 SDK, against a
+FRESHLY RESTARTED emulator.** This is the discriminator for the whole arc: without it, no
+post-upgrade failure is attributable to the SDK rather than to something already broken.
+- unit suite **3,008 / 0**, `** TEST SUCCEEDED **`, **49.7 s**, emulator UP, **0** `127.0.0.1:9099` hits;
+- **116 emulator-backed cases ran across SIX classes** (not the four CLAUDE.md records — see §F);
+- SwiftLint **0 violations, 0 serious, 812 files**;
+- sim `** BUILD SUCCEEDED **` — **70 warnings, 0 errors, and ALL SEVENTY ARE CONCURRENCY WARNINGS**
+  (13 of them already say *"this is an error in the Swift 6 language mode"*). See §F;
+- coverage, app target **27.56% (13,356 / 48,454)** — up from 24.72% (11,114/44,961) on 2026-09-07,
+  and **comparable**: the denominator moved because the TREE GREW (380 → 423 Swift files,
+  46,978 → 53,093 raw lines), not because the measurement extent changed. Numerator +20.2% against
+  a denominator +7.8%, so coverage grew ~2.5× faster than the code;
 - **both UI journeys GREEN** (run for `-6`; not re-run for `-Surfaces`, which touches no UI, nor
   for `-Corners`, which changes a shape no UI test asserts);
-- **device: ON MAIN at `1920536`, installed 2026-09-13 22:29** — build, install and launch clean
-  in one wireless pass. **ALL FOUR blocks have passed on the phone**: `-6`, `-7`, `-Surfaces`
-  (*"you can mark a PASS"*) and `-Corners` (*"they look okay"*, with two screenshots filed).
-  **Nothing in any merged block is owed to E.**
+- **device: ON MAIN at `1920536`, installed 2026-09-13 22:29** — unchanged this session; no new
+  build has been put on the phone. **ALL FOUR blocks have passed on the phone**: `-6`, `-7`,
+  `-Surfaces` (*"you can mark a PASS"*) and `-Corners` (*"they look okay"*, with two screenshots
+  filed). **Nothing in any merged block is owed to E.**
+
+**The emulator was restarted on E's instruction and it mattered.** The running instance had been up
+since **Sun 13 Sep 03:48 — 1 day 19 hours**. E: *"if there's a stale or old emulator running then
+I'd suggest closing it and starting a fresh one … purely because it has been running for so long."*
+Correct call: a baseline is only worth having if the environment under it is clean. The old one was
+on the right project and rules, but the whole point of Phase A is that nothing underneath it is
+suspect. Cycled cleanly (SIGTERM to the parent, ports released in 3 s, the Firebase **MCP** left
+untouched) and the suite re-run against the fresh one.
 
 ### Landed this session
 
@@ -107,6 +133,95 @@ okay"*, two screenshots filed). Nothing outstanding. (NEW)
   and two more write attempts failed with 504/GraphQL errors. It reconciled itself later. **Verify
   against `origin/main` — `git merge-base --is-ancestor` — and do not re-run `gh pr merge`**, which
   would have put a second empty merge commit on `main`. (NEW)
+
+## ⓪ · THE iOS 27 ARC — LIVE, and the next move is E's
+
+**Opened 2026-09-14, the day iOS 27 shipped.** E: *"i need to look at updating the LifeOS application up to
+the most recent iOS version that was released today - iOS 27. This must be done safely to ensure that nothing
+breaks."* Plan: `/Users/ethan/.claude/plans/okay-claude-i-need-melodic-origami.md`.
+Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
+
+**E's three decisions, 2026-09-14:**
+1. **Phone holds at iOS 26.4**, Automatic Updates off, until Xcode 27 is installed.
+2. **Scope = move to the 27 SDK AND prove nothing broke AND adopt worthwhile 27 APIs** behind `#available`
+   with complete iOS 16 floors. **The 16.0 deployment target does not move.**
+3. **iOS 27 first; the colour arc stays held.**
+
+- [x] **Phase A — the baseline. DONE 2026-09-14.** Figures in "State" above. This is the discriminator for
+      every later phase. (NEW)
+- [ ] **⛔ Phase B — THE GATE, and it is E's. Nothing from Phase C on can start until this is done.**
+      - **Automatic Updates OFF on the phone; hold at 26.4.** (E has been asked.)
+      - **Free the boot volume — it had 12.2 GB.** `~/Library/Developer/CoreSimulator/Devices` is **11 GB**
+        and regenerates safely. `iOS DeviceSupport` is 5.5 GB but is **entirely E's phone at 26.4**.
+      - **Xcode 27 onto `/Volumes/Es-SSD`** — E's instruction, and it works for the `.xip` and the app.
+        **BUT the iOS 27 simulator runtime (~8 GB) CANNOT go there**: runtimes are MobileAsset cryptex disk
+        images under `/System/Library/AssetsV2/`, on the system volume, with no supported relocation. That
+        8 GB of boot volume is unavoidable. **This is the one place E's instruction cannot be followed
+        literally, and E has been told.**
+      - **Keep Xcode 26.6 as `Xcode-26.6.app` — the rollback.** Switch with `DEVELOPER_DIR`, never
+        `xcode-select`.
+      - **DO NOT delete the iOS 26.5 runtime** (7.9 GB, deletable): Phase D needs both runtimes.
+      - **`brew upgrade swiftlint`** — 0.65.0 may not parse Swift 6.4.
+      - **Optional, and it will never be cheaper:** the older simulator runtime §A has wanted since
+        2026-09-11 is the same Components screen. (NEW)
+- [ ] **Phase C — build on the 27 SDK.** Traps enumerated in the opener. The load-bearing ones: decline
+      "update to recommended settings"; keep `SWIFT_VERSION = 5.0`; **first build on the committed
+      `Package.resolved`, unchanged, then `git diff` it**; add explicit `,OS=` to every destination and
+      update CLAUDE.md's Commands section. (NEW)
+- [ ] **Phase D — the 26.5-vs-27.0 UI sweep**, E's explicit question. Evidence to
+      `screenshots/ios27-compat/` with the mandatory README. Highest-risk surfaces: `AppTabBar` /
+      `AppTabContent` (the 10,000 pt off-screen offset and `CelebrationPopSource`'s `.global` compensation),
+      the three `presentationDetents` sheets, `.searchable`, and the four `connectedScenes → keyWindow`
+      walks. (NEW)
+- [ ] **Phase E — Firebase.** See the bump item below; the proof is the six emulator classes still passing.
+- [ ] **Phase F — device**: install the 27-SDK build while the phone is STILL on 26.4 (proves the new binary
+      runs on the old OS), then E updates to 27 and it is checked again. (NEW)
+- [ ] **Phase G — adoption.** Candidate list first, E picks, **each pick is its own FEATURE block** that
+      stops for review. Possibly zero. §7.1's filter governs and `apple:modernize` does not skip the gate. (NEW)
+
+### ⚠ THE ONE ITEM HERE THAT IS A REAL USER-FACING BUG, NOT MIGRATION WORK
+
+- [ ] **Bump firebase-ios-sdk 12.17.0 → 12.19.1 — it fixes silent random sign-outs.**
+      [PR #16505](https://github.com/firebase/firebase-ios-sdk/pull/16505): a known iOS 15+ bug where
+      `SecItemCopyMatching` returns `errSecItemNotFound` instead of `errSecInteractionNotAllowed` on a locked
+      device; FirebaseAuth trusted it and wiped the user. Reporters measured **~1% of recently active users**
+      losing their session. **This app is maximally exposed**: it restores sessions with a single
+      `Auth.auth().currentUser` read (`FirebaseAuthClientAdapter.swift:29` → `FirebaseManager.swift:97`) and
+      has **no `addStateDidChangeListener` fallback**, so a spurious `nil` drops straight to `.signedOut`.
+      **Skip 12.18.0** (app-extension `UIApplication.shared` regression, reversed in 12.19.0).
+      **This is independent of iOS 27 and worth doing regardless.** (NEW)
+
+### Facts the arc turned up that are NOT its scope
+
+- [ ] **`UIApplication.canOpenURL` is deprecated in iOS 27** (release note 179874781). Used at
+      `Places/PlaceAppInstallVerification.swift:91`; the app-directory "installed" badge and its **45
+      `LSApplicationQueriesSchemes`** rest on it. Apple's advice — *"attempt to open the URL and handle any
+      failure instead"* — **does not preserve the feature**, because the badge must answer "is it installed"
+      *without* launching anything. It sits behind a one-method seam (`:83`) so the code blast radius is one
+      function, but **what the badge becomes is a design question for E.** Not urgent: deprecated, not
+      removed. (NEW)
+- [ ] **No `PrivacyInfo.xcprivacy` anywhere in the project**, while the app links three SDKs on Apple's
+      third-party-requirements list (`FirebaseAuth`, `FirebaseCore`, `FirebaseFirestore`) plus five listed
+      transitive binaries, and uses `UserDefaults` — a required-reason API — via the App Group. **A
+      submission blocker at launch**, not an iOS 27 one. Belongs with §D. (NEW)
+- [ ] **The gRPC XCFramework slices are unsigned on disk** (`codesign -dvv` → *"code object is not signed at
+      all"*) and gRPC is on Apple's signature-required list. **Current state under Xcode 26 too — not new**,
+      but it had never been written down. (NEW)
+- [ ] **`Home/FirebaseDailySummaryGenerator.swift:77,127` bypasses the adapter seam**, calling `Auth.auth()`
+      and the callback `getIDToken` directly — the exact pattern `AuthBackingStore.swift:10-13` records as
+      removed elsewhere because "nothing could stub it". The only Auth consumer outside `Firebase/`. (NEW)
+
+### Corrections to CLAUDE.md this session earned
+
+- **"The four extensions the emulator harness covers" — there are SIX.** `FirebaseManagerRoutineRunsTests`
+  and `FirebaseManagerNudgeCompletionTests` joined and were never added. All six ran in the baseline
+  (116 cases). (NEW)
+- **`PlaceMapPicker.swift:15` says "the 40-odd `#available` gates"; the real count is 28** code sites (plus
+  68 `@available` declarations, zero `#unavailable`). (NEW)
+- **`ModernAPIPolicyCallSiteTests.swift:13-14` claims every other iOS 17 gate is an `if` with no `else`.**
+  `VoiceCaptureRecorder.swift:74` is an iOS 17 gate **with** a full `else`. (NEW)
+- **CLAUDE.md records the app target's deployment target as 16.0 only**; the widget is **16.1**, and the
+  file's §7 does say so elsewhere — but the "Architecture notes" bullet does not. (NEW)
 
 ## A · Decisions only E can make — minutes each
 
