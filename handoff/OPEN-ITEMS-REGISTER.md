@@ -1,4 +1,4 @@
-# Open items register — 2026-09-14 (forty-sixth edition; **the iOS 27 arc has opened and Phase A — the baseline — is CAPTURED. The gate is now E's: Xcode 27.**)
+# Open items register — 2026-09-15 (forty-seventh edition; **the Firebase keychain fix is SHIPPED — `F-FirebaseKeychainFix`, 12.17.0 → 12.19.1. The iOS 27 gate is still E's: Xcode 27.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -36,9 +36,14 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ `855759c`** (PR #121). `firestore.rules` untouched — **nothing for E to republish**.
-**No app code has changed since `598da3b`** — this session and the two before it are documentation
-and baseline only.
+**`main` @ PR #123** (`4e4ec1c` was the baseline). `firestore.rules` untouched — **nothing for E to
+republish**. **No app SWIFT code has changed since `598da3b`**; `F-FirebaseKeychainFix` moves a
+dependency pin and adds a test, nothing else.
+
+**Measured on the bump (2026-09-15, Xcode 26.6, emulator UP):** suite **3,011 / 0** in 26.3 s
+(3,008 baseline + 3 new floor tests), **0** `127.0.0.1:9099` hits, **116** emulator cases across the six
+classes, SwiftLint **0 / 813**, `** BUILD SUCCEEDED **` **70 warnings / 0 errors** (identical breakdown
+to baseline), coverage **27.56% (13,356/48,454)** — bit-identical, as it must be.
 
 **THE iOS 27 BASELINE — measured 2026-09-14 at `855759c` on Xcode 26.6 / iOS 26.5 SDK, against a
 FRESHLY RESTARTED emulator.** This is the discriminator for the whole arc: without it, no
@@ -181,7 +186,24 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
 
 ### ⚠ THE ONE ITEM HERE THAT IS A REAL USER-FACING BUG, NOT MIGRATION WORK
 
-- [ ] **Bump firebase-ios-sdk 12.17.0 → 12.19.1 — it fixes silent random sign-outs.**
+- [x] **DONE 2026-09-15 (`F-FirebaseKeychainFix`). Bumped firebase-ios-sdk 12.17.0 → 12.19.1 — it fixes silent random sign-outs.**
+      **Verified the FIX ITSELF is in the source we compile, not just the version string:**
+      `AuthKeychainServices.swift` in the resolved checkout has `isKeychainAccessible()` at :265, called
+      at :60 and :189, with the `errSecInteractionNotAllowed` remap at :65 and :194. Version numbers are a
+      proxy; this is the thing.
+      **Clean bump — suite 3,011/0 (3,008 + the 3 new floor tests), all 116 emulator cases across the six
+      classes still pass, SwiftLint 0/813, BUILD SUCCEEDED with 70 warnings — byte-identical breakdown to
+      the baseline — and app coverage bit-identical at 27.56% (13,356/48,454), which is exactly right
+      because no app code changed.** Four packages moved: firebase 12.17.0 → 12.19.1 (LINKED) plus three
+      transitive pins that are **not linked into any target** (googleappmeasurement, googleutilities,
+      google-ads-on-device-conversion). **The prebuilt binaries did not move at all** — abseil, grpc,
+      leveldb, nanopb, promises were already the newest that exist, as the research predicted.
+      `FirebaseSDKVersionFloorTests` now pins the floor in BOTH places — the resolved version and the
+      pbxproj `minimumVersion`, which was raised 12.0.0 → 12.19.1 so a clean resolve or a fresh clone
+      cannot legally land below the fix. Red-checked before the bump: both assertions failed on 12.17.0.
+      (NEW, CLOSED)
+
+      ~~The original entry, kept because it is the reasoning:~~
       [PR #16505](https://github.com/firebase/firebase-ios-sdk/pull/16505): a known iOS 15+ bug where
       `SecItemCopyMatching` returns `errSecItemNotFound` instead of `errSecInteractionNotAllowed` on a locked
       device; FirebaseAuth trusted it and wiped the user. Reporters measured **~1% of recently active users**
