@@ -1,4 +1,4 @@
-# Open items register — 2026-09-15 (forty-eighth edition; **THE APP BUILDS AND PASSES ON XCODE 27 / SWIFT 6.4 / iOS 27 SDK. Two test-double lines; zero app code.**)
+# Open items register — 2026-09-15 (forty-ninth edition; **THE APP RUNS ON iOS 27 — 3,011/0 on BOTH runtimes. Both simulators installed; Phase D is unblocked.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -207,6 +207,29 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       "update to recommended settings"; keep `SWIFT_VERSION = 5.0`; **first build on the committed
       `Package.resolved`, unchanged, then `git diff` it**; add explicit `,OS=` to every destination and
       update CLAUDE.md's Commands section. (NEW)
+- [x] **THE APP RUNS ON iOS 27.0 — verified 2026-09-15.** Not merely built against the SDK: the full
+      suite executed on the **iOS 27.0 (24A434)** runtime. **3,011 / 0**, 0 errors, 58 emulator cases,
+      0 `127.0.0.1:9099` hits, `Package.resolved` unchanged. Both runtimes are now green:
+      **26.5 → 3,011/0 (57.9 s)** and **27.0 → 3,011/0 (90.7 s)**. (NEW)
+
+- [x] **The iOS 27 runtime is INSTALLED, and the failure on the way in is worth keeping.** Xcode's
+      Components download sat on "Preparing…" all night: **it was DISK**, not a network or Xcode fault.
+      "Preparing" is the decompression step, the boot volume had 8.4 GB, and the asset needs ~7.5 GB plus
+      room to expand — **Xcode does not error in that state, it spins indefinitely.** After freeing space
+      the download completed but then reported ***"Failed — Registering simulator runtime with
+      CoreSimulator failed."***, **caused by me `pkill`ing a parallel `xcodebuild -downloadPlatform` when
+      E's GUI download started.** Recovery needed no re-download: the asset was intact at
+      `/System/Library/AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime/<hash>.asset/AssetData/Restore/*.dmg`
+      and `xcrun simctl runtime add <dmg>` registered it, **at zero disk cost** — same volume, so simctl
+      cloned rather than copied (27 GiB free before and after). **Do not run two runtime downloads at
+      once**, and if registration fails, re-add the local image rather than re-downloading. (NEW)
+
+- [x] **Disk: 8.4 GiB → 35 GiB free** (2026-09-15). The internal Data volume was **96% full** — this was
+      never an Xcode problem. Dev caches took it to 15 GiB (`iOS DeviceSupport` 5.5 GB, swiftpm 619 MB,
+      Homebrew 614 MB — all regenerate); **E then asked for Steam (11 GB) and EVE Online (9.3 GB) to be
+      deleted**, which was safe on inspection: Steam's `userdata` was **196 KB** and its 10 GB was six
+      re-downloadable games, EVE's 9.3 GB was **entirely `SharedCache`**. (NEW)
+
 - [ ] **Phase D — the 26.5-vs-27.0 UI sweep**, E's explicit question. Evidence to
       `screenshots/ios27-compat/` with the mandatory README. Highest-risk surfaces: `AppTabBar` /
       `AppTabContent` (the 10,000 pt off-screen offset and `CelebrationPopSource`'s `.global` compensation),

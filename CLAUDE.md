@@ -97,8 +97,9 @@ xcodebuild -resolvePackageDependencies -project "ADHD LifeOS.xcodeproj"
 
 swiftlint lint            # lint check, no errors allowed
 
+rm -rf TestResults.xcresult   # a stale bundle fails the run before a test starts — see below
 xcodebuild test -project "ADHD LifeOS.xcodeproj" -scheme "ADHD LifeOS" \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
   -skip-testing:"ADHD LifeOSUITests" \
   -enableCodeCoverage YES -resultBundlePath TestResults.xcresult
 xcrun xccov view --report TestResults.xcresult   # coverage report
@@ -110,12 +111,26 @@ but need a booted simulator and live network; run them deliberately, not per-blo
 ```bash
 
 xcodebuild build -project "ADHD LifeOS.xcodeproj" -scheme "ADHD LifeOS" \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'
 ```
 
-**Test destination note (2026-07-30):** this machine has only the iPhone 17 family on iOS 26.5
-installed — there is no iPhone 15 Pro simulator, so the previously documented destination was not
-runnable. If `xcodebuild` reports the destination is unavailable, run
+**`OS=` IS NOW MANDATORY, and the commands above carry it (2026-09-15).** Since the iOS 27 runtime
+was installed there are **TWO** `iPhone 17 Pro` simulators — one on 26.5, one on 27.0 — so a bare
+`name=iPhone 17 Pro` is ambiguous and `xcodebuild` will either error or silently pick one. **Never
+write a destination without `OS=` again.** The two that matter:
+
+```
+-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'   # the floor-side runtime
+-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0'   # the current one
+```
+
+**And `rm -rf TestResults.xcresult` belongs INSIDE the run, not beside it.** `xcodebuild` refuses to
+overwrite an existing bundle — *"error: Existing file at -resultBundlePath"*, exit 64 — before a
+single test executes. A cancelled run leaves one behind, so a separate earlier cleanup is not enough.
+
+**Test destination note (2026-07-30, superseded in part by the above):** this machine had only the
+iPhone 17 family on iOS 26.5 — there is no iPhone 15 Pro simulator, so the previously documented
+destination was not runnable. If `xcodebuild` reports the destination is unavailable, run
 `xcrun simctl list devices available` and use an installed device rather than guessing.
 
 ### Xcode's MCP bridge (E installed it 2026-09-11)
