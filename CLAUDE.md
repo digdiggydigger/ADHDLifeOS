@@ -147,7 +147,12 @@ take **project-navigator paths, not filesystem paths**: root is `/`, the project
 `ADHD LifeOS`, the app group is `ADHD LifeOS/ADHD LifeOS`. Also `XcodeRefreshCodeIssuesInFile`,
 `XcodeListNavigatorIssues`, `BuildProject` + `GetBuildLog`, `GetTestList`, `RunAllTests`,
 `RunSomeTests` (target name + XCTest identifier), `RunCodeSnippet`, `DocumentationSearch`, and
-**`RenderPreview`**, which builds and snapshots any `#Preview` in a file by index.
+**`RenderPreview`**, which builds and snapshots any `#Preview` in a file by index — **on a device the
+preview canvas chooses for itself, not the scheme's run destination** (established 2026-09-15: the
+scheme was switched to `iPhone 17 Pro (26.5)` and confirmed, the preview launched on `iPhone 18
+Pro` / 27.0). It cannot be pointed at an older runtime, and on this 8 GB machine it timed out on
+launch twice with Xcode, the emulator and a simulator resident; the UI-test render harness is the
+tool for a cross-runtime comparison.
 
 **Where it sits against the bar above — and it does not move the bar.** `RenderPreview` is a
 sanctioned way to produce STILL evidence for `screenshots/` (every view already has Light/Dark

@@ -1,4 +1,4 @@
-# Open items register — 2026-09-15 (forty-ninth edition; **THE APP RUNS ON iOS 27 — 3,011/0 on BOTH runtimes. Both simulators installed; Phase D is unblocked.**)
+# Open items register — 2026-09-15 (fiftieth edition; **PHASE D DONE — the 26.5-vs-27.0 sweep found NO clash in the app's own UI; two iOS-27 chrome retunes recorded. Next: Phase F, the device.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -36,7 +36,11 @@ update rather than improvising a list in chat.
 
 ## State
 
-**`main` @ PR #123** (`4e4ec1c` was the baseline). `firestore.rules` untouched — **nothing for E to
+**`main` @ PR #131 — Phase D landed** (`4e4ec1c` was the baseline). Measured for Phase D on
+2026-09-15 (Xcode 27.0, iOS 26.5 runtime, emulator UP): suite **3,011 / 0**, **0** `127.0.0.1:9099`
+hits, **58** emulator cases across the six classes, SwiftLint **0 / 814** (the sweep harness is the
+814th file), `** BUILD SUCCEEDED **`, coverage **27.62% (13,356/48,357)** — bit-identical to Phase C,
+as it must be: the block adds a UI-target file and evidence, and no app code. `firestore.rules` untouched — **nothing for E to
 republish**. **No app SWIFT code has changed since `598da3b`**; `F-FirebaseKeychainFix` moves a
 dependency pin and adds a test, nothing else.
 
@@ -230,14 +234,42 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       deleted**, which was safe on inspection: Steam's `userdata` was **196 KB** and its 10 GB was six
       re-downloadable games, EVE's 9.3 GB was **entirely `SharedCache`**. (NEW)
 
-- [ ] **Phase D — the 26.5-vs-27.0 UI sweep**, E's explicit question. Evidence to
-      `screenshots/ios27-compat/` with the mandatory README. Highest-risk surfaces: `AppTabBar` /
-      `AppTabContent` (the 10,000 pt off-screen offset and `CelebrationPopSource`'s `.global` compensation),
-      the three `presentationDetents` sheets, `.searchable`, and the four `connectedScenes → keyWindow`
-      walks. (NEW)
+- [x] **Phase D — the 26.5-vs-27.0 UI sweep. DONE 2026-09-15.** Evidence in
+      `screenshots/ios27-compat/` (52 frames, 26 composites, 2 zooms, README with the per-band
+      measurement). Thirteen surfaces × two runtimes × two appearances, the SAME binary, driven by
+      `IOS27CompatSweepUITests` (committed deliberately — it is the re-runnable camera for Phase F
+      and every 27.x point release). **Answer to E's question: nothing the app draws moved.**
+      - **The custom tab bar is pixel-identical** — bottom band **0.00 %** on all ten plain-tab
+        frames, both modes. The audit's highest-risk surface is closed.
+      - **iOS 27 retunes SHEET CHROME**: bottom corners rounded and inset, a thin dark edge, on every
+        sheet (promote, Settings, New nudge at both detents). Content inside unchanged.
+      - **Glass capsules retuned, visible in DARK**: sheet-toolbar Cancel/Save are lighter and edged
+        on 27.0. System controls, consistent with iOS 27 — **an input to the held colour arc**, not a
+        defect.
+      - `confirmationDialog` is a **popover on both runtimes** (no Cancel element in either tree);
+        27.0 places it above the row rather than beside it.
+      - The bottom search row is unchanged; frame 02's delta is iOS 27's first-run QuickPath tip
+        pane where 26.5 shows the keyboard. The `.searchable` precedent did not repeat.
+      - One text delta in 52 frames (the schedule summary line, dark, ~30 % dimmer on 27.0) carries
+        an opacity transition and is recorded as an observation, not a finding.
+      - **NOT covered: widgets and Live Activities** — see the bridge item below. Owed to Phase F.
+      (NEW, CLOSED)
+- [ ] **The Xcode bridge's `RenderPreview` cannot be pointed at a chosen runtime — established, not
+      assumed.** The scheme was switched to `iPhone 17 Pro (26.5)` and confirmed active; the preview
+      launched on `iPhone 18 Pro` (27.0) regardless — **the preview canvas picks its own device**. Both
+      27.0 attempts then failed on launch timeouts (`AppLaunchTimeoutError` 15 s; then
+      `CHSErrorDomain 1051 timelineReloadTimeout` for the widget extension) on this 8 GB machine with
+      Xcode, the emulator and a simulator all resident. So the widget and Live Activity previews were
+      NOT rendered on either runtime. **Phase F covers it on the phone**; if a sim render is wanted
+      first, the route is the home-screen widget gallery driven through the simulator, not the bridge.
+      (NEW)
 - [ ] **Phase E — Firebase.** See the bump item below; the proof is the six emulator classes still passing.
-- [ ] **Phase F — device**: install the 27-SDK build while the phone is STILL on 26.4 (proves the new binary
-      runs on the old OS), then E updates to 27 and it is checked again. (NEW)
+- [ ] **Phase F — device, THE NEXT BLOCK**: install the 27-SDK build while the phone is STILL on 26.4
+      (proves the new binary runs on the old OS), then E updates to 27 and it is checked again. The
+      device look now carries three specific asks from Phase D: **the Focus Live Activity and the
+      Home Screen widgets on iOS 27** (never rendered on 27 anywhere yet), **the retuned sheet chrome
+      and dark-mode capsules on a physical display**, and the schedule summary line's dimness in dark.
+      E's phone does not yet carry the Firebase keychain fix either. (NEW)
 - [ ] **Phase G — adoption.** Candidate list first, E picks, **each pick is its own FEATURE block** that
       stops for review. Possibly zero. §7.1's filter governs and `apple:modernize` does not skip the gate. (NEW)
 

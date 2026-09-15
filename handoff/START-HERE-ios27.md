@@ -1,4 +1,4 @@
-# START HERE — **the iOS 27 arc.** Phase A is DONE; the next session opens at the Xcode 27 gate
+# START HERE — **the iOS 27 arc.** Phases A–D are DONE; the next block is **Phase F, the device**
 
 **Written 2026-09-14.** iOS 27 shipped today. E asked to move the app onto it "safely to ensure that
 nothing breaks", and chose the scope, the ordering and the phone policy in the same sitting.
@@ -130,7 +130,26 @@ incremental builds — only recompiled files emit.
 
 ---
 
-## ▶ THE NEXT BLOCK: PHASE D — the 26.5-vs-27.0 visual sweep
+## ✅ PHASE D IS DONE (2026-09-15) — read `screenshots/ios27-compat/README.md`, then start Phase F
+
+**The answer to E's question is: nothing the app draws moved between iOS 26.5 and 27.0.** Thirteen
+surfaces, both runtimes, both appearances, the same binary, measured per band. The custom tab bar's
+band is **0.00 %** on every plain-tab frame. What DID move is iOS 27's own chrome — sheets get rounded,
+inset bottom corners and a dark edge; glass capsules in sheet toolbars are lighter and edged in dark —
+and both are recorded as inputs to the held colour arc, not as defects. `confirmationDialog` is a
+popover on both runtimes. The bottom search row did not repeat the iOS 26 `.searchable` episode.
+
+**Two mechanism facts, so nobody re-derives them:** `RenderPreview`'s canvas **ignores the scheme's run
+destination** (switched to 26.5, launched on iPhone 18 Pro / 27.0) and timed out on launch twice on this
+machine — so **widgets and Live Activities were NOT rendered on either runtime** and are owed to Phase F.
+The harness `IOS27CompatSweepUITests` is committed and re-runnable: one run per `OS=` destination,
+erase the simulator after each, `screenshots/ios27-compat/compare.py` does the per-band diff.
+
+**Phase F's asks, from Phase D:** the Focus Live Activity and the widgets on iOS 27; the retuned sheet
+chrome and dark capsules on a physical display; the schedule summary line in dark (one frame showed it
+~30 % dimmer on 27.0, most likely a mid-fade capture — look, do not assume).
+
+## ~~▶ THE NEXT BLOCK: PHASE D — the 26.5-vs-27.0 visual sweep~~ (done; kept as the brief it was)
 
 **This is the block E actually asked for**, verbatim: *"look for any clashes between the design of the UI
 of the top version iOS 26 compared to the new top level which is iOS 27."* Everything else so far has been
