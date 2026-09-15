@@ -27,6 +27,55 @@ The full plan is `/Users/ethan/.claude/plans/okay-claude-i-need-melodic-origami.
 
 ---
 
+## ⬛ STATE AT 2026-09-15 02:30 — THE GATE IS OPEN. Read this before the baseline table.
+
+**Xcode 27.0 (27A266a) is INSTALLED, licence accepted, Swift 6.4, iOS 27.0 SDK present.** E installed it
+on 2026-09-15. Phase B is therefore DONE, with three deviations from the plan that a later session must
+know about:
+
+1. **Xcode 26.6 IS GONE — there is no rollback.** It installed over the top at `/Applications/Xcode.app`
+   rather than alongside on the SSD, so the `DEVELOPER_DIR` rollback the plan called for does not exist.
+   If Swift 6.4 breaks something that cannot be fixed quickly, **there is currently no way to build this
+   app at all.** Re-downloading 26.6 from the developer portal (~4 GB) is the insurance; E has been told
+   and has not yet decided.
+2. **The iOS 27 SIMULATOR RUNTIME IS NOT INSTALLED, and that is DELIBERATE.** Boot volume is ~12 GB free
+   and the runtime needs ~8 GB on that volume (it cannot go on the SSD — MobileAsset cryptex). It is not
+   needed yet: **the deployment target is 16.0, so a 27-SDK binary runs on the existing 26.5 runtime.**
+   Running Phase C on 26.5 changes exactly ONE variable — the SDK — which is the whole point. The 27
+   runtime is needed for **Phase D only** (the 26-vs-27 visual sweep), and by then the 5.5 GB of
+   `iOS DeviceSupport` can be freed for it.
+3. **macOS TCC blocks the external SSD, and this WILL bite again.** After the Xcode 27 install the volume
+   remounted (00:36) and every access returned `Operation not permitted` — EPERM, not EACCES, so it is
+   privacy control and NOT file permissions. DerivedData lives on that volume, so **no build can run**.
+   E granted Ghostty **Full Disk Access**; reads started working immediately but **writes still require
+   Ghostty to be quit and reopened**. If a build fails with "couldn't be opened because you don't have
+   permission", this is it — check `touch /Volumes/Es-SSD/.test` before blaming the toolchain.
+
+**ALSO ALREADY DONE, ahead of the plan's order (E's call, 2026-09-15): the Firebase bump.**
+`F-FirebaseKeychainFix` merged `cfdb250` (PR #123) — **12.17.0 → 12.19.1**, fixing silent random
+sign-outs. And the emulator count was corrected 116 → **58** (PR #124): xcodebuild logs each case twice,
+so a naive `grep -c` doubles it.
+
+**WHAT HAS NOT HAPPENED YET:** the app has **never been compiled under Swift 6.4**. The first attempt
+died on the TCC block before reaching the compiler, so **nothing is yet known** about whether it builds,
+how many warnings it produces, or whether the 3,011 tests still pass. That is the very next thing to do.
+
+**THE NEXT COMMAND**, once Ghostty has been restarted and `touch /Volumes/Es-SSD/.test` succeeds:
+
+```bash
+rm -rf TestResults.xcresult
+xcodebuild test -project "ADHD LifeOS.xcodeproj" -scheme "ADHD LifeOS" \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+  -skip-testing:"ADHD LifeOSUITests" \
+  -enableCodeCoverage YES -resultBundlePath TestResults.xcresult
+```
+
+**Do NOT pass `-resolvePackageDependencies`**, and check `git diff` on `Package.resolved` afterwards —
+it must not move. It was verified unchanged (`md5 5362cb266cc69a00bd8e0ded7ecaffa4`) through the failed
+attempt, and holding it fixed is what makes a Swift 6.4 failure attributable.
+
+---
+
 ## THE BASELINE — captured 2026-09-14 on Xcode 26.6, and this is the whole point of Phase A
 
 **Without this, no post-upgrade failure is attributable.** Measured at `855759c`, against a **freshly
