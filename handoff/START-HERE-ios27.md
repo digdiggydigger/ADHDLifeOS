@@ -27,52 +27,106 @@ The full plan is `/Users/ethan/.claude/plans/okay-claude-i-need-melodic-origami.
 
 ---
 
-## ⬛ STATE AT 2026-09-15 02:30 — THE GATE IS OPEN. Read this before the baseline table.
+## ⬛ STATE AT 2026-09-15 — PHASES A, B, C AND THE FIREBASE FIX ARE ALL DONE AND LANDED
 
-**Xcode 27.0 (27A266a) is INSTALLED, licence accepted, Swift 6.4, iOS 27.0 SDK present.** E installed it
-on 2026-09-15. Phase B is therefore DONE, with three deviations from the plan that a later session must
-know about:
+**Everything measurable says nothing broke.** Read this section; the baseline table below is kept as the
+"before" it was captured to be, not as current state.
 
-1. **Xcode 26.6 IS GONE — there is no rollback.** It installed over the top at `/Applications/Xcode.app`
-   rather than alongside on the SSD, so the `DEVELOPER_DIR` rollback the plan called for does not exist.
-   If Swift 6.4 breaks something that cannot be fixed quickly, **there is currently no way to build this
-   app at all.** Re-downloading 26.6 from the developer portal (~4 GB) is the insurance; E has been told
-   and has not yet decided.
-2. **The iOS 27 SIMULATOR RUNTIME IS NOT INSTALLED, and that is DELIBERATE.** Boot volume is ~12 GB free
-   and the runtime needs ~8 GB on that volume (it cannot go on the SSD — MobileAsset cryptex). It is not
-   needed yet: **the deployment target is 16.0, so a 27-SDK binary runs on the existing 26.5 runtime.**
-   Running Phase C on 26.5 changes exactly ONE variable — the SDK — which is the whole point. The 27
-   runtime is needed for **Phase D only** (the 26-vs-27 visual sweep), and by then the 5.5 GB of
-   `iOS DeviceSupport` can be freed for it.
-3. **macOS TCC blocks the external SSD, and this WILL bite again.** After the Xcode 27 install the volume
-   remounted (00:36) and every access returned `Operation not permitted` — EPERM, not EACCES, so it is
-   privacy control and NOT file permissions. DerivedData lives on that volume, so **no build can run**.
-   E granted Ghostty **Full Disk Access**; reads started working immediately but **writes still require
-   Ghostty to be quit and reopened**. If a build fails with "couldn't be opened because you don't have
-   permission", this is it — check `touch /Volumes/Es-SSD/.test` before blaming the toolchain.
+| | iOS 26.5 runtime | iOS 27.0 runtime |
+|---|---|---|
+| Suite | **3,011 / 0** (57.9 s) | **3,011 / 0** (90.7 s) |
+| Errors | 0 | 0 |
+| Emulator cases | 58 / six classes | 58 / six classes |
 
-**ALSO ALREADY DONE, ahead of the plan's order (E's call, 2026-09-15): the Firebase bump.**
-`F-FirebaseKeychainFix` merged `cfdb250` (PR #123) — **12.17.0 → 12.19.1**, fixing silent random
-sign-outs. And the emulator count was corrected 116 → **58** (PR #124): xcodebuild logs each case twice,
-so a naive `grep -c` doubles it.
+**Toolchain:** Xcode **27.0 (27A266a)**, Swift **6.4**, iOS **27.0 SDK**, licence accepted.
+**Both runtimes installed:** 26.5 (23F77) and 27.0 (24A434). Deployment target **unchanged at 16.0 / 16.1**.
+`Package.resolved` verified unchanged on every single run — the SDK was the only variable throughout.
 
-**WHAT HAS NOT HAPPENED YET:** the app has **never been compiled under Swift 6.4**. The first attempt
-died on the TCC block before reaching the compiler, so **nothing is yet known** about whether it builds,
-how many warnings it produces, or whether the 3,011 tests still pass. That is the very next thing to do.
+**Landed, newest first:**
+- `c5e6e2c` — `OS=` mandatory in destinations + the app runs on iOS 27
+- `cd56e71` — **`F-iOS27-C-SDK`**: builds and passes on Swift 6.4. Two test-double lines, **zero app code**
+- `cfdb250` — **`F-FirebaseKeychainFix`**: firebase-ios-sdk 12.17.0 → **12.19.1** (silent random sign-outs)
+- `4e4ec1c` — the pre-upgrade baseline
 
-**THE NEXT COMMAND**, once Ghostty has been restarted and `touch /Volumes/Es-SSD/.test` succeeds:
+**The only thing Swift 6.4 actually broke:** it enforces that an `actor` cannot conform to a
+global-actor-isolated protocol. `DailySummaryGenerating` is implicitly `@MainActor` via the app target's
+`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, which broke two gated test doubles.
+**⚠ Marking the PROTOCOL `nonisolated` does NOT fix it** — that propagates to conformers and an actor
+cannot be `nonisolated` either, so the error just moves. The fix was `final class … @unchecked Sendable`
+on the doubles. App-target build warnings went **33 → 37**: +3 `[#IsolatedConformances]`,
++1 `[#ImplicitStrongCapture]`, both new Swift 6.4 diagnostics. Every pre-existing category unchanged.
 
-```bash
-rm -rf TestResults.xcresult
-xcodebuild test -project "ADHD LifeOS.xcodeproj" -scheme "ADHD LifeOS" \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
-  -skip-testing:"ADHD LifeOSUITests" \
-  -enableCodeCoverage YES -resultBundlePath TestResults.xcresult
-```
+**⚠ COUNT DISTINCT.** `xcodebuild` prints each warning AND each test case twice, so `grep -c` doubles
+both. "70 warnings" was really **33**; "116 emulator cases" was really **58**. Both were wrong in earlier
+editions and are corrected. A `test` run's warning count is not comparable to a `build` run's, nor across
+incremental builds — only recompiled files emit.
 
-**Do NOT pass `-resolvePackageDependencies`**, and check `git diff` on `Package.resolved` afterwards —
-it must not move. It was verified unchanged (`md5 5362cb266cc69a00bd8e0ded7ecaffa4`) through the failed
-attempt, and holding it fixed is what makes a Swift 6.4 failure attributable.
+---
+
+## ▶ THE NEXT BLOCK: PHASE D — the 26.5-vs-27.0 visual sweep
+
+**This is the block E actually asked for**, verbatim: *"look for any clashes between the design of the UI
+of the top version iOS 26 compared to the new top level which is iOS 27."* Everything else so far has been
+the groundwork that makes it possible.
+
+**Both runtimes exist now, so this is a measurement rather than an opinion.** Render the design-sensitive
+surfaces on **26.5 and 27.0**, put them side by side, and look.
+
+**Mechanism — establish which works BEFORE building the folder around it.** The Xcode MCP bridge's
+`RenderPreview` is preferred but **it is unverified whether it can be pointed at a chosen runtime**, and
+note the `xcode` MCP server has been failing to connect this session. The fallback is already in the repo:
+`ADHD LifeOSUITests/RenderHarnessUITests.swift`, driven once per `OS=` destination. Say in the README
+which one produced the images.
+
+**Point the camera here, in this order:**
+1. **`AppTabBar` / `AppTabContent`** — highest risk in the app. `AppTabContent.swift:108` parks hidden tabs
+   **10,000 pt off-screen** via `.offset(x:)`, and `CelebrationPopSource.swift:43,57` compensates in
+   `.global` coordinates. A custom bar above the safe area plus a global-coordinate hack is exactly what a
+   new SwiftUI release disturbs.
+2. **Sheets** — `AccountDeletionSection:156`, `CapturePromoteSheet:92`, `NudgesView:300`, plus
+   `CelebrationPresentationProbe`, which walks `connectedScenes → keyWindow`. **iOS 27 changed presented-VC
+   trait inheritance to walk the superview chain** (release note 170005251) — that is the probe E shipped
+   in `F-CTACelebrations-Surfaces` and passed on device, so it is the highest-value regression check.
+3. **`.searchable`** — precedent that matters: iOS 26 rendering it as a capsule is *the entire reason the
+   bottom-search arc exists* (`Theme/AppSearchScope.swift:11`). This app has been visually broken by an OS
+   bump before.
+4. **Materials / toolbars**, then **widgets and Live Activities**.
+
+**What the research already settled, so do not re-derive it:**
+- **No new Liquid Glass APIs in 27, none deprecated.** The glass was *retuned* though — secondary reporting
+  describes darker edges and brighter speculars, plus a new user-facing **Settings → Appearance → Liquid
+  Glass** transparency slider. **Whether an iOS-26-SDK binary receives the refreshed material is not stated
+  by any primary source — that is what looking settles.**
+- **Nothing changed in Reduce Motion, `symbolEffect`, `PhaseAnimator` or `keyframeAnimator`.** §7.2 and the
+  celebration ladder are untouched by this release. A clean negative.
+- **Nothing found about changed safe-area insets or home-indicator height** — the things that would move
+  `AppTabBar`.
+- **HIG *Layout* (2026-09-09)** now says use a scroll edge effect rather than a solid background beneath
+  controls; the app has **zero** `scrollEdgeEffect` uses. **HIG *Branding* (same date)** says put brand
+  colour in the content layer "where it scrolls beneath Liquid Glass controls" — **a direct input to the
+  held colour arc.**
+
+**Deliverable:** `screenshots/ios27-compat/` with the mandatory README in the `tag-editor-ui` house style —
+environment line, what driving the real screens caught that tests could not, and a table of
+**filename → what it proves**, numerically prefixed.
+
+---
+
+## ⏭ AFTER PHASE D
+
+- **Phase F — device.** Install the 27-SDK build while **E's phone is still on 26.4** (proves the new
+  binary runs on the old OS), *then* E updates to 27 and it is checked again. E's phone does **not** yet
+  carry the Firebase keychain fix.
+- **Phase G — adoption.** Candidate list first, E picks, each pick its own FEATURE block. Possibly zero.
+
+## ⚠ STILL OPEN, AND E HAS NOT DECIDED
+
+- **THERE IS NO XCODE 26.6 ROLLBACK.** 27.0 installed over the top at `/Applications`. Less pressing now
+  the build is green, but if Phase D or F turns up something ugly there is no way back. ~4 GB to
+  re-download.
+- **E's phone is HELD at iOS 26.4** with Automatic Updates off — correct until Phase F step 1 is done.
+- **Disk: 27 GiB free** after clearing ~27 GB (dev caches, plus Steam and EVE at E's request). No longer a
+  constraint, but the internal volume was 96% full and will creep back.
 
 ---
 
