@@ -273,7 +273,11 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       fix** — compiled from the 12.19.1 checkout (`AuthKeychainServices.swift` has
       `isKeychainAccessible` ×3; `Package.resolved` unchanged). Note the embedded Firebase version
       string reads `12.19.0`: Firebase did not bump its core constant for the .1 patch, so the SOURCE
-      is the proof, not the string. **E's look at 26.4 is the next thing, then step 2.** (NEW)
+      is the proof, not the string. **E's look at 26.4 PASSED, 2026-09-16** (E: *"your most recent install to my iphone works
+      correctly throughout the app"*) — the 27-SDK binary runs on the old OS, the floor-side half of
+      the compatibility claim. **Step 2 is under way**: E is updating the phone to iOS 27 through
+      the MacBook (Finder), because the phone's own storage is very limited; the same build is then
+      re-checked on 27 without a reinstall. (NEW)
       Original brief: install the 27-SDK build while the phone is STILL on 26.4
       (proves the new binary runs on the old OS), then E updates to 27 and it is checked again. The
       device look now carries three specific asks from Phase D: **the Focus Live Activity and the
