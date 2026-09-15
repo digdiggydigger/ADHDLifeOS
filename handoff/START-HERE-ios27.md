@@ -36,7 +36,7 @@ restarted** emulator (the previous one had been running 1 day 19 hours; E called
 |---|---|
 | Unit suite | **3,008 / 0**, `** TEST SUCCEEDED **`, in 49.7 s |
 | Emulator-retry hits (`127.0.0.1:9099`) | **0** — the poisoned-simulator tell is clean |
-| Emulator-backed cases | **116**, all six classes ran (see below) |
+| Emulator-backed cases | **58**, all six classes ran (see below) |
 | SwiftLint | **0 violations, 0 serious, 812 files** |
 | Build | `** BUILD SUCCEEDED **`, **70 warnings, 0 errors** |
 | Coverage — app target | **27.56% (13,356 / 48,454)** |
@@ -72,10 +72,14 @@ flipping it in this arc.
 SDK move:
 
 ```
-FirebaseManagerTagsTests             38     FirebaseManagerSeedTests            26
-FirebaseManagerAccountDeletionTests  26     FirebaseManagerStorageTests         20
-FirebaseManagerRoutineRunsTests       4     FirebaseManagerNudgeCompletionTests  2
+FirebaseManagerTagsTests             19     FirebaseManagerSeedTests            13
+FirebaseManagerAccountDeletionTests  13     FirebaseManagerStorageTests         10
+FirebaseManagerRoutineRunsTests       2     FirebaseManagerNudgeCompletionTests  1
 ```
+
+**Count DISTINCT test-case names, not log lines.** `xcodebuild` logs each case twice — once
+`' started'` and once `' passed'` — so a naive `grep -c` reports exactly double. An earlier edition of
+this file and of the register said "116"; the real figure is **58**, and the doubling is the reason.
 
 ⚠ **CLAUDE.md says "the four extensions the emulator harness covers". There are SIX.**
 `+RoutineRuns` and `+NudgeCompletion` joined and were never added to the doc. Corrected here.

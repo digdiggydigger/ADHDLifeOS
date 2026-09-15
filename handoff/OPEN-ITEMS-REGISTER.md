@@ -41,7 +41,7 @@ republish**. **No app SWIFT code has changed since `598da3b`**; `F-FirebaseKeych
 dependency pin and adds a test, nothing else.
 
 **Measured on the bump (2026-09-15, Xcode 26.6, emulator UP):** suite **3,011 / 0** in 26.3 s
-(3,008 baseline + 3 new floor tests), **0** `127.0.0.1:9099` hits, **116** emulator cases across the six
+(3,008 baseline + 3 new floor tests), **0** `127.0.0.1:9099` hits, **58** emulator cases across the six
 classes, SwiftLint **0 / 813**, `** BUILD SUCCEEDED **` **70 warnings / 0 errors** (identical breakdown
 to baseline), coverage **27.56% (13,356/48,454)** — bit-identical, as it must be.
 
@@ -49,7 +49,7 @@ to baseline), coverage **27.56% (13,356/48,454)** — bit-identical, as it must 
 FRESHLY RESTARTED emulator.** This is the discriminator for the whole arc: without it, no
 post-upgrade failure is attributable to the SDK rather than to something already broken.
 - unit suite **3,008 / 0**, `** TEST SUCCEEDED **`, **49.7 s**, emulator UP, **0** `127.0.0.1:9099` hits;
-- **116 emulator-backed cases ran across SIX classes** (not the four CLAUDE.md records — see §F);
+- **58 emulator-backed cases ran across SIX classes** (not the four CLAUDE.md records — see §F);
 - SwiftLint **0 violations, 0 serious, 812 files**;
 - sim `** BUILD SUCCEEDED **` — **70 warnings, 0 errors, and ALL SEVENTY ARE CONCURRENCY WARNINGS**
   (13 of them already say *"this is an error in the Swift 6 language mode"*). See §F;
@@ -191,7 +191,7 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       `AuthKeychainServices.swift` in the resolved checkout has `isKeychainAccessible()` at :265, called
       at :60 and :189, with the `errSecInteractionNotAllowed` remap at :65 and :194. Version numbers are a
       proxy; this is the thing.
-      **Clean bump — suite 3,011/0 (3,008 + the 3 new floor tests), all 116 emulator cases across the six
+      **Clean bump — suite 3,011/0 (3,008 + the 3 new floor tests), all 58 emulator cases across the six
       classes still pass, SwiftLint 0/813, BUILD SUCCEEDED with 70 warnings — byte-identical breakdown to
       the baseline — and app coverage bit-identical at 27.56% (13,356/48,454), which is exactly right
       because no app code changed.** Four packages moved: firebase 12.17.0 → 12.19.1 (LINKED) plus three
@@ -237,7 +237,7 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
 
 - **"The four extensions the emulator harness covers" — there are SIX.** `FirebaseManagerRoutineRunsTests`
   and `FirebaseManagerNudgeCompletionTests` joined and were never added. All six ran in the baseline
-  (116 cases). (NEW)
+  (58 cases). (NEW)
 - **`PlaceMapPicker.swift:15` says "the 40-odd `#available` gates"; the real count is 28** code sites (plus
   68 `@available` declarations, zero `#unavailable`). (NEW)
 - **`ModernAPIPolicyCallSiteTests.swift:13-14` claims every other iOS 17 gate is an `if` with no `else`.**
