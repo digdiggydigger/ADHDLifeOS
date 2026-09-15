@@ -67,7 +67,18 @@ struct SecondaryFailingDailySummaryGenerator: DailySummaryGenerating {
 /// Holds generation open until a test releases it, so "mid-flight" is a state the test can stand
 /// in rather than a race it has to win. Counts its calls so joining a generation is
 /// distinguishable from paying for a second one.
-actor GatedDailySummaryGenerator: DailySummaryGenerating {
+/// A CLASS rather than an `actor`, and the reason is Swift 6.4 rather than preference: the app
+/// target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, so `DailySummaryGenerating` is
+/// implicitly `@MainActor`, and Xcode 27 enforces that an actor cannot conform to a
+/// global-actor-isolated protocol. Marking the PROTOCOL `nonisolated` does not rescue it — that
+/// propagates `nonisolated` to conformers, which an actor cannot be either.
+///
+/// Nothing is lost by the change. The mid-flight hold is the `Gate` actor's doing, not this type's:
+/// `generate` is still `async` and still suspends on the gate, so "generating" remains a state a
+/// test can stand in. `@unchecked Sendable` follows `ToggleableDailySummaryGenerator` below and
+/// `GatedFocusLogger` in `FocusCompletionStackServiceTests` — the established shape for a gated
+/// double whose mutation is serialised by the test that owns it.
+final class GatedDailySummaryGenerator: DailySummaryGenerating, @unchecked Sendable {
     private let gate: Gate
     private(set) var callCount = 0
 
@@ -75,7 +86,7 @@ actor GatedDailySummaryGenerator: DailySummaryGenerating {
         self.gate = gate
     }
 
-    nonisolated var source: DailySummarySource { .model }
+    var source: DailySummarySource { .model }
 
     func generate(_ request: DailySummaryRequest) async throws -> DailySummaryContent {
         callCount += 1
@@ -93,7 +104,7 @@ actor GatedDailySummaryGenerator: DailySummaryGenerating {
 /// That race is lost only under load — which is exactly when it is hardest to read as a race
 /// rather than a real failure. Holding the failure behind the gate makes mid-flight a state the
 /// test stands in, rather than one it has to catch.
-actor GatedFailingDailySummaryGenerator: DailySummaryGenerating {
+final class GatedFailingDailySummaryGenerator: DailySummaryGenerating, @unchecked Sendable {
     private let gate: Gate
 
     init(gate: Gate) {

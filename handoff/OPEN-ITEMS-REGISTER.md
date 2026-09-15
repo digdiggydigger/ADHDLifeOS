@@ -1,4 +1,4 @@
-# Open items register — 2026-09-15 (forty-seventh edition; **the Firebase keychain fix is SHIPPED — `F-FirebaseKeychainFix`, 12.17.0 → 12.19.1. The iOS 27 gate is still E's: Xcode 27.**)
+# Open items register — 2026-09-15 (forty-eighth edition; **THE APP BUILDS AND PASSES ON XCODE 27 / SWIFT 6.4 / iOS 27 SDK. Two test-double lines; zero app code.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -169,7 +169,41 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       - **`brew upgrade swiftlint`** — 0.65.0 may not parse Swift 6.4.
       - **Optional, and it will never be cheaper:** the older simulator runtime §A has wanted since
         2026-09-11 is the same Components screen. (NEW)
-- [ ] **Phase C — build on the 27 SDK.** Traps enumerated in the opener. The load-bearing ones: decline
+- [x] **Phase C — build on the 27 SDK. DONE 2026-09-15 (`F-iOS27-C-SDK`).**
+      **The app compiles and the whole suite passes under Xcode 27.0 / Swift 6.4 / iOS 27.0 SDK**, run on
+      the iOS 26.5 runtime (target is 16.0, so the 27 runtime is not needed for this and is deliberately
+      not installed — it is a Phase D need). `Package.resolved` verified **unchanged** on every run, so
+      the SDK was the only variable.
+
+      **Exactly TWO compile errors, both in TEST DOUBLES, none in app code.** `DailySummaryGenerating`
+      is implicitly `@MainActor` because the app target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`,
+      and **Swift 6.4 began enforcing that an `actor` cannot conform to a global-actor-isolated
+      protocol** — which broke `GatedDailySummaryGenerator` and `GatedFailingDailySummaryGenerator`.
+
+      **A wrong turn worth recording, because it looks right: marking the PROTOCOL `nonisolated` does
+      not fix it.** That propagates `nonisolated` to conformers, and an actor cannot be `nonisolated`
+      either — the error simply moves. Reverted; app code ended up untouched. The fix is the two doubles
+      becoming `final class … @unchecked Sendable`, following `ToggleableDailySummaryGenerator` ten lines
+      below them in the same file. **Nothing is lost semantically:** the mid-flight hold is the `Gate`
+      actor's doing, not the generator's own isolation, so `generate` still suspends and "generating"
+      remains a state a test can stand in.
+
+      **App-target build warnings: 33 → 37, and the +4 is two NEW Swift 6.4 diagnostics**, not decay.
+      Every pre-existing category is unchanged to the count (14, 8, 5, 2, 2, 1, 1). The new ones are
+      **3 × `[#IsolatedConformances]`** and **1 × `[#ImplicitStrongCapture]`**.
+      ⚠ **Count DISTINCT warnings.** The "70" in the forty-sixth edition was a raw `grep -c`; the log
+      repeats each warning, and the distinct figure was always 33. Same doubling trap as the emulator
+      count — both are now corrected. A `test` run's warning count is NOT comparable to a `build` run's,
+      and neither is comparable across incremental builds, since only recompiled files emit.
+
+      Suite **3,011 / 0** in 57.9 s · **58** emulator cases across the six classes · **0**
+      `127.0.0.1:9099` hits · SwiftLint **0 / 813** · `** BUILD SUCCEEDED **`, 0 errors · coverage
+      **27.62% (13,356/48,357)** — numerator BIT-IDENTICAL; the denominator moved 48,454 → 48,357 with
+      no source change, i.e. Swift 6.4 attributes executable lines slightly differently. (NEW, CLOSED)
+
+- [ ] ~~Phase C~~ — superseded above. Still outstanding from its trap list:
+      **add an explicit `,OS=` to CLAUDE.md's documented destinations**, which becomes load-bearing the
+      moment the iOS 27 runtime is installed and two `iPhone 17 Pro` sims exist. (NEW) Traps enumerated in the opener. The load-bearing ones: decline
       "update to recommended settings"; keep `SWIFT_VERSION = 5.0`; **first build on the committed
       `Package.resolved`, unchanged, then `git diff` it**; add explicit `,OS=` to every destination and
       update CLAUDE.md's Commands section. (NEW)
