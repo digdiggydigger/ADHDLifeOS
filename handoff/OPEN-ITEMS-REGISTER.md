@@ -63,8 +63,8 @@ post-upgrade failure is attributable to the SDK rather than to something already
   a denominator +7.8%, so coverage grew ~2.5× faster than the code;
 - **both UI journeys GREEN** (run for `-6`; not re-run for `-Surfaces`, which touches no UI, nor
   for `-Corners`, which changes a shape no UI test asserts);
-- **device: ON MAIN at `1920536`, installed 2026-09-13 22:29** — unchanged this session; no new
-  build has been put on the phone. **ALL FOUR blocks have passed on the phone**: `-6`, `-7`,
+- **device: ON MAIN at `b47aad5`, installed 2026-09-15 (Phase F step 1) — the first 27-SDK build on the
+  phone, phone still on iOS 26.4.** (Was `1920536` from 2026-09-13.) **ALL FOUR blocks have passed on the phone**: `-6`, `-7`,
   `-Surfaces` (*"you can mark a PASS"*) and `-Corners` (*"they look okay"*, with two screenshots
   filed). **Nothing in any merged block is owed to E.**
 
@@ -264,7 +264,17 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       first, the route is the home-screen widget gallery driven through the simulator, not the bridge.
       (NEW)
 - [ ] **Phase E — Firebase.** See the bump item below; the proof is the six emulator classes still passing.
-- [ ] **Phase F — device, THE NEXT BLOCK**: install the 27-SDK build while the phone is STILL on 26.4
+- [ ] **Phase F — device, IN PROGRESS. Step 1 DONE 2026-09-15: the 27-SDK build is ON THE PHONE at
+      iOS 26.4.** `main` @ `b47aad5` built for `wishwashwacky15` (iPhone 15 Pro, iOS 26.4 / 23E246)
+      with `-allowProvisioningUpdates` (both profiles re-issued), installed and launched via
+      `devicectl`; the app AND the widget extension were running as processes afterwards. The bundle
+      is stamped `DTSDKName iphoneos27.0`, `MinimumOSVersion 16.0` (widget 16.1). **This is the first
+      27-SDK binary on the phone, and the first build on the phone that carries the Firebase keychain
+      fix** — compiled from the 12.19.1 checkout (`AuthKeychainServices.swift` has
+      `isKeychainAccessible` ×3; `Package.resolved` unchanged). Note the embedded Firebase version
+      string reads `12.19.0`: Firebase did not bump its core constant for the .1 patch, so the SOURCE
+      is the proof, not the string. **E's look at 26.4 is the next thing, then step 2.** (NEW)
+      Original brief: install the 27-SDK build while the phone is STILL on 26.4
       (proves the new binary runs on the old OS), then E updates to 27 and it is checked again. The
       device look now carries three specific asks from Phase D: **the Focus Live Activity and the
       Home Screen widgets on iOS 27** (never rendered on 27 anywhere yet), **the retuned sheet chrome
