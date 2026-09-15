@@ -27,6 +27,65 @@ The full plan is `/Users/ethan/.claude/plans/okay-claude-i-need-melodic-origami.
 
 ---
 
+## ‼ FIRST THING THIS SESSION MUST DO — give E the Xcode 26.6 rollback decision
+
+**E asked for this explicitly at the end of the previous session:** *"Tell me what i need todo for the
+'Xcode 26.6 rollback' decision. Breakdown for me what i need todo and what we are achieving."*
+Present the brief below **before** starting Phase D, and let E decide.
+
+### What the rollback would achieve
+
+Xcode 27.0 installed **over the top** of 26.6 at `/Applications/Xcode.app`, so 26.6 is gone. The plan had
+called for keeping it side by side as `Xcode-26.6.app` and switching with `DEVELOPER_DIR`. The rollback
+would restore **the ability to build this app with the previous toolchain**.
+
+### ⚠ BUT THE CASE FOR IT IS NOW MUCH WEAKER THAN WHEN IT WAS RAISED — say so plainly
+
+It was raised while the app had **never been compiled** under Swift 6.4, when the real fear was "Xcode 27
+breaks something and there is then no way to build at all." That fear is now retired:
+
+1. **The migration is green.** 3,011 / 0 on **both** runtimes, 0 errors, lint clean.
+2. **THE CODE IS FULLY BACKWARD-COMPATIBLE — this is the decisive fact.** The entire Swift 6.4 change was
+   two `actor` → `final class … @unchecked Sendable` conversions plus dropping one now-redundant
+   `nonisolated`. **That pattern was already used THREE TIMES in the same file before the migration** —
+   `FakeDailySummaryStore`, `FakeDailySummaryDataProvider` and `ToggleableDailySummaryGenerator`, all
+   present at the pre-upgrade baseline `4e4ec1c`. So it compiles under Swift 6.3 too: **if 26.6 were
+   reinstalled, current `main` would build on it unchanged.** The rollback is therefore NOT insurance
+   against "our code is now 27-only" — that risk does not exist.
+
+**So the only scenario it still covers** is Xcode 27 itself producing a bad *artifact* rather than a
+compile error — something that builds clean but misbehaves on device in Phase F. Rebuilding on 26.6 to
+compare would be the diagnostic. Real, but unlikely, and recoverable later since Apple keeps old Xcode
+releases available.
+
+### If E says yes — what E does (all of it is E's; none is Claude Code's)
+
+1. developer.apple.com/download/all → search "Xcode 26.6" → download the `.xip`
+   (sign in with the Apple ID; it is a developer-portal download, not the App Store).
+2. **Download it to `/Volumes/Es-SSD`**, not the internal disk. Internal is at **26 GiB free** and was 96%
+   full a day ago; the SSD has ~219 GiB.
+3. Expand the `.xip` there (double-click, or `xip --expand`). Expansion needs roughly 2× the archive.
+4. Rename the result **`Xcode-26.6.app`** and leave it on the SSD. **Do not put it in `/Applications`** —
+   that is how 27.0 replaced 26.6 in the first place.
+5. Tell Claude Code it exists. Switching is then per-command and never global:
+   ```bash
+   DEVELOPER_DIR=/Volumes/Es-SSD/Xcode-26.6.app/Contents/Developer xcodebuild ...
+   ```
+   **Never `xcode-select`** — that changes the machine's toolchain globally and a stray command could
+   silently move the whole project back a version mid-arc.
+
+**Cost:** one large download, ~10 GB on the SSD, and E's time. **No boot-volume cost.**
+**Note:** the iOS 26.5 runtime is already installed and 26.6 would use it, so no extra runtime download.
+
+### The honest recommendation
+
+**Skip it, and revisit only if Phase F turns up a device-only problem.** The code is backward-compatible,
+the build is green on both runtimes, and Apple keeps old Xcode releases — so this decision can be deferred
+at no cost, which is exactly what makes deferring it safe. **It is E's call, not Claude Code's**, and if E
+wants the safety net, steps 1–5 above are the whole job.
+
+---
+
 ## ⬛ STATE AT 2026-09-15 — PHASES A, B, C AND THE FIREBASE FIX ARE ALL DONE AND LANDED
 
 **Everything measurable says nothing broke.** Read this section; the baseline table below is kept as the
