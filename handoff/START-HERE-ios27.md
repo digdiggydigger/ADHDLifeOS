@@ -27,11 +27,19 @@ The full plan is `/Users/ethan/.claude/plans/okay-claude-i-need-melodic-origami.
 
 ---
 
-## ‼ FIRST THING THIS SESSION MUST DO — give E the Xcode 26.6 rollback decision
+## ✅ DECIDED — the Xcode 26.6 rollback is SKIPPED. Do NOT re-offer it.
 
-**E asked for this explicitly at the end of the previous session:** *"Tell me what i need todo for the
-'Xcode 26.6 rollback' decision. Breakdown for me what i need todo and what we are achieving."*
-Present the brief below **before** starting Phase D, and let E decide.
+**E was given the full brief and decided on 2026-09-15:** *"lets skip the rollback for now but make sure
+that this decision is logged in memory so ONLY IF NEEDED, we can return back to this point."*
+
+**Start Phase D. Do not open this question again unless the one trigger below fires.**
+
+**THE ONE TRIGGER, and it is narrow:** Xcode 27 producing a bad *artifact* rather than a compile error —
+a build that is clean and green but misbehaves **on the device** in Phase F. That is the only thing 26.6
+would diagnose, by rebuilding the same commit on the old toolchain and comparing. **A test failure, a
+warning, or a simulator oddity is NOT the trigger** — those reproduce without it.
+
+The reasoning and the five recovery steps are kept below because they are the record, not a task.
 
 ### What the rollback would achieve
 
@@ -77,9 +85,9 @@ releases available.
 **Cost:** one large download, ~10 GB on the SSD, and E's time. **No boot-volume cost.**
 **Note:** the iOS 26.5 runtime is already installed and 26.6 would use it, so no extra runtime download.
 
-### The honest recommendation
+### The recommendation E acted on
 
-**Skip it, and revisit only if Phase F turns up a device-only problem.** The code is backward-compatible,
+**Skip it, and revisit only if Phase F turns up a device-only problem.** — **E AGREED, 2026-09-15.** The code is backward-compatible,
 the build is green on both runtimes, and Apple keeps old Xcode releases — so this decision can be deferred
 at no cost, which is exactly what makes deferring it safe. **It is E's call, not Claude Code's**, and if E
 wants the safety net, steps 1–5 above are the whole job.
