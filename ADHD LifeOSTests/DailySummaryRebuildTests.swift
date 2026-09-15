@@ -81,7 +81,7 @@ final class DailySummaryRebuildTests: XCTestCase {
         await generating.value
         await reattaching.value
 
-        let calls = await generator.callCount
+        let calls = generator.callCount
         XCTAssertEqual(calls, 1)
     }
 
