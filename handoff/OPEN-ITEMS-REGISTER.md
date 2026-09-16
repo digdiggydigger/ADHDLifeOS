@@ -1,4 +1,4 @@
-# Open items register — 2026-09-15 (fiftieth edition; **PHASE D DONE — the 26.5-vs-27.0 sweep found NO clash in the app's own UI; two iOS-27 chrome retunes recorded. Next: Phase F, the device.**)
+# Open items register — 2026-09-16 (fifty-first edition; **PHASE F STEP 2's PRECONDITION IS MET — E's phone is on iOS 27.0. But the erase-and-restore that got it there REMOVED the app, so step 2 is now a REINSTALL then the device look.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -63,8 +63,11 @@ post-upgrade failure is attributable to the SDK rather than to something already
   a denominator +7.8%, so coverage grew ~2.5× faster than the code;
 - **both UI journeys GREEN** (run for `-6`; not re-run for `-Surfaces`, which touches no UI, nor
   for `-Corners`, which changes a shape no UI test asserts);
-- **device: ON MAIN at `b47aad5`, installed 2026-09-15 (Phase F step 1) — the first 27-SDK build on the
-  phone, phone still on iOS 26.4.** (Was `1920536` from 2026-09-13.) **ALL FOUR blocks have passed on the phone**: `-6`, `-7`,
+- **device: E's phone is now on iOS 27.0 (24A437) — 2026-09-16.** Phase F step 2's precondition is
+  MET. **But NO BUILD IS CURRENTLY INSTALLED**: reaching 27 required erasing and restoring the phone,
+  which removed the `b47aad5` 27-SDK build step 1 had put there. Step 1's RESULT is unaffected and
+  still stands as recorded below — it was observed and passed before the erase. (Was `b47aad5`,
+  installed 2026-09-15 for step 1; `1920536` from 2026-09-13.) **ALL FOUR blocks have passed on the phone**: `-6`, `-7`,
   `-Surfaces` (*"you can mark a PASS"*) and `-Corners` (*"they look okay"*, with two screenshots
   filed). **Nothing in any merged block is owed to E.**
 
@@ -275,9 +278,14 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       string reads `12.19.0`: Firebase did not bump its core constant for the .1 patch, so the SOURCE
       is the proof, not the string. **E's look at 26.4 PASSED, 2026-09-16** (E: *"your most recent install to my iphone works
       correctly throughout the app"*) — the 27-SDK binary runs on the old OS, the floor-side half of
-      the compatibility claim. **Step 2 is under way**: E is updating the phone to iOS 27 through
-      the MacBook (Finder), because the phone's own storage is very limited; the same build is then
-      re-checked on 27 without a reinstall. (NEW)
+      the compatibility claim. **STEP 2's PRECONDITION IS MET, 2026-09-16: the phone is on iOS 27.0 (24A437)**, updated through
+      the MacBook as planned. **What changed is the shape of step 2.** Getting there required an
+      erase-and-restore, so the 27-SDK build is **no longer on the phone** — step 2 is a REINSTALL of
+      the same `main` build followed by the device look, NOT the "re-checked on 27 without a
+      reinstall" this item originally planned. The reinstall is a new precondition, not a new
+      finding: nothing about the app or the compatibility claim changed. Note also the phone now has
+      **~92 GB free** where storage was previously very limited, so the constraint that shaped step 2
+      is gone. (NEW)
       Original brief: install the 27-SDK build while the phone is STILL on 26.4
       (proves the new binary runs on the old OS), then E updates to 27 and it is checked again. The
       device look now carries three specific asks from Phase D: **the Focus Live Activity and the
