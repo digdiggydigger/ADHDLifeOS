@@ -1,4 +1,4 @@
-# Open items register — 2026-09-16 (fifty-first edition; **PHASE F STEP 2's PRECONDITION IS MET — E's phone is on iOS 27.0. But the erase-and-restore that got it there REMOVED the app, so step 2 is now a REINSTALL then the device look.**)
+# Open items register — 2026-09-16 (fifty-second edition; **PHASE F STEP 2 IS SET UP — E's phone is on iOS 27.0 and the build is REINSTALLED and RUNNING on it. The only thing outstanding is E's LOOK.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -63,11 +63,18 @@ post-upgrade failure is attributable to the SDK rather than to something already
   a denominator +7.8%, so coverage grew ~2.5× faster than the code;
 - **both UI journeys GREEN** (run for `-6`; not re-run for `-Surfaces`, which touches no UI, nor
   for `-Corners`, which changes a shape no UI test asserts);
-- **device: E's phone is now on iOS 27.0 (24A437) — 2026-09-16.** Phase F step 2's precondition is
-  MET. **But NO BUILD IS CURRENTLY INSTALLED**: reaching 27 required erasing and restoring the phone,
-  which removed the `b47aad5` 27-SDK build step 1 had put there. Step 1's RESULT is unaffected and
-  still stands as recorded below — it was observed and passed before the erase. (Was `b47aad5`,
-  installed 2026-09-15 for step 1; `1920536` from 2026-09-13.) **ALL FOUR blocks have passed on the phone**: `-6`, `-7`,
+- **device: ON MAIN at `560d068`, REINSTALLED 2026-09-16 — E's phone is on iOS 27.0 (24A437) and
+  the build is running on it.** `** BUILD SUCCEEDED **`, 0 errors, installed and launched via
+  `devicectl`; **app (pid 869) AND `FocusTimerWidgetExtension` (pid 843) both running as processes**.
+  Bundle `LifeOS 1.3 (1)`, `DTSDKName iphoneos27.0`, `MinimumOSVersion 16.0`.
+  **This is the SAME APP CODE as step 1's `b47aad5` build** — `git diff b47aad5..HEAD -- '*.swift'`
+  is **0 files**, the only change being this register — so step 2's "same build, re-checked on 27"
+  is satisfied exactly. The reinstall was needed only because the erase-and-restore to reach 27
+  removed the app; step 1's PASS at 26.4 was observed before that and is unaffected.
+  Two mechanics worth keeping: a restored phone has **Developer Mode OFF** and `xcodebuild` fails at
+  destination resolution until E enables it; and the **first launch was denied for `Security`
+  (untrusted profile) and the immediate RETRY succeeded** — the transient denial already recorded in
+  the device-build notes. (Was `b47aad5`, installed 2026-09-15 for step 1; `1920536` from 2026-09-13.) **ALL FOUR blocks have passed on the phone**: `-6`, `-7`,
   `-Surfaces` (*"you can mark a PASS"*) and `-Corners` (*"they look okay"*, with two screenshots
   filed). **Nothing in any merged block is owed to E.**
 
@@ -282,8 +289,9 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       the MacBook as planned. **What changed is the shape of step 2.** Getting there required an
       erase-and-restore, so the 27-SDK build is **no longer on the phone** — step 2 is a REINSTALL of
       the same `main` build followed by the device look, NOT the "re-checked on 27 without a
-      reinstall" this item originally planned. The reinstall is a new precondition, not a new
-      finding: nothing about the app or the compatibility claim changed. Note also the phone now has
+      reinstall" this item originally planned. **THE REINSTALL IS DONE (2026-09-16): `560d068` is on the phone and running, app and widget
+      extension both.** So the ONLY thing outstanding for step 2 is **E's LOOK** — the three Phase D
+      asks below. Nothing about the app or the compatibility claim changed. Note also the phone now has
       **~92 GB free** where storage was previously very limited, so the constraint that shaped step 2
       is gone. (NEW)
       Original brief: install the 27-SDK build while the phone is STILL on 26.4
