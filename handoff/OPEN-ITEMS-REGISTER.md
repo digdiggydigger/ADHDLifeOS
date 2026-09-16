@@ -1,4 +1,4 @@
-# Open items register — 2026-09-16 (fifty-second edition; **PHASE F STEP 2 IS SET UP — E's phone is on iOS 27.0 and the build is REINSTALLED and RUNNING on it. The only thing outstanding is E's LOOK.**)
+# Open items register — 2026-09-16 (fifty-third edition; **PHASE F STEP 2's LOOK IS DONE — the app is correct on iOS 27. It surfaced TWO NEW items: a REAL landscape FAB-overlap BUG, and a tab-pill inset E wants rendered. Both are handed to a FRESH session.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -289,9 +289,16 @@ Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
       the MacBook as planned. **What changed is the shape of step 2.** Getting there required an
       erase-and-restore, so the 27-SDK build is **no longer on the phone** — step 2 is a REINSTALL of
       the same `main` build followed by the device look, NOT the "re-checked on 27 without a
-      reinstall" this item originally planned. **THE REINSTALL IS DONE (2026-09-16): `560d068` is on the phone and running, app and widget
-      extension both.** So the ONLY thing outstanding for step 2 is **E's LOOK** — the three Phase D
-      asks below. Nothing about the app or the compatibility claim changed. Note also the phone now has
+      reinstall" this item originally planned. **THE REINSTALL IS DONE (2026-09-16) and E's LOOK IS DONE the same evening.** `560d068` ran on
+      the phone at iOS 27.0, app and widget extension both. **E's verdict: the app is correct** —
+      *"LifeOS looks to be working correctly. The live activity & home screen widgets look to be
+      working."* That closes the two biggest Phase D asks (**widgets and Live Activities on 27**,
+      never rendered on 27 anywhere before) and the **sheet chrome**, which E photographed in both
+      modes: iOS 27's lighter, edged toolbar capsules are confirmed on a physical display, content
+      inside unchanged, system behaviour rather than a defect. Evidence:
+      `screenshots/ios27-device-findings/` (5 files + README with the measurements).
+      **The look also surfaced TWO NEW items, neither of them an iOS 27 regression — see §B.**
+      Still unlooked-at from the Phase D list: **the schedule summary line's dimness in dark**. Nothing about the app or the compatibility claim changed. Note also the phone now has
       **~92 GB free** where storage was previously very limited, so the constraint that shaped step 2
       is gone. (NEW)
       Original brief: install the 27-SDK build while the phone is STILL on 26.4
@@ -489,6 +496,35 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       **E chose (a), 2026-09-12**, written into CLAUDE.md §7.3. (CLOSED)
 
 ## B · Real work, ready to start — recommended order
+
+- [ ] **🐞 THE LANDSCAPE FAB OVERLAP — a REAL user-facing bug, found on device 2026-09-16.** In
+      **landscape**, with an unacknowledged **`OfflineSprintSummaryCard`** ("Sprint finished while
+      you were away") on screen, the **capture disc renders on top of the Settings gear** and the
+      gear cannot be tapped. Measured from E's screen recording: the disc sits at **y 48–226 on an
+      1180 pt-tall landscape screen**, i.e. hard against the top edge. Evidence:
+      `screenshots/ios27-device-findings/04-fab-overlap-landscape.jpeg`; E's original GIF (123
+      frames) is in their own screenshot folder, deliberately not committed.
+      **Suspected cause, NOT verified — read the code before fixing.** `RootBottomOverlay.swift`
+      shares ONE `VStack` between the away card, the disc and the timer bar, by design, so *"an
+      active sprint PUSHES the disc up"*. That is right in portrait; in landscape the away card's
+      height appears to push past the header. **The trigger is the COMBINATION** — landscape plus
+      the away card — so any fix needs both to reproduce. **This is NOT an iOS 27 regression**: it
+      is a layout interaction that would have existed on 26 and simply had not been looked at in
+      landscape with that card up. (NEW)
+
+- [ ] **The selected tab pill's left inset — E wants OPTIONS RENDERED, not a number chosen for
+      them.** E circled it on device (`03-tab-bubble-inset-dark-circled.jpeg`) and the measurement
+      agrees: the filled pill sits **3.00 pt (light) / 2.67 pt (dark)** from the bar's left edge,
+      against **15.7 pt** from the last glyph to the right edge — a **~5× asymmetry**. It will
+      mirror on the right when **Tools** is selected.
+      **This is NOT a §2 grid violation.** `floatingPaddingHorizontal = 4` is on the grid; the
+      problem is that 4 was approved when the selection was an **icon-only chip** that never
+      reached its slot edge, and Design C's resting pill is a **filled capsule** that does.
+      **Do not just re-tune it** — memory records that all bar constants are E-approved and must not
+      be changed unprompted. E has now prompted, and asked specifically for **rendered options
+      (4 / 8 / 12) to pick by eye**, which is the house pattern for a spacing decision (cf.
+      `peekStep`). Constants live in `Theme/AppTabBarPresentation.swift`. (NEW)
+
 
 ~~**00. THE CTA CELEBRATIONS ARC — `F-CTACelebrations-6` is BUILT TO C5 ON A BRANCH.**~~
    **THE WHOLE ARC IS FINISHED — corrected 2026-09-13, and this entry was badly stale.** It still
