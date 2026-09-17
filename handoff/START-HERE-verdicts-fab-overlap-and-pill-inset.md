@@ -17,11 +17,14 @@ bar) and the F-LandscapeFabOverlap block in `TODO-CLAUDE-CODE.md` (the overlay's
 ## State when this was written
 
 `main` @ `7e85ec6` (PR #137) plus this close-out's chore PR — run `git log --oneline -1`. Suite
-3,025 / 0, SwiftLint 0 / 819, build green. **E's phone is on iOS 27.0 and still carries `560d068`:
-the fix is NOT installed on it.** `xcrun devicectl list devices` showed simulators only at close-out.
+3,025 / 0, SwiftLint 0 / 819, build green. **E's phone is on iOS 27.0 and carries `main` @ `5c322e5`
+— the fix IS installed** (built, installed and launched via `devicectl` in one pass on 2026-09-17,
+03:38 local). The free-account profile in that build expires **2026-09-17T19:25:02Z**; after that the
+app refuses to launch until a rebuild re-issues it, which is the first thing to do if E reports
+the app "won't open".
 The colour-scheme arc remains on E's HOLD (2026-09-13); its opener is in `handoff/archive/`.
 
-## First: put the build on the phone, THEN ask for the verdict
+## First: check the build is still on the phone (profile expiry above), THEN ask for the verdict
 
 The standing rule (`ask-for-device-checks-on-a-build-e-has`): install before asking. Recipe in the
 `device-build-lag` memory — `xcodebuild build -destination 'platform=iOS,name=wishwashwacky15'
