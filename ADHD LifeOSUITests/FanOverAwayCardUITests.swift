@@ -29,7 +29,9 @@ final class FanOverAwayCardUITests: XCTestCase {
         let account = try UITestSession.createAccount(label: "fanaway")
         let app = try UITestSession.launchSignedIn(
             as: account,
-            launchArguments: UITestSession.unacknowledgedCompletionLaunchArguments(taskTitle: "celebration sound testing")
+            launchArguments: UITestSession.unacknowledgedCompletionLaunchArguments(
+                taskTitle: "celebration sound testing"
+            )
         )
 
         let card = app.descendants(matching: .any)["offlineSprintSummaryCard"]
@@ -52,7 +54,8 @@ final class FanOverAwayCardUITests: XCTestCase {
         XCTAssertTrue(UITestSession.tap(disc, untilExists: task), "The fan did not open")
         settle()
         attach(app, "01-portrait-fan-open-over-away-card")
-        print("[FAN-AWAY] disc before=\(discBeforeOpening) after=\(disc.frame) task=\(task.frame) link=\(link.frame) card=\(card.frame)")
+        print("[FAN-AWAY] disc before=\(discBeforeOpening) after=\(disc.frame)"
+            + " task=\(task.frame) link=\(link.frame) card=\(card.frame)")
 
         // The finding, as E met it: TASK and LINK sit inside the card's frame and were unreachable.
         XCTAssertTrue(

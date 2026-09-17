@@ -4320,7 +4320,7 @@ no line count did. Shipped tree rendered (`tabbar-pill-inset-options/08–11`). 
 12 on the phone** (installed with this close-out). No RM-on pass: no motion site touched.
 
 
-### FEATURE: F-FanCardsFade — the sprint cards fade out while the capture fan is open  [ ]
+### FEATURE: F-FanCardsFade — the sprint cards fade out while the capture fan is open  [x] COMPLETED
 
 **E's finding (2026-09-17 03:44, six device frames, `screenshots/landscape-fab-overlap/09–12`):**
 with a card up — the live Confirm card or the away card — opening the capture fan drew the card
@@ -4346,12 +4346,35 @@ timer bar — because the fan is momentary and one rule beats three. Reduce Moti
 construction).
 
 **Acceptance criteria**
-- [ ] `RootBottomOverlayLayoutTests` — open → (0, no touches); closed → (1, touches). RED first.
-- [ ] `RootBottomOverlayCallSiteTests` — the overlay asks the rule, modifies the cards with
+- [x] `RootBottomOverlayLayoutTests` — open → (0, no touches); closed → (1, touches). RED first.
+- [x] `RootBottomOverlayCallSiteTests` — the overlay asks the rule, modifies the cards with
       `.opacity(` and `.allowsHitTesting(` inside the container, and never gates them on `if`.
-- [ ] `FanOverAwayCardUITests` — portrait, away card up: open the fan; TASK and LINK (inside the
+- [x] `FanOverAwayCardUITests` — portrait, away card up: open the fan; TASK and LINK (inside the
       card's frame, asserted) become hittable; Got it does NOT take touches; the disc's frame is
       unchanged by the opening; dismiss → Got it back. **Fails on the unfixed tree.**
-- [ ] Red-check by reverting the view; frames into `screenshots/landscape-fab-overlap/`.
-- [ ] SwiftLint 0, suite green, sim build green; pasted. RM-on device pass: **owed** — this block
+- [x] Red-check by reverting the view; frames into `screenshots/landscape-fab-overlap/`.
+- [x] SwiftLint 0, suite green, sim build green; pasted. RM-on device pass: **owed** — this block
       ADDS a reduced site (the fade under Reduce Motion), so E looks at it with RM on and off.
+
+**DONE 2026-09-17.** RED: the test target did not compile — 2 distinct errors, both
+`type 'RootBottomOverlayLayout' has no member 'cardsPresence'`. GREEN: **17 / 0** in the two
+classes. Journey on the fixed tree **PASSED**: the disc's frame identical before and after the
+fan opened (318, 475.3), TASK (314, 602) and LINK (301, 524) both inside the card's frame
+(16, 543–740) and both hittable, Got it not hittable, card back on dismiss. **Red-check with the
+overlay reverted to `main`'s, after the commit:** the call-site guard failed (one test, its three
+assertions — the rule, `.opacity(`, `.allowsHitTesting(`), the pure tests stayed green as they
+should, and the journey failed on exactly *"Fan open: the TASK tile behind the away card cannot
+be tapped"* — the bug E photographed, reproduced by the same test that now passes. Restored with
+`git checkout --`. Suite **3,029 / 0** (0 × `9099`), SwiftLint **0** (two line-length wraps in the
+journey after the first run; re-run green on the final tree), `** BUILD SUCCEEDED **` (37
+distinct warnings, unchanged; 0 errors), coverage 27.66% (13,404/48,461). Frames:
+`screenshots/landscape-fab-overlap/13–15`.
+
+**The whole column fades — the running timer bar too.** One rule beats three, the fan is
+momentary, and a sprint's controls under a modal picker are not controls anyone reaches for.
+Said here so nobody reads the timer bar's absence under the fan as a bug.
+
+**Owed to E (two looks, one toggle):** the fade on the phone with Reduce Motion OFF, then ON —
+this block ADDS a reduced site (§7.3's rule), so the reduced fade needs device time. And the
+verdict on the arrangement itself. Verified paths line: **fade: run on sim + E's phone (RM off,
+pending); Reduced: run on sim (injected by the `.default` branch) — NOT yet on device.**

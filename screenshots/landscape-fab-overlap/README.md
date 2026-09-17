@@ -105,3 +105,23 @@ yet made.
 | `10-device-landscape-fan-open-confirm-card-above-scrim-light.jpeg` | Same, LIGHT. |
 | `11-device-landscape-fan-open-away-card-above-scrim.jpeg` | Fan open, landscape: the away card above the scrim. |
 | `12-device-portrait-fan-open-away-card-hides-link-and-task.jpeg` | **Fan open, portrait: LINK and TASK hidden behind the away card — unreachable.** |
+
+---
+
+## `F-FanCardsFade` — E's call on the finding above, built the same day (2026-09-17)
+
+E: *"Fade the cards out while the fan's open."* While the fan is open the cards column fades by
+opacity and stops taking touches, keeping its layout so the × stays exactly where the + was.
+Frames are the journey's own `app.screenshot()` — portrait, where it is truthful — on the
+`iPhone 17 Pro` simulator, iOS 26.5, light, the same emulator account shape as above, sim erased
+after. The journey printed the geometry: TASK (314, 602) and LINK (301, 524) inside the card's
+frame (16, 543–740), the disc at (318, 475) before AND after the fan opened.
+
+| file | what it proves |
+|---|---|
+| `13-fanfade-portrait-card-up-fan-closed-26.5.jpeg` | The control: away card up, fan closed, Got it tappable. |
+| `14-fanfade-portrait-fan-open-card-faded-tiles-free-26.5.jpeg` | **The fix.** Fan open over the same state: the card is gone from view, LINK and TASK are on top of nothing, the × has not moved. On the unfixed tree the same journey failed here with TASK un-hittable — E's frame 12. |
+| `15-fanfade-portrait-fan-closed-card-back-26.5.jpeg` | Dismissed by the ×: the card is back and Got it tappable again. |
+
+**Owed to E:** the fade on the phone with Reduce Motion OFF, then ON — this block adds a reduced
+site. The arc still leans out of the resting corner (not re-anchored; see the register).
