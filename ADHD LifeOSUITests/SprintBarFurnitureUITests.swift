@@ -34,7 +34,8 @@ final class SprintBarFurnitureUITests: XCTestCase {
                 taskTitle: "celebration sound testing", collapsed: true
             )
         )
-        let bar = app.descendants(matching: .any)["focusTimerBar"]
+        // `.firstMatch`: the identifier sits on a container, and its children inherit it.
+        let bar = app.descendants(matching: .any).matching(identifier: "focusTimerBar").firstMatch
         let disc = app.buttons["quickCaptureButton"]
         XCTAssertTrue(
             bar.waitForExistence(timeout: UITestSession.timeout),
@@ -42,7 +43,7 @@ final class SprintBarFurnitureUITests: XCTestCase {
         )
         sweepSystemPrompts(app, wait: 5)
         UITestSession.openTab("Tasks", in: app)
-        let row = app.descendants(matching: .any)["appSearchRow"]
+        let row = app.descendants(matching: .any).matching(identifier: "appSearchRow").firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: UITestSession.timeout), "No search row on Tasks")
         XCTAssertTrue(disc.waitForExistence(timeout: UITestSession.timeout), "No capture disc")
         settle()
