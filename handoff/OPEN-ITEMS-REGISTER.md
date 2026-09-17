@@ -1,4 +1,4 @@
-# Open items register — 2026-09-17 (fifty-fourth edition; **THE LANDSCAPE FAB OVERLAP IS FIXED AND MERGED — `F-LandscapeFabOverlap`, reproduced first, red-checked, passing on 26.5 and 27.0. Owed: E's device verdict on the side-by-side arrangement — the build IS on the phone. The tab-pill inset options are the session's second half.**)
+# Open items register — 2026-09-17 (fifty-fourth edition; **THE LANDSCAPE FAB OVERLAP IS FIXED AND MERGED — `F-LandscapeFabOverlap`, reproduced first, red-checked, passing on 26.5 and 27.0. E's frame 07 shows the side-by-side arrangement working on the phone; no verdict WORD yet. A THIRD finding arrived with those frames — cards above the capture fan, §B. The tab-pill inset options are the session's second half.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -537,6 +537,30 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       arrangement** — the card bottom-left, the disc in its corner — **— the build IS on the phone
       (installed after the close-out report).** No RM-on pass owed (no reduced site touched). (CLOSED as
       a bug; verdict owed)
+
+- [ ] **🐞 NEW 2026-09-17 03:44 — THE SPRINT CARDS SIT ABOVE THE CAPTURE FAN, and in portrait the
+      away card HIDES two of the five tiles.** Found by E on the phone minutes after the landscape
+      fix was installed (`screenshots/landscape-fab-overlap/09`–`12`, E's `IMG_8503/8504/8507/8508`).
+      With a card up — the live Confirm card (09/10) or the away card (11/12) — opening the fan
+      draws the card crisp ABOVE the fan's scrim, and the tiles land where the card is; in portrait
+      (12) LINK and TASK are behind the away card and cannot be tapped. **Two causes, read from the
+      code:** (1) z-order — `RootView` mounts `RootBottomOverlay` as a later `.overlay` than the
+      fan, deliberately so the disc (the fan's ×) stays crisp and tappable, and the cards ride
+      above the scrim with it; (2) anchoring — `CaptureFanOverlay` positions tiles at fixed
+      offsets from the screen's bottom-trailing corner, the disc's RESTING spot, so when a card
+      pushes the disc up the × moves and the arc does not. Pre-existing on both counts; the
+      landscape fix changed neither (in landscape the disc no longer moves, and the horizontal arc
+      runs along the bottom where the side-by-side column now sits).
+      **Options put to E, not yet chosen:** **A (recommended)** — while the fan is open the cards
+      FADE OUT and stop hit-testing but keep their layout, so the × stays where the + was; they fade
+      back on dismiss; AND the arc is anchored to the disc's real centre so it always leans out of
+      the ×. **B** — the cards collapse while the fan is open (the × drops to its corner as the fan
+      opens — it moves under the thumb; not recommended). **C** — the cards stay, dimmed under the
+      scrim, arc anchored to the ×; landscape keeps a dimmed card under the tile row. Any of them
+      is one block with a fan-open journey; A's reduced-motion path is an opacity fade by nature
+      (§7.2). Also noted from frame 08, as an OBSERVATION only: in portrait the pushed-up disc
+      floats over the hero's *Start another session* button — the standing "disc floats over
+      content" behaviour at a pushed-up height, not raised by E. (NEW)
 
 - [ ] **The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
       outstanding.** `screenshots/tabbar-pill-inset-options/`: the REAL `AppTabBar` at
