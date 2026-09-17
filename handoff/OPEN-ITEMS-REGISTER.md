@@ -1,4 +1,4 @@
-# Open items register — 2026-09-17 (fifty-sixth edition; **E's DEVICE LOOKS ARE IN: the pill at 12 and the fan fade (Reduce Motion OFF and ON) PASSED; the landscape look and E's GIF produced THREE NEW BLOCKS, written up and NOT built (E: build in a fresh session) — `F-FanXAtRest`, `F-CollapsedBarLift`, `F-FanHoldsCelebration`, to be built back to back with ONE install. Opener: `handoff/START-HERE-fan-x-bar-lift-celebration-hold.md`.**)
+# Open items register — 2026-09-17 (fifty-seventh edition; **ALL THREE OF E's CALLS ARE BUILT AND MERGED — `F-FanXAtRest` (PR #147), `F-CollapsedBarLift` (#148), `F-FanHoldsCelebration` (#149, NARROWED by E to "Only hold new requests") — and `main` @ `4653433` is ON E's PHONE. Owed: E's one set of looks, incl. the × move with Reduce Motion ON. Profile expires 2026-09-17T19:25:02Z (20:25 BST).** Opener: `handoff/START-HERE-looks-on-three-blocks.md`.)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -35,6 +35,51 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Fifty-seventh edition — measured 2026-09-17 on `main` @ `4653433` (Xcode 27.0, iOS 26.5 runtime,
+emulator UP, freshly started this session):** suite **3,053 / 0** (3,029 + `F-FanXAtRest`'s 10 +
+`F-CollapsedBarLift`'s 1 + `F-FanHoldsCelebration`'s 13), **0** `127.0.0.1:9099` hits, SwiftLint
+**0 / 824**, sim `** BUILD SUCCEEDED **` (incremental — the 37-distinct-warning figure was NOT
+re-measured like-for-like). Journeys PASSED on 26.5 (sim erased after every run):
+`FanOverAwayCardUITests` (reversed), `SprintBarFurnitureUITests` (new, 3 tests: Tasks, bar alone,
+bar under a Confirm card). `firestore.rules` untouched — **nothing for E to republish**.
+**The phone is ON MAIN at `4653433`** — device build, `devicectl` install AND launch clean,
+`codesign --verify --deep --strict` exit 0, 0 signing tells. **The profile was NOT re-issued: it still
+expires 2026-09-17T19:25:02Z (20:25 BST)** — after that the app will not open until a rebuild after
+expiry re-issues it via `-allowProvisioningUpdates`.
+
+**Landed this session (all back to back, E's pacing call):**
+- **`F-FanXAtRest`** (PR #147) — while the fan is open the stacked disc row drops to the column's
+  bottom line; every close path animates (scrim/pick set `isFabOpen` bare, so the container carries
+  `.animation(value: isFabOpen)`, `nil` under RM); the disc row draws above the fading cards
+  (`zIndex`, proved in a custom `Layout` by render). RED on the unfixed tree: "× sits on PHOTO, 35.3pt";
+  wiring cut on Tasks: "× on TASK, 9.49pt" (E's frame 19: 9pt). `screenshots/fan-x-at-rest/`.
+- **`F-CollapsedBarLift`** (PR #148) — the 32pt `.offset` removed; the keyline closes in both states
+  (`cardShape.strokeBorder`); `FocusBarCardBorder` and the three drop metrics deleted
+  (`FocusBarMetrics.bottomLift`). Measured both orientations, alone and under a Confirm card: bar
+  bottom +32 → 0 off the disc's line, gap above the tab bar 0 → 32, Confirm button → bar 56 → 24.
+  `screenshots/collapsed-bar-lift/`.
+- **`F-FanHoldsCelebration`** (PR #149) — **E NARROWED IT in-session.** Frame 20 (`IMG_8521`) was E's
+  OWN Confirm already playing when the fan opened (fireworks = stack-clearing Confirm only; the card
+  cannot be tapped under the fan; the × was at rest). E: **"Only hold new requests"** and **"Same 60s
+  rule"**. `RootView` reports `isFabOpen || composerKind != nil` (closes the composer gap by
+  construction); the fan joins `isBlocked` beside the probe at `.root`. Red-check pins the rejected
+  "replay" shape.
+
+**What this session established:**
+- **A spec's reading of a screenshot is a hypothesis.** The collecting session read frame 20 as "a
+  sprint ended while the fan was open"; three facts in the code (fireworks, the only Confirm caller,
+  the × at rest) said otherwise, and E confirmed. Asking before building changed the block.
+- **UI-harness traps, each paid for once** (memory `sprint-seed-harness-traps`): the timer bar's
+  container identifier OVERRIDES its children's (`focusBarPause` matches nothing — find by label);
+  sweep AutoFill before the first wait; a `simctl io screenshot` poller HUNG and blocked a chained
+  erase for an HOUR — kill it on exit, never `wait` on it; `pkill -f` matched its own shell and skipped
+  a restore; macOS `seq` prints epochs in exponent form.
+
+---
+
+**Fifty-sixth edition's State follows, unchanged.**
+
 
 **Measured 2026-09-17 on `feature/landscape-fab-overlap` @ `11224c9` (Xcode 27.0, iOS 26.5 runtime,
 emulator UP, freshly started this session):** suite **3,029 / 0** (3,011 + `F-LandscapeFabOverlap`'s 14 + the pill pin + `F-FanCardsFade`'s 3), **0** `127.0.0.1:9099` hits, **58** emulator cases across the six classes,
@@ -518,7 +563,7 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
 
 ## B · Real work, ready to start — recommended order
 
-- [ ] **🐞 `F-FanXAtRest` — the × drops to its resting corner while the capture fan is open.** E's GIF
+- [x] ~~**🐞 `F-FanXAtRest` — the × drops to its resting corner while the capture fan is open.**~~ **BUILT + MERGED 2026-09-17 (PR #147); ON THE PHONE at `4653433`; OWED: E's look incl. the RM-ON pass.** E's GIF
       and frame 19: in portrait any card pushes the disc (and so the ×) up, while the fan's tiles are
       anchored to the resting corner, so the × lands on a tile (TASK under the sprint bar, 9pt; TASK
       under a Confirm card, 7pt; LINK / PHOTO under the taller cards). E called it a bug and chose
@@ -526,14 +571,14 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       where the + was", including a UI journey assertion. RM-on device pass owed. **Spec:
       `TODO-CLAUDE-CODE.md`, last section.** (NEW, first)
 
-- [ ] **`F-CollapsedBarLift` — the collapsed sprint bar stops dropping onto the tab bar, portrait AND
-      landscape.** E's answers: the collapsed bar (not the expanded card, which already has 33pt);
+- [x] ~~**`F-CollapsedBarLift` — the collapsed sprint bar stops dropping onto the tab bar, portrait AND
+      landscape.**~~ **BUILT + MERGED 2026-09-17 (PR #148); ON THE PHONE; OWED: E's look (no RM pass owed).** E's answers: the collapsed bar (not the expanded card, which already has 33pt);
       *"Portrait too"* (reverses the 2026-09-09 flush drop); *"Line up with the Disc, But when there
       are multiple cards being displayed, then maintain the alignment."* Removing the visual `.offset`
       does all three by construction; the bottom keyline returns (it was removed only because the
       card sat on the bar). **Spec: `TODO-CLAUDE-CODE.md`, last section.** (NEW, second)
 
-- [ ] **`F-FanHoldsCelebration` — a full-screen celebration waits while the capture fan is open.**
+- [x] ~~**`F-FanHoldsCelebration` — a full-screen celebration waits while the capture fan is open.**~~ **BUILT + MERGED 2026-09-17 (PR #149), NARROWED BY E: only NEW requests wait; one already playing keeps playing. ON THE PHONE; OWED: E's look.**
       Frame 20: a sprint ended with the fan open and the celebration played over it. E: *"Wait until
       the fan closes."* The fan is a SwiftUI overlay that `-Surfaces`' UIKit probe cannot see, so
       `RootView` has to tell the centre. **Spec: `TODO-CLAUDE-CODE.md`, last section.** (NEW, third)
