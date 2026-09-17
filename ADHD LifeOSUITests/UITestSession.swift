@@ -62,8 +62,14 @@ enum UITestSession {
         try launchSignedIn(as: createAccount(label: label))
     }
 
+    /// `launchArguments` reach the app process as `argv`, which is how a journey seeds the app's
+    /// OWN `UserDefaults` before it reads them: `-key value` pairs land in the argument domain,
+    /// which `UserDefaults.standard` consults first. See `unacknowledgedCompletionLaunchArguments`
+    /// for the one seed that exists and why it is spelled the way it is.
     @MainActor
-    static func launchSignedIn(as account: UITestAccount) throws -> XCUIApplication {
+    static func launchSignedIn(
+        as account: UITestAccount, launchArguments: [String] = []
+    ) throws -> XCUIApplication {
         let email = account.email
         resetToPortrait()
         let app = XCUIApplication()
@@ -71,6 +77,7 @@ enum UITestSession {
         // app process's environment, and `FirebaseEmulatorSettings.resolve()` reads it at
         // `FirebaseManager` init — before any Firestore call can happen.
         app.launchEnvironment[emulatorHostKey] = UITestEmulator.host
+        app.launchArguments += launchArguments
         app.launch()
 
         // BEFORE anything waits on the app's own UI. A SpringBoard alert renders above the app,

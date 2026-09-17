@@ -1,4 +1,4 @@
-# Open items register — 2026-09-16 (fifty-third edition; **PHASE F STEP 2's LOOK IS DONE — the app is correct on iOS 27. It surfaced TWO NEW items: a REAL landscape FAB-overlap BUG, and a tab-pill inset E wants rendered. Both are handed to a FRESH session.**)
+# Open items register — 2026-09-17 (fifty-fourth edition; **THE LANDSCAPE FAB OVERLAP IS FIXED AND MERGED — `F-LandscapeFabOverlap`, reproduced first, red-checked, passing on 26.5 and 27.0. Owed: E's device verdict on the side-by-side arrangement, and the phone was NOT reachable at close-out so the install is owed too. The tab-pill inset options are the session's second half.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -35,6 +35,16 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Measured 2026-09-17 on `feature/landscape-fab-overlap` @ `11224c9` (Xcode 27.0, iOS 26.5 runtime,
+emulator UP, freshly started this session):** suite **3,025 / 0** (3,011 + the 14 tests of
+`F-LandscapeFabOverlap`), **0** `127.0.0.1:9099` hits, **58** emulator cases across the six classes,
+SwiftLint **0 / 819**, `** BUILD SUCCEEDED **` (**37 distinct warnings**, the Phase C figure, 0 errors),
+coverage **27.67% (13,399/48,433)** — numerator +43 on a denominator +76 (the layout file and the
+overlay's new lines), i.e. comparable and the new code is covered. `LandscapeAwayCardUITests`
+**PASSED on 26.5 light and 27.0 dark** (both sims erased after). `firestore.rules` untouched —
+**nothing for E to republish**. **The phone was NOT reachable at close-out** (`devicectl list
+devices` shows simulators only), so it still carries `560d068`: the fix is NOT on E's phone yet.
 
 **`main` @ PR #131 — Phase D landed** (`4e4ec1c` was the baseline). Measured for Phase D on
 2026-09-15 (Xcode 27.0, iOS 26.5 runtime, emulator UP): suite **3,011 / 0**, **0** `127.0.0.1:9099`
@@ -497,20 +507,27 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
 
 ## B · Real work, ready to start — recommended order
 
-- [ ] **🐞 THE LANDSCAPE FAB OVERLAP — a REAL user-facing bug, found on device 2026-09-16.** In
-      **landscape**, with an unacknowledged **`OfflineSprintSummaryCard`** ("Sprint finished while
-      you were away") on screen, the **capture disc renders on top of the Settings gear** and the
-      gear cannot be tapped. Measured from E's screen recording: the disc sits at **y 48–226 on an
-      1180 pt-tall landscape screen**, i.e. hard against the top edge. Evidence:
-      `screenshots/ios27-device-findings/04-fab-overlap-landscape.jpeg`; E's original GIF (123
-      frames) is in their own screenshot folder, deliberately not committed.
-      **Suspected cause, NOT verified — read the code before fixing.** `RootBottomOverlay.swift`
-      shares ONE `VStack` between the away card, the disc and the timer bar, by design, so *"an
-      active sprint PUSHES the disc up"*. That is right in portrait; in landscape the away card's
-      height appears to push past the header. **The trigger is the COMBINATION** — landscape plus
-      the away card — so any fix needs both to reproduce. **This is NOT an iOS 27 regression**: it
-      is a layout interaction that would have existed on 26 and simply had not been looked at in
-      landscape with that card up. (NEW)
+- [x] ~~**🐞 THE LANDSCAPE FAB OVERLAP — a REAL user-facing bug, found on device 2026-09-16.**~~
+      **FIXED AND MERGED 2026-09-17 — `F-LandscapeFabOverlap`.** The hypothesis the last session
+      recorded was right in kind and wrong in one word: the bottom stack does not overflow the
+      landscape screen, it FILLS it — 372 (safe height) − 100 (lift) − 186 (away card) − 8 − 60 puts
+      the disc's top at **18pt**, inside the header's gear well; the expanded sprint card alone
+      (148) leaves 56, eight points clear, which is why neither landscape nor the card alone ever
+      showed it. **Reproduced BEFORE a line was written**: `LandscapeAwayCardUITests` raises the
+      away card through the app's own UserDefaults key (argument domain, no production seam) and
+      failed at its landscape assertion on the unfixed tree with the portrait control passing;
+      the simulator printed the same sum to the point (381 − 100 − 196.7 − 8 − 60 = 17.3).
+      **The fix keeps E's stack byte for byte in portrait.** In compact height with anything up
+      the cards take the column BESIDE the disc row (`RootBottomOverlayLayout.arrangement`); the
+      container is a `Layout` whose arrangement is a property — a `switch` between a `VStack` and
+      an `HStack` would have re-identified the timer bar and dismissed its detail sheet on
+      rotation. RED 25 compile errors → GREEN 14 / 0 → red-check exactly the 3 predicted
+      call-site failures plus the journey's landscape failure → restored → PASS on 26.5 light and
+      27.0 dark. Evidence: `screenshots/landscape-fab-overlap/` (host-side `simctl` frames;
+      `app.screenshot()` lies on a rotated sim). **Owed: E's device verdict on the side-by-side
+      arrangement** — the card bottom-left, the disc in its corner — **and the install: the phone
+      was not reachable at close-out.** No RM-on pass owed (no reduced site touched). (CLOSED as
+      a bug; verdict owed)
 
 - [ ] **The selected tab pill's left inset — E wants OPTIONS RENDERED, not a number chosen for
       them.** E circled it on device (`03-tab-bubble-inset-dark-circled.jpeg`) and the measurement

@@ -30,8 +30,11 @@ A **~5× asymmetry**. The constants behind it are in `Theme/AppTabBarPresentatio
 selection was an icon-only chip that never reached its slot edge, and Design C's resting pill is a
 filled capsule that does. It will mirror on the right when **Tools** is selected.
 
-**FAB overlap in landscape** (file 04): the capture disc renders at **y 48–226 on an 1180 pt-tall
-landscape screen** — against the top edge, on top of the Settings gear.
+**FAB overlap in landscape** (file 04): the capture disc renders at **y 48–226 px on the 1180 px-tall
+landscape frame — y 16–75 pt on the 393 pt screen** (the frame is 3×; the first edition of this
+line called the pixel values points) — against the top edge, on top of the Settings gear.
+Diagnosed and fixed in `F-LandscapeFabOverlap` (2026-09-17): the stack was not overflowing the
+screen, it was FILLING it — see `screenshots/landscape-fab-overlap/`.
 
 ## Files
 

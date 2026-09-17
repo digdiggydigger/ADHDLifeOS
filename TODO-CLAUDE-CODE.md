@@ -4199,3 +4199,92 @@ then pointed at as the one they wanted was a render **of the code already on `ma
 the close-out and write the SHA the phone carries. `device-build-lag` already said "don't leave the
 phone behind"; the register's own "device verdict owed" wording is what made it easy to miss, and
 both it and the live opener now say which.
+
+
+### FEATURE: F-LandscapeFabOverlap — the capture disc stops climbing into the header in landscape  [x] COMPLETED
+
+**E's bug, found on the phone 2026-09-16 (iOS 27.0, `560d068`):** in **landscape**, with an
+unacknowledged **"Sprint finished while you were away"** card up, the capture disc rendered ON the
+Settings gear and the gear could not be tapped (`screenshots/ios27-device-findings/04-…jpeg`).
+Handed to this session by `handoff/START-HERE-fab-overlap-and-tab-inset.md` with the cause marked
+as a HYPOTHESIS to verify before writing anything. Not an iOS 27 regression.
+
+**Diagnosis (verified by arithmetic, then reproduced in a journey — see the verification note below).**
+`RootBottomOverlay` is an `.overlay(alignment: .bottom)` whose one `VStack` holds, top to bottom,
+the disc row, the away card, the completion stack and the timer bar, over a 100pt lift
+(`bottomFurnitureLift` = 32 gap + 68 bar band). A landscape iPhone 15 Pro has **372pt** of safe
+height; the away card measures **186pt**; 372 − 100 − 186 − 8 − 60 puts the disc's top at
+**18pt** — inside the header's 40pt gear well (y 8–48). The expanded sprint card alone (148pt)
+leaves the disc at 56, eight points clear, which is why "neither alone did it". The hypothesis
+was right in kind and wrong in one word: the stack does not overflow the screen, it FILLS it.
+
+**The fix, and the shape it must keep.** The stack is E-reviewed and deliberate: "an active
+sprint PUSHES the disc up rather than letting the timer bar occlude the disc's controls". That
+invariant is kept in portrait byte for byte. In **compact height** (the landscape iPhone — the
+`verticalSizeClass` reading `CaptureFanOverlay` and `LoginView` already use) **with any card up**,
+the cards take a column BESIDE the disc instead of above it: the disc keeps its resting corner,
+nothing pushes it, nothing covers it, and the gear's column stays clear because the cards column
+ends 100pt short of the trailing edge. With nothing up, compact height is the ordinary row, so the
+search row on Tasks is untouched. The rule is pure — `RootBottomOverlayLayout.arrangement(
+isCompactHeight:hasCards:)` — and the view only asks it.
+
+**Acceptance criteria**
+- [x] `RootBottomOverlayLayoutTests` — the bug as arithmetic from production constants and E's
+      measurements; the rule over all four inputs; the two named spacings.
+- [x] `RootBottomOverlayCallSiteTests` — the overlay reads `verticalSizeClass`, calls the rule,
+      builds both arms, the side-by-side arm is bottom-aligned, **and the stacked arm still puts
+      the disc row above the cards** (the invariant, pinned by order).
+- [x] `LandscapeAwayCardUITests` — the regression camera: away card raised through the app's own
+      UserDefaults key (argument domain, `UITestUserDefaultsSeeds.swift`), portrait asserted as the
+      control, then landscape: disc ∩ gear = ∅, gear hittable, gear opens Settings, card ∩ disc = ∅.
+      **Fails on the unfixed tree** (the reproduction), passes on the fixed one, red-checked by
+      reverting the fix.
+- [x] Portrait unchanged: `CaptureDiscClearanceUITests` and the sweep's bottom band as before.
+- [x] `screenshots/landscape-fab-overlap/` — before/after landscape frames, light and dark, README.
+- [x] SwiftLint 0, suite green, sim build green; pasted.
+
+**DONE 2026-09-17.** Suite **3,025 / 0** (3,011 + 14 new; 0 × `9099`, 58 emulator cases), SwiftLint
+**0 / 819**, `** BUILD SUCCEEDED **` (37 distinct warnings, unchanged from Phase C; 0 errors),
+coverage **27.67% (13,399/48,433)** — numerator +43 on a denominator +76, the layout file and the
+overlay's new lines.
+
+**The hypothesis survived, corrected in one word.** The opener said the stack "pushes past the
+header"; the arithmetic says it FILLS the screen — 372 − 100 − 186 − 8 − 60 = 18 — and the
+journey printed the same sum on the 17 Pro simulator to the point (381 − 100 − 196.7 − 8 − 60 =
+17.3; the disc's frame read 17.3). Reproduced BEFORE anything was written: the journey failed at
+its landscape assertion on the unfixed tree, with the portrait control passing.
+
+**Why a `Layout` rather than a `switch` between a `VStack` and an `HStack`.** Changing the
+container TYPE gives the children new identities, and `FocusTimerBar` owns the sprint detail
+sheet's `@State` — a rotation with that sheet open would have dismissed it. `RootBottomOverlayArrangement`
+is a `Layout` (iOS 16.0, no gate) whose arrangement is a property; the geometry is delegated to
+`RootBottomOverlayLayout` so the numbers on screen are the numbers the tests hold.
+`testTheOverlayDoesNotSwitchContainerTypesOnTheArrangement` pins the choice.
+
+**RED / GREEN / red-check, all pasted in the session.** RED: the test target did not compile —
+25 distinct errors, 21 of them `cannot find 'RootBottomOverlayLayout' in scope`. GREEN: 14 / 0 in
+the two new classes. Red-check with `RootBottomOverlay.swift` reverted to `main`'s, one regression,
+predicted before running: the call-site class **3 / 5 failed** (`ReadsTheVerticalSizeClass`,
+`AsksTheRule`, `ContainerIsTheArrangementLayout` — exactly the three that read the overlay's use of
+the rule; the two that read the Layout file stayed green, as predicted) and the 9 pure tests stayed
+green; the journey failed on the landscape assertion with the disc back at y 17.3. Restored with
+`git checkout --`; final journey PASSED on **26.5 light and 27.0 dark**, disc at y 222.
+
+**Two harness facts worth more than the fix:**
+- **The away card can be raised at launch without a production seam**: `-focus.sprint.unacknowledgedCompletion
+  "<hex>"` in `launchArguments` lands in the UserDefaults argument domain as `Data` (the old-style
+  plist spelling), and `restorePersistedSprint()` reads it through the store it uses in production.
+  Verified on macOS's CoreFoundation first, then by the card appearing. `UITestUserDefaultsSeeds.swift`.
+- **The AutoFill "Save Password?" sheet cost one false failure**: the second run's portrait control
+  read the gear as un-hittable with frames identical to the passing run's, 70 s after sign-in on a
+  simulator slowed by a concurrent SwiftLint. The next run's sweep logged the dismissal. The control
+  now sweeps with the sweep harness's 5 s wait and polls hittability, attaching the hierarchy on a
+  miss. **Do not run anything CPU-heavy beside a UI run.**
+- `app.screenshot()` lied on the rotated simulator again (F-LandscapeFix's finding); the evidence
+  frames are host-side `simctl io screenshot` polls while the test holds each pose.
+
+**No RM-on device pass is owed (§7.3):** no `#available` site and no reduced-motion site is added
+or changed; the three `.animation(reduceMotion ? nil : …)` modifiers are untouched.
+
+**Owed: E's device verdict on the side-by-side arrangement** — the card bottom-left, the disc in
+its corner (`screenshots/landscape-fab-overlap/README.md`, "Open, for E on the phone").
