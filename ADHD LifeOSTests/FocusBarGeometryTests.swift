@@ -51,7 +51,7 @@ final class FocusBarGeometryTests: XCTestCase {
     /// are multiple cards being displayed, then maintain the alignment."*
     ///
     /// So there is ONE lift, in both states: the disc's resting line, `bottomFurnitureLift`, which
-    /// clears the tab bar by the 32pt E measured for the disc. The claim is reversed rather than
+    /// clears the tab bar by the disc's gap (32 then; 24 since `F-FurnitureGap24`). The claim is reversed rather than
     /// deleted, and its name with it, so the history reads.
     func testTheCollapsedCardSitsOnTheDiscsLineNotOnTheTabBar() {
         XCTAssertEqual(
@@ -60,7 +60,7 @@ final class FocusBarGeometryTests: XCTestCase {
         )
         XCTAssertEqual(
             FocusBarMetrics.bottomLift - AppTabBarMetrics.rowHeight, AppSearchRowMetrics.gapAboveTabBar,
-            "The card does not clear the tab bar by the disc's 32pt margin."
+            "The card does not clear the tab bar by the disc's margin."
         )
         XCTAssertGreaterThan(
             FocusBarMetrics.bottomLift, AppTabBarMetrics.rowHeight,
@@ -87,7 +87,7 @@ final class FocusBarGeometryTests: XCTestCase {
         XCTAssertEqual(
             FocusBarMetrics.bottomLift - (AppTabBarMetrics.cardHeight + AppTabBarMetrics.restingLift),
             AppSearchRowMetrics.gapAboveTabBar,
-            "The margin under the collapsed card is not E's 32pt against the bar's own top."
+            "The margin under the collapsed card is not the disc's gap against the bar's own top."
         )
     }
 
@@ -244,7 +244,7 @@ final class FocusBarGeometryTests: XCTestCase {
     /// **REVERSED 2026-09-17** (it was `testTheCollapsedCardHasNoBottomKeyline`). E's 2026-09-09
     /// call — *"REMOVE the bottom border on the collapsed card tab"* — was right for a card sitting
     /// flush ON the tab bar: a hairline at the join read as a seam between two slabs. With the
-    /// flush drop reversed there is no join, and a card outlined on three sides floating 32pt above
+    /// flush drop reversed there is no join, and a card outlined on three sides floating above
     /// the bar reads unfinished. The run returns as a CONSEQUENCE of E's call, not a new decision.
     func testTheCollapsedCardHasItsBottomKeylineBack() {
         XCTAssertTrue(

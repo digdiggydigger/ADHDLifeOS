@@ -4632,3 +4632,27 @@ re-issue via `-allowProvisioningUpdates`. If the build log says `No Accounts`, E
 sprint running, portrait, including on Tasks; (2) the collapsed bar's new margin, portrait AND
 landscape, alone and under a Confirm card; (3) a sprint ending while the fan is open (the
 celebration waits); (4) the × move with **Reduce Motion ON** (block 1's reduced path).
+
+### FEATURE: F-FurnitureGap24 — the bottom furniture drops 8pt: 32 → 24 above the tab bar  [x] COMPLETED 2026-09-17
+
+**E's device look on the three blocks (2026-09-17, four screenshots, portrait, light and dark):**
+the × fix PASSED (*"your fixes to the FAB Icon were successful"*); the collapsed bar's new margin
+(32pt, measured ≈34 off E's frame) — *"please reduce it slightly."*
+
+**E's two answers:** move **everything together** (disc, search row and cards stay aligned; offered
+"only when a card is up", which would have broken the landscape alignment) — and **24pt**, the smallest
+on-grid step (offered 16 and "render options first"). So `AppSearchRowMetrics.gapAboveTabBar` 32 → 24:
+`bottomFurnitureLift` 100 → 92, `bottomClearance` follows (content floors drop 8 with the disc).
+
+**The accepted cost, named for E's look:** 32 was measured to centre the disc on the Journal tab's
+"One line about today" composer (centre 700.5; the disc at 698). At 24 the disc's centre lands ~706 on
+an iPhone 15 Pro, ~5.5pt off.
+
+- [x] RED: `testTheGapAboveTheTabBarMatchesEsMarking` reversed and renamed
+      `testTheGapAboveTheTabBarIsTheValueEChoseOnDevice` (24), E's 2026-09-03 marking kept → 1 failure.
+- [x] GREEN; the one predicted knock-on — the landscape arithmetic that pinned E's y-16 measurement at
+      the old lift — derived from the lift and annotated rather than retyped. Docs that said "32pt" updated.
+- [x] Pins unaffected, re-checked by the suite: the × pin (resting × now 122pt up; TASK 85pt away),
+      every card height still lands the CLOSED × on a tile, the landscape stack still reaches the gear.
+- [ ] **Owed: E's device look** — the bar margin at 24 (portrait + landscape), the disc with nothing up,
+      the Journal tab's composer alignment. No reduced or `#available` site touched.

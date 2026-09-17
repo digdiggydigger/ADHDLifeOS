@@ -57,7 +57,12 @@ final class RootBottomOverlayLayoutTests: XCTestCase {
                 + " INSIDE the header band — that is the bug. If this fails the metrics have moved;"
                 + " re-measure before deciding the rule below is no longer needed."
         )
-        XCTAssertEqual(stackedDiscTop, 18, accuracy: 4, "E measured the disc at y 16 on the device frame.")
+        // E measured the disc at y 16 on 2026-09-16, when the lift was 100. `F-FurnitureGap24` (E,
+        // 2026-09-17) lowered the lift 8pt, so the same stack stands 8pt lower — still inside the well.
+        XCTAssertEqual(
+            stackedDiscTop, 18 + (100 - AppSearchRowMetrics.bottomFurnitureLift), accuracy: 4,
+            "E measured the disc at y 16 on the device frame, at the 2026-09-16 lift of 100."
+        )
 
         let sprintOnly = RootBottomOverlayLayout.size(
             .stacked, width: width, discRow: discRow, cards: CGSize(width: width, height: 148)

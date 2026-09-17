@@ -37,20 +37,25 @@ final class AppSearchRowMetricsTests: XCTestCase {
         )
     }
 
-    /// **Measured off E's own device markings, not chosen.** E marked the target twice on
-    /// 2026-09-03 and asked for the capture button *"comfortably aligned with the One line about
-    /// today button on the Journal Tab"*: that composer field spans y 677.3-723.7 (centre 700.5)
-    /// and E's ring around it centred on 701.5. This gap puts the disc's centre at 698 on an
-    /// iPhone 15 Pro — 2.5pt out, inside the width of the line E drew.
+    /// **E's number, chosen on device — REVISED 2026-09-17 from 32 to 24 (`F-FurnitureGap24`).**
     ///
-    /// It was 60 for exactly one build, and that was 58pt too generous: the 60 had never meant
-    /// "above the bar" — it was measured from the home indicator while the disc overlapped the
-    /// bar, so restoring the missing bar height made it wrong in the other direction.
-    func testTheGapAboveTheTabBarMatchesEsMarking() {
+    /// It was 32, measured off E's markings: on 2026-09-03 E asked for the capture button
+    /// *"comfortably aligned with the One line about today button on the Journal Tab"* — that
+    /// composer field spans y 677.3-723.7 (centre 700.5) — and 32 put the disc's centre at 698 on an
+    /// iPhone 15 Pro, 2.5pt out.
+    ///
+    /// On 2026-09-17, looking at the collapsed sprint bar lifted onto this same line
+    /// (`F-CollapsedBarLift`), E asked to *"reduce it slightly"*, and chose — offered moving only
+    /// the cards — to move **everything together** (disc, search row and cards stay aligned), by the
+    /// smallest on-grid step: **24**. The accepted cost: the disc's centre now lands ~706, ~5.5pt off
+    /// the Journal composer's centre instead of 2.5. (It was 60 for exactly one build, once — that
+    /// was 58pt too generous, a number measured from the home indicator while the disc overlapped
+    /// the bar.)
+    func testTheGapAboveTheTabBarIsTheValueEChoseOnDevice() {
         XCTAssertEqual(
-            AppSearchRowMetrics.gapAboveTabBar, 32,
-            "The gap above the tab bar changed. 32 is what centres the capture button on the"
-                + " Journal composer, which is the alignment E marked on device."
+            AppSearchRowMetrics.gapAboveTabBar, 24,
+            "The gap above the tab bar changed. 24 is E's 2026-09-17 call — \"reduce it slightly\","
+                + " everything together — revising the 32 that centred the disc on the Journal composer."
         )
     }
 

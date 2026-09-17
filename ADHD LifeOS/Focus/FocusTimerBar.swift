@@ -19,7 +19,7 @@ import SwiftUI
 /// Collapsed, it keeps the SAME 16pt inset — so collapsing changes height only, never width —
 /// and sits narrower than the tab bar below it (E's 2026-09-09 reversal of the original
 /// full-bleed call), rounded on all four corners (`F-FocusCard-Corners`) and — since E reversed the
-/// flush drop on 2026-09-17 — on the disc's line, 32pt above the tab bar, carrying exactly the
+/// flush drop on 2026-09-17 — on the disc's line, 24pt above the tab bar, carrying exactly the
 /// ring, the sprint name and Pause. Every sprint starts expanded, and **collapse is
 /// cleared only by the Confirm button (F-FocusCard-2), and since F-FocusCard-3 only when no
 /// sprint is running** — never by a tab switch, backgrounding or a relaunch, which is E's stated
@@ -88,7 +88,7 @@ struct FocusTimerBar: View {
             .background(.regularMaterial, in: cardShape)
             // The keyline closes in BOTH states since `F-CollapsedBarLift` (E, 2026-09-17). E removed
             // the collapsed card's bottom run on 2026-09-09 only because the card sat ON the tab bar,
-            // where a hairline at the join read as a seam; floating 32pt above it, an outline open at
+            // where a hairline at the join read as a seam; floating 24pt above it, an outline open at
             // the bottom reads unfinished. `strokeBorder` on the fill's own shape, so the two cannot
             // disagree about the corner.
             .overlay(cardShape.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1))

@@ -184,7 +184,7 @@ final class SprintBarFurnitureUITests: XCTestCase {
         return app
     }
 
-    /// The bar's bottom on the disc's resting line — 32pt above the tab bar — and, with a Confirm
+    /// The bar's bottom on the disc's resting line — above the tab bar — and, with a Confirm
     /// card up, its Confirm button clear above the bar.
     @MainActor
     private func assertTheBarsLine(_ bar: CGRect, restingLine: CGFloat, card: CGRect?, orientation: String) {
@@ -200,9 +200,10 @@ final class SprintBarFurnitureUITests: XCTestCase {
         }
     }
 
-    /// The gap above the tab bar is the disc line's 32pt less however far the bar drops below it.
+    /// The gap above the tab bar is the disc line's gap — 24 since `F-FurnitureGap24` (it was 32 when
+    /// this journey was written) — less however far the bar drops below it.
     private func report(_ orientation: String, bar: CGRect, discBottom: CGFloat, card: CGRect?, discPushed: CGRect?) {
-        let gapAboveTabBar = discBottom + 32 - bar.maxY
+        let gapAboveTabBar = discBottom + 24 - bar.maxY
         let confirmToBar = card.map { bar.minY - $0.maxY }
         print("[BAR-LINE] \(orientation) bar=\(bar) discRestingBottom=\(discBottom)"
             + " gapAboveTabBar=\(gapAboveTabBar) confirmButton=\(String(describing: card))"
