@@ -59,3 +59,49 @@ opens Settings (frames 04 and 06).
    its corner? (A running sprint's timer bar takes the same column in landscape; the disc no
    longer rises above it there.)
 2. Portrait is unchanged; nothing to look at, but the claim is on the table.
+
+---
+
+## Device look, 2026-09-17 03:44 — E's six frames (iPhone 15 Pro, iOS 27.0, `main` @ `5c322e5`)
+
+E installed the fix and sent six frames from the phone (`IMG_8503`–`8508` in E's own folder). Two
+things in them, and only the first was expected.
+
+**The landscape arrangement, on the phone (07, 08).** 07 is the fix as built: the away card takes
+the column bottom-left, the disc keeps its corner, the gear is clear. 08 is portrait with the card
+up — unchanged, and it shows something the fix did not touch and this folder should record: with
+the card pushing the disc up, the disc floats over the Best Next Move card's *Start another session*
+button. That is the pre-existing "the disc floats over content" behaviour at a pushed-up height;
+`captureDiscClearance` clears only the bottom of the scroll. Noted as an observation, not a
+finding — E has not raised it. **E has not yet given a verdict word on 07.**
+
+**NEW FINDING — the sprint cards sit ABOVE the capture fan (09–12).** With a card up, opening the
+fan draws the card crisp on top of the fan's dimmed scrim, and the fan's tiles land where the card
+is. 09/10: the LIVE Confirm card ("30s focused · 2 checkpoints · Confirm") in landscape, dark and
+light, above the scrim with the tile row butting its bottom edge. 11: the away card, same. 12:
+**portrait — the away card hides the LINK and TASK tiles entirely**, so two of the five capture
+kinds cannot be tapped while an away card is waiting. Two causes, both read from the code, not
+the frames:
+
+- **z-order.** `RootView` applies `.blur` and the fan overlay to the tab content, then mounts
+  `RootBottomOverlay` as a later `.overlay` — deliberately, so the disc (which becomes the fan's ×)
+  stays crisp and tappable. The cards came along with it: everything in the bottom overlay is
+  above the scrim, un-dimmed.
+- **anchoring.** `CaptureFanOverlay` places each tile at `(width − fromTrailing, height −
+  fromBottom)` — fixed offsets from the screen's bottom-trailing corner, i.e. the disc's RESTING
+  position. When a card pushes the disc up (portrait), the × moves and the arc does not, so the
+  arc leans out of empty space and its lower tiles sit under the card. In landscape the disc no
+  longer moves (this block), but the horizontal arc runs along the bottom exactly where the
+  side-by-side column now is.
+
+Recorded in the register (§B) with the options; **not fixed here** — it is a design call E has not
+yet made.
+
+| file | what it shows |
+|---|---|
+| `07-device-landscape-cards-beside-disc-light-27.0.jpeg` | The fix on E's phone: card bottom-left, disc in its corner, gear clear. |
+| `08-device-portrait-away-card-disc-over-hero-buttons.jpeg` | Portrait, unchanged; the pushed-up disc floats over the hero's buttons (observation). |
+| `09-device-landscape-fan-open-confirm-card-above-scrim-dark.jpeg` | Fan open, landscape, DARK: the Confirm card crisp above the scrim, tiles under its edge. |
+| `10-device-landscape-fan-open-confirm-card-above-scrim-light.jpeg` | Same, LIGHT. |
+| `11-device-landscape-fan-open-away-card-above-scrim.jpeg` | Fan open, landscape: the away card above the scrim. |
+| `12-device-portrait-fan-open-away-card-hides-link-and-task.jpeg` | **Fan open, portrait: LINK and TASK hidden behind the away card — unreachable.** |
