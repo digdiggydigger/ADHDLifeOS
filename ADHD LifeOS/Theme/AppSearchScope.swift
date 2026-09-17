@@ -84,7 +84,13 @@ enum AppSearchRowMetrics {
 
     /// The gap between the top of the tab bar and the bottom of the capture stack.
     ///
-    /// **32, and it is E's number twice over — measured off E's own markings, not chosen.** E
+    /// **24 since E's 2026-09-17 call (`F-FurnitureGap24`).** Looking at the collapsed sprint bar on
+    /// this line (`F-CollapsedBarLift`), E asked to *"reduce it slightly"* and chose to move
+    /// EVERYTHING together — disc, search row and cards stay aligned — by the smallest on-grid step.
+    /// The accepted cost is the Journal alignment below: the disc's centre lands ~706 on an iPhone 15
+    /// Pro, ~5.5pt off the composer's centre instead of 2.5.
+    ///
+    /// **It was 32, E's number twice over — measured off E's own markings, not chosen.** E
     /// marked the target on two device screenshots (2026-09-03) and asked for the disc to be
     /// *"comfortably aligned with the One line about today button on the Journal Tab"*:
     ///
@@ -106,7 +112,7 @@ enum AppSearchRowMetrics {
     /// both states — only the visual capsule shrinks to 60x48 inside it — so the pill's centre is
     /// the disc's centre and moving one moves the other. E confirmed centre alignment is what was
     /// meant.
-    static let gapAboveTabBar: CGFloat = 32
+    static let gapAboveTabBar: CGFloat = 24
 
     /// What the bottom furniture actually has to be padded by, and **it is not `gapAboveTabBar`
     /// alone — that was a real bug, measured on E's device.**

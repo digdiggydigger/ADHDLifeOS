@@ -55,7 +55,7 @@ enum FocusBarCollapseSwipe {
 ///
 /// **E reversed the drop too, on 2026-09-17 (`F-CollapsedBarLift`)**, in portrait and landscape:
 /// *"Line up with the Disc, But when there are multiple cards being displayed, then maintain the
-/// alignment."* The card now sits on the disc's line, 32pt above the bar, with its 24pt radius and a
+/// alignment."* The card now sits on the disc's line, 24pt above the bar, with its 24pt radius and a
 /// keyline closed on all four sides.
 ///
 /// **`InsettableShape` is not optional here.** The card is drawn twice — `.background` and an
@@ -258,7 +258,7 @@ enum FocusBarMetrics {
     static let collapsedPaddingVertical: CGFloat = 8
 
     /// **Where the card's bottom sits, in BOTH states: the disc's line.** Derived, never
-    /// hard-coded — `RootBottomOverlay` pads its whole stack up by `bottomFurnitureLift` (the 32pt
+    /// hard-coded — `RootBottomOverlay` pads its whole stack up by `bottomFurnitureLift` (the 24pt
     /// gap E measured PLUS the tab bar's own height) and `FocusTimerBar` is the stack's last child.
     ///
     /// **One lift since `F-CollapsedBarLift` (E, 2026-09-17).** There were three more metrics here —

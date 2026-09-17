@@ -97,7 +97,7 @@ final class FocusBarCollapseCallSiteTests: XCTestCase {
         XCTAssertFalse(
             source.contains(".offset(y:"),
             "Something offsets the timer bar vertically again. The collapsed card belongs on the"
-                + " disc's line, 32pt above the tab bar — E reversed the flush drop on 2026-09-17."
+                + " disc's line, above the tab bar — E reversed the flush drop on 2026-09-17."
         )
         XCTAssertFalse(
             source.contains("collapsedOffsetY"),
