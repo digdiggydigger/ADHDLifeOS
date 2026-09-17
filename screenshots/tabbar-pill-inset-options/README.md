@@ -75,3 +75,10 @@ the pin fails and the SE floor fails twice (43.0 ≠ 44.6, 43.0 < 44).
 | file | what it shows |
 |---|---|
 | `08-shipped-12-today-light.png` … `11-shipped-12-tools-dark.png` | The SHIPPED tree (no constant override, no probe loop) rendered the same way as the options above: the real bar at 12, Today and Tools, light and dark. Identical to the `12` rows of the sheets, as it must be — same file, same constant. |
+
+---
+
+## E's device verdict — PASSED (2026-09-17, iPhone 15 Pro, iOS 27.0, `main` @ `9eb5198`)
+
+E, verbatim, after looking at 12 on the phone: *"regarding the pill at 12 - i think it looks
+perfect."* Nothing is outstanding on the inset.
