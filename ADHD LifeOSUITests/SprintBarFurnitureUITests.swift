@@ -101,8 +101,8 @@ final class SprintBarFurnitureUITests: XCTestCase {
         try checkTheCollapsedBarsLine(withConfirmCard: false)
     }
 
-    /// E's "maintain the alignment" with more than one card: a Confirm card above the collapsed
-    /// bar keeps the column's 8pt to it, and the bar still ends on the disc's line.
+    /// E's "maintain the alignment" with more than one card: with a Confirm card above it the
+    /// collapsed bar still ends on the disc's line, and the Confirm card stays clear above it.
     @MainActor
     func testUnderAConfirmCardTheCollapsedBarKeepsTheAlignment() throws {
         try checkTheCollapsedBarsLine(withConfirmCard: true)
@@ -118,9 +118,9 @@ final class SprintBarFurnitureUITests: XCTestCase {
         let pose = withConfirmCard ? "confirm" : "alone"
 
         // Portrait. The resting line is where the × drops to with the fan open.
-        let bar = largestFrame("focusTimerBar", in: app)
+        let bar = collapsedCard(in: app)
         let discPushed = disc.frame
-        let card = withConfirmCard ? largestFrame("focusCompletionCard", in: app) : nil
+        let card = withConfirmCard ? app.buttons["focusCompletionConfirmButton"].frame : nil
         attach(app, "\(pose)-portrait")
         holdPose("\(pose)-portrait")
         let task = app.buttons["captureFan-task"]
@@ -144,8 +144,8 @@ final class SprintBarFurnitureUITests: XCTestCase {
 
         XCTAssertTrue(UITestSession.rotateToLandscape(app), "The window never went landscape")
         settle()
-        let landscapeBar = largestFrame("focusTimerBar", in: app)
-        let landscapeCard = withConfirmCard ? largestFrame("focusCompletionCard", in: app) : nil
+        let landscapeBar = collapsedCard(in: app)
+        let landscapeCard = withConfirmCard ? app.buttons["focusCompletionConfirmButton"].frame : nil
         report("landscape", bar: landscapeBar, discBottom: disc.frame.maxY, card: landscapeCard, discPushed: nil)
         holdPose("\(pose)-landscape")
         assertTheBarsLine(landscapeBar, restingLine: disc.frame.maxY, card: landscapeCard, orientation: "Landscape")
@@ -183,7 +183,7 @@ final class SprintBarFurnitureUITests: XCTestCase {
     }
 
     /// The bar's bottom on the disc's resting line — 32pt above the tab bar — and, with a Confirm
-    /// card up, the column's 8pt between the two cards.
+    /// card up, its Confirm button clear above the bar.
     @MainActor
     private func assertTheBarsLine(_ bar: CGRect, restingLine: CGFloat, card: CGRect?, orientation: String) {
         XCTAssertEqual(
@@ -192,9 +192,8 @@ final class SprintBarFurnitureUITests: XCTestCase {
                 + " — dropped toward the tab bar"
         )
         if let card {
-            XCTAssertEqual(
-                bar.minY - card.maxY, 8, accuracy: 1,
-                "\(orientation): the Confirm card and the collapsed bar are not the column's 8pt apart"
+            XCTAssertLessThanOrEqual(
+                card.maxY, bar.minY, "\(orientation): the Confirm button runs into the collapsed bar"
             )
         }
     }
@@ -202,17 +201,20 @@ final class SprintBarFurnitureUITests: XCTestCase {
     /// The gap above the tab bar is the disc line's 32pt less however far the bar drops below it.
     private func report(_ orientation: String, bar: CGRect, discBottom: CGFloat, card: CGRect?, discPushed: CGRect?) {
         let gapAboveTabBar = discBottom + 32 - bar.maxY
+        let confirmToBar = card.map { bar.minY - $0.maxY }
         print("[BAR-LINE] \(orientation) bar=\(bar) discRestingBottom=\(discBottom)"
-            + " gapAboveTabBar=\(gapAboveTabBar) card=\(String(describing: card))"
-            + " discPushed=\(String(describing: discPushed))")
+            + " gapAboveTabBar=\(gapAboveTabBar) confirmButton=\(String(describing: card))"
+            + " confirmButtonToBar=\(String(describing: confirmToBar)) discPushed=\(String(describing: discPushed))")
     }
 
-    /// Identifiers on a container are inherited by its children, so the card is the LARGEST match.
+    /// The collapsed card, read from its Pause button. The card's `focusTimerBar` identifier never
+    /// surfaces as an element of its own — its children inherit it, and the largest of them is the
+    /// title (measured 165 × 16) — but Pause is the collapsed row's 44pt height, and the card is
+    /// that row plus `FocusBarMetrics.collapsedPaddingVertical` (8) above and below: 60pt.
     @MainActor
-    private func largestFrame(_ identifier: String, in app: XCUIApplication) -> CGRect {
-        app.descendants(matching: .any).matching(identifier: identifier).allElementsBoundByIndex
-            .map(\.frame)
-            .max { $0.width * $0.height < $1.width * $1.height } ?? .zero
+    private func collapsedCard(in app: XCUIApplication) -> CGRect {
+        let pause = app.buttons["focusBarPause"].frame
+        return CGRect(x: pause.minX, y: pause.minY - 8, width: pause.width, height: pause.height + 16)
     }
 
     /// Holds a pose for the host-side poller, stamped with the host clock it names its files by.
