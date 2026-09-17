@@ -4289,6 +4289,13 @@ or changed; the three `.animation(reduceMotion ? nil : …)` modifiers are untou
 **Owed: E's device verdict on the side-by-side arrangement** — the card bottom-left, the disc in
 its corner (`screenshots/landscape-fab-overlap/README.md`, "Open, for E on the phone").
 
+**E's device verdict, 2026-09-17 ~06:00 — NOT passed as it stands, and it became a block.** E ran a
+sprint in landscape (`screenshots/landscape-fab-overlap/16–17`) and answered: *"it needs to have
+some margin space added BELOW the card bottom-left AND ABOVE the NAV tab menu bar."* Measured: the
+expanded card already sits 33pt above the bar, but the COLLAPSED bar sits on it (the 2026-09-09
+flush drop). Asked, E narrowed it to the collapsed bar, **in portrait too**, lined up with the disc.
+See **`F-CollapsedBarLift`** below. The side-by-side arrangement itself was not questioned.
+
 
 ### FEATURE: F-TabBarPillInset — the resting pill's inset, E's pick from rendered options  [x] COMPLETED
 
@@ -4318,6 +4325,9 @@ waiver — the second, beside `peekStep = 14` — recorded in CLAUDE.md §2.
 (37 distinct warnings, unchanged; 0 errors), coverage 27.67% (13,399/48,433) — a constant moved,
 no line count did. Shipped tree rendered (`tabbar-pill-inset-options/08–11`). **Owed: E's look at
 12 on the phone** (installed with this close-out). No RM-on pass: no motion site touched.
+
+**E's device verdict, 2026-09-17: PASSED** — *"regarding the pill at 12 - i think it looks
+perfect."* Nothing outstanding.
 
 
 ### FEATURE: F-FanCardsFade — the sprint cards fade out while the capture fan is open  [x] COMPLETED
@@ -4378,3 +4388,207 @@ Said here so nobody reads the timer bar's absence under the fan as a bug.
 this block ADDS a reduced site (§7.3's rule), so the reduced fade needs device time. And the
 verdict on the arrangement itself. Verified paths line: **fade: run on sim + E's phone (RM off,
 pending); Reduced: run on sim (injected by the `.default` branch) — NOT yet on device.**
+
+**E's device verdict, 2026-09-17: PASSED, Reduce Motion OFF AND ON** (E: *"Right, Reduce Motion OFF
+and ON"*). Verified paths, final: **fade: run on sim + E's phone (RM off). Reduced: run on sim
+(injected) + E's phone (RM on).**
+
+**One claim above is now SUPERSEDED by E's next call:** "never an `if`: removal would collapse the
+column and drop the × into its corner the instant the fan opened, moving it from under the thumb".
+Dropping the × into its corner is exactly what E then CHOSE (shape B, `F-FanXAtRest` below),
+because a × that stays pushed up lands on a tile. The opacity-not-`if` shape still stands, for a
+different reason (see that block). This paragraph stays as the record of why it read that way on
+the day.
+
+---
+
+## E's three calls from the 2026-09-17 device looks — three blocks, built back to back
+
+**Written 2026-09-17 by the session that collected E's looks. It built NOTHING, at E's
+instruction:** *"I suggest that any building happens in a fresh Claude code terminal session."*
+**E's pacing call for these three: build all three back to back WITHOUT stopping for review
+between them, then ONE install and ONE set of phone looks** (E chose *"All three, one install"*
+over the standing stop-after-each rule). Each block still gets its own branch, TDD, red-check,
+PR and pasted output. Evidence for all three: `screenshots/landscape-fab-overlap/16–21` and its
+README's two 2026-09-17 device sections (**the measurements are done; do not re-derive them**).
+
+Recommended order: the × first (E called it a bug), then the bar lift, then the celebration hold.
+The first two both edit `RootBottomOverlay`'s neighbourhood and do not conflict: block 1 moves the
+disc ROW inside the Layout, block 2 removes an `.offset` inside `FocusTimerBar`.
+
+### FEATURE: F-FanXAtRest — the × drops to its resting corner while the capture fan is open  [ ] OPEN
+
+**The bug (E's GIF, `…/21-…gif`, and frame 19).** In portrait, any card in the bottom column
+(the running sprint's bar, a Confirm card, the away card) pushes the capture disc up. When the fan
+opens, the disc becomes its ×, but `CaptureFanOverlay` places the tiles from the safe area's
+bottom-trailing corner (the disc's RESTING spot), so the × lands on whichever tile sits at the
+pushed height. The tiles are 78pt apart, so ANY push collides:
+
+| what is up | push | × lands on (15 Pro) |
+|---|---|---|
+| collapsed sprint bar | 68pt (measured, frame 19) | **TASK**, centres 9pt apart |
+| Confirm card | 84pt (measured, the GIF) | **TASK**, 7pt |
+| expanded sprint card | 156pt (arithmetic) | **LINK**, ~16pt |
+| away card | 194pt (arithmetic) | between **PHOTO** and **LINK** |
+
+E: *"The cause of the drifting FAB 'x' icon seems to be when there is an unresolved notification
+such as a completed sprint."* Right about the effect. The cause is any card: frame 19 shows it with
+a RUNNING sprint, before any notification existed. Landscape is unaffected, because the cards sit
+beside the disc there (`F-LandscapeFabOverlap`).
+
+**E's call (2026-09-17, chosen over A "move the arc up with the ×" and "render both first"):**
+**B, *"× drops to its corner"*.** While the fan is open the × sits at its resting corner, and the
+arc stays exactly as designed. The accepted cost: the × moves 68–194pt down from under the thumb as
+the fan opens.
+
+**Why the resting corner is correct, in numbers** (all from the safe area's bottom-trailing
+corner, which both the fan's `GeometryReader` and the bottom overlay measure from): the resting ×
+centre is 54pt from trailing (`CaptureDiscMetrics.edgeMargin` 24 + 30) and 130pt from the bottom
+(`AppSearchRowMetrics.bottomFurnitureLift` 100 + 30, confirmed on the phone: centre y 688 on an
+818pt safe bottom). The nearest tile, TASK at (57, 207), is 77pt away, and a tile (radius 31) and
+the disc (radius 30) need 61pt. Every slot clears.
+
+**The shape, as the collecting session worked it out (verify, do not trust):**
+- **Pure rule:** `RootBottomOverlayLayout.frames(_:in:discRow:cards:fanIsOpen:)`. While the fan is
+  open, the disc row's frame moves to the bottom line (`y = bounds.maxY − discRow.height`), and the
+  cards' frames stay unchanged. It is a no-op in `.besideTheDisc` (already on the bottom line) and
+  with an empty column (bounds height == disc row height). `sizeThatFits` is unchanged: the
+  invisible cards still take their space, so nothing else reflows.
+- **`RootBottomOverlayArrangement` gains `fanIsOpen`**, passed into `frames`. `RootBottomOverlay`
+  builds it as `RootBottomOverlayArrangement(arrangement: arrangement, fanIsOpen: isFabOpen)`.
+- **Animation:** it rides the existing `withAnimation(reduceMotion ? nil : .spring(…))` around
+  `isFabOpen.toggle()`, since a `Layout` property change animates inside that transaction. **Under
+  Reduce Motion the × moves with no animation**, the same as the disc's existing push when a sprint
+  starts (`.animation(reduceMotion ? nil : …, value: focusService.isActive)`), which is §7.2's
+  continuous re-layout case. It still CHANGES what the reduced path shows, so an **RM-on device
+  pass is owed** (§7.3).
+- **The cards keep the opacity + hit-test fade, never an `if`**, for a reason that is now the
+  honest one: removing them would destroy `FocusTimerBar`'s `@State` (the detail sheet, the Stop
+  confirmation) and swap the fade for a removal transition. The old reason ("the × stays where the
+  + was") is reversed by this block.
+- **The search row on Tasks rides down with the disc**, because it is in the same row. Look at it
+  on Tasks with a sprint running before calling the block done.
+
+**Tests that must be REVERSED, not deleted (the reversed-test habit, names and messages too):**
+- `RootBottomOverlayCallSiteTests.testTheCardsFadeUnderTheFanByOpacityAndKeepTheirLayout`: keep the
+  opacity / `allowsHitTesting` / no-`if` guard, and rewrite its rationale (see above).
+- `FanOverAwayCardUITests`: `XCTAssertEqual(disc.frame.midY, discBeforeOpening.midY, …, "The disc
+  moved when the fan opened")` becomes: the disc's `maxY` is on the column's bottom line (≈ the away
+  card's `maxY`), AND every tile's centre is ≥ 61pt from the ×'s centre. **On the unfixed tree the
+  distance assertion fails** (the × is 194pt up, on PHOTO/LINK). That is the red.
+- Doc comments that say the × stays put: `RootBottomOverlay.swift` (the fade's comment) and
+  `RootBottomOverlayLayout.cardsPresence`'s doc.
+
+**Acceptance criteria**
+- [ ] `RootBottomOverlayLayoutTests`, RED first: stacked + cards + fan open → disc row on the bottom
+      line, cards' frame unchanged; stacked + no cards + fan open → identical to closed;
+      `.besideTheDisc` + fan open → identical to closed.
+- [ ] A PIN (it passes on today's tree; mutation-check it both ways): every `CaptureFan.slots`
+      centre is ≥ 61pt from the resting × centre, so a future arc or lift change cannot silently
+      put a tile under the ×.
+- [ ] `RootBottomOverlayCallSiteTests`: the overlay passes `fanIsOpen: isFabOpen` to the Layout; the
+      Layout passes `fanIsOpen` into `frames`; the reversed fade guard.
+- [ ] `FanOverAwayCardUITests` reversed as above. **Fails on the unfixed tree, passes on the fix.**
+- [ ] Red-check by reverting the Layout after the commit; count the failures; restore with
+      `git checkout --`.
+- [ ] Evidence folder with a README: portrait fan open over a card, before and after.
+- [ ] SwiftLint 0, suite green, sim build green, all pasted. Verified paths line. **RM-on device pass
+      owed** (with E's one set of looks at the end).
+
+### FEATURE: F-CollapsedBarLift — the collapsed sprint bar stops dropping onto the tab bar  [ ] OPEN
+
+**E's call, three answers, verbatim (2026-09-17):**
+1. Landscape verdict: *"I think at this point, it needs to have some margin space added BELOW The
+   card bottom-left AND ABOVE The NAV tap menu bar."*
+2. Shown the measured frames (the expanded card already 33pt above the bar; the collapsed bar ~1pt,
+   sitting on it) and asked which card: **the collapsed bar.**
+3. Where: **"Portrait too."** This **reverses the flush drop** E chose on 2026-09-09 (*"Drop it
+   flush to the tab bar"*) and kept through `F-FocusCard-Corners` (*"the flush drop STAYS"*). It
+   was offered as landscape-only (recommended) and E chose both.
+4. How much: *"Line up with the Disc, But when there are multiple cards being displayed, then
+   maintain the alignment."*
+
+**What that means in the geometry (the collecting session's reading; say it in the report):** the
+drop is purely visual. `FocusTimerBar` applies `.offset(y: isCollapsed ?
+FocusBarMetrics.collapsedOffsetY : 0)`, which is +32, and deliberately not padding, so the LAYOUT
+frame has always sat on the disc's line. Removing the offset puts the collapsed bar's bottom on the
+same line as the expanded card and the resting disc: `bottomFurnitureLift`, 32pt above the bar.
+Nothing else moves: the disc, the Confirm stack and the column's frame are all laid out from the
+un-offset frame. **"Maintain the alignment with multiple cards"** then holds by construction. A
+Confirm card above the collapsed bar sits the column's 8pt above it (today, visually, 8 + 32 =
+40pt). In landscape the column is bottom-aligned with the disc row (`frames(.besideTheDisc)`), so
+the bar's bottom lands exactly on the disc's. In portrait the disc is ABOVE the column, so "line up
+with the disc" can only mean the disc's resting line. Say that explicitly.
+
+**Consequences that follow from E's call (not new design; name each in the report):**
+- **The bottom keyline comes back.** E removed it on 2026-09-09 only because the card sat on the bar
+  (*"REMOVE the bottom border on the collapsed card tab"*: a hairline at the join read as a seam).
+  With no join, a card outlined on three sides looks unfinished. Stroke the full outline in both
+  states. `FocusBarCardBorder.omitsBottomEdge` then has no caller that passes `true`, so **delete
+  the parameter** (the dead-shared-component pattern) rather than leave it always false. Check
+  whether `FocusBarCardBorder` then collapses into a plain `strokeBorder` of `FocusBarCardShape`.
+- `FocusBarMetrics.collapsedBottomLift` / `collapsedDrop` / `collapsedOffsetY` exist only for the
+  drop. Delete them, or reduce them to the one statement the new rule needs. Do not leave a named
+  zero.
+- The bottom corner radius stays 24 (E's "match the top"), and `animatableData` stays inert.
+- **Check the scroll clearance:** the bar now floats 32pt higher. Confirm the last row of a
+  scrolled screen still clears it (the clearance reads layout frames, which do not move, but
+  verify on the sim rather than assuming).
+
+**Tests that pin the drop and must be REVERSED:** `FocusBarGeometryTests` (≈ lines 40–100: the
+collapsed lift == `AppTabBarMetrics.rowHeight`, `collapsedDrop == −gapAboveTabBar`,
+`collapsedOffsetY == gapAboveTabBar`; ≈ line 229, `omitsBottomEdge: collapsed`) and
+`FocusBarCollapseCallSiteTests` ≈ line 88 (the source contains `FocusBarMetrics.collapsedOffsetY`).
+Read each test's doc comment before rewriting: several carry E's words, and those words need a
+"reversed 2026-09-17" note, not a silent edit.
+
+**Acceptance criteria**
+- [ ] RED first: the collapsed bar's bottom lift equals the expanded card's (the disc's line); the
+      outline is closed in both states; a call-site guard that `FocusTimerBar` applies no collapse
+      offset.
+- [ ] The pinning tests above reversed, with their E quotes kept and annotated.
+- [ ] Rendered evidence in BOTH orientations, collapsed bar alone AND with a Confirm card above it:
+      the before/after gap, measured, in a README.
+- [ ] Red-check (restore the offset → the new tests fail, count them); restore.
+- [ ] SwiftLint 0, suite green, build green, pasted. RM: the collapse animation's
+      `reduceMotion ? nil` is untouched (height and position re-layout). If it is touched, the RM-on
+      pass is owed. Say which in the report.
+
+### FEATURE: F-FanHoldsCelebration — a full-screen celebration waits while the capture fan is open  [ ] OPEN
+
+**The evidence (frame 20, `IMG_8521`):** a 30-second sprint ended while the fan was open, and a
+full-screen celebration (fireworks and confetti) played OVER the open fan, dimming the tiles.
+**E's call (2026-09-17, over "play over the fan, as now"): *"Wait until the fan closes."***
+
+**Why it happens today:** `F-CTACelebrations-Surfaces` holds a full-screen celebration while
+`CelebrationCenter.isBlocked`, the ONE predicate behind both the hold and the release. It knows
+tracked surfaces (`frontmost.dismissesItself`) and asks UIKit (`KeyWindowPresentationProbe`) about
+anything presented. The fan is neither: it is a SwiftUI overlay in `RootView`, gated on
+`@State isFabOpen`, so no probe can see it.
+
+**The shape to start from (verify first):** `RootView` TELLS the centre, e.g.
+`.onChange(of: isFabOpen) { celebrationCenter.… = $0 }`, and `isBlocked` also holds while the fan
+is open (at `.root`). Release needs no new wiring: the hold watch polls every 0.25s
+(`holdPollInterval`) and releases when `isBlocked` clears. **Read `-Surfaces`' R-g** (enforced by
+TIME) and say what happens to a burst held through a long fan session. **Picking a tile opens a
+composer**, and the probe takes over the hold from there. Check the gap between `isFabOpen = false`
+and the composer's presentation, so a held burst cannot slip out in between. **Pops are not held**
+by `-Surfaces` (`outcome == .fullScreen`), which E chose then. Keep that, and say so. Find which
+request fired in frame 20 and confirm it resolves `.fullScreen`.
+
+**Acceptance criteria**
+- [ ] `CelebrationCenter` unit tests, RED first: fan open → a full-screen request is held; fan closes
+      → the next hold-watch tick plays it; a pop is not held; fan open AND closed with nothing held →
+      nothing plays.
+- [ ] A call-site guard that `RootView` feeds `isFabOpen` to the centre (without it, a perfect centre
+      holds nothing: the dead-component pattern).
+- [ ] Red-check; restore.
+- [ ] SwiftLint 0, suite green, build green, pasted. No reduced site touched, so no RM-on pass owed.
+      Say why.
+
+**After all three:** ONE device install (`device-build-lag` recipe). **The phone's profile expires 2026-09-17T19:25:02Z (20:25 BST).** After that the
+app will not open until it is reinstalled. A build before expiry ships the same dying profile, and one after it should
+re-issue via `-allowProvisioningUpdates`. If the build log says `No Accounts`, E signs in to Xcode., then ONE message asking E for: (1) the × at its corner with a
+sprint running, portrait, including on Tasks; (2) the collapsed bar's new margin, portrait AND
+landscape, alone and under a Confirm card; (3) a sprint ending while the fan is open (the
+celebration waits); (4) the × move with **Reduce Motion ON** (block 1's reduced path).
