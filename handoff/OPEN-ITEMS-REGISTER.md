@@ -47,7 +47,7 @@ overlay's new lines), i.e. comparable and the new code is covered. `LandscapeAwa
 `codesign --verify --deep --strict` exit 0); the LAUNCH was denied for `Locked` — the known
 "install is real, unlock and open" case, so **E opens it by hand**. Profile valid to
 **2026-09-17T19:25:02Z — it expires TONIGHT**; after that the app needs a rebuild + reinstall
-before it will open. **Three looks are owed on that build — see §B's first three items.**
+before it will open. **Three looks were owed on that build — see §B's first three items.** **Update 2026-09-17 05:48 (mid-session, not yet a new edition):** E ran one sprint on the phone and sent five frames (`screenshots/landscape-fab-overlap/16–20`). **The pill at 12 PASSED** (*"i think it looks perfect"*). The landscape arrangement and the fade both show working in the frames, but E has given no verdict WORD on either, and the Reduce Motion ON pass is unconfirmed. **Frame 19 widens the × question: with a running sprint's collapsed bar up in portrait, the × covers TASK** (centres 9pt apart), not PHOTO. See §B's second item.
 
 **`main` @ PR #131 — Phase D landed** (`4e4ec1c` was the baseline). Measured for Phase D on
 2026-09-15 (Xcode 27.0, iOS 26.5 runtime, emulator UP): suite **3,011 / 0**, **0** `127.0.0.1:9099`
@@ -560,7 +560,35 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       ×'s real centre (works with one card; with the away card AND a Confirm stack the top tile
       would clip off the top edge, so it needs a cap), or let the × drop to its corner while the
       fan is open (the cards are invisible then anyway; the × moves under the thumb as the fan
-      opens, which is the cost). Not built; E's call. Frame 08's observation (the pushed-up disc over the hero's *Start another
+      opens, which is the cost). Not built; E's call.
+      **WIDENED BY E's FRAME 19 (2026-09-17 05:44, phone): it is not PHOTO-specific.** With a
+      running sprint's COLLAPSED bar up in portrait, the push is 68pt and the × covers **TASK**, the
+      nearest and most-used tile (centres (339, 620) and (336, 611), 9pt apart). The tiles are 78pt
+      apart, so any push lands the × within ~39pt of some tile. On the 15 Pro, by arithmetic: the
+      expanded card (push 156) lands on LINK, and the away card (push 194) lands between PHOTO and
+      LINK. **"Leave it" therefore means TASK is covered whenever a sprint bar is up in portrait.**
+      Frame 20 adds two facts: when the sprint ENDED with the fan open, the × dropped 68pt to its
+      corner on its own (shape B's cost, already live today), and **a celebration played over the
+      open fan**. That is the code as written: `-Surfaces` holds behind sheets, alerts and pickers,
+      and the fan is an overlay nothing reports. An observation for E, not a finding. Table and
+      measurements: `screenshots/landscape-fab-overlap/README.md`, the 05:44 section.
+      **E's GIF, 05:47 (`…/21-…gif`): E calls it a BUG** (*"the drifting FAB 'x' icon … when there is
+      an unresolved notification such as a completed sprint"*). With the finished sprint's Confirm card
+      up, the × sits at (339, 604), 84pt up and 7pt from TASK, and does not move while the fan opens.
+      Landscape is clear. The cause is any card pushing the disc, not the notification: frame 19 showed
+      the same with a running sprint's bar.
+      **E's CALLS, 2026-09-17 ~06:00 — four answers, three of them new work:**
+      - **The ×: shape B** — the × drops to its resting corner while the fan is open. TO BUILD.
+      - **A celebration that fires while the fan is open WAITS until the fan closes.** TO BUILD.
+      - **`F-FanCardsFade` PASSED ON DEVICE with Reduce Motion OFF and ON** (E: *"Right, Reduce Motion
+        OFF and ON"*). Verified paths: full run on sim + E's phone (RM off); reduced run on sim
+        (injected) + E's phone (RM on).
+      - **Landscape: NOT passed as it stands.** E: *"it needs to have some margin space added BELOW the
+        card bottom-left AND ABOVE the NAV tab menu bar."* Measured on E's frames: the expanded card
+        already sits 33pt above the bar, and the COLLAPSED bar sits on it (~1pt, the flush drop). Asked
+        which card, where and how much, E chose: **the collapsed bar; portrait TOO** (this REVERSES the
+        2026-09-09 flush drop that `F-FocusCard-Corners` kept); **"Line up with the Disc, but when there
+        are multiple cards being displayed, then maintain the alignment."** TO BUILD. Frame 08's observation (the pushed-up disc over the hero's *Start another
       session*) is unchanged and still only an observation. (CLOSED; two looks owed)
 
 - [x] ~~**The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
@@ -570,7 +598,8 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       and 16 offered); SE floor 47.8 → 44.6, still clear; pinned by
       `testTheCardsInnerPaddingIsTheValueEChoseByLooking`; red-checked at 4 and at 16 with the
       predicted counts. Options + the shipped render: `screenshots/tabbar-pill-inset-options/`.
-      **Owed: E's look at 12 on the phone.** (CLOSED; verdict owed)
+      **E's device verdict, 2026-09-17: PASSED** — *"regarding the pill at 12 - i think it looks
+      perfect."* Nothing outstanding. (CLOSED; PASSED ON DEVICE)
 
 ~~**00. THE CTA CELEBRATIONS ARC — `F-CTACelebrations-6` is BUILT TO C5 ON A BRANCH.**~~
    **THE WHOLE ARC IS FINISHED — corrected 2026-09-13, and this entry was badly stale.** It still

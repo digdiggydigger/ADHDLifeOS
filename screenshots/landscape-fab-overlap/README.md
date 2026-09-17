@@ -125,3 +125,90 @@ frame (16, 543–740), the disc at (318, 475) before AND after the fan opened.
 
 **Owed to E:** the fade on the phone with Reduce Motion OFF, then ON — this block adds a reduced
 site. The arc still leans out of the resting corner (not re-anchored; see the register).
+
+---
+
+## Device looks, 2026-09-17 05:44 — E's five frames (iPhone 15 Pro, iOS 27.0, `main` @ `9eb5198`)
+
+E ran one 30-second sprint ("celebration sound testing") and sent five frames (`IMG_8515`,
+`8517`, `8518`, `8520`, `8521`). Measured from the frames at 3 px per point: landscape is
+852 × 393pt, portrait 393 × 852pt. **The one finding is in 19, and it corrects the register:** the
+× does not only land on PHOTO, and not only with the away card.
+
+**Landscape (16, 17): the side-by-side arrangement, on the phone, with a running sprint.** The
+expanded sprint card takes x 76–677, y 126–273. The disc sits at x 709–769, y 213–273, so its
+bottom lines up with the card's. The collapsed bar is at y 246–305 and sits on the tab bar
+(y 306), which is the bar's flush drop. The disc stays in its corner. In 16 the disc is in its
+translucent scroll pill, not a fault. **E has sent the frames but no verdict word yet.**
+
+**Landscape, fan open (18): the fade works.** The timer bar is gone and the five tiles are clear.
+The tile centres match the table exactly: TASK is at (586, 316), from `793 − 207` and `372 − 57`.
+The × is at (739, 243), 153pt right of TASK and 73pt above it. Nothing overlaps.
+
+**Portrait, fan open (19): the fade works, but THE × COVERS TASK.** The timer bar is gone. The ×'s
+centre is at (339, 620) and TASK's is at (336, 611), 9pt apart, so the nearest and most-used tile
+is almost completely hidden. The ×'s resting centre (frame 20) is (339, 688), so the collapsed bar
+pushed it up 68pt. TASK sits 77pt above the resting centre (`818 − 207 = 611`). **The tiles are
+78pt apart, so any push lands the × within about 39pt of SOME tile. Which one depends on the
+card's height.** Arithmetic on the 15 Pro, from the same table:
+
+| what is up | push | × centre | nearest tile(s) |
+|---|---|---|---|
+| collapsed timer bar (measured, 19) | 68pt | (339, 620) | **TASK**, 9pt |
+| expanded sprint card, 148pt | 156pt | (339, 532) | **LINK** (323, 533), ~16pt |
+| away card, 186pt | 194pt | (339, 494) | between **PHOTO** (318, 455) ~44pt and **LINK** ~42pt |
+
+A tile is 62pt wide and the × is 60pt, so any gap under about 61pt means they overlap. **So frame
+14's "× on PHOTO" was one instance of a general collision.** Leaving it as it is means TASK is
+covered whenever a collapsed sprint bar is up in portrait.
+
+**The sprint ended while the fan was open (20).** Two things happened at once:
+- **The × dropped 68pt to its resting corner**, because the timer bar left the column. That is the
+  × moving under the thumb, the cost of shape B in the register, and it already happens today
+  whenever the card set changes with the fan open. (With shape A, the arc would have to move with
+  the × or stay where it was when the fan opened.)
+- **A celebration (fireworks and confetti) played OVER the open fan**, dimming the tiles and the
+  ×, with the in-app "Sprint complete" banner above it. This is the current code working as
+  written: `F-CTACelebrations-Surfaces` holds a celebration behind an unknown sheet, alert or
+  system picker, and the fan is an overlay in the view tree, so nothing tells the celebrations
+  it is open. An observation for E, not a finding.
+
+Reduce Motion's state in these frames is unknown. Stills cannot show a fade, so the fan-fade look
+(OFF then ON) still needs E's word.
+
+| file | what it shows |
+|---|---|
+| `16-device-landscape-sprint-card-beside-disc-27.0.jpeg` | Landscape, expanded sprint card bottom-left, disc in its corner (in its scroll pill), bottoms aligned. |
+| `17-device-landscape-sprint-bar-collapsed-beside-disc-27.0.jpeg` | Landscape, collapsed bar on the tab bar, disc beside it. |
+| `18-device-landscape-fan-open-timer-bar-faded-27.0.jpeg` | Landscape, fan open: the timer bar faded, tiles clear, no overlap. |
+| `19-device-portrait-fan-open-x-covers-task-27.0.jpeg` | **Portrait, fan open with a sprint running: the bar faded, but the × hides TASK (centres 9pt apart).** |
+| `20-device-portrait-sprint-ends-fan-open-celebration-x-drops-27.0.jpeg` | The sprint ended with the fan open: a celebration over the fan, and the × dropped 68pt to its corner. |
+
+### E's GIF, 2026-09-17 05:47: "the drifting FAB × icon" (`21-…gif`, 6.0 s, 75 frames)
+
+E, sending it: *"The cause of the drifting FAB 'x' Icon Seems to be when there is an unresolved
+notification such as a completed sprint."* A 30-second sprint had finished, and its Confirm card
+("celebration sound testing · 30s focused · 2 checkpoints · Confirm") is up. The recording opens
+the fan in portrait, closes it, rotates to landscape, and opens it again.
+
+**Measured from the frames** (298 px wide = 393pt; the × found by its colour in frames 5, 14, 17
+and 21):
+- **Portrait:** the disc's centre is at **(339, 604)** before the fan opens and stays there
+  through the whole open. **It does not move during the animation.** It sits 84pt above its resting
+  centre (339, 688), pushed up by the Confirm card, so it lands **7pt from TASK's centre
+  (336, 611)**. TASK only shows in frames 22–23, when the × fades on dismiss.
+- **Landscape (frames 57–69):** the card takes the column beside the disc, the disc stays in its
+  corner, and the arc is clear: the same arrangement as frame 18.
+
+**E's reading is right about the effect, and one step narrower than the cause.** It is not the
+notification itself but **any card in the bottom stack**. A card pushes the disc (and so the ×) up
+in portrait, while `CaptureFanOverlay` places the tiles from the screen's corner. A Confirm card
+pushes it 84pt onto TASK here. In frame 19 the × was on TASK too, but that was a RUNNING sprint's
+collapsed bar (68pt), before the sprint finished and before any notification existed. "Drifting" is
+the × turning up at a different height depending on which card is showing. Landscape never shows
+it, because the cards sit beside the disc there (`F-LandscapeFabOverlap`). **E calls it a bug.** The
+shape of the fix is still E's call (the register's A / B).
+
+| file | what it shows |
+|---|---|
+| `21-device-gif-confirm-card-pushes-x-onto-task-portrait-landscape-clear-27.0.gif` | **E's recording.** Portrait: the Confirm card fades, but the × stays 84pt up, covering TASK. Landscape: × in its corner, arc clear. |
