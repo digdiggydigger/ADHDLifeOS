@@ -186,7 +186,15 @@ enum AppTabBarMetrics {
     static let floatingInset: CGFloat = 8
     static let floatingCornerRadius: CGFloat = 22
     static let floatingPaddingVertical: CGFloat = 8
-    static let floatingPaddingHorizontal: CGFloat = 4
+    /// **The horizontal inner padding is 12 since 2026-09-17 (`F-TabBarPillInset`), E's pick from
+    /// the REAL bar rendered at 4 / 8 / 12 / 16 in both modes** — CLAUDE.md §2's second named
+    /// waiver: off the grid, chosen by looking, pinned by
+    /// `testTheCardsInnerPaddingIsTheValueEChoseByLooking`. Round 2's *"Keep B's 4pt"* was made
+    /// for the icon-only chip, which never reached its slot edge; the filled resting pill does, and
+    /// E circled it on the phone 3pt from the card's edge. 16 was offered and would have dropped
+    /// the SE's unselected slot to 43.0pt, under §3's floor; 12 leaves 44.6. The scrolled chip
+    /// inherits the same padding — one card in both states.
+    static let floatingPaddingHorizontal: CGFloat = 12
 
     /// The selected indicator's floating form: the resting pill contracts into a tinted chip
     /// behind the glyph. 44 wide is the concept's, and not a coincidence — it keeps §3's touch
@@ -225,8 +233,9 @@ enum AppTabBarMetrics {
     /// C drew a 10pt inner padding and a 6pt icon-to-label gap; neither is on §2's grid, and §2
     /// beats the concept (CLAUDE.md §7). The gap rounds to 8. **The inner padding is 16 since
     /// E's 2026-09-08 device verdict** (*"increase the inner-padding of the icon inside the blue
-    /// highlight"*), up from the 8 that shipped in round 2. The card's own inner padding stays
-    /// B's 4 in both states (E: *"Keep B's 4pt"*).
+    /// highlight"*), up from the 8 that shipped in round 2. The card's own inner padding was
+    /// B's 4 in both states (E: *"Keep B's 4pt"*, round 2) until E moved it to 12 on 2026-09-17
+    /// (round 4, from rendered options).
     static let pillPaddingHorizontal: CGFloat = 16
     static let pillGlyphToLabelSpacing: CGFloat = 8
 
@@ -259,7 +268,8 @@ enum AppTabBarMetrics {
 
     /// The widest a resting pill may be. This is what turns §3's floor into a GUARANTEE rather
     /// than a font-metrics estimate: the five unselected slots share what the pill leaves inside
-    /// the resting card, so the floor test is (375 − 2·4 − 2·4 − 120) / 5 = 47.8 on the SE,
+    /// the resting card, so the floor test is (375 − 2·4 − 2·12 − 120) / 5 = 44.6 on the SE (47.8 until the card
+    /// padding moved to 12 on 2026-09-17),
     /// whatever the label measures. "Captures" — the longest label — needs ~115pt at the default
     /// size with the 16pt inner padding and ~138 at the bar's largest clamped size (xxxLarge),
     /// so the cap bites only towards the top of the range, where the label's

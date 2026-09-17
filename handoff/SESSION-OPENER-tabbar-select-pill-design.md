@@ -275,3 +275,24 @@ predicted-versus-actual per run. Device reinstall follows.
 The three asks, as built. The scrolled card is now 8pt from each edge and 4pt above the home
 indicator's safe line; E may want either back up a notch. And whether the chip growing to 44
 tall reads right while scrolling — it was B's 34, and it is one constant if not.
+
+---
+
+## Round 4 — the pill's inset, E's pick from rendered options (2026-09-17)
+
+**What E saw.** On the phone at iOS 27.0 (2026-09-16, `ios27-device-findings/03`, E's own red
+circle): the resting pill — a filled capsule since round 2 — sitting **3.00pt (light) / 2.67pt
+(dark)** from the card's left edge against **15.7pt** from the last glyph to the right edge. The
+constant behind it was `floatingPaddingHorizontal = 4`, round 2's *"Keep B's 4pt"* — approved
+when the selection was an icon-only CHIP that never reached its slot edge. Not a §2 violation; a
+decision made for a different shape.
+
+**What E was shown.** The REAL `AppTabBar` rendered at 4 / 8 / 12 / 16, Today and Tools, light and
+dark, at the phone's 393pt (`screenshots/tabbar-pill-inset-options/`), with the two catches
+stated: 12 is off §2's grid; 16 drops the SE's unselected slot to 43.0pt, below §3's floor.
+
+**What E chose, verbatim:** *"regarding the pill inset I think that padding 12 is the right choice
+for now."* Shipped as `F-TabBarPillInset`: the constant is 12, `testTheCardsInnerPaddingIsTheValueEChoseByLooking`
+pins it, the SE floor test's expected value moves 47.8 → 44.6 (clear by 0.6pt), and CLAUDE.md §2
+carries it as the second named waiver beside `peekStep = 14`. The scrolled chip inherits the same
+padding — the card is one card in both states. Nothing else on the bar moved.

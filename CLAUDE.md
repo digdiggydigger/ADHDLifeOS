@@ -555,15 +555,23 @@ Implement layouts as an elite Apple Design Engineer. Every view must look handcr
   - `8pt`: Inter-element bounding spacing within a component wrapper.
   - `16pt`: Outer screen container margins and canvas boundaries.
   - `24pt`: Macro group-to-group layout separation.
-- **The ONE sanctioned off-grid value, and it is a waiver rather than a loophole:**
+- **The TWO sanctioned off-grid values, and each is a waiver rather than a loophole. First:**
   **`FocusCompletionStackLayout.peekStep = 14`** (E's call, 2026-09-10). The completion stack's
   peek shipped at the on-grid 8 and proved too quiet in LIGHT mode on E's device — the visible
   sliver measured **1.03:1** against the page, so the card behind was carried entirely by its
   keyline. E was shown six rendered options, **offered the on-grid 16 explicitly, and chose 14**:
   the value they had actually approved by sight. `testThePeekStepIsTheValueEChoseByLooking` pins
   it and says why. **Do not "correct" it to a grid value** — that silently undoes a decision made
-  by looking. This waiver covers that one constant and nothing else; every other spacing value in
-  the app stays on 4/8/16/24, and `12` and `20` remain banned (§7.5).
+  by looking. **Second: `AppTabBarMetrics.floatingPaddingHorizontal = 12`** (E's call,
+  2026-09-17, `F-TabBarPillInset`). The tab bar card's inner padding shipped at the on-grid 4,
+  approved when the selection was an icon-only chip that never reached its slot edge; Design C's
+  resting pill is a filled capsule that does, and E circled it on the phone sitting 3pt from the
+  card's edge against 15.7pt of slack at the far end. E was shown the REAL bar at 4 / 8 / 12 / 16
+  in both modes (`screenshots/tabbar-pill-inset-options/`), **with 8 and 16 on the grid offered
+  explicitly, and chose 12** — *"the right choice for now"*; 16 would also have broken §3's SE
+  floor (43.0pt slots). `testTheCardsInnerPaddingIsTheValueEChoseByLooking` pins it. **These two
+  waivers cover those two constants and nothing else**; every other spacing value in the app stays
+  on 4/8/16/24, and `12` and `20` remain banned everywhere else (§7.5).
 - **Structural Wrappers**: Use native `ScrollView` systems nested with `LazyVStack` or `LazyHStack` along with custom pinned segment controls over stock, standard `List` containers unless outputting basic Settings structures.
 
 ### 3. Hit Targets & Input Interaction

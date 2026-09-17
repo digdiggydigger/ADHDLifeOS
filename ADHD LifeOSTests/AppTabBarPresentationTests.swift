@@ -157,16 +157,35 @@ final class AppTabBarPresentationTests: XCTestCase {
     /// **The resting state's own "stops a seventh tab" test.** The selected pill takes what it
     /// needs (capped) and the other five share the rest, so the floor to prove is the width of an
     /// UNSELECTED slot beside the WIDEST pill the bar allows, on the narrowest supported iPhone,
-    /// inside the RESTING card: (375 − 2·4 inset − 2·4 card padding − 120) / 5 = 47.8, clear of
-    /// §3's 44. A seventh tab would be 39.8 and fail.
+    /// inside the RESTING card: (375 − 2·4 inset − 2·12 card padding − 120) / 5 = **44.6**, clear
+    /// of §3's 44 by 0.6pt — the card padding E chose (below) is the LARGEST that clears it; 16
+    /// would be 43.0 and fail here. A seventh tab would be 37.2 and fail.
     func testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE() {
         let width = AppTabBarPresentation.restingSlotWidth(
             barWidth: AppTabBarPresentation.narrowestSupportedScreenWidth,
             pillWidth: AppTabBarMetrics.maximumRestingPillWidth,
             count: AppTabBarPresentation.tabs.count
         )
-        XCTAssertEqual(width, 47.8, accuracy: 0.001)
+        XCTAssertEqual(width, 44.6, accuracy: 0.001)
         XCTAssertGreaterThanOrEqual(width, AppTabBarPresentation.minimumTouchTarget)
+    }
+
+    /// **The one number in this class that is a DECISION rather than a derivation, so it is the
+    /// place a literal belongs — and it is OFF §2's grid, by E's explicit waiver.**
+    ///
+    /// E circled the resting pill on the phone (2026-09-16): a filled capsule 3pt from the card's
+    /// edge against 15.7pt of slack at the far end. 4 had been approved when the selection was an
+    /// icon-only chip that never reached its slot edge; Design C's pill is a filled capsule that
+    /// does. E was shown the REAL bar at 4 / 8 / 12 / 16 in both modes
+    /// (`screenshots/tabbar-pill-inset-options/`), with 8 and 16 on the grid offered explicitly,
+    /// and chose **12** — *"padding 12 is the right choice for now"* (2026-09-17). Like
+    /// `peekStep = 14`, do not "correct" it to a grid value; that silently undoes a decision made
+    /// by looking. CLAUDE.md §2 carries the waiver. The scrolled chip inherits the same padding.
+    func testTheCardsInnerPaddingIsTheValueEChoseByLooking() {
+        XCTAssertEqual(
+            AppTabBarMetrics.floatingPaddingHorizontal, 12,
+            "The card's inner padding moved off the value E chose from rendered options on 2026-09-17."
+        )
     }
 
     /// §3's 44pt target is carried by the slot's HIT AREA, which may overflow the card, never by

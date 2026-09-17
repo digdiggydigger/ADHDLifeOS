@@ -4288,3 +4288,25 @@ or changed; the three `.animation(reduceMotion ? nil : …)` modifiers are untou
 
 **Owed: E's device verdict on the side-by-side arrangement** — the card bottom-left, the disc in
 its corner (`screenshots/landscape-fab-overlap/README.md`, "Open, for E on the phone").
+
+
+### FEATURE: F-TabBarPillInset — the resting pill's inset, E's pick from rendered options  [ ]
+
+**E's call (2026-09-17, in chat, after looking at the four rendered options):** *"regarding the
+pill inset I think that padding 12 is the right choice for now."* The options and the two catches
+(12 off-grid; 16 breaks the SE floor) are in `screenshots/tabbar-pill-inset-options/README.md`;
+the why is round 4 of `handoff/SESSION-OPENER-tabbar-select-pill-design.md`.
+
+**The change:** `AppTabBarMetrics.floatingPaddingHorizontal` 4 → **12**, and nothing else on the
+bar. The scrolled chip inherits it (one card in both states). Off §2's grid by E's explicit
+waiver — the second, beside `peekStep = 14` — recorded in CLAUDE.md §2.
+
+**Acceptance criteria**
+- [ ] `testTheCardsInnerPaddingIsTheValueEChoseByLooking` pins 12 and says why (RED at 4 first).
+- [ ] `testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE` moves to 44.6 and
+      still clears §3's 44 (RED at 4 first: 47.8 ≠ 44.6).
+- [ ] Red-check: constant back to 4 → exactly those two fail; constant at 16 → the pin AND the
+      floor's `>= 44` fail. One regression at a time.
+- [ ] CLAUDE.md §2 names the second waiver; the design record carries round 4.
+- [ ] A render of the SHIPPED tree (not the probe) in the options folder, and the build on E's phone.
+- [ ] SwiftLint 0, suite green, sim build green; pasted.
