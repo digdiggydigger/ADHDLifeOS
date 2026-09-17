@@ -239,6 +239,8 @@ struct RootView: View {
                 // position the Confirm overlay held, so the record's R3 still holds. The covers
                 // above it mount layers of their own (E's ARCH answer: one layer per surface).
                 .overlay { CelebrationLayer(surface: .root) }
+                // F-FanHoldsCelebration: the fan is an overlay no probe can see, so say when it is up.
+                .onChange(of: capturesHoldCelebrations) { celebrationCenter.captureChanged(isOpen: $0) }
                 .fullScreenCover(
                     item: $presentedRoutineRun,
                     onDismiss: { celebrationCenter.surfaceDismissed(.routineCover) },
