@@ -46,12 +46,17 @@ enum FocusBarCollapseSwipe {
 /// over a plain inset and over a squared-off strip; then, told that top-only rounding 100pt above
 /// the screen bottom would leave the square bottom corners hanging in mid-air, chose *"Drop it
 /// flush to the tab bar"*. So the two were one shape: square bottom corners were correct only
-/// because they sat ON the bar, and `FocusBarMetrics.collapsedOffsetY` is what puts them there.
+/// because they sat ON the bar, and `FocusBarMetrics.collapsedOffsetY` was what put them there.
 ///
-/// **E reversed the corner half on 2026-09-11 — *"Round them"* — and the flush drop STAYS.**
-/// They are separable after all: the card still lands on the bar, and the rounding simply lets the
-/// page read through the notch where the two meet. `F-FocusCard-Corners`, and
+/// **E reversed the corner half on 2026-09-11 — *"Round them"* — and the flush drop STAYED.**
+/// They are separable after all: the card still landed on the bar, and the rounding simply let the
+/// page read through the notch where the two met. `F-FocusCard-Corners`, and
 /// `screenshots/focus-card-bottom-corners/` is the render E chose the radius from.
+///
+/// **E reversed the drop too, on 2026-09-17 (`F-CollapsedBarLift`)**, in portrait and landscape:
+/// *"Line up with the Disc, But when there are multiple cards being displayed, then maintain the
+/// alignment."* The card now sits on the disc's line, 32pt above the bar, with its 24pt radius and a
+/// keyline closed on all four sides.
 ///
 /// **`InsettableShape` is not optional here.** The card is drawn twice — `.background` and an
 /// `.overlay(...strokeBorder...)` — and `strokeBorder` insets the shape by half the line width so
@@ -87,8 +92,8 @@ struct FocusBarCardShape: Shape, InsettableShape {
             topRadius: FocusBarCardOutline.clamped(cornerRadius - insetAmount, in: bounds),
             bottomRadius: FocusBarCardOutline.clamped(bottomCornerRadius - insetAmount, in: bounds)
         )
-        // Closing draws the flat bottom RUN. It is the only difference between this fill and the
-        // collapsed keyline, which leaves that one run out.
+        // Closing draws the flat bottom RUN — for the fill, and since `F-CollapsedBarLift` for the
+        // keyline too, which is `strokeBorder` on this same shape.
         path.closeSubpath()
         return path
     }
@@ -117,8 +122,9 @@ enum FocusBarCardOutline {
     }
 
     /// From the bottom-left corner's end, up the left side, across the top, and down to the
-    /// bottom-right corner's end. **The flat bottom RUN is never part of it** — the fill closes the
-    /// path to get one, the collapsed keyline leaves it open to go without.
+    /// bottom-right corner's end. **The flat bottom RUN is not part of it**; `FocusBarCardShape`
+    /// closes the path to draw one. (An open-path keyline, `FocusBarCardBorder`, used to leave the
+    /// run out for the card sitting flush on the tab bar; it was deleted with the flush drop.)
     static func path(in bounds: CGRect, topRadius: CGFloat, bottomRadius: CGFloat) -> Path {
         var path = Path()
         path.move(to: CGPoint(x: bounds.minX + bottomRadius, y: bounds.maxY))
@@ -154,42 +160,6 @@ enum FocusBarCardOutline {
             center: centre, radius: radius,
             startAngle: .degrees(from), endAngle: .degrees(through), clockwise: false
         )
-    }
-}
-
-/// The card's 1pt keyline, drawn as an OPEN path when collapsed so there is no bottom edge.
-///
-/// **E's call, 2026-09-09: *"REMOVE the bottom border on the collapsed card tab."*** The collapsed
-/// card is dropped flush onto the tab bar, so a bottom keyline draws a hairline right at the join
-/// and reads as a seam between two stacked slabs. Without it the card runs into the bar.
-///
-/// This is a separate shape from `FocusBarCardShape` rather than a flag on it because the two do
-/// different jobs: the card shape is a closed FILL for the background, and a fill has no concept
-/// of a missing edge. Stroking an open path is the only way to omit one side.
-struct FocusBarCardBorder: Shape {
-    var cornerRadius: CGFloat
-    var bottomCornerRadius: CGFloat
-    var omitsBottomEdge: Bool
-    /// Inset by half of this so the keyline lands INSIDE the bounds, the way `strokeBorder` would.
-    var lineWidth: CGFloat = 1
-
-    func path(in rect: CGRect) -> Path {
-        let bounds = rect.insetBy(dx: lineWidth / 2, dy: lineWidth / 2)
-        // **The same silhouette the FILL is cut from.** Rounding one and not the other was the
-        // trap in `F-FocusCard-Corners`: a keyline still tracing square bottom corners runs 24pt
-        // past a curve the card no longer has. Sharing the outline makes that impossible rather
-        // than merely tested.
-        var path = FocusBarCardOutline.path(
-            in: bounds,
-            topRadius: FocusBarCardOutline.clamped(cornerRadius - lineWidth / 2, in: bounds),
-            bottomRadius: FocusBarCardOutline.clamped(bottomCornerRadius - lineWidth / 2, in: bounds)
-        )
-        // Closed, the flat bottom run is drawn; open, it is not. E removed that run on 2026-09-09
-        // — *"REMOVE the bottom border on the collapsed card tab"* — and rounding the corners does
-        // not reverse it: the keyline now sweeps around both bottom corners and stops where the
-        // run would begin, so it follows the card and still leaves no hairline on the join.
-        if !omitsBottomEdge { path.closeSubpath() }
-        return path
     }
 }
 
@@ -287,28 +257,15 @@ enum FocusBarMetrics {
     static let expandedPaddingVertical: CGFloat = 16
     static let collapsedPaddingVertical: CGFloat = 8
 
-    /// **Derived, never hard-coded.** `RootBottomOverlay` pads its whole stack up by
-    /// `bottomFurnitureLift` (the 32pt gap E measured PLUS the tab bar's own height), and
-    /// `FocusTimerBar` is that stack's last child — so the expanded card's bottom sits 100pt up.
-    static var expandedBottomLift: CGFloat { AppSearchRowMetrics.bottomFurnitureLift }
-
-    /// Flush means clearing the tab bar and *nothing more*. Spelling it as the bar's own
-    /// `rowHeight` rather than as the literal 68 keeps it correct when the bar's chip height or
-    /// lift changes — the drift `AppSearchRowMetrics` was written to end.
-    static var collapsedBottomLift: CGFloat { AppTabBarMetrics.rowHeight }
-
-    /// The change in LIFT, so it is negative: the collapsed card is lifted 32pt LESS than the
-    /// expanded one. Equal to `-AppSearchRowMetrics.gapAboveTabBar`, but expressed as the
-    /// difference between the two lifts so the pair cannot drift apart.
-    static var collapsedDrop: CGFloat { collapsedBottomLift - expandedBottomLift }
-
-    /// The same 32pt in `.offset(y:)`'s convention, where **positive is downward**. Exactly one
-    /// negation exists in this file and this is it — the call site reads
-    /// `.offset(y: collapsedOffsetY)` and cannot get the sign wrong by hand.
+    /// **Where the card's bottom sits, in BOTH states: the disc's line.** Derived, never
+    /// hard-coded — `RootBottomOverlay` pads its whole stack up by `bottomFurnitureLift` (the 32pt
+    /// gap E measured PLUS the tab bar's own height) and `FocusTimerBar` is the stack's last child.
     ///
-    /// **It must be `.offset`, not negative bottom padding.** `FocusTimerBar` is the LAST child of
-    /// `RootBottomOverlay`'s VStack; negative bottom padding there shrinks the stack and drags the
-    /// search row and the capture disc down 32pt with it. `.offset` moves rendering and
-    /// hit-testing without touching layout.
-    static var collapsedOffsetY: CGFloat { -collapsedDrop }
+    /// **One lift since `F-CollapsedBarLift` (E, 2026-09-17).** There were three more metrics here —
+    /// `collapsedBottomLift` (the bar's `rowHeight`), `collapsedDrop` (−32) and `collapsedOffsetY`
+    /// (+32, in `.offset`'s downward-positive space) — which existed only to drop the collapsed card
+    /// flush onto the tab bar, E's 2026-09-09 call. E reversed that in portrait and landscape: *"Line
+    /// up with the Disc, But when there are multiple cards being displayed, then maintain the
+    /// alignment."* They are deleted rather than left as named zeros.
+    static var bottomLift: CGFloat { AppSearchRowMetrics.bottomFurnitureLift }
 }
