@@ -13,10 +13,18 @@ import SwiftUI
 
 /// Everything that floats above the tab bar on every tab.
 ///
-/// The three pieces share one `VStack` so an active sprint PUSHES the disc up rather than letting
-/// the timer bar occlude the disc's controls (E, 2026-08-19), and the whole stack is trailing-
+/// The pieces share one container so an active sprint PUSHES the disc up rather than letting
+/// the timer bar occlude the disc's controls (E, 2026-08-19), and the whole thing is trailing-
 /// pinned at full width because a `.bottom` overlay would otherwise centre it mid-screen once the
 /// timer bar was gone (E's position review, 2026-08-25).
+///
+/// **Two arrangements since F-LandscapeFabOverlap (2026-09-17).** In regular height the container
+/// is that stack — the disc row above the cards, exactly as reviewed. In COMPACT height (the
+/// landscape iPhone) with anything up, the cards take the column BESIDE the disc row instead:
+/// 372pt of landscape cannot hold the 100pt lift, a 186pt card, the gap and the disc in one
+/// column without the disc's top landing at y 18, inside the header's gear well — which is where
+/// E photographed it, on the Settings gear. `RootBottomOverlayLayout` holds the rule and the
+/// geometry; this view only asks it.
 struct RootBottomOverlay: View {
     @Binding var isFabOpen: Bool
     /// The disc's sticky scrolled-down state (F-PillStay). Passed in rather than observed here:
@@ -31,6 +39,9 @@ struct RootBottomOverlay: View {
     var onOpenSearch: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Compact height is the landscape iPhone — the same reading `CaptureFanOverlay` and
+    /// `LoginView` use. An iPad is regular in both orientations and keeps the stack.
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     /// The celebration centre, or the inert default outside the app (previews, snapshots).
     @Environment(\.celebrate) private var celebrate
 
@@ -52,39 +63,121 @@ struct RootBottomOverlay: View {
     /// this gap by name when approving the search row.
     private static var bottomPadding: CGFloat { AppSearchRowMetrics.bottomFurnitureLift }
 
-    var body: some View {
-        VStack(alignment: .trailing, spacing: 8) {
-            // E's layout (2026-09-03): the search field fills the leading width and the capture
-            // disc sits at the end of the SAME row, centres aligned. One `HStack` lays both out,
-            // so the alignment is by construction rather than two views agreeing on a number.
-            //
-            // The centres cannot drift: the disc's outer frame stays `discDiameter` square in
-            // BOTH states — only the visual capsule shrinks to the pill — so the row's height is
-            // the disc's, and the shorter field centres inside it.
-            HStack(spacing: AppSearchRowMetrics.rowSpacing) {
-                if let placeholder = searchScope.placeholder {
-                    AppSearchRow(placeholder: placeholder, action: onOpenSearch)
-                }
-                Button {
-                    withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                        isFabOpen.toggle()
-                    }
-                } label: {
-                    CaptureDiscLabel(isFabOpen: isFabOpen, showsPill: showsPill)
-                }
-                .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
-                .accessibilityIdentifier("quickCaptureButton")
-            }
-            // The disc's own trailing margin, unchanged — E's number, settled over four device
-            // passes. The field takes the page's 16pt margin on the leading side.
-            .padding(.leading, 16)
-            .padding(.trailing, CaptureDiscMetrics.edgeMargin)
+    /// Whether anything but the disc row is up — the away card, a waiting Confirm, a running
+    /// sprint. Each of the three sits behind its own condition below, and `FocusTimerBar` draws
+    /// nothing without a session, so this is the column's emptiness spelled once.
+    private var hasCards: Bool {
+        focusService.offlineCompletionSummary != nil
+            || !focusService.unconfirmedCompletions.isEmpty
+            || focusService.isActive
+    }
 
+    private var arrangement: RootBottomOverlayLayout.Arrangement {
+        RootBottomOverlayLayout.arrangement(
+            isCompactHeight: verticalSizeClass == .compact, hasCards: hasCards
+        )
+    }
+
+    var body: some View {
+        // ONE container whose arrangement is a property, never a `switch` between a `VStack` and
+        // an `HStack`: two container types would give the timer bar two identities, and its
+        // detail sheet — `@State` on that view — would be dismissed by a rotation.
+        RootBottomOverlayArrangement(arrangement: arrangement) {
+            discRow
+            cards
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.bottom, Self.bottomPadding)
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+            value: focusService.isActive
+        )
+        // F-TabDepth-2: the row leaves and returns on the same spring — a pushed task detail
+        // sees it slide away rather than pop beside the disc. Keyed on the scope, so the timer
+        // bar's own trigger above is untouched.
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+            value: searchScope
+        )
+        // F-FocusCard-2: a completion is the one moment BOTH cards move — the running card
+        // leaves as the confirmation card arrives, and again in reverse on Confirm. `isActive`
+        // above covers only the first half, so without this the new card simply pops in.
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+            value: focusService.unconfirmedCompletions.count
+        )
+        // F-FocusCard-4: the success feel for a sprint that ran its countdown out. **On this
+        // view and not on the stack**, because the stack is inserted by the `if` below in the
+        // same update that bumps the count, and a listener arriving with the value already
+        // changed observes no change — the first card after an empty stack would be silent.
+        // Keyed on `confirmableCompletionCount`, never `completedSprintCount` (bumped by manual
+        // stops, which raise no card) nor the stack's depth (falls on Confirm, so it would buzz
+        // on dismissal). `.haptic` is the `#available`-split helper — `.sensoryFeedback` itself
+        // is iOS 17+ against the 16.0 floor.
+        .haptic(.success, trigger: focusService.confirmableCompletionCount)
+        // F-ConfirmCelebration-1 (E's decision 3): the success feel on EVERY Confirm, keyed on the
+        // Confirm ordinal, which only a Confirm of a waiting card advances. Here beside the
+        // completion haptic for the same reason — the stack leaves with the last card, so a
+        // listener on it would be gone before the Confirm that empties it could buzz.
+        .haptic(.success, trigger: focusService.confirmationCount)
+        // F-CTACelebrations-3: the bridge from the Confirm stamp to the celebration centre,
+        // beside the haptic and for the same reason — this view is always mounted, and the
+        // card stack that a Confirm empties is gone before the Confirm lands.
+        //
+        // **It asks; it never decides.** The Celebrations switch, the cooldown and the queue
+        // all live in the centre, which is why E's #3 can keep the haptic above while
+        // silencing the celebration: nothing on this line knows the switch exists.
+        .onChange(of: focusService.latestConfirmation) { confirmation in
+            guard let confirmation else { return }
+            celebrate.request(.confirm(clearedStack: confirmation.clearedStack), at: nil)
+        }
+    }
+
+    // MARK: - The two pieces
+
+    /// E's layout (2026-09-03): the search field fills the leading width and the capture disc
+    /// sits at the end of the SAME row, centres aligned. One `HStack` lays both out, so the
+    /// alignment is by construction rather than two views agreeing on a number.
+    ///
+    /// The centres cannot drift: the disc's outer frame stays `discDiameter` square in BOTH
+    /// states — only the visual capsule shrinks to the pill — so the row's height is the disc's,
+    /// and the shorter field centres inside it.
+    ///
+    /// The same view in both arrangements. Stacked it is offered the whole width and the field
+    /// fills the leading side; beside the cards it takes its own width, so on Today it is the
+    /// disc and its margins and the cards get the rest.
+    private var discRow: some View {
+        HStack(spacing: AppSearchRowMetrics.rowSpacing) {
+            if let placeholder = searchScope.placeholder {
+                AppSearchRow(placeholder: placeholder, action: onOpenSearch)
+            }
+            Button {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                    isFabOpen.toggle()
+                }
+            } label: {
+                CaptureDiscLabel(isFabOpen: isFabOpen, showsPill: showsPill)
+            }
+            .accessibilityLabel(isFabOpen ? "Close capture fan" : "Capture something")
+            .accessibilityIdentifier("quickCaptureButton")
+        }
+        // The disc's own trailing margin, unchanged — E's number, settled over four device
+        // passes. The field takes the page's 16pt margin on the leading side.
+        .padding(.leading, 16)
+        .padding(.trailing, CaptureDiscMetrics.edgeMargin)
+    }
+
+    /// The column under the disc row (regular height) or beside it (compact height): the away
+    /// card, the Confirm stack, the running timer. Empty on most screens most of the time, and
+    /// an empty column costs the stack nothing — `RootBottomOverlayLayout.size` spends no gap
+    /// on a zero-height column.
+    private var cards: some View {
+        VStack(spacing: RootBottomOverlayLayout.spacing) {
             // A sprint that finished while the app was dead announces itself here — above the
             // tab bar on every tab, gone only when acknowledged.
             //
             // **Known collision, documented and deliberately unfixed (F-FocusCard-5).** This card
-            // and the completion stack below share this VStack, so an old unacknowledged
+            // and the completion stack below share this column, so an old unacknowledged
             // app-was-dead completion and a new unconfirmed sprint can be on screen together in
             // two visual languages (green-washed v3 card above, material card below). E ruled the
             // offline card out of the focus-card arc explicitly — *"keep them separate... queue
@@ -109,7 +202,7 @@ struct RootBottomOverlay: View {
             //
             // The `if` is not decoration: the stack reserves top padding for the peeks its
             // `.offset`s hang outside its frame, and an empty stack rendered unconditionally
-            // would spend that padding plus the VStack's own spacing on nothing.
+            // would spend that padding plus the column's own spacing on nothing.
             if !focusService.unconfirmedCompletions.isEmpty {
                 FocusCompletionCardStack(
                     records: focusService.unconfirmedCompletions,
@@ -120,51 +213,6 @@ struct RootBottomOverlay: View {
             }
 
             FocusTimerBar(service: focusService)
-        }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.bottom, Self.bottomPadding)
-        .animation(
-            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
-            value: focusService.isActive
-        )
-        // F-TabDepth-2: the row leaves and returns on the same spring — a pushed task detail
-        // sees it slide away rather than pop beside the disc. Keyed on the scope, so the timer
-        // bar's own trigger above is untouched.
-        .animation(
-            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
-            value: searchScope
-        )
-        // F-FocusCard-2: a completion is the one moment BOTH cards move — the running card
-        // leaves as the confirmation card arrives, and again in reverse on Confirm. `isActive`
-        // above covers only the first half, so without this the new card simply pops in.
-        .animation(
-            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
-            value: focusService.unconfirmedCompletions.count
-        )
-        // F-FocusCard-4: the success feel for a sprint that ran its countdown out. **On this
-        // view and not on the stack**, because the stack is inserted by the `if` above in the
-        // same update that bumps the count, and a listener arriving with the value already
-        // changed observes no change — the first card after an empty stack would be silent.
-        // Keyed on `confirmableCompletionCount`, never `completedSprintCount` (bumped by manual
-        // stops, which raise no card) nor the stack's depth (falls on Confirm, so it would buzz
-        // on dismissal). `.haptic` is the `#available`-split helper — `.sensoryFeedback` itself
-        // is iOS 17+ against the 16.0 floor.
-        .haptic(.success, trigger: focusService.confirmableCompletionCount)
-        // F-ConfirmCelebration-1 (E's decision 3): the success feel on EVERY Confirm, keyed on the
-        // Confirm ordinal, which only a Confirm of a waiting card advances. Here beside the
-        // completion haptic for the same reason — the stack leaves with the last card, so a
-        // listener on it would be gone before the Confirm that empties it could buzz.
-        .haptic(.success, trigger: focusService.confirmationCount)
-        // F-CTACelebrations-3: the bridge from the Confirm stamp to the celebration centre,
-        // beside the haptic and for the same reason — this view is always mounted, and the
-        // card stack that a Confirm empties is gone before the Confirm lands.
-        //
-        // **It asks; it never decides.** The Celebrations switch, the cooldown and the queue
-        // all live in the centre, which is why E's #3 can keep the haptic above while
-        // silencing the celebration: nothing on this line knows the switch exists.
-        .onChange(of: focusService.latestConfirmation) { confirmation in
-            guard let confirmation else { return }
-            celebrate.request(.confirm(clearedStack: confirmation.clearedStack), at: nil)
         }
     }
 }

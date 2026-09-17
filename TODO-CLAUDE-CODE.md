@@ -4199,3 +4199,46 @@ then pointed at as the one they wanted was a render **of the code already on `ma
 the close-out and write the SHA the phone carries. `device-build-lag` already said "don't leave the
 phone behind"; the register's own "device verdict owed" wording is what made it easy to miss, and
 both it and the live opener now say which.
+
+
+### FEATURE: F-LandscapeFabOverlap — the capture disc stops climbing into the header in landscape  [ ]
+
+**E's bug, found on the phone 2026-09-16 (iOS 27.0, `560d068`):** in **landscape**, with an
+unacknowledged **"Sprint finished while you were away"** card up, the capture disc rendered ON the
+Settings gear and the gear could not be tapped (`screenshots/ios27-device-findings/04-…jpeg`).
+Handed to this session by `handoff/START-HERE-fab-overlap-and-tab-inset.md` with the cause marked
+as a HYPOTHESIS to verify before writing anything. Not an iOS 27 regression.
+
+**Diagnosis (verified by arithmetic, then reproduced in a journey — see the verification note).**
+`RootBottomOverlay` is an `.overlay(alignment: .bottom)` whose one `VStack` holds, top to bottom,
+the disc row, the away card, the completion stack and the timer bar, over a 100pt lift
+(`bottomFurnitureLift` = 32 gap + 68 bar band). A landscape iPhone 15 Pro has **372pt** of safe
+height; the away card measures **186pt**; 372 − 100 − 186 − 8 − 60 puts the disc's top at
+**18pt** — inside the header's 40pt gear well (y 8–48). The expanded sprint card alone (148pt)
+leaves the disc at 56, eight points clear, which is why "neither alone did it". The hypothesis
+was right in kind and wrong in one word: the stack does not overflow the screen, it FILLS it.
+
+**The fix, and the shape it must keep.** The stack is E-reviewed and deliberate: "an active
+sprint PUSHES the disc up rather than letting the timer bar occlude the disc's controls". That
+invariant is kept in portrait byte for byte. In **compact height** (the landscape iPhone — the
+`verticalSizeClass` reading `CaptureFanOverlay` and `LoginView` already use) **with any card up**,
+the cards take a column BESIDE the disc instead of above it: the disc keeps its resting corner,
+nothing pushes it, nothing covers it, and the gear's column stays clear because the cards column
+ends 100pt short of the trailing edge. With nothing up, compact height is the ordinary row, so the
+search row on Tasks is untouched. The rule is pure — `RootBottomOverlayLayout.arrangement(
+isCompactHeight:hasCards:)` — and the view only asks it.
+
+**Acceptance criteria**
+- [ ] `RootBottomOverlayLayoutTests` — the bug as arithmetic from production constants and E's
+      measurements; the rule over all four inputs; the two named spacings.
+- [ ] `RootBottomOverlayCallSiteTests` — the overlay reads `verticalSizeClass`, calls the rule,
+      builds both arms, the side-by-side arm is bottom-aligned, **and the stacked arm still puts
+      the disc row above the cards** (the invariant, pinned by order).
+- [ ] `LandscapeAwayCardUITests` — the regression camera: away card raised through the app's own
+      UserDefaults key (argument domain, `UITestUserDefaultsSeeds.swift`), portrait asserted as the
+      control, then landscape: disc ∩ gear = ∅, gear hittable, gear opens Settings, card ∩ disc = ∅.
+      **Fails on the unfixed tree** (the reproduction), passes on the fixed one, red-checked by
+      reverting the fix.
+- [ ] Portrait unchanged: `CaptureDiscClearanceUITests` and the sweep's bottom band as before.
+- [ ] `screenshots/landscape-fab-overlap/` — before/after landscape frames, light and dark, README.
+- [ ] SwiftLint 0, suite green, sim build green; pasted.
