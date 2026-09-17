@@ -1,4 +1,4 @@
-# Open items register — 2026-09-17 (fifty-fifth edition; **THREE BLOCKS SHIPPED IN ONE SESSION AND INSTALLED ON E's PHONE — `F-LandscapeFabOverlap` (#137), `F-TabBarPillInset` (#141, E's pick of 12), `F-FanCardsFade` (#142, E's call). Owed: E's three device looks, one with Reduce Motion ON, and E's call on the × over the PHOTO tile. Opener: `handoff/START-HERE-three-device-looks.md`.**)
+# Open items register — 2026-09-17 (fifty-sixth edition; **E's DEVICE LOOKS ARE IN: the pill at 12 and the fan fade (Reduce Motion OFF and ON) PASSED; the landscape look and E's GIF produced THREE NEW BLOCKS, written up and NOT built (E: build in a fresh session) — `F-FanXAtRest`, `F-CollapsedBarLift`, `F-FanHoldsCelebration`, to be built back to back with ONE install. Opener: `handoff/START-HERE-fan-x-bar-lift-celebration-hold.md`.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -47,7 +47,7 @@ overlay's new lines), i.e. comparable and the new code is covered. `LandscapeAwa
 `codesign --verify --deep --strict` exit 0); the LAUNCH was denied for `Locked` — the known
 "install is real, unlock and open" case, so **E opens it by hand**. Profile valid to
 **2026-09-17T19:25:02Z — it expires TONIGHT**; after that the app needs a rebuild + reinstall
-before it will open. **Three looks were owed on that build — see §B's first three items.** **Update 2026-09-17 05:48 (mid-session, not yet a new edition):** E ran one sprint on the phone and sent five frames (`screenshots/landscape-fab-overlap/16–20`). **The pill at 12 PASSED** (*"i think it looks perfect"*). The landscape arrangement and the fade both show working in the frames, but E has given no verdict WORD on either, and the Reduce Motion ON pass is unconfirmed. **Frame 19 widens the × question: with a running sprint's collapsed bar up in portrait, the × covers TASK** (centres 9pt apart), not PHOTO. See §B's second item.
+before it will open. **Three looks were owed on that build — see §B's first three items.** **The looks came in the same morning (fifty-sixth edition).** E ran a sprint on the phone and sent five frames and a GIF (`screenshots/landscape-fab-overlap/16–21`). **PASSED:** the pill at 12 (*"i think it looks perfect"*), and `F-FanCardsFade` with Reduce Motion OFF and ON. **Not passed as it stands:** landscape, where E wants margin under the collapsed bar. **Found:** the × lands on a tile whenever ANY card pushes the disc up in portrait (TASK under the sprint bar and under a Confirm card, 9pt and 7pt). **E's calls became three blocks in `TODO-CLAUDE-CODE.md`'s last section, NOT built** (E: *"I suggest that any building happens in a fresh Claude code terminal session"*). E's pacing: all three back to back, one install. See §B's first three items. **The phone still carries `9eb5198`, and its profile expires 2026-09-17T19:25:02Z.** The emulator is NOT running.
 
 **`main` @ PR #131 — Phase D landed** (`4e4ec1c` was the baseline). Measured for Phase D on
 2026-09-15 (Xcode 27.0, iOS 26.5 runtime, emulator UP): suite **3,011 / 0**, **0** `127.0.0.1:9099`
@@ -518,6 +518,29 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
 
 ## B · Real work, ready to start — recommended order
 
+- [ ] **🐞 `F-FanXAtRest` — the × drops to its resting corner while the capture fan is open.** E's GIF
+      and frame 19: in portrait any card pushes the disc (and so the ×) up, while the fan's tiles are
+      anchored to the resting corner, so the × lands on a tile (TASK under the sprint bar, 9pt; TASK
+      under a Confirm card, 7pt; LINK / PHOTO under the taller cards). E called it a bug and chose
+      **shape B** over "move the arc up" and "render first". Reverses `F-FanCardsFade`'s "the × stays
+      where the + was", including a UI journey assertion. RM-on device pass owed. **Spec:
+      `TODO-CLAUDE-CODE.md`, last section.** (NEW, first)
+
+- [ ] **`F-CollapsedBarLift` — the collapsed sprint bar stops dropping onto the tab bar, portrait AND
+      landscape.** E's answers: the collapsed bar (not the expanded card, which already has 33pt);
+      *"Portrait too"* (reverses the 2026-09-09 flush drop); *"Line up with the Disc, But when there
+      are multiple cards being displayed, then maintain the alignment."* Removing the visual `.offset`
+      does all three by construction; the bottom keyline returns (it was removed only because the
+      card sat on the bar). **Spec: `TODO-CLAUDE-CODE.md`, last section.** (NEW, second)
+
+- [ ] **`F-FanHoldsCelebration` — a full-screen celebration waits while the capture fan is open.**
+      Frame 20: a sprint ended with the fan open and the celebration played over it. E: *"Wait until
+      the fan closes."* The fan is a SwiftUI overlay that `-Surfaces`' UIKit probe cannot see, so
+      `RootView` has to tell the centre. **Spec: `TODO-CLAUDE-CODE.md`, last section.** (NEW, third)
+
+**E's pacing for the three above: back to back, no review stop between them, ONE install, ONE set of
+looks** (the looks list is at the foot of the TODO section).
+
 - [x] ~~**🐞 THE LANDSCAPE FAB OVERLAP — a REAL user-facing bug, found on device 2026-09-16.**~~
       **FIXED AND MERGED 2026-09-17 — `F-LandscapeFabOverlap`.** The hypothesis the last session
       recorded was right in kind and wrong in one word: the bottom stack does not overflow the
@@ -537,8 +560,9 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       27.0 dark. Evidence: `screenshots/landscape-fab-overlap/` (host-side `simctl` frames;
       `app.screenshot()` lies on a rotated sim). **Owed: E's device verdict on the side-by-side
       arrangement** — the card bottom-left, the disc in its corner — **— the build IS on the phone
-      (installed after the close-out report).** No RM-on pass owed (no reduced site touched). (CLOSED as
-      a bug; verdict owed)
+      (installed after the close-out report).** No RM-on pass owed (no reduced site touched). **E's verdict
+      2026-09-17: the arrangement stands, but the collapsed bar needs margin above the tab bar, which became
+      `F-CollapsedBarLift` above.** (CLOSED as a bug; its follow-up is §B's second item)
 
 - [x] ~~**🐞 NEW 2026-09-17 03:44 — THE SPRINT CARDS SIT ABOVE THE CAPTURE FAN, and in portrait the
       away card HIDES two of the five tiles.**~~ **FIXED AND MERGED — `F-FanCardsFade` (E's call:
@@ -589,7 +613,9 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
         which card, where and how much, E chose: **the collapsed bar; portrait TOO** (this REVERSES the
         2026-09-09 flush drop that `F-FocusCard-Corners` kept); **"Line up with the Disc, but when there
         are multiple cards being displayed, then maintain the alignment."** TO BUILD. Frame 08's observation (the pushed-up disc over the hero's *Start another
-      session*) is unchanged and still only an observation. (CLOSED; two looks owed)
+      session*) is unchanged and still only an observation. **The fade PASSED on device, Reduce Motion OFF
+      and ON (2026-09-17). The × question was answered: shape B, which became `F-FanXAtRest` above.**
+      (CLOSED; PASSED ON DEVICE)
 
 - [x] ~~**The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
       outstanding.**~~ **E PICKED 12 — SHIPPED as `F-TabBarPillInset` (2026-09-17).** E: *"padding 12
