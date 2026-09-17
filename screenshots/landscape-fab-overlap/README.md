@@ -1,0 +1,61 @@
+# The landscape FAB overlap — F-LandscapeFabOverlap (2026-09-17)
+
+**Environment:** `iPhone 17 Pro` simulators on **iOS 26.5 (23F77), light** and **iOS 27.0 (24A434),
+dark** — E's phone runs 27.0. Built with Xcode 27.0 (27A266a) against the iOS 27.0 SDK, deployment
+target 16.0, branch `feature/landscape-fab-overlap` @ `11224c9`. Backend: the Firebase Emulator
+Suite, signed in as a throwaway `uitest-landscapeaway-*` account created per run. The BEFORE frames
+come from the same build with `RootBottomOverlay.swift` reverted to `main`'s (`a8636ee`) for the
+red-check. Captured 2026-09-17.
+
+**Why this folder exists.** `LandscapeAwayCardUITests` asserts the geometry — the disc clear of the
+gear, the gear hittable and opening Settings, the card clear of the disc — and it fails on the
+old overlay and passes on the new one. What no assertion can settle is how the new arrangement
+READS: E has never seen the bottom furniture laid out side by side, and whether a card at the
+bottom-left with the disc in its own corner looks right in the hand is E's call, made by looking.
+The frames below are that arrangement on both runtimes and in both modes.
+
+**How the frames were taken, and why not by the test.** `app.screenshot()` lies on a rotated
+simulator (F-LandscapeFix): the attachment comes back letterboxed portrait with the content
+squeezed into a column and half the frame black. These are host-side `xcrun simctl io <udid>
+screenshot` frames, polled once a second while the journey held each pose for three seconds
+(`hold()` in the test). The test still attaches its own frames as the record that each pose was
+reached; none of them is in this folder.
+
+**No throwaway data survives.** Each run's account lived only in the emulator process, and both
+simulators were erased (`xcrun simctl erase`) in the same command as their run — the standing
+rule that a signed-in simulator poisons the next unit suite.
+
+## The measurements, from the journey's own frame prints
+
+Printed on the pass path and the fail path alike (the geometry-journey lesson), `iPhone 17 Pro`,
+402 × 874 pt portrait / 874 × 402 pt landscape:
+
+| | disc | gear | away card |
+|---|---|---|---|
+| portrait, before and after (identical) | y 475–535 | y 78–118 | y 543–740 |
+| **landscape, BEFORE** | **y 17–77** | y 16–56 | y 85–282, x 78–796 (full width) |
+| **landscape, AFTER** | **y 222–282** (its resting position) | y 16–56 | y 85–282, x 78–696 (the column beside the disc) |
+
+Before: the disc's top at 17.3 is the sum the pure test holds — 381 (the landscape safe height)
+− 100 (the lift) − 196.7 (the card) − 8 − 60. The gear at y 16–56 is under it. After: the disc
+sits 166pt below the gear, the card ends 100pt short of the trailing edge, and the tap on the gear
+opens Settings (frames 04 and 06).
+
+## Files
+
+| file | what it proves |
+|---|---|
+| `00-before-portrait-control.jpeg` | Portrait with the away card up, OLD overlay: disc above the card, gear clear. The control the journey asserts before rotating — portrait never collided. |
+| `01-before-landscape-disc-on-gear-sim-26.5.jpeg` | **The bug, reproduced on the simulator with the old overlay.** Landscape, the capture disc sitting on the Settings gear (the well's edge shows behind the disc). The same frame E photographed on the phone (`ios27-device-findings/04`). |
+| `02-after-portrait-unchanged-light-26.5.jpeg` | Portrait with the NEW overlay: byte-for-byte the stack E reviewed — the frames above are identical before and after. |
+| `03-after-landscape-cards-beside-disc-light-26.5.jpeg` | **The fix, light, 26.5.** Landscape: the away card takes the column at the bottom-left, the disc keeps its resting corner, the gear is clear. |
+| `04-after-landscape-gear-opens-settings-light-26.5.jpeg` | The gear tapped in that state opens Settings — the thing E could not do. |
+| `05-after-landscape-cards-beside-disc-dark-27.0.jpeg` | **The fix, dark, 27.0** — E's runtime. Same arrangement. |
+| `06-after-landscape-gear-opens-settings-dark-27.0.jpeg` | Settings opened from the gear on 27.0, dark — with iOS 27's retuned sheet chrome, as Phase D recorded. |
+
+## Open, for E on the phone
+
+1. Does the side-by-side arrangement read right in the hand — the card bottom-left, the disc in
+   its corner? (A running sprint's timer bar takes the same column in landscape; the disc no
+   longer rises above it there.)
+2. Portrait is unchanged; nothing to look at, but the claim is on the table.
