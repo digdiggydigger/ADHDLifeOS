@@ -1,4 +1,4 @@
-# Open items register — 2026-09-17 (fifty-seventh edition; **ALL THREE OF E's CALLS ARE BUILT AND MERGED — `F-FanXAtRest` (PR #147), `F-CollapsedBarLift` (#148), `F-FanHoldsCelebration` (#149, NARROWED by E to "Only hold new requests") — and `main` @ `4653433` is ON E's PHONE. Owed: E's one set of looks, incl. the × move with Reduce Motion ON. Profile expires 2026-09-17T19:25:02Z (20:25 BST).** Opener: `handoff/START-HERE-looks-on-three-blocks.md`.)
+# Open items register — 2026-09-17 (fifty-eighth edition; **E's LOOK: the × fix PASSED; the bar margin → "reduce it slightly" → `F-FurnitureGap24` MERGED (32 → 24, everything together). `main` @ `173ba7d` is ON E's PHONE (see State). Owed: the 24pt look incl. the Journal composer alignment, and the RM-ON pass. E closed the session to continue in a fresh one.** Opener: `handoff/START-HERE-after-gap-24.md`.)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -35,6 +35,28 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Fifty-eighth edition — 2026-09-17 ~13:30, `main` @ `173ba7d`.** Suite **3,053 / 0**, **0**
+`127.0.0.1:9099` hits, SwiftLint **0 / 824**, sim `** BUILD SUCCEEDED **`. `firestore.rules`
+untouched — nothing for E to republish. **Phone: see "Device" below.**
+
+**E's device look on the three blocks (~12:55, four portrait frames, light + dark):**
+- **`F-FanXAtRest` — PASSED** (*"your fixes to the FAB Icon were successful"*). **RM-ON pass still
+  OWED** (the × jumps by design; the cards must still FADE — the container's `nil` wraps the cards'
+  `.default` fade and no RM render has proved the inner wins).
+- **`F-CollapsedBarLift` — margin REVISED:** *"please reduce it slightly."* E chose **everything
+  together** and **24pt** → **`F-FurnitureGap24`** (PR #152): `gapAboveTabBar` 32 → 24,
+  `bottomFurnitureLift` 100 → 92, content clearance follows. **Accepted cost, owed a look:** the disc
+  was centred on the Journal composer at 32 (2.5pt off); at 24 ~5.5pt off. Landscape not yet looked at.
+- **`F-FanHoldsCelebration`** — no ordinary device look exists (a Confirm cannot be tapped under the
+  fan; only a background daily goal / streak can fire while it is open). Tested-only unless E sets it up.
+
+**Device:** **The phone is ON MAIN at `173ba7d`** (installed ~13:35; device build + `devicectl` install clean, 0 signing tells, `codesign --verify --deep --strict` exit 0). The LAUNCH was denied `Locked` — the known "install is real, unlock and open" case, so E opens it by hand (and force-quits first). **Profile NOT re-issued: expires 2026-09-17T19:25:02Z (20:25 BST)** — after that, rebuild after expiry.
+
+---
+
+**Fifty-seventh edition's State follows, unchanged.**
+
 
 **Fifty-seventh edition — measured 2026-09-17 on `main` @ `4653433` (Xcode 27.0, iOS 26.5 runtime,
 emulator UP, freshly started this session):** suite **3,053 / 0** (3,029 + `F-FanXAtRest`'s 10 +

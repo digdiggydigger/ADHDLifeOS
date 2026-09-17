@@ -40,3 +40,9 @@ E's RM-on pass is owed** (§7.3). No `#available` site added.
 | `05-tasks-collapsed-bar-fan-closed-26.5.jpeg` | Tasks, seeded collapsed sprint bar, fan closed: the search row and disc share a row above the bar. |
 | `06-tasks-fan-open-wiring-cut-x-on-task-26.5.jpeg` | Red-check (overlay passes `fanIsOpen: false`): the × covers TASK — E's frame 19 reproduced. |
 | `07-tasks-fan-open-row-and-x-at-rest-26.5.jpeg` | **The fix on Tasks:** the search row and the × have dropped together to rest; TASK is clear. |
+
+## E's device verdict, 2026-09-17 ~12:55 — PASSED
+
+iPhone 15 Pro, iOS 27.0, `main` @ `4653433`. E's fan-open frame with a Confirm card up shows the × at
+its resting corner, clear of TASK: *"they also show that your fixes to the FAB Icon were
+successful."* **Still owed:** the Reduce Motion ON pass (the × jumps; the cards must still FADE).
