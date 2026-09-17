@@ -7,12 +7,19 @@
 //  the card crisp above the fan's scrim and, in portrait, the LINK and TASK tiles were behind it
 //  and could not be tapped. E's call: *"Fade the cards out while the fan's open."*
 //
-//  So the journey holds the away card, opens the fan, and asserts the three things that matter:
-//  the tiles that were buried are hittable; the card's own button is NOT (faded out and no longer
-//  taking touches); and the disc — now the fan's × — did not move when the fan opened, because
-//  the cards keep their layout. Then it dismisses and asserts the card is back. Portrait, where
-//  `app.screenshot()` is truthful. The away card is raised the way `LandscapeAwayCardUITests`
-//  raises it (`UITestUserDefaultsSeeds.swift`).
+//  So the journey holds the away card, opens the fan, and asserts the things that matter: the
+//  tiles that were buried are hittable; the card's own button is NOT (faded out and no longer
+//  taking touches); and the disc — now the fan's × — is at its RESTING corner, clear of every
+//  tile. Then it dismisses and asserts the card is back and the disc is back above it. Portrait,
+//  where `app.screenshot()` is truthful. The away card is raised the way
+//  `LandscapeAwayCardUITests` raises it (`UITestUserDefaultsSeeds.swift`).
+//
+//  **REVERSED 2026-09-17 by `F-FanXAtRest`.** This journey used to assert that the disc did NOT
+//  move when the fan opened — `F-FanCardsFade`'s "the × stays where the + was". E's GIF
+//  (`screenshots/landscape-fab-overlap/21`) showed what that costs: any card pushes the × up in
+//  portrait, the tiles are placed from the resting corner, and the × lands on one. With this card
+//  up it sat between PHOTO and LINK. E called it a bug and chose shape B, *"× drops to its
+//  corner"*, so the assertion is now the opposite one.
 //
 
 import XCTest
@@ -46,6 +53,9 @@ final class FanOverAwayCardUITests: XCTestCase {
         settle()
         XCTAssertTrue(waitUntilHittable(gotIt, in: app), "Fan closed: Got it is not tappable — the control failed")
         let discBeforeOpening = disc.frame
+        // Read while the card is plainly on screen: its bottom is the column's bottom line, which
+        // is the disc's resting line (the overlay pads the whole column up by the same lift).
+        let cardBeforeOpening = card.frame
         attach(app, "00-portrait-away-card-fan-closed")
 
         // Open the fan. The tiles exist only while it is open, so TASK's arrival is the landmark.
@@ -66,14 +76,42 @@ final class FanOverAwayCardUITests: XCTestCase {
         XCTAssertTrue(waitUntilHittable(link, in: app), "Fan open: the LINK tile behind the away card cannot be tapped")
         // The card is faded out AND out of the hit-test — its button must not take the tap instead.
         XCTAssertFalse(gotIt.isHittable, "Fan open: the away card's Got it still takes touches")
-        // The cards keep their layout, so the × stays where the + was.
-        XCTAssertEqual(disc.frame.midY, discBeforeOpening.midY, accuracy: 1, "The disc moved when the fan opened")
+        assertTheXIsAtRestAndClearOfEveryTile(disc, columnBottom: cardBeforeOpening.maxY, in: app)
 
-        // Dismiss by tapping the × (the disc itself); the card comes back.
+        // Dismiss by tapping the × (the disc itself); the card comes back, and so does the push.
         XCTAssertTrue(UITestSession.tap(disc, untilGone: task), "The fan did not close")
         settle()
         attach(app, "02-portrait-fan-closed-card-back")
         XCTAssertTrue(waitUntilHittable(gotIt, in: app), "Fan closed again: Got it did not come back")
+        XCTAssertEqual(
+            disc.frame.midY, discBeforeOpening.midY, accuracy: 1,
+            "Fan closed: the disc did not return above the card"
+        )
+    }
+
+    // MARK: - The × (F-FanXAtRest)
+
+    /// E's shape B: the × is clear of every tile, because it is at its resting corner — on the
+    /// column's bottom line. A tile is 62pt and the disc 60pt, so centres under 61pt apart overlap.
+    /// On the unfixed tree the × is pushed up over the tiles and the collision is where the journey
+    /// fails (it sat 35pt from PHOTO); the collision is asserted FIRST so that is what the red says.
+    @MainActor
+    private func assertTheXIsAtRestAndClearOfEveryTile(
+        _ disc: XCUIElement, columnBottom: CGFloat, in app: XCUIApplication
+    ) {
+        let xCentre = CGPoint(x: disc.frame.midX, y: disc.frame.midY)
+        for kind in ["note", "voice", "photo", "link", "task"] {
+            let tile = app.buttons["captureFan-\(kind)"].frame
+            let distance = hypot(tile.midX - xCentre.x, tile.midY - xCentre.y)
+            XCTAssertGreaterThanOrEqual(
+                distance, 61,
+                "Fan open: the × (centre \(xCentre)) sits on the \(kind.uppercased()) tile, \(distance)pt apart"
+            )
+        }
+        XCTAssertEqual(
+            disc.frame.maxY, columnBottom, accuracy: 1,
+            "Fan open: the × is not on the column's bottom line, so a card is still pushing it up"
+        )
     }
 
     // MARK: - Hittability
