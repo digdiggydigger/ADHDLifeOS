@@ -1,4 +1,4 @@
-# START HERE — two verdicts from E, then one tiny block
+# START HERE — E's device looks on three shipped blocks (one of them with Reduce Motion ON)
 
 *Written 2026-09-17 at the close of the session that fixed the landscape FAB overlap and rendered
 the pill-inset options. **This is a disposable pointer — archive it when you write your successor.**
@@ -46,7 +46,26 @@ is `RootBottomOverlayLayout.cardsWidth` and the pure tests in `RootBottomOverlay
 the arrangement rule itself (`arrangement(isCompactHeight:hasCards:)`) is the thing NOT to widen
 without E — regular height must stay stacked.
 
-## Verdict 2 — the pill inset (E picks a number)
+## Verdict 2 — the pill inset: E PICKED 12, and it is SHIPPED (`F-TabBarPillInset`, PR #141)
+
+Nothing to build. E looks at the bar on the phone (installed) and says whether 12 reads right at
+the pill's edge; the render of the shipped tree is `screenshots/tabbar-pill-inset-options/08–11`.
+If E wants a different number after seeing it in the hand, it is the same one-constant change
+with the pin test and CLAUDE.md §2's second waiver updated.
+
+## Verdict 3 — the fan fade (`F-FanCardsFade`), WITH a Reduce Motion ON pass
+
+E's third finding of 2026-09-17 (cards drawn above the capture fan; portrait away card hiding
+LINK and TASK) shipped the way E chose: the cards fade out and stop taking touches while the fan
+is open, layout kept so the × stays put. **This block ADDS a reduced site** (the same fade on a
+plain ease under Reduce Motion), so §7.3's rule applies: **ask E for both passes in one message —
+open the fan with a card up, Reduce Motion OFF, then ON.** The arc was deliberately NOT
+re-anchored to the disc's real position (see the register §B); if E finds the arc leaning out of
+the resting corner odd once the cards are gone, that is a new question, not a bug.
+
+## The original section below is superseded by the three above where they disagree.
+
+## Verdict 2 (original) — the pill inset (E picks a number)
 
 `screenshots/tabbar-pill-inset-options/00` and `01`: `floatingPaddingHorizontal` at 4 / 8 / 12 / 16.
 Then ONE block: set the constant, extend `AppTabBarPresentationTests` with a pinning test that says

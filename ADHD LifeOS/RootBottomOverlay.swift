@@ -78,6 +78,11 @@ struct RootBottomOverlay: View {
         )
     }
 
+    /// The cards' visibility under the capture fan — see `RootBottomOverlayLayout.cardsPresence`.
+    private var fanPresence: RootBottomOverlayLayout.CardsPresence {
+        RootBottomOverlayLayout.cardsPresence(fanIsOpen: isFabOpen)
+    }
+
     var body: some View {
         // ONE container whose arrangement is a property, never a `switch` between a `VStack` and
         // an `HStack`: two container types would give the timer bar two identities, and its
@@ -85,6 +90,16 @@ struct RootBottomOverlay: View {
         RootBottomOverlayArrangement(arrangement: arrangement) {
             discRow
             cards
+                // F-FanCardsFade (E's call, 2026-09-17): while the fan is open the cards fade out
+                // and stop taking touches, but KEEP their layout — an opacity, never an `if` —
+                // so the disc, now the fan's ×, stays where the + was. Reduce Motion gets the
+                // same fade on a plain ease (§5's one exception): the geometry never moves.
+                .opacity(fanPresence.opacity)
+                .allowsHitTesting(fanPresence.acceptsTouches)
+                .animation(
+                    reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8),
+                    value: isFabOpen
+                )
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
         .padding(.bottom, Self.bottomPadding)

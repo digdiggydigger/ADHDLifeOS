@@ -71,6 +71,30 @@ final class RootBottomOverlayCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The fan fade reaches the view (F-FanCardsFade)
+
+    /// The cards fade by OPACITY and drop out of hit-testing, fed by the pure rule — never by an
+    /// `if` that removes them: removal would collapse the column and drop the disc (the fan's ×)
+    /// into its corner the instant the fan opened, moving it from under the thumb.
+    func testTheCardsFadeUnderTheFanByOpacityAndKeepTheirLayout() throws {
+        let source = try Self.flattened(Self.overlay)
+        XCTAssertTrue(
+            source.contains("RootBottomOverlayLayout.cardsPresence(fanIsOpen: isFabOpen)"),
+            "The overlay never asks the fan rule, so the cards stay above the fan."
+        )
+        guard let container = source.range(of: "RootBottomOverlayArrangement(arrangement:") else {
+            return XCTFail("No arrangement container — see the test above.")
+        }
+        let body = source[container.upperBound...]
+        for anchor in [".opacity(", ".allowsHitTesting("] {
+            XCTAssertTrue(body.contains(anchor), "The cards are not modified with `\(anchor)` inside the container.")
+        }
+        XCTAssertFalse(
+            source.contains("if isFabOpen") || source.contains("if !isFabOpen"),
+            "The overlay gates the cards' EXISTENCE on the fan. That collapses the column and moves the ×."
+        )
+    }
+
     // MARK: - The geometry reaches the Layout
 
     /// `sizeThatFits` and `placeSubviews` cannot be unit-tested without real subviews, so they

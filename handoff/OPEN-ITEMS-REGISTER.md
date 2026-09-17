@@ -37,8 +37,7 @@ update rather than improvising a list in chat.
 ## State
 
 **Measured 2026-09-17 on `feature/landscape-fab-overlap` @ `11224c9` (Xcode 27.0, iOS 26.5 runtime,
-emulator UP, freshly started this session):** suite **3,026 / 0** (3,011 + the 14 tests of
-`F-LandscapeFabOverlap` + the pill pin), **0** `127.0.0.1:9099` hits, **58** emulator cases across the six classes,
+emulator UP, freshly started this session):** suite **3,029 / 0** (3,011 + `F-LandscapeFabOverlap`'s 14 + the pill pin + `F-FanCardsFade`'s 3), **0** `127.0.0.1:9099` hits, **58** emulator cases across the six classes,
 SwiftLint **0 / 819**, `** BUILD SUCCEEDED **` (**37 distinct warnings**, the Phase C figure, 0 errors),
 coverage **27.67% (13,399/48,433)** — numerator +43 on a denominator +76 (the layout file and the
 overlay's new lines), i.e. comparable and the new code is covered. `LandscapeAwayCardUITests`
@@ -106,6 +105,8 @@ overlap, reproduced first, fixed with a `Layout` that keeps the portrait stack b
 red-checked, passing on 26.5 and 27.0. Owed: E's verdict on the side-by-side look (the build is on the phone).
 
 **`F-TabBarPillInset`** — E chose 12 from the rendered options; shipped, red-checked at 4 and 16; §B's second item.
+
+**`F-FanCardsFade`** — E's third finding of the day, fixed the way E chose; §B's first item.
 
 **`F-CTACelebrations-6`** — C6–C9: the routine Completed flow wired (PRs #106–#109). See the
 forty-first edition's detail; nothing about it is outstanding.
@@ -538,29 +539,21 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       (installed after the close-out report).** No RM-on pass owed (no reduced site touched). (CLOSED as
       a bug; verdict owed)
 
-- [ ] **🐞 NEW 2026-09-17 03:44 — THE SPRINT CARDS SIT ABOVE THE CAPTURE FAN, and in portrait the
-      away card HIDES two of the five tiles.** Found by E on the phone minutes after the landscape
-      fix was installed (`screenshots/landscape-fab-overlap/09`–`12`, E's `IMG_8503/8504/8507/8508`).
-      With a card up — the live Confirm card (09/10) or the away card (11/12) — opening the fan
-      draws the card crisp ABOVE the fan's scrim, and the tiles land where the card is; in portrait
-      (12) LINK and TASK are behind the away card and cannot be tapped. **Two causes, read from the
-      code:** (1) z-order — `RootView` mounts `RootBottomOverlay` as a later `.overlay` than the
-      fan, deliberately so the disc (the fan's ×) stays crisp and tappable, and the cards ride
-      above the scrim with it; (2) anchoring — `CaptureFanOverlay` positions tiles at fixed
-      offsets from the screen's bottom-trailing corner, the disc's RESTING spot, so when a card
-      pushes the disc up the × moves and the arc does not. Pre-existing on both counts; the
-      landscape fix changed neither (in landscape the disc no longer moves, and the horizontal arc
-      runs along the bottom where the side-by-side column now sits).
-      **Options put to E, not yet chosen:** **A (recommended)** — while the fan is open the cards
-      FADE OUT and stop hit-testing but keep their layout, so the × stays where the + was; they fade
-      back on dismiss; AND the arc is anchored to the disc's real centre so it always leans out of
-      the ×. **B** — the cards collapse while the fan is open (the × drops to its corner as the fan
-      opens — it moves under the thumb; not recommended). **C** — the cards stay, dimmed under the
-      scrim, arc anchored to the ×; landscape keeps a dimmed card under the tile row. Any of them
-      is one block with a fan-open journey; A's reduced-motion path is an opacity fade by nature
-      (§7.2). Also noted from frame 08, as an OBSERVATION only: in portrait the pushed-up disc
-      floats over the hero's *Start another session* button — the standing "disc floats over
-      content" behaviour at a pushed-up height, not raised by E. (NEW)
+- [x] ~~**🐞 NEW 2026-09-17 03:44 — THE SPRINT CARDS SIT ABOVE THE CAPTURE FAN, and in portrait the
+      away card HIDES two of the five tiles.**~~ **FIXED AND MERGED — `F-FanCardsFade` (E's call:
+      *"Fade the cards out while the fan's open"*, option A).** While the fan is open the whole
+      cards column — away card, Confirm stack, timer bar — fades by opacity and drops out of
+      hit-testing, keeping its layout so the disc (the fan's ×) stays where the + was; the
+      reduced path is the same fade on `.default`. `RootBottomOverlayLayout.cardsPresence` is the
+      rule; a call-site guard forbids gating the cards on an `if`. `FanOverAwayCardUITests`
+      reproduced E's frame 12 (TASK and LINK inside the card's frame, un-hittable) on the unfixed
+      tree and passes on the fixed one. **Deliberately NOT done: re-anchoring the fan's arc to the
+      disc's real position** — moving the origin up with a pushed-up × risks the top tiles going off
+      the top edge; the arc still leans out of the resting corner, which is where it always has.
+      A separate question for E if that reads wrong once the cards are gone. **Owed: E's look on
+      the phone with Reduce Motion OFF and then ON** (this block adds a reduced site — §7.3), and
+      the verdict. Frame 08's observation (the pushed-up disc over the hero's *Start another
+      session*) is unchanged and still only an observation. (CLOSED; two looks owed)
 
 - [x] ~~**The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
       outstanding.**~~ **E PICKED 12 — SHIPPED as `F-TabBarPillInset` (2026-09-17).** E: *"padding 12

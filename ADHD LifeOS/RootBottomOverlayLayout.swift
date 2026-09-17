@@ -41,6 +41,28 @@ enum RootBottomOverlayLayout {
         isCompactHeight && hasCards ? .besideTheDisc : .stacked
     }
 
+    // MARK: - The fan (F-FanCardsFade)
+
+    /// What the cards do while the capture fan is open. E's call (2026-09-17), on the finding in
+    /// `screenshots/landscape-fab-overlap/09–12`: the bottom overlay sits ABOVE the fan (so the
+    /// disc, which becomes the fan's ×, stays crisp and tappable), and the cards rode above the
+    /// scrim with it — in portrait the away card hid the LINK and TASK tiles outright. *"Fade the
+    /// cards out while the fan's open."*
+    ///
+    /// Both facets travel together: invisible AND out of the hit-test, or an invisible card would
+    /// still take the tap meant for the tile under it. The cards keep their LAYOUT throughout —
+    /// this is an opacity, never an `if` — so the × stays exactly where the + was.
+    struct CardsPresence: Equatable {
+        var opacity: Double
+        var acceptsTouches: Bool
+    }
+
+    static func cardsPresence(fanIsOpen: Bool) -> CardsPresence {
+        fanIsOpen
+            ? CardsPresence(opacity: 0, acceptsTouches: false)
+            : CardsPresence(opacity: 1, acceptsTouches: true)
+    }
+
     /// The stack's inter-element gap — §2's 8. A literal in the view body until this block; named
     /// because the bug's arithmetic reads it.
     static let spacing: CGFloat = 8
