@@ -120,7 +120,7 @@ final class SprintBarFurnitureUITests: XCTestCase {
         // Portrait. The resting line is where the × drops to with the fan open.
         let bar = collapsedCard(in: app)
         let discPushed = disc.frame
-        let card = withConfirmCard ? app.buttons["focusCompletionConfirmButton"].frame : nil
+        let card = withConfirmCard ? confirmButton(in: app).frame : nil
         attach(app, "\(pose)-portrait")
         holdPose("\(pose)-portrait")
         let task = app.buttons["captureFan-task"]
@@ -145,7 +145,7 @@ final class SprintBarFurnitureUITests: XCTestCase {
         XCTAssertTrue(UITestSession.rotateToLandscape(app), "The window never went landscape")
         settle()
         let landscapeBar = collapsedCard(in: app)
-        let landscapeCard = withConfirmCard ? app.buttons["focusCompletionConfirmButton"].frame : nil
+        let landscapeCard = withConfirmCard ? confirmButton(in: app).frame : nil
         report("landscape", bar: landscapeBar, discBottom: disc.frame.maxY, card: landscapeCard, discPushed: nil)
         holdPose("\(pose)-landscape")
         assertTheBarsLine(landscapeBar, restingLine: disc.frame.maxY, card: landscapeCard, orientation: "Landscape")
@@ -167,17 +167,19 @@ final class SprintBarFurnitureUITests: XCTestCase {
         addTeardownBlock { @MainActor in
             UITestSession.resetToPortrait()
         }
+        // iOS's own prompts first — the AutoFill "Save Password?" sheet trails sign-in and stood
+        // over Today for most of an earlier run of this journey.
+        sweepSystemPrompts(app, wait: 5)
         XCTAssertTrue(
-            app.buttons["focusBarPause"].waitForExistence(timeout: UITestSession.timeout),
+            resumeButton(in: app).waitForExistence(timeout: UITestSession.timeout),
             "The seeded collapsed sprint never appeared."
         )
         if withConfirmCard {
             XCTAssertTrue(
-                app.buttons["focusCompletionConfirmButton"].waitForExistence(timeout: UITestSession.timeout),
+                confirmButton(in: app).waitForExistence(timeout: UITestSession.timeout),
                 "The seeded Confirm card never appeared."
             )
         }
-        sweepSystemPrompts(app, wait: 5)
         settle()
         return app
     }
@@ -208,13 +210,27 @@ final class SprintBarFurnitureUITests: XCTestCase {
     }
 
     /// The collapsed card, read from its Pause button. The card's `focusTimerBar` identifier never
-    /// surfaces as an element of its own — its children inherit it, and the largest of them is the
-    /// title (measured 165 × 16) — but Pause is the collapsed row's 44pt height, and the card is
-    /// that row plus `FocusBarMetrics.collapsedPaddingVertical` (8) above and below: 60pt.
+    /// surfaces as an element of its own, and it OVERRIDES its children's — the largest match is
+    /// the title (measured 165 × 16), and `focusBarPause` matches nothing at all — but Pause is the
+    /// collapsed row's 44pt height, and the card is that row plus
+    /// `FocusBarMetrics.collapsedPaddingVertical` (8) above and below: 60pt.
     @MainActor
     private func collapsedCard(in app: XCUIApplication) -> CGRect {
-        let pause = app.buttons["focusBarPause"].frame
+        let pause = resumeButton(in: app).frame
         return CGRect(x: pause.minX, y: pause.minY - 8, width: pause.width, height: pause.height + 16)
+    }
+
+    /// The Confirm card's button, by label for the same reason — its card identifier may override too.
+    @MainActor
+    private func confirmButton(in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Confirm'")).firstMatch
+    }
+
+    /// Found by LABEL, for the reason above. The seeded sprint is paused, so the collapsed card's
+    /// Pause control reads "Resume sprint"; the expanded card's control is labelled "Resume".
+    @MainActor
+    private func resumeButton(in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == 'Resume sprint'")).firstMatch
     }
 
     /// Holds a pose for the host-side poller, stamped with the host clock it names its files by.
