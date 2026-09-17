@@ -185,6 +185,25 @@ final class RootBottomOverlayLayoutTests: XCTestCase {
         XCTAssertEqual(frames.cards.minY, 20)
     }
 
+    // MARK: - The fan (F-FanCardsFade)
+
+    /// E's call, 2026-09-17, on the finding in `screenshots/landscape-fab-overlap/09–12`: with a
+    /// card up, opening the capture fan drew the card crisp above the fan's scrim and, in
+    /// portrait, hid the LINK and TASK tiles behind it. *"Fade the cards out while the fan's
+    /// open."* Invisible AND out of the hit-test — an invisible card that still took the tap
+    /// would be the same bug with better lighting.
+    func testWhileTheFanIsOpenTheCardsAreInvisibleAndTakeNoTouches() {
+        let presence = RootBottomOverlayLayout.cardsPresence(fanIsOpen: true)
+        XCTAssertEqual(presence.opacity, 0, "The cards are still visible over the fan.")
+        XCTAssertFalse(presence.acceptsTouches, "The faded cards still take the taps meant for the tiles under them.")
+    }
+
+    func testWithTheFanClosedTheCardsArePresentAndTappable() {
+        let presence = RootBottomOverlayLayout.cardsPresence(fanIsOpen: false)
+        XCTAssertEqual(presence.opacity, 1)
+        XCTAssertTrue(presence.acceptsTouches)
+    }
+
     /// The stack's spacing was a literal in the view body; it is named now because the
     /// arithmetic above has to read it. §2's grid: 8 is inter-element spacing.
     func testTheStackSpacingIsOnTheGrid() {

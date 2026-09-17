@@ -4318,3 +4318,40 @@ waiver — the second, beside `peekStep = 14` — recorded in CLAUDE.md §2.
 (37 distinct warnings, unchanged; 0 errors), coverage 27.67% (13,399/48,433) — a constant moved,
 no line count did. Shipped tree rendered (`tabbar-pill-inset-options/08–11`). **Owed: E's look at
 12 on the phone** (installed with this close-out). No RM-on pass: no motion site touched.
+
+
+### FEATURE: F-FanCardsFade — the sprint cards fade out while the capture fan is open  [ ]
+
+**E's finding (2026-09-17 03:44, six device frames, `screenshots/landscape-fab-overlap/09–12`):**
+with a card up — the live Confirm card or the away card — opening the capture fan drew the card
+crisp ABOVE the fan's scrim, and in portrait the away card hid the LINK and TASK tiles so two of
+the five capture kinds could not be tapped. **E's call, verbatim: *"Fade the cards out while the
+fan's open."*** (Option A of the three put to E; the arc's anchoring stays as it is — moving the
+arc's origin up with a pushed-up × risks the top tiles going off the top edge, the clipping the
+landscape fan exists to avoid; a separate question for E if the resting-corner origin bothers
+them once the cards are gone.)
+
+**Why it happened, from the code:** `RootView` mounts `RootBottomOverlay` as a later `.overlay`
+than the fan, deliberately, so the disc (the fan's ×) stays crisp and tappable — the cards rode
+above the scrim with it; and `CaptureFanOverlay` anchors its tiles to the screen's bottom-trailing
+corner, the disc's RESTING spot, so a card that pushes the disc up puts the tiles under itself.
+
+**The change, and its shape.** `RootBottomOverlayLayout.cardsPresence(fanIsOpen:)` — opacity AND
+hit-testing together (an invisible card that still took the tap would be the same bug with better
+lighting) — applied to the cards column as `.opacity` + `.allowsHitTesting`, **never an `if`**:
+removal would collapse the column and drop the × into its corner the instant the fan opened,
+moving it from under the thumb. The whole column fades — away card, Confirm stack AND the running
+timer bar — because the fan is momentary and one rule beats three. Reduce Motion: the same fade on
+`.default` (§5's one exception; the geometry never moves, so §7.2's opening-pose rule is met by
+construction).
+
+**Acceptance criteria**
+- [ ] `RootBottomOverlayLayoutTests` — open → (0, no touches); closed → (1, touches). RED first.
+- [ ] `RootBottomOverlayCallSiteTests` — the overlay asks the rule, modifies the cards with
+      `.opacity(` and `.allowsHitTesting(` inside the container, and never gates them on `if`.
+- [ ] `FanOverAwayCardUITests` — portrait, away card up: open the fan; TASK and LINK (inside the
+      card's frame, asserted) become hittable; Got it does NOT take touches; the disc's frame is
+      unchanged by the opening; dismiss → Got it back. **Fails on the unfixed tree.**
+- [ ] Red-check by reverting the view; frames into `screenshots/landscape-fab-overlap/`.
+- [ ] SwiftLint 0, suite green, sim build green; pasted. RM-on device pass: **owed** — this block
+      ADDS a reduced site (the fade under Reduce Motion), so E looks at it with RM on and off.
