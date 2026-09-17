@@ -1,4 +1,4 @@
-# Open items register — 2026-09-17 (fifty-fourth edition; **THE LANDSCAPE FAB OVERLAP IS FIXED AND MERGED — `F-LandscapeFabOverlap`, reproduced first, red-checked, passing on 26.5 and 27.0. E's frame 07 shows the side-by-side arrangement working on the phone; no verdict WORD yet. A THIRD finding arrived with those frames — cards above the capture fan, §B. The tab-pill inset options are the session's second half.**)
+# Open items register — 2026-09-17 (fifty-fifth edition; **THREE BLOCKS SHIPPED IN ONE SESSION AND INSTALLED ON E's PHONE — `F-LandscapeFabOverlap` (#137), `F-TabBarPillInset` (#141, E's pick of 12), `F-FanCardsFade` (#142, E's call). Owed: E's three device looks, one with Reduce Motion ON, and E's call on the × over the PHOTO tile. Opener: `handoff/START-HERE-three-device-looks.md`.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -179,7 +179,7 @@ okay"*, two screenshots filed). Nothing outstanding. (NEW)
 **Opened 2026-09-14, the day iOS 27 shipped.** E: *"i need to look at updating the LifeOS application up to
 the most recent iOS version that was released today - iOS 27. This must be done safely to ensure that nothing
 breaks."* Plan: `/Users/ethan/.claude/plans/okay-claude-i-need-melodic-origami.md`.
-Opener: **`handoff/START-HERE-ios27.md`** — the single live opener.
+Opener (this edition): **`handoff/START-HERE-three-device-looks.md`** — the single live opener; `START-HERE-ios27.md` is archived.
 
 **E's three decisions, 2026-09-14:**
 1. **Phone holds at iOS 26.4**, Automatic Updates off, until Xcode 27 is installed.
