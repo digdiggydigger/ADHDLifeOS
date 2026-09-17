@@ -58,3 +58,11 @@ between the two cards is now what is drawn (the button is centred in a 76pt card
 | `07-after-confirm-landscape-26.5.jpeg` | **After, landscape, with a Confirm card:** the bar on the disc's line. |
 | `08-before-alone-portrait-scrolled-26.5.jpeg` | Before, Today scrolled to the bottom. |
 | `09-after-alone-portrait-scrolled-26.5.jpeg` | **After:** the last card still clears the lifted bar. |
+
+## E's device verdict, 2026-09-17 ~12:55 — the margin REVISED to 24 (`F-FurnitureGap24`)
+
+iPhone 15 Pro, iOS 27.0, `main` @ `4653433`, portrait, light and dark: the collapsed running bar and a
+Confirm card each sat on the disc's line, ≈34pt above the tab bar measured off E's frames (32 as
+built). E: *"please reduce it slightly."* E chose to move **everything together** (disc, search row,
+cards) and **24pt**, so `AppSearchRowMetrics.gapAboveTabBar` is 24 since PR #152. The frames in this
+folder show the 32pt build; the 24pt build went to E's phone the same afternoon, look owed.
