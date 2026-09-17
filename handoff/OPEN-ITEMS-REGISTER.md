@@ -571,7 +571,12 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       corner on its own (shape B's cost, already live today), and **a celebration played over the
       open fan**. That is the code as written: `-Surfaces` holds behind sheets, alerts and pickers,
       and the fan is an overlay nothing reports. An observation for E, not a finding. Table and
-      measurements: `screenshots/landscape-fab-overlap/README.md`, the 05:44 section. Frame 08's observation (the pushed-up disc over the hero's *Start another
+      measurements: `screenshots/landscape-fab-overlap/README.md`, the 05:44 section.
+      **E's GIF, 05:47 (`…/21-…gif`): E calls it a BUG** (*"the drifting FAB 'x' icon … when there is
+      an unresolved notification such as a completed sprint"*). With the finished sprint's Confirm card
+      up, the × sits at (339, 604), 84pt up and 7pt from TASK, and does not move while the fan opens.
+      Landscape is clear. The cause is any card pushing the disc, not the notification: frame 19 showed
+      the same with a running sprint's bar. Frame 08's observation (the pushed-up disc over the hero's *Start another
       session*) is unchanged and still only an observation. (CLOSED; two looks owed)
 
 - [x] ~~**The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing

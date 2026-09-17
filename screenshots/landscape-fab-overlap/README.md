@@ -183,3 +183,32 @@ Reduce Motion's state in these frames is unknown. Stills cannot show a fade, so 
 | `18-device-landscape-fan-open-timer-bar-faded-27.0.jpeg` | Landscape, fan open: the timer bar faded, tiles clear, no overlap. |
 | `19-device-portrait-fan-open-x-covers-task-27.0.jpeg` | **Portrait, fan open with a sprint running: the bar faded, but the × hides TASK (centres 9pt apart).** |
 | `20-device-portrait-sprint-ends-fan-open-celebration-x-drops-27.0.jpeg` | The sprint ended with the fan open: a celebration over the fan, and the × dropped 68pt to its corner. |
+
+### E's GIF, 2026-09-17 05:47: "the drifting FAB × icon" (`21-…gif`, 6.0 s, 75 frames)
+
+E, sending it: *"The cause of the drifting FAB 'x' Icon Seems to be when there is an unresolved
+notification such as a completed sprint."* A 30-second sprint had finished, and its Confirm card
+("celebration sound testing · 30s focused · 2 checkpoints · Confirm") is up. The recording opens
+the fan in portrait, closes it, rotates to landscape, and opens it again.
+
+**Measured from the frames** (298 px wide = 393pt; the × found by its colour in frames 5, 14, 17
+and 21):
+- **Portrait:** the disc's centre is at **(339, 604)** before the fan opens and stays there
+  through the whole open. **It does not move during the animation.** It sits 84pt above its resting
+  centre (339, 688), pushed up by the Confirm card, so it lands **7pt from TASK's centre
+  (336, 611)**. TASK only shows in frames 22–23, when the × fades on dismiss.
+- **Landscape (frames 57–69):** the card takes the column beside the disc, the disc stays in its
+  corner, and the arc is clear: the same arrangement as frame 18.
+
+**E's reading is right about the effect, and one step narrower than the cause.** It is not the
+notification itself but **any card in the bottom stack**. A card pushes the disc (and so the ×) up
+in portrait, while `CaptureFanOverlay` places the tiles from the screen's corner. A Confirm card
+pushes it 84pt onto TASK here. In frame 19 the × was on TASK too, but that was a RUNNING sprint's
+collapsed bar (68pt), before the sprint finished and before any notification existed. "Drifting" is
+the × turning up at a different height depending on which card is showing. Landscape never shows
+it, because the cards sit beside the disc there (`F-LandscapeFabOverlap`). **E calls it a bug.** The
+shape of the fix is still E's call (the register's A / B).
+
+| file | what it shows |
+|---|---|
+| `21-device-gif-confirm-card-pushes-x-onto-task-portrait-landscape-clear-27.0.gif` | **E's recording.** Portrait: the Confirm card fades, but the × stays 84pt up, covering TASK. Landscape: × in its corner, arc clear. |
