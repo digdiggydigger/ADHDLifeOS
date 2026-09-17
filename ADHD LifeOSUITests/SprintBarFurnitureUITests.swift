@@ -12,6 +12,14 @@
 //  running before calling the block done", held as an assertion rather than a glance. Portrait,
 //  where `app.screenshot()` is truthful.
 //
+//  `F-CollapsedBarLift`: the collapsed bar no longer drops onto the tab bar. E: *"Line up with the
+//  Disc, But when there are multiple cards being displayed, then maintain the alignment"*, in
+//  portrait AND landscape. The disc's RESTING line is read from the app itself — beside the cards
+//  in landscape, and with the fan open in portrait (where `F-FanXAtRest` drops the × to it) — so
+//  "lined up" is measured, not assumed. Landscape frames for evidence are taken host-side while a
+//  pose is held (`[POSE]` lines carry the host clock), because `app.screenshot()` lies on a
+//  rotated simulator (F-LandscapeFix).
+//
 
 import XCTest
 
@@ -81,6 +89,136 @@ final class SprintBarFurnitureUITests: XCTestCase {
         settle()
         XCTAssertEqual(row.frame.midY, rowBefore.midY, accuracy: 1, "Fan closed: the search row did not return")
         XCTAssertEqual(disc.frame.midY, discBefore.midY, accuracy: 1, "Fan closed: the disc did not return")
+    }
+
+    // MARK: - The collapsed bar's line (F-CollapsedBarLift)
+
+    /// The bar alone: in portrait its bottom is the disc's resting line and it sits the stack's 8pt
+    /// under the pushed-up disc; in landscape its bottom is the disc's bottom. On the unfixed tree
+    /// the bar hangs 32pt lower in both — onto the tab bar.
+    @MainActor
+    func testTheCollapsedBarAloneSitsOnTheDiscsLineInBothOrientations() throws {
+        try checkTheCollapsedBarsLine(withConfirmCard: false)
+    }
+
+    /// E's "maintain the alignment" with more than one card: a Confirm card above the collapsed
+    /// bar keeps the column's 8pt to it, and the bar still ends on the disc's line.
+    @MainActor
+    func testUnderAConfirmCardTheCollapsedBarKeepsTheAlignment() throws {
+        try checkTheCollapsedBarsLine(withConfirmCard: true)
+    }
+
+    @MainActor
+    private func checkTheCollapsedBarsLine(withConfirmCard: Bool) throws {
+        // Every pose is worth seeing even when one assertion fails: the RED run is the "before"
+        // evidence, so it must reach the landscape frame too.
+        continueAfterFailure = true
+        let app = try launchWithCollapsedSprint(withConfirmCard: withConfirmCard)
+        let disc = app.buttons["quickCaptureButton"]
+        let pose = withConfirmCard ? "confirm" : "alone"
+
+        // Portrait. The resting line is where the × drops to with the fan open.
+        let bar = largestFrame("focusTimerBar", in: app)
+        let discPushed = disc.frame
+        let card = withConfirmCard ? largestFrame("focusCompletionCard", in: app) : nil
+        attach(app, "\(pose)-portrait")
+        holdPose("\(pose)-portrait")
+        let task = app.buttons["captureFan-task"]
+        XCTAssertTrue(UITestSession.tap(disc, untilExists: task), "The fan did not open")
+        settle()
+        let restingLine = disc.frame.maxY
+        XCTAssertTrue(UITestSession.tap(disc, untilGone: task), "The fan did not close")
+        settle()
+        report("portrait", bar: bar, discBottom: restingLine, card: card, discPushed: discPushed)
+        assertTheBarsLine(bar, restingLine: restingLine, card: card, orientation: "Portrait")
+        if !withConfirmCard {
+            XCTAssertEqual(
+                bar.minY - discPushed.maxY, 8, accuracy: 1,
+                "Portrait: the bar is not the stack's 8pt under the disc it pushes up"
+            )
+            // The scroll-clearance look: the last row of a scrolled Today against the lifted bar.
+            for _ in 0..<4 { app.swipeUp() }
+            settle()
+            holdPose("\(pose)-portrait-scrolled-to-bottom")
+        }
+
+        XCTAssertTrue(UITestSession.rotateToLandscape(app), "The window never went landscape")
+        settle()
+        let landscapeBar = largestFrame("focusTimerBar", in: app)
+        let landscapeCard = withConfirmCard ? largestFrame("focusCompletionCard", in: app) : nil
+        report("landscape", bar: landscapeBar, discBottom: disc.frame.maxY, card: landscapeCard, discPushed: nil)
+        holdPose("\(pose)-landscape")
+        assertTheBarsLine(landscapeBar, restingLine: disc.frame.maxY, card: landscapeCard, orientation: "Landscape")
+    }
+
+    /// Signs a fresh account in with a PAUSED, collapsed sprint seeded — and a Confirm card too
+    /// when asked — and waits for both to be on screen.
+    @MainActor
+    private func launchWithCollapsedSprint(withConfirmCard: Bool) throws -> XCUIApplication {
+        try UITestEmulator.skipUnlessRunning()
+        let account = try UITestSession.createAccount(label: withConfirmCard ? "barliftconfirm" : "barlift")
+        var arguments = UITestSession.pausedSprintLaunchArguments(
+            taskTitle: "celebration sound testing", collapsed: true
+        )
+        if withConfirmCard {
+            arguments += UITestSession.unconfirmedCompletionLaunchArguments(taskTitle: "the sprint before")
+        }
+        let app = try UITestSession.launchSignedIn(as: account, launchArguments: arguments)
+        addTeardownBlock { @MainActor in
+            UITestSession.resetToPortrait()
+        }
+        XCTAssertTrue(
+            app.buttons["focusBarPause"].waitForExistence(timeout: UITestSession.timeout),
+            "The seeded collapsed sprint never appeared."
+        )
+        if withConfirmCard {
+            XCTAssertTrue(
+                app.buttons["focusCompletionConfirmButton"].waitForExistence(timeout: UITestSession.timeout),
+                "The seeded Confirm card never appeared."
+            )
+        }
+        sweepSystemPrompts(app, wait: 5)
+        settle()
+        return app
+    }
+
+    /// The bar's bottom on the disc's resting line — 32pt above the tab bar — and, with a Confirm
+    /// card up, the column's 8pt between the two cards.
+    @MainActor
+    private func assertTheBarsLine(_ bar: CGRect, restingLine: CGFloat, card: CGRect?, orientation: String) {
+        XCTAssertEqual(
+            bar.maxY, restingLine, accuracy: 1,
+            "\(orientation): the collapsed bar's bottom is \(bar.maxY - restingLine)pt off the disc's line"
+                + " — dropped toward the tab bar"
+        )
+        if let card {
+            XCTAssertEqual(
+                bar.minY - card.maxY, 8, accuracy: 1,
+                "\(orientation): the Confirm card and the collapsed bar are not the column's 8pt apart"
+            )
+        }
+    }
+
+    /// The gap above the tab bar is the disc line's 32pt less however far the bar drops below it.
+    private func report(_ orientation: String, bar: CGRect, discBottom: CGFloat, card: CGRect?, discPushed: CGRect?) {
+        let gapAboveTabBar = discBottom + 32 - bar.maxY
+        print("[BAR-LINE] \(orientation) bar=\(bar) discRestingBottom=\(discBottom)"
+            + " gapAboveTabBar=\(gapAboveTabBar) card=\(String(describing: card))"
+            + " discPushed=\(String(describing: discPushed))")
+    }
+
+    /// Identifiers on a container are inherited by its children, so the card is the LARGEST match.
+    @MainActor
+    private func largestFrame(_ identifier: String, in app: XCUIApplication) -> CGRect {
+        app.descendants(matching: .any).matching(identifier: identifier).allElementsBoundByIndex
+            .map(\.frame)
+            .max { $0.width * $0.height < $1.width * $1.height } ?? .zero
+    }
+
+    /// Holds a pose for the host-side poller, stamped with the host clock it names its files by.
+    private func holdPose(_ name: String) {
+        print("[POSE] \(name) t=\(Int(Date().timeIntervalSince1970))")
+        Thread.sleep(forTimeInterval: 3.0)
     }
 
     // MARK: - Capture
