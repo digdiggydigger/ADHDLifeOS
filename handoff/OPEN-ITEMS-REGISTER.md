@@ -98,6 +98,12 @@ untouched) and the suite re-run against the fresh one.
 
 ### Landed this session
 
+**`F-LandscapeFabOverlap`** (PR #137, `main` @ `7e85ec6`) — see §B's first item: the landscape FAB
+overlap, reproduced first, fixed with a `Layout` that keeps the portrait stack byte for byte,
+red-checked, passing on 26.5 and 27.0. Owed: E's verdict on the side-by-side look, and the install.
+
+**The pill-inset options** (this edition) — rendered, not chosen; §B's second item.
+
 **`F-CTACelebrations-6`** — C6–C9: the routine Completed flow wired (PRs #106–#109). See the
 forty-first edition's detail; nothing about it is outstanding.
 
@@ -529,19 +535,16 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       was not reachable at close-out.** No RM-on pass owed (no reduced site touched). (CLOSED as
       a bug; verdict owed)
 
-- [ ] **The selected tab pill's left inset — E wants OPTIONS RENDERED, not a number chosen for
-      them.** E circled it on device (`03-tab-bubble-inset-dark-circled.jpeg`) and the measurement
-      agrees: the filled pill sits **3.00 pt (light) / 2.67 pt (dark)** from the bar's left edge,
-      against **15.7 pt** from the last glyph to the right edge — a **~5× asymmetry**. It will
-      mirror on the right when **Tools** is selected.
-      **This is NOT a §2 grid violation.** `floatingPaddingHorizontal = 4` is on the grid; the
-      problem is that 4 was approved when the selection was an **icon-only chip** that never
-      reached its slot edge, and Design C's resting pill is a **filled capsule** that does.
-      **Do not just re-tune it** — memory records that all bar constants are E-approved and must not
-      be changed unprompted. E has now prompted, and asked specifically for **rendered options
-      (4 / 8 / 12) to pick by eye**, which is the house pattern for a spacing decision (cf.
-      `peekStep`). Constants live in `Theme/AppTabBarPresentation.swift`. (NEW)
-
+- [ ] **The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
+      outstanding.** `screenshots/tabbar-pill-inset-options/`: the REAL `AppTabBar` at
+      `floatingPaddingHorizontal` **4 (current) / 8 / 12 / 16**, Today and Tools selected, light and
+      dark, rendered at E's 393pt via a temporary `ImageRenderer` probe (constant and probe both
+      reverted; the bar file untouched). Measured insets 4.3 / 8.3 / 12.0 / 16.0pt. Two facts for the
+      pick: **12 is off §2's grid** (ships only as a named waiver with a pinning test, the `peekStep`
+      shape); **16 breaks §3's SE floor** — the unselected slot falls to 43.0pt and
+      `testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE` fails unless `maximumRestingPillWidth` drops ≥5pt
+      with it. The scrolled chip inherits the same padding. **Nothing else on the bar moves.** Once
+      E says a number it is a one-constant block with one test. (RENDERED; pick owed)
 
 ~~**00. THE CTA CELEBRATIONS ARC — `F-CTACelebrations-6` is BUILT TO C5 ON A BRANCH.**~~
    **THE WHOLE ARC IS FINISHED — corrected 2026-09-13, and this entry was badly stale.** It still
