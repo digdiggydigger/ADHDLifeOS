@@ -4416,7 +4416,7 @@ Recommended order: the × first (E called it a bug), then the bar lift, then the
 The first two both edit `RootBottomOverlay`'s neighbourhood and do not conflict: block 1 moves the
 disc ROW inside the Layout, block 2 removes an `.offset` inside `FocusTimerBar`.
 
-### FEATURE: F-FanXAtRest — the × drops to its resting corner while the capture fan is open  [ ] OPEN
+### FEATURE: F-FanXAtRest — the × drops to its resting corner while the capture fan is open  [x] COMPLETED 2026-09-17
 
 **The bug (E's GIF, `…/21-…gif`, and frame 19).** In portrait, any card in the bottom column
 (the running sprint's bar, a Confirm card, the away card) pushes the capture disc up. When the fan
@@ -4480,19 +4480,31 @@ the disc (radius 30) need 61pt. Every slot clears.
   `RootBottomOverlayLayout.cardsPresence`'s doc.
 
 **Acceptance criteria**
-- [ ] `RootBottomOverlayLayoutTests`, RED first: stacked + cards + fan open → disc row on the bottom
+- [x] `RootBottomOverlayLayoutTests`, RED first: stacked + cards + fan open → disc row on the bottom
       line, cards' frame unchanged; stacked + no cards + fan open → identical to closed;
-      `.besideTheDisc` + fan open → identical to closed.
-- [ ] A PIN (it passes on today's tree; mutation-check it both ways): every `CaptureFan.slots`
+      `.besideTheDisc` + fan open → identical to closed. *(RED: 13 compile errors. Plus the bug as
+      arithmetic over the four card heights — 60/76/148/186 all land the closed × within 61pt of a
+      tile, TASK for the collapsed bar — and the open × at rest for each.)*
+- [x] A PIN (it passes on today's tree; mutation-check it both ways): every `CaptureFan.slots`
       centre is ≥ 61pt from the resting × centre, so a future arc or lift change cannot silently
-      put a tile under the ×.
-- [ ] `RootBottomOverlayCallSiteTests`: the overlay passes `fanIsOpen: isFabOpen` to the Layout; the
-      Layout passes `fanIsOpen` into `frames`; the reversed fade guard.
-- [ ] `FanOverAwayCardUITests` reversed as above. **Fails on the unfixed tree, passes on the fix.**
-- [ ] Red-check by reverting the Layout after the commit; count the failures; restore with
-      `git checkout --`.
-- [ ] Evidence folder with a README: portrait fan open over a card, before and after.
-- [ ] SwiftLint 0, suite green, sim build green, all pasted. Verified paths line. **RM-on device pass
+      put a tile under the ×. *(Both fans, portrait and landscape. `CaptureFan.tileDiameter` named so
+      the pin reads a production number. Mutation: TASK `fromBottom` 207 → 170 fails it at 40.1pt.)*
+- [x] `RootBottomOverlayCallSiteTests`: the overlay passes `fanIsOpen: isFabOpen` to the Layout; the
+      Layout passes `fanIsOpen` into `frames`; the reversed fade guard. *(Plus two the spec missed:
+      the container's `.animation(value: isFabOpen)` — the scrim and tile pick set `isFabOpen` bare,
+      so without it the × SNAPS back up — and the disc row's `.zIndex(1)`, whose effect inside a
+      custom `Layout` is proved by render in `RootBottomOverlayDrawOrderTests`, with a control.)*
+- [x] `FanOverAwayCardUITests` reversed as above. **Fails on the unfixed tree, passes on the fix.**
+      *(RED: "the × (centre (348, 505)) sits on the PHOTO tile, 35.3pt apart". GREEN: × at y 680–740.
+      Plus `SprintBarFurnitureUITests`, the Tasks look as an assertion, with a seeded PAUSED sprint:
+      wiring cut → "sits on the TASK tile, 9.49pt apart" (E's frame 19: 9pt); fixed → the search row
+      and the × drop together 612 → 680 and return.)*
+- [x] Red-check by reverting the Layout after the commit; count the failures; restore with
+      `git checkout --`. *(Mutation A, the fan ignored everywhere: exactly the 6 predicted cases.
+      Mutation B, the disc always at rest: exactly the 2 predicted. Restore proven by a green run.)*
+- [x] Evidence folder with a README: portrait fan open over a card, before and after.
+      *(`screenshots/fan-x-at-rest/`, incl. 15 fps crops showing a real tween with the × in front.)*
+- [x] SwiftLint 0, suite green, sim build green, all pasted. Verified paths line. **RM-on device pass
       owed** (with E's one set of looks at the end).
 
 ### FEATURE: F-CollapsedBarLift — the collapsed sprint bar stops dropping onto the tab bar  [ ] OPEN
