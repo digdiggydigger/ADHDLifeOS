@@ -82,25 +82,52 @@ final class FocusBarCollapseCallSiteTests: XCTestCase {
         )
     }
 
-    func testTheFlushDropUsesAnOffsetNotNegativePadding() throws {
+    /// **REVERSED 2026-09-17 by E — `F-CollapsedBarLift`** (it was
+    /// `testTheFlushDropUsesAnOffsetNotNegativePadding`). It required `.offset(y:
+    /// FocusBarMetrics.collapsedOffsetY)`, which dropped the collapsed card 32pt onto the tab bar,
+    /// and its message said *"E reversed the corners and not the flush landing"*. On 2026-09-17 E
+    /// reversed the landing too: *"Line up with the Disc, But when there are multiple cards being
+    /// displayed, then maintain the alignment"* — portrait and landscape.
+    ///
+    /// The card is now laid out exactly where its layout frame is — the disc's line — so ANY
+    /// vertical offset on it is the drop coming back, whatever it is named, and so is negative
+    /// bottom padding (which would also drag the disc and the search row down with it).
+    func testTheCollapsedCardIsNotDroppedOffItsLayoutLine() throws {
         let source = try Self.appCode("Focus/FocusTimerBar.swift")
-        XCTAssertTrue(
-            source.contains("FocusBarMetrics.collapsedOffsetY"),
-            "Nothing drops the collapsed card onto the tab bar, so it floats 32pt above it. The"
-                + " corners are ROUNDED since `F-FocusCard-Corners` and the drop still stands —"
-                + " E reversed the corners and not the flush landing."
-        )
-        XCTAssertTrue(
+        XCTAssertFalse(
             source.contains(".offset(y:"),
-            "`FocusTimerBar` is the LAST child of `RootBottomOverlay`'s VStack, which pads its own"
-                + " bottom by `bottomFurnitureLift`. Negative bottom padding here SHRINKS that"
-                + " stack and drags the search row and the capture disc down 32pt with it."
-                + " `.offset` moves rendering and hit-testing without touching layout."
+            "Something offsets the timer bar vertically again. The collapsed card belongs on the"
+                + " disc's line, 32pt above the tab bar — E reversed the flush drop on 2026-09-17."
+        )
+        XCTAssertFalse(
+            source.contains("collapsedOffsetY"),
+            "The flush drop's offset is wired back into the timer bar."
         )
         XCTAssertFalse(
             source.contains(".padding(.bottom, -"),
-            "Negative bottom padding is back — see above; it moves the search row and the disc too."
+            "Negative bottom padding is on the timer bar — it would drop the card and drag the disc down."
         )
+    }
+
+    /// The bottom keyline's return is a consequence of the same call: E removed the run on
+    /// 2026-09-09 only because the card sat ON the bar (*"REMOVE the bottom border on the collapsed
+    /// card tab"*). With no join the card is outlined on all four sides in both states, by
+    /// `strokeBorder` on the SAME shape the fill uses — so the open-path `FocusBarCardBorder`, which
+    /// existed only to leave that run out, is deleted rather than kept with a flag always `false`.
+    func testTheCardsKeylineIsItsOwnShapeClosedInBothStates() throws {
+        let source = try Self.appCode("Focus/FocusTimerBar.swift")
+        XCTAssertTrue(
+            source.contains("cardShape.strokeBorder("),
+            "The card's keyline is not `strokeBorder` on the card's own shape, so the fill and the"
+                + " outline can disagree about the corner."
+        )
+        let shapes = try Self.appCode("Focus/FocusBarCollapse.swift")
+        for leftover in ["struct FocusBarCardBorder", "omitsBottomEdge"] {
+            XCTAssertFalse(
+                source.contains(leftover) || shapes.contains(leftover),
+                "`\(leftover)` survives. It existed only to omit the collapsed card's bottom run."
+            )
+        }
     }
 
     // MARK: - The long-press door, and the orphan guard
