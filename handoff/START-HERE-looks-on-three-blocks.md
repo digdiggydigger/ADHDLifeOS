@@ -27,11 +27,16 @@ baseline or journey.
    rides down with it).
 2. The collapsed bar's new margin — portrait AND landscape, alone and under a Confirm card — with its
    bottom keyline back.
-3. The celebration hold: a celebration asked for WHILE the fan is open waits. **E narrowed this: one
-   already playing when the fan opens keeps playing** — so the look is "nothing changed for a
-   Confirm then open the fan", which is by design.
-4. **The × move with Reduce Motion ON** — block 1's reduced path (no animation, the cards still fade).
-   Only when E toggles and says so may a report write "Reduced: … + E's phone (RM on)".
+3. **The celebration hold has NO ordinary device look, and E was told so.** A sprint ending raises a
+   Confirm CARD, not a celebration; the celebration fires on the Confirm tap, which cannot happen under
+   the fan. The only requests that can fire while the fan is open are the daily goal or the 7-day
+   streak landing from a background change. E narrowed the block to exactly that ("Only hold new
+   requests"), so a Confirm then opening the fan still plays over it BY DESIGN. It is pinned by 13
+   tests; a look is optional (goal one close away, fan open, close a task from outside the app).
+4. **Reduce Motion ON** — block 1's reduced path: the × JUMPS to its corner (§7.2 re-layout, by
+   design) and the cards must still FADE, not cut. The container's `nil` animation wraps the cards'
+   own `.default` fade; inner should win, but no RM render proved it — so the fade is the regression
+   check. Only when E toggles and says so may a report write "Reduced: … + E's phone (RM on)".
 
 Record E's verdicts in the register and the two evidence READMEs. A FAIL becomes a block in TODO,
 built in a fresh session unless E says otherwise.
