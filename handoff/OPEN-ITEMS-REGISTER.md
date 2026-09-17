@@ -576,7 +576,19 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       an unresolved notification such as a completed sprint"*). With the finished sprint's Confirm card
       up, the × sits at (339, 604), 84pt up and 7pt from TASK, and does not move while the fan opens.
       Landscape is clear. The cause is any card pushing the disc, not the notification: frame 19 showed
-      the same with a running sprint's bar. Frame 08's observation (the pushed-up disc over the hero's *Start another
+      the same with a running sprint's bar.
+      **E's CALLS, 2026-09-17 ~06:00 — four answers, three of them new work:**
+      - **The ×: shape B** — the × drops to its resting corner while the fan is open. TO BUILD.
+      - **A celebration that fires while the fan is open WAITS until the fan closes.** TO BUILD.
+      - **`F-FanCardsFade` PASSED ON DEVICE with Reduce Motion OFF and ON** (E: *"Right, Reduce Motion
+        OFF and ON"*). Verified paths: full run on sim + E's phone (RM off); reduced run on sim
+        (injected) + E's phone (RM on).
+      - **Landscape: NOT passed as it stands.** E: *"it needs to have some margin space added BELOW the
+        card bottom-left AND ABOVE the NAV tab menu bar."* Measured on E's frames: the expanded card
+        already sits 33pt above the bar, and the COLLAPSED bar sits on it (~1pt, the flush drop). Asked
+        which card, where and how much, E chose: **the collapsed bar; portrait TOO** (this REVERSES the
+        2026-09-09 flush drop that `F-FocusCard-Corners` kept); **"Line up with the Disc, but when there
+        are multiple cards being displayed, then maintain the alignment."** TO BUILD. Frame 08's observation (the pushed-up disc over the hero's *Start another
       session*) is unchanged and still only an observation. (CLOSED; two looks owed)
 
 - [x] ~~**The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
