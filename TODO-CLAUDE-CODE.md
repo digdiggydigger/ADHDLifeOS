@@ -4507,7 +4507,7 @@ the disc (radius 30) need 61pt. Every slot clears.
 - [x] SwiftLint 0, suite green, sim build green, all pasted. Verified paths line. **RM-on device pass
       owed** (with E's one set of looks at the end).
 
-### FEATURE: F-CollapsedBarLift — the collapsed sprint bar stops dropping onto the tab bar  [ ] OPEN
+### FEATURE: F-CollapsedBarLift — the collapsed sprint bar stops dropping onto the tab bar  [x] COMPLETED 2026-09-17
 
 **E's call, three answers, verbatim (2026-09-17):**
 1. Landscape verdict: *"I think at this point, it needs to have some margin space added BELOW The
@@ -4555,14 +4555,24 @@ Read each test's doc comment before rewriting: several carry E's words, and thos
 "reversed 2026-09-17" note, not a silent edit.
 
 **Acceptance criteria**
-- [ ] RED first: the collapsed bar's bottom lift equals the expanded card's (the disc's line); the
+- [x] RED first: the collapsed bar's bottom lift equals the expanded card's (the disc's line); the
       outline is closed in both states; a call-site guard that `FocusTimerBar` applies no collapse
       offset.
-- [ ] The pinning tests above reversed, with their E quotes kept and annotated.
-- [ ] Rendered evidence in BOTH orientations, collapsed bar alone AND with a Confirm card above it:
+- [x] The pinning tests above reversed, with their E quotes kept and annotated. *(RED: 4 compile
+      errors on `FocusBarMetrics.bottomLift`. Reversed in place, names too: flush → on the disc's line;
+      flush in both bar states → the margin in both bar states; the drop's sign → the drop's metrics are
+      gone; no bottom keyline → keyline back; radius-0 no run → radius-0 closes; the offset guard → no
+      vertical offset or negative padding. Plus a keyline guard: `cardShape.strokeBorder(` and no
+      `FocusBarCardBorder`/`omitsBottomEdge` left. `FocusBarCardBorder` deleted; three drop metrics
+      reduced to `FocusBarMetrics.bottomLift`.)*
+- [x] Rendered evidence in BOTH orientations, collapsed bar alone AND with a Confirm card above it:
       the before/after gap, measured, in a README.
-- [ ] Red-check (restore the offset → the new tests fail, count them); restore.
-- [ ] SwiftLint 0, suite green, build green, pasted. RM: the collapse animation's
+- [x] Red-check (restore the offset → the new tests fail, count them); restore. *(Offset + metric +
+      an open `stroke`: exactly the 3 predicted cases, 4 assertions. Restore proven 3,040 / 0. And the
+      journeys, RED on `main` @ `ad4f3ee`: bar 32pt off the disc's line and 0pt above the tab bar in
+      both orientations, alone and under a Confirm card; GREEN: 0 and 32, Confirm button → bar 56 → 24.
+      `screenshots/collapsed-bar-lift/`.)*
+- [x] SwiftLint 0, suite green, build green, pasted. RM: the collapse animation's
       `reduceMotion ? nil` is untouched (height and position re-layout). If it is touched, the RM-on
       pass is owed. Say which in the report.
 

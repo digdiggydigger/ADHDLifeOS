@@ -18,8 +18,9 @@ import SwiftUI
 /// `FocusTimerBarContent`. Expanded, it is the 16pt-inset card above with all four controls.
 /// Collapsed, it keeps the SAME 16pt inset — so collapsing changes height only, never width —
 /// and sits narrower than the tab bar below it (E's 2026-09-09 reversal of the original
-/// full-bleed call), with rounded TOP corners only, dropped flush onto the tab bar, carrying
-/// exactly the ring, the sprint name and Pause. Every sprint starts expanded, and **collapse is
+/// full-bleed call), rounded on all four corners (`F-FocusCard-Corners`) and — since E reversed the
+/// flush drop on 2026-09-17 — on the disc's line, 32pt above the tab bar, carrying exactly the
+/// ring, the sprint name and Pause. Every sprint starts expanded, and **collapse is
 /// cleared only by the Confirm button (F-FocusCard-2), and since F-FocusCard-3 only when no
 /// sprint is running** — never by a tab switch, backgrounding or a relaunch, which is E's stated
 /// requirement. A sprint that finishes naturally raises `FocusCompletionCard` ABOVE this bar
@@ -85,26 +86,23 @@ struct FocusTimerBar: View {
             // and pushed the expanded card from 148pt to 161pt.
             .overlay(alignment: .top) { grabber }
             .background(.regularMaterial, in: cardShape)
-            .overlay(
-                FocusBarCardBorder(
-                    cornerRadius: FocusBarMetrics.cornerRadius,
-                    bottomCornerRadius: isCollapsed
-                        ? FocusBarMetrics.collapsedBottomCornerRadius
-                        : FocusBarMetrics.cornerRadius,
-                    omitsBottomEdge: isCollapsed
-                )
-                .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
-            )
+            // The keyline closes in BOTH states since `F-CollapsedBarLift` (E, 2026-09-17). E removed
+            // the collapsed card's bottom run on 2026-09-09 only because the card sat ON the tab bar,
+            // where a hairline at the join read as a seam; floating 32pt above it, an outline open at
+            // the bottom reads unfinished. `strokeBorder` on the fill's own shape, so the two cannot
+            // disagree about the corner.
+            .overlay(cardShape.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
             // Tap-anywhere is one of the four affordances E chose, so the whole card — including
             // the slack between its controls — has to be hit-testable. Child buttons still win
             // their own taps; this only catches what they do not.
             .contentShape(Rectangle())
             .padding(.horizontal, isCollapsed ? FocusBarMetrics.collapsedInset : FocusBarMetrics.expandedInset)
-            // The flush drop. `.offset` and NOT negative bottom padding: this view is the LAST
-            // child of `RootBottomOverlay`'s VStack, and negative padding there would shrink the
-            // stack and drag the search row and the capture disc down 32pt with it.
-            .offset(y: isCollapsed ? FocusBarMetrics.collapsedOffsetY : 0)
+            // **No drop, in either state (`F-CollapsedBarLift`, E's call 2026-09-17).** The collapsed
+            // card used to be `.offset` 32pt down onto the tab bar — E's 2026-09-09 flush drop. E
+            // reversed it in portrait AND landscape: *"Line up with the Disc, But when there are
+            // multiple cards being displayed, then maintain the alignment."* The card's layout
+            // frame was always on the disc's line, so drawing it where it is laid out does both.
             // **E's gesture model, 2026-09-09.** A tap opens the full sprint view in BOTH states —
             // one meaning, nothing to remember — and the long-press that used to do it is retired
             // rather than left as a hidden duplicate. Collapsing and expanding are the swipe and

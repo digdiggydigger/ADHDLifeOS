@@ -3,7 +3,7 @@
 //  ADHD LifeOSTests
 //
 //  F-FocusCard-1. The collapsible sprint card's pure maths — the swipe's direction rule, the
-//  card's top-only rounding, and the flush-drop geometry — plus the collapse flag's round trip
+//  card's shape (top-only rounding until E's "Round them"), and the collapse flag's round trip
 //  through `FocusSprintPersisting`.
 //
 //  Written before the implementation (`claudecode.md`). Each test's failure message says what a
