@@ -4576,7 +4576,19 @@ Read each test's doc comment before rewriting: several carry E's words, and thos
       `reduceMotion ? nil` is untouched (height and position re-layout). If it is touched, the RM-on
       pass is owed. Say which in the report.
 
-### FEATURE: F-FanHoldsCelebration — a full-screen celebration waits while the capture fan is open  [ ] OPEN
+### FEATURE: F-FanHoldsCelebration — a full-screen celebration waits while the capture fan is open  [x] COMPLETED 2026-09-17
+
+> **E NARROWED THIS BLOCK in the build session, 2026-09-17, and the two answers govern it.** Frame 20
+> (`IMG_8521`) was NOT a request made while the fan was open: its fireworks are a stack-clearing
+> Confirm (`CelebrationLayer` draws fireworks only for `clearedStack`), the only Confirm caller is the
+> card's button (not hittable under the fan), and the × sat at rest (no card up). E confirmed it: the
+> screenshot was taken after E had confirmed the sprint, so the celebration was ALREADY PLAYING when
+> the fan opened. Walked through today / replay-after-close / hold-new-only, **E chose "Only hold new
+> requests"** — a celebration already playing keeps playing over the fan, exactly as in that frame —
+> and **"Same 60s rule"** for waiting behind the fan. So this block changes what a celebration ASKED
+> FOR while the fan is open does; in practice that is the daily goal or the 7-day streak landing in
+> the background (a Confirm cannot be tapped under the fan).
+
 
 **The evidence (frame 20, `IMG_8521`):** a 30-second sprint ended while the fan was open, and a
 full-screen celebration (fireworks and confetti) played OVER the open fan, dimming the tiles.
@@ -4599,13 +4611,19 @@ by `-Surfaces` (`outcome == .fullScreen`), which E chose then. Keep that, and sa
 request fired in frame 20 and confirm it resolves `.fullScreen`.
 
 **Acceptance criteria**
-- [ ] `CelebrationCenter` unit tests, RED first: fan open → a full-screen request is held; fan closes
+- [x] `CelebrationCenter` unit tests, RED first: fan open → a full-screen request is held; fan closes
       → the next hold-watch tick plays it; a pop is not held; fan open AND closed with nothing held →
       nothing plays.
-- [ ] A call-site guard that `RootView` feeds `isFabOpen` to the centre (without it, a perfect centre
+- [x] A call-site guard that `RootView` feeds `isFabOpen` to the centre (without it, a perfect centre
       holds nothing: the dead-component pattern).
-- [ ] Red-check; restore.
-- [ ] SwiftLint 0, suite green, build green, pasted. No reduced site touched, so no RM-on pass owed.
+- [x] Red-check; restore. *(RED: 16 compile errors. Mutation A, the fan ignored in the predicate
+      and the wiring: exactly the 8 predicted cases. Mutation B, the "replay" shape E rejected (cut
+      playing bursts on open): exactly the 1 predicted — the pin on E's choice. Restore proven
+      3,053 / 0. `CelebrationCaptureFanHoldTests` (10) + `CelebrationCaptureFanCallSiteTests` (3).
+      The composer gap is closed by construction: `RootView` reports `isFabOpen || composerKind !=
+      nil`, so the flag never reads clear before UIKit presents the composer; frame 20's request was
+      a stack-clearing Confirm, which resolves `.fullScreen`; pops stay unheld.)*
+- [x] SwiftLint 0, suite green, build green, pasted. No reduced site touched, so no RM-on pass owed.
       Say why.
 
 **After all three:** ONE device install (`device-build-lag` recipe). **The phone's profile expires 2026-09-17T19:25:02Z (20:25 BST).** After that the

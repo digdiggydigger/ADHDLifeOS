@@ -35,6 +35,9 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
 
     /// Presented surfaces, innermost last. The root is the base and is never on it.
     private var presented: [CelebrationSurface] = []
+    /// Whether the capture fan — or the composer a tile opened from it — is up (`F-FanHoldsCelebration`).
+    /// Told by `RootView`, because the fan is a SwiftUI overlay: no UIKit probe can see it.
+    private(set) var captureIsOpen = false
     /// One counter for every burst, whatever kind: SwiftUI ids and confetti seeds can then never
     /// collide between a pop and a Confirm.
     private var ordinal = 0
@@ -88,6 +91,11 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     ///
     /// - A tracked surface that closes ITSELF (the Create Task sheet). A 5.4 s celebration on its
     ///   layer is cut off a fraction of a second in.
+    /// - The capture fan (`F-FanHoldsCelebration`, E's call 2026-09-17: *"Wait until the fan
+    ///   closes"*). It is an overlay in `RootView`, not a presentation, so the probe below cannot see
+    ///   it and `RootView` reports it instead. **Only NEW requests wait** — E chose that over cutting
+    ///   and replaying one already playing when the fan opens, so opening the fan changes nothing
+    ///   that is already on screen.
     /// - Anything the centre was never told about at all. Four surfaces call `surfacePresented`;
     ///   the tree holds 26 `.sheet` / `.fullScreenCover` call sites, so `frontmost` reads `.root`
     ///   under Quick Capture, Settings, the Journal composer and twenty more — and iOS hands the
@@ -103,7 +111,7 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
     private var isBlocked: Bool {
         if frontmost.dismissesItself { return true }
         guard frontmost == .root else { return false }
-        return probe.isAnythingPresented
+        return captureIsOpen || probe.isAnythingPresented
     }
 
     /// The bursts one layer should draw.
@@ -179,6 +187,16 @@ final class CelebrationCenter: ObservableObject, CelebrationRequesting {
         guard surface != .root else { return }
         presented.removeAll { $0 == surface }
         presented.append(surface)
+    }
+
+    /// `RootView` reports the capture fan opening and closing — the fan, or the composer one of its
+    /// tiles opened, so the flag never reads clear in the run loop or two before UIKit presents that
+    /// composer. Opening only holds what is asked for from now on (E: "Only hold new requests");
+    /// closing releases at once rather than on the next tick of the watch, over whatever is then in
+    /// front, and R-g's sixty seconds apply exactly as they do behind a sheet (E: "Same 60s rule").
+    func captureChanged(isOpen: Bool) {
+        captureIsOpen = isOpen
+        if !isOpen { releaseHeldIfClear() }
     }
 
     /// Called from each presenter's `onDismiss` — never from the layer's `onDisappear`, which

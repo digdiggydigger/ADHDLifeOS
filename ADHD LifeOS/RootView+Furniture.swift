@@ -30,6 +30,15 @@ extension RootView {
         discScrollActivity.prefersPill && !isFabOpen
     }
 
+    /// **Whether a full-screen celebration should wait** (`F-FanHoldsCelebration`): the capture fan is
+    /// open, OR a composer one of its tiles opened is. Picking a tile sets `isFabOpen = false` and
+    /// `composerKind` in the same update, and UIKit presents the composer a run loop or two later;
+    /// fed by `isFabOpen` alone, the centre would read clear in between and its hold watch could
+    /// release a celebration under the rising composer. With the OR the flag stays up into the
+    /// composer, and drops only when it is gone. A composer opened by a widget door holds too, which
+    /// the probe would have done anyway.
+    var capturesHoldCelebrations: Bool { isFabOpen || composerKind != nil }
+
     /// The tab badge's one writer. A failure leaves the previous number standing rather than
     /// dropping to zero: an offline moment is not an empty inbox.
     func refreshCaptureInboxCount() async {
