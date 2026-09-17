@@ -42,11 +42,12 @@ SwiftLint **0 / 819**, `** BUILD SUCCEEDED **` (**37 distinct warnings**, the Ph
 coverage **27.67% (13,399/48,433)** — numerator +43 on a denominator +76 (the layout file and the
 overlay's new lines), i.e. comparable and the new code is covered. `LandscapeAwayCardUITests`
 **PASSED on 26.5 light and 27.0 dark** (both sims erased after). `firestore.rules` untouched —
-**nothing for E to republish**. **The phone is ON MAIN at `5c322e5`** (Swift identical to `7e85ec6`): E connected it after the
-close-out report, and the device build, `devicectl` install and launch all succeeded in one pass
-(0 signing tells in the log, `codesign --verify --deep --strict` exit 0, profile valid to
-**2026-09-17T19:25:02Z — it expires TONIGHT**, so the app needs a reinstall after that). **The
-fix IS on E's phone; the landscape verdict can be given.**
+**nothing for E to republish**. **The phone is ON MAIN at `9eb5198`** — all three of the day's blocks (`F-LandscapeFabOverlap`,
+`F-TabBarPillInset`, `F-FanCardsFade`): device build, `devicectl` install clean (0 signing tells,
+`codesign --verify --deep --strict` exit 0); the LAUNCH was denied for `Locked` — the known
+"install is real, unlock and open" case, so **E opens it by hand**. Profile valid to
+**2026-09-17T19:25:02Z — it expires TONIGHT**; after that the app needs a rebuild + reinstall
+before it will open. **Three looks are owed on that build — see §B's first three items.**
 
 **`main` @ PR #131 — Phase D landed** (`4e4ec1c` was the baseline). Measured for Phase D on
 2026-09-15 (Xcode 27.0, iOS 26.5 runtime, emulator UP): suite **3,011 / 0**, **0** `127.0.0.1:9099`
@@ -552,7 +553,14 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       the top edge; the arc still leans out of the resting corner, which is where it always has.
       A separate question for E if that reads wrong once the cards are gone. **Owed: E's look on
       the phone with Reduce Motion OFF and then ON** (this block adds a reduced site — §7.3), and
-      the verdict. Frame 08's observation (the pushed-up disc over the hero's *Start another
+      the verdict. **And the remainder the fade exposes, now concrete (frame 14): with the card
+      pushing the disc up in portrait, the × sits ON the PHOTO tile** (centres 34pt apart) —
+      the same overlap E's frame 8508 showed before the fade, because the arc leans out of the
+      RESTING corner while the × is ~200pt higher. Two shapes for E: re-anchor the arc to the
+      ×'s real centre (works with one card; with the away card AND a Confirm stack the top tile
+      would clip off the top edge, so it needs a cap), or let the × drop to its corner while the
+      fan is open (the cards are invisible then anyway; the × moves under the thumb as the fan
+      opens, which is the cost). Not built; E's call. Frame 08's observation (the pushed-up disc over the hero's *Start another
       session*) is unchanged and still only an observation. (CLOSED; two looks owed)
 
 - [x] ~~**The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
