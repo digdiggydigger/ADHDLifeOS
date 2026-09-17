@@ -27,6 +27,11 @@ enum CaptureFan {
         let label: String
     }
 
+    /// Each tile's diameter. Named since `F-FanXAtRest`, because a rule reads it now: a tile and
+    /// the resting capture disc overlap when their centres are nearer than half of this plus half
+    /// the disc, and `RootBottomOverlayLayoutTests` pins every slot clear of that.
+    static let tileDiameter: CGFloat = 62
+
     /// Top of the arc first (Note) down to the nearest disc (Task) — v3's draw order.
     static let slots: [Slot] = [
         Slot(kind: .note, fromTrailing: 57, fromBottom: 519, appearanceDelay: 0.16,

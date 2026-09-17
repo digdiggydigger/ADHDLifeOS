@@ -87,13 +87,20 @@ struct RootBottomOverlay: View {
         // ONE container whose arrangement is a property, never a `switch` between a `VStack` and
         // an `HStack`: two container types would give the timer bar two identities, and its
         // detail sheet — `@State` on that view — would be dismissed by a rotation.
-        RootBottomOverlayArrangement(arrangement: arrangement) {
+        // F-FanXAtRest (E's shape B, 2026-09-17): while the fan is open the Layout drops the disc
+        // row — the ×, and on Tasks the search row beside it — to its resting corner, so it can
+        // never sit on a tile. See `RootBottomOverlayLayout.frames`.
+        RootBottomOverlayArrangement(arrangement: arrangement, fanIsOpen: isFabOpen) {
             discRow
+                // In FRONT of the cards: the × drops into the space they still hold, and they are
+                // subview 1, drawn over it. Without this it passes behind a half-faded card — and
+                // under Reduce Motion it jumps there at once and sits behind the whole fade.
+                .zIndex(1)
             cards
                 // F-FanCardsFade (E's call, 2026-09-17): while the fan is open the cards fade out
-                // and stop taking touches, but KEEP their layout — an opacity, never an `if` —
-                // so the disc, now the fan's ×, stays where the + was. Reduce Motion gets the
-                // same fade on a plain ease (§5's one exception): the geometry never moves.
+                // and stop taking touches, but KEEP their layout — an opacity, never an `if` — so
+                // the timer bar keeps its detail sheet and Stop confirmation (both `@State` on
+                // it). Reduce Motion gets the same fade on a plain ease (§5's one exception).
                 .opacity(fanPresence.opacity)
                 .allowsHitTesting(fanPresence.acceptsTouches)
                 .animation(
@@ -103,6 +110,15 @@ struct RootBottomOverlay: View {
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
         .padding(.bottom, Self.bottomPadding)
+        // F-FanXAtRest: the × travels on the fan's own spring WHICHEVER way the fan opens or
+        // closes. The disc's button toggles inside a `withAnimation`, but RootView's scrim and
+        // tile pick set `isFabOpen` bare, and without this the × would snap 68–194pt back up on a
+        // scrim dismissal. `nil` under Reduce Motion is §7.2's continuous re-layout, the same
+        // reading as the push below when a sprint starts; the cards keep their own fade above.
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+            value: isFabOpen
+        )
         .animation(
             reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
             value: focusService.isActive

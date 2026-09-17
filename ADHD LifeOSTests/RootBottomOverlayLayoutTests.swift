@@ -71,7 +71,9 @@ final class RootBottomOverlayLayoutTests: XCTestCase {
         let beside = RootBottomOverlayLayout.size(.besideTheDisc, width: width, discRow: discRow, cards: awayCard)
         // Bottom-aligned inside the room, as the overlay places it.
         let bounds = CGRect(x: 0, y: room - beside.height, width: width, height: beside.height)
-        let frames = RootBottomOverlayLayout.frames(.besideTheDisc, in: bounds, discRow: discRow, cards: awayCard)
+        let frames = RootBottomOverlayLayout.frames(
+            .besideTheDisc, in: bounds, discRow: discRow, cards: awayCard, fanIsOpen: false
+        )
         XCTAssertEqual(
             frames.discRow.minY, room - CaptureDiscMetrics.discDiameter,
             "Side by side, the disc is not at its resting position — something is still pushing it."
@@ -116,14 +118,15 @@ final class RootBottomOverlayLayoutTests: XCTestCase {
     /// The stacked arrangement is the `VStack(alignment: .trailing, spacing: 8)` E's position
     /// review settled, expressed as frames: the disc row on top, trailing-aligned, the cards
     /// below it, the grid gap between. **`discRow.maxY <= cards.minY` is the invariant** — the
-    /// disc above the cards, never under them.
+    /// disc above the cards, never under them — **while the fan is closed.** With it open the ×
+    /// drops into the invisible cards' space on purpose (`F-FanXAtRest`, tested below).
     func testStackedPutsTheDiscRowAboveTheCardsTrailingAlignedWithTheGridGapBetween() {
         let cards = CGSize(width: 393, height: 186)
         let size = RootBottomOverlayLayout.size(.stacked, width: 393, discRow: discRow, cards: cards)
         XCTAssertEqual(size, CGSize(width: 393, height: 60 + RootBottomOverlayLayout.spacing + 186))
 
         let frames = RootBottomOverlayLayout.frames(
-            .stacked, in: CGRect(origin: .zero, size: size), discRow: discRow, cards: cards
+            .stacked, in: CGRect(origin: .zero, size: size), discRow: discRow, cards: cards, fanIsOpen: false
         )
         XCTAssertEqual(frames.discRow, CGRect(x: 393 - 100, y: 0, width: 100, height: 60))
         XCTAssertEqual(frames.cards, CGRect(x: 0, y: 60 + RootBottomOverlayLayout.spacing, width: 393, height: 186))
@@ -142,7 +145,7 @@ final class RootBottomOverlayLayoutTests: XCTestCase {
         XCTAssertEqual(size.height, CaptureDiscMetrics.discDiameter)
 
         let frames = RootBottomOverlayLayout.frames(
-            .stacked, in: CGRect(origin: .zero, size: size), discRow: discRow, cards: none
+            .stacked, in: CGRect(origin: .zero, size: size), discRow: discRow, cards: none, fanIsOpen: false
         )
         XCTAssertEqual(frames.discRow, CGRect(x: 393 - 100, y: 0, width: 100, height: 60))
     }
@@ -164,7 +167,7 @@ final class RootBottomOverlayLayoutTests: XCTestCase {
         XCTAssertEqual(size, CGSize(width: width, height: 186), "Side by side, the height is the taller piece.")
 
         let frames = RootBottomOverlayLayout.frames(
-            .besideTheDisc, in: CGRect(origin: .zero, size: size), discRow: discRow, cards: cards
+            .besideTheDisc, in: CGRect(origin: .zero, size: size), discRow: discRow, cards: cards, fanIsOpen: false
         )
         XCTAssertEqual(frames.discRow, CGRect(x: width - 100, y: 186 - 60, width: 100, height: 60))
         XCTAssertEqual(frames.cards, CGRect(x: 0, y: 0, width: width - 100, height: 186))
@@ -179,7 +182,7 @@ final class RootBottomOverlayLayoutTests: XCTestCase {
         XCTAssertEqual(size.height, CaptureDiscMetrics.discDiameter)
 
         let frames = RootBottomOverlayLayout.frames(
-            .besideTheDisc, in: CGRect(origin: .zero, size: size), discRow: discRow, cards: cards
+            .besideTheDisc, in: CGRect(origin: .zero, size: size), discRow: discRow, cards: cards, fanIsOpen: false
         )
         XCTAssertEqual(frames.cards.maxY, frames.discRow.maxY, "The two pieces do not share a bottom line.")
         XCTAssertEqual(frames.cards.minY, 20)
@@ -202,6 +205,132 @@ final class RootBottomOverlayLayoutTests: XCTestCase {
         let presence = RootBottomOverlayLayout.cardsPresence(fanIsOpen: false)
         XCTAssertEqual(presence.opacity, 1)
         XCTAssertTrue(presence.acceptsTouches)
+    }
+
+    // MARK: - The × while the fan is open (F-FanXAtRest)
+
+    /// The resting ×'s centre, from the safe area's bottom-trailing corner — the corner both the
+    /// fan's `GeometryReader` and this overlay measure from. 54 across (the 24pt margin and half
+    /// the disc), 130 up (the 100pt lift and half the disc); E's phone put it at y 688 on an
+    /// 818pt safe bottom, which is 130.
+    private static let restingX = CGPoint(
+        x: CaptureDiscMetrics.edgeMargin + CaptureDiscMetrics.discDiameter / 2,
+        y: AppSearchRowMetrics.bottomFurnitureLift + CaptureDiscMetrics.discDiameter / 2
+    )
+
+    /// A tile and the disc overlap when their centres are nearer than their two radii.
+    private static let clearance = CaptureFan.tileDiameter / 2 + CaptureDiscMetrics.discDiameter / 2
+
+    /// Where the × actually is, in the fan's corner-offset convention, for a stacked column of
+    /// `cardsHeight` — laid out the way the overlay lays it out: bottom-aligned, lifted by
+    /// `bottomFurnitureLift`.
+    private func xCentre(cardsHeight: CGFloat, fanIsOpen: Bool) -> CGPoint {
+        let cards = CGSize(width: 393, height: cardsHeight)
+        let size = RootBottomOverlayLayout.size(.stacked, width: 393, discRow: discRow, cards: cards)
+        let bounds = CGRect(origin: .zero, size: size)
+        let frames = RootBottomOverlayLayout.frames(
+            .stacked, in: bounds, discRow: discRow, cards: cards, fanIsOpen: fanIsOpen
+        )
+        return CGPoint(
+            x: bounds.maxX - frames.discRow.maxX + CaptureDiscMetrics.edgeMargin + CaptureDiscMetrics.discDiameter / 2,
+            y: AppSearchRowMetrics.bottomFurnitureLift + bounds.maxY - frames.discRow.midY
+        )
+    }
+
+    private static func nearestTile(to point: CGPoint) -> (kind: CaptureKind, distance: CGFloat) {
+        CaptureFan.slots
+            .map { ($0.kind, hypot($0.fromTrailing - point.x, $0.fromBottom - point.y)) }
+            .min { $0.1 < $1.1 }!
+    }
+
+    /// **The bug, as arithmetic, and the fix in the same numbers.** E's frame 19 and GIF
+    /// (`screenshots/landscape-fab-overlap/19`, `21`): in portrait any card pushes the disc up by
+    /// its height plus the stack's gap, the tiles are placed from the RESTING corner, and the
+    /// tiles are 78pt apart — so wherever the push lands the ×, some tile is under it. The heights
+    /// are the ones the pushes were measured or derived from: the collapsed bar (60, pushing 68 —
+    /// TASK, 9pt, measured), a Confirm card (76, pushing 84 — TASK, 7pt, measured), the expanded
+    /// card (148) and the away card (186).
+    ///
+    /// E's call, shape B — *"× drops to its corner"*: with the fan open every one of them puts the
+    /// × back where it rests, clear of every tile.
+    func testWithAnyCardUpTheClosedStackPutsTheXOnATileAndTheOpenFanDoesNot() {
+        for height: CGFloat in [60, 76, 148, 186] {
+            let closed = Self.nearestTile(to: xCentre(cardsHeight: height, fanIsOpen: false))
+            XCTAssertLessThan(
+                closed.distance, Self.clearance,
+                "A \(height)pt card no longer pushes the × onto a tile. If the arc or the lift moved,"
+                    + " re-measure before deciding the rule below is still needed."
+            )
+            let open = xCentre(cardsHeight: height, fanIsOpen: true)
+            XCTAssertEqual(open, Self.restingX, "Fan open over a \(height)pt card: the × is not at its resting corner.")
+            XCTAssertGreaterThanOrEqual(
+                Self.nearestTile(to: open).distance, Self.clearance,
+                "Fan open over a \(height)pt card: the × still sits on \(Self.nearestTile(to: open).kind)."
+            )
+        }
+        XCTAssertEqual(
+            Self.nearestTile(to: xCentre(cardsHeight: 60, fanIsOpen: false)).kind, .task,
+            "E's frame 19: the collapsed sprint bar put the × on TASK."
+        )
+    }
+
+    /// The pure rule: fan open, stacked, with cards up — the disc row moves to the bottom line and
+    /// the cards stay exactly where they were. They are invisible then, but they keep their space,
+    /// so nothing else on screen reflows.
+    func testStackedWithCardsAndTheFanOpenMovesOnlyTheDiscRowToTheBottomLine() {
+        let cards = CGSize(width: 393, height: 186)
+        let size = RootBottomOverlayLayout.size(.stacked, width: 393, discRow: discRow, cards: cards)
+        let bounds = CGRect(origin: .zero, size: size)
+        let closed = RootBottomOverlayLayout.frames(
+            .stacked, in: bounds, discRow: discRow, cards: cards, fanIsOpen: false
+        )
+        let open = RootBottomOverlayLayout.frames(
+            .stacked, in: bounds, discRow: discRow, cards: cards, fanIsOpen: true
+        )
+
+        XCTAssertEqual(open.discRow, CGRect(x: 393 - 100, y: bounds.maxY - 60, width: 100, height: 60))
+        XCTAssertEqual(open.discRow.maxY, closed.cards.maxY, "The × is not on the column's bottom line.")
+        XCTAssertEqual(open.cards, closed.cards, "Opening the fan moved the cards, so the column reflows.")
+    }
+
+    /// With nothing up the disc already rests on the bottom line, so opening the fan changes
+    /// nothing — the ordinary row must not jump on every screen.
+    func testStackedWithNothingUpIsTheSameWhetherTheFanIsOpenOrNot() {
+        let none = CGSize(width: 393, height: 0)
+        let size = RootBottomOverlayLayout.size(.stacked, width: 393, discRow: discRow, cards: none)
+        let bounds = CGRect(origin: .zero, size: size)
+        XCTAssertEqual(
+            RootBottomOverlayLayout.frames(.stacked, in: bounds, discRow: discRow, cards: none, fanIsOpen: true),
+            RootBottomOverlayLayout.frames(.stacked, in: bounds, discRow: discRow, cards: none, fanIsOpen: false)
+        )
+    }
+
+    /// Landscape already keeps the disc in its corner beside the cards (`F-LandscapeFabOverlap`),
+    /// which is why E's landscape frames never showed the collision. The fan changes nothing there.
+    func testBesideTheDiscIsTheSameWhetherTheFanIsOpenOrNot() {
+        let cards = CGSize(width: 634, height: 186)
+        let size = RootBottomOverlayLayout.size(.besideTheDisc, width: 734, discRow: discRow, cards: cards)
+        let bounds = CGRect(origin: .zero, size: size)
+        XCTAssertEqual(
+            RootBottomOverlayLayout.frames(.besideTheDisc, in: bounds, discRow: discRow, cards: cards, fanIsOpen: true),
+            RootBottomOverlayLayout.frames(.besideTheDisc, in: bounds, discRow: discRow, cards: cards, fanIsOpen: false)
+        )
+    }
+
+    /// **A PIN, and it passes on the tree it was written against.** Every tile, in BOTH fans, is
+    /// clear of the RESTING ×. Shape B is only a fix while that holds — so a later change to the
+    /// arc, the tile size, the lift or the disc cannot quietly put a tile back under the ×.
+    /// Portrait's nearest is TASK at 77pt; landscape's is TASK at ~170pt.
+    func testEveryTileInBothFansClearsTheRestingX() {
+        for (name, slots) in [("portrait", CaptureFan.slots), ("landscape", CaptureFan.horizontalSlots)] {
+            for slot in slots {
+                let distance = hypot(slot.fromTrailing - Self.restingX.x, slot.fromBottom - Self.restingX.y)
+                XCTAssertGreaterThanOrEqual(
+                    distance, Self.clearance,
+                    "The \(name) fan's \(slot.label) tile is \(distance)pt from the resting × — they overlap."
+                )
+            }
+        }
     }
 
     /// The stack's spacing was a literal in the view body; it is named now because the

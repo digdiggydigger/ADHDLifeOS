@@ -51,7 +51,12 @@ enum RootBottomOverlayLayout {
     ///
     /// Both facets travel together: invisible AND out of the hit-test, or an invisible card would
     /// still take the tap meant for the tile under it. The cards keep their LAYOUT throughout —
-    /// this is an opacity, never an `if` — so the × stays exactly where the + was.
+    /// this is an opacity, never an `if` — so the timer bar keeps its detail sheet and Stop
+    /// confirmation, and nothing else on screen reflows.
+    ///
+    /// **This used to add "so the × stays exactly where the + was". `F-FanXAtRest` reversed that
+    /// (E, 2026-09-17):** the × does move now, to its resting corner, and it moves by `frames`
+    /// below rather than by the cards leaving.
     struct CardsPresence: Equatable {
         var opacity: Double
         var acceptsTouches: Bool
@@ -104,15 +109,27 @@ enum RootBottomOverlayLayout {
     /// `VStack(alignment: .trailing)` E's position review settled, as frames. Beside the disc:
     /// the disc row in the bottom-trailing corner it rests in, the cards in the column to its
     /// leading side, both on the bottom line.
-    static func frames(_ arrangement: Arrangement, in bounds: CGRect, discRow: CGSize, cards: CGSize) -> Frames {
+    ///
+    /// **While the capture fan is open (`F-FanXAtRest`, E's shape B, 2026-09-17), the stacked disc
+    /// row drops to the bottom line — its resting corner — and the cards stay exactly where they
+    /// were.** The fan places its tiles from that corner, 78pt apart, so a disc pushed up by any
+    /// card turned into a × sitting on a tile (TASK under the sprint bar in E's frame 19, TASK
+    /// under a Confirm card in E's GIF). The cards are invisible and untouchable then
+    /// (`cardsPresence`), but they keep their space, so the size is unchanged and nothing reflows.
+    /// Beside the disc, and with nothing up, the disc is already on the bottom line.
+    static func frames(
+        _ arrangement: Arrangement, in bounds: CGRect, discRow: CGSize, cards: CGSize, fanIsOpen: Bool
+    ) -> Frames {
         switch arrangement {
         case .stacked:
-            let disc = CGRect(
-                x: bounds.maxX - discRow.width, y: bounds.minY, width: discRow.width, height: discRow.height
-            )
             let gap = cards.height > 0 ? spacing : 0
             let column = CGRect(
-                x: bounds.maxX - cards.width, y: disc.maxY + gap, width: cards.width, height: cards.height
+                x: bounds.maxX - cards.width, y: bounds.minY + discRow.height + gap,
+                width: cards.width, height: cards.height
+            )
+            let disc = CGRect(
+                x: bounds.maxX - discRow.width, y: fanIsOpen ? bounds.maxY - discRow.height : bounds.minY,
+                width: discRow.width, height: discRow.height
             )
             return Frames(discRow: disc, cards: column)
         case .besideTheDisc:
@@ -129,7 +146,8 @@ enum RootBottomOverlayLayout {
 }
 
 /// The container `RootBottomOverlay` lays its two pieces out with: subview 0 is the disc row,
-/// subview 1 the cards column, and `arrangement` says which of the two shapes above applies.
+/// subview 1 the cards column, `arrangement` says which of the two shapes above applies, and
+/// `fanIsOpen` whether the × drops to its resting corner (`F-FanXAtRest`).
 ///
 /// **A `Layout` and not a `switch` between a `VStack` and an `HStack`, deliberately.** Changing
 /// the container TYPE gives every child a new identity, and `FocusTimerBar` owns the sprint
@@ -141,6 +159,7 @@ enum RootBottomOverlayLayout {
 /// decides a number.
 struct RootBottomOverlayArrangement: Layout {
     var arrangement: RootBottomOverlayLayout.Arrangement
+    var fanIsOpen: Bool
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         guard subviews.count == 2 else { return .zero }
@@ -153,7 +172,7 @@ struct RootBottomOverlayArrangement: Layout {
         guard subviews.count == 2 else { return }
         let fitted = fitted(width: bounds.width, subviews: subviews)
         let frames = RootBottomOverlayLayout.frames(
-            arrangement, in: bounds, discRow: fitted.discRow, cards: fitted.cards
+            arrangement, in: bounds, discRow: fitted.discRow, cards: fitted.cards, fanIsOpen: fanIsOpen
         )
         subviews[0].place(at: frames.discRow.origin, proposal: ProposedViewSize(frames.discRow.size))
         subviews[1].place(at: frames.cards.origin, proposal: ProposedViewSize(frames.cards.size))

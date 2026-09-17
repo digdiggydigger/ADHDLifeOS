@@ -74,8 +74,14 @@ final class RootBottomOverlayCallSiteTests: XCTestCase {
     // MARK: - The fan fade reaches the view (F-FanCardsFade)
 
     /// The cards fade by OPACITY and drop out of hit-testing, fed by the pure rule — never by an
-    /// `if` that removes them: removal would collapse the column and drop the disc (the fan's ×)
-    /// into its corner the instant the fan opened, moving it from under the thumb.
+    /// `if` that removes them.
+    ///
+    /// **The reason REVERSED on 2026-09-17 (`F-FanXAtRest`); the guard did not.** It used to say
+    /// removal would drop the × into its corner, moving it from under the thumb. E then chose
+    /// exactly that drop — shape B, *"× drops to its corner"* — so it is no longer the reason. The
+    /// honest reasons now: removing the cards would destroy `FocusTimerBar`'s `@State` (the sprint
+    /// detail sheet, the Stop confirmation) every time the fan opened, and swap the fade E passed
+    /// on device for a removal transition. The × now moves by the Layout, not by the cards leaving.
     func testTheCardsFadeUnderTheFanByOpacityAndKeepTheirLayout() throws {
         let source = try Self.flattened(Self.overlay)
         XCTAssertTrue(
@@ -91,7 +97,56 @@ final class RootBottomOverlayCallSiteTests: XCTestCase {
         }
         XCTAssertFalse(
             source.contains("if isFabOpen") || source.contains("if !isFabOpen"),
-            "The overlay gates the cards' EXISTENCE on the fan. That collapses the column and moves the ×."
+            "The overlay gates the cards' EXISTENCE on the fan. That tears down the timer bar's"
+                + " detail sheet and Stop confirmation, and replaces the fade with a removal."
+        )
+    }
+
+    // MARK: - The × drops to its corner (F-FanXAtRest)
+
+    /// A perfect `frames(…fanIsOpen:)` that the view never feeds leaves the × on the tile E
+    /// photographed. Both hops are pinned: the overlay hands the fan's state to the Layout, and
+    /// the Layout hands it to the pure geometry.
+    func testTheFansStateReachesTheGeometry() throws {
+        XCTAssertTrue(
+            try Self.flattened(Self.overlay).contains(
+                "RootBottomOverlayArrangement(arrangement: arrangement, fanIsOpen: isFabOpen)"
+            ),
+            "The overlay never tells the Layout the fan is open, so the × stays pushed up over the tiles."
+        )
+        XCTAssertTrue(
+            try Self.flattened(Self.layout).contains("fanIsOpen: fanIsOpen"),
+            "The Layout never passes the fan's state into `frames`, so the tested rule is not the one on screen."
+        )
+    }
+
+    /// **Every way the fan closes moves the × the same way.** The disc's own button toggles inside
+    /// a `withAnimation`, but the scrim's tap and a tile's pick set `isFabOpen` bare in `RootView`
+    /// — so without an animation keyed on the state itself, dismissing by the scrim would SNAP
+    /// the × 68–194pt back up. `nil` under Reduce Motion: this is §7.2's continuous re-layout,
+    /// the same reading as the disc's existing push when a sprint starts.
+    func testTheXMovesOnTheSameSpringWhicheverWayTheFanCloses() throws {
+        XCTAssertTrue(
+            try Self.flattened(Self.overlay).contains(
+                ".animation( reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: isFabOpen )"
+            ),
+            "Nothing animates the × on a scrim or tile dismissal, so it jumps back up above the cards."
+        )
+    }
+
+    /// The disc row is subview 0, so the cards column draws OVER it. While the fan opens, the ×
+    /// travels down into the cards' space as they fade; with the default order it passes behind a
+    /// half-faded card — and under Reduce Motion it jumps there at once and sits behind the fading
+    /// card for the whole fade. `zIndex` puts the × on top without touching the subview order the
+    /// Layout's contract depends on. `RootBottomOverlayDrawOrderTests` proves the Layout honours it.
+    func testTheDiscRowDrawsAboveTheCards() throws {
+        let source = try Self.flattened(Self.overlay)
+        guard let container = source.range(of: "RootBottomOverlayArrangement(arrangement:") else {
+            return XCTFail("No arrangement container — see the tests above.")
+        }
+        XCTAssertTrue(
+            source[container.upperBound...].contains("discRow .zIndex(1)"),
+            "The disc row is not raised above the cards, so the × passes behind a fading card."
         )
     }
 

@@ -78,7 +78,7 @@ struct CaptureFanOverlay: View {
             // card icon tiles, so the open fan finally matches the rest of the app. A hairline
             // ring in the same hue keeps each disc's edge on the scrim.
             .foregroundStyle(Color(slot.fillAssetName))
-            .frame(width: 62, height: 62)
+            .frame(width: CaptureFan.tileDiameter, height: CaptureFan.tileDiameter)
             .background(Color(slot.fillAssetName).opacity(0.18), in: Circle())
             .background(.ultraThinMaterial, in: Circle())
             .overlay(Circle().strokeBorder(Color(slot.fillAssetName).opacity(0.4), lineWidth: 1))
