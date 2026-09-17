@@ -1,4 +1,4 @@
-# Open items register — 2026-09-17 (fifty-fourth edition; **THE LANDSCAPE FAB OVERLAP IS FIXED AND MERGED — `F-LandscapeFabOverlap`, reproduced first, red-checked, passing on 26.5 and 27.0. Owed: E's device verdict on the side-by-side arrangement, and the phone was NOT reachable at close-out so the install is owed too. The tab-pill inset options are the session's second half.**)
+# Open items register — 2026-09-17 (fifty-fourth edition; **THE LANDSCAPE FAB OVERLAP IS FIXED AND MERGED — `F-LandscapeFabOverlap`, reproduced first, red-checked, passing on 26.5 and 27.0. Owed: E's device verdict on the side-by-side arrangement — the build IS on the phone. The tab-pill inset options are the session's second half.**)
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -43,8 +43,11 @@ SwiftLint **0 / 819**, `** BUILD SUCCEEDED **` (**37 distinct warnings**, the Ph
 coverage **27.67% (13,399/48,433)** — numerator +43 on a denominator +76 (the layout file and the
 overlay's new lines), i.e. comparable and the new code is covered. `LandscapeAwayCardUITests`
 **PASSED on 26.5 light and 27.0 dark** (both sims erased after). `firestore.rules` untouched —
-**nothing for E to republish**. **The phone was NOT reachable at close-out** (`devicectl list
-devices` shows simulators only), so it still carries `560d068`: the fix is NOT on E's phone yet.
+**nothing for E to republish**. **The phone is ON MAIN at `5c322e5`** (Swift identical to `7e85ec6`): E connected it after the
+close-out report, and the device build, `devicectl` install and launch all succeeded in one pass
+(0 signing tells in the log, `codesign --verify --deep --strict` exit 0, profile valid to
+**2026-09-17T19:25:02Z — it expires TONIGHT**, so the app needs a reinstall after that). **The
+fix IS on E's phone; the landscape verdict can be given.**
 
 **`main` @ PR #131 — Phase D landed** (`4e4ec1c` was the baseline). Measured for Phase D on
 2026-09-15 (Xcode 27.0, iOS 26.5 runtime, emulator UP): suite **3,011 / 0**, **0** `127.0.0.1:9099`
@@ -100,7 +103,7 @@ untouched) and the suite re-run against the fresh one.
 
 **`F-LandscapeFabOverlap`** (PR #137, `main` @ `7e85ec6`) — see §B's first item: the landscape FAB
 overlap, reproduced first, fixed with a `Layout` that keeps the portrait stack byte for byte,
-red-checked, passing on 26.5 and 27.0. Owed: E's verdict on the side-by-side look, and the install.
+red-checked, passing on 26.5 and 27.0. Owed: E's verdict on the side-by-side look (the build is on the phone).
 
 **The pill-inset options** (this edition) — rendered, not chosen; §B's second item.
 
@@ -531,8 +534,8 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       call-site failures plus the journey's landscape failure → restored → PASS on 26.5 light and
       27.0 dark. Evidence: `screenshots/landscape-fab-overlap/` (host-side `simctl` frames;
       `app.screenshot()` lies on a rotated sim). **Owed: E's device verdict on the side-by-side
-      arrangement** — the card bottom-left, the disc in its corner — **and the install: the phone
-      was not reachable at close-out.** No RM-on pass owed (no reduced site touched). (CLOSED as
+      arrangement** — the card bottom-left, the disc in its corner — **— the build IS on the phone
+      (installed after the close-out report).** No RM-on pass owed (no reduced site touched). (CLOSED as
       a bug; verdict owed)
 
 - [ ] **The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
