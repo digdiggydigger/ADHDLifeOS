@@ -4290,7 +4290,7 @@ or changed; the three `.animation(reduceMotion ? nil : …)` modifiers are untou
 its corner (`screenshots/landscape-fab-overlap/README.md`, "Open, for E on the phone").
 
 
-### FEATURE: F-TabBarPillInset — the resting pill's inset, E's pick from rendered options  [ ]
+### FEATURE: F-TabBarPillInset — the resting pill's inset, E's pick from rendered options  [x] COMPLETED
 
 **E's call (2026-09-17, in chat, after looking at the four rendered options):** *"regarding the
 pill inset I think that padding 12 is the right choice for now."* The options and the two catches
@@ -4302,11 +4302,19 @@ bar. The scrolled chip inherits it (one card in both states). Off §2's grid by 
 waiver — the second, beside `peekStep = 14` — recorded in CLAUDE.md §2.
 
 **Acceptance criteria**
-- [ ] `testTheCardsInnerPaddingIsTheValueEChoseByLooking` pins 12 and says why (RED at 4 first).
-- [ ] `testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE` moves to 44.6 and
+- [x] `testTheCardsInnerPaddingIsTheValueEChoseByLooking` pins 12 and says why (RED at 4 first).
+- [x] `testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE` moves to 44.6 and
       still clears §3's 44 (RED at 4 first: 47.8 ≠ 44.6).
-- [ ] Red-check: constant back to 4 → exactly those two fail; constant at 16 → the pin AND the
+- [x] Red-check: constant back to 4 → exactly those two fail; constant at 16 → the pin AND the
       floor's `>= 44` fail. One regression at a time.
-- [ ] CLAUDE.md §2 names the second waiver; the design record carries round 4.
-- [ ] A render of the SHIPPED tree (not the probe) in the options folder, and the build on E's phone.
-- [ ] SwiftLint 0, suite green, sim build green; pasted.
+- [x] CLAUDE.md §2 names the second waiver; the design record carries round 4.
+- [x] A render of the SHIPPED tree (not the probe) in the options folder, and the build on E's phone.
+- [x] SwiftLint 0, suite green, sim build green; pasted.
+
+**DONE 2026-09-17.** RED at 4: exactly the two predicted (47.8 ≠ 44.6; 4 ≠ 12), 29 green. GREEN
+31 / 0. Red-check one regression at a time, after the commit: **back at 4 → the same two**; **at
+16 → the two tests, three assertions** (43.0 ≠ 44.6, 43.0 < 44, 16 ≠ 12); restored with
+`git checkout --`. Suite **3,026 / 0** (0 × `9099`), SwiftLint **0 / 819**, `** BUILD SUCCEEDED **`
+(37 distinct warnings, unchanged; 0 errors), coverage 27.67% (13,399/48,433) — a constant moved,
+no line count did. Shipped tree rendered (`tabbar-pill-inset-options/08–11`). **Owed: E's look at
+12 on the phone** (installed with this close-out). No RM-on pass: no motion site touched.

@@ -37,8 +37,8 @@ update rather than improvising a list in chat.
 ## State
 
 **Measured 2026-09-17 on `feature/landscape-fab-overlap` @ `11224c9` (Xcode 27.0, iOS 26.5 runtime,
-emulator UP, freshly started this session):** suite **3,025 / 0** (3,011 + the 14 tests of
-`F-LandscapeFabOverlap`), **0** `127.0.0.1:9099` hits, **58** emulator cases across the six classes,
+emulator UP, freshly started this session):** suite **3,026 / 0** (3,011 + the 14 tests of
+`F-LandscapeFabOverlap` + the pill pin), **0** `127.0.0.1:9099` hits, **58** emulator cases across the six classes,
 SwiftLint **0 / 819**, `** BUILD SUCCEEDED **` (**37 distinct warnings**, the Phase C figure, 0 errors),
 coverage **27.67% (13,399/48,433)** — numerator +43 on a denominator +76 (the layout file and the
 overlay's new lines), i.e. comparable and the new code is covered. `LandscapeAwayCardUITests`
@@ -105,7 +105,7 @@ untouched) and the suite re-run against the fresh one.
 overlap, reproduced first, fixed with a `Layout` that keeps the portrait stack byte for byte,
 red-checked, passing on 26.5 and 27.0. Owed: E's verdict on the side-by-side look (the build is on the phone).
 
-**The pill-inset options** (this edition) — rendered, not chosen; §B's second item.
+**`F-TabBarPillInset`** — E chose 12 from the rendered options; shipped, red-checked at 4 and 16; §B's second item.
 
 **`F-CTACelebrations-6`** — C6–C9: the routine Completed flow wired (PRs #106–#109). See the
 forty-first edition's detail; nothing about it is outstanding.
@@ -562,16 +562,14 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       floats over the hero's *Start another session* button — the standing "disc floats over
       content" behaviour at a pushed-up height, not raised by E. (NEW)
 
-- [ ] **The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
-      outstanding.** `screenshots/tabbar-pill-inset-options/`: the REAL `AppTabBar` at
-      `floatingPaddingHorizontal` **4 (current) / 8 / 12 / 16**, Today and Tools selected, light and
-      dark, rendered at E's 393pt via a temporary `ImageRenderer` probe (constant and probe both
-      reverted; the bar file untouched). Measured insets 4.3 / 8.3 / 12.0 / 16.0pt. Two facts for the
-      pick: **12 is off §2's grid** (ships only as a named waiver with a pinning test, the `peekStep`
-      shape); **16 breaks §3's SE floor** — the unselected slot falls to 43.0pt and
-      `testRestingSlots_clearTheTouchTargetFloorBesideTheWidestPillOnTheSE` fails unless `maximumRestingPillWidth` drops ≥5pt
-      with it. The scrolled chip inherits the same padding. **Nothing else on the bar moves.** Once
-      E says a number it is a one-constant block with one test. (RENDERED; pick owed)
+- [x] ~~**The selected tab pill's left inset — RENDERED 2026-09-17, E's pick is the only thing
+      outstanding.**~~ **E PICKED 12 — SHIPPED as `F-TabBarPillInset` (2026-09-17).** E: *"padding 12
+      is the right choice for now."* `floatingPaddingHorizontal` 4 → 12, the second named §2 waiver
+      beside `peekStep = 14` (off-grid, chosen from the real bar rendered at 4 / 8 / 12 / 16 with 8
+      and 16 offered); SE floor 47.8 → 44.6, still clear; pinned by
+      `testTheCardsInnerPaddingIsTheValueEChoseByLooking`; red-checked at 4 and at 16 with the
+      predicted counts. Options + the shipped render: `screenshots/tabbar-pill-inset-options/`.
+      **Owed: E's look at 12 on the phone.** (CLOSED; verdict owed)
 
 ~~**00. THE CTA CELEBRATIONS ARC — `F-CTACelebrations-6` is BUILT TO C5 ON A BRANCH.**~~
    **THE WHOLE ARC IS FINISHED — corrected 2026-09-13, and this entry was badly stale.** It still

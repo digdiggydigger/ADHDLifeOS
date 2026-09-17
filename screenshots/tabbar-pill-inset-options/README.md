@@ -60,3 +60,18 @@ the edge, which is why nobody saw this until the pill did.
 Pick one of 4 / 8 / 12 / 16 by looking at `00` and `01`. If 12, say so and it ships as a named
 waiver with a pinning test, like `peekStep`. If 16, the pill cap comes down with it. Nothing else
 on the bar is being re-tuned — every other constant is E-approved and stays.
+
+---
+
+## What shipped — E chose 12 (2026-09-17)
+
+E, verbatim: *"regarding the pill inset I think that padding 12 is the right choice for now."*
+Landed as `F-TabBarPillInset`: `floatingPaddingHorizontal` 4 → **12**, the SE floor test's expected
+value 47.8 → 44.6 (still clear of 44), `testTheCardsInnerPaddingIsTheValueEChoseByLooking` pinning
+it, and CLAUDE.md §2 carrying it as the second named waiver beside `peekStep = 14`. Nothing else on
+the bar moved. Red-checked one regression at a time: back at 4 exactly the two tests fail; at 16
+the pin fails and the SE floor fails twice (43.0 ≠ 44.6, 43.0 < 44).
+
+| file | what it shows |
+|---|---|
+| `08-shipped-12-today-light.png` … `11-shipped-12-tools-dark.png` | The SHIPPED tree (no constant override, no probe loop) rendered the same way as the options above: the real bar at 12, Today and Tools, light and dark. Identical to the `12` rows of the sheets, as it must be — same file, same constant. |
