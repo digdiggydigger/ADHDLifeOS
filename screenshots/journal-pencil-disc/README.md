@@ -42,6 +42,45 @@ Edges found by strong saturation (max − min channel > 120), which skips the wh
   large title comes back on both runtimes. (Without the fix it settles at 54 / −116 — Step 0's bug,
   and the committed `JournalLargeTitleReTapTests` RED.)
 
+## E's device look — PASSED, 2026-09-18 (frames 19–24)
+
+**Environment:** E's iPhone (393 × 852pt at 3×), **iOS 27.0**, the `654012f` install (blocks 1 + 2
+of the Journal-door arc together), live Firebase, E's own account and real journal. Taken by E
+at 21:26–21:27 BST. Nothing was created for the look, so nothing needed cleaning up.
+
+**E's verdicts, the option labels verbatim:**
+- **Reduce Motion OFF:** the disc beside the +, the nav bar with the eye, the re-tap bringing the
+  large title back, and the 24pt gap in portrait and landscape: **"All passed"**.
+- **Reduce Motion ON:** the fan's cards fade, the pencil fades in and out on a tab switch, and the
+  re-tap: **"All faded, passed"**.
+- **Landscape: fan → Note, does the composer open?** **"Composer opened"**. So
+  `testRenderLandscapeSweep`'s failure at that step is the TEST's fault, not the app's (register).
+
+**Measured on the device frames**, by the same saturation threshold as the gate above. JPEG edges
+trim about 0.3pt off each side of a disc, so a raw gap reads about 0.6pt wide.
+
+| frame | + disc | pencil disc | gap | disc → bar |
+|---|---|---|---|---|
+| 19, portrait at rest | 60 × 60, centre **(339.0, 696.0)** | 42 × 42, centre **(272.0, 696.0)** | 16 | bottom 725.7 → bar keyline 751.0 ≈ **24** |
+| 23, landscape at rest | 60 × 60, centre (739.0, 251.0) | 42 × 42, centre (672.0, 250.8) | 16 | bottom 280.7 → bar keyline 305.0 ≈ **24** |
+
+**The device matches the sim gate to the point:** the + disc's centre is at 696.0 on the phone, as
+the constants predict and both runtimes rendered. The pencil spans the same x (251–293) as it
+did on the sim. `gapAboveTabBar = 24` holds in BOTH orientations.
+
+| file | what it proves |
+|---|---|
+| `19-device-rest-eye-off.jpg` | Portrait at rest on the phone: the large "Journal", with the eye ALONE top right, OFF in the label colour. The pencil disc sits beside the + at the numbers above. |
+| `20-device-rest-eye-on.jpg` | **The eye ON, rendered for the first time since Step 0** (the sim frames did not re-render it): accent glyph, and the hidden rows ("Routine offered … not opened") now showing. |
+| `21-device-scrolled-pill-eye-off.jpg` | Scrolled: the inline title, the + a pill at 0.68, and the pencil at 0.68 with it (E's "Follows the pill"). The tab bar's selected item drops its label while floating, which is shipped Design C behaviour (`AppTabBarPresentation.showsLabel`), unchanged here. |
+| `22-device-scrolled-pill-eye-on.jpg` | The same, with the eye ON. |
+| `23-device-landscape-rest.jpg` | Landscape at rest: the inline title (compact height), the eye top right, and the pencil beside the + on its line. The 24pt gap above the bar. |
+| `24-device-landscape-scrolled-pill.jpg` | Landscape scrolled: both discs pilled together. |
+
+**What frames 19–24 do NOT show:** motion. The re-tap, the Reduce Motion ON fades and the 24pt
+gap under a Confirm card were judged live on the phone. E's verdicts above cover them; no frame
+here does.
+
 ## What the frames show
 
 | file | what it proves |
@@ -59,14 +98,16 @@ Edges found by strong saturation (max − min channel > 120), which skips the wh
 
 ## Verified paths (§7.3)
 
-- **Re-tap:** 26 path run on sim 26.5 + 27.0 (the committed hosted test and these frames). 16 path
-  is the shipped `proxy.scrollTo`, unchanged; OS-level COMPILE-ONLY, since no runtime below 26.5 is
-  installed.
-- **Reduced paths:** the re-tap's reduced branch was run on sim by injection
-  (`TabRootLargeTitleReTap.restore(_:reduceMotion: true)` in the hosted test: 106pt at −168 on the
-  next layout pass). The pencil's appear/leave fade and its fan fade under Reduce Motion are a
-  **plain-ease fade in code, NOT rendered here**: a still frame cannot show a transition, and the
-  setting cannot be injected into the environment. **Owed: E's RM-on device pass.**
+- **Re-tap:** 26 path run on sim 26.5 + 27.0 (the committed hosted test and these frames) + E's
+  phone (iOS 27.0, RM off): "All passed". 16 path is the shipped `proxy.scrollTo`, unchanged;
+  OS-level COMPILE-ONLY, since no runtime below 26.5 is installed.
+- **Reduced paths:** the re-tap's reduced branch: run on sim (injected), via
+  `TabRootLargeTitleReTap.restore(_:reduceMotion: true)` in the hosted test (106pt at −168 on the
+  next layout pass), + E's phone (RM on). The pencil's appear/leave fade and its fan fade are a
+  plain-ease fade in code. A still frame cannot show a transition, and the setting cannot be
+  injected into the environment, so their evidence is **E's phone (RM on) only**. The capture fan's
+  cards fading under RM were covered by the same pass. **E toggled Reduce Motion ON for that check
+  and answered "All faded, passed"** (2026-09-18).
 
 ## What these frames do NOT show
 

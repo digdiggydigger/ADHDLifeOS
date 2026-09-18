@@ -1,4 +1,4 @@
-# Open items register — 2026-09-18 (sixty-second edition; **`F-JournalPencilDisc` BUILT and MERGED (PR #160, `654012f`): the Journal keeps its nav bar with the eye alone, the pencil is a 42pt disc beside the + (the + disc's colours, gradient REVERSED, its glow, following the pill), and a tab re-tap brings the large title back on iOS 26+. Blocks 1 + 2 installed on E's phone TOGETHER at `654012f`. Owed: E's device look — Reduce Motion OFF, then ON.**) Opener: `handoff/START-HERE-after-pencil-disc.md`.
+# Open items register — 2026-09-18 (sixty-third edition; **E's device look on the `654012f` install: PASSED, all of it.** Reduce Motion OFF *"All passed"*, Reduce Motion ON *"All faded, passed"*, and the landscape Note tile *"Composer opened"* — so the Journal-door arc and `F-FurnitureGap24` owe nothing, and `testRenderLandscapeSweep`'s failure is the TEST's fault, not the app's.) Opener: `handoff/START-HERE-after-pencil-disc.md`.
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
@@ -36,6 +36,54 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Sixty-third edition — 2026-09-18 (evening, the look session), `main` @ the merge of this hand-off.**
+- **Figures carried:** suite **3,085 / 0**, SwiftLint **0 / 831**, both on `061dbaa`. **No Swift
+  changed this session.**
+- **Rules:** `firestore.rules` untouched; nothing for E to republish.
+- **Emulator:** not started (nothing was run).
+
+**Device:** unchanged. The phone carries **`654012f`**. Profiles run to **2026-09-24T19:49Z**.
+
+**E's verdicts on the one install, asked in ONE message (§7.3), option labels verbatim:**
+- **Reduce Motion OFF — "All passed":** the pencil disc beside the +, the nav bar with the eye alone,
+  the Journal re-tap bringing the large title back, and the **24pt gap** in portrait and landscape.
+- **Reduce Motion ON — "All faded, passed":** the capture fan's cards fade, the pencil disc fades in
+  and out on a tab switch, and the re-tap. **E toggled the setting for this**, so the pencil block's
+  Verified-paths line now honestly reads *"Reduced: run on sim (injected) + E's phone (RM on)"*.
+- **Landscape, fan → Note — "Composer opened".** Per the opener's rule, the sweep's failure at that
+  step is therefore the TEST's fault (below).
+
+**Evidence: E's six frames (`IMG_8543–8548`), filed as `screenshots/journal-pencil-disc/19–24`**, with
+a README section and measurements. **The device matches the sim gate to the point:** + disc centre
+**(339.0, 696.0)**, pencil 42 × 42 at **(272.0, 696.0)**, gap 16. Disc to bar ≈ **24** in portrait
+(725.7 → 751.0) AND landscape (280.7 → 305.0). Frames 20 and 22 are the first renders of the eye
+**ON** since Step 0. The frames show no motion; the verdicts cover it.
+
+**What this closes:**
+- **The Journal-door arc (blocks 1 + 2): nothing owed.** Memory `journal-door-arc`.
+- **`F-FurnitureGap24`'s 24pt look and the RM-on fan-fade pass: PASSED.** They were carried from
+  2026-09-17 onto this install. Memory `fab-overlap-and-tab-inset`.
+
+**Outstanding from this look:**
+- [ ] **`RenderHarnessUITests.testRenderLandscapeSweep` — fix the TEST.** It fails at "The note
+  composer never opened from the fan tile tapped in landscape" on 27.0, and fails identically on
+  `aec558a`. E's phone opens the composer from that tile. **The leading hypothesis is unverified — do
+  not fix on it:** `quickCaptureContentField` is a `TextField(axis: .vertical)`, and the test queries
+  `app.textFields[…]`. If iOS 27 exposes a vertical-axis field as a `textView`, the query can never
+  match. Confirm first by dumping the element's `elementType` in the failing run. Red-check the fix by
+  restoring the old query. It needs the emulator, a ~460s UI run, and `xcrun simctl erase` in the same
+  command. Test-only, so it involves no design decision.
+
+**Carried, unchanged:** the colour arc stays **HELD**. `F-Search-3-Journal`'s objection is LIVE. The
+cards' VoiceOver gap under the fan (`F-FanCardsFade`, the pencil's fix) is small and below the bar.
+§A's three older device checks (`SwipeOrigin`, `NoCooldown`, `PopScale`) and §D's photosensitivity
+blocker are untouched. Frame 08's pushed-up disc and Phase D's dark schedule-summary dimness are
+still unlooked-at.
+
+---
+
+**Sixty-second edition's State follows, unchanged.**
 
 **Sixty-second edition — 2026-09-18 (the build session), `main` @ the merge of this hand-off.**
 - **Figures, all on the final tree `061dbaa` (merged as `654012f`):** suite **3,085 / 0** (was
