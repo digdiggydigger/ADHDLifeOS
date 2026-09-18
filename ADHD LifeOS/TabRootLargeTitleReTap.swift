@@ -50,7 +50,8 @@ enum TabRootLargeTitleReTap {
     /// Brings a collapsed large title back, or answers `false` — having put the page back exactly
     /// where it was — so the caller runs the shipped scroll untouched.
     static func restore(_ scrollView: UIScrollView?, reduceMotion: Bool) -> Bool {
-        guard let scrollView, let window = scrollView.window else { return false }
+        guard let scrollView, let window = scrollView.window,
+              hasVisibleNavigationBar(scrollView) else { return false }
         let resting = scrollView.contentOffset
         let plainTop = -scrollView.adjustedContentInset.top
         // A screen's height above the plain top, with no finger down: UIKit brings a large-title
@@ -76,6 +77,21 @@ enum TabRootLargeTitleReTap {
             scrollView.setContentOffset(CGPoint(x: resting.x, y: top), animated: true)
             return true
         }
+    }
+
+    /// No visible bar, no large title to bring back — and no probe. The four tabs that hide their
+    /// bars are left exactly as they were: the probe's overscroll would otherwise reach the floating
+    /// tab bar through `AppScrollOffsetObserver`'s KVO as an un-float then a re-float before the
+    /// real scroll. Found through the responder chain, the way UIKit itself finds a view's owner.
+    private static func hasVisibleNavigationBar(_ view: UIView) -> Bool {
+        var responder: UIResponder? = view
+        while let current = responder {
+            if let controller = current as? UIViewController, let navigation = controller.navigationController {
+                return !navigation.isNavigationBarHidden
+            }
+            responder = current.next
+        }
+        return false
     }
 }
 

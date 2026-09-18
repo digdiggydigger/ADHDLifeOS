@@ -155,6 +155,11 @@ final class JournalLargeTitleReTapTests: XCTestCase {
     /// Every other tab. The fix must find nothing, put the page back exactly where it was, and
     /// answer `false`, so the shipped `proxy.scrollTo` runs as it always has. Without this control
     /// the positive tests would pass just as well on a fix that re-drove every tab by UIKit.
+    ///
+    /// **And it must not even PROBE a page whose bar is hidden** (the four hidden-bar tabs). The
+    /// probe's overscroll is visible to `AppScrollOffsetObserver`'s KVO, which feeds the floating
+    /// tab bar: a floating bar would read −852 (un-float) then +420 (float) before the real scroll.
+    /// The spec says leave those tabs exactly as they are, so the offset is never written at all.
     func testAPageWithoutALargeTitleIsHandedBackUntouched() async throws {
         guard #available(iOS 26.0, *) else { throw XCTSkip("iOS 26+") }
         window.rootViewController = UIHostingController(rootView: HiddenBarPage())
@@ -165,12 +170,16 @@ final class JournalLargeTitleReTapTests: XCTestCase {
         try await scroll(by: 300)
         let scrollView = try XCTUnwrap(pageScrollView)
         let resting = scrollView.contentOffset
+        var writes = 0
+        let observation = scrollView.observe(\.contentOffset, options: [.new]) { _, _ in writes += 1 }
 
         XCTAssertFalse(
             TabRootLargeTitleReTap.restore(scrollView, reduceMotion: false),
             "A page with no large title was taken off the shipped scroll."
         )
+        observation.invalidate()
         XCTAssertEqual(scrollView.contentOffset, resting, "The probe did not put the page back where it was.")
+        XCTAssertEqual(writes, 0, "The fix probed a hidden-bar page — its tab bar would see the transient offsets.")
     }
 
     // MARK: - The rig
