@@ -5081,8 +5081,8 @@ card, a tile or the gear), STOP and ask. Do not improvise a design answer.**
       plan or control test survives both. The at-rest, short-scroll and no-refresh tests pass both
       ways — guards, not discriminators.
 - [x] SwiftLint 0; full suite (documented command, `OS=26.5`); build. All pasted. Targeted runs use
-      `-enableCodeCoverage NO`. **Lint 0 / 831. Suite 3,085 / 0 (was 3,057). App coverage 29.71%
-      (14,432 / 48,582). `** BUILD SUCCEEDED **`.**
+      `-enableCodeCoverage NO`. **Lint 0 / 831. Suite 3,085 / 0 (was 3,057) — re-run on the final
+      tree `061dbaa`. App coverage 29.72% (14,442 / 48,593). `** BUILD SUCCEEDED **`.**
 - [x] **UI journeys, deliberately:** `JournalJourneyUITests` and `RoutineRecordJourneyUITests`,
       foreground, emulator up, then `xcrun simctl erase` in the same command.
       `RenderHarnessUITests`' landscape sweep also taps `journalComposeButton`.
@@ -5127,6 +5127,11 @@ card, a tile or the gear), STOP and ask. Do not improvise a design answer.**
   while the fan is open (hit-testing does not stop VoiceOver's activate), and the glyph's Dynamic
   Type capped at `.accessibility1` so it cannot outgrow the 42pt circle. The same VoiceOver gap on
   the CARDS predates this block (`F-FanCardsFade`) — register.
+- **The re-tap never probes a page whose nav bar is hidden** (the advisor's catch, applied
+  test-first: the hidden-bar control saw 2 offset writes, now 0). The probe's overscroll is visible
+  to `AppScrollOffsetObserver`'s KVO, so a floating tab bar would have read an un-float then a
+  re-float on the four hidden-bar tabs. **Residual:** Tasks shows a bar, so it is still probed
+  (and handed back — its title never collapses); for E's look.
 - **§5 note:** the re-tap's motion path is UIKit's own animated scroll-to-top, not the house spring:
   SwiftUI cannot address an offset above the content's top. **§1 note:** the system large title
   cannot take `.tracking(-0.5)` without a global appearance; E chose it by looking.
