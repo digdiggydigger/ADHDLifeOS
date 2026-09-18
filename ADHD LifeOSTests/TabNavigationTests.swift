@@ -91,6 +91,19 @@ final class TabNavigationTests: XCTestCase {
         XCTAssertTrue(coordinator.isAtRoot(.tasks))
     }
 
+    /// `F-JournalPencilDisc`: the pencil disc lives in the root overlay and the composer is the
+    /// Journal's private sheet, so the tap travels down as a count — the re-tap's shape. A request
+    /// is not a re-tap: it must never scroll or pop the Journal.
+    func testRequestJournalEntry_bumpsItsOwnCountAndNoReselection() {
+        let coordinator = TabNavigationCoordinator()
+
+        coordinator.requestJournalEntry()
+        coordinator.requestJournalEntry()
+
+        XCTAssertEqual(coordinator.journalEntryRequests, 2)
+        XCTAssertEqual(coordinator.reselectionCount(for: .journal), 0)
+    }
+
     func testReport_theLatestReportWins() {
         let coordinator = TabNavigationCoordinator()
 

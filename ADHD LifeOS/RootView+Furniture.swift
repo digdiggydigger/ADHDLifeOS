@@ -23,6 +23,12 @@ extension RootView {
         AppSearchScope.scope(for: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))
     }
 
+    /// Whether the Journal's pencil disc is up (`F-JournalPencilDisc`): the selected tab and that
+    /// tab's DEPTH, the same two inputs as `searchScope` above and for the same reason.
+    var showsJournalCompose: Bool {
+        JournalComposeDoor.isShown(selectedTab: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))
+    }
+
     /// The pill is a STICKY scrolled-down state (F-PillStay, E's call 2026-08-31: "stay in
     /// pill form until the page is scrolled upwards again"). An open fan forces the full disc:
     /// its scrim blocks scrolling anyway, and the ✕ rotation reads as a disc, not a sliver.

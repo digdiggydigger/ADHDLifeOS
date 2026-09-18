@@ -98,6 +98,10 @@ enum AppSearchRowMetrics {
     /// decision it informed stands. Do not re-tune this, or `CaptureDiscMetrics.edgeMargin`, on the
     /// strength of the bar's absence.
     ///
+    /// **And the header pencil moved too (`F-JournalPencilDisc`, the same day):** it is a 42pt disc
+    /// in THIS row now, 16pt left of the capture disc on its centre line — so on the Journal the
+    /// band left of the disc is the pencil's. Still no reason to move this number.
+    ///
     /// **It was 32, E's number twice over — measured off E's own markings, not chosen.** E
     /// marked the target on two device screenshots (2026-09-03) and asked for the disc to be
     /// *"comfortably aligned with the One line about today button on the Journal Tab"*:

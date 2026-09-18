@@ -2614,6 +2614,10 @@ red-checked with three regressions → seven failures, installed and launch-veri
 > the left-hand side of the FAB Icon"*. So the band left of the disc on the Journal belongs to the
 > 42pt pencil disc (`F-JournalPencilDisc`). A search row there would have to share the band with it,
 > which is a design question for E, not a layout detail. Still not to be started unasked.
+>
+> **Built 2026-09-18 (`F-JournalPencilDisc`):** the pencil disc now lives in that band — in
+> `RootBottomOverlay.discRow`, between the search slot and the +. The objection is live, not
+> hypothetical.
 
 **Do not start this without asking E.** The Captures revert above applies here with MORE force,
 not less: the Journal tab's bottom furniture is the "One line about today…" composer — a field.
@@ -4880,7 +4884,7 @@ a blue GLYPH on shared glass. So, with the render harness and the one-build stat
 `accessibilityLabel` ("Write an entry" today). If a reduced or `#available` site is touched, the
 **RM-on device pass is owed** (§7.3).
 
-### FEATURE: F-JournalPencilDisc — the nav bar stays (eye alone); the pencil is a 42pt gradient disc beside the +  [ ] SPECCED 2026-09-18 (revised by Step 0) — build in a FRESH session
+### FEATURE: F-JournalPencilDisc — the nav bar stays (eye alone); the pencil is a 42pt gradient disc beside the +  [x] COMPLETED 2026-09-18 — awaiting E's device look (RM off + RM on)
 
 **This REPLACES the build plan of `F-JournalPencilReachable` above**, whose Step 0 ran on 2026-09-18
 and put the combination in front of E, as that block required. E answered by changing the shape.
@@ -5063,20 +5067,71 @@ card, a tile or the gear), STOP and ask. Do not improvise a design answer.**
 
 #### Acceptance criteria
 
-- [ ] RED first, counted. GREEN. Commit. Then red-check by restoring block 1's `JournalView.swift`,
+- [x] RED first, counted. GREEN. Commit. Then red-check by restoring block 1's `JournalView.swift`,
       `JournalAllActivityButton.swift`, `TabNavigation.swift` and `RootBottomOverlay.swift` from
       `main`. Count the failures, `git checkout HEAD --`, rebuild green.
-- [ ] SwiftLint 0; full suite (documented command, `OS=26.5`); build. All pasted. Targeted runs use
-      `-enableCodeCoverage NO`.
-- [ ] **UI journeys, deliberately:** `JournalJourneyUITests` and `RoutineRecordJourneyUITests`,
+      **RED, three cycles:** the disc + header 16 tests / 51 assertions; the re-tap 7 / 11 (the
+      hosted test red at **54pt / −116**, Step 0's bug); the HIG-review fixes 2 / 2. All exit 65.
+      **Red-check** (the four files + `RootView` + the resurrected `JournalHeaderMetrics` from
+      `main`, `CaptureDiscLabel` too; `TabNavigation`'s re-tap and anchor surgically reverted,
+      keeping the request API so the test target compiles): **16 tests / 27 assertions red**, exit
+      65 — the hosted six failing cleanly on "Bar 0.0pt". Restored from `0b91ab6`: 115 / 0.
+      **Mutation** of the plan (never hand back to the shipped scroll): the hidden-bar control and
+      the plan's three negatives fall (7 assertions); the stub RED was the other direction. No
+      plan or control test survives both. The at-rest, short-scroll and no-refresh tests pass both
+      ways — guards, not discriminators.
+- [x] SwiftLint 0; full suite (documented command, `OS=26.5`); build. All pasted. Targeted runs use
+      `-enableCodeCoverage NO`. **Lint 0 / 831. Suite 3,085 / 0 (was 3,057) — re-run on the final
+      tree `061dbaa`. App coverage 29.72% (14,442 / 48,593). `** BUILD SUCCEEDED **`.**
+- [x] **UI journeys, deliberately:** `JournalJourneyUITests` and `RoutineRecordJourneyUITests`,
       foreground, emulator up, then `xcrun simctl erase` in the same command.
       `RenderHarnessUITests`' landscape sweep also taps `journalComposeButton`.
-- [ ] Evidence folder `screenshots/journal-pencil-disc/` + README (rig: `journal-pencil-step0`).
+      **On 27.0: Journal journey PASSED (179s), routine-record journey PASSED (487s; the eye as a
+      toolbar item). The landscape sweep FAILED — at the capture fan's Note tile on Today, before
+      it reaches the Journal — and fails IDENTICALLY on `main` @ `aec558a` (462s), so it predates
+      this block (register). Its Journal step was run on its own instead (a temporary test,
+      reverted): landscape → tap `journalComposeButton` → pad → submit, PASSED (342s).** Each run
+      erased its simulator in the same command.
+- [x] Evidence folder `screenshots/journal-pencil-disc/` + README (rig: `journal-pencil-step0`).
       Render: rest and scrolled/pilled, light and dark; a sprint card up; landscape; the fan open;
       **scrolled → `coordinator.reselect(.journal)` → the large title RE-EXPANDED (bar 106)**.
-      Gate: the + disc's centre is unchanged (696.5).
-- [ ] "Verified paths" line (§7.3) for the re-tap gate:
+      Gate: the + disc's centre is unchanged (696.5). **Measured 696.0 on both runtimes (the
+      constants predict 696.0; 696.5 was a looser threshold); the pencil 42 × 42 on the same line,
+      gap 16.0. Landscape by really rotating the test host's scene. Nothing lands on a card, a tile
+      or the gear.**
+- [x] "Verified paths" line (§7.3) for the re-tap gate:
       `26 path: run on sim 26.5 + 27.0; 16 path: the shipped proxy.scrollTo; OS-level COMPILE-ONLY`.
+      **Reduced: the re-tap's reduced branch run on sim (injected); the disc's appear/leave and fan
+      fades under RM are code-only here — NOT on device until E's RM-on pass.**
 - [ ] Land via PR. **Install blocks 1 + 2 on E's phone in ONE build** (profiles to 2026-09-24),
       force-relaunch, THEN ask for the look, with the carried looks on the same install. The
       RM-on pass covers the disc's appear/leave, the re-tap, and the capture fan.
+
+**Built 2026-09-18, and where it departs from the plan above — each one deliberate:**
+- **E answered the one gap in the spec:** the disc shows on the Journal at its top level *loaded or
+  not* — *"Always on the Journal (Recommended)"* — since saving never depended on the timeline.
+- **The row grows 58pt, not 64** (the spec's figure was 48 + 16). Landscape cards column 58pt
+  narrower; the sprint card still fits (`14`/`15`).
+- **The request counter lives on `TabNavigationCoordinator`** (`requestJournalEntry()`), and the
+  Journal listens through its own modifier, `onJournalEntryRequest`, so `JournalView`'s whole body
+  is not re-evaluated on every depth report. `RootView.swift` is at 398.
+- **The appear/leave curve rides on the TRANSITION** (`.opacity.animation(…)`), not on a
+  row-level `.animation(value:)`, so on a Tasks ↔ Journal switch the search row's own (`nil`)
+  animation is untouched.
+- **`CaptureDiscFace`** (new, `Theme/`) holds the twins' colours, directions, halo and pill curves;
+  `CaptureDiscLabel` reads it, pixel-identical (block 1's gate still 696.0).
+- **The re-tap test asserts the SETTLED page.** Its first cut polled "bar > 100" and passed on the
+  bug: a per-frame probe showed the shipped spring overshoots ~6pt, the bar pops to 106 for ~0.25s,
+  then collapses back to 54 as it settles. Step 0's finding holds; the probe explains why it hides.
+- **Two HIG-review findings applied** (a read-only `apple:hig-reviewer` pass): `accessibilityHidden`
+  while the fan is open (hit-testing does not stop VoiceOver's activate), and the glyph's Dynamic
+  Type capped at `.accessibility1` so it cannot outgrow the 42pt circle. The same VoiceOver gap on
+  the CARDS predates this block (`F-FanCardsFade`) — register.
+- **The re-tap never probes a page whose nav bar is hidden** (the advisor's catch, applied
+  test-first: the hidden-bar control saw 2 offset writes, now 0). The probe's overscroll is visible
+  to `AppScrollOffsetObserver`'s KVO, so a floating tab bar would have read an un-float then a
+  re-float on the four hidden-bar tabs. **Residual:** Tasks shows a bar, so it is still probed
+  (and handed back — its title never collapses); for E's look.
+- **§5 note:** the re-tap's motion path is UIKit's own animated scroll-to-top, not the house spring:
+  SwiftUI cannot address an offset above the content's top. **§1 note:** the system large title
+  cannot take `.tracking(-0.5)` without a global appearance; E chose it by looking.

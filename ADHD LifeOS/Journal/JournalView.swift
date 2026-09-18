@@ -4,10 +4,16 @@
 //
 //  The v3 Journal (F-V3-Journal): one day-grouped stream where written entries and closed tasks
 //  sit together — the day as it actually went, not just what was typed. Closed nudges are absent
-//  until real completion stamps exist (V3-Nudges). The composer stays a sheet; the header pencil is
-//  its door. It shared that job with a pinned "One line about today…" bar until 2026-09-18, when
-//  E chose option 04 from five rendered options — nothing pinned — because the bar *"gets in the
-//  way … and reduces viewing space"* (`F-JournalDoorUnpinned`, `screenshots/journal-door-options/`).
+//  until real completion stamps exist (V3-Nudges). The composer stays a sheet. Its door was a header
+//  pencil, sharing the job with a pinned "One line about today…" bar until 2026-09-18, when E chose
+//  option 04 from five rendered options — nothing pinned — because the bar *"gets in the way … and
+//  reduces viewing space"* (`F-JournalDoorUnpinned`, `screenshots/journal-door-options/`).
+//
+//  **Since `F-JournalPencilDisc` (the same day) the door is a 42pt disc beside the capture disc**,
+//  mounted by `RootBottomOverlay` so it never scrolls away, and this screen keeps the system nav
+//  bar: E's *"Keep the nav bar"* — the large title, with the "All activity" eye ALONE top right.
+//  The disc's tap arrives here as a request (`onJournalEntryRequest`), because the composer is
+//  this screen's private sheet.
 //
 
 import Combine
@@ -119,7 +125,21 @@ struct JournalView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.pageBackground.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            // E's "Keep the nav bar" (F-JournalPencilDisc): the system large title replaces the
+            // drawn "Journal". §1's `.tracking(-0.5)` cannot reach it without a global
+            // `UINavigationBarAppearance`; E chose this by looking at exactly that render.
+            .navigationTitle("Journal")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    JournalAllActivityButton(isOn: $showAllActivity)
+                        // Safe on the container: the button is the ONLY element inside, so
+                        // inheritance renames nothing out from under itself.
+                        .accessibilityIdentifier("journalAllActivitySwitch")
+                }
+            }
+            // The pencil disc beside the capture disc — its tap is this.
+            .onJournalEntryRequest { isPresentingComposer = true }
             // The tab re-tap (E, 2026-09-08): the two pushed doors are the Journal's only depth.
             .tabRoot(.journal, isAtRoot: inspectingTaskId == nil && inspectingCapture == nil) {
                 inspectingTaskId = nil
@@ -177,39 +197,16 @@ struct JournalView: View {
 
     // MARK: - Header + chips
 
+    /// The day's summary line, first under the large title. It sat above a drawn "Journal" with the
+    /// eye and the pencil beside it until `F-JournalPencilDisc`: the title is the system's now, the
+    /// eye is in its toolbar, and the pencil is a disc beside the capture disc.
     var header: some View {
-        HStack(alignment: .top, spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(JournalTimeline.headerLine(
-                    logs: allLogs, tasks: tasks, sprints: journalService.focusSessions
-                ))
-                    .sectionLabel()
-                    .foregroundStyle(.secondary)
-                Text("Journal")
-                    .font(.largeTitle.bold())
-                    .tracking(-0.5)
-            }
-            Spacer()
-            JournalAllActivityButton(isOn: $showAllActivity)
-                // Safe on the container: the button is the ONLY element inside, so inheritance
-                // renames nothing out from under itself.
-                .accessibilityIdentifier("journalAllActivitySwitch")
-            // The Journal's only door to a new entry since `F-JournalDoorUnpinned` — hence §3's
-            // 44pt, which it did not meet as a 40pt second door.
-            Button {
-                isPresentingComposer = true
-            } label: {
-                Image(systemName: "square.and.pencil")
-                    .font(.body)
-                    .foregroundStyle(Color("LabelSecondary"))
-                    .frame(width: JournalHeaderMetrics.controlSize, height: JournalHeaderMetrics.controlSize)
-                    .background(Color.cardSurface, in: Circle())
-                    .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 1))
-                    .contentShape(Circle())
-            }
-            .accessibilityLabel("Write an entry")
-            .accessibilityIdentifier("journalComposeButton")
-        }
+        Text(JournalTimeline.headerLine(
+            logs: allLogs, tasks: tasks, sprints: journalService.focusSessions
+        ))
+            .sectionLabel()
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var allLogs: [Log] {

@@ -86,7 +86,9 @@ struct ToolsView: View {
             // This page scrolls INSIDE the tab bar, so its last card would otherwise sit under
             // the capture disc. The bar's own inset is separate and already applied by RootView.
             .captureDiscClearance()
-            // The house pattern for a tab root that draws its own title (Today, Areas, Journal).
+            // The house pattern for a tab root that draws its own title (Today, Areas — and the
+            // Journal until 2026-09-18, when E kept its system nav bar and large title instead,
+            // `F-JournalPencilDisc`).
             // Pushed screens are unaffected — they bring their own bar.
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(isPresented: Binding(

@@ -37,6 +37,11 @@ struct RootBottomOverlay: View {
     var searchScope: AppSearchScope = .none
     /// Opens the full-screen surface. The screen presents it; this only asks.
     var onOpenSearch: () -> Void = {}
+    /// The Journal's pencil disc (`F-JournalPencilDisc`): whether it is up, decided in RootView by
+    /// `JournalComposeDoor.isShown`, and the request it sends. Same shape as the search row's pair
+    /// — this view never learns which tab is selected.
+    var showsJournalCompose = false
+    var onWriteEntry: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Compact height is the landscape iPhone — the same reading `CaptureFanOverlay` and
@@ -83,6 +88,13 @@ struct RootBottomOverlay: View {
         RootBottomOverlayLayout.cardsPresence(fanIsOpen: isFabOpen)
     }
 
+    /// The curve everything that steps aside for the fan fades on — the cards and, since
+    /// `F-JournalPencilDisc`, the Journal's pencil disc. Spelled once so the two fade together.
+    /// Reduce Motion gets the same fade on a plain ease (§5's one exception), never a cut.
+    private var fanFade: Animation {
+        reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8)
+    }
+
     var body: some View {
         // ONE container whose arrangement is a property, never a `switch` between a `VStack` and
         // an `HStack`: two container types would give the timer bar two identities, and its
@@ -103,10 +115,7 @@ struct RootBottomOverlay: View {
                 // it). Reduce Motion gets the same fade on a plain ease (§5's one exception).
                 .opacity(fanPresence.opacity)
                 .allowsHitTesting(fanPresence.acceptsTouches)
-                .animation(
-                    reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8),
-                    value: isFabOpen
-                )
+                .animation(fanFade, value: isFabOpen)
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
         .padding(.bottom, Self.bottomPadding)
@@ -181,6 +190,26 @@ struct RootBottomOverlay: View {
         HStack(spacing: AppSearchRowMetrics.rowSpacing) {
             if let placeholder = searchScope.placeholder {
                 AppSearchRow(placeholder: placeholder, action: onOpenSearch)
+            }
+            // F-JournalPencilDisc (E, 2026-09-18): *"move the filled pencil icon disc down to the
+            // left-hand side of the FAB Icon. make the filled pencil disc inline with the FAB
+            // icon"*. In this `HStack`, so the shared centre line is by construction and the +
+            // never moves: the row grows leftward by the disc and the 16pt gap.
+            //
+            // While the fan is open it steps aside WITH the cards — invisible and untouchable, by
+            // the same rule (decision 6; `F-FanCardsFade` is the precedent) — and it arrives and
+            // leaves on a fade whose Reduce Motion path is a plain ease, never a cut (§7.2). The
+            // arrival's curve rides on the TRANSITION, so this row's other animations (the search
+            // row's, keyed on the scope) are untouched when both change on one tab switch.
+            if showsJournalCompose {
+                JournalComposeDisc(showsPill: showsPill, action: onWriteEntry)
+                    .opacity(fanPresence.opacity)
+                    .allowsHitTesting(fanPresence.acceptsTouches)
+                    // …and out of VoiceOver's reach with it: hit-testing stops a finger, not
+                    // VoiceOver's activate, which could otherwise open the composer under the scrim.
+                    .accessibilityHidden(!fanPresence.acceptsTouches)
+                    .animation(fanFade, value: isFabOpen)
+                    .transition(.opacity.animation(JournalComposeDoor.appearAnimation(reduceMotion: reduceMotion)))
             }
             Button {
                 withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {

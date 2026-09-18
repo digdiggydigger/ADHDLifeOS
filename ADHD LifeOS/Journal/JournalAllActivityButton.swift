@@ -3,9 +3,14 @@
 //  ADHD LifeOS
 //
 //  The "All activity" switch (F-RoutineRecord-2, E's call): the one way the routine story —
-//  offered, started, finished — becomes visible on the Journal. The compose button's circle,
-//  so the header reads as one family; selected state carried by the fill AND the eye glyph,
-//  never colour alone. 44pt with the pencil since `F-JournalDoorUnpinned` (`JournalHeaderMetrics`).
+//  offered, started, finished — becomes visible on the Journal. Selected state carried by the eye
+//  glyph AND `.isSelected`, never colour alone.
+//
+//  **A nav-bar toolbar item since `F-JournalPencilDisc` (2026-09-18)**, alone top right — E's "Keep
+//  the nav bar". It drew its own 44pt circle beside the header pencil until then; in the toolbar
+//  the chrome is the system's (a glass circle on 26+), so it is glyph-only. E's **"B"**: OFF in the
+//  LABEL colour, ON in accent. Spelled explicitly because Step 0 measured the default differing by
+//  tier — label colour on 26/27, accent below, where an OFF eye would read as ON.
 //
 
 import SwiftUI
@@ -19,15 +24,7 @@ struct JournalAllActivityButton: View {
             isOn.toggle()
         } label: {
             Image(systemName: isOn ? "eye" : "eye.slash")
-                .font(.body)
-                .foregroundStyle(isOn ? AreaPalette.work.onColor : Color("LabelSecondary"))
-                .frame(width: JournalHeaderMetrics.controlSize, height: JournalHeaderMetrics.controlSize)
-                .background(
-                    isOn ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.cardSurface),
-                    in: Circle()
-                )
-                .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 1))
-                .contentShape(Circle())
+                .foregroundStyle(isOn ? Color.accentColor : Color.primary)
         }
         .accessibilityLabel("All activity")
         .accessibilityHint("Shows your routines — offered, started and finished")
@@ -35,11 +32,31 @@ struct JournalAllActivityButton: View {
     }
 }
 
-#Preview("All activity — light and dark") {
-    HStack(spacing: 24) {
-        JournalAllActivityButton(isOn: .constant(false))
-        JournalAllActivityButton(isOn: .constant(true))
-            .environment(\.colorScheme, .dark)
+#Preview("All activity — light") {
+    JournalAllActivityPreviewBar()
+        .preferredColorScheme(.light)
+}
+
+#Preview("All activity — dark") {
+    JournalAllActivityPreviewBar()
+        .preferredColorScheme(.dark)
+}
+
+/// Where it lives: a large-title nav bar, OFF and then ON.
+private struct JournalAllActivityPreviewBar: View {
+    @State private var isOn = false
+
+    var body: some View {
+        NavigationStack {
+            Text(isOn ? "All activity on" : "All activity off")
+                .font(.footnote)
+                .navigationTitle("Journal")
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        JournalAllActivityButton(isOn: $isOn)
+                    }
+                }
+        }
     }
-    .padding(16)
 }
