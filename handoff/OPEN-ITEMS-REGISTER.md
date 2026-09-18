@@ -1,4 +1,4 @@
-# Open items register — 2026-09-18 (sixty-first edition; **`F-JournalPencilReachable`'s Step 0 RAN, and E revised the shape by looking: the nav bar stays, with the eye alone, and the pencil becomes a 42pt disc beside the + with the + disc's glow and its gradient REVERSED, following the pill. The tab re-tap was proved NOT to bring the large title back. `F-JournalPencilDisc` is SPECCED for a FRESH session (E's rule). No Swift changed; the phone is still on `c54efd7`.**) Opener: `handoff/START-HERE-journal-pencil-disc.md`.
+# Open items register — 2026-09-18 (sixty-second edition; **`F-JournalPencilDisc` BUILT and MERGED (PR #160, `654012f`): the Journal keeps its nav bar with the eye alone, the pencil is a 42pt disc beside the + (the + disc's colours, gradient REVERSED, its glow, following the pill), and a tab re-tap brings the large title back on iOS 26+. Blocks 1 + 2 installed on E's phone TOGETHER at `654012f`. Owed: E's device look — Reduce Motion OFF, then ON.**) Opener: `handoff/START-HERE-after-pencil-disc.md`.
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
@@ -36,6 +36,65 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Sixty-second edition — 2026-09-18 (the build session), `main` @ the merge of this hand-off.**
+- **Figures, all on the final tree `061dbaa` (merged as `654012f`):** suite **3,085 / 0** (was
+  3,057; +28), SwiftLint **0 / 831**, `** BUILD SUCCEEDED **`, app coverage **29.72%
+  (14,442 / 48,593)**. Last recorded 27.67% (13,399 / 48,433): the denominator moved by this
+  block's own ~160 lines (same measurement extent, so the ratios compare); the numerator jumped
+  because the committed hosted-window test renders the real `JournalView` body.
+- **Rules:** `firestore.rules` untouched; nothing for E to republish.
+- **Emulator:** started this session; stopped at close-out.
+
+**Device: the phone carries `654012f` — blocks 1 + 2 TOGETHER, block 1 on it for the first time.** Built from merged `main` (`-allowProvisioningUpdates`, scratch DerivedData), `** BUILD SUCCEEDED **`, 0 signing tells, `codesign --verify --deep --strict` OK, profiles valid to **2026-09-24T19:49Z**. Installed, launched clean first time (no `Security` denial), then relaunched (terminate + launch) so E judges a fresh process, not one launched over an install.
+
+**Landed — `F-JournalPencilDisc`, PR #160, merge `654012f`.** Evidence `screenshots/journal-pencil-disc/`.
+- **The header:** the Journal keeps the system nav bar, with the large title and the "All activity" eye
+  ALONE in its toolbar (OFF label colour, ON accent — E's B). `JournalHeaderMetrics` deleted.
+- **The pencil:** a 42pt disc in `RootBottomOverlay.discRow`, 16pt left of the + on its line: the +
+  disc's colours with the gradient REVERSED, the same glow, 0.68 with the pill on the same curves,
+  fading + untouchable + VoiceOver-hidden while the fan is open, arriving and leaving on a fade (plain
+  ease under RM). 44pt target via the `slotHitOverflow` shape. `CaptureDiscFace` holds the twins'
+  shared values. Its tap reaches the Journal as a count, `TabNavigationCoordinator.requestJournalEntry()`.
+- **The re-tap:** iOS 26+ brings a collapsed large title back (54pt → 106pt at −168), by an overscroll
+  written with no finger down that FINDS the expanded top. Pages with a hidden bar are never probed.
+  Below 26 the shipped `proxy.scrollTo` (§7.1 degraded).
+- **Gate by pixels on 27.0 and 26.5:** + disc centre **696.0** (the constants predict 696.0), the
+  pencil 42 × 42 on the same line, gap **16.0**. Nothing lands on a card, a tile or the gear.
+
+**E's decision this session:** asked the one gap in the spec — does the disc show while the Journal is
+loading or has failed? — E chose **"Always on the Journal (Recommended)"**.
+
+**What this session established:**
+- **Step 0's re-tap finding HOLDS, and a probe showed why it hides:** the shipped spring overshoots the
+  plain top by ~6pt, the bar pops to 106 for ~0.25s, then collapses back to 54 as it settles. A test
+  that polls for "bar > 100" passes on the bug — so the hosted test asserts the SETTLED page.
+- **A red-check that swaps a `some View` member's underlying type can SEGV** in an extension file the
+  incremental build did not recompile (`JournalTimelineSections.swift` calling `header`). `touch` the
+  dependents. Memory `opaque-type-incremental-segv`.
+- **The landscape sweep (`RenderHarnessUITests.testRenderLandscapeSweep`) FAILS on `main` @ `aec558a`
+  too** — at the capture fan's Note tile, in landscape on Today ("The note composer never opened"). It
+  predates this block; its Journal step was run on its own instead (PASSED). **Unknown yet whether the
+  app or the test** — an optional ten-second check on E's phone below settles it.
+- **Two HIG-review findings applied**, one deferred: the CARDS under the fan are invisible and
+  untouchable but still reachable by VoiceOver (`F-FanCardsFade`) — the same fix the pencil got.
+- **Residual for the look:** Tasks shows a nav bar, so its re-tap is still probed (and handed back — its
+  title never collapses). No twitch expected; say so if E sees one.
+
+**Owed by E, all on the `654012f` install — ask in ONE message (§7.3):**
+1. **RM OFF:** the final disc beside the + (at rest, scrolled/pilled); the nav bar with the eye; on the
+   Journal scroll down, then tap the Journal tab → the large title comes back; the **24pt gap** in
+   portrait AND landscape, with the collapsed bar alone and under a Confirm card.
+2. **RM ON (Settings → Accessibility → Motion):** the capture fan's cards FADE, not cut; the pencil disc
+   fades in and out on a tab switch; the re-tap.
+3. **Optional, ten seconds:** in landscape, open the capture fan and tap Note — does the composer open?
+
+**Carried, unchanged:** the colour arc stays **HELD**. `F-Search-3-Journal`'s objection is LIVE (the
+band left of the disc is the pencil's). Frame 08's pushed-up disc; Phase D's dark schedule-summary dimness.
+
+---
+
+**Sixty-first edition's State follows, unchanged.**
 
 **Sixty-first edition — 2026-09-18 (later still), `main` @ the merge of this hand-off.**
 - **Figures carried:** suite **3,057 / 0** and SwiftLint **0 / 826**, both at `d1b3601`.
