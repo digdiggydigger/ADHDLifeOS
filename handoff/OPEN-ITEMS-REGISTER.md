@@ -1,4 +1,4 @@
-# Open items register — 2026-09-18 (sixtieth edition; **`F-JournalDoorUnpinned` BUILT and MERGED — the pinned bar is gone, +96pt visible at rest; E then chose the pencil's shape by looking — "(b) Restore a nav bar", "Filled accent" — and `F-JournalPencilReachable` is SPECCED for a FRESH session (E's call). Block 1 is deliberately NOT on the phone: both blocks install together.**) Opener: `handoff/START-HERE-journal-pencil-navbar.md`.
+# Open items register — 2026-09-18 (sixty-first edition; **`F-JournalPencilReachable`'s Step 0 RAN, and E revised the shape by looking: the nav bar stays, with the eye alone, and the pencil becomes a 42pt disc beside the + with the + disc's glow and its gradient REVERSED, following the pill. The tab re-tap was proved NOT to bring the large title back. `F-JournalPencilDisc` is SPECCED for a FRESH session (E's rule). No Swift changed; the phone is still on `c54efd7`.**) Opener: `handoff/START-HERE-journal-pencil-disc.md`.
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
@@ -36,6 +36,67 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Sixty-first edition — 2026-09-18 (later still), `main` @ the merge of this hand-off.**
+- **Figures carried:** suite **3,057 / 0** and SwiftLint **0 / 826**, both at `d1b3601`.
+  **No Swift changed this session.** Every probe edit was temporary, reverted with `git checkout --`,
+  and `git status` was empty before anything was committed.
+- **Rules:** `firestore.rules` untouched; nothing for E to republish.
+- **Emulator:** started this session, stopped cleanly at close-out.
+
+**Device:** unchanged. The phone carries **`c54efd7`**. Blocks 1 + 2 install together after
+`F-JournalPencilDisc`. Profiles run to **2026-09-24T19:49Z**.
+
+**What this session did:** it ran `F-JournalPencilReachable`'s Step 0, the throwaway probe the plan
+required before any test. It rendered on **27.0 (E's OS) and 26.5**, then put the result in front of
+E. Evidence: `screenshots/journal-pencil-step0/` (PR: this hand-off).
+
+**E's decisions, verbatim:**
+- Shown that a filled pencil splits (b)'s one toolbar capsule into two circles: *"move the filled
+  pencil icon disc down to the left-hand side of the FAB Icon. make the filled pencil disc inline with
+  the FAB icon"*.
+- **"B (Recommended)"**: the eye is OFF in the label colour and ON in accent; the pencil glyph is
+  white.
+- **"Keep the nav bar"**: the large title stays, with the eye alone top right.
+- **"48pt (Recommended)"**, then mid-session: *"decrease the size of the filled pencil disc from
+  48pt to 42pt"*.
+- **"1 · Follows the pill (Recommended)"**: 68% translucent with the + while pilled.
+- **"Match the + gradient"**, then, shown 42pt without and with the glow: *"Can you reverse the DIRECTION that the gradient on the pencil disc currently points in? And use the same glow as the +. So the pair are twins with halos, But with the pencil disc's Background colour gradient direction different."*
+  So: the same colours, direction reversed, plus the + disc's glow.
+- **"Hand off to fresh session (Recommended)"**.
+
+**Facts Step 0 established** (the spec's table has the numbers):
+- **The re-tap does NOT bring the large title back.**
+  - `proxy.scrollTo` leaves the bar at **54pt**, and so does iOS 18 `ScrollPosition.scrollTo(edge:)`.
+    A UIKit offset to the expanded top restores **106pt**.
+  - An overscroll written with no finger down settles at the expanded top by itself, so the fix can
+    FIND that top.
+  - Measured on 26.5 AND 27.0.
+  - **The fix is specced iOS 26+ only**, with the shipped scroll as the floor (§7.1 degraded):
+    nothing below 26.5 can be run here, and a wrong guess there would displace the page.
+- **Tasks' large title never collapses.** Its scroll view sits under a filter row, so it is not a
+  control for the re-tap and must be left alone.
+- **`.borderedProminent` ≡ `.glassProminent` in a toolbar:** pixel-identical on both runtimes.
+- **The prominent-item glyph:** iOS draws it BLACK in dark mode, and a `.foregroundStyle` overrides
+  it.
+- **Toolbar glyphs on 26/27 default to the label colour, not accent.**
+- **The pencil disc at E's inset:** centred on the + disc's line (695.8 / 695.8), with the + disc's
+  centre unmoved (gate ≈ 696).
+
+**Process note, worth keeping.** The plan's Step 0 was framed as "a confirm, not a re-ask", but a
+confirm can come back as a redesign, and this one did. The fresh-session rule then applied mid-session.
+E was asked rather than assumed, and E chose the hand-off. Memory `build-in-a-fresh-session`.
+
+**Owed by E, carried, not blocking. Put them all on the blocks 1 + 2 install:**
+1. The **24pt gap** look: portrait AND landscape, with the bar alone and under a Confirm card.
+2. The **Reduce Motion ON pass**, now covering THREE reduced sites:
+   - the fan's cards fading;
+   - the pencil disc appearing and leaving on a tab switch;
+   - the re-tap.
+
+---
+
+**Sixtieth edition's State follows, unchanged.**
 
 **Sixtieth edition — 2026-09-18 (later), `main` @ the merge of this hand-off.** Suite **3,057 / 0**,
 SwiftLint **0 / 826** — both measured at `d1b3601` (block 1's code) with the emulator UP; nothing merged
@@ -849,9 +910,10 @@ looks** (the looks list is at the foot of the TODO section).
    sites and disagree about their input. (carried)
 5. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops.** (carried)
 6. **Arc 2 — first-class routines + the "at a time" trigger.** (carried)
-7. **`F-Search-3-Journal`** — recommendation is still to kill the block. Its one objection (a field
-   already in the band) is VOID since `F-JournalDoorUnpinned`, and E chose the nav bar for the pencil,
-   so the band stays free. Still E's call; not to be started unasked. (updated 2026-09-18)
+7. **`F-Search-3-Journal`** — the recommendation is still to kill the block. **Its objection is BACK
+   in a new form (2026-09-18, later).** E moved the pencil into the band left of the disc
+   (`F-JournalPencilDisc`), so a Journal search row would have to share that band with it. Still E's
+   call; not to be started unasked.
 8. **The Live Activity design review** E parked. (carried)
 
 ## C · Parked on E's instruction — do not start unprompted
@@ -901,6 +963,11 @@ that was tried and dismissed.*
   sections reflowing beneath it.** A REDUCED-path effect, so E's passing verdicts did not see it.
   **The RM-on pass this sitting owes is the natural moment to look.** (carried)
 - **The Feedback section's footer is a thirteen-line paragraph** covering six switches. (carried)
+- **The Tasks tab's large title NEVER collapses**, so it permanently costs about 52pt of viewing
+  space. Measured in Step 0's rig: the bar stays at 106pt with the list scrolled 420pt. The cause is
+  that `TaskListView`'s `ScrollView` sits under the count line and filter row inside a `VStack`, so
+  UIKit never links it to the bar. This is the same species of complaint E made about the Journal's
+  bar (*"reduces viewing space"*). Noticed; not work until E says so. (NEW 2026-09-18)
 
 ## D · Launch blockers — no conversation opened yet
 

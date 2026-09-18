@@ -2608,6 +2608,12 @@ red-checked with three regressions → seven failures, installed and launch-veri
 > search row at all — and, if `F-JournalPencilReachable` puts the pencil in the disc's band (shape
 > c), that band is spoken for again. Noted, not started. **E chose (b), the nav bar, so the band stays
 > free** — the objection is simply void.
+>
+> **2026-09-18, later — the objection is BACK, in a new form.** Step 0 of `F-JournalPencilReachable`
+> showed E the filled pencil in the toolbar, and E moved it: *"move the filled pencil icon disc down to
+> the left-hand side of the FAB Icon"*. So the band left of the disc on the Journal belongs to the
+> 42pt pencil disc (`F-JournalPencilDisc`). A search row there would have to share the band with it,
+> which is a design question for E, not a layout detail. Still not to be started unasked.
 
 **Do not start this without asking E.** The Captures revert above applies here with MORE force,
 not less: the Journal tab's bottom furniture is the "One line about today…" composer — a field.
@@ -4751,7 +4757,14 @@ space the change does not buy.
 - Three more production comments said "the two screens that pin furniture" (`AppTabContent`,
   `RootView`, `AppTabBar`) — annotated "one since 2026-09-18" rather than left to rot.
 
-### FEATURE: F-JournalPencilReachable — restore the nav bar; the pencil is a filled-accent toolbar button  [ ] SPECCED 2026-09-18 — build in a FRESH session
+### FEATURE: F-JournalPencilReachable — restore the nav bar; the pencil is a filled-accent toolbar button  [~] SUPERSEDED IN PART 2026-09-18 — Step 0 ran and E revised the shape → build `F-JournalPencilDisc` (the next block), NOT this plan
+
+> **Read `F-JournalPencilDisc` below instead of building this.** Step 0 ran on 2026-09-18
+> (`screenshots/journal-pencil-step0/`). The filled pencil splits (b)'s capsule. Shown that, E kept
+> the nav bar and the eye, and moved the pencil down beside the + as a 42pt disc. This block stays as
+> the record of E's first choice and of the plan Step 0 tested. The facts it asked Step 0 to settle
+> are settled in the next block, and its re-tap risk turned out REAL.
+
 
 **E's call, 2026-09-17, verbatim:** *"making the current new journal entry icon (in the top-right-hand
 corner of the screen) MORE visable and EASIER to interact with."* E asked for this in a fresh session.
@@ -4842,7 +4855,10 @@ a blue GLYPH on shared glass. So, with the render harness and the one-build stat
 
 #### Acceptance criteria
 
-- [ ] Step 0 rendered and its two answers recorded; E confirmed the combination if (ii) differed.
+- [x] Step 0 rendered and its two answers recorded; E confirmed the combination if (ii) differed.
+      **Ran 2026-09-18.** (i) Pixel-identical, so there is no 26 tier. (ii) The group SPLITS. E did
+      not confirm the split: E moved the pencil to the disc band. The re-tap was also probed: the large
+      title stays COLLAPSED. See `F-JournalPencilDisc`.
 - [ ] RED first, counted; GREEN; commit; red-check by restoring block-1 `JournalView.swift` +
       `JournalAllActivityButton.swift` from `main`, count, `git checkout HEAD --`, rebuild green.
 - [ ] SwiftLint 0; full suite (documented command, `OS=26.5`); build — all pasted. Targeted runs with
@@ -4863,3 +4879,204 @@ a blue GLYPH on shared glass. So, with the render harness and the one-build stat
 **Whatever the shape:** §3's 44pt floor, §1's hierarchy, §4's tokens only, and an
 `accessibilityLabel` ("Write an entry" today). If a reduced or `#available` site is touched, the
 **RM-on device pass is owed** (§7.3).
+
+### FEATURE: F-JournalPencilDisc — the nav bar stays (eye alone); the pencil is a 42pt gradient disc beside the +  [ ] SPECCED 2026-09-18 (revised by Step 0) — build in a FRESH session
+
+**This REPLACES the build plan of `F-JournalPencilReachable` above**, whose Step 0 ran on 2026-09-18
+and put the combination in front of E, as that block required. E answered by changing the shape.
+The block above is kept, marked superseded, because it is the record of what E chose first and why.
+Evidence: `screenshots/journal-pencil-step0/` and its README (**the measurements are done — do not
+re-derive them**).
+
+**E's answers, verbatim, 2026-09-18** (shown `00-toolbar-options-27.jpg`: before = (b) as rendered;
+A = the spec as written; B = recommended):
+1. Asked whether the split is right (a filled item cannot share (b)'s one capsule: iOS draws the eye in
+   its own glass circle and the pencil as a separate blue disc): *"move the filled pencil icon disc
+   down to the left-hand side of the FAB Icon. make the filled pencil disc inline with the FAB icon"*.
+2. Details: **"B (Recommended)"**. The eye is OFF in the label colour (black/white), as E saw in (b),
+   and ON in accent. The pencil glyph is white in both modes (the house `AreaPalette.work.onColor`,
+   as on the + disc and the "Filled accent" swatch E chose).
+3. **"Keep the nav bar"**: the large title stays, with the eye ALONE top right in its glass circle, in
+   B's colours.
+4. **"48pt (Recommended)"**: the pencil disc is 48pt, centred on the + disc's line,
+   `AppSearchRowMetrics.rowSpacing` (16pt) to its left. **E then revised it mid-session:
+   *"decrease the size of the filled pencil disc from 48pt to 42pt"*. 42 is the number.**
+5. The pill (shown `03`–`05`): **"1 · Follows the pill (Recommended)"**, i.e. 68% translucent with
+   the +. At rest, from the same question: **"Match the + gradient"**, i.e. `CaptureDeep` → accent,
+   over the flat accent the frames show.
+   **Then, shown the 42pt gradient disc with and without the + disc's glow (`06`):** *"Can you reverse the DIRECTION that the gradient on the pencil disc currently points in? And use the same glow as the +. So the pair are twins with halos, But with the pencil disc's Background colour gradient direction different."*
+   So: the SAME two colours with the direction REVERSED (accent at the top → `CaptureDeep` at the
+   bottom), and the + disc's glow, shrinking with the pill exactly as the + disc's does.
+6. **"Hand off to fresh session (Recommended)"** (E's standing rule, `build-in-a-fresh-session`).
+
+**What E has now seen, and what E has NOT.** Seen: B's toolbar at rest and scrolled, light and dark,
+eye OFF and ON; the pencil disc beside the + at rest, and pilled three ways (`03`–`05`), **at 48pt
+and flat accent, both since revised**; and the 42pt disc with the + disc's gradient, with and
+without its glow (`06`). NOT seen: **the REVERSED gradient with the glow — the final look**, the disc
+with a sprint card up, in landscape, while the fan is open, or on a tab switch. **The build
+session renders those to VERIFY them. If one shows something E has not decided (the disc lands on a
+card, a tile or the gear), STOP and ask. Do not improvise a design answer.**
+
+#### What Step 0 established (facts; do not re-derive)
+
+- **`.borderedProminent` and `.glassProminent` render pixel-identically in a toolbar** on 26.5 and
+  27.0: 0 differing pixels over the full 1179×2556 frame, light and dark, at rest and scrolled. One
+  26.5 run showed ≤3/255 per channel in the scrolled frames, spread over every glass region including
+  the title: backdrop-sampling noise. **Moot for the pencil, which has left the toolbar.** It means
+  the glass circle the eye now wears is the system's on every tier, with nothing to gate.
+- **A prominent item splits a `ToolbarItemGroup`.** The group and two separate `ToolbarItem`s render
+  pixel-identically.
+- **In DARK mode iOS draws a prominent item's glyph BLACK** (0,0,0 on 60,131,246) on both runtimes. A
+  `.foregroundStyle` on the label overrides it. Also moot now, since the disc is ours, not the system's.
+- **On 26/27, toolbar glyphs default to the LABEL colour, not accent.** The old decision 2 ("toolbar
+  glyphs default to the accent tint, which would make the eye look ON when it is OFF") is true only
+  below 26, where classic bars tint with accent. So the OFF eye is set to `.primary` EXPLICITLY. That is
+  E's B, and the same code is also correct on 16–18.
+- **THE TAB RE-TAP DOES NOT BRING THE LARGE TITLE BACK — the spec's named risk is real.** Measured
+  with the real `JournalView` in the render rig (`02-retap-large-title-27.jpg`); identical on 26.5
+  and 27.0, light and dark:
+
+  | re-tap after scrolling 420pt | nav bar | content offset | verdict |
+  |---|---|---|---|
+  | at rest (baseline) | 106pt | −168 | large title |
+  | R0: shipped `proxy.scrollTo(TabRootScrollAnchor.id, anchor: .top)` | **54pt** | −116 | **collapsed** |
+  | R1: iOS 18 `ScrollPosition.scrollTo(edge: .top)` | **54pt** | −116 | **collapsed** |
+  | R2: UIKit `setContentOffset(y: −168)`, no animation | 106pt | −168 | large title, holds |
+  | R3: the same, `animated: true` | 106pt | −168 | large title, holds |
+  | R4/R5: offset written to `−adjustedTop − bounds.height`, then layout | 106pt | **−168** | the overscroll comes to rest at the EXPANDED top by itself |
+
+  **R4/R5 are the useful finding.** An overscroll written with no finger on the glass settles at the
+  large-title top, so the fix can FIND that top rather than hard-code the 52pt band (which grows with
+  Dynamic Type).
+- **Tasks is not a control for this.** Its `ScrollView` sits under a filter row, UIKit never links it
+  to the bar, and its title never collapses at all (106pt at 420pt scrolled). The re-tap fix must
+  leave it, and the four hidden-bar tabs, exactly as they are.
+
+#### Decisions — defaults, each stated in the report (verify, do not trust)
+
+1. **The re-tap fix, iOS 26+ only; floor = the shipped `proxy.scrollTo`.** The mechanism depends on
+   how an overscroll with no finger down settles. That was verified on 26.5 and 27.0 only. On 16–18 a
+   bar that stretches with the overscroll could leave the page displaced by a whole screen, which is
+   worse than a collapsed title. So this is §7.1's DEGRADED shape: 26+ restores the large title; the
+   floor lands the content at its top under an inline title — plainer, not absent. Say so in the
+   "Verified paths" line.
+2. **Starting shape:**
+   - `tabRootScrollAnchor()` gains a background `UIViewRepresentable` locator. It walks `superview`s
+     to the enclosing `UIScrollView` (the anchor sits on the content root INSIDE the scroll view, so
+     the first ancestor is the vertical one, never the chips' horizontal one) and hands it to a handle
+     `TabRootModifier` owns and passes down through the environment.
+   - On a top-level re-tap: write `y = −adjustedContentInset.top − bounds.height` without animation,
+     `window.layoutIfNeeded()`, read `expandedTop = −adjustedContentInset.top`.
+   - **If that is not above the plain top, restore the offset and run the shipped `proxy.scrollTo`
+     untouched.** That is every tab but the Journal.
+   - Otherwise, under Reduce Motion, set `expandedTop` directly. With motion, restore the offset,
+     then `setContentOffset(expandedTop, animated: true)`: UIKit's own scroll-to-top animation, the
+     status-bar tap's, proved by R3. **§5 note for the report:** that is not the house spring, because
+     SwiftUI cannot address an offset above the content's top.
+   - The decision is a pure function (e.g. `plan(plainTop:expandedTop:reduceMotion:)`), tested
+     once (§7.4).
+3. **The pencil disc.**
+   - A new `JournalComposeDisc`: a **42pt** `Circle` filled with the + disc's two colours with the
+     direction REVERSED, per E: `LinearGradient([Color("CaptureDeep"), .accentColor])` from
+     `.bottom` to `.top` (the + runs `.top` → `.bottom`). Share the COLOURS with `CaptureDiscLabel`
+     so the pair cannot drift, and let the direction be the one thing that differs. A test holds
+     both directions, so a later "tidy" that makes them match fails.
+   - `square.and.pencil` at `.title3.weight(.semibold)` in `AreaPalette.work.onColor`. Verify it
+     reads at 42.
+   - **The + disc's glow, per E ("twins with halos")**: accent at 0.5, radius 12, y 8 at rest, and
+     0.3 / 6 / 4 while pilled, on the same curves as the +. Share the values with `CaptureDiscLabel`
+     rather than retyping them. This is E's call over §5's soft-shadow default, for the same reason
+     the + has it.
+   - A `ButtonStyle` that presses to 0.97 (§3).
+   - **§3: 42 < 44.** So the hit target takes the house `AppTabBarMetrics.slotHitOverflow` shape:
+     `max(0, (minimumTouchTarget − diameter) / 2)` = 1pt of negative padding around the
+     `contentShape`. The LAYOUT stays 42, so the 16pt visual gap and the centre line do not move,
+     while taps land within 44.
+   - Label "Write an entry". **Identifier `journalComposeButton`, kept**: the journeys find it by
+     that, and it moves from `JournalView` to the overlay.
+   - A named metric holds E's 42, with E's words. A test holds the value AND that the hit target
+     reaches 44.
+   - `#Preview` in light and dark.
+4. **Where it lives.** `RootBottomOverlay.discRow`, between the search-row slot and the disc
+   (`RootBottomOverlay.swift`, the `HStack` in `discRow`).
+   - It shows only when `selectedTab == .journal` and the Journal is at its root. That mirrors the
+     search row's rule (hidden when a door is pushed), computed in `RootView+Furniture.swift`
+     (`RootView.swift` sits at the 400-line bar).
+   - The tap has to reach `JournalView`'s private `isPresentingComposer` and its `journalService`.
+     Use a request counter in the `TabNavigationCoordinator.reselect` shape; JournalView's
+     `onChange` presents the sheet.
+5. **The pill: E's "Follows the pill".** While `showsPill`, the disc's opacity is
+   `CaptureDiscMetrics.pillOpacity` (0.68, E's dial), read from that metric and never retyped.
+   - Its SIZE stays 42. The pill is 60×48, so the pair stays on one line.
+   - It rides the + disc's own curves: the spring on the shrink, the 0.9s `easeOut` regrow
+     (`CaptureDiscLabel`'s asymmetric animation), and `nil` under Reduce Motion exactly as the + does.
+     Share the expression, so the two can never be out of step.
+6. **While the fan is open the disc fades and stops taking touches WITH the cards**
+   (`RootBottomOverlayLayout.cardsPresence`). E's `F-FanCardsFade` is the precedent that non-capture
+   furniture steps aside for the fan. `F-FanXAtRest` drops the disc row to its resting line while the
+   fan is open, and the disc rides in that row: render it and check that no tile lands on it.
+7. **Appearing and leaving (tab switch, push, pop) is a transition, so it is a REDUCED SITE.** With
+   motion it gets the spring the search row uses. Under Reduce Motion geometry is pinned and only
+   opacity travels (§7.2, `CaptureFanOverlay.swift:89-96`), never `nil`. **The RM-on device pass is
+   owed** for this and for the re-tap's reduced branch.
+8. **The header.**
+   - `.toolbar(.hidden, for: .navigationBar)` (`JournalView.swift:120`) becomes
+     `.navigationTitle("Journal")` + `.navigationBarTitleDisplayMode(.large)` +
+     `.toolbar { ToolbarItem(placement: .topBarTrailing) { JournalAllActivityButton … } }`.
+     `.topBarTrailing` is ungated in five files at 16.0.
+   - `header` becomes the summary line alone.
+   - `JournalAllActivityButton` becomes glyph-only: OFF `eye.slash` in `.primary`, ON `eye` in
+     `Color.accentColor`. Label, hint, haptic and `.isSelected` are unchanged.
+   - **§1 departure, for the report:** `.tracking(-0.5)` cannot reach the system title without a
+     global `UINavigationBarAppearance`. E chose this by looking.
+9. **Delete `Journal/JournalHeaderMetrics.swift`**: nothing reads it once both circles leave the
+   header (memory `dead-shared-component-pattern`). Its history moves into the reversed test's doc
+   comment.
+10. **`F-Search-3-Journal` gets an objection back, in a new form.** The band left of the disc on the
+    Journal is now the pencil's. Note it in that block; do not start it.
+
+#### Tests — REVERSE in place (names, messages, "reversed 2026-09-18" history)
+
+- **`JournalHeaderControlsTests`** (block 1's):
+  - `testTheHeaderControlsMeetTheTouchFloor` → the disc's hit target is ≥ 44 (42 + the 1pt overflow each side), and the eye is
+    a system toolbar item.
+  - `testBothHeaderCirclesAreSizedByTheSharedMetric` → the eye lives in the nav-bar toolbar
+    (`.navigationTitle("Journal")`, `ToolbarItem(placement: .topBarTrailing)`, no
+    `.toolbar(.hidden…)`).
+  - `testThePencilStillOpensTheComposer` → the disc's tap reaches `isPresentingComposer` through the
+    request.
+- **New tests:**
+  - the disc is mounted in `discRow` ONLY for the Journal at root (a call site, not just a view);
+  - the eye's OFF style is `.primary`, not accent and not `.secondary`;
+  - the re-tap's pure `plan` function;
+  - the §7.4 call-site test: `#available(iOS 26.0, *) {`, `} else {`, `proxy.scrollTo`;
+  - **a hosted-window behavioural test**: the Step 0 rig, committed. It is RED on the shipped
+    re-tap (bar 54pt) and GREEN with the fix (106pt), and skipped below 26.
+- **Must stay green; check each:**
+  - `RootBottomOverlayLayoutTests`: the disc row grows by 64pt on the Journal only. Re-run the
+    landscape arithmetic;
+  - `RootBottomOverlayDrawOrderTests`, `AppSearchCallSiteTests`, `CaptureDiscPillCallSiteTests`;
+  - `RoutineRecordSurfacesCallSiteTests`: `journalAllActivitySwitch` stays in `JournalView.swift`;
+  - `TabNavigationCallSiteTests`: annotate its "tab roots hide theirs on purpose";
+  - `ToolsView.swift:89` ("a tab root that draws its own title (Today, Areas, Journal)"): annotate
+    it.
+
+#### Acceptance criteria
+
+- [ ] RED first, counted. GREEN. Commit. Then red-check by restoring block 1's `JournalView.swift`,
+      `JournalAllActivityButton.swift`, `TabNavigation.swift` and `RootBottomOverlay.swift` from
+      `main`. Count the failures, `git checkout HEAD --`, rebuild green.
+- [ ] SwiftLint 0; full suite (documented command, `OS=26.5`); build. All pasted. Targeted runs use
+      `-enableCodeCoverage NO`.
+- [ ] **UI journeys, deliberately:** `JournalJourneyUITests` and `RoutineRecordJourneyUITests`,
+      foreground, emulator up, then `xcrun simctl erase` in the same command.
+      `RenderHarnessUITests`' landscape sweep also taps `journalComposeButton`.
+- [ ] Evidence folder `screenshots/journal-pencil-disc/` + README (rig: `journal-pencil-step0`).
+      Render: rest and scrolled/pilled, light and dark; a sprint card up; landscape; the fan open;
+      **scrolled → `coordinator.reselect(.journal)` → the large title RE-EXPANDED (bar 106)**.
+      Gate: the + disc's centre is unchanged (696.5).
+- [ ] "Verified paths" line (§7.3) for the re-tap gate:
+      `26 path: run on sim 26.5 + 27.0; 16 path: the shipped proxy.scrollTo; OS-level COMPILE-ONLY`.
+- [ ] Land via PR. **Install blocks 1 + 2 on E's phone in ONE build** (profiles to 2026-09-24),
+      force-relaunch, THEN ask for the look, with the carried looks on the same install. The
+      RM-on pass covers the disc's appear/leave, the re-tap, and the capture fan.
