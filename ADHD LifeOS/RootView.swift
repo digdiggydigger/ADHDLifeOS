@@ -232,7 +232,9 @@ struct RootView: View {
                         showsPill: showsPill,
                         focusService: focusService,
                         searchScope: searchModel.scope,
-                        onOpenSearch: { searchModel.open() }
+                        onOpenSearch: { searchModel.open() },
+                        showsJournalCompose: showsJournalCompose,
+                        onWriteEntry: { tabNavigation.requestJournalEntry() }
                     )
                 }
                 // F-ConfirmCelebration-1, generalised in `F-CTACelebrations-3`: the root

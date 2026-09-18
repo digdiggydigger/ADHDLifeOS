@@ -46,6 +46,16 @@ final class TabNavigationCoordinator: ObservableObject {
         reselectionCounts[tab, default: 0] += 1
     }
 
+    /// The Journal's pencil disc (`F-JournalPencilDisc`) lives in the root overlay, beside the
+    /// capture disc, while the composer it opens is the Journal's private sheet. So a tap travels
+    /// DOWN as a count the Journal watches — this type's re-tap shape, and never a re-tap itself:
+    /// a request neither scrolls nor pops.
+    @Published private(set) var journalEntryRequests = 0
+
+    func requestJournalEntry() {
+        journalEntryRequests += 1
+    }
+
     func reselectionCount(for tab: AppTab) -> Int {
         reselectionCounts[tab] ?? 0
     }
@@ -99,7 +109,24 @@ private struct TabRootModifier: ViewModifier {
     }
 }
 
+/// The Journal's half of the pencil disc's request. Its own modifier rather than an
+/// `@EnvironmentObject` on `JournalView`, so the Journal's whole body is not re-evaluated every
+/// time any tab reports its depth or is re-tapped.
+private struct JournalEntryRequestListener: ViewModifier {
+    let onRequest: () -> Void
+    @EnvironmentObject private var coordinator: TabNavigationCoordinator
+
+    func body(content: Content) -> some View {
+        content.onChange(of: coordinator.journalEntryRequests) { _ in onRequest() }
+    }
+}
+
 extension View {
+    /// Runs `action` each time the pencil disc asks for a new journal entry.
+    func onJournalEntryRequest(perform action: @escaping () -> Void) -> some View {
+        modifier(JournalEntryRequestListener(onRequest: action))
+    }
+
     /// Marks a tab's scroll content root as the re-tap's scroll target. Apply AFTER the root's
     /// padding, so the target's top is the content's true top.
     func tabRootScrollAnchor() -> some View {

@@ -150,6 +150,65 @@ final class RootBottomOverlayCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The Journal's pencil disc (F-JournalPencilDisc)
+
+    /// E, 2026-09-18: *"move the filled pencil icon disc down to the left-hand side of the FAB Icon.
+    /// make the filled pencil disc inline with the FAB icon"*. Inline means the SAME `HStack` as the
+    /// +, so the shared centre line is by construction — and to its LEFT means after the search
+    /// slot and before the disc. A pencil disc drawn anywhere else passes every value test.
+    func testThePencilDiscSitsInTheDiscRowBetweenTheSearchSlotAndThePlus() throws {
+        let source = try Self.flattened(Self.overlay)
+        guard let row = source.range(of: "private var discRow: some View {") else {
+            return XCTFail("`RootBottomOverlay` has no `discRow`.")
+        }
+        let body = source[row.upperBound...]
+        let order = ["AppSearchRow(", "if showsJournalCompose {", "JournalComposeDisc(", "CaptureDiscLabel("]
+        let positions = order.map { body.range(of: $0)?.lowerBound }
+        XCTAssertFalse(positions.contains(nil), "The disc row is missing one of \(order).")
+        let found = positions.compactMap { $0 }
+        XCTAssertEqual(found, found.sorted(), "The disc row's order is not search slot → pencil → +.")
+    }
+
+    /// The pencil's arrangement, pinned hop by hop — each one missing is a pencil that does
+    /// something E did not choose:
+    /// - **the pill** (*"Follows the pill"*): it is handed the + disc's `showsPill`;
+    /// - **the fan** (decision 6, `F-FanCardsFade`'s precedent): it fades and stops taking touches
+    ///   WITH the cards, by the same rule — an opacity, never an `if`;
+    /// - **appearing and leaving** is a reduced site (§7.2): a fade on both paths, never a `nil` cut.
+    func testThePencilDiscFollowsThePillFadesWithTheFanAndArrivesOnAFade() throws {
+        let source = try Self.flattened(Self.overlay)
+        guard let disc = source.range(of: "JournalComposeDisc("),
+              let plus = source.range(of: "CaptureDiscLabel(", range: disc.upperBound..<source.endIndex)
+        else {
+            return XCTFail("No pencil disc before the + disc — see the test above.")
+        }
+        let chain = source[disc.lowerBound..<plus.lowerBound]
+        for anchor in [
+            "JournalComposeDisc(showsPill: showsPill, action: onWriteEntry)",
+            ".opacity(fanPresence.opacity)",
+            ".allowsHitTesting(fanPresence.acceptsTouches)",
+            ".transition(.opacity.animation(JournalComposeDoor.appearAnimation(reduceMotion: reduceMotion)))"
+        ] {
+            XCTAssertTrue(chain.contains(anchor), "The pencil disc is not modified with `\(anchor)`.")
+        }
+    }
+
+    /// The rule decides; `RootView` asks it with the selected tab AND that tab's depth, and hands
+    /// the answer to the overlay. The depth is the search row's lesson (F-TabDepth-2): a row
+    /// mounted once at the root that learns the tab but not the depth sits under a pushed screen.
+    func testRootViewDecidesThePencilDiscFromTheSelectedTabAndItsDepth() throws {
+        XCTAssertTrue(
+            try Self.flattened("RootView+Furniture.swift").contains(
+                "JournalComposeDoor.isShown(selectedTab: selectedTab, isAtRoot: tabNavigation.isAtRoot(selectedTab))"
+            ),
+            "RootView never asks the pencil's rule, or asks it without the tab's depth."
+        )
+        XCTAssertTrue(
+            try Self.flattened("RootView.swift").contains("showsJournalCompose: showsJournalCompose"),
+            "RootView computes whether the pencil shows and never tells the overlay."
+        )
+    }
+
     // MARK: - The geometry reaches the Layout
 
     /// `sizeThatFits` and `placeSubviews` cannot be unit-tested without real subviews, so they
