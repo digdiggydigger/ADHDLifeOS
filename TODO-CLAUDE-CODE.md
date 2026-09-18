@@ -2606,7 +2606,8 @@ red-checked with three regressions → seven failures, installed and launch-veri
 > Journal's bottom band no longer holds a field, and the "grow the composer's clearance" paragraph
 > further down has nothing to grow. What remains open is E's call on whether the Journal wants a
 > search row at all — and, if `F-JournalPencilReachable` puts the pencil in the disc's band (shape
-> c), that band is spoken for again. Noted, not started.
+> c), that band is spoken for again. Noted, not started. **E chose (b), the nav bar, so the band stays
+> free** — the objection is simply void.
 
 **Do not start this without asking E.** The Captures revert above applies here with MORE force,
 not less: the Journal tab's bottom furniture is the "One line about today…" composer — a field.
@@ -4750,7 +4751,7 @@ space the change does not buy.
 - Three more production comments said "the two screens that pin furniture" (`AppTabContent`,
   `RootView`, `AppTabBar`) — annotated "one since 2026-09-18" rather than left to rot.
 
-### FEATURE: F-JournalPencilReachable — the new-entry icon becomes visible and easy to hit  [ ]
+### FEATURE: F-JournalPencilReachable — restore the nav bar; the pencil is a filled-accent toolbar button  [ ] SPECCED 2026-09-18 — build in a FRESH session
 
 **E's call, 2026-09-17, verbatim:** *"making the current new journal entry icon (in the top-right-hand
 corner of the screen) MORE visable and EASIER to interact with."* E asked for this in a fresh session.
@@ -4762,12 +4763,102 @@ next to a `.largeTitle.bold()` "Journal". *Reachable* — it is 40×40 (under §
 the nav bar is hidden. After block 1 it is the only door, so **persistence is the substance of this
 block and mere styling would not deliver what E asked for.**
 
-**[BLOCKED] — do not guess; ask E before building.** Three shapes, materially different, and E has
-not chosen: (a) **pin the header** so the title row stays put while the stream scrolls beneath it;
-(b) **restore a nav bar** with the pencil as a toolbar item (reverses `JournalView.swift:120`);
-(c) **promote it to the capture disc's band**, the option-02 shape E did not pick for the bar but
-which is a different question for a persistent icon. Prefer rendered options over description
-(`show-dont-describe-geometry`) — the harness now exists and is documented.
+**UNBLOCKED 2026-09-18 — E chose by looking.** Shown the three shapes rendered at rest and scrolled
+(`screenshots/journal-pencil-options/`, sheets 00/01) and three pencil treatments (sheet 02), E answered:
+- Shape: **"(b) Restore a nav bar"** — over (c) the disc's band, which was recommended, and (a).
+- Treatment: **"Filled accent"** — over the recommended accent glyph, and quiet.
+
+What E saw in (b) (`11`–`14` in that folder): a system large title "Journal" at rest with the eye and
+the pencil in a toolbar capsule top right; scrolled, an inline title with the capsule and content
+fading softly beneath (iOS 26 soft scroll edge). The summary line ("0 CLOSED · 8 WRITTEN…") moved under
+the large title as the first content row. **E was told** the cost: Journal becomes the only one of the
+four title-drawing tabs (Today, Areas, Tools, Journal) on the system bar, and the bar looks different
+below iOS 26.
+
+**Built in a FRESH session — E's call, 2026-09-18** (asked mid-plan: *"Did you remember that we need
+to do building in a fresh session?"*). The approved plan is below; nothing of it was written.
+
+#### Step 0 — one throwaway probe build BEFORE any test (it decides the code's shape and the test list)
+
+**E has not seen "filled accent" INSIDE a toolbar**: sheet 02 was the header circle, and render (b) had
+a blue GLYPH on shared glass. So, with the render harness and the one-build static-switch trick
+(temporary edits, reverted — memory `full-screen-render-harness`):
+- **(i) Is an iOS 26 tier real?** The same toolbar with the pencil as `.borderedProminent` vs
+  `.glassProminent`, light + dark. WWDC25 guidance is that the system renders `.borderedProminent` in a
+  toolbar as tinted prominent glass. **Pixel-identical → one style, NO `#available`, no enum, no §7.4
+  call-site test**, and the report says "26 tier considered, not added: the system already renders the
+  floor API as prominent glass" (§7.1's filter). Different → the two-tier shape under Decisions.
+- **(ii) The combination E will actually get:** `ToolbarItemGroup` (the grouping E judged) with the eye
+  plain and the pencil filled — does the prominent item split the shared capsule into two pills?
+- **If (ii) differs materially from the capsule E chose, send E one before/after image and confirm the
+  combination** (`show-dont-describe-geometry`) — a confirm, not a re-ask of the shape.
+
+#### Decisions — defaults, each to be stated in the report (verify, do not trust)
+
+1. **"Filled accent" in a system toolbar.** Floor: `.buttonStyle(.borderedProminent)` +
+   `.buttonBorderShape(.capsule)` — filled accent, native on iOS 16. A separate iOS 26 `.glassProminent`
+   tier ONLY if Step 0 (i) shows it differs. No 17 tier either way (`.circle` adds nothing visible over
+   capsule for a square glyph — say so, §7.1's filter).
+2. **The eye moves to the toolbar too** (as in the render E chose), plain style. ON = `eye` + accent
+   tint; OFF = `eye.slash` in `.secondary` — **deliberately**: toolbar glyphs default to the accent tint,
+   which would make the eye look ON when it is OFF. State rides on the glyph + `.isSelected`; haptic,
+   label, hint unchanged. Not prominent, so the pencil is the only filled blue.
+3. **The system large title replaces the drawn "Journal".** §1's `.tracking(-0.5)` cannot reach the
+   system title without a global `UINavigationBarAppearance`; E chose this by looking at exactly that
+   render. Report it as a §1 departure.
+4. **Placement `.topBarTrailing`** — already used ungated in `SettingsView.swift:82`, so it compiles at
+   the 16.0 target. Pencil trailing-most: "the top-right-hand corner" E named.
+
+#### Implementation (TDD — failing tests first)
+
+- **New `Journal/JournalComposeButton.swift`**: `Button { action() } label: { Image(systemName:
+  "square.and.pencil") }`, `.accessibilityLabel("Write an entry")`,
+  `.accessibilityIdentifier("journalComposeButton")`, the filled style, `#Preview` light + dark inside a
+  `NavigationStack` toolbar. *Only if two tiers:* `enum JournalComposeProminence { glass, bordered;
+  resolve(glassAvailable:) }` taken as a PARAMETER (§7.2's shape), so the floor can be RUN on 26.5.
+- **`JournalView.swift`**: `.toolbar(.hidden, for: .navigationBar)` (`:120`) → `.navigationTitle("Journal")`,
+  `.navigationBarTitleDisplayMode(.large)`, `.toolbar { ToolbarItemGroup(placement: .topBarTrailing) {
+  JournalAllActivityButton … .accessibilityIdentifier("journalAllActivitySwitch"); JournalComposeButton {
+  isPresentingComposer = true } } }`. `header` becomes the summary line only. File header comment: the
+  door is the toolbar pencil.
+- **`JournalAllActivityButton.swift`**: drop the circle chrome; glyph-only label per decision 2.
+- **Delete `Journal/JournalHeaderMetrics.swift`** — nothing reads it once both circles leave the header
+  (the dead-component pattern, memory `dead-shared-component-pattern`). Move its history into the
+  reversed test's doc comment.
+- **Annotate, don't delete:** `Tools/ToolsView.swift:89` ("a tab root that draws its own title (Today,
+  Areas, Journal)"); `TabNavigationCallSiteTests`' "this app's tab roots hide theirs on purpose".
+
+#### Tests to REVERSE in place (names, messages, "reversed 2026-09-18" history)
+
+- `JournalHeaderControlsTests` (block 1's): `testTheHeaderControlsMeetTheTouchFloor` → the header draws
+  no hand-sized circles, both controls are system toolbar items (§3 by the system);
+  `testBothHeaderCirclesAreSizedByTheSharedMetric` → both controls live in the nav-bar toolbar
+  (`.navigationTitle("Journal")`, `ToolbarItemGroup(placement: .topBarTrailing)`, no
+  `.toolbar(.hidden…)`); `testThePencilStillOpensTheComposer` → adapted to `JournalComposeButton`.
+- New: the pencil is `.borderedProminent` (+ the §7.4 both-branches test and the pure `resolve` test
+  ONLY if two tiers); the eye's OFF glyph is `.secondary`, not accent.
+- Stay green untouched: `RoutineRecordSurfacesCallSiteTests` (`journalAllActivitySwitch` stays in
+  `JournalView.swift`), `TabNavigationCallSiteTests`.
+
+#### Acceptance criteria
+
+- [ ] Step 0 rendered and its two answers recorded; E confirmed the combination if (ii) differed.
+- [ ] RED first, counted; GREEN; commit; red-check by restoring block-1 `JournalView.swift` +
+      `JournalAllActivityButton.swift` from `main`, count, `git checkout HEAD --`, rebuild green.
+- [ ] SwiftLint 0; full suite (documented command, `OS=26.5`); build — all pasted. Targeted runs with
+      `-enableCodeCoverage NO` (coverage post-processing hung once on 2026-09-18).
+- [ ] **UI journeys, deliberately** — the identifiers move from content into the nav bar:
+      `JournalJourneyUITests`, `RoutineRecordJourneyUITests`, foreground, emulator up — then
+      `xcrun simctl erase` that simulator in the same command, before any unit run.
+- [ ] Evidence `screenshots/journal-pencil-navbar/` + README (rig: `journal-door-unpinned`): at rest +
+      scrolled, light + dark; the floor render if two tiers; **scrolled → `coordinator.reselect(.journal)`
+      → the large title RE-EXPANDED.** The re-tap is `proxy.scrollTo(TabRootScrollAnchor.id, anchor:
+      .top)` (`TabNavigation.swift`), which is the known risk with large titles — if it stays collapsed,
+      fix before landing. Gate: disc centre 696.5 unchanged.
+- [ ] "Verified paths" line (§7.3) if an `#available` site ships. No reduced site is added or changed
+      (the title collapse is the system's) → **no RM-on pass owed**; say why.
+- [ ] Land via PR; **install BOTH blocks on E's phone in one build** (profiles to 2026-09-24),
+      force-relaunch, THEN ask for the look — with the two carried looks on the same install.
 
 **Whatever the shape:** §3's 44pt floor, §1's hierarchy, §4's tokens only, and an
 `accessibilityLabel` ("Write an entry" today). If a reduced or `#available` site is touched, the

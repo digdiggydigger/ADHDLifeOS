@@ -1,4 +1,4 @@
-# Open items register — 2026-09-18 (fifty-ninth edition; **E chose Journal door option 04 — nothing pinned, the pencil is the door — from five rendered options; specced, NOT built (`build-in-a-fresh-session`). A second block, the pencil's visibility/reachability, is [BLOCKED] on E's choice of shape. The phone's profiles were re-issued and now run to 2026-09-24.**) Opener: `handoff/START-HERE-journal-door.md`.
+# Open items register — 2026-09-18 (sixtieth edition; **`F-JournalDoorUnpinned` BUILT and MERGED — the pinned bar is gone, +96pt visible at rest; E then chose the pencil's shape by looking — "(b) Restore a nav bar", "Filled accent" — and `F-JournalPencilReachable` is SPECCED for a FRESH session (E's call). Block 1 is deliberately NOT on the phone: both blocks install together.**) Opener: `handoff/START-HERE-journal-pencil-navbar.md`.
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
@@ -36,6 +36,50 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Sixtieth edition — 2026-09-18 (later), `main` @ the merge of this hand-off.** Suite **3,057 / 0**,
+SwiftLint **0 / 826** — both measured at `d1b3601` (block 1's code) with the emulator UP; nothing merged
+since touched Swift. Build `** BUILD SUCCEEDED **`. `firestore.rules` untouched — nothing for E to
+republish.
+
+**Device:** the phone still carries **`c54efd7`** — **block 1 is NOT installed, on purpose.** Alone it
+leaves the Journal with no door once scrolled, so blocks 1 + 2 install together in one build after
+block 2. Profiles run to **2026-09-24T19:49Z**.
+
+**Landed this session:**
+- **`F-JournalDoorUnpinned`** (PR #156, `d1b3601` + evidence `8a237be`, merge `6656866`). The composer
+  bar, its `safeAreaInset` and its private trailing clearance are deleted; the timeline calls
+  `.captureDiscClearance()` like every other screen; both header circles 40 → 44 through
+  `JournalHeaderMetrics.controlSize`. RED 4 tests / 8 assertions → GREEN; red-check (bar restored +
+  pencil id deleted) 4 / 8 red, exit 65, restored 32 / 0. No `#available` or reduced site → no RM-on
+  pass owed. Evidence `screenshots/journal-door-unpinned/`.
+- **`screenshots/journal-pencil-options/`** (PR #157) — three shapes × at rest/scrolled × light/dark,
+  plus three pencil treatments.
+- **`F-JournalPencilReachable` specced** in `TODO-CLAUDE-CODE.md` with E's answers and the approved plan.
+
+**E's decisions this session:** **"(b) Restore a nav bar"** (over the recommended (c) disc's band, and
+(a)); **"Filled accent"** (over the recommended accent glyph); and, asked mid-plan, that building happens
+**in a fresh session** — *"Did you remember that we need to do building in a fresh session?"*
+
+**Numbers worth keeping, measured at E's phone's real 34pt home-indicator inset:**
+- Block 1 bought **+96pt visible at rest** (653.7 → 750.0), not the +107 the options README recorded —
+  that rig had no home-indicator inset. Reserve 164 → 160: a look-and-feel win, not scroll reach.
+- The "~5.5pt disc-below-composer" figure in the docs was DERIVED, not measured; the constants give 7.3.
+  Moot now — block 1 deleted the composer.
+- Shape (a)'s pinned header would have cost **85pt** permanently (hairline at y 147).
+
+**Render rig, improved:** the hosted window must be pinned to the BOTTOM of the simulator's 874pt screen
+(else it inherits 12 of the 34pt inset); all variants from one build via static switches; targeted runs
+with `-enableCodeCoverage NO` (a coverage-on run hung ~20 min after its tests finished). Memory
+`full-screen-render-harness`.
+
+**Owed by E, carried, not blocking — put them on the blocks 1 + 2 install:**
+1. The **24pt gap** look — portrait AND landscape, bar alone and under a Confirm card.
+2. The **Reduce Motion ON** fan pass — the cards must FADE, not cut.
+
+---
+
+**Fifty-ninth edition's State follows, unchanged.**
 
 **Fifty-ninth edition — 2026-09-18, `main` @ `79fa171`.** Suite **3,053 / 0**, SwiftLint **0 / 824**
 — both measured at `c54efd7`; the two commits since are **evidence and spec only, no Swift changed**,
@@ -805,7 +849,9 @@ looks** (the looks list is at the foot of the TODO section).
    sites and disagree about their input. (carried)
 5. **Accuracy-aware containment for the arrival card — ONLY if E still sees drops.** (carried)
 6. **Arc 2 — first-class routines + the "at a time" trigger.** (carried)
-7. **`F-Search-3-Journal`** — recommendation is still to kill the block. (carried)
+7. **`F-Search-3-Journal`** — recommendation is still to kill the block. Its one objection (a field
+   already in the band) is VOID since `F-JournalDoorUnpinned`, and E chose the nav bar for the pencil,
+   so the band stays free. Still E's call; not to be started unasked. (updated 2026-09-18)
 8. **The Live Activity design review** E parked. (carried)
 
 ## C · Parked on E's instruction — do not start unprompted
