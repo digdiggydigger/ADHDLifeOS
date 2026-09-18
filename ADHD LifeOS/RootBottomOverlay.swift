@@ -205,6 +205,9 @@ struct RootBottomOverlay: View {
                 JournalComposeDisc(showsPill: showsPill, action: onWriteEntry)
                     .opacity(fanPresence.opacity)
                     .allowsHitTesting(fanPresence.acceptsTouches)
+                    // …and out of VoiceOver's reach with it: hit-testing stops a finger, not
+                    // VoiceOver's activate, which could otherwise open the composer under the scrim.
+                    .accessibilityHidden(!fanPresence.acceptsTouches)
                     .animation(fanFade, value: isFabOpen)
                     .transition(.opacity.animation(JournalComposeDoor.appearAnimation(reduceMotion: reduceMotion)))
             }

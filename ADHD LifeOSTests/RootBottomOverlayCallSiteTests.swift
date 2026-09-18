@@ -187,6 +187,9 @@ final class RootBottomOverlayCallSiteTests: XCTestCase {
             "JournalComposeDisc(showsPill: showsPill, action: onWriteEntry)",
             ".opacity(fanPresence.opacity)",
             ".allowsHitTesting(fanPresence.acceptsTouches)",
+            // `allowsHitTesting` stops a finger, not VoiceOver's activate: without this a VoiceOver
+            // user could open the composer from under the fan's scrim (the HIG review, 2026-09-18).
+            ".accessibilityHidden(!fanPresence.acceptsTouches)",
             ".transition(.opacity.animation(JournalComposeDoor.appearAnimation(reduceMotion: reduceMotion)))"
         ] {
             XCTAssertTrue(chain.contains(anchor), "The pencil disc is not modified with `\(anchor)`.")

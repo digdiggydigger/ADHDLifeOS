@@ -119,6 +119,18 @@ final class JournalComposeDiscTests: XCTestCase {
         XCTAssertFalse(source.contains("width: 42"), "A literal 42 is back beside E's named metric.")
     }
 
+    /// A frame positions a glyph; it does not clip it. `.title3` keeps growing through the
+    /// accessibility sizes, and in E's fixed 42pt disc it would spill past the circle long before
+    /// the + disc's glyph fills its 60 — so the pencil's glyph stops growing at `.accessibility1`
+    /// (the HIG review, 2026-09-18). Nothing changes at the sizes the disc was designed at.
+    func testThePencilGlyphStopsGrowingBeforeItOutgrowsTheDisc() throws {
+        let source = try Self.flattened("Journal/JournalComposeDisc.swift")
+        XCTAssertTrue(
+            source.contains(".dynamicTypeSize(...DynamicTypeSize.accessibility1)"),
+            "The pencil glyph scales without a ceiling inside a fixed 42pt disc."
+        )
+    }
+
     // MARK: - Where it shows
 
     /// The Journal, at its top level, and nowhere else — the search row's rule (a pushed door has

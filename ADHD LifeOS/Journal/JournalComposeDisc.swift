@@ -59,6 +59,9 @@ struct JournalComposeDisc: View {
         Button(action: action) {
             Image(systemName: "square.and.pencil")
                 .font(.title3.weight(.semibold))
+                // A frame positions a glyph, it does not clip it: past `.accessibility1` a `.title3`
+                // glyph would spill out of E's fixed 42pt circle. Unchanged at every other size.
+                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(AreaPalette.work.onColor)
                 .frame(width: JournalComposeDiscMetrics.diameter, height: JournalComposeDiscMetrics.diameter)
                 .background(CaptureDiscFace.pencil.gradient, in: Circle())

@@ -2614,6 +2614,10 @@ red-checked with three regressions → seven failures, installed and launch-veri
 > the left-hand side of the FAB Icon"*. So the band left of the disc on the Journal belongs to the
 > 42pt pencil disc (`F-JournalPencilDisc`). A search row there would have to share the band with it,
 > which is a design question for E, not a layout detail. Still not to be started unasked.
+>
+> **Built 2026-09-18 (`F-JournalPencilDisc`):** the pencil disc now lives in that band — in
+> `RootBottomOverlay.discRow`, between the search slot and the +. The objection is live, not
+> hypothetical.
 
 **Do not start this without asking E.** The Captures revert above applies here with MORE force,
 not less: the Journal tab's bottom furniture is the "One line about today…" composer — a field.
