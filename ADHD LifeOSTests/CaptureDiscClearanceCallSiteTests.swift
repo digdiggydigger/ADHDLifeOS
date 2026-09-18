@@ -28,11 +28,15 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
     /// roots and everything pushed into their navigation stacks. Sheets and full-screen covers
     /// are deliberately absent: they are presented ABOVE the disc and hide it entirely.
     ///
-    /// `Journal/JournalTimelineSections.swift` is absent for a measured reason, not an oversight:
-    /// the Journal's composer bar is a `safeAreaInset(edge: .bottom)` that already occupies the
-    /// disc's band, and it carries the TRAILING half of the same clearance
-    /// (`JournalView.captureDiscClearance`). Adding the vertical form on top would open a dead
-    /// 84pt gap under a screen that has been through six colour and layout passes.
+    /// **`Journal/JournalTimelineSections.swift` is PRESENT since 2026-09-18 — reversed by
+    /// `F-JournalDoorUnpinned`.** It used to be absent for a measured reason: the Journal's
+    /// composer bar was a `safeAreaInset(edge: .bottom)` that already occupied the disc's band and
+    /// carried the TRAILING half of the same clearance (`JournalView.captureDiscClearance`), so
+    /// adding the vertical form on top "would open a dead 84pt gap under a screen that has been
+    /// through six colour and layout passes". E chose option 04 — nothing pinned, the header pencil
+    /// is the door (`screenshots/journal-door-options/`) — so the bar and its trailing copy are
+    /// deleted, that reason is void, and the Journal joins every other screen. Without it the last
+    /// row lands under the disc with nothing below it to scroll to — the defect this list exists for.
     ///
     /// `LifeAreaEditor/LifeAreaEditorListView.swift` is absent for a different one: it now has
     /// THREE presentations — pushed from Areas (under the disc), pushed from the Tools tab (under
@@ -65,6 +69,8 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
         ("Capture/CaptureInboxView.swift", ".captureDiscClearance()"),
         ("Capture/CaptureDetailView.swift", ".captureDiscClearance()"),
         ("LifeAreaDetail/LifeAreaDetailView.swift", ".captureDiscClearance()"),
+        // Since `F-JournalDoorUnpinned` (2026-09-18) — see the reversal note above.
+        ("Journal/JournalTimelineSections.swift", ".captureDiscClearance()"),
         // The sixth tab root (F-Tools-3-Page). Two cards do not reach the disc today, but the
         // page is deliberately the place Routines will land, and the list is what stops that
         // arrival from being the moment somebody rediscovers this.
@@ -133,8 +139,10 @@ final class CaptureDiscClearanceCallSiteTests: XCTestCase {
             // holds both call sites moved out of `CaptureInboxSections.swift` to make room for the
             // Sorted and Journal it pop wrappers. The measurement did not change; its file did.
             trailing, ["CaptureInboxUndoSections.swift"],
+            // The message used to cite `JournalView`'s own `captureDiscClearance` copy as the
+            // example; that copy died with the composer bar in `F-JournalDoorUnpinned` (2026-09-18).
             "The trailing clearance moved. It lifts a PINNED BAR's controls out from under the"
-                + " disc — `JournalView` names its own copy `captureDiscClearance` — and is not"
+                + " disc — the capture inbox's undo bar is the one left — and is not"
                 + " interchangeable with the bottom form."
         )
     }

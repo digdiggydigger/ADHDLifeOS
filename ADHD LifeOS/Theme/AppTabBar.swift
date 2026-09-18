@@ -290,7 +290,8 @@ extension View {
     /// something better: a reserve is a strip of dead layout the page cannot enter, so the bar
     /// sat on a plinth rather than floating over live content — E's *"I'd much rather the
     /// background surrounding the nav bar is transparent so that I can see the content scrolling
-    /// behind it"*. Content wins; the two screens that pin furniture ask for the room here.
+    /// behind it"*. Content wins; a screen that pins furniture asks for the room here — two did,
+    /// and one (the capture inbox) since `F-JournalDoorUnpinned` deleted the Journal's bar.
     ///
     /// Applied to the furniture INSIDE the screen's own `safeAreaInset` closure, so the screen's
     /// scroll content is inset by the furniture and this together — the last row still clears

@@ -32,8 +32,9 @@ final class AppTabBarCallSiteTests: XCTestCase {
     /// the bar sat on a plinth. E: *"I'd much rather the background surrounding the nav bar is
     /// transparent so that I can see the content scrolling behind it."*
     ///
-    /// So the inset is back and the reserve is gone, with the two screens that pin their own
-    /// furniture asking for room explicitly. Both halves are asserted, because either alone is a
+    /// So the inset is back and the reserve is gone, with the screens that pin their own furniture
+    /// asking for room explicitly — two of them then, ONE since `F-JournalDoorUnpinned`
+    /// (2026-09-18) deleted the Journal's composer bar. Both halves are asserted, because either alone is a
     /// bug: an inset with a reserve double-counts the height, and a reserve without the inset is
     /// the plinth E rejected.
     func testTheBarIsASafeAreaInsetAndTheContainerReservesNothing() throws {
@@ -51,12 +52,17 @@ final class AppTabBarCallSiteTests: XCTestCase {
         )
     }
 
-    /// The two screens that pin their OWN bottom furniture inside a `NavigationStack`, and so
-    /// never inherit the bar's inset. A helper nothing calls is this repo's most repeated defect,
-    /// so the call sites are enumerated rather than the definition.
+    /// The screens that pin their OWN bottom furniture inside a `NavigationStack`, and so never
+    /// inherit the bar's inset. A helper nothing calls is this repo's most repeated defect, so the
+    /// call sites are enumerated rather than the definition.
+    ///
+    /// **One screen since 2026-09-18, reversed from two.** `("Journal/JournalView.swift",
+    /// "composerBar")` was the first pair — the Journal caption line sliced in half under the bar
+    /// is what this guard's message still cites — until E chose option 04, nothing pinned
+    /// (`F-JournalDoorUnpinned`). The Journal's pinning is now held the other way round by
+    /// `testTheJournalPinsNoBottomFurniture` below.
     func testEveryTabLevelPinnedBarAsksForTabBarClearance() throws {
         for (file, furniture) in [
-            ("Journal/JournalView.swift", "composerBar"),
             ("Capture/CaptureInboxView.swift", "bottomBar")
         ] {
             XCTAssertTrue(
@@ -66,6 +72,31 @@ final class AppTabBarCallSiteTests: XCTestCase {
                     + " tab bar — the Journal composer's caption line is what this looked like."
             )
         }
+    }
+
+    /// **E's option 04 (2026-09-18): nothing is pinned to the Journal's bottom edge.** E: the "One
+    /// line about today…" bar *"currently gets in the way and aesthetically unattractive and
+    /// reduces viewing space on the Journal page"*; asked, E named **"The bar — its bulk and
+    /// position"**, and chose option 04 from five rendered options. The header pencil is the door.
+    ///
+    /// The reverse of the pair this file used to hold, so a re-added bar fails loudly instead of
+    /// quietly re-joining the list above. The shared `composerFooterSurface()` it wore is NOT gone
+    /// — E ruled it out of scope and four other screens keep it — so this reads `JournalView`
+    /// alone, with comments stripped so the history it keeps cannot trip it.
+    func testTheJournalPinsNoBottomFurniture() throws {
+        let journal = try Self.appSource("Journal/JournalView.swift")
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+        XCTAssertFalse(
+            journal.contains("safeAreaInset(edge: .bottom)"),
+            "JournalView pins bottom furniture again. E chose nothing pinned (option 04) — the"
+                + " bar's bulk and position were the complaint."
+        )
+        XCTAssertFalse(
+            journal.contains("composerBar"),
+            "The Journal's composer bar is back. The header pencil is the door (F-JournalDoorUnpinned)."
+        )
     }
 
     /// **This assertion used to say the opposite, and it was enforcing a bug.**

@@ -190,9 +190,10 @@ struct RootView: View {
                 // full height, so the page scrolls BEHIND the bar rather than stopping at a
                 // reserved strip.
                 //
-                // The two screens that pin their own bottom furniture inside a `NavigationStack`
-                // do not inherit this (a SwiftUI inset does not cross that boundary) and ask for
-                // the room with `appTabBarClearance()` instead.
+                // A screen that pins its own bottom furniture inside a `NavigationStack` does not
+                // inherit this (a SwiftUI inset does not cross that boundary) and asks for the
+                // room with `appTabBarClearance()` instead. Two did; one — the capture inbox —
+                // since `F-JournalDoorUnpinned` (2026-09-18) deleted the Journal's composer bar.
                 //
                 // Placed above `.blur` deliberately: the bar dims with the content when the
                 // capture fan opens, the way the system bar did.
