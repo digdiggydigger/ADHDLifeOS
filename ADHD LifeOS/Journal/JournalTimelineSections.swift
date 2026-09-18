@@ -41,6 +41,11 @@ extension JournalView {
             .padding(16)
             .tabRootScrollAnchor()
         }
+        // The capture disc floats over the bottom of this stream. The pinned composer bar used to
+        // hold the disc's band and carry a trailing clearance of its own; E chose nothing pinned
+        // (option 04, `F-JournalDoorUnpinned`), so the Journal joins every other screen here —
+        // without it the last entry rests under the disc with nothing below it to scroll to.
+        .captureDiscClearance()
         .refreshable {
             await reload()
         }

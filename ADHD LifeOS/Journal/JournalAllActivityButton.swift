@@ -5,7 +5,7 @@
 //  The "All activity" switch (F-RoutineRecord-2, E's call): the one way the routine story —
 //  offered, started, finished — becomes visible on the Journal. The compose button's circle,
 //  so the header reads as one family; selected state carried by the fill AND the eye glyph,
-//  never colour alone.
+//  never colour alone. 44pt with the pencil since `F-JournalDoorUnpinned` (`JournalHeaderMetrics`).
 //
 
 import SwiftUI
@@ -21,7 +21,7 @@ struct JournalAllActivityButton: View {
             Image(systemName: isOn ? "eye" : "eye.slash")
                 .font(.body)
                 .foregroundStyle(isOn ? AreaPalette.work.onColor : Color("LabelSecondary"))
-                .frame(width: 40, height: 40)
+                .frame(width: JournalHeaderMetrics.controlSize, height: JournalHeaderMetrics.controlSize)
                 .background(
                     isOn ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.cardSurface),
                     in: Circle()

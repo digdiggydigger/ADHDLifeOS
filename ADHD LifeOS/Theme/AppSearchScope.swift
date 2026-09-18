@@ -90,6 +90,14 @@ enum AppSearchRowMetrics {
     /// The accepted cost is the Journal alignment below: the disc's centre lands ~706 on an iPhone 15
     /// Pro, ~5.5pt off the composer's centre instead of 2.5.
     ///
+    /// **The Journal composer field below no longer exists (2026-09-18, `F-JournalDoorUnpinned`).**
+    /// E chose option 04 — nothing pinned on the Journal, the header pencil is the door — so the
+    /// ruler this number was first measured against is deleted. **The number does not change:**
+    /// 24 is E's approved value, chosen by looking at the collapsed sprint bar on this line, and the
+    /// 2026-09-03 measurements below stay as the record of how 32 was found. The ruler is gone; the
+    /// decision it informed stands. Do not re-tune this, or `CaptureDiscMetrics.edgeMargin`, on the
+    /// strength of the bar's absence.
+    ///
     /// **It was 32, E's number twice over — measured off E's own markings, not chosen.** E
     /// marked the target on two device screenshots (2026-09-03) and asked for the disc to be
     /// *"comfortably aligned with the One line about today button on the Journal Tab"*:

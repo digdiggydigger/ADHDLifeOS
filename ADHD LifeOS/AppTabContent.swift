@@ -61,10 +61,11 @@ struct AppTabVisitLog {
 /// the opposite of that — it is a strip of dead layout the page cannot enter, so the bar sits on
 /// a plinth instead of floating over live content, and no shade of backdrop fixes it.
 ///
-/// So content fills the screen and the bar floats over it. The two screens that pin their OWN
-/// bottom furniture inside a `NavigationStack` — and therefore never see the outer inset — ask
-/// for the room explicitly with `appTabBarClearance()`, which `AppTabBarCallSiteTests` enumerates
-/// so a third cannot be added without noticing.
+/// So content fills the screen and the bar floats over it. A screen that pins its OWN bottom
+/// furniture inside a `NavigationStack` — and therefore never sees the outer inset — asks for the
+/// room explicitly with `appTabBarClearance()`, which `AppTabBarCallSiteTests` enumerates so
+/// another cannot be added without noticing. There were two; since `F-JournalDoorUnpinned`
+/// (2026-09-18) deleted the Journal's composer bar, the capture inbox is the only one.
 /// The one number the container needs. Named so a test can pin that it clears any screen.
 enum AppTabContentLayout {
     /// Where a hidden tab is parked. Wider than any device in either orientation: a hidden

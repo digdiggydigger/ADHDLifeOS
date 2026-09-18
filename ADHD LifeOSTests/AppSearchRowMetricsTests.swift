@@ -51,6 +51,12 @@ final class AppSearchRowMetricsTests: XCTestCase {
     /// the Journal composer's centre instead of 2.5. (It was 60 for exactly one build, once — that
     /// was 58pt too generous, a number measured from the home indicator while the disc overlapped
     /// the bar.)
+    ///
+    /// **That composer field was deleted on 2026-09-18 (`F-JournalDoorUnpinned`, E's option 04 —
+    /// nothing pinned on the Journal).** The reference is gone and this value is NOT: 24 is still
+    /// E's call and this test still holds it. What changed is only that its original ruler no
+    /// longer exists to re-measure against — which is a reason to leave the number alone, not to
+    /// revisit it.
     func testTheGapAboveTheTabBarIsTheValueEChoseOnDevice() {
         XCTAssertEqual(
             AppSearchRowMetrics.gapAboveTabBar, 24,
@@ -61,7 +67,9 @@ final class AppSearchRowMetricsTests: XCTestCase {
 
     /// The gap has to clear the bar and stay clear of it: too small and the disc sits ON the bar
     /// (the 7pt overlap E photographed), too large and it floats away from the composer it is
-    /// meant to line up with.
+    /// meant to line up with. (The Journal composer it lined up with was deleted on 2026-09-18 by
+    /// `F-JournalDoorUnpinned`; the upper bound stays, now as the point past which the disc stops
+    /// reading as part of the bar's furniture at all.)
     func testTheGapClearsTheBarWithoutFloatingAway() {
         XCTAssertGreaterThanOrEqual(
             AppSearchRowMetrics.gapAboveTabBar, 24,
@@ -70,7 +78,8 @@ final class AppSearchRowMetricsTests: XCTestCase {
         XCTAssertLessThanOrEqual(
             AppSearchRowMetrics.gapAboveTabBar, 40,
             "The capture button has floated far enough above the bar to stop lining up with a"
-                + " screen's own bottom furniture — the Journal composer is the reference."
+                + " screen's own bottom furniture — the Journal composer was the reference until"
+                + " 2026-09-18."
         )
     }
 

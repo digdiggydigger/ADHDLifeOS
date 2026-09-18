@@ -4,8 +4,10 @@
 //
 //  The v3 Journal (F-V3-Journal): one day-grouped stream where written entries and closed tasks
 //  sit together — the day as it actually went, not just what was typed. Closed nudges are absent
-//  until real completion stamps exist (V3-Nudges). The composer stays a sheet; the bottom bar's
-//  "One line about today…" is its door.
+//  until real completion stamps exist (V3-Nudges). The composer stays a sheet; the header pencil is
+//  its door. It shared that job with a pinned "One line about today…" bar until 2026-09-18, when
+//  E chose option 04 from five rendered options — nothing pinned — because the bar *"gets in the
+//  way … and reduces viewing space"* (`F-JournalDoorUnpinned`, `screenshots/journal-door-options/`).
 //
 
 import Combine
@@ -123,7 +125,6 @@ struct JournalView: View {
                 inspectingTaskId = nil
                 inspectingCapture = nil
             }
-            .safeAreaInset(edge: .bottom) { composerBar.appTabBarClearance() }
             .sheet(isPresented: $isPresentingComposer) {
                 LogComposerView(journalService: journalService, lifeAreas: journalService.lifeAreas) {
                     Task { await journalService.load() }
@@ -193,13 +194,15 @@ struct JournalView: View {
                 // Safe on the container: the button is the ONLY element inside, so inheritance
                 // renames nothing out from under itself.
                 .accessibilityIdentifier("journalAllActivitySwitch")
+            // The Journal's only door to a new entry since `F-JournalDoorUnpinned` — hence §3's
+            // 44pt, which it did not meet as a 40pt second door.
             Button {
                 isPresentingComposer = true
             } label: {
                 Image(systemName: "square.and.pencil")
                     .font(.body)
                     .foregroundStyle(Color("LabelSecondary"))
-                    .frame(width: 40, height: 40)
+                    .frame(width: JournalHeaderMetrics.controlSize, height: JournalHeaderMetrics.controlSize)
                     .background(Color.cardSurface, in: Circle())
                     .overlay(Circle().strokeBorder(Color.cardBorder, lineWidth: 1))
                     .contentShape(Circle())
@@ -268,44 +271,5 @@ struct JournalView: View {
                 .contentShape(Capsule())
         }
         .accessibilityIdentifier("journalLifeAreaFilter")
-    }
-
-    // MARK: - Composer bar
-
-    /// Trailing room for the capture disc — see `CaptureDiscMetrics`, which this screen's
-    /// screenshot (E, 2026-08-25) is the origin of.
-    private static let captureDiscClearance = CaptureDiscMetrics.clearance
-
-    private var composerBar: some View {
-        VStack(spacing: 4) {
-            Button {
-                isPresentingComposer = true
-            } label: {
-                Text("One line about today…")
-                    .font(.callout)
-                    .foregroundStyle(Color("LabelSecondary"))
-                    .frame(maxWidth: .infinity, minHeight: 54)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color.cardBorder, lineWidth: 1)
-                            .background(
-                                Color.cardSurface,
-                                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            )
-                    )
-                    .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("journalComposerBar")
-            Text("Entries are append-only. Energy and mood are asked once, on save.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.leading, 16)
-        .padding(.trailing, Self.captureDiscClearance)
-        .padding(.top, 8)
-        .padding(.bottom, 4)
-        .frame(maxWidth: .infinity)
-        .composerFooterSurface()
     }
 }
