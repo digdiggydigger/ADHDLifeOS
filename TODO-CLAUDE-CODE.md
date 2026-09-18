@@ -2601,6 +2601,13 @@ red-checked with three regressions → seven failures, installed and launch-veri
 
 ### FEATURE: F-Search-3-Journal — Journal adopts the row  [ ] UNCHECKED — ⚠ RECONSIDER FIRST
 
+> **2026-09-18 — the objection below is VOID; the block is still NOT to be started unasked.**
+> `F-JournalDoorUnpinned` deleted the "One line about today…" composer bar (E's option 04), so the
+> Journal's bottom band no longer holds a field, and the "grow the composer's clearance" paragraph
+> further down has nothing to grow. What remains open is E's call on whether the Journal wants a
+> search row at all — and, if `F-JournalPencilReachable` puts the pencil in the disc's band (shape
+> c), that band is spoken for again. Noted, not started.
+
 **Do not start this without asking E.** The Captures revert above applies here with MORE force,
 not less: the Journal tab's bottom furniture is the "One line about today…" composer — a field.
 Putting the search row in that band would place a field immediately above another field, on the
@@ -4679,7 +4686,7 @@ and the nav bar is hidden (`JournalView.swift:120`), so **once scrolled there is
 writing a line becomes tab-re-tap then pencil. E's follow-up addresses exactly this, so **build both
 in the same fresh session, block 1 first**, rather than shipping 1 alone.
 
-### FEATURE: F-JournalDoorUnpinned — the pinned "One line about today…" bar goes; the pencil is the door  [ ]
+### FEATURE: F-JournalDoorUnpinned — the pinned "One line about today…" bar goes; the pencil is the door  [x] COMPLETED 2026-09-18 — awaiting E's device look
 
 **What E chose, in numbers** (measured on the rendered frames, `screenshots/journal-door-options/`):
 content visible at rest goes **y 705 → 812, +107pt**; the reserved band goes **164pt → 160pt**, so
@@ -4717,18 +4724,31 @@ space the change does not buy.
   history. **Do not re-tune `gapAboveTabBar` or `CaptureDiscMetrics.edgeMargin`.**
 
 **Acceptance criteria**
-- [ ] RED first: a call-site guard that `JournalTimelineSections` calls `.captureDiscClearance()`
+- [x] RED first: a call-site guard that `JournalTimelineSections` calls `.captureDiscClearance()`
       and that `JournalView` no longer pins `composerBar`; a geometry test that the pencil's hit
-      target is ≥ 44×44.
-- [ ] The four tests above reversed in place, E's quotes kept and annotated "reversed 2026-09-18".
-- [ ] Red-check by restoring the bar; count the failures; restore with `git checkout --`.
-- [ ] Evidence folder + README: the Journal at rest, light and dark, before and after.
-      The render harness is `full-screen-render-harness` — `ImageRenderer` CANNOT do a whole screen.
-- [ ] SwiftLint 0, suite green, build green, all pasted. No `#available` or reduced site touched, so
-      **no RM-on pass is owed** — say why in the report.
-- [ ] **`F-Search-3-Journal` (`TODO-CLAUDE-CODE.md:2600-2625`, "⚠ RECONSIDER FIRST") is unblocked by
+      target is ≥ 44×44. **RED observed: 4 tests / 8 assertions**, each for the intended reason.
+- [x] The four tests above reversed in place, E's quotes kept and annotated "reversed 2026-09-18".
+- [x] Red-check by restoring the bar; count the failures; restore with `git checkout --`.
+      **Bar restored from `8a8b96e` + the pencil's identifier deleted: 4 tests / 8 assertions red,
+      exit 65; restored from `d1b3601`, 32/0 green.**
+- [x] Evidence folder + README: the Journal at rest, light and dark, before and after.
+      `screenshots/journal-door-unpinned/` — plus scrolled-to-end, which is the clearance's proof.
+- [x] SwiftLint 0, suite green, build green, all pasted. No `#available` or reduced site touched, so
+      **no RM-on pass is owed** — say why in the report. **3,057 / 0; lint 0 / 826.**
+- [x] **`F-Search-3-Journal` (`TODO-CLAUDE-CODE.md:2600-2625`, "⚠ RECONSIDER FIRST") is unblocked by
       this block** — its entire objection was that this band already held a field. Note it; do not
-      start it.
+      start it. *(Noted in its block, 2026-09-18.)*
+
+**Built 2026-09-18, and where it departs from the shape above — both deliberate:**
+- **A real 44pt frame, not the `slotHitOverflow` trick.** The overflow exists so a target does not
+  grow a CONSTRAINED container; the header row is already taller than 44 (caption + `.largeTitle`),
+  so growing costs no layout, and E's word was "grow". Both circles read one metric,
+  `JournalHeaderMetrics.controlSize` (its own file, so a red-check that restores the old views still
+  compiles). `JournalHeaderControlsTests` holds the value, the readers and the pencil's door.
+- **`+96pt`, not `+107pt`.** At E's phone's real 34pt home-indicator inset the bar was 96.3pt tall,
+  so that is what came back; the options rig had no inset. Reserve 164 → 160, as specced.
+- Three more production comments said "the two screens that pin furniture" (`AppTabContent`,
+  `RootView`, `AppTabBar`) — annotated "one since 2026-09-18" rather than left to rot.
 
 ### FEATURE: F-JournalPencilReachable — the new-entry icon becomes visible and easy to hit  [ ]
 
