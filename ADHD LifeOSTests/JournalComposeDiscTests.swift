@@ -19,6 +19,7 @@ import SwiftUI
 import XCTest
 @testable import ADHD_LifeOS
 
+@MainActor
 final class JournalComposeDiscTests: XCTestCase {
 
     // MARK: - The twins: same colours, opposite directions

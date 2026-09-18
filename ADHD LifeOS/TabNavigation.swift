@@ -87,10 +87,14 @@ private struct TabRootModifier: ViewModifier {
     let onPopToRoot: () -> Void
     @EnvironmentObject private var coordinator: TabNavigationCoordinator
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Filled by the locator `tabRootScrollAnchor()` plants in this tab's scroll content, so the
+    /// re-tap can reach the page's `UIScrollView` (`F-JournalPencilDisc`).
+    @State private var scrollHandle = TabRootScrollHandle()
 
     func body(content: Content) -> some View {
         ScrollViewReader { proxy in
             content
+                .environment(\.tabRootScrollHandle, scrollHandle)
                 .onAppear { coordinator.report(tab, isAtRoot: isAtRoot) }
                 .onChange(of: isAtRoot) { coordinator.report(tab, isAtRoot: $0) }
                 .onChange(of: coordinator.reselectionCount(for: tab)) { _ in
@@ -98,14 +102,45 @@ private struct TabRootModifier: ViewModifier {
                     case .popToRoot:
                         onPopToRoot()
                     case .scrollToTop:
-                        withAnimation(
-                            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)
-                        ) {
-                            proxy.scrollTo(TabRootScrollAnchor.id, anchor: .top)
-                        }
+                        scrollToTop(proxy)
                     }
                 }
         }
+    }
+
+    /// iOS 26+: a page whose large title collapsed gets it back (`TabRootLargeTitleReTap`); every
+    /// other page — and every page below 26 — gets the shipped scroll, untouched. §7.1's DEGRADED
+    /// shape: the floor lands the content at its top under an inline title, plainer, not absent.
+    private func scrollToTop(_ proxy: ScrollViewProxy) {
+        if #available(iOS 26.0, *) {
+            if !TabRootLargeTitleReTap.restore(scrollHandle.scrollView, reduceMotion: reduceMotion) {
+                scrollToAnchor(proxy)
+            }
+        } else {
+            scrollToAnchor(proxy)
+        }
+    }
+
+    /// The shipped re-tap (E, 2026-09-08). Instant under Reduce Motion: a scroll to the top is
+    /// re-positioning, not an appearance.
+    private func scrollToAnchor(_ proxy: ScrollViewProxy) {
+        withAnimation(
+            reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)
+        ) {
+            proxy.scrollTo(TabRootScrollAnchor.id, anchor: .top)
+        }
+    }
+}
+
+/// The anchor's two jobs: the id the shipped scroll aims at, and — since `F-JournalPencilDisc` —
+/// a locator the large-title re-tap finds the page's scroll view by.
+private struct TabRootScrollAnchorModifier: ViewModifier {
+    @Environment(\.tabRootScrollHandle) private var handle
+
+    func body(content: Content) -> some View {
+        content
+            .id(TabRootScrollAnchor.id)
+            .background(TabRootScrollLocator(handle: handle))
     }
 }
 
@@ -130,7 +165,7 @@ extension View {
     /// Marks a tab's scroll content root as the re-tap's scroll target. Apply AFTER the root's
     /// padding, so the target's top is the content's true top.
     func tabRootScrollAnchor() -> some View {
-        id(TabRootScrollAnchor.id)
+        modifier(TabRootScrollAnchorModifier())
     }
 
     /// Wires a tab's root screen to the coordinator: reports whether it is at its top-level page,

@@ -109,10 +109,64 @@ final class TabNavigationCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The re-tap brings a large title back (F-JournalPencilDisc)
+
+    /// §7.4: BOTH branches by string. Step 0 proved the shipped `proxy.scrollTo` leaves a large
+    /// title collapsed; the fix is iOS 26+ only (the overscroll that finds the expanded top was
+    /// verified on 26.5 and 27.0 and nowhere below), with the shipped scroll as the floor — §7.1's
+    /// DEGRADED shape. A test that pinned only the modern branch would stay green on a build that
+    /// dropped the floor; one that pinned only the floor would miss the fix going dead.
+    func testTheTopLevelReTapHasAModernTierAndTheShippedScrollAsItsFloor() throws {
+        let code = try Self.flattenedAppCode("TabNavigation.swift")
+        guard let gate = code.range(of: "if #available(iOS 26.0, *) {") else {
+            return XCTFail("The re-tap has no iOS 26 gate, so the large-title fix is either absent or ungated.")
+        }
+        let modern = code[gate.upperBound...]
+        guard let floor = modern.range(of: "} else {") else {
+            return XCTFail("The iOS 26 gate has no `else`: below 26 a re-tap would do nothing at all.")
+        }
+        XCTAssertTrue(
+            modern[..<floor.lowerBound].contains(
+                "TabRootLargeTitleReTap.restore(scrollHandle.scrollView, reduceMotion: reduceMotion)"
+            ),
+            "The modern branch never asks the large-title fix, so Step 0's collapsed title ships."
+        )
+        XCTAssertTrue(
+            modern[..<floor.lowerBound].contains("scrollToAnchor(proxy)"),
+            "On 26+ a page with no large title has lost the shipped scroll — every other tab."
+        )
+        let floorBranch = modern[floor.upperBound...]
+        XCTAssertTrue(
+            floorBranch.prefix(80).contains("scrollToAnchor(proxy)"),
+            "The floor branch no longer runs the shipped scroll, so below 26 a re-tap does nothing."
+        )
+        XCTAssertTrue(
+            code.contains("proxy.scrollTo(TabRootScrollAnchor.id, anchor: .top)"),
+            "The shipped `proxy.scrollTo` is gone — the floor has nothing to run."
+        )
+    }
+
+    /// The fix FINDS the page's scroll view from inside its content, never by searching down from
+    /// outside, where the chips' horizontal strip is a candidate too (memory `large-title-retap`).
+    /// So the anchor carries a locator, and the root hands the anchor the handle it fills.
+    func testTheScrollAnchorCarriesTheLocatorAndTheRootHandsItTheHandle() throws {
+        let code = try Self.flattenedAppCode("TabNavigation.swift")
+        XCTAssertTrue(
+            code.contains(".environment(\\.tabRootScrollHandle, scrollHandle)"),
+            "The tab root never hands its scroll handle down, so the anchor's locator fills nothing."
+        )
+        XCTAssertTrue(
+            code.contains("TabRootScrollLocator(handle: handle)"),
+            "The scroll anchor carries no locator, so the fix never finds a scroll view."
+        )
+    }
+
     // MARK: - No pushed screen without a way back (E's Nudges report)
 
     /// A pushed screen that hides the navigation bar has no back chevron, and this app's tab
-    /// roots hide theirs on purpose. Every OTHER screen that hides it must draw its own back
+    /// roots hide theirs on purpose — all but the Journal since `F-JournalPencilDisc` (2026-09-18),
+    /// whose large title E kept ("Keep the nav bar"); the exemption below is by file, so it stays
+    /// correct either way. Every OTHER screen that hides it must draw its own back
     /// control — `TaskDetailView`'s chevron is the house pattern — or E's "no way to get back
     /// to the Today main page" ships again on the next screen someone styles this way.
     func testNoPushedScreenHidesTheNavigationBarWithoutABackControl() throws {
@@ -174,6 +228,15 @@ final class TabNavigationCallSiteTests: XCTestCase {
             throw SourceError.unreadable(url.path)
         }
         return stripComments(text)
+    }
+
+    /// The same code on one line, each line trimmed and joined by a single space, so an anchor
+    /// does not have to know how a call was wrapped.
+    private static func flattenedAppCode(_ relativePath: String) throws -> String {
+        try appCode(relativePath)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .joined(separator: " ")
     }
 
     private static func allAppCode() throws -> [(name: String, code: String)] {
