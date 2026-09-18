@@ -1,4 +1,5 @@
-# Open items register — 2026-09-17 (fifty-eighth edition; **E's LOOK: the × fix PASSED; the bar margin → "reduce it slightly" → `F-FurnitureGap24` MERGED (32 → 24, everything together). `main` @ `173ba7d` is ON E's PHONE (see State). Owed: the 24pt look incl. the Journal composer alignment, and the RM-ON pass. E closed the session to continue in a fresh one.** Opener: `handoff/START-HERE-after-gap-24.md`.)
+# Open items register — 2026-09-18 (fifty-ninth edition; **E chose Journal door option 04 — nothing pinned, the pencil is the door — from five rendered options; specced, NOT built (`build-in-a-fresh-session`). A second block, the pencil's visibility/reachability, is [BLOCKED] on E's choice of shape. The phone's profiles were re-issued and now run to 2026-09-24.**) Opener: `handoff/START-HERE-journal-door.md`.
+
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.
@@ -35,6 +36,50 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Fifty-ninth edition — 2026-09-18, `main` @ `79fa171`.** Suite **3,053 / 0**, SwiftLint **0 / 824**
+— both measured at `c54efd7`; the two commits since are **evidence and spec only, no Swift changed**,
+so the figures carry. `firestore.rules` untouched — nothing for E to republish.
+
+**Device:** the phone carries **`c54efd7`** (Swift-identical to `173ba7d`). **The profiles EXPIRED
+mid-session at 2026-09-17T19:25:02Z and were re-issued at 19:49Z — they now run to
+2026-09-24T19:49Z.** Getting there needed E's Xcode → Settings → Accounts sign-in: the free-account
+profile and the empty account list died together, exactly as on 2026-09-03. `devicectl` launch was
+then denied `Security` twice **with a valid, freshly minted profile and an UNCHANGED July
+certificate** — a third species beyond the two on record — and E cleared it by trusting the
+developer on the device. E confirmed: *"the app works"*.
+
+**Landed this session (no production Swift):**
+- **`screenshots/journal-door-options/`** (PR #154) — five options × light/dark of the Journal's
+  bottom furniture, rendered from the REAL views at 393×852, plus a README carrying the numbers.
+- **`F-JournalDoorUnpinned` + `F-JournalPencilReachable`** specced in `TODO-CLAUDE-CODE.md`.
+
+**E's decisions this session:**
+- The ugliness is **"The bar — its bulk and position"**, NOT the shared `composerFooterSurface()`
+  treatment — so that treatment and the four other screens wearing it are untouched.
+- **"Render them first, then I'll choose"**, then **"Go with option '04'"** — nothing pinned.
+- Next: *"making the current new journal entry icon … MORE visable and EASIER to interact with"*, in
+  a fresh session.
+
+**What the options work established, worth keeping:**
+- **The pinning was never E's design.** The v3 mockup (`handoff/…v3.dc.html:204`) has this bar as the
+  last child of the *scrolling* screen. Height 54, radius 14, hairline and caption all shipped
+  faithfully; the pinning was added in implementation.
+- **The caption wraps on every iPhone** — 355.6pt of text in 285pt — and the composer already states
+  the same rule at the moment it applies.
+- **Options 02-04 are a look-and-feel win, not a scroll-reach win** (reserved band 164 → 160pt). A
+  first draft overstated them by omitting `.captureDiscClearance()`; corrected before E saw them.
+- **`ImageRenderer` cannot render a whole screen** and fails as a plausible image both ways. The
+  working harness and its three gates are memory `full-screen-render-harness`.
+
+**Owed by E, carried, not blocking:**
+1. The **24pt gap** look — portrait AND landscape, bar alone and under a Confirm card. **The Journal
+   composer-alignment half is now MOOT**, since block 1 deletes the reference.
+2. The **Reduce Motion ON** fan pass — the cards must FADE, not cut.
+
+---
+
+**Fifty-eighth edition's State follows, unchanged.**
 
 **Fifty-eighth edition — 2026-09-17 ~13:30, `main` @ `173ba7d`.** Suite **3,053 / 0**, **0**
 `127.0.0.1:9099` hits, SwiftLint **0 / 824**, sim `** BUILD SUCCEEDED **`. `firestore.rules`
