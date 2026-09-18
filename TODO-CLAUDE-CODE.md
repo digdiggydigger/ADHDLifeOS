@@ -4656,3 +4656,99 @@ an iPhone 15 Pro, ~5.5pt off.
       every card height still lands the CLOSED × on a tile, the landscape stack still reaches the gear.
 - [ ] **Owed: E's device look** — the bar margin at 24 (portrait + landscape), the disc with nothing up,
       the Journal tab's composer alignment. No reduced or `#available` site touched.
+
+## E's Journal-door call from the rendered options — two blocks, the second in a fresh session
+
+**Written 2026-09-18 by the session that rendered the options. It built NOTHING** — E's standing
+rule (`build-in-a-fresh-session`, E's call 2026-09-17). Evidence: `screenshots/journal-door-options/`
+and its README (**the measurements are done; do not re-derive them**).
+
+**E's brief, verbatim (2026-09-17):** the "One line about today…" bar *"currently gets in the way and
+aesthetically unattractive and reduces viewing space on the Journal page"*. Asked whether the
+ugliness was the BAR or the shared `composerFooterSurface()` treatment it wears, E answered **"The
+bar — its bulk and position"**, so the shared footer treatment is UNTOUCHED and four other screens
+keep it. Shown five rendered options, E chose **"option '04'"** — **nothing pinned; the header
+pencil is the door** — and then: *"in a fresh claude code terminal session, I think that we should
+spend some time making the current new journal entry icon (in the top-right-hand corner of the
+screen) MORE visable and EASIER to interact with."*
+
+**Read the two blocks as one arc. Block 1 REMOVES the only persistent door; block 2 is what makes
+that safe.** The recommending session's reservation, recorded because it did not go away when E
+chose: the pencil lives inside the scrolling `LazyVStack` (`JournalTimelineSections.swift:25-27`)
+and the nav bar is hidden (`JournalView.swift:120`), so **once scrolled there is no door at all** —
+writing a line becomes tab-re-tap then pencil. E's follow-up addresses exactly this, so **build both
+in the same fresh session, block 1 first**, rather than shipping 1 alone.
+
+### FEATURE: F-JournalDoorUnpinned — the pinned "One line about today…" bar goes; the pencil is the door  [ ]
+
+**What E chose, in numbers** (measured on the rendered frames, `screenshots/journal-door-options/`):
+content visible at rest goes **y 705 → 812, +107pt**; the reserved band goes **164pt → 160pt**, so
+this is a look-and-feel win, **not** a scroll-reach win — say so in the report rather than claiming
+space the change does not buy.
+
+**The shape (verify, do not trust):**
+- Delete `composerBar` and its `.safeAreaInset(edge: .bottom)` (`JournalView.swift:126`, `:279-310`),
+  including the private `captureDiscClearance` copy at `:277` and the trailing padding at `:305`.
+- **Journal must now join every other screen and call `.captureDiscClearance()`** on the timeline
+  (`JournalTimelineSections.swift`). Without it the last row lands unreachable under the disc — the
+  defect `Theme.swift:232-237` describes. This is why frames 02-04 carry it.
+- **The pencil MUST reach §3's 44pt floor in THIS block**, because this block is what makes it the
+  only door. It is `.frame(width: 40, height: 40)` (`JournalView.swift:202`) — under the floor
+  today. The house pattern for "44pt target, smaller visual" is `AppTabBarMetrics.slotHitOverflow`
+  (`AppTabBarPresentation.swift:212-219`). `JournalAllActivityButton.swift:24` is the identical
+  40×40 and sits beside it; grow both or say why not.
+- The caption (`:300-302`) dies with the bar. It was **355.6pt of text in 285pt of space** — two
+  lines on every iPhone — and `LogComposerView.swift:295` already states the same rule at the moment
+  it applies. No information is lost.
+
+**Tests that must be REVERSED, not deleted (names and messages too):**
+- `AppTabBarCallSiteTests.testEveryTabLevelPinnedBarAsksForTabBarClearance` (`:57-69`) — drop the
+  `("Journal/JournalView.swift", "composerBar")` pair, leaving `CaptureInboxView`. Its doc comment
+  cites the Journal caption as the bug the helper prevents; keep the history, annotate it.
+- `CaptureDiscClearanceCallSiteTests` — `:31-35` explains Journal's ABSENCE from the clearance list
+  ("a dead 84pt gap"); that reason is now void. Reverse it and **add
+  `Journal/JournalTimelineSections.swift` to the enumerated list** (`:53-72`).
+  `testTrailingClearanceStillReadsTheMetricDirectly` (`:126-140`) names JournalView's own
+  `captureDiscClearance` copy, which this block deletes.
+- **Do NOT delete the two stale doc comments — ANNOTATE them.** `AppSearchScope.swift:88-95` and
+  `AppSearchRowMetricsTests.swift:41-53` both name this bar as the capture disc's alignment
+  reference and carry E's 2026-09-03 words. `gapAboveTabBar = 24` is E's approved number and does
+  **not** change; what changes is that its stated rationale no longer exists. Record that, keep the
+  history. **Do not re-tune `gapAboveTabBar` or `CaptureDiscMetrics.edgeMargin`.**
+
+**Acceptance criteria**
+- [ ] RED first: a call-site guard that `JournalTimelineSections` calls `.captureDiscClearance()`
+      and that `JournalView` no longer pins `composerBar`; a geometry test that the pencil's hit
+      target is ≥ 44×44.
+- [ ] The four tests above reversed in place, E's quotes kept and annotated "reversed 2026-09-18".
+- [ ] Red-check by restoring the bar; count the failures; restore with `git checkout --`.
+- [ ] Evidence folder + README: the Journal at rest, light and dark, before and after.
+      The render harness is `full-screen-render-harness` — `ImageRenderer` CANNOT do a whole screen.
+- [ ] SwiftLint 0, suite green, build green, all pasted. No `#available` or reduced site touched, so
+      **no RM-on pass is owed** — say why in the report.
+- [ ] **`F-Search-3-Journal` (`TODO-CLAUDE-CODE.md:2600-2625`, "⚠ RECONSIDER FIRST") is unblocked by
+      this block** — its entire objection was that this band already held a field. Note it; do not
+      start it.
+
+### FEATURE: F-JournalPencilReachable — the new-entry icon becomes visible and easy to hit  [ ]
+
+**E's call, 2026-09-17, verbatim:** *"making the current new journal entry icon (in the top-right-hand
+corner of the screen) MORE visable and EASIER to interact with."* E asked for this in a fresh session.
+
+**The problem is TWO problems, and the second is the one that bites.** *Visible* — a
+`Color("LabelSecondary")` glyph on `Color.cardSurface` inside a hairline circle reads as quiet chrome
+next to a `.largeTitle.bold()` "Journal". *Reachable* — it is 40×40 (under §3's floor, fixed in block
+1) **and it scrolls away entirely**, because the header is the first child of the `LazyVStack` and
+the nav bar is hidden. After block 1 it is the only door, so **persistence is the substance of this
+block and mere styling would not deliver what E asked for.**
+
+**[BLOCKED] — do not guess; ask E before building.** Three shapes, materially different, and E has
+not chosen: (a) **pin the header** so the title row stays put while the stream scrolls beneath it;
+(b) **restore a nav bar** with the pencil as a toolbar item (reverses `JournalView.swift:120`);
+(c) **promote it to the capture disc's band**, the option-02 shape E did not pick for the bar but
+which is a different question for a persistent icon. Prefer rendered options over description
+(`show-dont-describe-geometry`) — the harness now exists and is documented.
+
+**Whatever the shape:** §3's 44pt floor, §1's hierarchy, §4's tokens only, and an
+`accessibilityLabel` ("Write an entry" today). If a reduced or `#available` site is touched, the
+**RM-on device pass is owed** (§7.3).
