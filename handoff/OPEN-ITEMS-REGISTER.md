@@ -1,4 +1,4 @@
-# Open items register — 2026-09-18 (sixty-third edition; **E's device look on the `654012f` install: PASSED, all of it.** Reduce Motion OFF *"All passed"*, Reduce Motion ON *"All faded, passed"*, and the landscape Note tile *"Composer opened"* — so the Journal-door arc and `F-FurnitureGap24` owe nothing, and `testRenderLandscapeSweep`'s failure is the TEST's fault, not the app's.) Opener: `handoff/START-HERE-after-pencil-disc.md`.
+# Open items register — 2026-09-18 (sixty-third edition; **E's device look on the `654012f` install: PASSED, all of it.** Reduce Motion OFF *"All passed"*, Reduce Motion ON *"All faded, passed"*, and the landscape Note tile *"Composer opened"* — so the Journal-door arc and `F-FurnitureGap24` owe nothing, and `testRenderLandscapeSweep`'s failure is the TEST's fault, not the app's.) Opener: `handoff/START-HERE-after-journal-door-pass.md`.
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
@@ -65,7 +65,8 @@ a README section and measurements. **The device matches the sim gate to the poin
 - **`F-FurnitureGap24`'s 24pt look and the RM-on fan-fade pass: PASSED.** They were carried from
   2026-09-17 onto this install. Memory `fab-overlap-and-tab-inset`.
 
-**Outstanding from this look:**
+**Outstanding from this look — PARKED by E the same evening.** Asked *fix it now / hand off / park*,
+E chose **"Park it"**. It is listed in §C and is not to be started unprompted:
 - [ ] **`RenderHarnessUITests.testRenderLandscapeSweep` — fix the TEST.** It fails at "The note
   composer never opened from the fan tile tapped in landscape" on 27.0, and fails identically on
   `aec558a`. E's phone opens the composer from that tile. **The leading hypothesis is unverified — do
@@ -1031,6 +1032,10 @@ looks** (the looks list is at the foot of the TODO section).
 - **App connections** — real two-way sync; Apple Notes has no iOS API. (carried)
 - **LA interactive buttons**, **time-of-day triggers**, **smart skip**. (carried)
 - **`OfflineSprintSummaryCard`** — E ruled it out of the focus-card arc explicitly. (carried)
+- **`testRenderLandscapeSweep`'s fix** — E, 2026-09-18: **"Park it"**. The test fails at the Note tile on
+  27.0, E's phone opens the composer there, so the TEST is at fault. The hypothesis (`app.textFields`
+  missing a `TextField(axis: .vertical)` on iOS 27) is UNVERIFIED; the recipe is in the 63rd State.
+  Only the render harness is affected, not the app. (NEW)
 
 ## C2 · Noticed, below the bar — **E asked explicitly that these be KEPT, 2026-09-13**
 
