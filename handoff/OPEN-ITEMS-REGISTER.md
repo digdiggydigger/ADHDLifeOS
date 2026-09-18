@@ -1,4 +1,4 @@
-# Open items register — 2026-09-18 (sixty-first edition; **`F-JournalPencilReachable`'s Step 0 RAN, and E revised the shape by looking: the nav bar stays, with the eye alone, and the pencil becomes a 42pt gradient disc beside the + that follows the pill. The tab re-tap was proved NOT to bring the large title back. `F-JournalPencilDisc` is SPECCED for a FRESH session (E's rule). No Swift changed; the phone is still on `c54efd7`.**) Opener: `handoff/START-HERE-journal-pencil-disc.md`.
+# Open items register — 2026-09-18 (sixty-first edition; **`F-JournalPencilReachable`'s Step 0 RAN, and E revised the shape by looking: the nav bar stays, with the eye alone, and the pencil becomes a 42pt disc beside the + with the + disc's glow and its gradient REVERSED, following the pill. The tab re-tap was proved NOT to bring the large title back. `F-JournalPencilDisc` is SPECCED for a FRESH session (E's rule). No Swift changed; the phone is still on `c54efd7`.**) Opener: `handoff/START-HERE-journal-pencil-disc.md`.
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
@@ -61,7 +61,8 @@ E. Evidence: `screenshots/journal-pencil-step0/` (PR: this hand-off).
 - **"48pt (Recommended)"**, then mid-session: *"decrease the size of the filled pencil disc from
   48pt to 42pt"*.
 - **"1 · Follows the pill (Recommended)"**: 68% translucent with the + while pilled.
-- **"Match the + gradient"**: `CaptureDeep` → accent, over the flat accent.
+- **"Match the + gradient"**, then, shown 42pt without and with the glow: *"Can you reverse the DIRECTION that the gradient on the pencil disc currently points in? And use the same glow as the +. So the pair are twins with halos, But with the pencil disc's Background colour gradient direction different."*
+  So: the same colours, direction reversed, plus the + disc's glow.
 - **"Hand off to fresh session (Recommended)"**.
 
 **Facts Step 0 established** (the spec's table has the numbers):
@@ -962,6 +963,11 @@ that was tried and dismissed.*
   sections reflowing beneath it.** A REDUCED-path effect, so E's passing verdicts did not see it.
   **The RM-on pass this sitting owes is the natural moment to look.** (carried)
 - **The Feedback section's footer is a thirteen-line paragraph** covering six switches. (carried)
+- **The Tasks tab's large title NEVER collapses**, so it permanently costs about 52pt of viewing
+  space. Measured in Step 0's rig: the bar stays at 106pt with the list scrolled 420pt. The cause is
+  that `TaskListView`'s `ScrollView` sits under the count line and filter row inside a `VStack`, so
+  UIKit never links it to the bar. This is the same species of complaint E made about the Journal's
+  bar (*"reduces viewing space"*). Noticed; not work until E says so. (NEW 2026-09-18)
 
 ## D · Launch blockers — no conversation opened yet
 

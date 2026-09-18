@@ -34,8 +34,9 @@ reverted, and `git status` was empty before anything was committed.
 `F-JournalPencilDisc`, exactly as specced. In one breath:
 - **the nav bar:** restore it with the large title; the eye goes ALONE into the toolbar (OFF
   `.primary`, ON accent);
-- **the pencil:** a **42pt** disc, filled with the + disc's own `CaptureDeep` → accent gradient,
-  white glyph and no glow. It sits in `RootBottomOverlay`'s disc row, 16pt left of the +, centred on
+- **the pencil:** a **42pt** disc filled with the + disc's two colours, **gradient REVERSED**
+  (accent top → `CaptureDeep` bottom), with the + disc's **glow**. E: *"twins with halos"*. White
+  glyph. It sits in `RootBottomOverlay`'s disc row, 16pt left of the +, centred on
   its line, and on the Journal at its root only;
 - **the pill:** the disc follows the + disc's pill translucency (0.68) on the same curves;
 - **the fan:** the disc fades with the cards while the fan is open;
@@ -43,7 +44,7 @@ reverted, and `git status` was empty before anything was committed.
   the shipped `proxy.scrollTo` as the floor.
 
 **No design question is open.** Everything E was asked is answered and recorded. The spec lists what
-E has NOT seen: the 42pt gradient disc itself, a sprint card up, landscape, the fan open, and a tab
+E has NOT seen: the final disc (reversed gradient + glow), a sprint card up, landscape, the fan open, and a tab
 switch. **Render those to VERIFY them. If one shows something E has not decided (the disc on a card,
 a tile or the gear), STOP and ask. Do not improvise.**
 

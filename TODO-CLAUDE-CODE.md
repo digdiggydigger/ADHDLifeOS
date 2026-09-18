@@ -4904,12 +4904,16 @@ A = the spec as written; B = recommended):
 5. The pill (shown `03`–`05`): **"1 · Follows the pill (Recommended)"**, i.e. 68% translucent with
    the +. At rest, from the same question: **"Match the + gradient"**, i.e. `CaptureDeep` → accent,
    over the flat accent the frames show.
+   **Then, shown the 42pt gradient disc with and without the + disc's glow (`06`):** *"Can you reverse the DIRECTION that the gradient on the pencil disc currently points in? And use the same glow as the +. So the pair are twins with halos, But with the pencil disc's Background colour gradient direction different."*
+   So: the SAME two colours with the direction REVERSED (accent at the top → `CaptureDeep` at the
+   bottom), and the + disc's glow, shrinking with the pill exactly as the + disc's does.
 6. **"Hand off to fresh session (Recommended)"** (E's standing rule, `build-in-a-fresh-session`).
 
 **What E has now seen, and what E has NOT.** Seen: B's toolbar at rest and scrolled, light and dark,
 eye OFF and ON; the pencil disc beside the + at rest, and pilled three ways (`03`–`05`), **at 48pt
-and flat accent, both since revised**. NOT seen: the 42pt gradient disc itself, the disc with a
-sprint card up, in landscape, while the fan is open, or on a tab switch. **The build
+and flat accent, both since revised**; and the 42pt disc with the + disc's gradient, with and
+without its glow (`06`). NOT seen: **the REVERSED gradient with the glow — the final look**, the disc
+with a sprint card up, in landscape, while the fan is open, or on a tab switch. **The build
 session renders those to VERIFY them. If one shows something E has not decided (the disc lands on a
 card, a tile or the gear), STOP and ask. Do not improvise a design answer.**
 
@@ -4972,13 +4976,17 @@ card, a tile or the gear), STOP and ask. Do not improvise a design answer.**
    - The decision is a pure function (e.g. `plan(plainTop:expandedTop:reduceMotion:)`), tested
      once (§7.4).
 3. **The pencil disc.**
-   - A new `JournalComposeDisc`: a **42pt** `Circle` filled with the + disc's OWN gradient,
-     `LinearGradient([Color("CaptureDeep"), .accentColor], top → bottom)`, exactly as
-     `CaptureDiscLabel` draws it. Share it rather than copy it, so the pair cannot drift.
+   - A new `JournalComposeDisc`: a **42pt** `Circle` filled with the + disc's two colours with the
+     direction REVERSED, per E: `LinearGradient([Color("CaptureDeep"), .accentColor])` from
+     `.bottom` to `.top` (the + runs `.top` → `.bottom`). Share the COLOURS with `CaptureDiscLabel`
+     so the pair cannot drift, and let the direction be the one thing that differs. A test holds
+     both directions, so a later "tidy" that makes them match fails.
    - `square.and.pencil` at `.title3.weight(.semibold)` in `AreaPalette.work.onColor`. Verify it
      reads at 42.
-   - §5's soft shadow and **NO glow**. That is a default: E was not asked. The + keeps its glow as
-     the one cue that capture is primary. Say so in the report, and E judges it on the device.
+   - **The + disc's glow, per E ("twins with halos")**: accent at 0.5, radius 12, y 8 at rest, and
+     0.3 / 6 / 4 while pilled, on the same curves as the +. Share the values with `CaptureDiscLabel`
+     rather than retyping them. This is E's call over §5's soft-shadow default, for the same reason
+     the + has it.
    - A `ButtonStyle` that presses to 0.97 (§3).
    - **§3: 42 < 44.** So the hit target takes the house `AppTabBarMetrics.slotHitOverflow` shape:
      `max(0, (minimumTouchTarget − diameter) / 2)` = 1pt of negative padding around the

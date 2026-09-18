@@ -39,10 +39,10 @@ rather than built here (E's standing rule, `build-in-a-fresh-session`).
    number.** Frames `03`–`05` show 48 because they were rendered before that message.
 5. Shown `03`–`05`, what the disc does while the + is a pill: **"1 · Follows the pill
    (Recommended)"**. It goes 68% translucent with the +.
-6. At rest: **"Match the + gradient"**, i.e. `CaptureDeep` → accent, top to bottom, as
-   `CaptureDiscLabel` draws it. That is over the flat accent the frames show. **E has not seen the
-   gradient rendered.** The glow was not asked about. The spec's default is NO glow, so the + keeps
-   its glow as the cue that capture is primary, and E judges it on the device.
+6. At rest: **"Match the + gradient"**, i.e. `CaptureDeep` → accent, over the flat accent the
+   frames show. **Then, shown `06`** (42pt with the + disc's gradient, without and with its glow): *"Can you reverse the DIRECTION that the gradient on the pencil disc currently points in? And use the same glow as the +. So the pair are twins with halos, But with the pencil disc's Background colour gradient direction different."*
+   **The final look is the REVERSED gradient with the glow. E has not seen it rendered**, and the
+   build session's evidence shows it for the first time.
 7. **"Hand off to fresh session (Recommended)"**.
 
 ## What was measured, all of it on BOTH runtimes unless stated
@@ -99,12 +99,12 @@ height, and a 1pt hit overflow takes the target to 44 without moving the layout.
 | `02-retap-large-title-27.jpg` | At rest; scrolled; the re-tap under R0 and R1 (the title stays COLLAPSED) and R2 (restored). |
 | `03-pencil-disc-pill-zoom-27.jpg` | What E answered 5 from: the disc at rest and pilled three ways, light and dark, zoomed. At 48pt, flat accent: both since revised. |
 | `04-…-light-27.jpg`, `05-…-dark-27.jpg` | The same four states as whole screens, with the eye alone in the toolbar (B). |
+| `06-pencil-disc-42-glow-27.jpg` | What E answered the glow from: 42pt, the + disc's gradient, without (1) and with (2) its glow, at rest and pilled. Measured: 41.7pt tall, centre 695.8, on the + disc's line. E then asked for the gradient REVERSED, with the glow. |
 
 ## What these frames do NOT show
 
 - **Not rendered:**
-  - the 42pt size;
-  - the gradient;
+  - the FINAL disc: the reversed gradient with the glow;
   - a sprint card up;
   - landscape;
   - the fan open;
