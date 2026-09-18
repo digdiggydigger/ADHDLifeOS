@@ -4884,7 +4884,7 @@ a blue GLYPH on shared glass. So, with the render harness and the one-build stat
 `accessibilityLabel` ("Write an entry" today). If a reduced or `#available` site is touched, the
 **RM-on device pass is owed** (§7.3).
 
-### FEATURE: F-JournalPencilDisc — the nav bar stays (eye alone); the pencil is a 42pt gradient disc beside the +  [x] COMPLETED 2026-09-18 — awaiting E's device look (RM off + RM on)
+### FEATURE: F-JournalPencilDisc — the nav bar stays (eye alone); the pencil is a 42pt gradient disc beside the +  [x] COMPLETED 2026-09-18 — E's device look PASSED 2026-09-18 (RM off "All passed", RM on "All faded, passed")
 
 **This REPLACES the build plan of `F-JournalPencilReachable` above**, whose Step 0 ran on 2026-09-18
 and put the combination in front of E, as that block required. E answered by changing the shape.
@@ -5103,9 +5103,14 @@ card, a tile or the gear), STOP and ask. Do not improvise a design answer.**
       `26 path: run on sim 26.5 + 27.0; 16 path: the shipped proxy.scrollTo; OS-level COMPILE-ONLY`.
       **Reduced: the re-tap's reduced branch run on sim (injected); the disc's appear/leave and fan
       fades under RM are code-only here — NOT on device until E's RM-on pass.**
-- [ ] Land via PR. **Install blocks 1 + 2 on E's phone in ONE build** (profiles to 2026-09-24),
+      **Now (2026-09-18): `26 path: run on sim 26.5 + 27.0 + E's phone (RM off). Reduced: run on
+      sim (injected) + E's phone (RM on)`. E toggled Reduce Motion ON for the pass.**
+- [x] Land via PR. **Install blocks 1 + 2 on E's phone in ONE build** (profiles to 2026-09-24),
       force-relaunch, THEN ask for the look, with the carried looks on the same install. The
       RM-on pass covers the disc's appear/leave, the re-tap, and the capture fan.
+      **Landed (PR #160, `654012f`); installed together and relaunched. E's look, one message:
+      RM OFF "All passed", RM ON "All faded, passed", landscape Note tile "Composer opened" (so
+      the sweep's failure is the test's). E's frames: `screenshots/journal-pencil-disc/19–24`.**
 
 **Built 2026-09-18, and where it departs from the plan above — each one deliberate:**
 - **E answered the one gap in the spec:** the disc shows on the Journal at its top level *loaded or
