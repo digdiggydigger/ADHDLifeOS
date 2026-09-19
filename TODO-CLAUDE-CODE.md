@@ -8111,6 +8111,14 @@ a third inline row control. Either satisfies Q7; no E input needed if (a) is bui
 
 ### FEATURE: F-G4-Refresh — reload on appear, on foreground, and prove writes reach their screens  [ ] NOT STARTED
 
+**E's addition is a CONTINUITY requirement, not a defect report (E, 2026-09-19, asked directly in the audit's
+closing text):** *"I don't think I have seen it fail to refresh but I stated it to ensure continuity."* Nobody has
+observed Journal or the Capture inbox failing to update after an in-app write, and the code says they should:
+both listen for `DataChangeSignal`, which every generic `save`/`delete`/`update` posts. **So this block's job is to
+PIN that behaviour with tests so it cannot regress, and to check the write paths that bypass the generic methods
+(the photo upload through `+Storage`, `Shortcuts/ShortcutIntentRunner.swift`). Do not open a bug hunt.** If a test
+does turn up a path that misses the signal, that is a real find: report it and fix it here.
+
 **What E chose:** Round 10b, **E verbatim:** *"I choose option one With the addition of an
 auto-refresh When a user makes an edit/Change Such as logging a new Journal entry - Then the
 Journal should update automatically. Creating a new quick capture - Should update the Capture

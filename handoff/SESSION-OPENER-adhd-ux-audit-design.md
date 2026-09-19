@@ -549,7 +549,9 @@ contact picker (sheet 3). The frames are in board `67`.
     with no pull.
   - Any write path that bypasses the generic methods (a photo upload through `+Storage`, the Shortcut runner) must be
     checked for the signal.
-  - If E has seen either screen fail to update, that is a bug to reproduce, not a design point.
+  - **E clarified, 2026-09-19 (asked in the closing text):** *"I don't think I have seen it fail to refresh but I
+    stated it to ensure continuity."* So this is NOT a bug report. It is a requirement that the behaviour keeps
+    working, which arc G's F-G4 pins with tests rather than hunting a defect.
 - **Capitals → "Sentence case everywhere"** (Recommended).
   - It confirms what E approved by sight. "Add to Today", "Delete Task" and "Keep Editing" become sentence case
     (X-CAPS).
