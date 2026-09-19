@@ -156,3 +156,22 @@ with swipe-back restored. And Cancel becomes "Close", because `sheets.md` says C
   - Code fact behind E's question: membership is a `tag_ids` array on each task or capture document. Today's delete
     (`FirebaseManager+Tags.swift`, `removeTagEverywhere(_:replacingWith: nil)`) strips the id from every item in one
     batch, so a restore would come back with no links. The answer is a follow-up question.
+- **Follow-ups, same day:**
+  - **Tag restore → "Back on every item".** While a tag sits in Recently Deleted, its `tag_ids` links stay on the
+    items, hidden (no chip, no filter). Restore brings it back on every task and capture it had. The links are
+    stripped only at the 30-day purge. A same-name tag created meanwhile is merged on restore (the Tag Editor's
+    existing merge).
+  - **How the undo-bar overhaul is shown → "Throwaway Swift renders".** A test-only file draws the options with the
+    real tokens (light, dark, AX3), placed on real sim frames. No app code changes. The file is deleted after E
+    chooses, and only the images are kept. This permission also covers the Today renders (round 3) and the sprint
+    renders (round 4).
+  - **The undo bar's look → "A · Capsule in the disc row"** (board `54-ROUND-2b-undo-bar-options.jpg`; frames in
+    `screenshots/adhd-ux-audit/round-2b-undo-bar/`).
+    - It sits exactly where the search row is, left of the + disc. Nothing moves and nothing stacks.
+    - On Tasks it stands in for the search row until the next action.
+    - Shared by all three options: a 48pt Undo capsule tinted like the tab bar's selected pill (accent at
+      `AppTabBarMetrics.chipTint*`), the standard ↶ symbol, a glyph plus words naming what happened, a stacked layout
+      at accessibility sizes, and a haptic on appear and on Undo.
+    - The draft bar ("Kept in your inbox · Reopen") uses the same design.
+    - Rejected: B (a card above the tab bar; the disc jumps ~88pt, breaking research 3.2) and C (a floating pill over
+      the list).

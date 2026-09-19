@@ -39,4 +39,6 @@ project. The simulator is to be erased at close-out.
 | `49`, `50` toolbar + New task / board after adding "Book an eye test" (Not yet) | **an undated task vanishes from the board it was added from** |
 | `52` round 1 evidence board | the labelled board method (built with `scripts/audit/board.py`, opened in Preview for E) |
 | `53` round 2 evidence board | drafts (Task composer loses text, Journal keeps it until quit), the two undo shapes (in-place card vs a 34x16pt bar under the disc), and where a Recently Deleted list could live |
+| `54` round 2b undo-bar options | three undo-bar designs rendered with the REAL tokens (throwaway `ImageRenderer` probe on iPhone 17 Pro / 27.0, deleted after E chose) and composited onto fresh 18 Pro / 27.0 frames: Tasks light / dark / AX3, Inbox, sprint running. The page band under the furniture is blanked to page colour where a design moves or removes furniture. **E chose A** (capsule in the disc row) |
+| `round-2b-undo-bar/` | the 15 full-size composites behind board `54` (`<option>-<state>.jpg`) |
 | `full/` | **every seeded tab frame** — `s-<tab>-L|D|A-pN.jpg` (light / dark / AX3, top→bottom) and `s-taskdetail-L-*`; the HIG reviews cite these (rounds 3, 4, 9) |
