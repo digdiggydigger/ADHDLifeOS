@@ -1,0 +1,255 @@
+//
+//  AuditUndoBarRenderProbe.swift
+//  ADHD LifeOSTests
+//
+//  THROWAWAY (ADHD UX audit, round 2 follow-up, E's permission 2026-09-19). Renders three
+//  candidate designs for the one app-wide undo bar with the real tokens, so E can choose by
+//  looking. Never committed: deleted as soon as E has chosen; only the PNGs are kept.
+//
+
+import SwiftUI
+import XCTest
+@testable import ADHD_LifeOS
+
+@MainActor
+final class AuditUndoBarRenderProbe: XCTestCase {
+
+    private static let outDir = "/private/tmp/claude-501/-Users-ethan--E--Claude-Code-v1-GoogleAI-ADHDLifeOS-ADHDLifeOS/583f35f8-93dd-4815-8059-9c715c0409e1/scratchpad/r2-bar"
+
+    struct Copy {
+        let key: String
+        let glyph: String
+        let glyphColor: Color
+        let verb: String
+        let item: String
+        let action: String
+        let actionGlyph: String
+    }
+
+    static let copies: [Copy] = [
+        Copy(key: "close", glyph: "checkmark.circle.fill", glyphColor: Color("StateGo"),
+             verb: "Closed", item: "Pay the council tax instalment", action: "Undo",
+             actionGlyph: "arrow.uturn.backward"),
+        Copy(key: "triage", glyph: "book.closed.fill", glyphColor: .accentColor,
+             verb: "Journalled", item: "Bike repair receipt", action: "Undo",
+             actionGlyph: "arrow.uturn.backward"),
+        Copy(key: "sprint", glyph: "checkmark.circle.fill", glyphColor: Color("StateGo"),
+             verb: "Closed", item: "Renew passport", action: "Undo",
+             actionGlyph: "arrow.uturn.backward"),
+        Copy(key: "draft", glyph: "tray.and.arrow.down.fill", glyphColor: .accentColor,
+             verb: "Kept in your inbox", item: "Book the dentist before Friday", action: "Reopen",
+             actionGlyph: "arrow.up.forward")
+    ]
+
+    func testRenderUndoBarOptions() throws {
+        try FileManager.default.createDirectory(atPath: Self.outDir, withIntermediateDirectories: true)
+        _ = ImageRenderer(content: Text("warm-up")).uiImage
+        var written = 0
+        for copy in Self.copies {
+            for scheme in [ColorScheme.light, .dark] {
+                for size in [DynamicTypeSize.large, .accessibility3] {
+                    let tag = "\(copy.key)-\(scheme == .dark ? "D" : "L")-\(size == .large ? "std" : "AX3")"
+                    written += try render(OptionA(copy: copy), name: "A-\(tag)", scheme: scheme, size: size)
+                    written += try render(OptionB(copy: copy), name: "B-\(tag)", scheme: scheme, size: size)
+                    written += try render(OptionC(copy: copy), name: "C-\(tag)", scheme: scheme, size: size)
+                }
+            }
+        }
+        XCTAssertEqual(written, Self.copies.count * 12)
+    }
+
+    private func render<V: View>(_ view: V, name: String, scheme: ColorScheme, size: DynamicTypeSize) throws -> Int {
+        let framed = view
+            .environment(\.colorScheme, scheme)
+            .dynamicTypeSize(size)
+            .frame(width: 402)
+            .padding(.vertical, 16)   // room for the soft shadow
+        let renderer = ImageRenderer(content: framed)
+        renderer.scale = 3
+        renderer.isOpaque = false
+        guard let image = renderer.uiImage, let png = image.pngData() else {
+            XCTFail("nothing rendered for \(name)")
+            return 0
+        }
+        // Gate: not the yellow prohibitory placeholder, and not blank.
+        XCTAssertGreaterThan(image.size.height, 40, name)
+        try png.write(to: URL(fileURLWithPath: "\(Self.outDir)/\(name).png"))
+        return 1
+    }
+}
+
+// MARK: - Shared pieces (house tokens only)
+
+private struct UndoGlyph: View {
+    let copy: AuditUndoBarRenderProbe.Copy
+    var body: some View {
+        Image(systemName: copy.glyph)
+            .font(.title3)
+            .foregroundStyle(copy.glyphColor)
+            .accessibilityHidden(true)
+    }
+}
+
+/// The Undo control is identical in all three options: a tinted capsule in the tab bar's own
+/// selection language (accent at the chip tint), at least 48pt tall.
+private struct UndoButton: View {
+    let copy: AuditUndoBarRenderProbe.Copy
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        Label(copy.action, systemImage: copy.actionGlyph)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 16)
+            .frame(minHeight: 48)
+            .background(
+                Color.accentColor.opacity(scheme == .dark ? AppTabBarMetrics.chipTintDark : AppTabBarMetrics.chipTintLight),
+                in: Capsule()
+            )
+            .fixedSize()
+    }
+}
+
+// MARK: - A · capsule in the disc row (takes the search row's slot, left of the disc)
+
+private struct OptionA: View {
+    let copy: AuditUndoBarRenderProbe.Copy
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private var texts: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(copy.verb)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color("LabelSecondary"))
+            Text(copy.item)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+        }
+    }
+    var body: some View {
+        HStack(spacing: AppSearchRowMetrics.rowSpacing) {
+            Group {
+                if typeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) { UndoGlyph(copy: copy); texts }
+                        UndoButton(copy: copy)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack(spacing: 8) {
+                        UndoGlyph(copy: copy)
+                        texts.layoutPriority(1)
+                        Spacer(minLength: 4)
+                        UndoButton(copy: copy)
+                    }
+                }
+            }
+            .padding(.leading, 16)
+            .padding(.trailing, 8)
+            .padding(.vertical, 8)
+            .frame(minHeight: CaptureDiscMetrics.discDiameter)
+            .frame(maxWidth: .infinity)
+            .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
+            .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
+            // The disc's slot, left clear so the composite shows the real disc.
+            Color.clear.frame(width: CaptureDiscMetrics.discDiameter, height: CaptureDiscMetrics.discDiameter)
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, CaptureDiscMetrics.edgeMargin)
+    }
+}
+
+// MARK: - B · card in the cards slot (the sprint card's column; the disc row lifts above it)
+
+private struct OptionB: View {
+    let copy: AuditUndoBarRenderProbe.Copy
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private var glyph: some View {
+        Image(systemName: copy.glyph)
+            .font(.title2)
+            .foregroundStyle(copy.glyphColor)
+            .accessibilityHidden(true)
+    }
+    private var texts: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(copy.verb)
+                .font(.headline)
+                .foregroundStyle(.primary)
+            Text(copy.item)
+                .font(.subheadline)
+                .foregroundStyle(Color("LabelSecondary"))
+                .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+        }
+    }
+    var body: some View {
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) { glyph; texts }
+                    UndoButton(copy: copy)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack(spacing: 8) {
+                    glyph.frame(width: 44, height: 44)
+                    texts.layoutPriority(1)
+                    Spacer(minLength: 8)
+                    UndoButton(copy: copy)
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: FocusBarMetrics.cornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: FocusBarMetrics.cornerRadius, style: .continuous)
+                .strokeBorder(Color.cardBorder, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
+        .padding(.horizontal, 16)
+    }
+}
+
+// MARK: - C · compact pill, centred, floating at the top of the bottom furniture
+
+private struct OptionC: View {
+    let copy: AuditUndoBarRenderProbe.Copy
+    @Environment(\.dynamicTypeSize) private var typeSize
+    private var line: some View {
+        Text("\(copy.verb) · \(copy.item)")
+            .font(.subheadline)
+            .foregroundStyle(.primary)
+            .lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+    }
+    var body: some View {
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) { UndoGlyph(copy: copy); line }
+                UndoButton(copy: copy)
+            }
+            .padding(16)
+            .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
+            .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity)
+        } else {
+            pill
+        }
+    }
+    private var pill: some View {
+        HStack(spacing: 8) {
+            UndoGlyph(copy: copy)
+            line.layoutPriority(1)
+            UndoButton(copy: copy)
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 4)
+        .padding(.vertical, 4)
+        .background(Color.cardSurface, in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.cardBorder, lineWidth: 1))
+        .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+    }
+}
