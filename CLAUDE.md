@@ -179,7 +179,9 @@ unconditionally**, rather than checking whether the next suite seems slow.
 A feature isn't done until `swiftlint lint`, the full test suite, and the build all pass — and the
 real terminal output has been pasted for review, not just a "done" summary. **If the block was
 settled by LOOKING at it rather than by an assertion, its `screenshots/` folder and that folder's
-README are part of the same bar** — see "Visual evidence" below.
+README are part of the same bar** — see "Visual evidence" below. **If the block changed anything a
+person sees or feels, an `apple-design` review in the report is part of the bar too (§7.6).** A
+block with nothing visible says why none was owed.
 
 **Coverage reality (2026-09-07, re-measured):** the app target is **24.72% (11,114/44,961)** over
 **2,497 unit tests**, measured with the documented command at `93beff2`, emulator UP. (It was
@@ -753,9 +755,15 @@ the rewrite, not what justifies it; the rule outlived the fact.) The skill-prece
 Design-heavy blocks may mandate the installed design skills (`ui-ux-pro-max`,
 `swiftui-design-principles`, `swiftui-pro`). On 2026-09-11 E also installed the `indie-apple-stack`
 plugin's `apple:*` skills and agents (`apple:modernize`, `apple:juice`, `apple:review`,
-`apple:hig-reviewer`, `apple:swiftui-builder`, …) and the `apple-skills:*` set. **The rule is the
-same for every one of them:** they improve *how well* an authorised change is executed. They never
-expand scope, and they never override this file.
+`apple:hig-reviewer`, `apple:swiftui-builder`, …) and the `apple-skills:*` set, and on 2026-09-18
+**`apple-design`**, which is not optional where it applies (§7.6). **The rule is the same for every
+one of them:** they improve *how well* an authorised change is executed. They never expand scope,
+and they never override this file.
+
+**`swiftui-pro` and `swiftui-design-principles` are no longer installed** (checked 2026-09-19 across
+`~/.claude`, `~/.agents` and the plugin cache). Their conflict bullets below stay, because they are
+the record of settled decisions. The finished-view review pass `swiftui-pro` used to run belongs to
+`apple-design` now (§7.6).
 
 **Precedence, absolute:** `CLAUDE.md` §1–6, §7.1–7.4 and the **iOS 16.0 deployment target** beat
 every skill and every agent. Never silently follow a skill over this doc, and never silently follow
@@ -798,3 +806,103 @@ row that should have been `LabeledContent` (which reflows at accessibility Dynam
 instead of wrapping into narrow columns), and a glyph+text `HStack` that should have been a `Label`
 (so VoiceOver reads it as one element and status is never conveyed by colour alone). Both are now
 the house pattern for Form rows.
+
+#### 7.6 `apple-design` — the HIG reviewer, and it is owed wherever a person will see the change
+
+*E's call, 2026-09-19: "add it to §7.5 — I want you to ensure that the apple-design skill is
+PROPERLY utilised in your work."* §7.5's precedence applies to it in full. What this section adds
+is **when it is owed, how to run it properly, and what it disagrees with here.**
+
+**What it is.** `apple-design` is a user-level skill: `~/.agents/skills/apple-design`, linked from
+`~/.claude/skills/`. It comes from `dickwu/apple-design-skill` at `da2da6dd` and was installed
+2026-09-18. It is a design reviewer. It bundles 122 of Apple's HIG pages in Apple's own wording
+(`references/hig/*.md`), a routing table (`references/hig-lookup.md`), five audit lenses
+(accessibility, platform conventions, visual craft, interaction, writing) and a report format.
+**Invoke it with the Skill tool (`apple-design`) every time**, so that its `SKILL.md` loads in
+full. Never run it from this summary or from memory.
+
+**When it is owed:**
+- **Any block that adds or changes something a person sees or feels**: a screen, component,
+  colour, type, spacing, motion, haptic or copy. Run it over the finished view before the report,
+  and the report carries its review.
+- **Before design options go to E.** Check each option against it first, and say where each one
+  stands against the HIG. Better that E learns an option breaks a guideline from the question than
+  from a later review.
+- **Whenever E asks for a review or critique, asks "is this right?", or shares a screenshot or
+  frame for feedback.**
+- **The colour arc, when E lifts the hold**: `branding.md`, `color.md`, `dark-mode.md`,
+  `materials.md`.
+- **Owed nothing:** pure logic, tests, harnesses and docs. The report says why none was owed, the
+  same way the RM-on pass (§7.3) is handled.
+
+**How to run it properly:**
+1. **Freshness check first (see the trap below).** Re-pull into the scratchpad and diff against
+   the pages you are about to cite.
+2. **Load what it prescribes and nothing wholesale.** That is the always-load set
+   (`accessibility`, `layout`, `typography`, `color`, `designing-for-ios`), plus 3 to 6 pages for
+   what is on screen, routed through `hig-lookup.md`.
+3. **Read before citing. Cite as `file.md › Heading` with a quote.** Label anything uncited as
+   judgment. `liquid-glass.md` is the skill author's CURATED gloss, not Apple's text: cite
+   `materials.md` / `color.md` for anything decisive.
+4. **Numbers, not adjectives, and real ones.** Take contrast from the colorsets' hex values in the
+   asset catalog, never from a JPEG. Take sizes from the render harness or a measured frame.
+   Measure BOTH appearances.
+5. **Deliver in its format** (Summary, Critical, Improvements, Craft notes, What works, Platform
+   notes; every finding tagged Critical, High, Medium or Low) **as a section of the block report.
+   It never replaces the pasted terminal output**, and a review is not a green.
+6. **What happens to findings.** A finding inside the block's authorised scope is fixed in the
+   block, or asked about if it is a design choice. Anything outside scope goes to the register as
+   a candidate. As with every skill, a recommendation is never a mandate for the block in hand.
+
+**THE FRESHNESS TRAP. Its pages are a snapshot, and they were already stale when installed.** The
+skill pulled Apple's site on 2026-09-09, and upstream had nothing newer at install. A scratch
+re-pull against the live site on 2026-09-19 found **six pages changed, one new, one renamed**:
+- **`layout.md` was rewritten on 2026-09-09.** It is in the always-load set. It now says to set
+  controls apart with Liquid Glass and a scroll edge effect "instead of applying a solid or
+  semi-opaque background colour beneath controls".
+- **`branding.md` was revised on 2026-09-09.** The installed copy carries the OLD accent-colour
+  paragraph. The new text is the one the register cites as the colour arc's dependency ("move it
+  into the content layer, where it scrolls beneath Liquid Glass controls"). So a colour session
+  citing the installed copy would cite the superseded guidance.
+- **`designing-for-iphone-duo.md` is new (2026-09-09).** It covers a two-display iPhone whose
+  system puts tab bars and toolbars on the SIDE. The custom `AppTabBar` knows nothing of this. It
+  is a register candidate, not work.
+- **`in-app-purchase.md` became `apple-in-app-purchase.md` (2026-09-17).** `apple-pay`,
+  `collaboration-and-sharing`, `managing-accounts` and `privacy` also changed, but only slightly.
+
+The check, run from the skill's directory (it takes about 150 requests and changes nothing
+installed):
+
+```bash
+node scripts/pull-hig.mjs --out <scratchpad>/hig-fresh/hig \
+  --lookup <scratchpad>/hig-fresh/hig-lookup.md --cache <scratchpad>/hig-fresh/.cache --no-prune
+diff -rq references/hig <scratchpad>/hig-fresh/hig
+```
+
+If a page you are citing differs, cite the fresh copy and say so. **Refreshing the INSTALLED copy
+is E's call:** it is user-level, shared by every project, and `npx skills` tracks it by folder
+hash. `hig-lookup.md`'s "Generated … on" line says when it was last pulled.
+
+**Where it disagrees with this file.** Established 2026-09-19 by reading its `SKILL.md` against
+this doc. These are settled unless E reopens one:
+- **Control size.** It allows a 28 × 28pt mobile minimum. **§3's 44 × 44pt is the floor here.**
+- **Improvement mode's token plan.** It prescribes "four to six named hex values", which may live
+  only in colorsets (§4). All palette work is the colour arc, which is HELD. Its "display face" is
+  a custom font: **§1 wins, and a custom font is E's decision, never a skill's.** Its "ASCII
+  wireframe" is replaced by a rendered frame (E's rule: show geometry, never describe it).
+- **Reduce Motion.** Lens 1 will flag the Confirm celebration for playing under Reduce Motion.
+  That is §7.2's named waiver. **Name it as waived, never report it as a finding.**
+- **The in-app appearance override is intentional (E, 2026-09-19: "that was intentional").**
+  `dark-mode.md › Best practices` says *"Avoid offering an app-specific appearance setting."*
+  Settings has one anyway (`AppearancePreference`, from v3 Settings block 11, `cf027ae`), and
+  `RootView` applies it. **Do not report it, and do not remove it.**
+- **The custom six-item `AppTabBar`.** Lens 2 and the revised `branding.md` ("Express your brand
+  with familiar components") pull toward the system bar. Every constant in the bar is
+  E-approved: a review may name the tension, never re-tune it (§7.5's `apple:modernize` bullet).
+- **Materials in content are COMPLIANT.** `materials.md` sends content-layer depth to *standard*
+  materials, and only Liquid Glass is barred from content. So §5's `.ultraThinMaterial` is not a
+  finding. A review that flags it has confused the two.
+- **Capitalisation.** Its Lens 5 says "Apple uses title-style for buttons, menu items, and
+  titles". That overstates Apple's text. `writing.md › Best practices` says to choose a style per
+  element type and apply it consistently, and `buttons.md › Content` asks for title-style button
+  labels. Review against those two pages, not against the summary line.
