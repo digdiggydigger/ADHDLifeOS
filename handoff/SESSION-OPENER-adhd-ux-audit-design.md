@@ -491,6 +491,71 @@ audit, as two read-only sub-agents. They are findings §M.
     of the standard run, and the audit needs a 17+ test runtime (27.0 is fine).
 - **Nutrition Labels (advisory, recorded):** none can be claimed today. Findings §M holds the table.
 
+**Round 10a: sheets, Save placement, tap twins and footers (session 3; board `67-ROUND-10a-sheets-save-gestures.jpg`).**
+
+The Places chain was sim-verified this session: Places → Edit place (sheet 1) → Edit action (sheet 2) → Apple's
+contact picker (sheet 3). The frames are in board `67`.
+- **Sheet depth → "One sheet, pushes inside it"** (Recommended).
+  - Edit place stays the one sheet. An action's editor, and the app's own app picker, push INSIDE it, with Back to
+    return.
+  - Only Apple's system screens (the contact picker, the camera) open over it.
+  - sheets.md › Best practices; research §2.3.
+- **The fix list → "Approve all four"** (Recommended).
+  1. **Save and Add move to the bottom of eight sheets** (REACH-1): Edit place, Edit action, the tag and life-area
+     editors, the nudge editor and the capture detail. The sprint sheet is round 4b's.
+  2. **The Settings Notifications card loses its ~310pt gap** (SET-01). "Not requested yet" gains an in-place
+     "Allow notifications" button (SET-02); the app already asks when the first nudge is created.
+  3. **Tasks shows a loading state** instead of "0 open" (TASKS-07).
+  4. **The inbox promote sheet's "Create Task" pins to the bottom** (INBOX-04).
+- **Tap twins → "↑ ↓ buttons + a Delete button"** (Recommended).
+  - Arrange mode (life areas) and a place's action list show ↑ and ↓ on every row (48pt); drag still works.
+  - Edit place gains a bottom Delete button with its confirm (GEST-2; Q10 allows the friction). GEST-3 is closed by
+    the same buttons.
+- **Footers → "One sentence, the rest behind 'More'"** (Recommended).
+  - Each Settings footer, and Tools' empty Routines card, becomes one plain sentence. The full text sits behind a
+    "More about this" disclosure (SET-03, TOOLS-01).
+
+**Round 10b: the words (session 3; board `68-ROUND-10b-words.jpg`).**
+- **Jargon → "Approve all"** (Recommended). Round 4 already retires the checkpoints, "Flow calibration"
+  (`Focus/FocusModels.swift:107`) and the "Nudge cadence" card. The renames:
+  - "Deep entry" → "Getting started" (`Focus/FocusSprintTimelineCard.swift:202`);
+  - "Sprint target 15m · Logged on finish" → "Length 15 min · saved when it ends" (`:212`);
+  - "1 of 15 min logged" → "1 of 15 min done" (`Focus/FocusSprintDetailView.swift:167`);
+  - "monitoring slots" and "At-Place tasks" → "iOS lets the app watch 20 places" and "tasks for this place"
+    (`Places/PlaceEditorView.swift:250-252`, `Places/PlaceActionsSection.swift:111`);
+  - "session" → "sprint" everywhere ("Start another session", "1 session · 15 min");
+  - "To triage" → "To sort";
+  - "Decide later" and "No life area" → **"None"**, as in the round 7b composer
+    (`Capture/QuickCaptureComponents.swift:188`, `Tasks/TaskCreateView.swift:141`, `Theme/ComposerChips.swift:256,271`);
+  - "WORKSHOP" goes (`Tools/ToolsView.swift:110`);
+  - "Entries are append-only — saved means saved" → "Entries can't be changed after saving"
+    (`Journal/LogComposerCopy.swift:13`). The line goes once journal edit ships (gaps list);
+  - Settings' "…light and dark variants for every token" → "Follows your device"
+    (`Settings/AppearancePreference.swift:49`).
+- **The inbox's "Promoted" segment → "Tasked"** (Recommended). The segments read To sort · Sorted · Tasked, matching
+  round 6's "Task it".
+- **Refresh → E, verbatim:** *"I choose option one With the addition of an auto-refresh When a user makes an
+  edit/Change Such as logging a new Journal entry - Then the Journal should update automatically. Creating a new
+  quick capture - Should update the Capture inbox page automatically"*.
+  - Option one: every screen reloads when it appears and whenever the app returns to the front. The pull stays as a
+    bonus, with no new button.
+  - Returning to the app does not reload data today. Only the sprint sync and the live routine run
+    (`RootView.swift:389`, `Home/HomeView.swift:306`).
+  - E's addition, and the code fact behind it: every generic Firestore `save`, `delete` and `update` posts
+    `DataChangeSignal` (`Firebase/FirebaseManager.swift:326-340`). Journal and the Capture inbox already listen
+    (`Journal/JournalView.swift:157`, `Capture/CaptureInboxView.swift:139`), and so do Today, Tasks, Areas, an
+    area's page, Nudges, Places and Tools.
+  - So the build must PROVE, with tests, that a new journal entry and a new quick capture appear on their screens
+    with no pull.
+  - Any write path that bypasses the generic methods (a photo upload through `+Storage`, the Shortcut runner) must be
+    checked for the signal.
+  - If E has seen either screen fail to update, that is a bug to reproduce, not a design point.
+- **Capitals → "Sentence case everywhere"** (Recommended).
+  - It confirms what E approved by sight. "Add to Today", "Delete Task" and "Keep Editing" become sentence case
+    (X-CAPS).
+  - This is the house style against `buttons.md › Content`'s title-style, under `writing.md › Best practices`
+    ("Choose a style for each UI element type and use it consistently").
+
 **Housekeeping note (session 2 hand-off).** Two throwaway render probes were swept into intermediate commits by `git add -A`:
 - the hero probe: in `3f8a187`, removed `952fdd3`;
 - the composer probe: in `d62cda0` and `a715d6b`, removed in the hand-off merge `670dbb7`.
