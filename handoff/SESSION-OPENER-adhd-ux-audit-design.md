@@ -258,3 +258,35 @@ bottom furniture cut out.
   event opens the task.
   - The app writes ONLY to its own "ADHD LifeOS" calendar and never edits or deletes the user's existing events.
   - The purpose string says exactly that.
+- **Round 4 carry-overs, stated as defaults (no question needed; E may overrule):**
+  - **Card timer:** grows from `.caption2` (11pt, the app's smallest text) to `.callout` monospaced semibold (about 16pt)
+    on the 70pt ring. At accessibility sizes the ring is 128pt and sits above the title (as rendered in board `58`,
+    which E chose from).
+  - **Haptics differ by meaning**, through the house `.haptic(_:trigger:)` and `HapticFeel`:
+    - start `.solid`;
+    - Pause / Resume `.selection`;
+    - each extension `.light`;
+    - End (after its confirm) `.solid`;
+    - the 5-minute heads-up `.light`, paired with the soft sound;
+    - a finished sprint keeps `.success`.
+
+    This is a device check (the phone-checks list).
+  - **Jargon left in Details:** "Deep entry", "Flow calibration", "Sprint target" and "1 of 15 min logged" live in the
+    timeline that "Details" reveals. They are renamed or cut in round 10 (the jargon list).
+
+**Round 5a: Today's one card (board `59-ROUND-5-hero-options.jpg`; real-token renders under the real Today header).**
+- **Buttons → "H1 · Start first, Close quiet".** One prominent "Start N min" (56pt, accent). "Close it" is a quiet
+  green-tinted button below it.
+  - The card also carries: a pin toggle (44pt) in the corner; the title; the next-step line; chips for time and
+    area; and the shrinking time bar (idea 8) when a commitment is ahead.
+  - The suggested state adds "Not this one" (idea 3).
+  - At AX3 the card is taller than the screen, so the build needs a COMPACT AX3 card with Start above the fold.
+- **What wins the one slot → "Leave-by first".** Leave by (inside 30 min) > live routine > paused sprint (Resume) >
+  pinned task > suggestion. Only a hard deadline outranks where you are.
+  - Due nudges sit at the top of the "then" list with a bell. This was stated in the question and E did not object.
+- **Next step → "A 'Next step' field".** One optional line on a task, editable from the card and from task detail.
+  Time comes from the task's stored sprint length (`focus_duration_seconds`). It is a Firestore change, so E
+  republishes the rules.
+- **The finished-sprint Confirm → "Keep Confirm"** (Recommended was auto-log + undo). A deliberate "claim it" tap that
+  fires the Confirm celebration, as today. It also catches sprints that ran out while the user was away.
+  - This is E's call over the audit's undo direction and Q10's friction rule. Recorded, not a finding.
