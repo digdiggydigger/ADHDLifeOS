@@ -437,6 +437,60 @@ The `apple-design` review of the three layouts is findings §L.
     (`Home/MomentumScoreboard.swift:246-252`).
   - The weekly chain speaks through Week review and the done-today line.
 
+**Round 9: accessibility and colour, an approve-the-list round (session 3; boards `65-ROUND-9-dynamic-type-AX3.jpg`
+and `66-ROUND-9-contrast-and-colour.jpg`).**
+
+Before asking, the `apple-skills` iOS `ui-review` and `accessibility-audit` modules ran for the first time in the
+audit, as two read-only sub-agents. They are findings §M.
+- **Contrast → "Leave it to the colour arc"** (Recommended was "Increase Contrast versions only").
+  - Nothing about contrast is built in the audit. That includes the bold-labels-on-blue fix, which rode only with the
+    Recommended option.
+  - The measured numbers become the colour arc's input, and they include round 7b's composer findings. Light: grey
+    meta 4.25, tertiary/placeholder 1.88, orange on card 3.02, on page 2.72, green on page 2.82, blue link 3.55, and
+    white on blue 3.93. Dark: tertiary 2.33 and white on blue 3.65. The tab badge (settled) is 4.21 light and 3.41
+    dark.
+  - This is E's choice of the Q6 hold over Q5's accessibility exception.
+  - Consequence to name at the close: until the colour arc lands, Increase Contrast does nothing, and the Sufficient
+    Contrast nutrition label cannot be claimed.
+- **AX3 layout → "Approve, but keep Areas in 2 columns"**.
+  - Approved: at accessibility sizes, task rows stack (the title wraps in full, the meta sits under it, and ▶ and ○
+    stay trailing).
+  - Approved: the sign-in segments grow; they are AUTH-01 and the only route to Create account.
+  - Approved: no button breaks mid-word ("Arran/ge"; icon only if needed).
+  - Approved: metric labels wrap to 2 lines (A11Y-09).
+  - **Kept:** the Areas grid stays 2 columns at every size (AREAS-01 is E's call). Names wrap inside the cards
+    instead of truncating.
+- **Colour jobs → "Approve all four"** (Recommended).
+  1. **Blue comes off labels that aren't tappable** ("TOMORROW", "WHERE DOES THIS LIVE?", "THEN").
+     - The eyebrows become DUE TODAY orange, TOMORROW grey (`MomentumTaskBuckets.swift:75`) and CLOSED TODAY green.
+     - Blue always means "tap me".
+  2. **The raw `.green`, `.orange` and `.red` become StateGo, StateWarn and StateRisk,** with StateGo shared with the
+     widget target.
+     - The places: `NotificationPermissionState.swift:72-74`, `WeeklyFocusSummaryWidget.swift:138,141`,
+       `FocusSprintPresentation.swift:88` and the widget's `FocusActivityComponents.swift:115`.
+     - The notification status cited §4 ("adaptive system colours") on purpose. E chose consistency over that
+       reading.
+  3. **The "Nudges Due" flame goes neutral.** It is StateRisk in Week review, at `DailySummaryView.swift:223`.
+  4. **In the inbox, a disabled "Sorted" looks disabled** beside an enabled "Skip" (INBOX-03).
+- **The §M accessibility list → "Approve all, plus automated audits"** (Recommended).
+  - **VoiceOver:**
+    - labels for the Tasks "+" ("New task"), each tag's remove ("Remove tag Work") and voice Play/Pause;
+    - the inbox top card and Home's Due-now rows become one element with a button trait;
+    - the promote sheet's chips carry `.isSelected`;
+    - the 13 decorative chevrons are hidden;
+    - the countdown gets `.updatesFrequently` (§M's list).
+  - **Reduce Motion:**
+    - the sprint ring stops re-springing every second (§7.2's continuous case, `nil`, as `FocusTimerBarContent`
+      already does);
+    - the undo bar fades in instead of sliding (§7.2's "appears" case);
+    - the Daily Summary and sign-in swaps are covered too;
+    - each is a reduced site and owes E's RM-on phone pass when built (§7.3).
+  - **Smart Invert:** `accessibilityIgnoresInvertColors` on photos.
+  - **Charts:** `accessibilityChartDescriptor` on Week review's chart.
+  - **Automated:** `performAccessibilityAudit` per screen in the UI journeys, in its own test plan. UI tests stay out
+    of the standard run, and the audit needs a 17+ test runtime (27.0 is fine).
+- **Nutrition Labels (advisory, recorded):** none can be claimed today. Findings §M holds the table.
+
 **Housekeeping note (session 2 hand-off).** Two throwaway render probes were swept into intermediate commits by `git add -A`:
 - the hero probe: in `3f8a187`, removed `952fdd3`;
 - the composer probe: in `d62cda0` and `a715d6b`, removed in the hand-off merge `670dbb7`.

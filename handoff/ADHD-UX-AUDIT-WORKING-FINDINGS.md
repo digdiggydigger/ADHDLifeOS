@@ -470,3 +470,69 @@ E's rule. The design record already carries this divergence.
   research §3.2 warns about.
   - The build must keep the keyboard up (or hold the bar at keyboard height) while a menu or the picker is open.
   - A test must pin it. This is unverified: SwiftUI `Menu`'s effect on the first responder was not checked here.
+
+## M. apple-skills ios `ui-review` + `accessibility-audit` (round 9, session 3; two read-only sub-agents, static only)
+
+These are the first runs of both modules in the audit. They were static, because the live passes (Accessibility
+Inspector, VoiceOver, Voice Control and Smart Invert on the device) cannot run from here. Claims marked **✓** were
+re-read in code by the main session.
+- **A11Y-01 High ✓ The promote sheet's chips have no `.isSelected` trait.**
+  - `Capture/CapturePromoteSheet.swift:132-142` holds `chip()`, used for Effort, When and Priority.
+  - Which chip is chosen reaches VoiceOver by colour alone. Five other users of `ChoiceChipButtonStyle` add the trait.
+- **A11Y-02 High ✓ The inbox's top decision card reads as text, not a button.**
+  - `Capture/CaptureInboxSections.swift:58-59` has `.onTapGesture` and an identifier only: no button trait, and no
+    combined element.
+  - Home's Due-now row (`Home/HomeMomentumSections.swift:222-224`) has the trait but is not combined.
+- **A11Y-03 High: icon-only controls with no label.**
+  - The tag remove "x" at `Capture/CaptureRowTagEditor.swift:83-93` is the same for every tag. The pattern already
+    exists as "Remove tag \(name)" in `Tasks/TaskDetailChipsRow.swift:158`.
+  - The voice Play/Pause at `Capture/CaptureRowComponents.swift:129-152` has no label or value.
+  - The Tasks "+" at `Tasks/TaskListView.swift:114-122` ✓ has no label. This is separate from X-TGT-1, which is its
+    size.
+- **A11Y-04 High ✓ Smart Invert: zero `accessibilityIgnoresInvertColors` app-wide.**
+  - That includes the photo lightbox (`CaptureRowComponents.swift:238`) and the composer's preview
+    (`QuickCaptureComponents.swift:305`). It blocks the Dark Interface label.
+- **RM-01 High ✓ The sprint sheet's 236pt ring springs every second under Reduce Motion.**
+  - `Focus/FocusSprintDetailView.swift:151` feeds `ClosureRing`, whose spring (`Home/MomentumScoreboardViews.swift:39`)
+    has no gate.
+  - The card's own ring IS gated (`FocusTimerBarContent.swift:203-206`, `.transaction`).
+  - This is §7.2's continuous case, so `nil` is correct. It rides into round 4b's Focus screen build.
+- **RM-02 High ✓ The inbox's undo and warning bars slide in on every triage with no Reduce Motion read.**
+  - `Capture/CaptureInboxUndoSections.swift:69,102-106` (`.move(edge: .bottom)` plus a spring).
+  - This is §7.2's "appears" case: a fade, per `CaptureFanOverlay`. It rides into round 2b's undo capsule build.
+- **RM-03 Medium: two more springs with no Reduce Motion read.**
+  - The Daily Summary state swap (`Home/DailySummaryView.swift:63`, which now lives in Week review).
+  - The sign-in mode swap (`Auth/LoginView.swift:98-105`).
+- **A11Y-05 Medium: the charts give VoiceOver no per-point data.**
+  - `Focus/ProductivityTrendChart.swift:132` and `Focus/WeeklyFocusSummaryWidget.swift:126` carry one label each and
+    no `accessibilityChartDescriptor`.
+  - After round 3 only Week review's bar chart remains.
+- **A11Y-06 Medium: the countdown text has no `.updatesFrequently`.** See `FocusSprintDetailView.swift:165` and
+  `FocusTimerBarContent.swift:197`.
+- **A11Y-07 Medium ✓ There are zero `performAccessibilityAudit` calls and no `.xctestplan`.**
+  - Natural homes are the existing journeys: FirstRun, SignedIn, Journal, Routine/ToolsRoutines, SprintBarFurniture
+    and the auth tests.
+  - Each audit must sit in its own deliberate test plan, because UI tests are skipped in the standard run.
+- **A11Y-08 Medium: nothing reads Differentiate Without Color, Reduce Transparency, `colorSchemeContrast`, or sets
+  `accessibilityInputLabels`.**
+  - No clean colour-only violation was found. This flags a missing mechanism, not a proven failure.
+- **A11Y-09 Medium, Dynamic Type: `DailyMetricCard` labels truncate at AX sizes.** The label at
+  `Home/DailySummaryView.swift:296-318` is `lineLimit(1)` with a 0.8 scale.
+- **Low:**
+  - The 13 decorative `chevron.right` glyphs and the closure card's checkmark are not hidden from VoiceOver.
+  - The Close button's accessible label embeds a shifting streak number (retired by round 8b's "makes today count").
+- **GEST-3 was inferred and is now read in code:** `.onMove` in `Home/HomeAccessoryStrips.swift:23` and
+  `Places/PlaceActionsSection.swift:63` has no `accessibilityAction` twin.
+- **What works (keep):**
+  - `FocusTimerBar` deliberately does NOT combine. It exposes the whole-card tap as a named action ("Open the full
+    sprint view"); don't "fix" it.
+  - `TaskRow`/`AreaTaskRow` combine with a labelled close action.
+  - The discs use `.accessibilityHidden(!acceptsTouches)`.
+  - The `JournalAllActivityButton` glyph carries `.isSelected` and a hint.
+  - Settings' permission status is a `Label` (icon + text + colour).
+- **Nutrition Labels (iPhone), advisory:** none can be claimed today.
+  - Not yet: VoiceOver, Voice Control, Larger Text, Sufficient Contrast, Dark Interface (Smart Invert) and Reduced
+    Motion.
+  - Unknown, needing a device pass: Differentiate Without Color, and Captions (voice captures show a transcript; E's
+    call whether that meets the criterion).
+  - N/A: Audio Descriptions.
