@@ -1,0 +1,138 @@
+{
+  "emulator": "http://127.0.0.1:8080",
+  "uid": "50pqew9lPwINjxf9P4p2lDyB5xL9",
+  "docs": [
+    {
+      "collection": "tasks",
+      "id": "74E281BE-8B3B-4D4C-8C1E-1393AD964361"
+    },
+    {
+      "collection": "tasks",
+      "id": "0E0FBEAC-BF65-466F-9912-D064CF9E3C01"
+    },
+    {
+      "collection": "tasks",
+      "id": "7B952A19-6476-469A-9796-F6CCEB2B9905"
+    },
+    {
+      "collection": "tasks",
+      "id": "A3572302-F841-4FD7-9284-10E19A3816E7"
+    },
+    {
+      "collection": "tasks",
+      "id": "81019D22-2AC6-4E7F-AEF2-F33C3BBEDC39"
+    },
+    {
+      "collection": "tasks",
+      "id": "2DEC1D8C-D905-43A7-B2A3-77FDA9F79CE5"
+    },
+    {
+      "collection": "tasks",
+      "id": "176ACB2A-4741-40AF-B5C2-A2A71712C7D2"
+    },
+    {
+      "collection": "tasks",
+      "id": "2172E106-2AF5-4836-ABA4-87D9D583D88C"
+    },
+    {
+      "collection": "tasks",
+      "id": "A217A79A-A634-493F-9D8E-9C4F8274368A"
+    },
+    {
+      "collection": "tasks",
+      "id": "CCF575AB-3A02-4D52-97EE-D03FFC69EF11"
+    },
+    {
+      "collection": "tasks",
+      "id": "4A560E2D-2937-43AC-9309-B08B64525F0F"
+    },
+    {
+      "collection": "tasks",
+      "id": "48F456A5-2C79-4CD6-BE6E-515E7AE95ED4"
+    },
+    {
+      "collection": "tasks",
+      "id": "DE0443BB-1732-4C6D-BA0F-E2B714A47F80"
+    },
+    {
+      "collection": "tasks",
+      "id": "443535A0-DB7D-49EB-A5B1-627E1DF4BEF7"
+    },
+    {
+      "collection": "tasks",
+      "id": "590B25B4-4233-4491-A66E-14565D972A0E"
+    },
+    {
+      "collection": "tasks",
+      "id": "794B8618-779E-4B56-ABEB-E3098420321F"
+    },
+    {
+      "collection": "tasks",
+      "id": "A83D08D6-3AAE-40C0-8296-BB626F897106"
+    },
+    {
+      "collection": "captures",
+      "id": "370615A4-051F-451A-8E97-97C17559572D"
+    },
+    {
+      "collection": "captures",
+      "id": "8D7AAD74-D754-40C1-8BF3-4D3D77A808C2"
+    },
+    {
+      "collection": "captures",
+      "id": "B931C1E3-10E3-4CF1-B689-A037E0E10B97"
+    },
+    {
+      "collection": "captures",
+      "id": "C5700EDF-0342-4DD3-B511-D6733C9A1C35"
+    },
+    {
+      "collection": "captures",
+      "id": "22EB8E4D-A048-419A-8903-5458366FB9FE"
+    },
+    {
+      "collection": "logs",
+      "id": "411593BF-236A-42A6-B3EF-2CD776709A79"
+    },
+    {
+      "collection": "logs",
+      "id": "05A0BD4E-8310-4B98-93FE-AB9D508D15F0"
+    },
+    {
+      "collection": "logs",
+      "id": "FE88BDD0-EBD1-4C87-835E-A54DAC9A1B77"
+    },
+    {
+      "collection": "nudges",
+      "id": "5AB67152-5738-483B-9BE9-C63F864E39FF"
+    },
+    {
+      "collection": "nudges",
+      "id": "A601C44B-DAE0-49AE-A367-56DE6685E0C7"
+    },
+    {
+      "collection": "focus_sessions",
+      "id": "76A61532-775D-4D7D-B1F8-9E046F2D6F14"
+    },
+    {
+      "collection": "focus_sessions",
+      "id": "50CE1C07-B4BF-4FEC-92B6-FC2A27B1FBD0"
+    },
+    {
+      "collection": "focus_sessions",
+      "id": "90B9638B-DC10-4F53-8796-48DF12EC9970"
+    },
+    {
+      "collection": "focus_sessions",
+      "id": "79D3D857-7E4C-4D0B-BC21-DBE8303FBE07"
+    },
+    {
+      "collection": "focus_sessions",
+      "id": "7A9C0A3B-ED5F-4EEF-818B-5958200B788B"
+    },
+    {
+      "collection": "focus_sessions",
+      "id": "BAF42FC0-10C2-462F-B7AD-6B3B66E837B9"
+    }
+  ]
+}
