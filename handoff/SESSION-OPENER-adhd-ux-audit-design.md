@@ -208,3 +208,18 @@ bottom furniture cut out.
     - 7 Fresh Start after 7+ days away: E's Q9, a new flow.
     - 9 one quiet "done today" line under the card. E accepted this bend of C's "nothing else".
   - **Outside the app:** 10 the one card on the Lock Screen, a new accessory-widget family.
+
+**Round 4a: the sprint (2026-09-19; board `57-ROUND-4-sprint-evidence.jpg`).**
+- **Lock Screen controls → "+5m only; End in the app".** One control. Ending early happens in the app, where its
+  confirm lives (Q10).
+  - This retires the Live Activity's unconfirmed Stop (LA-01) and its ~34pt Pause/Stop pair.
+  - Shared by every option: a tap opens the sprint (a `widgetURL`, LA-03), and the minimal Dynamic Island shows the
+    time left (LA-04).
+- **Extending a sprint → E, verbatim:** *"How about: +30 Seconds and +1 Minute and +5 Minute sprint time
+  extensions?"* E proposed rather than chose, so round 4b confirms it. The Lock Screen keeps +5 min alone, per the Q1
+  answer.
+- **5-minute heads-up → "Heads-up replaces checkpoints".** ONE alert at 5 minutes left: in the app a haptic, a soft
+  sound and the ring changing colour; when away, a notification. The mid-sprint checkpoints (the "In-Sprint Nudges"
+  stepper, `FocusNotificationPlanning.checkpoint`) and their jargon go.
+- **Pause → "Keep Pause in the app".** The in-app set is Pause · extensions · End. A paused sprint shows "Paused · N
+  min in · Resume", which feeds the Resume card (Today idea 4).
