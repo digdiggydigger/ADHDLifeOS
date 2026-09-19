@@ -1,5 +1,22 @@
 # Open items register — 2026-09-19 (sixty-sixth edition; **the ADHD / neurodivergent UX audit, session 2: options rounds 2–7 DONE** (drafts, undo, Recently Deleted, Today = one card, the sprint, the hero, composers, targets) plus E's nine Today ideas; every answer verbatim in `handoff/SESSION-OPENER-adhd-ux-audit-design.md`. **No Swift changed.** Handed off at round 7b by E's call at 60% context.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`. *(Edition 65's header, superseded: Open items register — 2026-09-19 (sixty-fifth edition; **E opened the ADHD / neurodivergent UX audit** — research, E's ten answers, a full iPhone 18 Pro / iOS 27.0 simulator audit (~80 findings, 51 frames) and options round 1. **No Swift changed.** Handed off at round 1 by E's call.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds.md`.)*
 
+> ## Edition 66 in five lines (2026-09-19, the ADHD UX audit, session 2)
+>
+> - **`main` @ `670dbb7`.** No app Swift changed since edition 65, so the suite, lint and coverage figures
+>   recorded below (at `93beff2`) still stand.
+> - **Shipped: records only.** Options rounds 2–7 + E's nine Today ideas, verbatim in
+>   `handoff/SESSION-OPENER-adhd-ux-audit-design.md`; evidence boards `53`–`64`.
+> - **Outstanding:** audit rounds 7b–10, then the Scope C gaps list, the phone-checks list, and Decision A.
+>   Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`.
+> - **New commitments awaiting build** (from the rounds):
+>   - calendar READ + WRITE, a new permission, time-blocking only;
+>   - a `next_step` task field;
+>   - `deleted_at` soft delete for tasks, captures and tags.
+>
+>   All three change Firestore and/or `firestore.rules`, so E republishes.
+> - **Parked, unchanged:** the colour-arc HOLD below; everything in §A–§D.
+
+
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
 primary sources, and captured the pre-upgrade baseline.

@@ -329,3 +329,10 @@ bottom furniture cut out.
 - **Corner controls → "All to 48×48"** (Recommended was 44). The Settings gear (40), Back (36), the composer's Close
   (77×36), the Tasks "+" (27×36) and Journal's "All activity" (38×36) all become 48×48 in their standard places.
   - Stated default: the Live Activity's single +5 min is at least 44pt within its height cap.
+
+**Housekeeping note (session 2 hand-off).** Two throwaway render probes were swept into intermediate commits by `git add -A`:
+- the hero probe: in `3f8a187`, removed `952fdd3`;
+- the composer probe: in `d62cda0` and `a715d6b`, removed in the hand-off merge `670dbb7`.
+
+No probe remains in the test target. From here on, delete a probe (or move it to `scripts/audit/probes/` as
+`.swift.txt`) BEFORE any `git add -A`.
