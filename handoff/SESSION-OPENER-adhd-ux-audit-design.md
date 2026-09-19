@@ -315,3 +315,17 @@ bottom furniture cut out.
 - **The capture copy → "Drop the explanations".** No subtitle on the fan and no footnotes on the tiles; the tile
   names say enough.
   - The inbox's own "Anything you capture lands here first" is round 8's (copy).
+- **Composer confirm (board `61-ROUND-6b-composer-your-combo.jpg`) → E, verbatim:** *"The chips That you have added
+  are correct, but the layout and display of them is quite ugly. A redesigns Suggestions of the layout would be much
+  appreciated."*
+  - The CONTENT is settled: title, four "when" chips, and the area and time menus.
+  - The LAYOUT is re-proposed with renders, keyboard up, in round 7b.
+
+**Round 7: touch targets (board `62-ROUND-7-targets.jpg`, measured from the accessibility tree on the 18 Pro).**
+- **Key targets → "Actions that change things".** 48pt for anything that starts, closes, adds, undoes, ends or saves,
+  and for each sheet's primary button. 44pt for navigation and filtering (Back, Settings, filter chips, tags).
+- **Filter and tag chips → "36pt look, 44pt reach"** (Recommended was 44pt visible). They keep today's 36pt look with
+  an invisible 44pt hit area (`contentShape` plus padding). The composer's own chips stay 48 (round 6).
+- **Corner controls → "All to 48×48"** (Recommended was 44). The Settings gear (40), Back (36), the composer's Close
+  (77×36), the Tasks "+" (27×36) and Journal's "All activity" (38×36) all become 48×48 in their standard places.
+  - Stated default: the Live Activity's single +5 min is at least 44pt within its height cap.

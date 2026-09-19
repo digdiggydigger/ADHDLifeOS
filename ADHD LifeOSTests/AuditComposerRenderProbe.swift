@@ -32,7 +32,7 @@ final class AuditComposerRenderProbe: XCTestCase {
             }
         }
         let missing = jobs.filter { !FileManager.default.fileExists(atPath: "\(Self.outDir)/\($0.0).png") }.map(\.0)
-        XCTAssertEqual(missing, [])
+        XCTAssertEqual(missing, [])  // 4 shapes × 3
     }
 
     private func render<V: View>(_ view: V, name: String, scheme: ColorScheme, size: DynamicTypeSize) throws -> Int {
@@ -58,6 +58,7 @@ private enum ComposerShape: String, CaseIterable {
     case chips = "C1-title-three-chips"
     case nextStep = "C2-title-next-step"
     case folded = "C3-everything-folded"
+    case combined = "C4-when-chips-plus-menus"
 }
 
 private struct Tinted: ViewModifier {
@@ -169,6 +170,28 @@ private struct Composer: View {
                 Text("No date, no area, 15 min. Change any of it on the task.")
                     .font(.footnote)
                     .foregroundStyle(Color("LabelSecondary"))
+            }
+        case .combined:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("WHEN").sectionLabel()
+                let when = ["Not yet", "Today", "Tomorrow"]
+                if typeSize.isAccessibilitySize {
+                    ForEach(when, id: \.self) { chip($0, selected: $0 == "Not yet") }
+                    MenuChip(glyph: "calendar", text: "Pick a date")
+                } else {
+                    HStack(spacing: 8) { ForEach(when, id: \.self) { chip($0, selected: $0 == "Not yet") } }
+                    MenuChip(glyph: "calendar", text: "Pick a date")
+                }
+                Spacer().frame(height: 8)
+                if typeSize.isAccessibilitySize {
+                    MenuChip(glyph: "square.grid.2x2", text: "No area")
+                    MenuChip(glyph: "timer", text: "15 min")
+                } else {
+                    HStack(spacing: 8) {
+                        MenuChip(glyph: "square.grid.2x2", text: "No area")
+                        MenuChip(glyph: "timer", text: "15 min")
+                    }
+                }
             }
         case .folded:
             VStack(alignment: .leading, spacing: 8) {
