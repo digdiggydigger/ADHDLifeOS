@@ -1,4 +1,4 @@
-# Open items register — 2026-09-18 (sixty-third edition; **E's device look on the `654012f` install: PASSED, all of it.** Reduce Motion OFF *"All passed"*, Reduce Motion ON *"All faded, passed"*, and the landscape Note tile *"Composer opened"* — so the Journal-door arc and `F-FurnitureGap24` owe nothing, and `testRenderLandscapeSweep`'s failure is the TEST's fault, not the app's.) Opener: `handoff/START-HERE-after-journal-door-pass.md`.
+# Open items register — 2026-09-19 (sixty-fourth edition; **`apple-design` made a standing part of the work — CLAUDE.md §7.6, E's call.** Its bundled HIG snapshot proved STALE against Apple's live site, which also surfaced Apple's new **iPhone Duo** page. No Swift changed.) Opener: `handoff/START-HERE-after-journal-door-pass.md` (still accurate — nothing queued).
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
@@ -36,6 +36,34 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Sixty-fourth edition — 2026-09-19, `main` @ the merge of this hand-off. Docs only.**
+- **Figures carried:** suite **3,085 / 0**, SwiftLint **0 / 831**, both on `061dbaa`. **No Swift
+  changed.** Rules untouched; emulator not started; the phone still carries `654012f`.
+
+**Landed: CLAUDE.md §7.6 — `apple-design` is owed wherever a person will see the change.** E
+installed the skill 2026-09-18 and asked that it be *"PROPERLY utilised"*. §7.6 says when it is owed
+(any visible change, before design options go to E, any review ask, the colour arc), how to run it
+(Skill tool, freshness check, always-load set, `file.md › Heading` citations, real numbers, its report
+format as a SECTION of the block report), and seven settled disagreements with this repo. The "feature
+isn't done until" bar now points at it. §7.5 records that `swiftui-pro` and `swiftui-design-principles`
+are no longer installed.
+
+**E's decision this session:** the in-app appearance override (`AppearancePreference`, `cf027ae`)
+breaks `dark-mode.md › Best practices` ("Avoid offering an app-specific appearance setting") —
+**E: "that was intentional."** Recorded in §7.6 as settled; never report it, never remove it.
+
+**Found: the skill's HIG pages were stale on arrival.** Pulled 2026-09-09; upstream had nothing
+newer. A scratch re-pull against Apple's live site found `layout.md` (always-load) REWRITTEN,
+`branding.md` REVISED — **the installed copy carries the old accent-colour paragraph, not the "content
+layer" sentence this register cites as the colour arc's dependency** — plus a NEW
+`designing-for-iphone-duo.md`, the IAP page renamed, and four small edits. §7.6 carries the re-pull
+check. **Open question for E, not work:** refresh the installed copy in place (`node
+scripts/pull-hig.mjs` in `~/.agents/skills/apple-design`) — user-level, shared by every project.
+
+---
+
+**Sixty-third edition's State follows, unchanged.**
 
 **Sixty-third edition — 2026-09-18 (evening, the look session), `main` @ the merge of this hand-off.**
 - **Figures carried:** suite **3,085 / 0**, SwiftLint **0 / 831**, both on `061dbaa`. **No Swift
@@ -1044,6 +1072,12 @@ this section is dropped for age, and none of it may be quietly closed as stale. 
 this session or an earlier one noticed and judged below the bar for its own block — not something
 that was tried and dismissed.*
 
+- **Apple published "Designing for iPhone Duo" on 2026-09-09 — a two-display iPhone whose system
+  puts tab bars and toolbars on the SIDE, vertically.** Found 2026-09-19 by the `apple-design`
+  freshness check (§7.6). The custom `AppTabBar` is drawn by the app, so it will not move there on
+  its own, and the page also stresses layouts that adapt across the hinge and device poses. Nothing
+  in this repo mentioned the device before. Not work until E says so: a candidate beside register
+  §B's modern-API inventory, and a public-launch question. (NEW)
 
 - **A fully-ticked routine that is never confirmed will be recorded as `dayEnded`, not
   `completed`.** Found while planning `-6`. An arrival run stays live until **end of day**
