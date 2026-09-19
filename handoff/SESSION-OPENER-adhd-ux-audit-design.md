@@ -195,3 +195,16 @@ bottom furniture cut out.
   drew values below zero). Both charts come off Today.
 - **Preset goals → "Off until you set one".** No ring and no percentage until the user chooses a goal in Settings.
   This covers the daily close goal (5) and the daily focus goal (30m).
+- **Today: alternative ideas (E's side request; the list is in `ADHD-UX-AUDIT-WORKING-FINDINGS.md` §K) → E, verbatim:
+  *"Add 1, 3, 4, 5, 6, 7, 8, 9, 10."*** Only #2 (work sized to the gap) was left out. Where each goes:
+  - **Into the one card (round 5 designs them with the hero):**
+    - 1 "Leave by" time card: needs calendar read, a new permission.
+    - 3 "Not this one" swap.
+    - 4 Resume card.
+    - 8 time you can see: a shrinking bar to the next commitment, which needs the calendar or a deadline.
+  - **Into Today's states or beside the card:**
+    - 5 morning first-open screen: needs wake-event triggers, the Scope C gap, now WANTED.
+    - 6 evening "tomorrow's first thing".
+    - 7 Fresh Start after 7+ days away: E's Q9, a new flow.
+    - 9 one quiet "done today" line under the card. E accepted this bend of C's "nothing else".
+  - **Outside the app:** 10 the one card on the Lock Screen, a new accessory-widget family.
