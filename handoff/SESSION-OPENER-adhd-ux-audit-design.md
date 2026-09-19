@@ -299,3 +299,19 @@ bottom furniture cut out.
   journal line, or sorting a capture.
 - **"Not this one" → "Back in the list, not re-suggested today".** The skipped task stays tappable in the "then"
   list, and the card won't offer it again until tomorrow.
+
+**Round 6: the task composers and capture copy (board `60-ROUND-6-composer-options.jpg`; real-token renders).**
+- **Doors → "One composer, both doors".** The Tasks "+" and the disc → Task open the SAME composer.
+- **What the composer asks → E, verbatim:** *"C1 AND THE C3 chips. I want The options "Not yet", "Today",
+  "Tomorrow", "Pick a date" - BUT I want the Chips to be tappable, so that the drop-down options that are shown in
+  C1 can be accessed."*
+  - Reading: the title field; C3's four tappable "when" chips (Not yet · Today · Tomorrow · Pick a date); and C1's
+    area and time pop-up chips (menus, not sheets).
+  - The next step, tags, place and notes live on the task.
+  - A render of this reading goes to E for confirmation at the start of round 7.
+- **A new task's date → "No date + an 'Anytime' row".** New tasks have no date unless one is picked. The Tasks board
+  gains one collapsed "Anytime · N" row at the bottom: the tail stays folded, but a new task is visible where it was
+  added. This retires the forced "due today" (CAPT-02) and the vanishing undated task (TASKS-03).
+- **The capture copy → "Drop the explanations".** No subtitle on the fan and no footnotes on the tiles; the tile
+  names say enough.
+  - The inbox's own "Anything you capture lands here first" is round 8's (copy).
