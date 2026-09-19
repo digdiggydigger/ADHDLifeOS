@@ -47,6 +47,29 @@ re-run; the next session to touch Swift re-measures.
 **Build order** (E chose C first; the rest is the proposal in the specs' intro):
 **C → D → E → F → A → B → G.**
 
+## How many sessions — the proposal (E asked, 2026-09-19)
+
+**About 16–20 sessions, not 31.** Small copy blocks batch; structural ones do not. What ends a
+session is CONTEXT, and it goes on red-check cycles, full-suite runs and device evidence rather than
+on lines of code — so size a session by its test surface, not its diff.
+
+| arc | sessions | grouping |
+|---|---|---|
+| C · Nothing lost | 3 | **C1 alone** (five close surfaces, a new shared component, an RM-on pass) · C2 · **C3+C4** (C4 rides C3's schema) |
+| D · The composer | 2–3 | **D1 alone** (two composers merge into one) · D2+D3 |
+| E · Today | 3–4 | E1+E2 · **E3 alone** (Today's whole body) · E4+E5 |
+| F · The sprint | 4 | **F1 alone** (retires checkpoints across app AND widget) · F2+F3 · F4 · **F5 after its render round** |
+| A · Copy and colour | 1–2 | A1+A2 · A3+A4 |
+| B · Accessibility | 2–3 | B1+B2 · B3+B4 · **B5 alone** (it migrates the scheme's Test action) |
+| G · Places, sheets, refresh | 3 | G1+G2 · G3+G4 · G5 |
+
+**This is a proposal, not a rule.** Two things add sessions: **F5's render round** (the calendar
+slot-picker has no rendered design and no chosen option anywhere in the record), and any block whose
+device verdict sends the shape back — the journal pencil did that twice in one arc.
+
+**Batching two blocks does NOT batch the review.** The standing rule is unchanged: build one block,
+stop, paste the real output, wait for E. Two blocks in a session means two review points.
+
 ## The 31 blocks
 
 `—` in *landed* means not built. *Owed to E* is the device look, the Reduce-Motion-on pass, or a Step 0 answer.
