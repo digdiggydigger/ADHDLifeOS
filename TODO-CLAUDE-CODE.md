@@ -5178,6 +5178,11 @@ rules have NO field-level validation (63 lines, collection-level owner CRUD), so
 republishes" line for `next_step` was wrong, and is corrected here. E still republishes if a block
 chooses to add the optional hardening rule that arc C names.
 
+**Every build session logs its progress** (E's instruction, 2026-09-19, because this runs across many
+sessions): `handoff/ADHD-AUDIT-BUILD-LOG.md` is the thread — a row per block and an entry per
+session — and it carries the six-step close-out contract each session owes before it ends. Read the
+live `handoff/START-HERE-*` opener first, then that log.
+
 **What every block owes, on top of its own criteria** (CLAUDE.md): tests first; a red-check that
 restores the old code and counts the failures; SwiftLint, the full suite and the build pasted;
 `screenshots/<folder>/` with a README when the result was settled by looking; an `apple-design`
