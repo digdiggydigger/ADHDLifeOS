@@ -117,3 +117,20 @@ be happy for you to use as many subagents to assist your current workload."*
   celebration's Reduce Motion waiver, the custom six-item `AppTabBar` and its constants, standard
   materials in content, the two spacing waivers (`peekStep = 14`, `floatingPaddingHorizontal = 12`),
   and the capture / pencil disc design.
+
+## Decisions collected in the options rounds (verbatim option labels)
+
+**Round 1 — conflicts between older decisions and the new answers (2026-09-19):**
+- **Closing a task → "Undo until next action".** Every close (the circle, a full swipe, Today's hero) shows the same undo,
+  which stays until the user's next action; after that, closing is final again. This RETIRES the earlier addendum
+  "closing is one-way" (`TaskRow.swift:14`) as far as the undo moment goes.
+- **Starting a sprint → "1 tap where a task stands alone".** One tap from Today's hero, Due-today rows, task detail and
+  search results; the long Tomorrow/Later lists stay quiet. This AMENDS the b11 call ("sprint-starting is a today thing").
+- **Sound as a grounding cue → E, verbatim:** *"I appreciate what you have found in your research, but this application is
+  not targeting autistic people. But specifically ADHD people. So my original requests still stand firm on this point."*
+  So: sounds are a first-class grounding cue beside haptics and subtle transitions (the NEW request above), and **the target
+  audience is ADHD specifically** — autism-specific evidence in the research brief (sensory over-responsivity, intolerance of
+  uncertainty) carries less weight in this audit than ADHD evidence.
+- **Gym steps (a check, not a decision):** E's own screenshots show the departure step saved as a Journal line ("Log today's
+  workout") and no arrival journal line; the editor also shows Save at the top, jargon footers ("monitoring slots", "At-Place
+  tasks") and "Drag to reorder" with no tap alternative.
