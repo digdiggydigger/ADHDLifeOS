@@ -1,4 +1,4 @@
-# Open items register — 2026-09-19 (sixty-fourth edition; **`apple-design` made a standing part of the work — CLAUDE.md §7.6, E's call.** Its bundled HIG snapshot proved STALE against Apple's live site, which also surfaced Apple's new **iPhone Duo** page. No Swift changed.) Opener: `handoff/START-HERE-after-journal-door-pass.md` (still accurate — nothing queued).
+# Open items register — 2026-09-19 (sixty-fifth edition; **E opened the ADHD / neurodivergent UX audit** — research, E's ten answers, a full iPhone 18 Pro / iOS 27.0 simulator audit (~80 findings, 51 frames) and options round 1. **No Swift changed.** Handed off at round 1 by E's call.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds.md`.
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to
@@ -36,6 +36,48 @@ nothing in any merged block is owed to E, and the three older device looks are s
 update rather than improvising a list in chat.
 
 ## State
+
+**Sixty-fifth edition — 2026-09-19, `main` @ the merge of this hand-off. Docs, evidence and audit tools only; no Swift.**
+- **Figures carried:** suite **3,085 / 0**, SwiftLint **0 / 831**, both on `061dbaa` (nothing re-run: no Swift changed).
+- **Rules:** untouched. **Emulator:** running at hand-off with the audit account; its state is exported to the git-ignored
+  `scripts/audit/emulator-state/`.
+
+**What happened.** E directed a new piece of work: an ADHD / neurodivergent UX audit on the iPhone 18 Pro / iOS 27.0
+simulator, with the rule that every fix gets 2–3 options framed on executive-function struggles and nothing is edited
+before E selects. It ran research (a sub-agent's evidence-graded brief), E's answers to ten questions, a code sweep by four
+sub-agents, a seeded simulator pass in light / dark / AX3, three `apple-design` HIG reviews, a contrast measurement from the
+colorset hex, and E's own hand-entered places, photo, voice and task. **Round 1 of ~10 options rounds is decided:**
+- every close gets an undo until the next action (retiring the "one-way" addendum);
+- sprint start is 1 tap wherever a task stands alone (amending b11);
+- sounds stand as a grounding cue;
+- **the app targets ADHD specifically, not autistic people.**
+
+**Where it lives:**
+- `handoff/SESSION-OPENER-adhd-ux-audit-design.md`: E's answers verbatim and the round log.
+- `handoff/SESSION-OPENER-adhd-ux-audit-research.md`: the evidence brief.
+- `handoff/ADHD-UX-AUDIT-WORKING-FINDINGS.md`: every finding, marked sim-verified or code-only.
+- `screenshots/adhd-ux-audit/`: the evidence frames.
+- `scripts/audit/`: the drive tools.
+
+**Outstanding (owed, in order):**
+- [ ] **Options rounds 2–10**, per `handoff/START-HERE-adhd-ux-audit-rounds.md`, on a new branch.
+- [ ] Then the **Scope C gaps list** and the **phone-checks list** (Dynamic Island, haptics, sound, AutoFill, Always-On).
+- [ ] Then **Decision A:** build here or fresh? The honest answer is fresh session(s), as FEATURE blocks.
+- [ ] Audit close-out: clear the sim location, erase the 18 Pro, stop the emulator.
+
+**Verified defects already on record (not yet fixed; the fixes wait for E's selections):**
+- The quick Task composer's Cancel silently discards typed text.
+- Tasks-tab closes (tap and full swipe) and nudge dismissals have no undo.
+- The Lock Screen Live Activity's Stop ends a sprint with no confirmation (code).
+- A task added from the Tasks toolbar "+" with no date vanishes from the board it was added from.
+- Targets under 44pt: the Settings gear (40×40), the Tasks "+" (27×36), the tag "Add" (24×14), the inbox Undo (34×16).
+- `LabelSecondary` fails 4.5:1 in light mode; no colorset has an Increase Contrast variant.
+
+**The colour arc's hold is unchanged.** The audit fixes colour MISUSE only (E's Q6).
+
+---
+
+**Sixty-fourth edition's State follows, unchanged.**
 
 **Sixty-fourth edition — 2026-09-19, `main` @ the merge of this hand-off. Docs only.**
 - **Figures carried:** suite **3,085 / 0**, SwiftLint **0 / 831**, both on `061dbaa`. **No Swift

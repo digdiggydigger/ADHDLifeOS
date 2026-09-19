@@ -47,3 +47,6 @@ storage-debug.log
 database-debug.log
 pubsub-debug.log
 .firebase/
+
+# ADHD UX audit: exported Firebase-emulator state (throwaway audit account + seed). Local only.
+scripts/audit/emulator-state/
