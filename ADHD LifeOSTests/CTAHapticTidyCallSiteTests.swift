@@ -159,13 +159,14 @@ final class CTAHapticTidyCallSiteTests: XCTestCase {
         )
         let setter = try Self.closure(
             in: "Undo/RecentActionCenter.swift",
-            from: "private func setPendingAction(",
-            to: "pendingAction = ",
+            from: "private func setPendingAction(_ action: RecentAction?) {",
+            to: "}",
             missing: "There is no `setPendingAction`, so record/clear/undo each write the slot."
         )
-        XCTAssertTrue(
-            setter.isEmpty || setter.allSatisfy(\.isWhitespace),
-            "`setPendingAction` does something before it writes; it is meant to be the assignment."
+        XCTAssertEqual(
+            setter.trimmingCharacters(in: .whitespacesAndNewlines), "pendingAction = action",
+            "`setPendingAction` is meant to be the assignment and nothing else — anything it did"
+                + " beyond that would be a rule one of its three callers could not see."
         )
     }
 

@@ -156,17 +156,37 @@ final class RootBottomOverlayCallSiteTests: XCTestCase {
     /// make the filled pencil disc inline with the FAB icon"*. Inline means the SAME `HStack` as the
     /// +, so the shared centre line is by construction — and to its LEFT means after the search
     /// slot and before the disc. A pencil disc drawn anywhere else passes every value test.
+    ///
+    /// **Reversed by `F-C1-UndoCapsule` (2026-09-20), not deleted, and the property is unchanged.**
+    /// The search row and the pencil moved into `leadingBand`, which `UndoCapsuleSlot` wraps so the
+    /// capsule can stand IN FOR them — so the row's source is now `UndoCapsuleSlot { leadingBand }`
+    /// then the +, and the band's own source is search → pencil. Both halves are asserted, because
+    /// a pencil that left the band, or a + that fell inside it, would each pass one of them alone.
     func testThePencilDiscSitsInTheDiscRowBetweenTheSearchSlotAndThePlus() throws {
         let source = try Self.flattened(Self.overlay)
-        guard let row = source.range(of: "private var discRow: some View {") else {
-            return XCTFail("`RootBottomOverlay` has no `discRow`.")
+        guard let row = source.range(of: "private var discRow: some View {"),
+              let band = source.range(of: "private var leadingBand: some View {")
+        else {
+            return XCTFail("`RootBottomOverlay` has no `discRow`/`leadingBand` pair.")
         }
-        let body = source[row.upperBound...]
-        let order = ["AppSearchRow(", "if showsJournalCompose {", "JournalComposeDisc(", "CaptureDiscLabel("]
-        let positions = order.map { body.range(of: $0)?.lowerBound }
-        XCTAssertFalse(positions.contains(nil), "The disc row is missing one of \(order).")
-        let found = positions.compactMap { $0 }
-        XCTAssertEqual(found, found.sorted(), "The disc row's order is not search slot → pencil → +.")
+        // The row: the capsule slot wrapping the band, then the + — and nothing between them.
+        let rowBody = source[row.upperBound..<band.lowerBound]
+        let rowOrder = ["UndoCapsuleSlot {", "leadingBand", "CaptureDiscLabel("]
+        let rowPositions = rowOrder.compactMap { rowBody.range(of: $0)?.lowerBound }
+        XCTAssertEqual(rowPositions.count, rowOrder.count, "The disc row is missing one of \(rowOrder).")
+        XCTAssertEqual(rowPositions, rowPositions.sorted(), "The row's order is not slot → band → +.")
+        // The band: the search row, then the pencil. The + is deliberately NOT here — it must never
+        // be displaced by the capsule.
+        let bandBody = source[band.upperBound...]
+        let bandOrder = ["AppSearchRow(", "if showsJournalCompose {", "JournalComposeDisc("]
+        let bandPositions = bandOrder.compactMap { bandBody.range(of: $0)?.lowerBound }
+        XCTAssertEqual(bandPositions.count, bandOrder.count, "The band is missing one of \(bandOrder).")
+        XCTAssertEqual(bandPositions, bandPositions.sorted(), "The band's order is not search → pencil.")
+        XCTAssertFalse(
+            bandBody.contains("CaptureDiscLabel("),
+            "The + disc is inside the band the capsule displaces, so a pending undo would take the"
+                + " capture disc off the screen with it."
+        )
     }
 
     /// The pencil's arrangement, pinned hop by hop — each one missing is a pencil that does
@@ -177,12 +197,12 @@ final class RootBottomOverlayCallSiteTests: XCTestCase {
     /// - **appearing and leaving** is a reduced site (§7.2): a fade on both paths, never a `nil` cut.
     func testThePencilDiscFollowsThePillFadesWithTheFanAndArrivesOnAFade() throws {
         let source = try Self.flattened(Self.overlay)
-        guard let disc = source.range(of: "JournalComposeDisc("),
-              let plus = source.range(of: "CaptureDiscLabel(", range: disc.upperBound..<source.endIndex)
-        else {
-            return XCTFail("No pencil disc before the + disc — see the test above.")
+        // Since `F-C1-UndoCapsule` the pencil is the last thing in `leadingBand`, so its modifier
+        // chain runs to the end of that property rather than up to the + disc.
+        guard let disc = source.range(of: "JournalComposeDisc(") else {
+            return XCTFail("No pencil disc — see the test above.")
         }
-        let chain = source[disc.lowerBound..<plus.lowerBound]
+        let chain = source[disc.lowerBound...]
         for anchor in [
             "JournalComposeDisc(showsPill: showsPill, action: onWriteEntry)",
             ".opacity(fanPresence.opacity)",
