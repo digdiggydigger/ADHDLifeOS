@@ -5140,3 +5140,3132 @@ card, a tile or the gear), STOP and ask. Do not improvise a design answer.**
 - **§5 note:** the re-tap's motion path is UIKit's own animated scroll-to-top, not the house spring:
   SwiftUI cannot address an offset above the content's top. **§1 note:** the system large title
   cannot take `.tracking(-0.5)` without a global appearance; E chose it by looking.
+
+---
+
+## The ADHD UX audit's seven arcs — E's decisions, 2026-09-19; NOTHING BUILT
+
+**Written by the audit's third session, which collected the decisions and built nothing** (E's
+`build-in-a-fresh-session` rule, and E's Decision A on 2026-09-19: *"Specs here, then hand off"*).
+**Each arc is built in a FRESH session, one arc at a time, stopping after each block for E's review.**
+
+**Where every decision comes from.** `handoff/SESSION-OPENER-adhd-ux-audit-design.md` is the design
+record: E's ten opening answers, then rounds 1–10 with every option label and E's own words. The
+evidence is `handoff/ADHD-UX-AUDIT-WORKING-FINDINGS.md` (findings §A–§M) and the boards
+`screenshots/adhd-ux-audit/52`–`68`, whose README says what each one proves.
+
+**How to read the quotes below.** They are quoted from the DESIGN RECORD. Where the record marks a
+line "E, verbatim" the words are E's own; everything else is the record's wording of a decision E
+made by choosing a labelled option. When a block needs E's exact words, read the round in the record
+rather than trusting a paraphrase here.
+
+**The build order E chose, and the proposal for the rest.** E chose the first arc: *"C · Nothing
+lost first (Recommended)"*. The rest is a proposal, and E may reorder it:
+
+| order | arc | what it is | depends on |
+|---|---|---|---|
+| 1 | **C · Nothing lost** | the undo capsule, drafts to the inbox, Recently Deleted, tags | — |
+| 2 | **D · The composer** | one composer both doors, L3 on the keyboard, the Anytime row | C |
+| 3 | **E · Today** | one card, the weekly chain, Next step, Week review | C, D |
+| 4 | **F · The sprint** | heads-up, Live Activity, six controls, Focus screen, calendar | — |
+| 5 | **A · Copy and colour** | round 8's words, round 9's colour jobs, jargon, footers | after C–F, so the words are written once |
+| 6 | **B · Accessibility** | targets, AX3 layouts, VoiceOver, the audit test plan | after the layouts settle |
+| 7 | **G · Places, sheets, refresh, Fresh Start** | one sheet, Save at the bottom, tap twins, refresh | D, E |
+
+**Two schema notes, both verified against `firestore.rules` this session rather than assumed:** the
+rules have NO field-level validation (63 lines, collection-level owner CRUD), so neither the
+`next_step` field (arc E) nor soft delete (arc C) needs a rules change. The record's earlier "E
+republishes" line for `next_step` was wrong, and is corrected here. E still republishes if a block
+chooses to add the optional hardening rule that arc C names.
+
+**What every block owes, on top of its own criteria** (CLAUDE.md): tests first; a red-check that
+restores the old code and counts the failures; SwiftLint, the full suite and the build pasted;
+`screenshots/<folder>/` with a README when the result was settled by looking; an `apple-design`
+review when anything visible changes (§7.6); E's Reduce-Motion-on device pass when a reduced site is
+added or changed (§7.3); and a "Verified paths" line when an `#available` site is touched (§7.1).
+
+**The gaps the audit did NOT spec** (E's Scope C list, in the register): the leave-by countdown,
+wake-event routines, a Lock Screen accessory widget, a daily notification cap, journal edit and
+delete, and the points/levels/badges arc E asked for after the audit.
+
+
+---
+
+## Arc C — Nothing lost
+
+The first arc E builds from the audit (design record, "Decision A and the build order": *"C ·
+Nothing lost first"* — Recommended, chosen). It holds the audit's data-loss Criticals (TASKS-01,
+CAPT-01) and builds the undo capsule every later arc reuses. Four blocks, in order: C1 the capsule
++ every task close; C2 drafts to the inbox + autosave; C3 Recently Deleted for tasks/captures; C4
+tags in Recently Deleted (needs C3's schema). **No block in this arc has landed; all code below is
+read as of the audit, `feature/adhd-ux-audit-rounds-3`.**
+
+---
+
+### FEATURE: F-C1-UndoCapsule — one undo capsule, in the disc row, for every task close  [ ] NOT STARTED
+
+**What E chose.** Round 1: *"Every close (the circle, a full swipe, Today's hero) shows the same
+undo, which stays until the user's next action; after that, closing is final again. This RETIRES
+the earlier addendum 'closing is one-way' … as far as the undo moment goes."* Round 2, verbatim:
+*"'Option 1.' But the 'bottom bar' Needs A visual overhaul"* — Option 1 is one bottom bar
+everywhere, above the tab bar, clear of the disc, 48pt, the standard ↶, naming what it undoes.
+Round 2b: shape **"A · Capsule in the disc row"** (board `54`, frames
+`screenshots/adhd-ux-audit/round-2b-undo-bar/`) — *"It sits exactly where the search row is, left
+of the + disc. Nothing moves and nothing stacks... On Tasks it stands in for the search row until
+the next action... a 48pt Undo capsule tinted like the tab bar's selected pill... the standard ↶
+symbol, a glyph plus words naming what happened, a stacked layout at accessibility sizes, and a
+haptic on appear and on Undo."* **Reading "one bottom bar everywhere" (E's Option 1) onto the code — the spec session's reading, NOT
+E's words:** the capsule replaces the inbox's current bottom undo bar
+(`Capture/CaptureInboxUndoSections.swift`, the compliant pattern UNDO-2 to reuse) and Home's
+in-place close card, so there is one shape everywhere. Round 9 (§M, RM-02): *"The inbox's undo …
+bars slide in on every triage with no Reduce Motion read … This is §7.2's 'appears' case: a fade,
+per `CaptureFanOverlay`. It rides into round 2b's undo capsule build."*
+
+**Where it sits (read, not inferred).** The disc row is ONE shared `HStack` mounted once, app-wide
+— `RootBottomOverlay.discRow` (`ADHD LifeOS/RootBottomOverlay.swift:189-228`), built with
+`AppSearchRowMetrics.rowSpacing` (16pt, `Theme/AppSearchScope.swift:80`) between an optional
+leading control and the capture disc. Today it holds `AppSearchRow` only when
+`searchScope.placeholder != nil` (Tasks alone — `AppSearchScope.swift:48-56`,
+`bottom-search-arc.md`) or `JournalComposeDisc` when `showsJournalCompose`. `RootBottomOverlay`
+already reads `@Environment(\.celebrate)` (`RootBottomOverlay.swift:51`) for exactly this reason:
+it is mounted above every tab and needs an app-wide signal, not a per-screen one. **The capsule is
+a THIRD optional occupant of this same slot**, so "it sits where the search row is" is literally
+this `HStack`, not a description.
+
+**Five close surfaces at four code sites, three named in the record, two found by reading the
+code.** Every one below carries the same "closing is one-way" (F-V3-Tasks-rebuild, E's addendum)
+comment or its close paraphrase — eight comment sites in total — and the record's retirement
+covers all of them: it names `TaskRow.swift:14` and `Tasks/MomentumTaskContext.swift`'s comment by
+name, which already reaches past the three enumerated surfaces (circle, swipe, Today's hero) into
+the task-DETAIL close button that uses `MomentumTaskContext.closeButtonLabel`:
+
+1. **Tasks tab, tap-circle + full swipe** — `Tasks/TaskRow.swift:14` ("No reopen: a closed row's
+   check is display-only (E's addendum — closing is one-way)"), `:126` ("Display-only: closed is
+   closed"). Both paths funnel through `TaskRow.close(poppingFrom:)` (`:49-54`), which calls
+   `Haptics.play(.taskClose)`, `celebrate.request(.pop, at:)`, then `onClose()`. `onClose` is wired
+   in `Tasks/TaskListView.swift:215` to `TasksService.close(_:)`
+   (`Tasks/TasksService.swift:75-91`, its own doc comment: "One-way since F-V3-Tasks-rebuild …
+   there is no reopen").
+2. **Home hero close** — `Home/MomentumScoreboardViews.swift:266-284`, the `homeCloseTaskButton`,
+   wired to `HomeMomentumSections.closeTask(_:)` (`Home/HomeMomentumSections.swift:248-259`),
+   which sets `celebratedTask` and shows `ClosureCelebrationCard` (`:313-369`) — the in-place card
+   the record retires by name. `undoClose(_:)` (`:261-269`) already calls
+   `taskDetailClient.updateStatus(id:status:.open)` — **reopening already works**; only the UI
+   shape is wrong.
+3. **Task detail's own Close button** — `Tasks/TaskDetailFormSections.swift:90-119` ("Closing is
+   one-way since F-V3-Tasks-rebuild (E's addendum): … No Reopen"), the `taskDetailStatusToggle`,
+   calling `service.close()` → `TaskDetailService.close()` (`Tasks/TaskDetailService.swift:101-112`,
+   "One-way close … a done task never reopens"). Uses `MomentumTaskContext.closeButtonLabel`
+   (`Tasks/MomentumTaskContext.swift:22-26`) — the exact comment the record names.
+4. **Life Area detail's task tick** — `LifeAreaDetail/AreaTaskRow.swift:8-9` ("Closing is one-way
+   (F-V3-Tasks-rebuild, E's addendum) — a done row's tick is display-only"), the tick button
+   (`:52-67`), wired to `LifeAreaDetailView.closeTask(_:)` (`:161-176`, same comment), which also
+   calls `taskDetailClient.updateStatus(id:status:.done)`.
+
+   Surfaces 1, 2 and 4 all end at the same underlying write:
+   `FirebaseManager+Tasks.swift:29-38`'s `setTaskStatus`, via either `TasksClientAdapting.setStatus`
+   (`FirebaseTasksClientAdapter.swift:35-39`) or `TaskDetailClientAdapting.updateStatus`
+   (`FirebaseTaskDetailClientAdapter.swift:42-48`). **Reopening (`.open`) is not new capability** —
+   `TaskCompletionStamp.applying` (`Tasks/TaskModels.swift:100-105`) already clears `completedAt`
+   on reopen, and the adapter's own comment says reopening "must not even request a [location]
+   fix" — this path was built for Home's existing undo and is reused, not invented.
+
+**Surface 4 (Life Area detail) is not named in the record's "circle, swipe, Today's hero" list.**
+Recommend including it anyway — it carries the identical retired comment and the identical write —
+but say so plainly in the build report rather than silently expanding scope; see Step 0 below.
+
+**The capsule's home — new code, sized to fit.** `RootView.swift` is 398 of SwiftLint's 400-line
+ceiling (verified: `wc -l` = 398) with a `@StateObject celebrationCenter` pattern already proven to
+fit at the **App** level instead: `ADHD_LifeOSApp.swift:188` builds `CelebrationCenter` once and
+`RootView` takes it as `@ObservedObject var celebrationCenter: CelebrationCenter`
+(`RootView.swift:15`), injected via `.environment(\.celebrate, celebrationCenter)`
+(`RootView.swift:273`). **Do the same for the new model** — build it once in
+`ADHD_LifeOSApp.swift` beside `celebrationCenter`, inject one `.environment(\.recentAction, …)`
+line in `RootView.body` (mirroring `:273`), and let `RootBottomOverlay` read it directly
+(`@Environment`) exactly as it already reads `\.celebrate` — no new RootView state, no new
+RootView wiring beyond the one environment line.
+
+**Recording a close — reuse `CelebrationRequesting`'s shape, not `@Environment` inside a plain
+`ObservableObject`.** `TasksService`, `HomeMomentumSections` (an extension on the View `HomeView`)
+and `TaskDetailService` cannot read `@Environment` from a non-View method. The house answer already
+exists: `CaptureInboxService` and `NudgesService` take `celebrate: any CelebrationRequesting =
+InertCelebrationRequester()` as a constructor default (`Capture/CaptureInboxService.swift:100,116`,
+`Nudges/NudgesService.swift:31,36`), and the VIEW reads `@Environment(\.celebrate)` and threads it
+in. **All four close button sites are Views, but only three route through `CelebrationPopSource`**
+(`Celebrations/CelebrationPopSource.swift:29-32`, which reads `@Environment(\.celebrate)`
+internally) — `MomentumScoreboardViews.swift:266`, `TaskDetailFormSections.swift:93`,
+`AreaTaskRow.swift:51`. **`TaskRow` is the one site that deliberately does NOT** —
+`TaskRow.swift:42-44` says why in its own comment ("the wrapper reports the centre of whatever it
+wraps, and the swipe lives on the whole row"): it reads `@Environment(\.celebrate)` directly
+(`:34`) and uses `.celebrationPopOrigin` instead. Both shapes are Views, so both can read a second,
+new environment key the same way — the natural build is a sibling read added at each of the four
+sites, firing right beside the existing `celebrate.request(.pop, at:)` / `.celebrationPopOrigin`
+and `Haptics.play(.taskClose)` — not a change to `TasksService`/`TaskDetailService`'s data-layer
+methods at all.
+
+**The capsule is optimistic, same as the write it reports.** `TasksService.close(_:)`
+(`TasksService.swift:80-91`) flips the local task and regroups BEFORE the network write lands, and
+only reloads from the server if the write fails. The capsule should appear on that same optimistic
+edge, not wait for the write to confirm — and Undo tapped after a failed, already-reverted write is
+simply a no-op (the reload already restored `.open`). Say this explicitly so the build session does
+not invent a separate "pending" state for the capsule.
+
+**Home's retirement — in scope for THIS block, not Arc E's.** `celebratedTask`,
+`setCelebratedTask(_:)`, `closeTask(_:)`, `undoClose(_:)`, `ClosureCelebrationCard` and
+`momentumLeadSection`'s `if let celebrated … else bestNextMoveSection` conditional
+(`Home/HomeMomentumSections.swift:12-40,239-269`, `MomentumScoreboardViews.swift:313-369`) are ALL
+retired: once close routes through the shared capsule, Home's lead section has no reason to hold
+its own celebration state — it recomputes `bestNextMoveSection` immediately (the closed task drops
+out of `homeService.openTasks` on the next `load()`, same as it does today after Undo). **Arc E
+(round 5a, "H1 · Start first, Close quiet") is a separate, later redesign of the hero's buttons and
+states — this block only removes the close-card mechanism and must not pre-empt Arc E's shape.**
+**Confirmed dead with it:** `MomentumScoreboard.celebrationLine` (`Home/MomentumScoreboard.swift:299`)
+and `.nextButtonLabel` (`:315`) have exactly one call site each — `HomeMomentumSections.swift:24,29`
+— building the retired card's text. Delete both and their tests too (the
+`dead-shared-component-pattern` memory: seven prior instances, always found by grep, never by the
+tests that were still passing on the dead code).
+
+**The capsule's shape, from the record.** 48pt height (round 7: "48pt for anything that starts,
+closes, adds, undoes, ends or saves" — **not** `AppSearchRowMetrics.fieldHeight` (44), a
+deliberately different, taller metric for this one control; a stacked layout at accessibility
+sizes (do not `.frame(height: 48)` unconditionally); tint `Color.accentColor.opacity(...)` at
+`AppTabBarMetrics.chipTintLight` (0.12) / `chipTintDark` (0.20) — `Theme/AppTabBarPresentation.swift:223-224`,
+read exactly as `Theme/AppTabBar.swift:58-64` composes it; `arrow.uturn.backward` (↶); a haptic on
+appear and on Undo (`.haptic(_:trigger:)`, never `.sensoryFeedback` directly — §7.1). Reduce
+Motion: fade in, not slide — house pattern `Capture/CaptureFanOverlay.swift:89-97` (`scaleEffect`/
+`offset` pinned to final geometry when `appeared || reduceMotion`, only `opacity` free, RM
+animation `.default`).
+
+**Two gaps board `54` never rendered — say so, don't guess.** Board 54 covered Tasks, Inbox and a
+running sprint, not these two:
+- **Journal already has THREE occupants of this row when writing is possible: the pencil disc
+  (`JournalComposeDisc`, 42pt) + 16pt + the capture disc.** The record's "on Tasks it stands in for
+  the search row" has a direct analogue here — default assumption: the capsule DISPLACES the
+  pencil disc while it shows (mirroring how it stands in for Tasks' search row), leaving the
+  capture disc alone. This is the tightest width the capsule will ever be drawn at and needs its
+  own render, default size AND AX3.
+- **Compact-height landscape** (`RootBottomOverlayLayout`, `RootBottomOverlay.swift:20-27,80-90`):
+  with a card up (a running sprint, an away summary) the arrangement puts the cards BESIDE the disc
+  row rather than above it, and the disc row "takes its own width" (`:186-188`). A capsule in that
+  arrangement, sprint running, has never been rendered — add it to the evidence list rather than
+  assuming the portrait shape ports over unchanged.
+
+**One slot, one occupant, last-writer-wins across kinds — a real behaviour change, stated
+explicitly.** Today, `CaptureInboxService.lastTriageAction` (`Capture/CaptureInboxService.swift:146`)
+survives unrelated navigation and is only cleared by `undoLastTriageAction()` or a new triage
+(`CaptureInboxService+Triage.swift:103-111`). Once the capsule is the ONE shared slot, **a task
+close spends a pending triage undo and vice versa** — closing a task after sorting a capture loses
+the capture's undo silently. This is what "one bottom bar everywhere" implies and the record does
+not flag it as a cost; say so in the build report. `CaptureInboxUndoSections.undoHeaderButton`
+(`:120-136`, the header-arrow safety net) is a second, independent affordance for the SAME
+`lastTriageAction` — decide whether it now reads the shared model too (recommended, so it does not
+go stale the moment a task closes elsewhere) or is retired with the bar; either is defensible, note
+which was chosen.
+
+**No `#available` site.** The tint is the tab bar's existing accent wash, not a Liquid Glass
+material — no new `if #available` gate, so no "Verified paths" line is owed; say why in the
+report. The RM-on device pass IS owed (§7.3): this is a NEW reduced site (the capsule's
+appear-fade) and a CHANGED one (the inbox's undo bar loses its `.move(edge: .bottom)` slide,
+RM-02's fix).
+
+**Tests that must be REVERSED, not deleted:**
+- `ADHD LifeOSTests/CTAHapticTidyCallSiteTests.swift:109-126`,
+  `testTheClosureCardSpringsInAndCrossFadesInsteadUnderReduceMotion` — string-matches
+  `HomeMomentumSections.swift` for `.transition(reduceMotion ? .opacity : .scale…)`, the spring/RM
+  pair, and `withAnimation(closureCardAnimation)`. All three strings are deleted with the card;
+  retarget this test to the CAPSULE's own file and its RM fade (the `CaptureFanOverlay` shape),
+  not delete it — it is CLAUDE.md §7.4's "both branches by string" guard and the capsule needs one
+  just as much as the card did.
+- `ADHD LifeOSTests/CTAHapticTidyCallSiteTests.swift:136-169`,
+  `testEveryWriteToTheCelebratedTaskGoesThroughTheAnimatedSetter` — sweeps every app source file
+  for bare `celebratedTask = ` writes and requires exactly one, inside `setCelebratedTask`. Once
+  `celebratedTask` is deleted entirely this test's own `Self.appCode`/`Self.closure` helpers will
+  throw "missing" rather than fail cleanly — retarget it to whatever single recording method the
+  new capsule model exposes (the same "exactly one writer, and it is the animated one" guarantee),
+  don't just delete it.
+- `ADHD LifeOSUITests/SignedInJourneyUITests.swift:307-323` (inside
+  `testCapturesTab_sortsACaptureIntoAnAreaAndTakesItBack`) — asserts `app.buttons["Undo"]` and
+  references `app.otherElements["captureInboxUndoBar"]` by name in its failure message. If the
+  capsule uses a new container identifier this message (and possibly the lookup, if
+  `captureInboxUndoBar` stops existing as an element) needs updating — reversed, not deleted; the
+  journey's assertions (Undo exists, tapping it restores the capture) must still pass.
+- `Tasks/TaskModels.swift`/`TasksServiceMutationTests.swift` and
+  `MomentumTaskContextTests.swift`'s "closing is one-way" DOC COMMENTS (not test bodies — grepped,
+  no test asserts the ABSENCE of undo) should be annotated "retired 2026-09-19, see F-C1" rather
+  than left to read as still true, per the house convention (`F-JournalDoorUnpinned`'s stale-comment
+  annotation, not deletion).
+- **None found by grep** for a UI or unit test asserting no-undo on `taskCheckbox-`,
+  `homeCloseTaskButton`, `taskDetailStatusToggle` or `lifeAreaDetailTick-` — the gap is real but
+  unassessed by any test today, so none of those four sites has a test to reverse; each needs a
+  NEW test (RED first) instead.
+
+**Acceptance criteria:**
+- [ ] RED first: a call-site/behaviour test per surface that closing shows the capsule and Undo
+      reopens the task (all four/five sites), plus the two reversed `CTAHapticTidyCallSiteTests`
+      above (RED against the current `celebratedTask` code).
+- [ ] Red-check: restore the pre-block code (`git checkout --`), count failures, restore again.
+- [ ] SwiftLint 0, full suite green, build green — all three pasted verbatim.
+- [ ] `screenshots/undo-capsule/` + README: Tasks (light/dark/AX3), Home, Life Area detail, the
+      Capture Inbox's migrated bar, the "one slot, last-writer-wins" collision (close a task right
+      after sorting a capture), **Journal at default size and AX3 (capsule vs pencil disc, the
+      tightest width)**, and **compact-height landscape with a sprint card up** — all "settled by
+      looking" per CLAUDE.md's screenshots filter (a live rule applied to real data/geometry).
+- [ ] `apple-design` review owed (§7.6) — every one of these sites becomes visible/behavioural.
+- [ ] RM-on device pass owed (§7.3) — new site (capsule appear-fade) + changed site (inbox bar's
+      slide removed). No `#available` site touched, so no "Verified paths" line — say so.
+- [ ] No `firestore.rules` change — this block is UI + an existing, already-permitted status write.
+
+**Dependencies:** none upstream (this is the arc's first block); C2, C3 and C4 all reuse this
+capsule's visual design for their own bars, so they depend on this block landing first.
+
+**Step 0 — ANSWERED by E, 2026-09-19, before the hand-off. Do not re-ask:**
+1. **Surface 4, Life Area detail's tick → INCLUDE it.** E: *"Yes, every close gets the undo
+   (Recommended)"*. Same action, same undo, wherever it happens.
+2. **The inbox's `undoHeaderButton` → KEEP IT**, as a second route reading the SAME undo as the
+   capsule, so it can never go stale. E chose this over the recommendation to retire it.
+3. **Nudge "Done for now" → INCLUDE it as a fifth capsule kind.** E: *"Yes, a nudge dismiss gets
+   the capsule (Recommended)"*. It needs the new `unmarkFired` write described above. A 7-day nudge
+   celebration that already fired is not un-fired.
+4. **Journal's disc row → the capsule STANDS IN FOR THE PENCIL** while it shows, full width, exactly
+   as it stands in for Tasks' search row (board `54`). The + disc never moves, and the pencil
+   returns after the next action. So the "tightest width" case below does not arise; render it
+   anyway as evidence.
+5. **The cross-kind collision was NOT asked.** It follows from E's own "one bottom bar everywhere",
+   so the build report NAMES the consequence (a task close spends a pending capture undo) rather
+   than re-opening the decision.
+
+---
+
+### FEATURE: F-C2-DraftsToInbox — unsent text goes to the inbox; Cancel becomes Close; task detail autosaves  [ ] NOT STARTED
+
+**What E chose.** Round 2: *"Unsent text → 'Inbox catches it'. A composer closed with text files it
+into the Capture Inbox as a note. A bar, 'Kept in your inbox · Reopen', stays until the next
+action."* Also round 2, stated as carried by every option: *"Task detail's blocking 'Discard
+changes?' becomes autosave with swipe-back restored. And Cancel becomes 'Close', because
+`sheets.md` says Cancel means 'without saving'."* Q4 (opener): *"When a composer containing typed
+text is swiped down, silently save as a draft / quick capture item in the background — never block
+with a modal and never lose user input."*
+
+**The three composers today, all read:**
+- `Capture/QuickCaptureView.swift` — presented as a `.fullScreenCover` (`RootView.swift:254-263`),
+  so swipe-down is already impossible; **Cancel discards silently**: `Button("Cancel") { dismiss()
+  }` at `QuickCaptureView.swift:129`. MODAL-1/CAPT-01, sim-verified (findings §E: "Book the dentist
+  before Friday" gone on reopen, no prompt).
+- `Tasks/TaskCreateView.swift` — presented as a real `.sheet(isPresented:)`
+  (`Tasks/TaskListView.swift:123-130`), so swipe-down IS live and undefended (no
+  `.interactiveDismissDisabled`, no `.onDisappear` hook); **Cancel discards**: `Button("Cancel") {
+  dismiss() }` at `TaskCreateView.swift:73`.
+- `Journal/LogComposerView.swift` — text lives on `@ObservedObject var journalService:
+  JournalService` (`:12`, `journalService.composerBody` bound at `:52`), not a local `@State`, so
+  it already survives Cancel/swipe WITHIN the session (JournalService outlives the view — every tab
+  stays mounted). It is lost only when the app quits (JRNL-01, in-memory only). **Cancel**:
+  `Button("Cancel") { dismiss() }` at `LogComposerView.swift:117`.
+
+**The shape.** On Cancel/Close (and, for `TaskCreateView`, on a swipe-down caught via
+`.onDisappear` or `.interactiveDismissDisabled(true)` plus a custom close button — a `.sheet`'s
+swipe cannot otherwise distinguish "empty, discard silently" from "typed, must file first"):
+1. If the primary text field is non-empty, create a `.note` capture via the existing
+   `CaptureClientAdapting.createCapture(_:NormalizedCreateCaptureInput)` seam
+   (`Capture/CaptureClientAdapting.swift:65-66`, already used by
+   `CaptureInboxService+Create.swift:15`) with that text as the capture's content.
+2. Show the capsule (F-C1) with "Kept in your inbox · Reopen" instead of dismissing silently.
+3. Relabel the Cancel button "Close" on all three composers (a copy-only change, but it rides this
+   block since it is carried by the same E decision).
+
+**Accepted costs — name these in the build report so nobody invents a richer draft type:**
+- Only the PRIMARY text field is caught. Task composer metadata (due choice, area, place, notes,
+  tags) and Journal's type/energy/mood chips are dropped when filed as a plain `.note` — matching
+  what a fan-opened Task capture already looks like in the inbox, not a richer draft object.
+- `QuickCaptureView`'s voice and photo kinds are NOT "typed text" and are unaffected by this block
+  (no swipe-down exists for them either, since it is a full-screen cover).
+- **`JournalService.composerBody` must be cleared when filed**, or the text exists twice (once as
+  a filed capture, once still sitting in the service for the next time the composer opens).
+
+**New dependency wiring, since neither composer holds what it needs today:** `TaskCreateView` holds
+only `TaskCreateClientAdapting` (`:19`); `LogComposerView` holds no capture client at all. Both need
+a `CaptureClientAdapting` threaded in from their presenting screens
+(`TaskListView.swift:123-130`, `LifeAreaDetail/LifeAreaDetailView.swift:111`,
+wherever `LogComposerView` is presented) the same way `QuickCaptureView` already takes one
+(`QuickCaptureView.swift:38-39`).
+
+**Task detail autosave (MODAL-4, TASKS-08).** Delete the discard gate entirely:
+`showDiscardAlert`, the `.alert("Discard changes?", …)` block (`Tasks/TaskDetailView.swift:42,109-116`),
+`attemptBack()`'s dirty check (`:150-157`) and `.navigationBarBackButtonHidden(true)` (`:103`) —
+restoring the system back button and its swipe-back gesture. In its place, autosave on field change
+(debounced or on-blur — build session's call), reusing the existing `performSave()`
+(`Tasks/TaskDetailFormSections.swift:264` onward) and `TaskDetailDirtyState`
+(`TaskDetailView.swift:161-183`) machinery that already computes what changed; the visible "Saved"
+confirmation (`showSavedConfirmation`, `:43,90-96`) already exists and needs no new UI, only a new
+trigger.
+
+**Tests that must be REVERSED, not deleted:**
+- Any unit/UI test asserting `taskDetailDiscardChangesButton` / `taskDetailKeepEditingButton`
+  (`TaskDetailView.swift:111,113`) exist or fire — grep found the identifiers only in the view
+  file itself; **none found by grep** in `ADHD LifeOSTests/` or `ADHD LifeOSUITests/` for either
+  identifier, so there is nothing to reverse for the alert's removal beyond the identifiers going
+  away (verify again at build time — a UI journey may reach this screen incidentally).
+- `.navigationBarBackButtonHidden(true)` / swipe-back-disabled — **none found by grep** for a test
+  asserting swipe-back is disabled; nothing to reverse, but a NEW test should assert swipe-back now
+  works (§7.4 needs one).
+- Cancel-discards-silently: **none found by grep** for a unit test on `QuickCaptureView`'s or
+  `TaskCreateView`'s Cancel button specifically discarding text (the CAPT-01/MODAL-1 findings were
+  established by sim-drive and code-reading, not by an existing test) — RED-first coverage is new,
+  not reversed.
+
+**Acceptance criteria:**
+- [ ] RED first: for each composer, typed text + Close/swipe → a `.note` capture with that content
+      exists in the inbox and the capsule shows "Kept in your inbox · Reopen"; task detail: edit a
+      field, back out with no Save tap, reload → the edit persisted; swipe-back pops the screen.
+- [ ] Red-check, restoring pre-block code; count failures; restore with `git checkout --`.
+- [ ] SwiftLint 0, suite green, build green, pasted.
+- [ ] `screenshots/drafts-to-inbox/` + README: each composer typed-then-closed, the inbox
+      afterward, and task detail's swipe-back working.
+- [ ] `apple-design` review owed (§7.6) — new bar state, new copy, restored system chrome.
+- [ ] RM-on device pass owed only if this block adds/changes a NEW reduced site beyond reusing
+      F-C1's capsule as-is; if the capsule component itself is untouched, say none is owed here
+      and point to F-C1's pass.
+- [ ] No `firestore.rules` change (captures already have full owner CRUD, §Architecture; this
+      writes ordinary `.note` captures through the existing seam).
+
+**Dependencies:** F-C1 (the capsule and its "kept in your inbox" bar shape).
+
+**Step 0 — ANSWERED before the hand-off. Do not re-ask:**
+1. **"Reopen" → opens the filed capture in the Capture Inbox** (option B). E: *"Open it in the inbox
+   (Recommended)"*. It is composer-agnostic and survives arc D's composer unification unchanged.
+2. **The swipe-down mechanics are the BUILD's call, not E's** (settled by the spec session): prefer
+   filing the draft when the sheet has ACTUALLY gone, so a swipe keeps dismissing as it does today.
+   A cancelled swipe must not file anything — prove that in a test. Reach for
+   `.interactiveDismissDisabled(true)` plus a visible Close only if the dismissal hook proves
+   unreliable, and say in the report which was used and why.
+
+---
+
+### FEATURE: F-C3-RecentlyDeleted — soft delete for tasks and captures; one row in Tools  [ ] NOT STARTED
+
+**What E chose.** Round 2: *"Where Recently Deleted lives → 'One row in Tools'"* (not context, not
+Settings), *"Kept 30 days"* (stated as the default; E did not object). *"Tasks + Captures + Tags"*
+(tags are C4). *"Places, nudges and place actions keep confirm-then-permanent delete (Q10)."*
+"Journal delete goes to the gaps list" — out of scope here.
+
+**Today's hard deletes, all read:**
+- `Tasks/TaskDetailView.swift:117-129` — `confirmationDialog("Delete this task?", …)` →
+  `performDelete()` (`TaskDetailFormSections.swift:215-219`) → `TaskDetailService.delete()`
+  (`TaskDetailService.swift:114-124`) → `TaskDetailClientAdapting.deleteTask`
+  (`TaskDetailClientAdapting.swift:19`) → `FirebaseTaskDetailClientAdapter.deleteTask`
+  (`:51-53`) → `TaskDetailBackingStore.deleteTask` (`TaskDetailBackingStore.swift:17`) →
+  `FirebaseManager+Tasks.swift:41-43`, `delete(id:from: .tasks)` — a real document delete.
+- `Capture/CaptureDetailView.swift:107-119` — `confirmationDialog("Discard this capture?", …)` →
+  `service.discard(capture:)`. (Read the equivalent `FirebaseManager+Captures.swift` delete before
+  building — not re-read for this spec; same generic `delete(id:from:)` shape is expected.)
+
+**Firestore rules — verified, not assumed.** `firestore.rules:55-59` already grants the owner full
+`read, write` on `tasks` and `captures` (both are in the generic
+`collection in ['tasks', 'life_areas', 'tags', 'captures', …]` allow). **A `deleted_at` field needs
+NO new allow rule** — the owner can already write it. Do not invent a rules diff to satisfy
+CLAUDE.md's "schema change → rules change" line by fiat; write the true state instead:
+*"rules verified unchanged against firestore.rules:55-59; RECOMMENDED hardening —
+`request.resource.data.deleted_at <= request.time`, so a client cannot pre-date its own purge
+window — added if the build session agrees, and E republishes regardless of whether anything
+changed, per house policy of confirming rules stayed correct."*
+
+**The Firestore null-query trap (read from `FirebaseManager+Tasks.swift`'s existing `fetchWhere`
+shape, generalised).** A soft-delete filter written as `whereField("deleted_at", isEqualTo:
+NSNull())` matches ONLY documents where the field is explicitly present and null — every EXISTING
+task/capture (field absent entirely) would be excluded from every list. **Do not query for
+"not deleted"; fetch as today and filter live-ness client-side**, via a small pure helper (e.g.
+`SoftDelete.isLive(deletedAt:asOf:)`) applied after `fetchTasks()`/`fetchAllTasks()`/etc. return.
+Enumerate every read path that must apply it (grepped): `FirebaseManager+Tasks.swift`'s
+`fetchTasks()`, `fetchTaskDetail(id:)`, `fetchOpenTaskSummaries()`, `fetchTasks(lifeAreaId:)`, and
+the captures equivalents in `FirebaseManager+Captures.swift` (not enumerated here — read at build
+time), plus `RootView`'s capture-inbox badge count (`captureInboxCount`,
+`RootView.swift:53,277-279`). **A call-site test must pin the full list**, on the model of
+`AppTabBarCallSiteTests`/`CaptureDiscClearanceCallSiteTests` (F-C1's neighbours) — a read path
+added later without the filter is exactly the failure mode those tests exist to catch.
+
+**Restore and permanent-delete, from the record's round 7 rule.** Restore is a 48pt VISIBLE button
+("anything that undoes" is a key target) — never swipe-only, which is the exact GEST-2 finding this
+arc is fixing elsewhere. A permanent "Delete forever" gets its own confirm (Q10: friction is
+allowed "executing permanent deletions").
+
+**The Tools placement — a row/section, not a third bento card.** `Tools/ToolsCatalog.swift:24-77`
+pins exactly two `Entry` values by test (`ToolsCatalogTests`, per its own doc comment at `:14-23`
+and `:20-23`); a third door is "a decision rather than a drift." E said "row," and the app already
+has a non-card precedent for exactly this: `ToolsRoutinesSection` (E's 2026-09-05 call, "a headed
+SECTION … not a card" — `ToolsView.swift:15-18,72-79`). **Follow that shape, not
+`ToolsCatalog`'s.** One caveat: `ToolsRoutinesSection` is gated `@available(iOS 17.0, *)`
+(`ToolsView.swift:77`) because the screen it opens is; Recently Deleted has no such dependency and
+must stay reachable on the 16.0 floor (§7.1) — do not copy the `#available` gate along with the
+shape.
+
+**Tests that must be REVERSED, not deleted:**
+- `ToolsCatalogTests` (file not yet read in full — grep confirms it exists and pins the two-`Entry`
+  count per `ToolsCatalog.swift:23`'s own comment): if Recently Deleted is added as a THIRD
+  catalog `Entry` instead of a section, this test fails and must be reversed to expect three; if it
+  is added as a section (recommended, matching Routines), this test is untouched — verify which at
+  build time and say so.
+- Any test asserting `TaskDetailService.delete()` / `deleteTask` performs a real Firestore
+  document delete (searched by call chain above, not yet grepped by name — grep
+  `deleteTask\(id:\)` test usages before building) needs reversing to assert a soft-delete write
+  instead.
+- **None found by grep** for "Recently Deleted" anywhere in `ADHD LifeOSTests/` or
+  `ADHD LifeOSUITests/` — this is entirely new surface.
+
+**Acceptance criteria:**
+- [ ] RED first: deleting a task/capture soft-deletes it (document still exists, `deleted_at` set,
+      excluded from every enumerated read path); the Tools row lists it; Restore clears
+      `deleted_at` and the item reappears everywhere it should; a 30-day-old soft-deleted item is
+      purged by whatever mechanism Step 0 settles.
+- [ ] Red-check, restore, count failures, restore code.
+- [ ] SwiftLint 0, suite green, build green, pasted.
+- [ ] `screenshots/recently-deleted/` + README: the Tools row (empty and with items), a soft-deleted
+      task absent from Tasks but present in Recently Deleted, Restore bringing it back.
+- [ ] `apple-design` review owed (§7.6) — a new screen and a new list state.
+- [ ] RM-on device pass: owed only if the new screen/capsule reuse adds a reduced site beyond
+      F-C1's; if it draws with plain `List`/`Form` rows and no new animation, say none is owed and
+      why.
+- [ ] **`firestore.rules` — verified unchanged against `:55-59`; if the hardening rule (Step 0) is
+      added, E republishes.** Say which happened.
+- [ ] A call-site test enumerating every read path the soft-delete filter must reach (see above),
+      so a later collection/query addition cannot silently leak deleted items back in.
+
+**Dependencies:** F-C1. Confirm with the build session whether the capsule ITSELF appears on
+delete ("Task deleted · Undo," ahead of the persistent 30-day list) — see Step 0 below.
+
+**Step 0 — ANSWERED by E, 2026-09-19. Do not re-ask:**
+1. **The purge runs in the app, on launch.** E: *"The app, when you open it (Recommended)"* — a
+   `.task` after first render, clearing anything older than 30 days, with an injectable clock. The
+   accepted cost, stated in the question: nothing is purged while the app is never opened. A server
+   function stays available as later hardening.
+2. **Deleting shows the capsule too.** E: *"Yes, show the capsule too (Recommended)"* — "Task
+   deleted · Undo" at the moment of the delete, on top of the 30-day list.
+
+---
+
+### FEATURE: F-C4-TagsRecentlyDeleted — tags in Recently Deleted; hidden links, restore-to-everywhere, merge  [ ] NOT STARTED
+
+**What E chose, verbatim (round 2):** *"Tasks + Captures + Tags (If A recently deleted tag is
+restored, What happens to Items that previously had this tag? … Can the tag be restored to the
+original photo capture it was assigned to?)"* — answered same day: *"Tag restore → 'Back on every
+item'. While a tag sits in Recently Deleted, its `tag_ids` links stay on the items, hidden (no chip,
+no filter). Restore brings it back on every task and capture it had. The links are stripped only at
+the 30-day purge. A same-name tag created meanwhile is merged on restore (the Tag Editor's existing
+merge)."*
+
+**Today's hard delete, read.** `FirebaseManager+Tags.swift:86-106`, `removeTagEverywhere(_:
+replacingWith:)`: batches every `tasks`/`captures` document with the tag id in its `tag_ids` array,
+rewrites each array to drop it (or swap in a replacement, for merge), THEN
+`batch.deleteDocument(collection(.tags).document(tagId.uuidString))` — delete and unlink happen in
+ONE atomic batch today. `TagEditorDetailView.swift:117` (`"Delete Tag"` alert) →
+`TagEditorService.delete(tag:)` (`TagEditorService.swift:105`) is the call site;
+`FirebaseTagEditorClientAdapter.swift:61` calls `removeTagEverywhere(id, replacingWith: nil)` for a
+plain delete and `:51` calls it with a replacement id for MERGE — this merge path is exactly what
+"restore, merged into the same-name survivor" must reuse.
+
+**The shape.** Deleting a tag must now do LESS than it does today, not more:
+1. Write `deleted_at` on the tag document only. **Do not touch any `tag_ids` array** — every
+   task/capture keeps the id, which is what "hidden, not stripped" means.
+2. Everywhere a tag chip is rendered or a tag filter is offered, skip tags whose `deleted_at` is
+   set — this is a filter at the SAME read layer C3 built (`SoftDelete.isLive`), applied to
+   `fetchAllTags()`/`fetchTagsForTask(taskId:)` and wherever the filter menu's tag list is built.
+3. **Restore** clears `deleted_at`. Because step 1 never touched `tag_ids`, every item that had the
+   tag shows it again with no further writes — "back on every item" is a property of NOT deleting
+   the links in the first place, not a restore-time re-attachment.
+4. **Merge on restore**: if a tag with the SAME NAME was created while the original sat deleted,
+   restoring must not produce two live tags with one name. Reuse `removeTagEverywhere(originalId,
+   replacingWith: newTagId)` exactly as today's merge does (`FirebaseTagEditorClientAdapter.swift:51`)
+   — except restore's caller already knows both ids and the "replacing" direction is the NEW tag
+   winning (since it has live usage the user built during the deletion window), then hard-delete
+   the original (it contributed nothing further once merged).
+5. **Purge, at 30 days**: THIS is where `removeTagEverywhere(id, replacingWith: nil)`'s existing
+   batch (strip `tag_ids` from every referencing item, delete the tag doc) finally runs, on a
+   still-deleted tag — the exact call that happens immediately today.
+
+**Tests that must be REVERSED, not deleted:**
+- Any `FirebaseManager+Tags.swift`/`FirebaseTagEditorClientAdapter` test asserting `deleteTag`/
+  `removeTagEverywhere(_:replacingWith: nil)` strips `tag_ids` SYNCHRONOUSLY on delete (grep
+  `removeTagEverywhere` test usages before building — not yet enumerated here) must be reversed:
+  a plain delete no longer strips anything; only the 30-day purge does. The merge-path call
+  (`replacingWith: someId`) is UNCHANGED behaviour and any test on IT should still pass as-is.
+- **None found by grep** for "Recently Deleted" + "tag" together — new surface, RED-first.
+
+**Acceptance criteria:**
+- [ ] RED first: deleting a tag hides it (no chip, no filter entry) but leaves every item's
+      `tag_ids` untouched (assert the array is unchanged, not just that the tag "looks" gone);
+      restoring shows the tag again on every item that had it with zero additional writes; a
+      same-name tag created during the deletion window causes restore to merge (reusing
+      `removeTagEverywhere(_:replacingWith:)`) rather than producing two live tags; the 30-day
+      purge strips `tag_ids` and hard-deletes, matching today's immediate-delete behaviour exactly
+      but deferred.
+- [ ] Red-check, restore, count failures, restore code.
+- [ ] SwiftLint 0, suite green, build green, pasted.
+- [ ] `screenshots/recently-deleted-tags/` + README: a tag deleted (chip gone from a task that had
+      it), the Recently Deleted row showing the tag, restore bringing the chip back, and the merge
+      case if it can be driven on the seeded emulator account.
+- [ ] `apple-design` review owed (§7.6) only if this block changes any VISIBLE surface beyond what
+      C3 already built (the same Recently Deleted list, one more row kind) — if it is a pure data-
+      layer change riding C3's UI, say so and name C3's review as covering it.
+- [ ] RM-on device pass: not owed unless a new reduced site is added — expected to be none; say so.
+- [ ] **`firestore.rules` — verified unchanged** (tags are in the same generic owner-CRUD allow,
+      `firestore.rules:57`); no new field-level restriction is implied by this block beyond C3's.
+
+**Dependencies:** F-C3 (the Recently Deleted screen, the `SoftDelete` read-filter helper, and the
+purge mechanism Step 0 settles there — tags reuse all three rather than inventing their own).
+
+**Step 0 — ANSWERED by E, 2026-09-19. Do not re-ask:**
+1. **Restore ASKS which tag survives.** E: *"Ask which one survives (Recommended)"* — reuse the Tag
+   Editor's existing merge choice (`TagEditorPresentation.mergeAlertMessage`) at restore time, so
+   the user picks the name and colour that wins. One extra tap, no silent merge.
+
+---
+
+## Arc D · The task composer
+
+Source: `handoff/SESSION-OPENER-adhd-ux-audit-design.md` rounds 6, 7, 7b, 10b; findings §I, §J, §L
+(`handoff/ADHD-UX-AUDIT-WORKING-FINDINGS.md`); boards `60`, `61`, `64`
+(`screenshots/adhd-ux-audit/README.md`); the throwaway probe
+`scripts/audit/probes/AuditComposerLayoutProbe.swift.txt` (real tokens/sizes for L3 — never build
+against a probe file, it does not compile in the app target).
+
+**Dependency for all three blocks: Arc C ("Nothing lost") lands first** (Decision A, design record
+line 573-579: *"C · Nothing lost first ... it holds the audit's data-loss Criticals (CAPT-01,
+TASKS-01), and it builds the undo capsule the later arcs reuse"*). Arc C also owns Q4's "Cancel →
+Close" rename and the silent-draft-save on swipe-down (CAPT-01). **D does not re-implement either —
+it reuses whatever Arc C ships for a composer's leading header control and its dismiss behaviour.**
+
+Today there are TWO task composers with unrelated code: `Tasks/TaskCreateView.swift` (Tasks tab "+"
+and `LifeAreaDetail/LifeAreaDetailView.swift:111-117`'s "Add to `<area>`") and
+`Capture/QuickCaptureView.swift`'s `kind == .task` path (the capture disc's fan tile,
+`RootView.swift:254-263`, and the same-shaped widget door, `RootView+Doors.swift:26-30`). Round 6
+merges them into one: **`TaskCreateView` becomes the composer every door opens**, so the split below
+is content (D1), then layout (D2), then the Tasks-board fallout (D3).
+
+---
+
+### FEATURE: F-D1-ComposerBothDoors — one composer, both doors, and the settled content  [ ] NOT STARTED
+
+**What E chose:**
+- **Doors → "One composer, both doors"** (round 6). *"The Tasks '+' and the disc → Task open the
+  SAME composer."*
+- **Content → E, verbatim (round 6):** *"C1 AND THE C3 chips. I want The options 'Not yet', 'Today',
+  'Tomorrow', 'Pick a date' - BUT I want the Chips to be tappable, so that the drop-down options that
+  are shown in C1 can be accessed."* Reading, confirmed at round 6b: **a title field; four tappable
+  "when" chips (Not yet · Today · Tomorrow · Pick a date); and C1's area and time pop-up chips
+  (menus, not sheets). The next step — tags, place and notes — live on the task**, not the composer.
+- **A new task's date → "No date + an 'Anytime' row"** (round 6): *"New tasks have no date unless
+  one is picked."* Retires CAPT-02 (forced `dueDate = startOfDay(now)`) and TASKS-03 (the vanishing
+  undated task) — the Anytime row itself is D3.
+- **Area "None" default label** — round 10b's rename list ties this composer's own no-selection
+  label to "None" directly (not "Decide later"): *"'Decide later' and 'No life area' → 'None', as in
+  the round 7b composer (... `Tasks/TaskCreateView.swift:141`)."*
+- **Round 7's "36pt look, 44pt reach"** does not apply here — the composer's own chips stay 48pt
+  (round 6's own line under round 7's targets section).
+
+**The shape (verify, do not trust):**
+- **Strip to the settled content.** `TaskCreateView.swift:49-52` (`areaSection`, `placeSection`,
+  `notesSection`, `tagsSection`) currently renders all four plus the due chips. Delete
+  `placeSection`, `notesSection`, `tagsSection` and their state (`TaskCreateService.swift:19,23-32`
+  — `notes`, `atPlaceId`, `places`, `tagsState`, `selectedTagIds`, `newTagName`, `loadPlaces()`,
+  `loadTags()`, `addNewTag()`, `toggleTagSelection()`, and the `attachTags` call in `createTask()`,
+  `:127-133`). All three already have a home: `Tasks/TaskDetailFormSections.swift:142` (notes),
+  `:164-167` (`TaskAtPlacePicker`, same component), `:179-182` (tags) — the task edits them right
+  after creation.
+- **This ripples into the protocol, not just the service.** `TaskCreateClientAdapting.swift`
+  declares `fetchTags`/`createTag`/`attachTags` alongside `createTask`; grep confirms
+  `TaskCreateService.swift` is their ONLY caller in the app. Once tags leave the composer,
+  `FirebaseTaskCreateClientAdapter.swift:20-26,52-56`'s matching implementations become
+  unreachable in production — the `dead-shared-component-pattern` this project has hit seven times
+  before. **The build session must decide prune-or-keep and say which in the report**, not
+  discover it as an unexplained coverage drop. Pruning also means reversing (not deleting)
+  `FirebaseTaskCreateClientAdapterTests.swift:72-110` (`testAttachTags_*`, `testCreateTag_*`,
+  `testFetchTags_*`) and `FakeTaskCreateClientAdapting.swift`'s matching stub methods.
+- **Area moves from `ComposerAreaChips` (a chip flow) to a Menu**, matching round 6b's "area and
+  time pop-up chips (menus, not sheets)". Reuse the `Menu { Button ... } label: { LabeledContent
+  or a bordered leaf }` shape from `Home/LifeAreaPicker.swift:47-71` and
+  `Tasks/TaskAtPlacePicker.swift:31-51` (both already default their no-selection row to "None",
+  `TaskAtPlacePicker.swift:26-28`) — **do not reuse `ComposerAreaChips`** (`Theme/ComposerChips.swift`
+  stays exactly as is; it is still used by `Journal/LogComposerView.swift` and
+  `Capture/CaptureInboxSections.swift`).
+- **Add a "Time" menu — the effort/duration field, currently missing from `TaskCreateService`
+  entirely.** `QuickCaptureView.swift:31` (`taskEffortSeconds = 900`) and
+  `QuickCaptureComponents.swift:139-173` (`effortSection`/`effortChip`, values 900/1800/3600s,
+  "15 min"/"30 min"/"1 hr") is the existing behaviour to port, as a Menu instead of three chips.
+  Wire the WRITE the way `TaskCreateService.createTask()` already handles its own secondary write
+  (`TaskCreateService.swift:127-133`, the `attachTags` failure path) — **not** the way
+  `QuickCaptureView.saveTask()` does it (`QuickCaptureView.swift:224-249`), which puts the
+  follow-up `updateTask` inside the SAME `do` as the create call: a failed secondary write there
+  surfaces as `taskErrorMessage` for a task that already exists, and a user-driven retry would
+  duplicate it. Instead: create succeeds → `createdTask` is set and `createTask()` returns `true`
+  regardless of what happens next; the `updateTask(id:payload:)` call (setting
+  `TaskUpdatePayload.focusDurationSeconds`) happens after, and on failure sets `warningMessage`
+  ("Task created, but couldn't save its time") the same way the tag-attach failure does today —
+  keep `warningMessage`/`taskCreateWarningMessage` (`TaskCreateView.swift:53-58`), it gains this as
+  its new (only) source once tags are gone. Do not add the field to
+  `NormalizedCreateTaskInput`/`TaskCreateValidation.swift`, which stay untouched. This means
+  `TaskCreateView` needs a `taskDetailClient: TaskDetailClientAdapting` alongside its existing
+  `client:`. Both current call sites already hold one: `TaskListView.swift:19` and
+  `LifeAreaDetail/LifeAreaDetailView.swift:21` — thread it through their existing
+  `TaskCreateView(...)` calls (`TaskListView.swift:125-130`,
+  `LifeAreaDetailView.swift:111-117`). `preselectedLifeAreaId` (`TaskCreateView.swift:23,29`, which
+  seeds `service.lifeAreaId`) must keep seeding the new Area Menu's initial selection, so
+  `LifeAreaDetailView.swift:114`'s "Add to `<area>`" door keeps landing pre-filed.
+- **Both doors.** `RootView.swift:254-263`'s `.fullScreenCover(item: $composerKind)` presents
+  `QuickCaptureView(client: captureClient, kind: kind, ...)` for every kind including `.task`. Branch
+  it: `.task` presents `TaskCreateView`, everything else keeps `QuickCaptureView`. `TaskCreateView`
+  takes `lifeAreas: [LifeArea]` as a plain array today (`TaskCreateView.swift:15,22`) — the Tasks tab
+  and `LifeAreaDetailView` both already hold one, but `RootView` does not. Give `TaskCreateView` the
+  same self-fetch pattern `QuickCaptureView` already has for its own areas
+  (`QuickCaptureView.swift:141-148`, via a `homeClient: HomeClientAdapting?`) so `RootView` can pass
+  `homeClient: homeClient` (already held there, `RootView.swift:258`) with no `lifeAreas` array, while
+  the two existing callers keep passing their already-loaded array unchanged. `CaptureFan.slot(for:
+  .task)` (`Capture/CaptureFan.swift`) is UNCHANGED — the tile stays; only what it opens changes.
+  `AppDeepLink.captureComposer(let kind)` (`RootView+Doors.swift:26-30`) routes through the same
+  `composerKind`, so the widget door is fixed by the same branch — no separate change needed there.
+  **Named, not decided:** the fan/widget door keeps presenting it as a `.fullScreenCover`, the Tasks
+  tab and Area detail keep presenting it as a `.sheet` — same view, two chromes, inherited from
+  today and unchanged by this block. Say this in the report so it reads as intentional rather than
+  an inconsistency the build session introduced.
+- **Scope fence:** the Tasks toolbar "+" itself — its 27×36 hit box growing to 48×48 and its
+  missing "New task" VoiceOver label (round 7 / findings §M) — is Arc B's (accessibility), not D's.
+  `TaskListView.swift:114-122` is read-only for this arc.
+- **Delete the now-dead `.task` path inside `QuickCaptureView`/`QuickCaptureComponents.swift`**,
+  since kind is never `.task` at either of its two call sites once the above lands
+  (`RootView.swift:255`, now branched away; `CaptureInboxView.swift:118`, which never passed `.task`
+  to begin with — its `kind:` defaults to `.note`). Delete: `isTaskKind`
+  (`QuickCaptureView.swift:59`), `taskEffortSeconds`/`taskErrorMessage` (`:31,33`), `effortSection`
+  (`QuickCaptureComponents.swift:139-150`) and `effortChip` (`:152-173`), `saveTask()`
+  (`QuickCaptureView.swift:214-250`) and the `if isTaskKind { return await saveTask() }` branch in
+  `save()` (`:202`). **Leave `CaptureComposerCopy`'s `.task` arms alone**
+  (`Capture/CaptureFan.swift:86,96,106-107,117`) — `CaptureKind.task` still exists (the fan tile,
+  and any capture already stored with kind `.task`), so the switch must stay exhaustive;
+  `.title(for: .task)` is still read by `Capture/CaptureInboxSections.swift:18` for an inbox row's
+  kind label. This is not new dead code the block introduces, only code that stops being reachable
+  through one caller — say so in the report rather than "cleaning" the enum.
+- **Regression to flag, not silently absorb:** for one block, the fan/widget door goes from
+  QuickCaptureView's 4-control quick composer (title, effort chips, area chips, tags) to
+  TaskCreateView's stripped form (title, when-chips, Area menu, Time menu) — still today's vertical
+  layout, not yet L3 (that is D2). Screenshot both states so the "no forced date" win is visible
+  even though the visual polish is still one block away.
+
+**Tests that must be REVERSED, not deleted:**
+- `ADHD LifeOSTests/TaskDueChoiceTests.swift` — unaffected by content (pure due-date mapping, no
+  area/time/notes fields). Confirm it stays green; nothing to reverse here.
+- `ADHD LifeOSTests/CaptureFanTests.swift:67,69` (`CaptureComposerCopy.ctaLabel/footer(for: .task)`)
+  — stays green (pure function, untouched). Note in the report that these now test code no view can
+  reach, per the point above; do not delete or "fix" them.
+- `ADHD LifeOSUITests/SignedInJourneyUITests.swift:29-60`
+  (`testCreateTask_fromTasksTab_appearsInList`) — asserts the title field and submit button
+  (`taskCreateTitleField`, `taskCreateSubmitButton`, both must survive unrenamed) and that the
+  created task appears under the **Open** filter (`TaskGrouping.groupTasksByLifeArea`, unaffected by
+  D3's Anytime fold). Its comment at `:49-51` ("the composer creates the task undated, and the
+  default Momentum board deliberately excludes undated tasks") stays TRUE after D1 alone — ANNOTATE
+  it rather than reverse it now; D3 is what makes an undated task visible on Momentum too, and that
+  block's own report should revisit this comment.
+- `LifeAreaPicker.swift:18-19`'s doc comment (*"Preserved verbatim per site: 'None' (Task Create /
+  Detail / Capture triage)..."*) is stale today (Task Create currently uses `ComposerAreaChips`, not
+  this component) and becomes true again once D1 lands. ANNOTATE, do not treat as a test.
+- `ADHD LifeOSTests/TaskCreateServiceTests.swift` — 9 tests exist. **These have real coverage to
+  reverse, not none**: `testCreateTask_success_withExistingTagSelected_attachesTag` (`:29`),
+  `testCreateTask_success_withNewlyCreatedTag_createsAndAttachesTag` (`:49`),
+  `testAddNewTag_matchingExistingTagName_selectsExistingTagInsteadOfCreating` (`:70`),
+  `testCreateTask_taskTagsInsertFailure_taskStillConsideredCreated_warningSurfaced` (`:110` — this
+  is the exact "secondary write fails, warningMessage, task still counts as created" shape the Time
+  write must copy) and `testLoadTags_failure_setsFailedState` (`:143`) all test tag behaviour this
+  block deletes from the composer. Reverse or delete each depending on the prune-or-keep call above,
+  and write its Time-menu equivalent (e.g.
+  `testCreateTask_focusDurationUpdateFailure_taskStillConsideredCreated_warningSurfaced`) either way.
+- `ADHD LifeOSTests/FirebaseTaskCreateClientAdapterTests.swift:72-110`
+  (`testAttachTags_attachesEveryTagToTheTask`, `testAttachTags_withNoTags_writesNothing`,
+  `testCreateTag_returnsTheExistingTagOnANameMatch`, `testFetchTags_returnsTheTagCollection`) and
+  `ADHD LifeOSTests/FakeTaskCreateClientAdapting.swift`'s matching stubs — reverse or delete
+  together with the protocol decision above; do not leave one side pruned and the other not.
+- `ADHD LifeOSTests/TaskCreateAtPlaceTests.swift` — covers `atPlaceId`/`places`, also deleted by
+  this block; read it before deciding reverse-vs-delete, same call as the tag tests.
+- Grep for `"Decide later"`, `taskCreateLifeAreaPicker`, `taskCreatePlaceholder` turned up nothing
+  beyond the files above.
+
+**Acceptance criteria:**
+- [ ] RED first: a pure test that `TaskCreateService` has no `notes`/`atPlaceId`/tags surface (or
+      that the view no longer renders those identifiers), a test that `TaskCreateView`'s Area control
+      defaults to "None" and is a `Menu`, and a test/assertion that creating a task with a chosen
+      Time writes `focusDurationSeconds` via `updateTask`. Count the RED failures before writing the
+      implementation.
+- [ ] The reversed/annotated items above updated in place, with the round quoted.
+- [ ] Red-check: restore `TaskCreateView.swift`/`TaskCreateService.swift`/`QuickCaptureView.swift`
+      from the pre-block commit, count the failures, restore forward with `git checkout --`.
+- [ ] SwiftLint, the full suite and the build all pasted.
+- [ ] `screenshots/composer-both-doors/` + README: Tasks "+" and disc → Task opening the identical
+      composer, light/dark, before (two different composers) and after.
+- [ ] **`apple-design` review owed** (§7.6) — the Area/Time menus and the stripped content are a
+      visible change.
+- [ ] **RM-on device pass: none owed.** No `#available` site and no appear/disappear animation is
+      added or changed in this block — say so in the report.
+- [ ] No `#available` site touched → no "Verified paths" line owed.
+- [ ] No `firestore.rules` change (no schema field added to create; `focusDurationSeconds` already
+      exists on `TaskUpdatePayload`).
+
+**Dependencies:** Arc C lands first (undo capsule + Cancel→Close + draft-save — D1 reuses whatever
+header control Arc C ships rather than inventing its own). D2 depends on D1 (same file). D3 is
+independent of D1/D2 but reads better after D1 (screenshots of a title-only "Not yet" task will show
+it in the Anytime row).
+
+---
+
+### FEATURE: F-D2-ComposerKeyboardLayout — L3 rides the keyboard; AX3 falls back; the Date segment  [ ] NOT STARTED
+
+**What E chose:**
+- **Layout → "L3 · Rides on the keyboard"** (Recommended, round 7b). *"The title owns the page.
+  Every choice and Add sit in one bar just above the keyboard: the four 'when' segments on top; Area
+  | Time | Add below, with Add trailing."* Measured: **with the keyboard up the bar spans
+  406–518pt of the 874pt screen** (L1 sat at 252–364pt, L2 at 282–440pt).
+- **The Date segment → "Text, then the date"** (Recommended, round 7b). *"It reads 'Date' in
+  LabelPrimary like its neighbours, with no calendar glyph. Once a date is picked, Date becomes the
+  selected segment and shows that date ('Fri 26')."* This closes all three `apple-design` findings on
+  it (findings §L): a glyph+text mix (`segmented-controls.md › Content`), an action segment inside a
+  selection control, and accent meaning both "selected" and "opens a picker"
+  (`color.md › Best practices`).
+- **At AX3, carried in the option E chose:** the bar cannot share the screen with the keyboard —
+  L3 falls back to L1's stacked form (choices scroll under the title, Add stays pinned).
+- **Also carried in the option:** opening Area, Time or the date picker must NOT dismiss the
+  keyboard, "or the bar drops 336pt and jumps back (research §3.2). A test pins it." Findings §L
+  calls this **unverified**: *"SwiftUI `Menu`'s effect on the first responder was not checked here."*
+- **Platform notes (findings §L, quoted as build instructions):** the bar rides the keyboard through
+  `safeAreaInset(edge: .bottom)`, "which is the 16 floor"; `ToolbarItemPlacement.keyboard` "is a
+  single row, too small for L3's two"; the container "takes Liquid Glass behind `#available`" on 26+
+  and a standard material below; the when-choice picker "is a popover or menu, never a sheet (Q4)",
+  needing `presentationCompactAdaptation(.popover)` (16.4+) "with a floor path on 16.0–16.3."
+
+**The shape (verify, do not trust):**
+- **The probe is the exact geometry and tokens to build from** (never import it —
+  `scripts/audit/probes/AuditComposerLayoutProbe.swift.txt` is a `.txt` file outside the target on
+  purpose). Its `toolbar` case (`:247-271`) is L3: a bare `Text` title (not `ComposerTextBox` — L3's
+  title is `.title2.weight(.semibold)`, `:131-134`, boxless), then a bottom `VStack` of
+  `WhenSegments()` (`:57-93`, one bordered container, 4pt internal gaps, `ChoiceChipButtonStyle`-like
+  selection) over `Area | Time | Add` (`:260-264`, 8pt inset for the compact menus, `compact: true`
+  so "15 min" doesn't wrap — noted in findings §L and the round 7b log as a real bug already found
+  and fixed once).
+- **Keep the `NavigationStack` and its toolbar — do not draw the probe's custom `Header()`
+  (`:151-168`).** The probe's header (a hand-drawn 48×48 "Close" capsule, no nav bar) is geometry
+  for the boards, not a component to import; `TaskCreateView` today gets its title and leading
+  control from `.toolbar` (`:70-79`, `.cancellationAction` + `.principal`). Round 7's "All to 48×48
+  ... in their standard places" reads as the toolbar control growing to 48×48 in place, not a
+  redraw. The leading control's BEHAVIOUR and LABEL are Arc C's (Close, not Cancel; draft-save on
+  dismiss) — D2 only makes it 48×48 in whatever chrome Arc C leaves it in. Say which you built,
+  since the probe and the current code disagree and only one can ship.
+- **Build it as `TaskCreateView.swift`'s existing `.safeAreaInset(edge: .bottom) { footerBar }`
+  (`:69`), replaced.** The current `footerBar` (`:250-275`) is the file this becomes; the current
+  due-chip row (`dueSection`, `:90-112`) moves INTO the bar as the top half of the new one. This is a
+  same-file redesign, not a new screen.
+- **File-length budget:** `TaskCreateView.swift` is 304 lines today. Adding the keyboard bar, the
+  AX3 fallback and two Menu leaves will clear the 400-line bar comfortably on its own — split the
+  bar into its own file (e.g. `Tasks/TaskComposerKeyboardBar.swift`) rather than letting
+  `TaskCreateView.swift` grow past it.
+- **`.keyboardDismissal()` is already applied by both callers** (`TaskListView.swift:131`,
+  `LifeAreaDetailView.swift:118`) and puts a "Done" button in a `.keyboard`-placement toolbar row —
+  a row the probe never drew, and one that will sit UNDER this new bar (SwiftUI keyboard-placement
+  toolbars render above the software keyboard, same as `safeAreaInset(edge: .bottom)` does, so the
+  two stack). **Verify at build time whether that row moves the bar off E's approved 406–518pt** —
+  render it for real before claiming the approved numbers, and say in the report whether the Done
+  row survives.
+- **The Liquid Glass gate is a new `#available(iOS 26, *)` site** — there is no existing
+  `.glassEffect`/`GlassEffectContainer` call anywhere in the app target to copy from (checked; the
+  only hit is a comment, `Celebrations/CelebrationFrame.swift:22`). Follow §7.1: the 26+ branch is
+  `.glassEffect(...)` on the bar's container, the floor branch is `Material.bar`/`.ultraThinMaterial`
+  (the same surface `Theme/ComposerChips.swift:190-197`'s `ComposerFooterSurface` already uses for
+  every other composer footer) — both branches carry the same information (a bar that reads as
+  raised above the page).
+- **Reduce Motion:** if the when-segments' selection just recolours in place (no `matchedGeometry`
+  slide), this block adds no reduced site — say so and skip the RM-on pass. If a sliding selection
+  indicator is added instead, that IS an "appears/moves" site under §7.2 and both the fade and the
+  RM-on device pass (§7.3) become owed; decide before building, don't discover it after.
+- **The Date picker's floor path (16.0–16.3, no `presentationCompactAdaptation`) is a Step 0
+  question below, not a build decision** — Q4 is E's verbatim HARD RULE ("Maximum 1 sheet deep as
+  the strict baseline"), so choosing to breach it for a narrow OS band is E's call to make, even
+  though real-world impact is near zero (16.4 shipped 2023-03).
+
+**Step 0 — ask E (two questions, findings §L left both open):**
+
+**1. Does the Date popover offer a time, or only a day?**
+Today's `.custom` picker is `[.date, .hourAndMinute]` (`TaskCreateView.swift:99-106`), and
+`TaskDueChoice.choice(for:)` (`TaskDueChoice.swift:48-54`) already treats anything other than exact
+midnight as `.custom`. E's chosen segment shows a DAY ("Fri 26"), with no visible time. Options:
+1. **(Recommended) Date-only** — `displayedComponents: [.date]`. Nothing is lost: a task's precise
+   due time can already be set afterward on the detail screen
+   (`Tasks/TaskDetailFormSections.swift:135-138`, same `[.date, .hourAndMinute]` picker). Keeps the
+   segment's "Fri 26" honest — there is no hidden time to contradict it.
+2. Keep `[.date, .hourAndMinute]` in the composer too, and change the segment to show the time as
+   well once one is picked ("Fri 26, 3pm") — more information, but crowds the segment and drifts
+   from "text, then the date" as chosen.
+3. Keep `[.date, .hourAndMinute]` but the segment still shows only the day — silently drops
+   information the user just entered, which is worse than not offering it.
+If E does not answer before the build session, build option 1 and say so in the report rather than
+guessing at option 2 or 3's exact wording.
+
+**2. How does the Date popover behave on iOS 16.0–16.3 (no `presentationCompactAdaptation`)?**
+Without it, SwiftUI's `.popover` adapts to a full sheet on a compact-width iPhone — a second sheet
+inside a composer that is already a sheet or cover, which Q4 forbids outright. This is compile-only
+per §7.3 (no pre-16.4 runtime on this machine), so it cannot be shown, only decided. Options:
+1. **(Recommended) Accept the system's sheet-adaptation on 16.0–16.3 as a named, documented Q4
+   exception.** 16.4 shipped 2023-03; real-world 16.0–16.3 usage is now negligible, and the
+   exception is confined to a single popover on an OS band with an install base the audit's own
+   floor (16.0) was never trying to make comfortable, only compilable.
+2. A `.compact`-style `DatePicker` on the floor only — its calendar overlay is UIKit's own card, not
+   a SwiftUI sheet, so it never breaches Q4. More floor-specific code to maintain for a shrinking
+   population.
+3. A `Menu` of near dates (today + 1…14) on the floor only, no true calendar. Loses "pick any date"
+   below 16.4.
+If E does not answer before the build session, build option 1 and say so in the report.
+
+**Tests that must be REVERSED, not deleted:**
+- `ADHD LifeOSTests/TaskDueChoiceTests.swift:69-74` (`testTitles_areTheChipCopy`) —
+  `XCTAssertEqual(TaskDueChoice.custom.title, "Pick a date")` must become `"Date"`, per round 7b's
+  "reads 'Date' ... with no calendar glyph." Reverse with a comment citing round 7b.
+- `TaskDueChoice.swift:11-13`'s doc comment ("`custom` keeps whatever is already chosen ... a
+  precise moment is what `custom`'s picker is for") — ANNOTATE if Step 0 resolves to date-only: a
+  "precise moment" is no longer what the composer's picker offers; the detail screen is.
+- Grep for `"Pick a date"` and `taskCreateDueDatePicker` elsewhere in
+  `ADHD LifeOSTests`/`ADHD LifeOSUITests`: **none found** beyond the file above.
+
+**Acceptance criteria:**
+- [ ] RED first: a pure test that `TaskDueChoice.custom.title == "Date"`; a call-site test (the
+      `*CallSiteTests` string-read pattern, §7.4) asserting the `if #available(iOS 26, *) { ... }
+      else { ... }` pair exists around the bar's material; a test/assertion (unit or UI) that the
+      title field keeps focus (or the bar keeps its keyboard-up height) while the Area/Time menu or
+      the date popover is open. Count RED failures.
+- [ ] `TaskDueChoiceTests.swift` reversed in place, round 7b quoted.
+- [ ] Red-check: restore the pre-block `TaskCreateView.swift`, count failures, restore forward.
+- [ ] SwiftLint, the full suite and the build all pasted.
+- [ ] `screenshots/composer-l3-layout/` + README: keyboard up/down, light/dark, AX3 fallback, and
+      the Date segment before/after a pick — matching board `64`'s naming
+      (`<layout>-<up|down>-<L|D|A>.jpg` convention from `round-7b-composer-layouts/`).
+- [ ] **`apple-design` review owed** (§7.6) — re-run over the SHIPPED view (not the probe); confirm
+      the three findings §L cites against the Date segment (glyph+text mix, action-inside-selection,
+      dual-meaning accent) are actually closed, and check the AX3 fallback and the 12pt-bezel-gap
+      note (§L "Low", accepted as-is per the record).
+- [ ] **RM-on device pass:** owed only if a sliding selection indicator was added — state which,
+      per the shape section above.
+- [ ] **"Verified paths" line, required** (an `#available` site is touched):
+      `26 path (Liquid Glass container): run on sim + [E's phone / sim-only, say which].`
+      `16 path (standard material): code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY
+      — no 16 runtime installed.`
+- [ ] **Device check owed** — the record calls the keyboard-stays-up behaviour "also a phone check";
+      confirm on E's phone that opening Area, Time and the date popover does not drop the keyboard.
+- [ ] No `firestore.rules` change.
+
+**Dependencies:** D1 (same file, same composer). Arc C for the leading header control.
+
+---
+
+### FEATURE: F-D3-TasksAnytimeRow — the "Anytime · N" row on the Momentum board  [ ] NOT STARTED
+
+**What E chose:**
+- Round 6: *"The Tasks board gains one collapsed 'Anytime · N' row at the bottom: the tail stays
+  folded, but a new task is visible where it was added."*
+- Round 8b (settling scope, so this block does not widen b11's exclusion by accident): *"Undated
+  tasks already live in Anytime, and future-dated tasks are untouched."* **Anytime is the undated
+  bucket only** — tasks due beyond tomorrow stay off the Momentum board entirely (E's b11 call,
+  `MomentumTaskBuckets.swift:8-9`, unchanged).
+
+**The shape (verify, do not trust):**
+- `MomentumTaskBuckets.swift:81-102` (`bucket(for:)`), line 94: `guard let due = task.dueDate else {
+  return nil }` — "Undated tasks belong to the Open filter, not the board." Change this one guard to
+  `return .anytime` instead of `nil`. Add `case anytime` to the `Bucket` enum (`:16-19`) with
+  `title: "Anytime"` (`:21-27`) — placed LAST in the enum so `Bucket.allCases` (`:43`) naturally
+  renders it at the bottom, after Closed today. Leave the beyond-tomorrow branch (`:101`,
+  `return nil`) untouched — that is the tail that stays folded, per the round 8b quote above.
+- `headerToneAssetName(customId:)` (`:72-79`): add no case for `"momentum-anytime"` — it falls
+  through to `default: return nil`, the plain secondary voice, matching round 9's "quiet, no colour"
+  direction for anything that isn't due-now/tomorrow/closed.
+- **Render it collapsed by default, using the existing house pattern.**
+  `Theme/CollapsibleSectionHeader.swift` is already shared by Home's life-areas fold
+  (`Home/HomeLifeAreasSections.swift:84-110`, `@AppStorage("home.lifeAreasCollapsed")`,
+  `HomeView.swift:70`) and Journal's day sections. `TaskListView.swift:180-202` (`taskList(groups:)`)
+  currently renders every group with a plain `Text(group.lifeAreaName).pinnedSectionHeader()`
+  header (`:191-193`); special-case `group.customId == "momentum-anytime"` to use
+  `CollapsibleSectionHeader` instead, with `summary: nil` (the title "Anytime · N" already carries
+  the count, per `MomentumTaskBuckets`'s `"\(bucket.title) · \(members.count)"` format,
+  `:47`), and gate `rowCard(for: group)` behind the expanded state. Add
+  `@AppStorage("tasks.anytimeCollapsed") private var anytimeCollapsed = true` to
+  `TaskListView` — default TRUE (collapsed), unlike Home's fold which defaults expanded, because
+  round 6's own words are "the tail stays folded."
+- `rowCard(for:)`'s `showsSprintStart` (`TaskListView.swift:207`, `group.customId ==
+  "momentum-dueToday"`) already keys off `customId`, so Anytime rows correctly get no ▶
+  sprint-launcher by construction — no change needed there, just confirm it in a test.
+- This reuses the exact shape round 8b's "Set aside · N" row (Arc G, Fresh Start) will need later —
+  D3 should land first so Arc G can copy its pattern rather than invent a second one.
+
+**Tests that must be REVERSED, not deleted:**
+- `MomentumTaskBucketsTests.swift:56-65` (`testGroup_excludesLaterAndUndatedTasks`) — currently
+  asserts `groups.map(\.lifeAreaName) == ["Due today · 1"]` for `[task("Undated"), task("Later",
+  dueDaysFromNow: 3), task("Today", dueDaysFromNow: 0)]`. Reverse to assert **both** `"Due today ·
+  1"` and `"Anytime · 1"` are present, **and that "Later" still produces nothing** — the point of
+  the test is now "undated is visible, beyond-tomorrow is not," not "both are excluded." Rename it
+  (e.g. `testGroup_undatedGoesToAnytime_laterStaysExcluded`) and keep the b11 citation.
+- `MomentumTaskBucketsTests.swift:9-12` (file header) and `MomentumTaskBuckets.swift:7-9` (file
+  header) both say "the long tail (later / undated) is deliberately NOT here" — ANNOTATE both:
+  undated no longer belongs to that sentence; later still does.
+- `testGroup_bucketsByDueness_inFixedOrder` (`:40-54`) and `testGroup_bucketIdsAreDistinct`
+  (`:112-124`) stay green as written but should each GAIN an undated task in their fixture so the
+  fourth bucket's ordering (last) and distinct id are pinned by a passing assertion, not merely
+  untested.
+- `SignedInJourneyUITests.swift:49-51`'s comment (already flagged in D1) — this is the block where
+  it stops being simply true. Re-read it here: the created undated task now ALSO appears, folded,
+  under Momentum's new Anytime row — the test still finds it via the Open filter (unaffected,
+  `TaskGrouping.groupTasksByLifeArea`), so the assertions themselves do not need to change, only the
+  comment.
+- Grep for `"Anytime"`, `momentum-anytime`, `anytimeCollapsed` in
+  `ADHD LifeOSTests`/`ADHD LifeOSUITests`: **none found** — this is new ground, not existing coverage
+  to reverse beyond the two files above.
+
+**Acceptance criteria:**
+- [ ] RED first: `testGroup_undatedGoesToAnytime_laterStaysExcluded` written to fail against
+      today's code (asserts `"Anytime · 1"` present); a view-level or snapshot test that the Anytime
+      section starts collapsed and that `showsSprintStart` is false for it. Count RED failures.
+- [ ] The reversed/annotated tests above updated in place, round 6 and round 8b quoted.
+- [ ] Red-check: restore `MomentumTaskBuckets.swift`/`TaskListView.swift` from the pre-block commit,
+      count failures, restore forward.
+- [ ] SwiftLint, the full suite and the build all pasted.
+- [ ] `screenshots/tasks-anytime-row/` + README: Momentum board with the row collapsed (showing only
+      the "Anytime · N" header), expanded, and a freshly-added undated task appearing in it —
+      light/dark. This is exactly the kind of "a live rule applied to real data" a unit test cannot
+      show (CLAUDE.md, "Visual evidence").
+- [ ] **`apple-design` review owed** (§7.6) — a new section header row appears on a screen already
+      reviewed multiple times in this audit (findings §I, §G). Route through `hig-lookup.md` (§7.6
+      step 2) for a disclosure/collapsible header rather than guessing a page name, and confirm the
+      chevron direction matches `Theme/CollapsibleSectionHeader.swift:20-22`'s stated convention
+      (points AT the hidden content, not at the gesture).
+- [ ] **RM-on device pass: none owed.** `CollapsibleSectionHeader` carries no motion of its own
+      (a static chevron glyph, no slide/fade) — confirm this stays true rather than assuming it.
+- [ ] No `#available` site touched → no "Verified paths" line owed.
+- [ ] No `firestore.rules` change (bucketing is client-side only).
+
+**Dependencies:** None on D1/D2 technically (pure `MomentumTaskBuckets` + `TaskListView` change),
+but land it after D1 if practical — D1's screenshots are more convincing with an Anytime row to put
+the new title-only task into. Arc G ("Set aside · N", round 8b) depends on this block's shape.
+
+---
+
+## Arc E · Today (the Home tab) — build specs
+
+Source: `handoff/SESSION-OPENER-adhd-ux-audit-design.md` Rounds 3, 5a, 5b, 8, 8b; findings §G
+(HOME-01…12) and §K (the ideas), `handoff/ADHD-UX-AUDIT-WORKING-FINDINGS.md`. Boards `55`, `56`,
+`59`; frames `screenshots/adhd-ux-audit/round-5-hero/`; the saved probe
+`scripts/audit/probes/AuditHeroRenderProbe.swift.txt`.
+
+**Build order: E1 → E2 → E3 → E4 → E5.** E3 is load-bearing; E1/E2 are its inputs, E4/E5 build on
+what E3 leaves behind. **E3 also depends on arc C** (the shared undo capsule).
+
+---
+
+### FEATURE: F-E1-WeeklyChain — the weekly active-day chain, goals off until set, and the gain-framed Close button  [ ] NOT STARTED
+
+**What E chose.** Round 3, *"Streaks → 'Weekly chain + auto repair.'"*: *"A week 'counts' once the
+user is active on N days they choose. One missed week a month is repaired automatically. The other
+two streaks go: the closing streak '6 days/Best is 6' and the focus '2 Day Streak'. The nudge 'best
+2' goes too."* Round 5b: *"Weekly streak N → '3 days' (the default; changeable in Settings)"* and
+*"What counts as an active day → 'Anything that moves life on'. Closing a task, finishing a sprint,
+writing a journal line, or sorting a capture."* Round 3, *"Preset goals → 'Off until you set one.'
+No ring and no percentage until the user chooses a goal in Settings. This covers the daily close
+goal (5) and the daily focus goal (30m)."* Round 8b: *"'Close it — makes today count'"* — shown
+only while today has no activity yet, otherwise plain "Close it", *"the gamification principle
+framed as a gain toward the weekly chain, never a loss."* Round 8 follow-up: *"the game layer
+already chosen IS the game layer... Every screen may show what was done; none tallies what was
+missed."*
+
+**The shape (verify, do not trust).**
+- `Home/MomentumScoreboard.swift:23-41` `streak(tasks:)`, `:220-242` `bestStreak`, `:246-253`
+  `streakLine` — task-closure-only, daily, no repair. Round 8b sends these three lines "with the
+  scoreboard" (E3 deletes it); this block replaces the underlying model.
+- `Home/MomentumPreferences.swift:30,44-51` — `dailyGoal: Int` (default 5) and
+  `focusDailyGoalMinutes: Int` (default 30) are always-on; per HOME-10 nobody ever chose either.
+  Make both `Int?` (`nil` = not set); `normalized()` and the hand-written `Codable` (`:84-158`)
+  pass `nil` through. **On decode, an existing install's stored 5/30 becomes `nil` too** — nobody
+  chose those defaults, so there is nothing to preserve; say this in the report, it is not a Step
+  0. Add `weeklyActiveDayGoal: Int` (default 3, range 1...7). `showStreaks` stays as the field/
+  toggle name, relabelled in Settings to gate the CHAIN's display rather than a daily streak —
+  stated default, not a new switch.
+- **`Home/DailyGoalTracker.swift:34` `DailyGoalRules.goal: Int`, and `HomeView+DailyGoal.swift:61`
+  `observeDailyGoal()`, both consume `dailyGoal` and must accept `nil` — no goal set means no
+  crossing, so F7's full-screen celebration cannot fire.** This is a model-level change owned here;
+  E3 separately owns moving the celebration's screen ANCHOR once the ring itself is deleted.
+- `Tasks/MomentumTaskContext.swift:12-28` — `Context.streak` and
+  `closeButtonLabel(streak:) -> "Close it — keeps a N-day streak"`. Replace with
+  `closeButtonLabel(hasCountedToday: Bool) -> "Close it — makes today count"` / `"Close it"`, and
+  `Context.hasCountedToday: Bool` in place of `streak`. Two call sites need the new input:
+  `Home/HomeMomentumSections.swift:329-334` (`MomentumTaskContext.build(...)`) and
+  `Tasks/TaskListView.swift:151`. `build(...)` should accept a precomputed `hasCountedToday: Bool`
+  from the caller — neither call site holds captures or journal data to derive it itself.
+- No existing fetch spans more than "today" for captures (`HomeMomentumSections.swift:284-295`
+  `refreshClearedCaptureCount()`) or reads journal at all from Home.
+  `Journal/JournalClientAdapting.swift:28` `fetchLogs() async throws -> [Log]` returns everything
+  unfiltered — the same "fetch all, filter client-side" shape `closedThisWeek` already uses on
+  `allTasks`. `HomeView`'s `journalClient` (`JournalClientAdapting?`) is already held; plumb
+  `fetchLogs()` through it, `nil` client degrading to "no journal signal" like every other input.
+- Widget-target line: `FocusTimerWidget/FocusStatsWidget.swift:218` reads `dailyGoalMinutes` on a
+  **separate compiled target** (`membershipExceptions`, per CLAUDE.md) — flag it, goals-off must
+  reach it too.
+- New pure type (`WeeklyActiveChain`, or an extension on `MomentumScoreboard`):
+  `isActiveDay(tasksClosed:sessions:capturesCleared:journalLines:on:)` plus a chain-length + repair
+  function. **The repair window ("one missed week a month") is a stated default of a rolling
+  4-week window**, not a calendar month — the record left only N open, not the repair period.
+- Settings (`Settings/SettingsPreferenceSections.swift:15-50` `momentumSection`): add a Stepper for
+  `weeklyActiveDayGoal` (1...7) beside the existing one, reusing the `onEditingChanged`/`.selection`
+  haptic pattern (`:26-31`). **The `dailyGoal`/`focusDailyGoalMinutes` Steppers (`:17-40`,
+  `:98-118`) bind directly to `Int` today — `Int?` breaks that binding, so this block must also
+  change the row, not defer it:** a Toggle ("Set a daily goal" / "Set a daily focus goal") that
+  reveals the Stepper only once set, off by default. This is squarely E1's, since it is the model
+  change's own compile dependency.
+
+**Tests that must be REVERSED, not deleted.**
+- `MomentumScoreboardTests.swift:60-106` `testStreak_*` (six sub-tests) — reverse to the chain's
+  active-day rule.
+- `MomentumScoreboardV3Tests.swift:39-79` `testBestStreak_*`, `testStreakLine_*` — same model.
+- `MomentumTaskContextTests.swift:39-56` `testCloseButtonLabel_statesTheStreakConsequence`,
+  `testCloseButtonLabel_withoutAStreak` — reverse to the two `hasCountedToday` states. `:111`
+  `testBuild_respectsTheStreakToggle` — reverse to the chain-display toggle.
+- `MomentumPreferencesTests.swift:15-22` `testDefaults_matchTheConceptsSeed`,
+  `testNormalized_clampsTheGoalIntoTheSupportedRange` — reverse for `Int?` and the new range.
+- None found by grep for `FocusStatsWidget` in the widget's own test target — say so.
+
+**Acceptance criteria**
+- [ ] RED first: reversed tests above, red-checked by restoring old code, failures counted.
+- [ ] SwiftLint, full suite, build all pasted.
+- [ ] No `apple-design` review owed beyond the two new/changed Settings rows (Toggle + Stepper,
+      matching the existing pattern) — run it on those rows only, say why nothing else qualifies.
+- [ ] No `#available`/Reduce Motion site touched — no Verified-paths line, no RM-on pass owed.
+- [ ] `firestore.rules`: none — everything here is local (`MomentumPreferences`, `UserDefaults`)
+      and derived from data already fetched.
+
+**Dependencies:** none upstream. E3 and E4 both consume `weeklyActiveDayGoal`, the chain function,
+and the goals-off model.
+
+---
+
+### FEATURE: F-E2-NextStepField — the task's "Next step" field  [ ] NOT STARTED
+
+**What E chose.** Round 5a: *"Next step → 'A "Next step" field.' One optional line on a task,
+editable from the card and from task detail. Time comes from the task's stored sprint length
+(`focus_duration_seconds`). It is a Firestore change, so E republishes the rules."*
+
+**The shape (verify, do not trust).**
+- `Tasks/TaskModels.swift:15-59` `TaskItem` — add `var nextStep: String?`, default `nil` (the
+  `atPlaceId`/`placeId` pattern already there).
+- `Home/HomeModels.swift:64-99` `TaskSummary` — add `let nextStep: String?`, default `nil` in the
+  memberwise init (`:75-95`), and a `CodingKeys` case `nextStep = "next_step"` beside
+  `lifeAreaId = "life_area_id"` (`:99`).
+- `Tasks/TaskDetailModels.swift:8-27` `TaskDetail` — what `TaskDetailFormSections.swift:74`'s
+  `titleAndStatusSection(for task: TaskDetail)` reads and `:39` stages (`notes = task.notes ?? ""`)
+  — add `var nextStep: String?` and a `CodingKeys` case `nextStep = "next_step"` beside
+  `lifeAreaId = "life_area_id"` (`:61-70`). `FirebaseManager+Tasks.swift:16` `fetchTaskDetail`
+  decodes it straight through `getDocument(as: TaskDetail.self)` — Codable carries the wire field
+  once the key exists; no separate backing-store change needed.
+- `Tasks/TaskDetailModels.swift:117-133` `TaskUpdatePayload` — add `var nextStep: String??`
+  (nested-optional like `notes`); include it in `isEmpty` (`:130-132`).
+- `Firebase/FirestoreFieldPayloads.swift:29-47` `taskUpdate(_:)` — add
+  `setNullable(payload.nextStep, forKey: "next_step", in: &fields)` beside the `notes` line (`:36`),
+  keeping the file's own snake_case convention for tasks (`:19`).
+- **`firestore.rules` — verified, not assumed: no change needed.** `firestore.rules:56-60` grants
+  owner CRUD on the whole `tasks` document by collection name; there is no per-field allowlist in
+  the file. Say this in the report rather than asking E to republish a no-op.
+- `TaskDetailFormSections.swift:142` already has `TextField("Notes", text: $notes, axis: .vertical)`
+  — add a matching "Next step" row beside it, staged the same way until Save (`:120-124`'s footer
+  rule). The card-side editing is E3's job once the card exists.
+- `MomentumScoreboard.effortLabel(seconds:)` (`:189-193`) needs no change — it already reads
+  `focus_duration_seconds`.
+
+**Tests that must be REVERSED, not deleted.** None found by grep for `nextStep`/`next_step` — new
+surface. Add fresh: a `FirestoreFieldPayloadsTests` present/absent-under-other-key pair (the house
+convention the file's tests already run for `life_area_id`), a `TaskUpdatePayload`
+`isEmpty`/nested-optional pair, and a `TaskSummary` decode test tolerating an absent key (the shape
+of `ActiveGoalSelectionTests.swift:61` `testTaskSummaryDecoding_readsHeroFields_...`).
+
+**Acceptance criteria**
+- [ ] RED first: the new field/payload/decode tests, run red before the field exists.
+- [ ] SwiftLint, full suite, build all pasted.
+- [ ] `apple-design` review owed for the new Task Detail row (Dynamic Type, VoiceOver label,
+      `writing.md` capitalisation for the row title).
+- [ ] No Reduce Motion site — none owed.
+- [ ] **"firestore.rules changes; E republishes" does NOT apply here** — state the verification
+      above in the report instead.
+
+**Dependencies:** none upstream. E3's card-side editing needs this block's model + payload work
+done first.
+
+---
+
+### FEATURE: F-E3-OneCardToday — Today collapses to one card, a "then" list, and nothing else  [ ] NOT STARTED
+
+**What E chose.** Round 3, *"Structure → 'C · One next thing.' Today shows ONE card, then a short
+'then' list, and nothing else."* *"At a place, the live routine takes the slot; elsewhere the hero
+does (480pt, half a screen)."* *"Life areas leave Today (the Areas tab has them), and so does the
+inbox peek."* Round 5a, *"H1 · Start first, Close quiet"*: one prominent "Start N min" (56pt,
+accent), "Close it" a quiet green-tinted button below it, a pin toggle (44pt) in the corner, the
+title, the next-step line, chips for time and area, and the shrinking time bar (idea 8) when a
+commitment is ahead. The suggested state adds "Not this one" (idea 3). *"At AX3 the card is taller
+than the screen, so the build needs a COMPACT AX3 card with Start above the fold."* Round 5a,
+*"What wins the one slot → 'Leave-by first.' Leave by (inside 30 min) > live routine > paused
+sprint (Resume) > pinned task > suggestion... Due nudges sit at the top of the 'then' list with a
+bell."* Round 5b, *"'Not this one' → 'Back in the list, not re-suggested today.'"* Round 5b, *"Week
+review door → 'Both.' ... '✓ 3 done today · Week review ›', AND a row sits at the top of the Areas
+tab."* Round 1 (already settled, governs Close): *"Closing a task → 'Undo until next action'. Every
+close (the circle, a full swipe, Today's hero) shows the same undo... This RETIRES the earlier
+addendum 'closing is one-way'."*
+
+**The shape (verify, do not trust).**
+
+*Leaves `HomeView.swift`'s body (`:326-366`):*
+- `todayHeader` stays. `arrivalAndRoutineCards` — see Step 0 below; do not delete unresolved.
+- `scoreboardSection` (`MomentumRingCard`) — deleted, per round 8b "goes with the scoreboard".
+  **The F7 daily-goal celebration's screen anchor moves with it**: once a goal is set (E1),
+  `celebrationPopOrigin`/`ringOrigin` (`HomeView.swift:97`) moves from the ring to the new
+  done-today line (below) — with no goal set there is no crossing to celebrate at all.
+- `momentumLeadSection` — its `celebratedTask != nil` branch (`ClosureCelebrationCard` swap,
+  `HomeMomentumSections.swift:13-42`) is **retired by Round 1** for arc C's shared undo capsule
+  (Dependencies). Its `else` branch (`bestNextMoveSection`) becomes the H1 card, built from the
+  slot-order winner. The suggestion tier still falls through `MomentumScoreboard.bestNextMove` to
+  `ActiveGoalSelection.topTask` (`ActiveGoalSelection.swift:16-33`, HOME-1) — that fallback and
+  `ActiveGoalSelectionTests` are unchanged. **The finished-sprint Confirm (`CelebrationCenter`,
+  full-screen) is a separate, UNCHANGED mechanism — "Keep Confirm" — do not conflate it with
+  `ClosureCelebrationCard`'s retirement.**
+- `lifeAreasSection`/`lifeAreasHeader`/`reorderList`/`moveArrangeAreas`/`isArranging`/
+  `arrangeAreas`/`lifeAreasCollapsed` — deleted; delete `Home/HomeLifeAreasSection(s).swift`
+  outright. `Areas/AreasView.swift` already renders the grid and has its own reorder door (`:143-
+  146`) — AREAS-03 already counted four routes to reorder areas, so this is simplification. Check
+  `Home/AreaMomentumList.swift` for other call sites before deleting it too.
+- `dueNowSection` (`HomeMomentumSections.swift:159-192`) — its bordered-card wrapper goes; its rows
+  (minus the headline task) become the plain "then" list.
+- `nudgesSection` (`HomeAccessoryStrips.swift:161-227`) — due nudges move into the "then" list, top,
+  with a bell, keeping `NudgeDueCard`/`onDismiss`. The **manager door** (`nudgesDoorCard`,
+  `:238-336`, → `NudgesView`) has nowhere left on Today — see Step 0.
+- `inboxPeekCard`/`inboxPeekRow` — deleted with `Home/HomeInboxPeek.swift`'s view-facing helpers
+  (verify its pure `countLine`/`overflowLine`/`handledLine` have no other caller first).
+- `closedToday`/`MomentumClosedTodayCard`, `closedWeekChartSection`, `weekReviewRow`,
+  `FocusAnalyticsSection(...)` — deleted from `HomeView.swift`. `weekReviewRow`'s door survives in
+  a new shape below; the two charts are E4's.
+
+*New:*
+- `HomeTodayCard.swift` (keep `HomeView.swift` under its 400-line budget the way
+  `HomeMomentumSections`/`HomeAccessoryStrips` already split it): the slot-order resolver
+  (leave-by absent until arc F lands — build the site with a `nil` input; live routine from
+  `liveRoutineRun`; paused sprint from whatever exposes "paused, N min in" on `FocusSessionService`
+  — verify the field exists before assuming it; pinned task from the pin store below; suggestion
+  from `bestNextMove`), the H1 card (reusing `MomentumChip`/`MomentumSolidButtonStyle`/
+  `MomentumBorderedButtonStyle`/`ClosureRing` from `MomentumScoreboardViews.swift` — those stay;
+  only `MomentumRingCard` and `ClosureCelebrationCard` are retired), the pin toggle, "Not this one".
+- **Pin storage: recommend `UserDefaults`, per-uid-keyed**, the `Nudges/NudgeFirstRunMarker.swift`
+  pattern (`"today.pinnedTaskId.<uid>"`) — device-local, consistent with `lifeAreasCollapsed`
+  (`HomeView.swift:70`). The record flagged Next-step as a Firestore change and was silent on pin;
+  this is the stated default, not a Step 0 — name the Firestore alternative (`pinned_task_id` on
+  the profile doc) in the report if E wants it to sync devices.
+- **"Not this one": the same house pattern**, a per-uid, per-day `UserDefaults` set of skipped IDs
+  (inject `asOf now: Date` for a test to roll the day).
+- **AX3 compact card:** gate on `@Environment(\.dynamicTypeSize).isAccessibilitySize` — existing
+  site pattern in `Theme/AppTabBar.swift` / `Capture/CaptureRowView.swift`.
+- `MomentumTaskContext.Context.hasCountedToday` (E1) feeds the H1 card's Close copy exactly as
+  Task Detail's, so the two never disagree.
+- `Home/HomeWeekReviewRow.swift:12-32` `weekReviewRow` — copy becomes *"✓ N done today · Week
+  review ›"*, N from E1's active-day count; still pushes `weekReviewDestination`.
+- A second door on `Areas/AreasView.swift` (`:134-154`, near `header`), reusing
+  `MomentumWeekReview.build`/`WeekReviewSummaryCounts` as `HomeWeekReviewRow.swift:34-49` does —
+  verify `AreasService` already exposes the equivalent task/history data before assuming a straight
+  port.
+- `HomeView.swift:277,361` `publishWidgetSnapshot` (via `HomeView+Refresh.swift`) derives the Home
+  Screen widget's Active Goal from the same selection the hero uses — under pin semantics it must
+  publish the slot-order WINNER (pinned beats suggestion), or the widget and the app disagree.
+
+**Step 0 — ask E (nudges reachability):** `grep -rn "NudgesView(" "ADHD LifeOS/"` returns exactly
+one production call site, `HomeAccessoryStrips.swift:216`, reached only through Today's nudges
+door, which Structure C removes. Options: (a) the manager door becomes its own "then"-list row; (b)
+it moves to Tools, beside the Routines section CLAUDE.md already documents there; (c) a corner well
+on the card, like Settings' gear. **Recommend (b)** — keeps the "then" list to tasks and due
+nudges. Must be resolved before building; Nudges must not become unreachable.
+
+**Step 0 — ask E (the arrival card vs. "one next thing"):** `HomeRoutineCard.swift:90-115`
+`arrivalAndRoutineCards` shows the live-routine card AND the place-arrival card together, by E's
+explicit 2026-09-04 veto of suppressing either (`:103-111`, *"i want it shown"*). Round 5a's slot
+order names "live routine" but never the arrival card, and Structure C is "ONE card". Options: (a)
+the pair together count as "the one card" when present, unchanged; (b) the arrival card's tasks
+fold into the "then" list instead of a second card; (c) the arrival card is suppressed after all,
+reopening E's veto. **Recommend (a)** — smallest change, keeps the veto intact.
+
+**Tests that must be REVERSED, not deleted.**
+- `HomeLifeAreasSectionTests.swift` — becomes an ABSENCE assertion, not a deletion; verify Areas
+  tab doesn't call the pure `collapsedLine`/`showsArrangeControl` logic before retiring the enum.
+- `CelebrationPopCallSiteTests.swift:59` `testHomesBestNextMoveCloseItButtonPops` — pop source
+  moves from `BestNextMoveCard` to the H1 card; reverse the reference, keep the pop.
+- `CelebrationMilestoneCallSiteTests.swift:100,115-146,190,209-223` — assert
+  `HomeMomentumSections.swift` by name (`onRingOrigin:`, the ring's toggle read, the daily-goal
+  ask-site). Re-point at the new done-today line's origin and whichever file hosts it — the "asked
+  from exactly one place" guarantee must survive the move, not be dropped.
+- `CTAHapticTidyCallSiteTests.swift:109-153` (`...SpringsInAndCrossFadesInsteadUnderReduceMotion`,
+  `...EveryWriteToTheCelebratedTaskGoesThroughTheAnimatedSetter`) — read the retired
+  `celebratedTask`/`setCelebratedTask`/`closureCardAnimation` machinery; reverse once arc C's own
+  Reduce-Motion-fade is known. This is a Reduce-Motion site changing hands, not disappearing — the
+  RM-on device pass is owed on its new home.
+- `HomeRoutineCardCallSiteTests.swift:25-26` reads `HomeMomentumSections.swift` for the arrival
+  card's refresh wiring — reverse if that builder moves into `HomeTodayCard.swift`.
+- UI: `SignedInJourneyUITests.swift:193,207` (`homeMomentumRing`, `homeNudgesSection`),
+  `CaptureDiscClearanceUITests.swift:67` (`homeWeekReviewRow`) — reverse to the new identifiers
+  once both Step 0s are answered.
+
+**Acceptance criteria**
+- [ ] RED first: reversed tests + new slot-order/pin/"Not this one" tests, red-checked, counted.
+- [ ] SwiftLint, full suite, build all pasted.
+- [ ] `screenshots/today-one-card/` + README: light/dark, default and AX3, suggested state with
+      "Not this one", pinned state, paused-sprint Resume state.
+- [ ] `apple-design` review owed — cite `layout.md` (HOME-03's ~50-numbers scroll),
+      `typography.md`/AX3 (HOME-01), `buttons.md › Style` (HOME-08, H1 has exactly two).
+- [ ] RM-on device pass owed for the close-from-hero feedback (arc C's capsule) and any new
+      appear/pin-toggle transitions — name each site; do not claim "verified on E's phone" unless
+      E actually toggled Reduce Motion ON and said so.
+- [ ] No `firestore.rules` change from this block alone (pin/"not this one" are local) — say so.
+
+**Dependencies:** E1, E2. **Arc C** must land first — this block retires `ClosureCelebrationCard`'s
+Undo/Next swap for arc C's shared capsule. Both Step 0s must be answered before this block starts.
+
+---
+
+### FEATURE: F-E4-WeekReviewConsolidation — one bar chart, the Areas door, the streak-copy removals  [ ] NOT STARTED
+
+**What E chose.** Round 3, *"Charts → 'One bar chart in Week review.' Keep the Mon–Sun bars and
+drop the 7-day trend line (its smoothing drew values below zero). Both charts come off Today."*
+Round 8b: the three day-streak lines (`MomentumScoreboard.swift:246-252`) — *"They go with the
+scoreboard. The weekly chain speaks through Week review and the done-today line."*
+
+**The shape (verify, do not trust).**
+- `Focus/FocusAnalyticsSection.swift:46-63` on Today hosts the two named charts: the Monday–Sunday
+  `WeeklyFocusSummaryWidget` and the rolling `ProductivityTrendChart` (catmullRom, HOME-09's
+  overshoot). **Verified false alarm:** `Tasks/TasksFocusWeekSection.swift` matched the same grep
+  only in a doc-comment reference; it renders its own `WeekBarStrip`, never the trend chart.
+- `Home/WeekReviewView.swift:91-111` `barsCard` already renders a bar chart — but of task
+  **closures**, over a **rolling** window, not the **focus-minutes, calendar Mon–Sun** chart named.
+  Adding the widget as-is would leave two bar charts, contradicting "one".
+
+**Step 0 — ask E:** which bar chart survives. (a) the Mon–Sun focus widget (minus the trend line)
+replaces `barsCard`; closures stay as text (`headline`/`dopamineWins`/`quietLine` already do this)
+— the record names Mon–Sun specifically, which only this widget is; (b) one new chart plots both
+closures and focus minutes, Mon–Sun; (c) drop `FocusAnalyticsSection` entirely, nothing moved,
+since Week Review already has "a bar chart". **Recommend (a).** Whichever wins, it must shed its
+`currentStreak` stat (HOME-04, a fourth streak reading), its minutes/hours toggle (one of HOME-09's
+"3 toggles"), and gate its goal bar on `focusDailyGoalMinutes` actually being set (E1).
+- `HomeWeekReviewRow.swift:34-49` `weekReviewDestination` already threads `homeService`/
+  `nudgesService` data into `WeekReviewView` — extend with session data for whichever chart wins.
+- Delete `MomentumScoreboard.swift:246-253` `streakLine` once nothing calls it (E1 already replaced
+  its Task Detail consumer).
+
+**Tests that must be REVERSED, not deleted.**
+- `MomentumWeekReviewTests.swift:58-69` `testBuild_dayBarsCoverSevenDays` — reverse if `barsCard`
+  survives under (a)/(b); delete only under (c).
+- `MomentumWeekChartsTests.swift:47-71` `testClosedPerDay_*` — input was Today's chart
+  (`HomeMomentumSections.swift:76`, deleted in E3); reverse to absence or delete with the function.
+- `FocusAnalyticsTests.swift` — check for `ProductivityTrendChart`/`rollingDays` coverage; reverse
+  to assert the trend-line path is gone.
+- None found by grep for `WeeklyFocusSummaryWidget` inside `Home*Tests`.
+
+**Acceptance criteria**
+- [ ] RED first, red-checked, failures counted.
+- [ ] SwiftLint, full suite, build all pasted.
+- [ ] `screenshots/week-review-one-chart/` + README, light/dark.
+- [ ] `apple-design` review owed — cite `charting-data.md › Designing effective charts` (HOME-09)
+      and `› Best practices` against the finished single chart.
+- [ ] No Reduce Motion site touched by the consolidation itself; if the goal bar gains an appear
+      animation, name it and its RM path explicitly instead.
+- [ ] No `firestore.rules` change — everything here is derived/display.
+
+**Dependencies:** E1 (goal-off gating), E3 (Today no longer hosts these charts or the `weekReviewRow`
+line this block's copy sits beside).
+
+---
+
+### FEATURE: F-E5-EveningFirstThing — evening "tomorrow's first thing" prompt  [ ] NOT STARTED
+
+**What E chose.** Round 3, idea list, E verbatim: *"Add 1, 3, 4, 5, 6, 7, 8, 9, 10"* — idea 6,
+*"Evening 'tomorrow's first thing'. After a set hour, the card asks which then-list item goes first
+tomorrow. That pre-decides the morning."* The record is explicit this idea's shape is unresolved:
+*"its shape details are NOT decided (which hour, the default, and whether it pins)."*
+
+**The shape (verify, do not trust).** Reuses E3's pin mechanism — "pre-deciding the morning" reads
+as writing tomorrow's chosen task into the same pin store, read back as tomorrow's slot-order
+winner. No new model beyond a trigger hour and an answered-today marker (`NudgeFirstRunMarker`'s
+per-uid `UserDefaults` shape, keyed by date instead of a boolean).
+
+**Step 0 — ask E, before any code:**
+1. **The hour** — fixed (e.g. 18:00), Settings-configurable, or device-signal-derived (no such
+   read exists today, so out of scope)? Recommend fixed default + Settings override.
+2. **Does answering it pin?** Recommend yes — it is the simpler model and matches idea 6's own
+   text; "no" would need a second, independent suggestion field alongside the pin.
+3. **Unanswered behaviour** — reappear every evening, or drop after one dismissal? Recommend:
+   reappear until answered or the "then" list is empty.
+
+**Do not build past Step 0 in this block.** Once answered, this is a state variant of E3's card,
+not a new screen — write the shape/tests/acceptance list in a follow-up pass.
+
+**Tests that must be REVERSED, not deleted.** None found by grep for "tomorrow"/"evening" — new
+surface, no prior implementation.
+
+**Acceptance criteria**
+- [ ] Step 0 answered by E before any other checkbox here is attempted.
+- [ ] (Deferred) RED-first tests, SwiftLint/suite/build pasted, `screenshots/` + README,
+      `apple-design` review, RM-on pass if a new transition is added.
+- [ ] `firestore.rules`: none anticipated if pin-only; revisit if Step 0 answer 2 goes the other way.
+
+**Dependencies:** E3 (the pin store and the card this extends). Blocked on Step 0.
+
+---
+
+## Arc F — the focus sprint (build specs)
+
+Source: `handoff/SESSION-OPENER-adhd-ux-audit-design.md` rounds 4a/4b/4c + the round-4 carry-overs,
+round 10b's Details renames; `handoff/ADHD-UX-AUDIT-WORKING-FINDINGS.md` §H (FOCUS-01–11, LA-01–04),
+§C (widgets/LA/notifications), §M (RM-01, A11Y-06); boards `57`/`58`, frames
+`screenshots/adhd-ux-audit/round-4c-sprint-controls/`; the deleted probe
+`scripts/audit/probes/AuditSprintControlsRenderProbe.swift.txt` (never re-add it to the test
+target — it is `.swift.txt` on purpose).
+
+Build order: after arc C (Decision A, the audit close-out). Within F: **F2 depends on F1** (the
+Live Activity's `ContentState` carries the checkpoint fields F1 retires — building F2 first would
+touch the same wire type twice). **F4 depends on F1 and F3** (the Focus screen mounts the same
+six-control block F3 builds for the card). F5 is independent of F1–F4 but edits `TaskDetailView.swift`,
+which arcs A/B/C also touch — land it after those to avoid conflicts. Arc E's "leave-by" card and
+shrinking time bar (round 3, idea 8/1) **consume** F5's calendar-read seam; F5 does not depend on
+arc E.
+
+## Test triage — three kinds, not two
+
+The brief asks for tests "reversed, not deleted". Two subsystems here (checkpoints/cadence) are not
+being changed, they are being **retired** — there is nothing to reverse them to, because the
+behaviour they assert no longer exists. Every block below sorts its tests into:
+- **(a) reverse** — the surface stays, the assertion flips (a string, a control set, an identifier).
+- **(b) delete** — the concept is retired; name the file, cite the design-record line as the WHY,
+  and delete the whole file rather than gutting it into a shell.
+- **(c) must stay green, unmodified** — named because a naive sweep could catch it by accident.
+
+## Every block below owes (not repeated per block)
+
+- [ ] RED first; a red-check that restores the deleted/changed code and counts the failures, then
+      restores from git.
+- [ ] SwiftLint 0, the full suite, and the build — real pasted terminal output, not a summary.
+- [ ] `apple-design` review (§7.6) — every block in this arc changes something a person sees or
+      feels.
+- [ ] A `screenshots/<folder>/` + README for anything settled by looking (named per block below).
+- [ ] No `firestore.rules` change unless a block says otherwise (none in this arc changes the
+      rules file itself — F5's new field sits inside the existing generic per-user allow).
+Only genuine deltas — a required RM-on pass, a `#available` Verified-paths line, a device check —
+are called out per block.
+
+### FEATURE: F-F1-HeadsUpReplacesCheckpoints — the 5-minute heads-up replaces mid-sprint checkpoints  [ ] NOT STARTED
+
+**The largest block in the arc, and it is genuinely one unit, not five.** `FocusActivityAttributes.ContentState`
+(`FocusTimerWidget/FocusActivityAttributes.swift:18`) is compiled into **both** the app and the
+widget target — ActivityKit matches an Activity across processes by this type — so the checkpoint
+fields cannot be retired on one side only. If the build session judges this too large for one
+reviewable unit, splitting into **F1a** (subtraction: delete the checkpoint/cadence subsystem
+app-wide, red-check = restore the deleted files and count failures) and **F1b** (addition: the
+heads-up, pure-logic TDD) is sanctioned — say so in the report rather than silently trimming scope.
+
+**What E chose:** round 4a, **"Heads-up replaces checkpoints"** — *"ONE alert at 5 minutes left: in
+the app a haptic, a soft sound and the ring changing colour; when away, a notification. The
+mid-sprint checkpoints go, with the 'In-Sprint Nudges' stepper, `FocusNotificationPlanning.checkpoint`,
+the checkpoint dots and caption, 'Flow calibration' (`Focus/FocusModels.swift:107`) and the Nudge
+cadence card."* Carried by E's own Q2 answer: *"Timer + Current Task + Primary Actions (+5m / End)
+ONLY... Include a subtle, non-intrusive 5-minute remaining heads-up notification/haptic transition."*
+
+**The shape — what retires (delete the file/region, delete its tests, no reverse):**
+- `Focus/FocusCadenceEditorCard.swift` (whole file) — the "Nudge cadence" card
+  (`:27-34` `LabeledContent`/`Label("Nudge cadence", ...)`), its editor, Apply.
+- `Focus/FocusCadenceDraft.swift` (whole file) — the draft type the editor above stages.
+- `Focus/FocusNudgeCadence.swift` — `enum FocusNudgeCadence` (`:19-48`) and its `checkpoints(forDurationSeconds:)`.
+  Keep `FocusSessionLogging` (`:14-16`) and `FocusNudgeCadence.standardDurationSeconds` if
+  `FocusSprintConfiguration.defaultDurationSeconds` still reads it, or fold that one constant in.
+- `Focus/FocusModels.swift`: `FocusSession.nudgeCheckpoints`/`triggeredCheckpointIndices` (`:21-25`),
+  `advance(toRemaining:)`'s checkpoint-crossing return (`:70-79` — keep the method, drop what it reports),
+  `replanCheckpoints(to:)` (`:81-98`), `checkpointPrompt(index:total:)` (`:100-113`, **"Flow
+  calibration" is `:107`**) — this is the whole `enum FocusCheckpoints` (`:196-244`) too:
+  `evenlySpaced`, `interval`, `replanned`. Keep `minimumIntervalSeconds`/`minimumDurationForCheckpoints`
+  only if another site still floors a duration on them (check before deleting).
+- `Focus/FocusSprintPresentation.swift`: `enum FocusCheckpointDotState` (`:62-112`, incl. the raw
+  `.green` at `:88` — tell arc A its colour-job list loses this site and
+  `FocusTimerWidget/FocusActivityComponents.swift:115`, both dying with the dots, not fixed by a
+  colour swap).
+- `Focus/SprintRingGeometry.swift` — the dot-on-dial maths, now unused.
+- `Focus/FocusTimerBarContent.swift`: `checkpointDots` (`:258-274`), the dial import in `sprintRing`
+  (`:202` `.overlay(checkpointDots)`), the `titleColumn`'s checkpoint `Group` (`:237-249`, incl.
+  "No checkpoints this sprint"/"✓ All N checkpoints reached"), the `checkpointBanner` param/row
+  (`:27`, `:86-92`).
+- `Focus/FocusSessionService.swift`: `checkpointBanner` (`:26`), `cadence` (`:54`), `updateCadence(_:)`
+  (`:223-232`), the checkpoint-prompt lines in `syncNow()`/`tick()` (`:330-333`, `:348-351`).
+  `start(...)`'s `cadence:` parameter goes; keep the method's other params.
+- `Focus/FocusNudgeCadence.swift:50-61` `FocusSessionService.start(plan:)` — drop the `cadence:` arg.
+- `Focus/FocusSprintConfiguration.swift`: `maximumNudgeCount`, `clampNudgeCount`, `resolvedNudgeCount`
+  (`:16,30-37`); `FocusSprintPlan.nudgeCount` (`:45,55,64,79,95`) and its two `nudgeCount:`
+  constructor args.
+- `Tasks/TaskFocusPlanSection.swift`: `nudgeCountRow` (`:212-217`, **the "In-Sprint Nudges"
+  stepper**), `cadencePreview`/`cadenceTimeline` (`:227-272`), the `checkpoints` computed prop
+  (`:46-48`), the footer's "chime and haptic pulse" copy (`:62-65`). The `nudgeCount: Binding<Int>`
+  parameter and its two call sites (`Tasks/TaskDetailView.swift:164`,
+  `Tasks/TaskDetailFormSections.swift:48`) go with it — `TaskFocusPlanSection` keeps only the
+  launch row, the preset chips and the fine-tune stepper.
+- `Tasks/TaskModels.swift:26,50,64,77` / `Tasks/TaskDetailModels.swift` (three structs, `:19,39,54,67`,
+  `:91,103,112`, `:126,132`) / `Home/HomeModels.swift:73,84,94,102` — the `nudgesCount`/`nudges_count`
+  field on every task-shaped type. **Leave the Firestore field alone** (stop writing it; a document
+  that already has `nudges_count` keeps it — harmless dead data, no `firestore.rules` change, no
+  migration). `Firebase/FirestoreFieldPayloads.swift:44-45` stops emitting the key.
+  `Tasks/TaskUpdateValidation.swift:71-77` drops its clamp branch.
+- `Focus/FocusWidgetPublishing.swift:45` and `FocusTimerWidget/FocusWidgetSnapshot.swift:146,212-219`
+  (`FocusCheckpointCopy.summary`) and `FocusTimerWidget/FocusSprintWidgetSection.swift:58` — the
+  Home Screen static widget's "N nudges"/"N of M checkpoints" text (§C: "medium shows '15m sprint ·
+  N nudges'"). Grep `FocusCheckpointCopy` and `checkpointSummary` for the rest; this is a third
+  surface beyond the app and the Live Activity and it is easy to miss.
+- `FocusTimerWidget/FocusActivityAttributes.swift:18` `ContentState`: drop `checkpointCount`,
+  `checkpointsReached`, `checkpointSeconds` and `checkpointMarks(isComplete:)`/`checkpointSummary(isComplete:)`
+  (`:83-112`); update the hand-written `Codable` (`:159-186`) to match — an Activity is swept at
+  every launch (`FocusActivityKitMirror.init`, `+FocusActivityKitMirror.swift:48`), so there is no
+  live cross-update Activity to keep decodable, unlike `CompletedFocusSession.confirmedAt`'s trap.
+  `FocusTimerWidget/FocusActivityComponents.swift`: delete `FocusSprintProgressTrack`'s `markers`
+  (`:63-81`) and `FocusCheckpointMarker` (`:91-124`); keep `fill` (the progress bar itself stays —
+  it just draws no dots) and `FocusCheckpointCaption` only if F2 finds another use for it (likely
+  not — delete alongside).
+- `Focus/FocusActivityMirroring.swift:12-30` `FocusActivitySnapshot`: drop `checkpointCount`,
+  `checkpointsReached`, `checkpointSeconds`.
+- `Focus/FocusSprintPersistence.swift:13-79` `PersistedFocusSprint`: drop `nudgeCheckpoints`,
+  `triggeredCheckpointIndices`, `cadenceCount`, `cadenceIntervalSeconds`, the `cadence` computed
+  prop. **Write a test that decodes an OLD-shaped JSON blob** (one written by the current code,
+  with those four keys present) through the NEW slimmed `Codable` struct and asserts it still
+  restores — `JSONDecoder` ignores unrecognised keys by default, so this should pass, but it is the
+  one persistence seam nobody has verified empirically and a live mid-sprint update must not lose
+  the sprint.
+- `Focus/FocusCompletionCard.swift:40-53` — the finished-card summary appends "· N checkpoints".
+  `checkpointsReached` will always be `0` going forward (Firestore's `CompletedFocusSession.checkpointsReached`,
+  `FocusModels.swift:126`, **stays in the struct, decodable, just never non-zero for a new
+  record** — same optional-tolerance rule as `confirmedAt`, `:139-145`). Cut the checkpoints clause
+  from the copy entirely rather than leaving a guard that can never fire.
+
+**What's added (pure logic first, TDD):**
+- A single fired-once flag replacing the whole checkpoint array — e.g. `FocusSession.hasFiredHeadsUp: Bool`,
+  set the moment `remainingSeconds` crosses 300s (mirrors `advance(toRemaining:)`'s existing crossing
+  detection at `FocusModels.swift:72-79`, now reporting one crossing instead of N).
+- `ScheduledFocusNotification.Kind` (`FocusNotificationPlanning.swift:10-13`): replace `.checkpoint(index:)`
+  with `.headsUp`; `FocusNotificationPlanning.plan(session:deadline:now:)` (`:47-82`) schedules it at
+  `deadline - 300s` instead of the checkpoint loop, only when `remainingSeconds > 300` at plan time
+  (see Step 0 below for the ≤5-minute sprint case).
+- In-app effect on the crossing: haptic `.light`, the soft sound (Step 0), and the ring recolouring
+  to `Color("StateWarn")` for the remainder of the sprint (stated default — it is the token this
+  app already uses for time-pressure on these surfaces, e.g. `FocusTimerBarContent.swift:240`'s
+  "Next checkpoint" text; E may overrule). Wire it the way `checkpointBanner` used to: a published
+  flag `FocusSessionService` sets in `tick()`/`syncNow()` when the crossing fires, read by
+  `FocusTimerBarContent.sprintRing`'s `arcStyle` and by a `.haptic(_:trigger:)` call.
+
+**Tests — (a) reverse:** `FocusNotificationPlanningTests.swift` (`testPlan_schedulesEveryCheckpointStillAhead`
+etc., `:41-116`) → heads-up scheduling. `FocusSprintPresentationTests.swift:74-98`
+(`testDotState_*`) → delete with `FocusCheckpointDotState`; `:18-63` (`testHeroAction_*`) **stay
+green, untouched** (Home's hero, not this arc — see the note below). `FocusSessionServiceCadenceTests.swift`
+(all 8, `:44-134`) → delete or replace with heads-up-crossing tests on the same seams
+(`syncToWallClock`, `tick`). `TaskFocusPlanSection`'s preview/host — no test file found by grep for
+"TaskFocusPlanSection"; check the UI journeys (`SprintSeedHarness`-adjacent) for a launch-row
+assertion that stages `nudgeCount`.
+
+**Tests — (b) delete, file and why:** `FocusCheckpointsTests.swift` (16 tests, pure cadence maths,
+retired). `FocusCadenceReplanTests.swift` (10 tests, `replanCheckpoints` retired).
+`FocusCadenceDraftTests.swift` (13 tests, the editor's draft type retired). `FocusActivityCheckpointMarkTests.swift`
+(16 tests, `FocusActivityCheckpointMark`/`checkpointMarks` retired). `SprintRingGeometryTests.swift`
+(4 tests, the dot-on-dial maths retired). Each deletion cites round 4a's "Heads-up replaces
+checkpoints" as the why in its own commit-adjacent comment or the block report — not silently.
+
+**Tests — (c) must stay green:** `FocusSprintPresentationTests.testHeroAction_*` (`:18-63`) — Home's
+`ActiveGoalSprintState` titles ("Start Session"/"Session Active"/"Session Paused",
+`FocusSprintPresentation.swift:34-36`) are arc E's hero, already superseded by round 5a's "H1 · Start
+first" redesign; F1 must not touch them even though the file also holds the (deleted)
+`FocusCheckpointDotState`. `FocusModels.swift`'s `CompletedFocusSession` Codable round-trip tests
+(`FirestoreDocumentCoderTests.swift`, `FirebaseFocusSessionAdapterTests.swift`) — `checkpointsReached`
+stays a decodable field; these must still pass unmodified.
+
+**Step 0 — ask E:**
+1. **The heads-up sound.** `Celebrations/CelebrationSound.swift` is scoped in its own header to
+   "full-screen celebrations only" with its switch OFF by default, and E's round-1 words were that
+   sounds are a first-class ADHD grounding cue. Three options: (a) reuse `CelebrationSoundPlayer`
+   and its existing "Celebration sounds" switch (cheapest, but broadens what that switch controls
+   and it defaults off, which is not "essential" grounding); (b) a new switch, own default
+   (recommend **ON**, since Q2 called the heads-up itself, not just celebrations, a first-class
+   sound cue); (c) always-on, no switch (simplest, but breaks the house pattern that every sound in
+   the app is a toggle). Recommend (b).
+2. **A sprint ≤5 minutes.** The presets include 30s/1m/2m/5m (`FocusSprintConfiguration.presetDurationsSeconds`).
+   A heads-up fired at "5 minutes left" on a 5-minute-or-shorter sprint fires at or before 0s.
+   Recommend: no heads-up below a floor (e.g. `durationSeconds > 300`), silently — the finished
+   notification is enough warning on something that short.
+3. **+5m after the heads-up already fired.** Does a Custom/+5m extension re-arm a fresh 5-minutes-out
+   heads-up, or does the flag stay spent for the rest of the sprint? Recommend: stays spent — one
+   alert per sprint, matching Q2's "ONE alert", not one per extension.
+
+### FEATURE: F-F2-LiveActivityFiveMinuteOnly — the Live Activity: `+5m` only, `.widgetURL`, the minimal Island  [ ] NOT STARTED
+
+**Depends on F1** (touches the same `ContentState`).
+
+**What E chose:** round 4a, **"+5m only; End in the app"** — *"One control. Ending early happens in
+the app, where its confirm lives... This retires the Live Activity's unconfirmed Stop (LA-01) and
+its ~34pt Pause/Stop pair."* And: *"a tap opens the sprint (a `widgetURL`, LA-03), and the minimal
+Dynamic Island shows the time left (LA-04)."* Pause is retired from the Lock Screen too — round
+4a's Pause bullet: *"'Keep Pause in the app.' The in-app set is Pause · extensions · End."* (the
+Lock Screen's set is `+5m` alone, stated separately). §3's 44pt floor applies "within the height
+cap" (widget's own note, `FocusTimerWidgetLiveActivity.swift:168`, ~38pt is the LA's own precedent
+for a control that must live inside 160pt).
+
+**The shape:**
+- `FocusTimerWidget/FocusTimerWidgetLiveActivity.swift:171-203` `FocusSprintControls`: replace the
+  `Pause`/`Stop` `Button(intent:)` pair with one `Button(intent: ExtendFocusSprintIntent())` reading
+  "+5m", styled like the removed Pause tint (`Color.sprintAccent`) — no `StateRisk` colour left on
+  this surface, since Stop is gone. Delete the `.tint(Color("StateRisk"))` line (`:194`).
+- `FocusTimerWidget/FocusSprintIntents.swift`: delete `PauseResumeFocusSprintIntent` (`:41-55`) and
+  `StopFocusSprintIntent` (`:57-70`); add `ExtendFocusSprintIntent: LiveActivityIntent` calling a
+  new `FocusSprintIntentActions.extend: (() async -> Void)?` (`:20-23`'s pattern). Keep
+  `endAllActivities()` (`:26-38`) — the orphan sweep still runs at launch.
+- `ADHD LifeOS/Focus/FocusActivityKitMirror.swift:180-193` `withLiveActivityMirroring`: replace the
+  `pauseResume`/`stop` closure wiring with one for `extend`, calling `service.addSeconds(300)`
+  then `mirror.waitForPendingUpdates()` — same shape as the two it replaces.
+- `.widgetURL` (LA-03): add `.widgetURL(URL(string: "adhdlifeos://widget/focus/sprint"))` (or a
+  distinct host) to both the Lock Screen view and the Island's tappable region — the exact site the
+  routine LA uses at `FocusTimerWidget/RoutineLiveActivity.swift:27,127`
+  (`.widgetURL(URL(string: RoutineActivityAttributes.deepLink))`). Route it in
+  `ADHD LifeOS/AppDeepLink.swift:12-52`: today `.focusWidget` (path `[]`) does nothing but land on
+  Home (`:37`, comment "Nothing to do... which is what the widget shows") — that is wrong for a
+  tap that should open the sprint. Add a case, e.g. `.focusSprintScreen`, routed by a new path
+  segment, and give it `requiresSignedInUI = true` (`:29-38`) so a cold launch holds it in
+  `RootView.pendingWidgetLink` (`RootView.swift:56`) until the tabs mount
+  (`RootView+Doors.swift:85-98`).
+  - **Naming constraint, name it rather than solve it:** the sprint's detail-sheet presentation
+    flag (`isPresentingDetail`) is local `@State` on `FocusTimerBar`
+    (`ADHD LifeOS/Focus/FocusTimerBar.swift:45`), and `testTheRowIsNoLongerItsOwnDoor`
+    (`ADHD LifeOSTests/FocusBarCollapseCallSiteTests.swift:175-188`) asserts **exactly one** writer
+    of `isPresentingDetail = true` in that file. `RootView+Doors.openWidgetDoor` cannot reach that
+    local state directly. Two options for the build session: (i) lift the flag onto
+    `FocusSessionService` (already `@ObservedObject` in `FocusTimerBar`) so both the card's gesture
+    and the widget door write the same published property, updating the call-site test's "exactly
+    one writer" claim to name the service instead of the view; or (ii) route the widget door to
+    `selectedTab = .today` (where the card lives) and rely on the card being on-screen — cheaper,
+    but does not "open the sprint", only the tab it lives on. Recommend (i); it is what LA-03
+    actually promises.
+- Minimal Dynamic Island (LA-04): `FocusTimerWidgetLiveActivity.swift:83-90` `minimal:` currently
+  shows only the emoji (or a checkmark when complete). Add the countdown —
+  `FocusCountdownReadout(state:isComplete:timerMaxWidth:)` (`FocusActivityComponents.swift:129-160`)
+  already exists and is reused by `compactTrailing`; give the minimal slot a narrow `timerMaxWidth`
+  (the compact slot uses 56) rather than inventing new formatting.
+- Delete the checkpoint caption row from both presentations
+  (`FocusTimerWidgetLiveActivity.swift:57-76` bottom region's `FocusCheckpointCaption`, `:143-156`
+  Lock Screen's matching `HStack`) — F1 already deletes the type; this block's job is only to
+  confirm the layout reads correctly with one fewer row (the `+5m` button now sits where
+  Pause/Stop did, beside nothing).
+
+**Tests — (a) reverse:** `FocusSprintIntentsTests.swift` (all 6, `:63-123`) — Pause/Resume and Stop
+recorder tests become one Extend recorder test (`installRecordingActions`, `:55-59`); keep the
+"cold-launch sweeps orphans" shape (`:97-115`) pointed at the new intent.
+`RoutineActivityCallSiteTests.swift`'s pattern (not this file, a sibling to write) becomes the model
+for a new `FocusActivityCallSiteTests.swift` asserting: no `Button(` for Pause/Stop remains in
+`FocusTimerWidgetLiveActivity.swift`, exactly one `Button(intent: ExtendFocusSprintIntent())`, and
+the `.widgetURL(` line exists on both presentations (mirroring `testTheActivityCarriesNoButtons`,
+`RoutineActivityCallSiteTests.swift:96-105`). `AppDeepLinkTests.swift` (`:18-80`) — add a test for
+the new route beside `testWidgetTap_routesToTheWidgetDestination` (`:18`) and
+`testWidgetDoors_mustBeHeldForTheSignedInUI` (`:70`).
+
+**Tests — (c) must stay green:** `FocusActivityContentStateTests.swift` — re-read after F1's field
+removal; whatever remains (deadline/pause/isCompleted logic) must still pass untouched by F2.
+
+**Acceptance criteria — deltas beyond "Every block owes" (F1 and F2 both, F1's suite run needs the
+emulator up or an accepted skip since `Firebase*` schema tests are in the reversed/stays-green set):**
+- [ ] `screenshots/focus-sprint-heads-up/` (F1: ring recolouring + notification, light/dark) and
+      `screenshots/focus-live-activity-v2/` (F2: Lock Screen + both Island tiers, light/dark).
+- [ ] **Verified paths** line for F2's `#available(iOS 17.0, *)` (`FocusSprintControls`): the 17+
+      path (sim + device) and the 16.1–16.x floor (LA renders, no interactive button —
+      compile-checked only, §7.3, no older runtime installed).
+- [ ] No Reduce Motion site is added or changed by F1/F2 (the ring's colour change is a state swap,
+      not a spring) — say so; no RM-on device pass owed here (it is owed in F4, RM-01).
+- [ ] F1's persisted-sprint decode test (above) is pasted as its own result, not folded into "suite
+      green" — it is the one empirical check for the update-mid-sprint trap.
+
+### FEATURE: F-F3-CardControlsV2 — the card's six controls ("V2 · two rows"), haptics by meaning, the timer size  [ ] NOT STARTED
+
+**Depends on F1** (the card currently renders checkpoint dots on the ring, `FocusTimerBarContent.swift:202`
+— already deleted there).
+
+**What E chose:** round 4c, **"V2 · two rows"** — *"The four time buttons sit on top (+30 sec · +1
+min · +5 min · Custom, text only); big Pause and End sit below. Card 222pt, against 148pt today. At
+AX3 the time row wraps to 2×2. The collapsed card keeps Pause only. The focus screen uses the same
+two-row block, taller (56pt). At accessibility sizes the card's ring grows (128pt) and sits above
+the title."* Extensions, E verbatim (round 4b): *"Instead of five controls, Add a sixth control,
+allowing the user to enter a custom time extension."* Round 4 carry-overs (stated defaults, E may
+overrule): timer grows from `.caption2` (11pt) to `.callout` monospaced semibold; haptics differ by
+meaning through `.haptic(_:trigger:)`/`HapticFeel` — start `.solid`, Pause/Resume `.selection`, each
+extension `.light`, End (after its confirm) `.solid`, the heads-up `.light` (F1), finished keeps
+`.success`.
+
+**Measured-number check, do not trust without re-measuring:** the record says the timer sits "on
+the 70pt ring". The real card's expanded ring is `FocusBarMetrics.expandedRingSize = 64`
+(`ADHD LifeOS/Focus/FocusBarCollapse.swift:243`) — 70 was the throwaway probe's `MockRing` default
+(`AuditSprintControlsRenderProbe.swift.txt:186`), not the shipped constant. Render the real 64pt
+ring with the new controls before treating 222pt as settled; if it reads short, that is a
+legitimate reason to re-render for E rather than silently growing the ring to 70 unasked.
+
+**The shape:**
+- `ADHD LifeOS/Focus/FocusTimerBarContent.swift`: `expandedBody`'s control `HStack`
+  (`:99-125`, today three buttons + Spacer + Stop) becomes two rows: a 4-up row
+  (`+30 sec`/`+1 min`/`+5 min`/`Custom`, text-only per the record, using `controlButton`'s pattern
+  at `:276-295` but without `.labelStyle(.titleAndIcon)` glyphs) and a 2-up row (`Pause`/`End`,
+  full-width, `MomentumBorderedButtonStyle`/`MomentumSolidButtonStyle`-weight per board 58 rather
+  than the current 44pt-tall `controlButton`). Add `onExtend` callers for `60` (new, "+1 min") and
+  a `onCustom: () -> Void` opening the Focus screen's inline stepper (F4). Rename `focusBarStop` →
+  `focusBarEnd` (identifier and label) — see F4's "End is the stop word everywhere".
+  `testTheExpandedOnlyControlsAreGatedOnTheFlag` (`FocusBarCollapseCallSiteTests.swift:190-206`)
+  currently asserts `focusBarAdd30`/`focusBarAdd5m`/`focusBarStop` exist — reverse to the six new
+  identifiers (`focusBarAdd30`, `focusBarAdd1m`, `focusBarAdd5m`, `focusBarCustom`, `focusBarPause`,
+  `focusBarEnd`), keep the "gated on `!isCollapsed`" and "chevron leaves the collapsed card"
+  assertions unchanged.
+- **Collapsed card is UNCHANGED by this block** — ring + emoji + title + Pause only
+  (`collapsedBody`, `:58-82`). Confirm `testTheExpandedOnlyControlsAreGatedOnTheFlag`'s collapsed-body
+  assertions (`:207-` onward) still pass; do not let a card-height change leak into the collapsed
+  state.
+- The countdown text (`sprintRing`, `:193-198`): `.font(.caption2.monospaced().weight(.bold))` →
+  `.font(.callout.monospacedDigit().weight(.semibold))`. `A11Y-06` (§M): add
+  `.accessibilityAddTraits(.updatesFrequently)` here (`:197`, the finding's own citation) — a
+  countdown that changes every second should not spam VoiceOver's "value changed" announcements.
+- Extend `FocusBarMetrics` (`FocusBarCollapse.swift:171-`) with the new card height (measure the
+  real render rather than hand-copying 222), and an accessibility-size ring diameter (128, per the
+  record) — mirror the existing `expandedRingSize`/`collapsedRingSize` pattern (`:243-244`) with a
+  third tier gated on `dynamicTypeSize.isAccessibilitySize`, matching the probe's
+  `MockCard.body` branch (`AuditSprintControlsRenderProbe.swift.txt:203-214`).
+- Haptics: `FocusTimerBar.swift` already fires `.light` on grabber/collapse (`:186`) and `.light`
+  on Stop's confirm (`:150`) — reuse `.haptic(_:trigger:)` triggers per control rather than
+  `Haptics.play` calls buried in closures, matching the house rule in `Theme/Haptics.swift:79-84`.
+  Start (`.solid`) is `RootView+Doors.swift:19` `startFocus(_:)` — already `.success` today
+  (`Haptics.play(.success)`); the record calls for `.solid` at start — **conflict to name in the
+  report**: `Theme/Haptics.swift:36-39` documents `.taskClose`/success as "the celebratory success
+  feel", and start already uses it deliberately (comment: "the success haptic the web fires on
+  start"). Recommend keeping `.success` at start (existing, deliberate, and `.solid` is defined as
+  "a committed write landed" — a sprint starting is closer to §HapticFeel's `.success` case, "a
+  completion worth marking... starting a sprint" is literally `Theme/Haptics.swift:22`'s example).
+  **This is a discrepancy between the design record's stated default and existing, deliberate,
+  documented behaviour — flag it in the report rather than silently changing either.**
+
+**Tests — (a) reverse:** `FocusBarCollapseCallSiteTests.testTheExpandedOnlyControlsAreGatedOnTheFlag`
+(above). `FocusBarGeometryTests.swift` — re-read for hard-coded 148pt/three-button assumptions and
+update to the new metrics. `CTAHapticTidyCallSiteTests.testStoppingASprintBuzzesWhenTheConfirmationIsAcceptedRatherThanWhenItIsRaised`
+(`:89-107`) — string-matches `"Button(FocusStopConfirmation.confirmTitle, role: .destructive) {"`;
+if `FocusStopConfirmation` is renamed (F4), this citation must move with it.
+
+**Acceptance criteria — deltas:**
+- [ ] `screenshots/focus-card-v2/` — light/dark/AX3, expanded and collapsed, the real 64pt ring
+      (not the probe's 70pt); board 58 chose from renders, so the real card owes its own look.
+- [ ] **RM-on pass:** none of F3's own changes touch a Reduce Motion site (the ring's per-second
+      spring is already gated, `FocusTimerBarContent.swift:203-206`) — say so, UNLESS the new
+      accessibility-size layout adds a transition (e.g. the ring moving above the title), in which
+      case it needs a reduced path and the pass is owed.
+- [ ] Device check on E's phone: haptics by meaning (record says so explicitly), and thumb reach
+      across two rows of small buttons — neither is simulator-verifiable.
+
+### FEATURE: F-F4-FocusScreenAndDetails — "Focus screen + Details", the inline stepper, "End" everywhere, round 10b's renames  [ ] NOT STARTED
+
+**Depends on F1 and F3** (mounts F3's control block; F1 has already stripped the checkpoint
+timeline/cadence card this file used to show).
+
+**What E chose:** round 4b, **"Focus screen + Details"** — *"A big ring with the time left, the
+task title, and the controls pinned at the bottom (Q8). One 'Details' row reveals the timeline and
+session stats... the grabber stops stealing taps from the title."* **Ending a sprint → "End"** —
+*"The word is End everywhere, and the confirm reads 'End sprint?'. 'Close it' only ever means 'the
+task is done'."* Round 4c: **"Inline stepper"** — *"Custom opens a row on the focus screen: − N min
++ · Add. Tapping Custom on the card opens the screen with that row ready. Whole minutes, no
+keyboard, no second sheet."*
+
+**The shape:**
+- `ADHD LifeOS/Focus/FocusSprintDetailView.swift` is the file to rebuild, not just edit — its
+  current `sprintContent(_:)` (`:63-77`) stacks a checkpoint banner, a 236pt ring, identity, the
+  full timeline card, the cadence editor and the controls, all in a scrolling `LazyVStack` — this
+  is exactly FOCUS-01/02's "≈14 regions... 12 before any control" and Q8's "scroll with content".
+  New shape: ring + title pinned near the top (no scroll needed for them), F3's control block at
+  56pt (record's number) pinned at the bottom via `.safeAreaInset(edge: .bottom)` (the house
+  pattern for a keyboard-adjacent bottom bar is round 7b's L3, `layout.md`'s "Adaptability" citation
+  in findings §L — same technique, no keyboard here but same reason: controls must not scroll away),
+  and ONE "Details" disclosure row between them that reveals `FocusSprintTimelineCard` (trimmed by
+  F1 to its two remaining phase cards) below the fold.
+- The `checkpointBanner(_:)` function (`:138-145`) and its call (`:66-68`) are gone with F1.
+- `statusRow(_:)` (`:99-108`) is **dead code today** — grep confirms it, defined but never called in
+  `sprintContent`. Either delete it outright or, if the rebuilt screen wants a status line, wire it
+  in with F4's renamed copy ("Sprint paused"/"Sprint active" rather than "Session paused"/"Active
+  focus sprint" — the "session"→"sprint" rename, scoped to this file, not Home's hero).
+- `identity(_:)` (`:111-125`)/`countdown(_:)` (`:149-181`) — keep the ring
+  (`ClosureRing(progress:size:lineWidth:arcStyle:)`, `:151-157`), **but gate its spring** the way
+  `FocusTimerBarContent.sprintRing` already does (`.transaction { if reduceMotion { $0.animation =
+  nil } }`, `FocusTimerBarContent.swift:205-207`) — **this is RM-01**, findings §M: *"The sprint
+  sheet's 236pt ring springs every second under Reduce Motion... `nil` is correct. It rides into
+  round 4b's Focus screen build."* This is a REQUIRED Reduce Motion fix, not optional.
+- **`"1 of 15 min logged"` → `"1 of 15 min done"`** (`:167`, round 10b, exact string match, cite it
+  verbatim in the diff).
+- Extend chips (`:205-217` `extendChips`) — retired; F3's control block replaces them (no separate
+  "+1/+5/+10 min" row distinct from the card's own extension buttons — one set of extension
+  controls, not two different ones as today's FOCUS-04 finding names).
+- `controls(_:)` (`:219-270`) — retired in favour of F3's shared block. The green "Close it ✓"
+  button that actually stops the sprint (`:236-243`, FOCUS-03) is deleted; its job is now the
+  shared block's "End" button, tinted `StateRisk` like the card's, with the SAME
+  `FocusStopConfirmation`-style dialog (rename the type/copy — see below).
+- **"End" everywhere:** rename `FocusStopConfirmation` (`FocusSprintPresentation.swift:136-147`) —
+  suggest `FocusEndConfirmation` for symbol/string consistency, though the design record only
+  requires the DISPLAYED words to change (`title` "Stop this sprint?" → "End sprint?",
+  `confirmTitle` "Stop sprint" → "End sprint"; `cancelTitle` "Keep going" stays). If renamed, update
+  `CTAHapticTidyCallSiteTests.swift:92`'s source-string match (F3 already flags this dependency).
+- **Round 10b's Details renames** (`FocusSprintTimelineCard.swift`, post-F1's trim to two phase
+  cards): `"Deep entry"` → `"Getting started"` (`:202`); `"Sprint target"` title/value/caption
+  combo → `"Length 15 min · saved when it ends"` (`:212-214` — this is a re-word of the title AND
+  caption together, not a single string swap; keep the value's `FocusTimeFormatting.human(seconds:)`
+  call, just change what wraps it). The "Cadence" phase card (`:206-210`) is deleted by F1 (nothing
+  to rename — no cadence exists any more); if round 10b's silence on it reads as "keep it", that is
+  a Step 0, but the more consistent reading is deletion, since its content (`"N checkpoints"`) is
+  gone.
+- **The inline stepper** ("− N min + · Add", whole minutes, no keyboard, no second sheet): new row
+  on the Focus screen, shown when Custom is tapped (from the card or from the screen itself). Stated
+  default (E may overrule): opens seeded at the task's own configured sprint length rounded to the
+  nearest minute, range 1–60. `−`/`+` are 48×48pt buttons (Q7's "key targets" bar) either side of a
+  `Text` showing "N min"; "Add" commits via `service.addSeconds(_:)` and dismisses the row. This is
+  new UI with no existing file — house pattern to copy: `Focus/FocusCadenceEditorCard.swift`'s
+  now-deleted `Stepper` + preset-chip shape is the closest precedent for "adjust a number inline,
+  no sheet", even though the type itself is retired.
+- The grabber (FOCUS-10): `FocusTimerBar.swift`'s own grabber (`:168-182`) is unaffected — FOCUS-10
+  is about the SHEET's drag handle overlapping the title inside `FocusSprintDetailView`'s presentation,
+  which is a `.sheet` default grabber, not a custom view. Check whether `.presentationDragIndicator(.visible)`
+  or a custom top inset is what is actually overlapping (grep for `.presentationDragIndicator` — none
+  found by an initial grep, so the default system grabber is likely the culprit; adding
+  `.padding(.top, ...)` to the title so it clears the system indicator's hit region is the likely
+  fix, verified by the build session against the real sheet, not assumed here).
+
+**Tests — (a) reverse:** `FocusSprintPresentationTests.swift:101-127` (`testStopConfirmation_*`) —
+reverse to "End sprint"/"Stop sprint"→"End sprint" wording, update the symbol name if renamed.
+Round-10b string tests: grep for `"1 of 15 min logged"`, `"Deep entry"`, `"Sprint target"`,
+`"Logged on finish"` across `ADHD LifeOSTests/` — none were found by this session's greps (all
+`0` hits), meaning **no existing test currently pins these exact strings**; write new ones rather
+than reversing.
+
+**Tests — (b) delete:** any test exercising `FocusCadenceEditorCard`/`FocusSprintTimelineCard`'s
+checkpoint track (grep `focusCheckpointPin`, `focusCheckpointInspector`, `focusCadence*` — none
+turned up a dedicated view-level test file by name in this session's sweep, but `FocusSessionServiceCadenceTests.swift`
+already listed under F1 covers the service side).
+
+**Acceptance criteria — deltas:**
+- [ ] `screenshots/focus-screen-details/` — the ring, Details collapsed/expanded, the inline
+      stepper, light/dark/AX3.
+- [ ] **RM-01 is a required fix here, and the RM-on device pass (§7.3) IS owed**: E must look at
+      the rebuilt Focus screen with Reduce Motion ON and confirm the ring no longer re-springs
+      every second. State both the sim-injected and the device pass in "Verified paths".
+- [ ] Sentence-case copy throughout new/renamed strings (round 10b, X-CAPS — "End sprint", not "End
+      Sprint").
+
+### FEATURE: F-F5-CalendarBlockTime — calendar access (read + write) and "Block time for a task"  [ ] NOT STARTED
+
+**Independent of F1–F4.** Touches `Tasks/TaskDetailView.swift`, which arcs A/B/C also edit — land
+after those. Nothing here exists in the codebase today: `grep -rn "EventKit\|EKEventStore"` over
+`ADHD LifeOS/` returns zero hits, so this is new, not a reversal.
+
+**What E chose:** round 4b, verbatim: *"Yes - add BOTH read-AND-write capabilities."* Round 4c:
+**"Block time for a task"** — *"From a task, the user picks a free slot and it becomes an event; the
+event opens the task. The app writes ONLY to its own 'ADHD LifeOS' calendar and never edits or
+deletes the user's existing events. The purpose string says exactly that."* Build notes from round
+4b: *"Read + write is FULL calendar access: `requestFullAccessToEvents` on 17+,
+`requestAccess(to: .event)` on the 16 floor (§7.1)... asked in context, never at launch."*
+
+**The shape — this is mostly new construction, so cite the seams to reuse rather than existing
+lines to edit:**
+- **Permission seam:** follow `Focus/FocusNotificationPlanning.swift:88-97`'s
+  `FocusNotificationScheduling` convention — a narrow `CalendarAccessing` (or similarly named)
+  protocol with a real `EKEventStore`-backed implementation and a fake for tests, per CLAUDE.md's
+  "Adapters depend on a per-feature protocol, never on the concrete SDK type directly" rule (the
+  Firebase-adapter rule, generalised — same reasoning applies to any system SDK singleton).
+  `Settings/NotificationCenterAuthorizationReader.swift` /
+  `Settings/NotificationAuthorizationReading.swift` is the second precedent (an OS-permission
+  reader with its own protocol seam).
+  `#available(iOS 17.0, *)`: `EKEventStore().requestFullAccessToEvents { granted, error in }`.
+  Floor (16.0–16.4): `EKEventStore().requestAccess(to: .event) { granted, error in }`. Both branches
+  complete, per §7.1.
+- **Info.plist purpose strings** — add beside the existing pattern in
+  `ADHD LifeOS.xcodeproj/project.pbxproj:622-627` (and the duplicate Release block `:665-670`):
+  `INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription` (17+ full access) and
+  `INFOPLIST_KEY_NSCalendarsUsageDescription` (legacy key, still read on the 16 floor for
+  `requestAccess(to:.event)`). Both strings must say the app writes only to its own calendar and
+  never touches the user's existing events (round 4c's exact promise) — do not reuse the location
+  string's tone (`:623-624`) verbatim, write one for calendars specifically.
+- **"Privacy-manifest line"** (round 4b's phrase): this repo has **no `PrivacyInfo.xcprivacy` file
+  at all** (checked, zero hits for `xcprivacy`/`NSPrivacyAccessedAPICategory` anywhere in the
+  project) — none of the app's existing permissions (camera, location, microphone, photos, speech)
+  have one either. EventKit is not on Apple's current Required-Reason API list, so this is likely
+  satisfied by the Info.plist purpose strings alone. **Confirm this during the build** (Apple's
+  list changes) rather than trusting this spec — if a manifest entry turns out to be required,
+  it is new ground for this project and worth flagging to E regardless.
+- **The app's own calendar:** create-if-missing an `EKCalendar` named "ADHD LifeOS" under
+  `EKEventStore.defaultCalendarForNewEvents`'s source (or the first writable local/iCloud source),
+  store its `calendarIdentifier` (UserDefaults, device-local — same tier as
+  `UserDefaultsFocusSprintStore`, not Firestore). All writes target this calendar only; never call
+  any EventKit method against a calendar the app did not create.
+- **A new task field** to remember which event a task is blocked to (so "the event opens the task"
+  works both ways): e.g. `calendarEventId: String?` on `TaskItem`/`TaskDetailModels` — follow the
+  existing optional-field convention (`focusDurationSeconds`, `:22` in `TaskModels.swift`) and the
+  snake_case tasks convention (`calendar_event_id` in `FirestoreFieldPayloads.swift`, beside
+  `nudges_count`'s old spot). The generic `collection in [...]` allow in `firestore.rules` already
+  covers a new field on an existing per-user document — **no `firestore.rules` change, no E
+  republish**, confirm this reading during the build rather than asserting it as fact.
+- **Deep link, so "the event opens the task" is real from the system Calendar app too:** a URL
+  scheme in the created `EKEvent`'s `.url` or `.notes` pointing back into the app
+  (`adhdlifeos://task/<uuid>` — check whether a task-opening deep link already exists; this
+  session's reading found only the widget/auth cases in `AppDeepLink.swift`, so a task route is
+  likely new and belongs in this block too).
+
+**Tests — none found by grep** for "EventKit", "EKEventStore", "Calendar" (feature sense) in
+`ADHD LifeOSTests/` — this is new-feature TDD from a blank slate, not a reversal. Write the
+permission-seam tests against a fake first (mirroring `FakeFocusActivityMirroring.swift`'s shape),
+then the "creates the calendar once, never twice" test, then the free-slot/event-creation logic as
+pure functions over a supplied list of busy periods (no EventKit call in the pure test).
+
+**Acceptance criteria — deltas:**
+- [ ] UI-level EventKit calls are effectively unverifiable on the sim without a signed-in Calendar
+      account — say so, and rely on the seam tests plus a device check.
+- [ ] `screenshots/calendar-block-time/` once Step 0 below is answered and a design exists to
+      photograph (not owed until then).
+- [ ] Device check on E's phone: the real permission dialog, a real calendar write, and "tap the
+      calendar event, land on the task" — none of this is simulator-verifiable.
+- [ ] **Verified paths** line for the `#available(iOS 17.0, *)` permission-request split.
+- [ ] Confirm the `firestore.rules` reading above empirically before claiming "no rules change".
+
+**Step 0 — ask E (this whole block is gated on it):** round 4c names WHAT calendar write means
+("pick a free slot, it becomes an event") but there is **no rendered design and no chosen option**
+for the slot-picker UI itself — unlike every other block in this arc, which points at a board E
+already chose from. Per `CLAUDE.md`'s `build-in-a-fresh-session` memory and §7.6 ("check each
+option against `apple-design` before design options go to E"), this needs a Step 0 render pass —
+2–3 slot-picker shapes (e.g. a list of "Today 14:00–14:30 free", a mini day-timeline with tappable
+gaps, or a simple duration-then-earliest-slot one-tap) — **before** this block is built, not
+inside it. Recommend: the build session stops after the permission seam and the calendar-creation
+logic (both fully spec'd and TDD-able right now) and hands the picker UI to a Step 0 render pass,
+the same shape `round-7b-composer-layouts` used for the composer.
+
+---
+
+## Arc A — Copy and colour jobs
+
+Source: `handoff/SESSION-OPENER-adhd-ux-audit-design.md` rounds 6, 8, 9, 10a, 10b; findings in
+`handoff/ADHD-UX-AUDIT-WORKING-FINDINGS.md`. Pure copy/colour-token edits — **no schema, no new
+palette values** (Q6; round 9 routed ALL contrast to the held colour arc — do not touch contrast).
+Four blocks, build in order (A2 depends on A1's rename landing first at one shared line; A4 depends
+on A3's Appearance-footer edit landing first). Each is one reviewable unit.
+
+---
+
+### FEATURE: F-A1-WordsAndStats — round 8's words: "Still open", the header count, quiet areas, inbox stats  [ ] NOT STARTED
+
+**What E chose** (round 8 + follow-up, `SESSION-OPENER-adhd-ux-audit-design.md:378-422`):
+- *"Still open"* (Recommended) replaces "Overdue" on rows. *"Where the row sits in the list must
+  say that, and the build owns it."*
+- *"Remove it; the rows say it"* (Recommended): "12 OPEN · 2 OVERDUE" → "12 open"; "0 OVERDUE" never
+  prints.
+- *"Neutral 'last closed Tue', no colour"* (Recommended) for quiet areas.
+- *"Framed as progress"* (Recommended): section re-headed "This week" (was "INBOX HEALTH"); its bars
+  + *"2 sorted · 7 captured this week"* lead with what was DONE; header reads *"5 to sort"*, no
+  longer orange; gone: the age line and *"decide or bin them"*; the S1 counterweight "survives,
+  reframed done-first."
+
+**The shape (verify, do not trust):**
+
+*1. "Still open"*
+- `Tasks/TaskRowPresentation.swift:72` `if dueDay < today { return "Overdue" }` → `return "Still open"`.
+- `LifeAreaDetail/AreaTaskRow.swift:92` `parts.append("Overdue")` → `parts.append("Still open")`.
+  (This view's `metaLine` re-derives the same overdue/due-today logic inline rather than calling
+  `TaskRowPresentation` — not this arc's job to consolidate, flag it in the report.)
+- E's carried note requires the ROW POSITION to say a task was due earlier, since the word alone no
+  longer does. `Tasks/MomentumTaskBuckets.swift:104-118` `sorted(_:)` sorts by priority then effort
+  then insertion order, with no due/overdue distinction. **Overdue must be the PRIMARY sort key, not
+  a same-priority tiebreak** — a tiebreak leaves a P2 task due last Tuesday sitting below every P1
+  due today, which says nothing about it being overdue (E's "must say that" requirement, unmet).
+  Thread `today`/`calendar` into `sorted(_:today:calendar:)` (called from `group`, `:44-51`, which
+  already has both in scope) and sort `(!isOverdue, priority, effort, index)` — every overdue task
+  first (in priority order among themselves), then every due-today task (in priority order).
+  `testGroup_withinBucket_priorityThenShortestEffort` (`:97-108`) stays green either way — its
+  fixtures are all due today, none overdue.
+
+*2. Header count*
+- `Tasks/MomentumTaskBuckets.swift:56-68` `headerLine` — drop the `overdue` computation and the
+  `" · N overdue"` suffix: `return "\(open.count) open"`.
+
+*3. Quiet areas*
+- `Home/MomentumScoreboard.swift:257-295` — collapse the two "quiet" branches (`gap >= 7` "quiet all
+  week", `gap > 3` "quiet since \(weekday)") into one neutral phrase using the house day-format
+  switch already at `Tools/ToolsRoutinesCatalog.swift:188-207` (`lastRunPhrase`: `EEE` under 7 days,
+  `MMMd` at/after): `"\(closedThisWeek) of \(total) closed — last closed \(phrase)"`, tone `.plain`.
+  Delete the `.quiet` case from `AreaStatusTone` (`:257`).
+- `Home/AreaMomentumList.swift:82-88` and `Areas/AreasComponents.swift:181-187` `statusColor` — drop
+  the now-invalid `case .quiet: return Color("StateWarn")` branch (compiler forces this once the
+  case is gone).
+
+*4. Inbox stats*
+- `Capture/CaptureInboxSections.swift:119` `Text("Inbox health")` → `Text("This week")`.
+- `Capture/CaptureInboxSections.swift:126` `Text("Captured this week: \(health.captured). Cleared:
+  \(health.cleared).")` → `Text("\(health.cleared) sorted · \(health.captured) captured this week")`.
+- `Capture/CaptureInboxSections.swift:129-134` — delete the `sittingLine` block (the StateWarn
+  "Four are still sitting here…" text) entirely.
+- `Capture/CaptureInboxSummary.swift:120-128` — delete `sittingLine(count:)` (now unused).
+- `Capture/CaptureInboxSummary.swift:52-66` `weeklyCounterweight` — reorder/reword to
+  `"\(cleared) sorted · \(captured) captured this week"`.
+- `Capture/CaptureInboxSummary.swift:34-43` `oldestLine` — **keep the function.** It has a SECOND
+  consumer the design record doesn't name: `CaptureInboxSections.swift:22-28` builds the top
+  decision card's age chip from it. Remove only the header's own call site,
+  `CaptureInboxSections.swift:233-238` (the `oldestLine` `Text` under the breakdown line).
+- `Capture/CaptureInboxSections.swift:204-222` `summaryHeader`'s big-count block — keep the
+  two-`Text` shape (count + word), change `"left"` → `"to sort"`, change the count's
+  `.foregroundStyle(Color("StateWarn"))` to a neutral label colour (`Color("LabelPrimary")`).
+
+**Step 0 — ask E:** does the top capture card's age chip ("18 hours old",
+`CaptureInboxSections.swift:22-28`, built from the SAME `oldestLine` function) also go, under the
+"none tallies what was missed" principle? Options: **(a) keep it** — it names a fact about the ONE
+item in front of you, not backlog pressure, and the record's "Gone" bullet only names the header's
+age line; **(b) remove it too**, for full consistency with "framed as progress." Recommend (a).
+
+**Stale doc comments to ANNOTATE, not delete** (history, per house convention): `MomentumTaskBuckets.swift:54-55`
+("4 open · 1 overdue" — the header's old shape); `MomentumScoreboard.swift:108` ("input to the
+'quiet since …' clause"); `CaptureInboxSections.swift:111-112` ("the backlog said out loud in
+warn" — no longer warn-toned) and `:231-232` (the M5 ageing-counterweight comment, which now
+describes only the top-card chip, not the header).
+
+**Tests that must be REVERSED, not deleted:**
+- `TaskRowPresentationTests.swift:40-53` `testMetaLine_open_areaPriorityAndDuePhrase` — line 51
+  `"💼 Work & Career · P1 · Overdue"` → `"… · Still open"`.
+- `TasksV3PresentationTests.swift:29-38` `testHeaderLine_countsOpenAndOverdue` — `"3 open · 1
+  overdue"` → `"3 open"`.
+- `TasksV3PresentationTests.swift:42-50` `testHeaderLine_singularAndClean` — `"1 open · 0 overdue"`
+  → `"1 open"`; `"0 open · 0 overdue"` → `"0 open"`.
+- `MomentumScoreboardV3Tests.swift:110-118` `testAreaStatusLine_quietSinceNamesTheWeekday` — text
+  becomes `"1 of 2 closed — last closed Sun"` (5-day gap, `EEE`), tone `.plain`.
+- `MomentumScoreboardV3Tests.swift:120-127` `testAreaStatusLine_quietAllWeekWhenTheGapOutrunsTheWindow`
+  — text becomes `"0 of 2 closed — last closed Aug 5"` (9-day gap, `MMMd`; mirror
+  `ToolsRoutinesLastRunTests.swift:79`'s `"last run Aug 19"` convention), tone `.plain`.
+- `CaptureInboxSummaryTests.swift:41-54,58-68,71-78,82-89` — 4 `testWeeklyCounterweight_*` tests
+  pin `"N captured · M cleared this week"`; reorder/reword to `"M sorted · N captured this week"`.
+- `CaptureWeekCounterweightTests.swift:37-49` `testLoad_populatesTheWeekCounterweightLine` —
+  `"1 captured · 1 cleared this week"` → `"1 sorted · 1 captured this week"`.
+- `CaptureInboxHealthTests.swift:56-70` `testSittingLine_speaksSmallNumbersAsWords` — **delete**
+  (function gone); update the class doc comment (`:9-10`) which still names "the sitting line."
+- Not touched (function survives): `CaptureInboxSummaryTests.swift:129-155`
+  `testOldestLine_readsHoursThenDays`, `testOldestLine_nilWhenNothingIsWaiting`.
+- None found by grep for: "Inbox health" (view body only), the new "to sort"/neutral header colour
+  (view body only, no unit test reads `.foregroundStyle`).
+
+**Acceptance criteria**
+- [ ] RED first: apply the reversed tests above against today's code; a red-check that restores the
+      pre-change files and counts the failures (expect the ~9 reversed assertions plus the new
+      overdue-sort test).
+- [ ] New test: `MomentumTaskBucketsTests` — overdue-before-due-today at equal priority (verify
+      `testGroup_withinBucket_priorityThenShortestEffort`, `:97-108`, still passes unchanged — its
+      fixture has no overdue tasks).
+- [ ] SwiftLint 0, full suite green, build green — paste the real output.
+- [ ] `screenshots/` folder: Tasks tab (Still open + overdue-first ordering, no header count),
+      an Area card (neutral "last closed"), Capture Inbox ("This week", "5 to sort" non-orange) —
+      light + dark. README per house standard.
+- [ ] `apple-design` review owed (§7.6) — four visible copy/behaviour changes. Cite `writing.md`
+      and `color.md › Best practices` (StateWarn no longer means "quiet area").
+- [ ] No `#available` site touched; no Reduce Motion site touched — RM-on pass not owed, say so.
+
+**Dependencies:** none upstream. A2 depends on this block's rename of "Inbox health" → "This week"
+landing first (A2 recolours that same line).
+
+---
+
+### FEATURE: F-A2-ColourJobs — round 9's four colour jobs  [ ] NOT STARTED
+
+**What E chose:** *"Approve all four"* (Recommended), `SESSION-OPENER-adhd-ux-audit-design.md:463-474`.
+
+**The shape (verify, do not trust):**
+
+*Job 1 — blue off non-tappable labels* (record names TOMORROW, "WHERE DOES THIS LIVE?", "THEN";
+the same X-COLOR finding, §I, also names "INBOX HEALTH" — include it as the same defect, now
+"This week" after A1):
+- `Tasks/MomentumTaskBuckets.swift:70-79` `headerToneAssetName` — `"momentum-tomorrow": "AccentColor"`
+  → `nil` (the doc comment at `:71` already says "`nil` keeps the plain secondary voice"; the caller,
+  `Tasks/TaskListView.swift:274-277`, already falls back to `Color("LabelSecondary")` on `nil`).
+- `Capture/CaptureInboxSections.swift:79-81` `Text("Where does this live?")…foregroundStyle(Color.accentColor)`
+  → `.foregroundStyle(.secondary)`.
+- `Capture/CaptureInboxView.swift:344-346` `Text("Then")…foregroundStyle(Color.accentColor)` →
+  `.foregroundStyle(.secondary)`.
+- `Capture/CaptureInboxSections.swift:119-121` "This week" (renamed by A1) →
+  `.foregroundStyle(.secondary)`. **Verify A1 has landed and the string reads "This week", not
+  "Inbox health", before touching only the colour here.**
+
+*Job 2 — raw `.green`/`.orange`/`.red` → StateGo/StateWarn/StateRisk:*
+- `Settings/NotificationPermissionState.swift:70-75` `tint` — `.green`(×3 cases) → `Color("StateGo")`;
+  `.orange` → `Color("StateWarn")`; `.red` → `Color("StateRisk")`; `.unknown: .secondary` unchanged.
+  Rewrite the doc comment at `:67-68` ("adaptive system colours… per §4") — the record says *"E
+  chose consistency over that reading."*
+- `Focus/WeeklyFocusSummaryWidget.swift:138,141` — both `.green` → `Color("StateGo")`.
+- `Focus/FocusSprintPresentation.swift:88` `FocusCheckpointDotState.color`, `.reached: return .green`
+  → `Color("StateGo")`.
+- `FocusTimerWidget/FocusActivityComponents.swift:115` (widget target) `fillColor`, `.reached: return
+  .green` → `Color("StateGo")`.
+- **Dependency/verify first:** round 4a (arc F) retires the mid-sprint checkpoint dots ("Heads-up
+  replaces checkpoints"). If arc F lands first, `FocusCheckpointDotState` and its widget mirror may
+  already be deleted — confirm both still exist before editing; if gone, this job is only the first
+  two sites.
+
+**Step 0 — ask E (or take the recommendation):** the brief says "spec SHARING the colorset (target
+membership) rather than copying." That does not fit the code: the app and the widget extension keep
+**two separate asset catalogs** (`ADHD LifeOS/Assets.xcassets`, `FocusTimerWidget/Assets.xcassets`),
+and the widget's catalog already independently duplicates ~40 colorsets, including `StateGoVivid`,
+`OnStateGo` and `StateRisk` — just not plain `StateGo`. There is no Swift-file-style "membership
+exception" mechanism for asset catalog entries. **Recommend:** copy `StateGo.colorset` verbatim
+(light `#0AA84E` / `0x0A 0xA8 0x4E`, dark `#30D158` / `0x30 0xD1 0x58`, from
+`ADHD LifeOS/Assets.xcassets/StateGo.colorset/Contents.json`) into
+`FocusTimerWidget/Assets.xcassets/`, matching the app's existing duplication pattern — this copies
+an EXISTING value into a second catalog, not a new one (Q6 intact). Add a drift-guard test that
+reads both `Contents.json` files from disk and asserts they are byte-for-byte equal, so a future
+colour-arc edit to one catalog is caught rather than silently drifting. **Alternative, not
+recommended:** merge the two catalogs into one shared target-membership catalog — a colour-arc-scale
+restructure, out of scope while that arc is HELD.
+
+*Job 3 — "Nudges Due" flame neutral:*
+- `Home/DailySummaryView.swift:219-232` `metricStrip` — the "Nudges Due" `DailyMetricCard`'s
+  `tint: Color("StateRisk")` (`:223`) → `Color("LabelSecondary")` (neutral; matches round 8's
+  "last closed" neutral choice). "Open Tasks" (StateGo), "Life Areas" (AreaAdminVivid) and "Ideas
+  Offloaded" (StateWarn) are untouched — not part of this job.
+
+*Job 4 — disabled "Sorted" reads as disabled beside enabled "Skip":*
+- `Capture/PrimaryActionButtonStyle.swift:126-155` `SortedButtonStyle` — its not-ready face is
+  pixel-identical to Skip's `MomentumBorderedButtonStyle` (`Home/MomentumScoreboardViews.swift:62-78`):
+  same `.callout.weight(.medium)`, same `Color("LabelSecondary")` foreground, same
+  `strokeBorder(Color.cardBorder, lineWidth: 1)`, same 48pt / 14pt radius. Add
+  `@Environment(\.isEnabled) private var isEnabled` and dim the whole not-ready face, e.g.
+  `.opacity(isEnabled ? 1 : 0.45)` — no new colour token (Q6), matches the standard iOS
+  dimmed-disabled-control convention. (`isEnabled` and `isReady` are always equal at the one
+  call site, `.disabled(!isReady)` in `CaptureInboxSections.swift:198` — reading the
+  environment is fine, but the style could equally key off the `isReady` parameter it already
+  has; say which the build chose.) **Pre-empt the apple-design review:** a dimmed DISABLED
+  control is exempt from the 4.5:1 text-contrast bar (WCAG 1.4.3 excludes inactive UI
+  components) — name this in the report so it is not mistaken for a colour-arc finding.
+
+**Tests that must be REVERSED, not deleted:** none found by grep — no test asserts `.tint` on
+`NotificationPermissionState`, `.color` on `FocusCheckpointDotState`, or any `.foregroundStyle`
+literal in the view files above.
+
+**New tests (RED first, nothing to reverse):**
+- One string-based call-site test (the `ModernAPIPolicyCallSiteTests` pattern: read source from
+  disk, assert absence of a token) covering all four job-2 files — this is the only way
+  `FocusTimerWidget/FocusActivityComponents.swift` gets checked at all, since it is NOT one of the
+  five widget files compiled into the unit-test host (CLAUDE.md coverage section) and so cannot be
+  exercised by a normal `XCTAssertEqual`.
+- `FocusCheckpointDotState` (app side): `XCTAssertEqual(FocusCheckpointDotState.reached.color,
+  Color("StateGo"))`.
+- The `StateGo.colorset` drift-guard test above.
+- `MomentumTaskBuckets.headerToneAssetName(customId: "momentum-tomorrow")` → `XCTAssertNil` (was
+  `"AccentColor"` in `TasksV3PresentationTests.swift:53`, reversed here, not in A1).
+
+**Acceptance criteria**
+- [ ] RED first (the reversed `headerToneAssetName` assertion plus every new test above); red-check
+      restoring pre-change files, count failures.
+- [ ] SwiftLint 0, full suite green, build green (app target AND `FocusTimerWidgetExtension`) —
+      paste real output.
+- [ ] `screenshots/`: Tasks (TOMORROW grey), Capture Inbox ("Where does this live?", "Then", "This
+      week" all non-blue), Week review (neutral flame), Capture Inbox top card (disabled Sorted vs
+      Skip) — light + dark. The Live Activity / Dynamic Island checkpoint dot needs a DEVICE or
+      widget-preview capture, not a simulator screenshot of the app.
+- [ ] `apple-design` review owed (§7.6) — cite `color.md › Best practices` ("avoid the same colour
+      meaning different things" — StateRisk no longer doubles as "neutral metric" and "danger").
+- [ ] No `#available` site touched; no Reduce Motion site touched — RM-on pass not owed, say so.
+
+**Dependencies:** lands after F-A1 (job 1's fourth site). Verify against arc F before job 2's
+checkpoint-dot sites (see note above).
+
+---
+
+### FEATURE: F-A3-JargonCapitals — round 10b's words, round 6's fan copy, the missed inbox line  [ ] NOT STARTED
+
+**What E chose:** *"Approve all"* (jargon, round 10b), *"Tasked"* (Promoted rename), *"Sentence case
+everywhere"* (capitals), *"Captures wait here to be sorted"* (the missed item), *"Drop the
+explanations"* (round 6). `SESSION-OPENER-adhd-ux-audit-design.md:303-322,518-565`.
+
+**Excluded — owned elsewhere, do not touch here:**
+- Focus sprint Details strings ("Deep entry", "Sprint target 15m · Logged on finish", "1 of 15 min
+  logged") — `Focus/FocusSprintTimelineCard.swift:202,212`, `Focus/FocusSprintDetailView.swift:167`
+  — **arc F**.
+- The Close button's "makes today count" (`Tasks/MomentumTaskContext.swift:27`) and Today's streak
+  lines (`Home/MomentumScoreboard.swift:246-252`, `Home/MomentumScoreboardViews.swift:145-176`) —
+  **arc E**.
+- Today's inbox-peek copy (`Home/HomeAccessoryStrips.swift:55`) leaves with the inbox peek — **arc E**.
+- The Settings Notifications card's ~310pt gap (SET-01) and its missing in-place "Allow
+  notifications" button (SET-02), and Tasks' "0 open" loading state (TASKS-07) — layout/behaviour
+  fixes named in round 10a but not copy — **arc G**. (F-A4 edits this same card's FOOTER text; say
+  in that block's report that the layout fix is separate and unblocked either order.)
+
+**The shape (verify, do not trust):**
+
+*Round 6 — drop the explanations:*
+- `Capture/CaptureFanOverlay.swift:36-46` — delete the subtitle
+  `Text("Pick how it arrived. Everything goes to the inbox — you decide what it is later.")` block.
+  Keep the title `Text("What just landed in your head?")`.
+- `Capture/QuickCaptureView.swift:115` — delete
+  `Label(CaptureComposerCopy.footer(for: kind), systemImage: "lock")`.
+- `Capture/CaptureFan.swift:100-109` — delete `CaptureComposerCopy.footer(for:)` (now unused). This
+  also resolves CAPT-04 (fan said "everything goes to the inbox," the Task tile's footer said
+  "skips the inbox" — both sentences are gone).
+
+*Jargon renames (file:line, current → new):*
+- `Places/PlaceEditorView.swift:248-252` footer: "…one of the \(PlaceMonitoringCapacity.limit)
+  monitoring slots iOS gives the whole app…nudge only fires when this place has open At-Place
+  tasks." → "…iOS lets the app watch \(PlaceMonitoringCapacity.limit) places…a nudge only fires
+  when there are open tasks for this place." (keep the interpolated constant, do not hardcode
+  "20"; the phrasing avoids repeating "this place… this place").
+- `Places/PlaceActionsSection.swift:108-112` footer: "…it uses a monitoring slot, like a nudge…" —
+  align to the same "watch places" phrasing; no second verbatim string is in the record — propose,
+  flag as build-verified starting point.
+- "session" → "sprint": `Home/MomentumScoreboardViews.swift:290` ("Start session"/"Start another
+  session"); `Home/MomentumScoreboard.swift:212` (`"1 session"`/`"\(count) sessions"`);
+  `Focus/FocusSprintPresentation.swift:34-36` `ActiveGoalSprintState.title` ("Start Session"/
+  "Session Active"/"Session Paused"). **`ActiveGoalSprintState` has ZERO call sites in the app
+  target** (grepped) — the live Home hero button reads `showsStartSession`/`onStartSession`
+  (`MomentumScoreboardViews.swift:285-296`) directly, not this enum. It is dead code (the
+  recurring "dead shared component" pattern). Rename it anyway, per "everywhere," and say so in
+  the report — this may also be entirely rebuilt by arc E's round-5a hero redesign ("Start N min").
+  Also `Home/MomentumScoreboardViewsPreviews.swift:30` `"1 session · 12 min today"` (a `#Preview`
+  fixture literal, not production copy — update for consistency).
+- "To triage" → "To sort": `Capture/CaptureInboxService.swift:30` (`Filter.title`);
+  `Capture/CaptureInboxSummary.swift:23` (`headline`'s `.unprocessed` branch — dead code today,
+  see A1's summaryHeader note, but rename for consistency); `Capture/CaptureInboxSummary.swift:150`
+  (`doorLine`, "waiting to triage" → "waiting to sort").
+- "Promoted" → "Tasked": `Capture/CaptureInboxService.swift:32` (`Filter.title`);
+  `Capture/CaptureInboxSummary.swift:27` ("N promoted"/"Nothing promoted yet" → "N tasked"/"Nothing
+  tasked yet" — a consequential rename found by grep, not verbatim-named in the record, needed so
+  the tab's header agrees with its own segment label); `Capture/CaptureRowComponents.swift:286`
+  (`CapturePromotedChip`'s `Label("Promoted", …)` → `"Tasked"`; the struct's own name is now stale —
+  flag only, do not rename the type in a copy-only arc).
+- "Decide later" / "No life area" → "None": `Capture/QuickCaptureComponents.swift:188`;
+  `Tasks/TaskCreateView.swift:141` (this file may be folded into arc D's unified composer — the
+  rename still applies to today's code); `Theme/ComposerChips.swift:256,271` (both are `#Preview`
+  blocks only, not production call sites — update for consistency); `Journal/LogComposerView.swift:168`.
+- "Workshop" goes: `Tools/ToolsView.swift:108-118` — delete the `Text("Workshop")` line entirely,
+  leaving only `Text("Tools")` as the large title.
+- Append-only line: `Journal/LogComposerCopy.swift:13` `footer` — "Entries are append-only — saved
+  means saved." → "Entries can't be changed after saving." (the record notes this line itself goes
+  once journal editing ships — a gaps-list item, not this arc's job).
+- Settings appearance jargon: `Settings/AppearancePreference.swift:49` `.system` case — "Follows
+  your device. The palette carries light and dark variants for every token." → "Follows your
+  device." (drop the second sentence; do not move it behind a disclosure — after this edit every
+  case is already ≤1 sentence, so A4 owes this footer nothing further).
+
+*Sentence case (X-CAPS):*
+- `Capture/CaptureFan.swift:117` `ctaLabel(for: .task)`: "Add to Today" → "Add to today".
+- `Tasks/TaskDetailView.swift:112`: "Keep Editing" → "Keep editing".
+- `Tasks/TaskDetailView.swift:122`: "Delete Task" → "Delete task".
+- `Tasks/TaskDetailFormSections.swift:194`: "Delete Task" → "Delete task".
+
+*The missed item:*
+- `Capture/CaptureInboxView.swift:283-293` `emptyMessage`, `.unprocessed` case (`:285-287`):
+  "Nothing waiting to be triaged. Anything you capture lands here first, so your head doesn't have
+  to hold it." → "Captures wait here to be sorted."
+
+**Tests that must be REVERSED, not deleted:**
+- `CaptureFanTests.swift:63-80` `testComposerCopy_perKindVoice` — delete the three
+  `CaptureComposerCopy.footer(for:)` assertions (`:68-79`, function removed); change line 67's
+  `"Add to Today"` → `"Add to today"`.
+- `FocusLoggedTodayTests.swift:46-53` — line 51 `"1 session today"` → `"1 sprint today"`.
+- `FocusLoggedTodayTests.swift:54-63` — line 62 `"2 sessions · 35 min today"` →
+  `"2 sprints · 35 min today"`.
+- `FocusLoggedTodayTests.swift:85-91` — line 90 `"1 session · 1 min today"` →
+  `"1 sprint · 1 min today"`.
+- `FocusSprintPresentationTests.swift:18-24,26-33,36-43` — three `testHeroAction_*` tests pin
+  `"Start Session"`/`"Session Active"`/`"Session Paused"` → `"Start Sprint"`/`"Sprint Active"`/
+  `"Sprint Paused"`.
+- `CaptureInboxSummaryTests.swift:93-99` `testHeadline_countsWhatIsWaiting`,
+  `testHeadline_singularAtOne` — `"3 to triage"`/`"1 to triage"` → `"3 to sort"`/`"1 to sort"`.
+- `CaptureInboxSummaryTests.swift:110-114` `testHeadline_onThePromotedTab_describesWhatWasTriaged`
+  — `"3 promoted"`/`"1 promoted"`/`"Nothing promoted yet"` → `"3 tasked"`/`"1 tasked"`/`"Nothing
+  tasked yet"`; rename the test to `…describesWhatWasTasked` if the build session agrees.
+- `CaptureSortAndUndoTests.swift:279-282` `testDoorLine_countsWhatIsWaiting` — `"3 waiting to
+  triage"`/`"1 waiting to triage"` → `"…waiting to sort"`.
+- `LogComposerCopyTests.swift:22-28` `testGuidanceAndFooter` — `"Entries are append-only — saved
+  means saved."` → `"Entries can't be changed after saving."`.
+- None found by grep for: "Decide later", "No life area", "monitoring slots", "At-Place tasks",
+  "Workshop", "WORKSHOP" (source spells it "Workshop"), "Delete Task", "Keep Editing" (beyond the
+  one CaptureFanTests hit above), "Nothing waiting to be triaged" (only a UI-test existence check
+  on `captureInboxEmptyState`, never its text), `AppearancePreference`'s `.explanation` text
+  (`AppearancePreferenceTests.swift` tests mapping/storage only).
+
+**Acceptance criteria**
+- [ ] RED first: apply every reversed assertion above; red-check restoring pre-change files, count
+      failures (expect ~11 reversed assertions + 3 deleted).
+- [ ] SwiftLint 0, full suite green, build green — paste real output.
+- [ ] `screenshots/`: capture fan (no subtitle), a Note/Task composer (no footnote), Places editor +
+      actions footers, Capture Inbox segments ("To sort · Sorted · Tasked"), empty inbox line,
+      Settings Appearance row, a task detail's Delete/Keep-editing alert — light + dark.
+- [ ] `apple-design` review owed (§7.6) — cite `writing.md › Best practices` (one capitalisation
+      style per element type) and `buttons.md › Content`.
+- [ ] No `#available` site touched — copy-only edits happen INSIDE the existing
+      `@available(iOS 17.0, *)` gates on `PlaceEditorView`/`PlaceActionsSection`; the gate itself is
+      untouched, so no "Verified paths" line is owed. No Reduce Motion site touched — RM-on pass not
+      owed, say so.
+
+**Dependencies:** none upstream (independent of A1/A2). A4 depends on this block's Appearance-footer
+edit landing first.
+
+---
+
+### FEATURE: F-A4-Footers — round 10a: one sentence, the rest behind "More about this"  [ ] NOT STARTED
+
+**What E chose:** *"One sentence, the rest behind 'More about this'"* (Recommended),
+`SESSION-OPENER-adhd-ux-audit-design.md:514-516`: *"Each Settings footer, and Tools' empty Routines
+card, becomes one plain sentence. The full text sits behind a 'More about this' disclosure
+(SET-03, TOOLS-01)."*
+
+**The shape (verify, do not trust):**
+
+New shared component (no house pattern exists — grepped, zero `DisclosureGroup`/"More about" hits):
+a small `FooterWithDisclosure(lead: String, more: String)` view for reuse across every footer below.
+**Verify a `DisclosureGroup` (or an inline expand `Button`) actually renders correctly inside a
+`Form`'s `footer:` closure** and that its trigger meets the 44pt floor (§3); if it renders oddly,
+fall back to a plain row inside the `Section` body instead of the `footer:` slot. **This IS a new
+Reduce Motion site, definitely, not conditionally** — `DisclosureGroup` animates its expand/collapse
+by default. Name which §7.2 case it is (an "appears" reveal of the "more" text, so the reduced path
+should fade the revealed content per `CaptureFanOverlay.swift:89-96`'s house pattern, geometry
+pinned, opacity the only thing that travels) and gate it behind `accessibilityReduceMotion`.
+
+Footers to shrink (current text unchanged as the "more" content; propose a one-sentence lead —
+build session verifies the exact wording):
+- `Settings/SettingsView.swift:137-145` Notifications footer (2 sentences) — lead: "This shows
+  whether iOS currently allows reminders for tasks and nudges."
+- `Settings/SettingsPreferenceSections.swift:81-92` "What counts as momentum" footer (4 sentences)
+  — lead: "These switches change what counts toward your streak and charts."
+- `Settings/SettingsPreferenceSections.swift:138-147` Focus footer (2 sentences) — lead: "The daily
+  goal drives the focus charts and widget ring."
+- `Settings/SettingsPreferenceSections.swift:223-245` Feedback footer (≈150 words / 17 lines, SET-03,
+  the clearest case) — lead: "These control the app's own sounds, haptics, and location use."
+- `Settings/AccountDeletionSection.swift:32-39` Delete Account footer — see Step 0 below.
+- `Tools/ToolsRoutinesCatalog.swift:71-82` `EmptyReason.body` (35-word body, TOOLS-01) — `.noPlaces`
+  lead: "Add a place first."; `.noQualifyingPlaces` lead: "Give a place \(thresholdPhrase) tap-steps
+  to make it a routine." `Tools/ToolsRoutinesSection.swift:239-242` (`emptyCard`) needs the
+  disclosure added to its `Text(reason.body)` line.
+
+**Not touched:** `SettingsView.swift:112-117` Appearance footer — F-A3 already reduces
+`current.explanation` to one sentence per case; nothing is left to hide.
+`ToolsRoutinesCatalog.NudgesOffFooter` (`:46-52`) — a different banner (shown only when Arrival
+nudges is off), not the empty-Routines card the record names; its exact text is pinned by
+`ToolsRoutinesCatalogTests.swift:276-287` and must not change here.
+
+**Step 0 — ask E:** the Delete Account footer's current text is a single safety-critical warning
+("This cannot be undone.") embedded in an itemised list of what gets erased. Should the one-sentence
+lead keep "This cannot be undone" always visible (never behind the disclosure), with only the
+itemised list ("tasks, life areas, journal, captures, nudges, and focus history") folded away?
+Recommend **yes** — hiding an irreversibility warning behind a disclosure on a destructive action is
+the kind of thing `modality.md`/`buttons.md` guidance on destructive actions warns against; lead:
+"Permanently deletes your account. This cannot be undone."; more: the itemised list.
+
+**Tests that must be REVERSED, not deleted:** none found by grep — no existing test pins the exact
+footer body text for any Settings section, `AccountDeletionSection`, or (per `testEveryEmptyStateIsFinishedCopy`,
+`ToolsRoutinesCatalogTests.swift:231-243`) the exact `EmptyReason.body` string; that test only
+asserts non-empty and that the two cases differ, so shrinking `.body` is safe as-is.
+
+**New tests (RED first):**
+- `ToolsRoutinesCatalogTests.swift`: each `EmptyReason` has a short `.body` (one sentence — assert
+  it, e.g., contains at most one `.` other than inside "…") and a non-empty `.moreBody`/equivalent
+  that still contains the original longer text (so nothing is silently lost — the exact original
+  strings currently pinned nowhere, so pin them HERE as the "more" content).
+- Equivalent short assertions for each new Settings footer's lead + full text, wherever the strings
+  move into a testable `enum`/`struct` (recommended over bare `Text` literals, so this block leaves
+  a testable seam behind it — flag if the build session decides bare literals are enough).
+
+**Acceptance criteria**
+- [ ] RED first: the new tests above fail against today's code; red-check restoring pre-change
+      files, confirm failures are for the intended reason.
+- [ ] SwiftLint 0, full suite green, build green — paste real output.
+- [ ] `screenshots/`: every touched footer collapsed and expanded, light + dark — this is a NEW
+      interaction pattern, so "settled by looking" applies in full.
+- [ ] `apple-design` review owed (§7.6) — this adds a new UI primitive; check `sheets.md`/
+      `layout.md` guidance on progressive disclosure and confirm the disclosure trigger meets the
+      44pt floor (§3) and reads correctly to VoiceOver (a single combined element, not "More about
+      this" plus a chevron as two).
+- [ ] No `#available` site touched (target the 16.0 floor — `DisclosureGroup` is iOS 14+, no gate
+      needed). **This block DOES add a new Reduce Motion site** (the disclosure's reveal) — a
+      reduced-path render (sim, injected) is required, and because it is a new/changed reduced
+      site, **the RM-on device pass (§7.3) is owed**: ask E to look at one expanded footer with
+      Reduce Motion on and off.
+
+**Dependencies:** lands after F-A3 (Appearance footer). Independent of F-A1/F-A2.
+
+---
+
+## Arc B — Accessibility. Five blocks, one reviewable unit each.
+
+Source: `handoff/SESSION-OPENER-adhd-ux-audit-design.md` rounds 7, 7b, 9; `handoff/ADHD-UX-AUDIT-WORKING-FINDINGS.md`
+§M (`apple-skills` ios `ui-review`+`accessibility-audit`), §G (Today/Areas `apple-design`), §L (composer); boards
+`62`, `64`, `65`, `66`. Every `file:line` below was read in the current tree.
+
+**Cross-arc boundaries (do not build these here):** arc F owns `.updatesFrequently` and RM-01 (sprint ring) — both
+sit inside the card/sheet rebuild rounds 4b/4c replace. Arc E owns the rest of §G's HOME-01 and Home's layout
+around `arrangeButton`. Arc C owns RM-02 (undo bar) and the undo capsule. Arc D owns the composer's own 48pt
+chips (`Theme/ComposerChips.swift`). Arc G owns GEST-3's ↑/↓ actions and the LA's +5 min target. **No block in B
+touches an `#available` site**, so none carries a "Verified paths" line unless said otherwise.
+
+---
+
+### FEATURE: F-B1-TouchTargets — round 7's target sizes: 48pt actions, 44pt reach on 36pt chips  [ ] NOT STARTED
+
+**What E chose (Round 7, board `62`, "measured from the accessibility tree on the 18 Pro"):**
+- *"Key targets → 'Actions that change things'. 48pt for anything that starts, closes, adds, undoes, ends or saves,
+  and for each sheet's primary button. 44pt for navigation and filtering."*
+- *"Filter and tag chips → '36pt look, 44pt reach' (Recommended was 44pt visible)... The composer's own chips stay
+  48 (round 6)."*
+- *"Corner controls → 'All to 48×48' (Recommended was 44). The Settings gear (40), Back (36), the composer's Close
+  (77×36), the Tasks '+' (27×36) and Journal's 'All activity' (38×36)."* Stated default: LA's +5 min ≥44pt — owned
+  by arc F, name only.
+
+**Shape — corner controls to 48×48:**
+- `Home/HomeAccessoryStrips.swift:387-395` `headerIconWell` (`.frame(width: 40, height: 40)`, behind `settingsButton`
+  at `:377-383`) and `Areas/AreasView.swift:177-185` `iconWell` (identical, behind `areasSettingsButton` at
+  `:167-173`) — raise both to 48 (§G HOME-02/AREAS-02: "iconWell 40×40 on both tabs").
+- `Tasks/TaskDetailView.swift:148-159` `backButton` — native `ToolbarItem(.navigationBarLeading)` wrapping
+  `Label("Back", systemImage:...)`, no explicit frame; board `62` measured 36×36. Grow via the label's own padding
+  and re-measure per board `62`'s method on 27.0 — a native leading bar item takes no `.frame()` directly.
+- `Capture/QuickCaptureView.swift:128-130`, `Tasks/TaskCreateView.swift:72-74` — both
+  `ToolbarItem(.cancellationAction) { Button("Cancel"){dismiss()} }`, board `62`'s "composer's Close (77×36)". Same
+  native-bar-item ceiling as Back.
+- `Tasks/TaskListView.swift:114-122` — toolbar `Image(systemName:"plus")`, no `accessibilityLabel`, board `62`'s
+  "27×36". Add `.accessibilityLabel("New task")` here too (shared with B3 — whichever lands second only checks it
+  survived).
+- `Journal/JournalAllActivityButton.swift:18-32` — glyph-only `ToolbarItem`, board `62`'s "38×36"; comment at
+  `:9-13` already says the chrome is the system's, same ceiling as Back.
+- **Not this one:** `Home/DailySummaryView.swift:296-299` and `Home/HomeAccessoryStrips.swift:104-114` are 40×40 /
+  36×36 decorative glyph TILES, no `Button` — round 7's list is the five above only.
+
+**Shape — filter/tag chips, keep 36pt visible + add 44pt reach:**
+- `Tasks/TaskListView.swift:253-270` `filterChip`, `Tasks/TaskDetailChipsRow.swift:137-159` `tagChip` (its `:158`
+  already has the `"Remove tag \(name)"` label pattern B3 reuses), `Journal/JournalView.swift:228-246` `filterChip`,
+  `:250-271` `areaChip` — all `.frame(minHeight: 36)` + `.contentShape(Capsule())`, which covers only the visible
+  capsule.
+- **House pattern:** `Theme/AppTabBarPresentation.swift:212-219` `AppTabBarMetrics.slotHitOverflow` — negative
+  vertical padding around the `contentShape` so the tap region reaches 44 without the visible chip growing. Apply
+  the same idea to all four chip functions.
+- **Not this block:** `ChoiceChipButtonStyle` call sites (Journal energy/mood, Home tone, `TaskCreateView.swift:127`,
+  `CapturePromoteSheet.swift:132-142`, `FocusCadenceEditorCard`, `NudgeScheduleEditor`) are round 6/7b's "composer's
+  own chips stay 48" family — arc D's, wherever its new composer subsumes them.
+
+**Tests that must be REVERSED, not deleted.** Grepped both test targets for `settingsButton`, `areasSettingsButton`,
+`taskDetailBackButton`, `taskCreateButton`, `frame(width: 40`, `minHeight: 36`, and the four chip function names:
+every hit taps by identifier (`SignedInJourneyUITests.swift:75-78`, `AccountNameJourneyUITests.swift:82`,
+`IOS27CompatSweepUITests.swift:121`, `UITestSession.swift:196-204`, `LandscapeAwayCardUITests.swift:51`) — **none
+found by grep for a pinned frame-size or geometry assertion.** Growing these frames breaks no test.
+
+**Acceptance criteria**
+- [ ] RED first: for the two `iconWell`s, the repo's live house shape for "one metric, several
+      readers, both pinned" — `JournalComposeDiscMetrics` (diameter + `slotHitOverflow`-derived
+      overflow) plus `JournalHeaderControlsTests.swift`'s pattern of a value test AND a source-read
+      call-site test proving each reader uses the constant (NOT `JournalHeaderMetrics`, which
+      `F-JournalPencilDisc` deleted 2026-09-18 once nothing read it — cite the current type). For
+      the three native toolbar items and the four chip functions: an XCUITest reading the
+      accessibility-tree frame (board `62`'s method) asserting ≥48×48 / ≥44×44.
+- [ ] Red-check by restoring the old frames; count failures; restore with `git checkout --`.
+- [ ] SwiftLint 0, full suite green, build green, all pasted.
+- [ ] `screenshots/touch-targets-48/` + README: light/dark, all ten sites, before/after, board `62`'s boxed-overlay
+      style.
+- [ ] `apple-design` review owed (§7.6) — every control is visible and interactive.
+- [ ] No `#available` site touched; no RM-on pass owed (no motion here).
+- [ ] Report which of the three native-toolbar controls cannot reach 48×48 within the system's own bar-item
+      chrome — do not silently accept a smaller number.
+
+**Dependencies:** none. Land first among B's blocks — B2 also touches `Tasks/TaskDetailChipsRow.swift`'s neighbour,
+`Tasks/TaskRow.swift`.
+
+---
+
+### FEATURE: F-B2-AX3Layouts — task rows stack, sign-in segments grow, no mid-word breaks, metric labels wrap  [ ] NOT STARTED
+
+**What E chose (Round 9, board `65`, "Approve, but keep Areas in 2 columns"):**
+- *"Approved: at accessibility sizes, task rows stack (the title wraps in full, the meta sits under it, ▶ and ○
+  stay trailing)."*
+- *"Approved: the sign-in segments grow; they are AUTH-01 and the only route to Create account."*
+- *"Approved: no button breaks mid-word ('Arran/ge'; icon only if needed)."*
+- *"Approved: metric labels wrap to 2 lines (A11Y-09)."*
+- *"Kept: the Areas grid stays 2 columns at every size (AREAS-01 is E's call). Names wrap inside the cards instead
+  of truncating."*
+
+**Shape — task rows stack:**
+- `Tasks/TaskRow.swift:82-149` (`rowContent`) and `LifeAreaDetail/AreaTaskRow.swift:21-72` — both one
+  `HStack(spacing: 8)`: effort chip + title(`.lineLimit(2)`)/meta(`.lineLimit(1)`) `VStack`, then trailing ▶/○/✓.
+  §M's "what works" names them as a pair; fix both.
+- **House pattern:** `Capture/CaptureRowView.swift:45-64` — `@Environment(\.dynamicTypeSize)`,
+  `if dynamicTypeSize.isAccessibilitySize { VStack } else { HStack }`, dropping a purely decorative trailing glyph
+  in the stacked form. Reuse the branch; drop the `.lineLimit` caps in the stacked form so title/meta wrap in full.
+
+**Shape — sign-in segments (AUTH-01):**
+- `Auth/LoginFormSections.swift:40-50` `modePicker` — native `Picker(...).pickerStyle(.segmented)`; UIKit's
+  segmented control does not reflow labels at large content sizes. It is "the only route to Create account".
+- `ADHD LifeOSUITests/RenderHarnessUITests.swift:139` — `app.segmentedControls["authModePicker"].buttons["Create account"]`,
+  commented *"addressed through the control rather than by an identifier of their own."* **REVERSE this test if the
+  native `Picker` is replaced** (`.segmentedControls[...]` only resolves a real `UISegmentedControl`).
+
+**Step 0 — ask E:** the record says the segments "grow", not how, and no custom segmented control exists to
+borrow (round 7b's composer segments are a different four-choice shape, arc D's).
+1. **(Recommended) A custom two-segment control** — same look, `.lineLimit(nil)` labels that wrap/grow the track.
+   Reusable if arc D later needs a two-way switch.
+2. Keep the native Picker, add only `.minimumScaleFactor` — cheap, doesn't actually fix AX3 readability.
+3. Two full-width stacked 48pt buttons ONLY at accessibility sizes, native Picker below — two UIs to keep in sync.
+
+**Shape — no mid-word breaks:**
+- `Home/HomeLifeAreasSections.swift:44-70` `arrangeButton` — `Label(isArranging ? "Done":"Arrange", ...)`, no
+  `.lineLimit`/`.minimumScaleFactor`, wraps "Arran/ge" at AX3. Add `.lineLimit(1).minimumScaleFactor(0.7)` or
+  `.labelStyle(.iconOnly)` at accessibility sizes. Button's own fix only — Home's surrounding layout is arc E's.
+
+**Shape — metric labels wrap (A11Y-09):**
+- `Home/DailySummaryView.swift:288-320` `DailyMetricCard`, label `Text` at `:309-313` is `.lineLimit(1)` +
+  `.minimumScaleFactor(0.8)`. Change to `.lineLimit(2)`, drop the scale factor.
+
+**Shape — Areas grid stays 2 columns, names wrap:**
+- `Areas/AreasComponents.swift:132-136` — area-name `Text` is `.lineLimit(1)` + `.minimumScaleFactor(0.8)` (why it
+  truncates to "Relatio…"). Remove the cap; the card's `minHeight:160`/`maxHeight:.infinity` (`:163-168`) and the
+  paired-row equal-height comment (`:159-162`) already let it grow. `Areas/AreasView.swift:187-206` `grid` is
+  untouched — 2 columns stays at every size.
+
+**Tests that must be REVERSED, not deleted.** `RenderHarnessUITests.swift:139` (above, only if Step 0 picks option
+1 or 3). Grepped `AreasGridTests.swift`, `HomeLifeAreasSectionTests.swift`, `TaskRowPresentationTests.swift`,
+`TaskRowSwipeTests.swift`: pure-logic tests (bucket sorting, swipe thresholds) — **none assert `.lineLimit` or row
+layout shape.** **But `CelebrationPopCallSiteTests.swift` string-anchors both row files, and this is real risk,
+not a "none found":** `:34-41` (`testTheTaskRowsCloseCirclePopsFromTheCircleItself`) requires the anchor
+`"private func close(poppingFrom origin: CGPoint? = nil) { Haptics.play(.taskClose)"` to appear EXACTLY ONCE in
+`TaskRow.swift`; `:51-57` (`testTheLifeAreaRowsTickPops`) requires `"Button { Haptics.play(.taskClose)"` exactly
+once in `AreaTaskRow.swift`; `:150-175` (`testTheCirclePopsFromItselfAndTheSwipePopsFromTheFinger`) requires
+`row.contains("Button { close() }")` and three other exact substrings anywhere in `TaskRow.swift`'s flattened
+source. **Do not duplicate the close/tick button declaration across the compact and stacked-AX3 branches** —
+extract it into ONE shared subview/computed property both branches reference, so these three tests need no
+reversal. If the build genuinely must write the button twice, reverse all three with the new anchor text.
+
+**Acceptance criteria**
+- [ ] RED first: an AX3 render/snapshot test per fixed view asserting the stacked/wrapped shape; a call-site test
+      string-matching the `isAccessibilitySize` branch in `TaskRow`/`AreaTaskRow`.
+- [ ] Red-check restoring old bodies; count failures; restore with `git checkout --`.
+- [ ] SwiftLint 0, suite green, build green, all pasted.
+- [ ] `screenshots/ax3-layouts/` + README: Tasks row and Areas card default vs AX3, sign-in segments before/after
+      at AX3, Arrange button at AX3, a metric card at AX3 — board `65`'s `full/s-*-A-*` frames as "before".
+- [ ] `apple-design` review owed (§7.6) — all visible fixes.
+- [ ] No `#available` site touched (a custom segmented control, if built, is plain SwiftUI); no RM-on pass owed —
+      the mode-swap animation itself is B4's.
+- [ ] Step 0's answer recorded in the report before building AUTH-01.
+
+**Dependencies:** land after B1 (shared file family). Independent of B3/B4/B5.
+
+---
+
+### FEATURE: F-B3-VoiceOverAndCharts — labels, combined elements, `.isSelected`, hidden chevrons, Smart Invert, chart descriptor  [ ] NOT STARTED
+
+**What E chose (Round 9, "the §M list → 'Approve all, plus automated audits' (Recommended)"):**
+- *"labels for the Tasks '+' ('New task'), each tag's remove ('Remove tag Work') and voice Play/Pause; the inbox
+  top card and Home's Due-now rows become one element with a button trait; the promote sheet's chips carry
+  `.isSelected`; the 13 decorative chevrons are hidden; the countdown gets `.updatesFrequently`."*
+- *"Smart Invert: `accessibilityIgnoresInvertColors` on photos."* / *"Charts: `accessibilityChartDescriptor` on
+  Week review's chart."*
+
+**Shape — missing labels (§M A11Y-03):**
+- `Tasks/TaskListView.swift:114-122` — add `.accessibilityLabel("New task")` (shared edit, see B1).
+- `Capture/CaptureRowTagEditor.swift:83-93` — the per-tag "x" (`xmark.circle.fill`) has only an identifier. Reuse
+  the shipped pattern at `Tasks/TaskDetailChipsRow.swift:158` (`"Remove tag \(name)"`).
+- `Capture/CaptureRowComponents.swift:129-152` `VoicePlaybackButton` — only an identifier. Add
+  `.accessibilityLabel(player.isPlaying ? "Pause" : "Play")`.
+
+**Shape — combined elements + button trait (§M A11Y-02):**
+- `Capture/CaptureInboxSections.swift:47-59` — `.onTapGesture` + identifier only, no trait/combine. Add
+  `.accessibilityElement(children: .combine)` + `.accessibilityAddTraits(.isButton)`. **Test impact:** `:50`'s
+  child identifier `captureInboxTopCardPlace` becomes unreachable once combined — grepped both test targets, no
+  hit references it today. `IOS27CompatSweepUITests.swift:97` queries the OUTER id
+  (`app.descendants(matching:.any)["captureInboxTopCard"]`), which survives unchanged. Say in the report that the
+  child id is now unreachable by design.
+- `Home/HomeMomentumSections.swift:215-224` — already has `.accessibilityAddTraits(.isButton)` (`:223`) but no
+  combine. Add it. Grepped for `homeDueNowRow` in UI tests: no hit.
+
+**Shape — `.isSelected` (§M A11Y-01):**
+- `Capture/CapturePromoteSheet.swift:132-142` `chip(_:isSelected:action:)` — styled with `ChoiceChipButtonStyle`
+  but no `.accessibilityAddTraits(isSelected ? .isSelected : [])`. Add it (five other call sites already do).
+
+**Shape — 13 decorative chevrons + the closure card's checkmark:**
+- `grep -c "chevron.right"` returns exactly 13 across `HomeMomentumSections.swift`, `HomeAccessoryStrips.swift`,
+  `AreaMomentumList.swift`, `CaptureRowView.swift`, `Tools/ToolsRoutinesSection.swift`,
+  `Areas/AreasComponents.swift:128-130`, `Tools/ToolsView.swift`, `Home/HomeWeekReviewRow.swift`,
+  `Places/PlaceAppPickerView.swift`, `Places/PlaceActionAppDetailSection.swift`. Only `AreasComponents.swift:128-130`
+  (a `NavigationLink`, confirmed above) was read directly — before hiding each of the other 12, confirm its
+  enclosing row is itself a `Button`/`NavigationLink` or already carries `.isButton`; if a chevron is the ONLY
+  navigability cue on its row, add the trait to the row first, then hide the glyph.
+- `Home/MomentumScoreboardViews.swift:326-330` `ClosureCelebrationCard` — `checkmark.circle.fill` above
+  `Text("... — closed")`, decorative. Add `.accessibilityHidden(true)` HERE ONLY. **Do not touch** `:276`'s
+  `checkmark.circle.fill` — that one is inside `Label("Close it", ...)`, a real button, not decorative.
+
+**Shape — `.updatesFrequently` — NAMED, OWNED BY ARC F, not built here:**
+`Focus/FocusSprintDetailView.swift:160-165` and `Focus/FocusTimerBarContent.swift:197-199` both need
+`.accessibilityAddTraits(.updatesFrequently)`; both sites sit inside arc F's round 4b/4c rebuild.
+
+**Shape — Smart Invert:**
+- `Capture/CaptureRowComponents.swift:238` (lightbox `AsyncImage` `.success` branch) and
+  `Capture/QuickCaptureComponents.swift:301-306` (composer photo preview) — add
+  `.accessibilityIgnoresInvertColors(true)` to both. Grep `Image(uiImage:`/`AsyncImage(url:` during the build for
+  any other photo surface (§M's "zero app-wide" makes these two a floor, not the whole list).
+
+**Shape — `accessibilityChartDescriptor`:**
+- `Home/WeekReviewView.swift:89-108` `barsCard` — hand-drawn `Capsule()` bars, each already labelled
+  (`.accessibilityElement(children:.ignore)` + `"\(day.0), \(day.1) closed"` at `:104-106`). Add an
+  `AXChartDescriptor` (one series, day → closed count, from `review.dayLabels`/`.dayCounts`) via the generic
+  `.accessibilityChartDescriptor` modifier (not Swift-Charts-only) for the audio-graph rotor action, additive to
+  the per-bar labels. **Not touched:** `Focus/ProductivityTrendChart.swift`/`WeeklyFocusSummaryWidget.swift` are
+  pre-arc-E charts due to be dropped by round 3's "one bar chart in Week review" — don't add there.
+
+**Tests that must be REVERSED, not deleted.** Covered inline above — only `captureInboxTopCardPlace`'s
+reachability changes, and nothing references it today.
+
+**Acceptance criteria**
+- [ ] RED first: unit/call-site tests for each label string, each `.isButton`/`.combine` pair, the `.isSelected`
+      trait, the 14 `.accessibilityHidden(true)` sites, the two `accessibilityIgnoresInvertColors` sites; a unit
+      test for the `AXChartDescriptor`'s series against `WeekReviewView`'s data.
+- [ ] Red-check restoring old code; count failures; restore with `git checkout --`.
+- [ ] SwiftLint 0, suite green, build green, all pasted.
+- [ ] No `screenshots/` owed — every change is VoiceOver/Smart-Invert/audio-graph, proved by unit tests, not by
+      looking.
+- [ ] `apple-design` review owed (§7.6), Lens 1 — VoiceOver's spoken output is what a VoiceOver user "feels".
+- [ ] No `#available` site touched; no RM-on pass owed (nothing here reads Reduce Motion).
+
+**Dependencies:** shares the Tasks "+" label edit with B1 (whichever lands second checks the other's edit
+survived). Otherwise independent.
+
+---
+
+### FEATURE: F-B4-ReduceMotionSwaps — Daily Summary and sign-in state swaps get a Reduce Motion fade  [ ] NOT STARTED
+
+**What E chose (Round 9, same approved §M list):**
+- *"Reduce Motion: the sprint ring stops re-springing every second (§7.2's continuous case, `nil`, as
+  `FocusTimerBarContent` already does); the undo bar fades in instead of sliding (§7.2's 'appears' case); the
+  Daily Summary and sign-in swaps are covered too; each ... owes E's RM-on phone pass when built (§7.3)."*
+- RM-01 (sprint ring) is **arc F's** (`FocusSprintDetailView.swift:151` → `MomentumScoreboardViews.swift:39`'s
+  ungated spring). RM-02 (undo bar) is **arc C's** (`Capture/CaptureInboxUndoSections.swift:69,102-106`). **B4
+  builds neither** — RM-03 only.
+
+**§7.2/§7.4 constraint that shapes both fixes below:** *"`accessibilityReduceMotion` cannot be injected through
+`.environment(\.)`. A leaf that must be tested in both modes takes the resolved value as a PARAMETER from a
+parent that reads it."* So neither fix may be "the view reads the environment inline and a test injects the
+environment" — each becomes a pure `resolve(reduceMotion:) -> Animation`-style function (§7.4), unit-tested for
+both booleans, with a call-site test pinning that the view reads the environment once and passes it in. Also
+§7.2's opening-pose rule: both swaps change CONTENT HEIGHT (Create account adds a field; the summary's states
+differ in size), so a single animated `Animation` value is not enough — if the swap changes height, split like
+`CaptureFanOverlay`: geometry pinned to final value (`nil`/no animation on frame-affecting state), content
+`.transition(.opacity)` animated at `.default` under RM.
+
+**Shape — Daily Summary state swap (RM-03):**
+- `Home/DailySummaryView.swift:56-73` — `.animation(.spring(response:0.35, dampingFraction:0.8, blendDuration:0),
+  value: service.state)` at `:63-65` over `bannerCard`/`toneToolbar`/`metricStrip`/`summaryContent` together; zero
+  `accessibilityReduceMotion` reads in the file (grepped).
+- Add a pure `static func summarySwapAnimation(reduceMotion: Bool) -> Animation` (e.g. in
+  `Home/DailySummaryView.swift` itself or a small `Theme/` helper), returning `.default` when true and the spring
+  otherwise; the view reads `@Environment(\.accessibilityReduceMotion)` ONCE and passes it to the function at
+  `:63-65`. If the state swap changes the card's height, pin geometry and animate only a `.transition(.opacity)`
+  under RM, per the constraint above.
+- **Cross-arc note:** round 3 says the Daily Summary "now lives in Week review," and arc E's Today rebuild is
+  expected to move/replace this view. Land B4 before arc E if possible; if arc E lands first, its block carries
+  this fix instead — say so in whichever report runs second.
+
+**Shape — sign-in mode swap (RM-03):**
+- `Auth/LoginView.swift:87-101` — `.animation(.spring(...), value: mode)` (`:96-99`) and
+  `.animation(.spring(...), value: isSubmittingApple)` (`:100-103`) on the top-level `VStack`; zero
+  `accessibilityReduceMotion` reads (grepped). Same shape: one pure resolver function, one environment read, both
+  modifiers gated through it; Create-account adds the name field (a height change), so split geometry/opacity per
+  the constraint above rather than animating the whole swap under one `Animation` value.
+
+**Tests that must be REVERSED, not deleted.** Grepped `ADHD LifeOSTests/` for `DailySummaryView`/`service.state`
+and `LoginView`/`mode` animation assertions: **none found** — nothing pins the spring today.
+
+**Acceptance criteria**
+- [ ] RED first: a unit test per resolver function asserting `.default` when `reduceMotion == true` and the spring
+      otherwise; a call-site test (the `FocusCompletionCard → FocusCompletionCelebration` shape, §7.2) pinning
+      that each view reads the environment once and passes it as a parameter — not `.environment(\.)` injection
+      anywhere in a test.
+- [ ] Red-check restoring the ungated `.animation` calls; count failures; restore with `git checkout --`.
+- [ ] SwiftLint 0, suite green, build green, all pasted.
+- [ ] `screenshots/reduce-motion-daily-summary-signin/` + README: both sites, RM off vs RM on (RM-on frames from a
+      render probe that PASSES `reduceMotion: true` into the resolver/leaf as a parameter, never environment
+      injection), light/dark.
+- [ ] `apple-design` review owed (§7.6), Lens 1.
+- [ ] **RM-on device pass owed (§7.3):** both are new reduced sites. Ask E for both passes in one message (RM off,
+      then RM on); the report line may only read "Reduced: run on sim (injected) + E's phone (RM on)" after E
+      actually toggles and confirms.
+- [ ] No `#available` site touched beyond the RM-on line above.
+
+**Dependencies:** independent of B1/B2/B3/B5. Do not build RM-01 or RM-02 here — they ride into arc F's and arc
+C's own blocks. See the Daily Summary cross-arc note above re: arc E ordering.
+
+---
+
+### FEATURE: F-B5-AutomatedAuditPlan — `performAccessibilityAudit` per screen, its own test plan  [ ] NOT STARTED
+
+**What E chose:** *"Automated: `performAccessibilityAudit` per screen in the UI journeys, in its own test plan. UI
+tests stay out of the standard run, and the audit needs a 17+ test runtime (27.0 is fine)."* §M A11Y-07: *"zero
+`performAccessibilityAudit` calls and no `.xctestplan`. Natural homes are the existing journeys ... Each audit
+must sit in its own deliberate test plan."*
+
+**Shape:** Confirmed zero `.xctestplan` files repo-wide; one shared scheme
+(`ADHD LifeOS.xcodeproj/xcshareddata/xcschemes/ADHD LifeOS.xcscheme`); the project uses
+`PBXFileSystemSynchronizedRootGroup` folders, so a new `.swift` file dropped into `ADHD LifeOSUITests/` is an
+automatic target member — no `project.pbxproj` edit needed for new test files.
+- Existing journeys to piggy-back navigation on (one audit call per screen/state, per the module's "audits only
+  see the current screen"): `FirstRunJourneyUITests.swift`, `SignedInJourneyUITests.swift`,
+  `JournalJourneyUITests.swift`, `ToolsRoutinesJourneyUITests.swift`/`RoutineJourneyUITests.swift`,
+  `SprintBarFurnitureUITests.swift`, `SignedOutLaunchUITests.swift`/`LandscapeLoginUITests.swift`.
+- **New files, not edits to those**, e.g. `ADHD LifeOSUITests/Accessibility/FirstRunAccessibilityAuditUITests.swift`
+  — reuse each journey's navigation helpers (`UITestSession`, `UITestTabs`) to reach each screen, then audit, so
+  the audit suite runs standalone from the journeys' own behavioural assertions. `continueAfterFailure = true`
+  before every audit call.
+- **Filtering** (module's rule: "filter specific accepted findings — never disable whole audit types"): round 9's
+  contrast Criticals are DEFERRED to the colour arc (§F's table: LabelSecondary 4.25, tertiary 1.88/2.33,
+  placeholder 1.69/2.43, white-on-accent 3.93/3.65) — filter each by element label/type, comment citing *"Round 9:
+  'Leave it to the colour arc.'"* Any `.hitRegion` finding on an arc C/D/F target gets the same per-element filter
+  naming the owning arc — or simpler, sequence B5 LAST so B1-B4 have already landed. Un-owned findings not already
+  named in §M/§G go to the register as candidates, not fixed here.
+
+**Tests that must be REVERSED, not deleted.** None — greenfield (grepped for any existing
+`performAccessibilityAudit` call or `TestPlans` reference in the scheme: zero hits).
+
+**Risk confirmed in the scheme itself:** `ADHD LifeOS.xcscheme:58-61` sets `LIFEOS_FIREBASE_EMULATOR_HOST` on the
+Test action with `shouldUseLaunchSchemeArgsEnv = "NO"` (Test-only; `:113` shows the Run action is `"YES"`,
+i.e. unaffected). **Adding ANY `.xctestplan` to a scheme migrates Xcode's Test action into test-plan mode**,
+which can silently drop this env var and override `-enableCodeCoverage` with the plan's own coverage setting —
+both the emulator harness (§ "Firebase emulator" in CLAUDE.md) and the 24.72% baseline depend on these surviving.
+
+**Acceptance criteria**
+- [ ] RED-first doesn't apply in the usual sense (no prior passing state) — instead, each new audit test's FIRST
+      run must fail on ≥1 real finding (proving it's wired to a real screen), then each accepted finding is
+      filtered with its comment, going green only once every unfiltered issue is fixed or filtered with a named
+      owner.
+- [ ] A new `.xctestplan` (e.g. `AccessibilityAudit.xctestplan`) listing ONLY the new audit classes, added to the
+      scheme as an ADDITIONAL plan (not default) — `xcodebuild test -scheme "ADHD LifeOS" -testPlan AccessibilityAudit`
+      runs it alone; CLAUDE.md's standard `xcodebuild test` command is untouched.
+- [ ] **Prove the migrated default plan still carries `LIFEOS_FIREBASE_EMULATOR_HOST` (Test-only) and coverage
+      ON:** diff the `.xcscheme` before/after and paste it; with the emulator UP, run the documented
+      `xcodebuild test` command and confirm the `+Seed`/`+Tags`/`+Storage`/`+AccountDeletion` tests RAN (not
+      skipped) and `xccov` still reports coverage. If the migration drops either, fix the plan/scheme before
+      calling this block done — a silent loss here reopens the emulator-skip and coverage-baseline facts this
+      file depends on.
+- [ ] **Non-negotiable: `xcrun simctl erase <udid>` immediately after this UI-target run, before any unit run** —
+      it poisons the simulator like any other UI-target suite.
+- [ ] SwiftLint 0 on new files; the standard unit suite stays green and unaffected; build green; all pasted,
+      including a separate run of the new plan (17+/27.0 sim, run deliberately).
+- [ ] No `screenshots/` owed — the audit's evidence is pass/fail plus filtered-issue comments, not a picture.
+- [ ] `apple-design` review: none owed — pure test harness. Say so.
+- [ ] No `#available` site touched; no RM-on pass owed.
+- [ ] Report lists every first-run finding split into: fixed inline (file:line), filtered as colour-arc-deferred
+      (§F), filtered as owned-elsewhere (name the arc), forwarded to the register as new.
+
+**Dependencies:** sequence LAST among B1-B5 (ideally after arcs A/C/D too) so the first live run has the fewest
+already-known findings to filter. Needs the 17+/27.0 runtime already on this machine.
+
+---
+
+## Arc G — Places, sheets, refresh and Fresh Start
+
+Source: `handoff/SESSION-OPENER-adhd-ux-audit-design.md` rounds **10a**, **10b**, **8b**. Findings:
+`handoff/ADHD-UX-AUDIT-WORKING-FINDINGS.md` §A (MODAL-2/3, REACH-1, GEST-2/3), §D (sheet-primary
+placement), §H (SET-01/02, TOOLS-01), §I (TASKS-07, INBOX-04). Evidence: board `67`
+(`screenshots/adhd-ux-audit/README.md`) — the Places chain sim-verified this session.
+
+**Order:** G1 before G2 (both touch the two Places toolbars — fold G2's Places moves into G1's
+commit if built together). G3's life-areas half needs arc E. G4 is independent. G5 needs arc D and
+arc E. Arc B ("Key targets", round 7) owns the 48pt token this arc's new buttons want — nothing
+named exists yet (`Theme.swift:198 pillHeight = 48` is the only 48pt token today); use a literal 48
+and re-point at arc B's token once it lands.
+
+---
+
+### FEATURE: F-G1-PlacesOneSheet — Places' editor becomes one sheet with pushes inside it  [ ] NOT STARTED
+
+**What E chose:** Round 10a, **"Sheet depth → 'One sheet, pushes inside it' (Recommended)."**
+*"Edit place stays the one sheet. An action's editor, and the app's own app picker, push INSIDE
+it, with Back to return. Only Apple's system screens (the contact picker, the camera) open over
+it."* Sim-verified this session (board `67`): Places → Edit place (1) → Edit action (2) → Apple's
+contact picker (3) — three deep on 17+ (MODAL-2, Critical).
+
+**The shape (verify, do not trust) — today's chain, each a separate `.sheet`:**
+- `Places/PlacesListView.swift:41-46` → `PlaceEditorView` (sheet 1, **stays a sheet**).
+- `PlaceEditorView.swift:50-74` wraps `Form` in its OWN `NavigationStack`; `PlaceActionsSection`
+  (`:57`) is a child of that Form.
+- `Places/PlaceActionsSection.swift:88-101` `.sheet(item: $editorContext)` → `PlaceActionEditorSheet`
+  (sheet 2). `:104-106` a second `.sheet(item: $guideContext)` → `PlaceAutomationGuideView` (the
+  app's OWN screen. E's quote names only the action editor and the app picker — extending "pushes
+  too" to this third screen is this session's plain reading of "only Apple's system screens open
+  over it", not a quoted decision; say so in the report).
+- `PlaceActionsEditorView.swift:39-104` wraps its OWN `NavigationStack`. `:66-71`
+  `.sheet(isPresented: $isPickingContact)` → `ContactPicker` (Apple's system UI — **stays a
+  sheet**). `:72-102` `.sheet(isPresented: $isPickingApp)` → `PlaceAppPickerView` (sheet 3).
+- `PlaceAppPickerView.swift:50-110` wraps a THIRD `NavigationStack` with its own
+  `.navigationDestination(for: PlaceAppCategory.self)` (`:85-87`) and
+  `(for: PlaceAppDirectoryEntry.self)` (`:88-102`).
+
+**The change:** one `NavigationStack`, owned by `PlaceEditorView`. `PlaceActionEditorSheet` and
+`PlaceAppPickerView` lose their own `NavigationStack`s and become `.navigationDestination` pushes
+on the shared stack (`PlaceAppPickerView`'s two `.navigationDestination`s move up onto it too);
+each loses its Cancel button (Back replaces it). `PlaceAutomationGuideView` becomes a push as well.
+`ContactPicker` and the camera covers (MODAL-3: `QuickCaptureView.swift:150`,
+`CaptureDetailView.swift:101`, `CaptureRowView.swift:37` — outside this arc, named as already
+compliant) stay presented OVER the one sheet.
+
+`PlaceAction` (`PlaceActionModels.swift:60`) is `Codable, Identifiable, Equatable, Sendable` — **not
+`Hashable`**, which `.navigationDestination(for:)` needs. Don't add it to the model; carry the push
+value on `PlaceActionEditorContext` (`PlaceActionsSection.swift:15-19`, already `Identifiable`
+with a minted `id`) instead, adding `Hashable` there. Verify `PlaceAppCategory`/
+`PlaceAppDirectoryEntry` are already `Hashable` — don't assume.
+
+**Tests that must be REVERSED, not deleted:**
+- `PlaceActionsEditorCallSiteTests.swift:24-31` (exactly-one-`.onMove`) — unaffected; **verify,
+  don't reverse.**
+- `ADHD LifeOSUITests/ToolsRoutinesJourneyUITests.swift:174-178` waits for
+  `app.buttons["placeEditorSaveButton"]` by id only — **verify it survives the button's move
+  (this block, and G2's bottom move), don't reverse.**
+- None found by grep for a test pinning today's sheet-depth by source or presentation count.
+
+**Acceptance criteria:**
+- [ ] RED first: a call-site test that `PlaceEditorView.swift`'s source has NO
+      `.sheet(item:$editorContext)`/`.sheet(isPresented:$isPickingApp)` and DOES have
+      `.navigationDestination` for both; a second assertion `ContactPicker`'s `.sheet` still exists
+      (the compliant exception).
+- [ ] Red-check: restore pre-block files; count failures; restore with `git checkout --`.
+- [ ] `screenshots/places-one-sheet/` + README: the chain driven end to end, light/dark.
+- [ ] `apple-design` review owed (§7.6) — sheet chrome changes.
+- [ ] No Reduce Motion site touched (push transitions are UIKit's own) — **no RM-on pass owed.**
+- [ ] **Verified paths:** "16.0 floor untouched; Places is already `@available(iOS 17.0, *)`
+      whole-feature (absent shape, §7.1) — no new gate expected."
+- [ ] SwiftLint 0, full suite green, build green, pasted.
+
+**Dependencies:** none. G2 depends on this landing first.
+
+---
+
+### FEATURE: F-G2-BottomAndFixList — Save/Add to the bottom of eight sheets; the fix-list's four items  [ ] NOT STARTED
+
+**What E chose:** Round 10a, **"The fix list → 'Approve all four' (Recommended)."**
+
+#### 2a — REACH-1: Save/Add to the bottom, eight sheets
+
+*"Save and Add move to the BOTTOM of eight sheets... The sprint sheet is round 4b's"* (arc F's, not
+this arc's). Template: `Capture/QuickCaptureView.swift:125` (`.safeAreaInset(edge: .bottom) {
+footerBar }`) + `QuickCaptureComponents.swift:357-386` (`footerBar`: primary `Button`,
+`MomentumSolidButtonStyle` at 54pt — `MomentumScoreboardViews.swift:45-59`, already clears the
+48pt floor — `.disabled(...)`, `.composerFooterSurface()`).
+
+| Sheet | file:line | id | today's placement |
+|---|---|---|---|
+| Edit place | `Places/PlaceEditorView.swift:66-70` | `placeEditorSaveButton` | `.confirmationAction` |
+| Edit action | `Places/PlaceActionsEditorView.swift:53-63` | `actionEditorSaveButton` | `.confirmationAction` |
+| Add Tag | `TagEditor/TagEditorListView.swift:171-183` | `addTagSaveButton` | `.confirmationAction` |
+| Tag detail | `TagEditor/TagEditorDetailView.swift:74-89` | `tagSaveButton` | `.topBarTrailing` |
+| Add Life Area | `LifeAreaEditor/LifeAreaEditorListView.swift:197-209` | `addLifeAreaSaveButton` | `.confirmationAction` |
+| Life Area detail | `LifeAreaEditor/LifeAreaEditorDetailView.swift:135-147` | `lifeAreaSaveButton` | `.topBarTrailing` |
+| New nudge | `Nudges/NudgesView.swift:275-296` | `nudgeAddSubmitButton` | `.confirmationAction` |
+| Capture detail | `Capture/CaptureDetailView.swift:71-134` (`actionsRow`) | none pinned | in-scroll |
+
+**Capture detail departs from the other seven — report it as such.** `CaptureDetailView` is
+**pushed** (`CaptureInboxView.swift:122-129`, `JournalTimelineSections.swift:348`), not a sheet —
+its own header comment says so. Its primary is `actionsRow(capture)` (`:83,126-134`, Sort / Make a
+task), placed in-scroll at the END of the `ScrollView` (`:72-84`), not pinned. Build it as E asked
+(bottom-pinned, same template) and say in the report that it's a pushed screen, not a sheet. `:213`
+is `overflowMenu` (Log to journal / discard) — a secondary exit, leave it where it is.
+
+**Nudges carries a comment arguing FOR top placement — annotate, don't delete**
+(`NudgesView.swift:279-280`: *"The confirming action belongs in the nav bar... not buried at the
+bottom of the form"*). Same `F-JournalDoorUnpinned` precedent (`TODO-CLAUDE-CODE.md:4731-4735`):
+mark it superseded by round 10a, keep the history.
+
+**The change**, each site: replace the toolbar Save/Add with a `.safeAreaInset(edge: .bottom)`
+primary (same accessibility id). Cancel/Back stays where it is — only the primary moves (Q8).
+
+#### 2b — SET-01/SET-02: the Notifications card
+
+*"The Settings Notifications card loses its ~310pt gap (SET-01). 'Not requested yet' gets an
+in-place 'Allow notifications' button (SET-02); the app already asks in `NudgesService.swift:182`."*
+
+**SET-01's cause is INFERRED, not confirmed.** Reading `SettingsView.swift:119-157`
+(`notificationsSection`, `LabeledContent` at `:126-129`, `permissionStatusView` at `:147-156`)
+found no explicit `.frame(height:)` explaining a 310pt gap. **Acceptance requires reproducing the
+gap on sim first** (measure it), THEN finding the real cause — do not fix an unconfirmed cause.
+
+**SET-02 deliberately breaks a documented invariant.** `NotificationAuthorizationReading.swift:9-14`
+and `NotificationCenterAuthorizationReader.swift:12-14` both say this seam is read-only "so no
+Settings code path can prompt." Grep for `requestAuthorization`/`NotificationAuthorizationReading`
+in tests finds only `FakeNotificationAuthorizationReading.swift` (a double, no such assertion) —
+**both doc comments must be ANNOTATED, not silently left claiming a now-false invariant.**
+Reusable mechanism: `NotificationCenterNudgeAdapter.swift:25-36`'s
+`requestAuthorizationIfNeeded()` shows the call (`center.requestAuthorization(options: [.alert,
+.sound])`), but it's nudge-scoped and namespaced — don't reuse it directly. **Shape:** a new,
+narrow `NotificationAuthorizationRequesting` protocol (one method) + `NotificationCenterAuthorizationRequester`,
+mirroring `NotificationAuthorizationReading`'s own shape. `SettingsView` shows the button only when
+`permissionState == .notDetermined`; on tap, request then re-read via the existing
+`authorizationReader`.
+
+#### 2c — TASKS-07: a loading state instead of "0 open"
+
+`TaskListView.swift:47` renders `Text(MomentumTaskBuckets.headerLine(tasks: tasksService.tasks))`
+unconditionally, ABOVE the `switch tasksService.state` (`:63-86`). `TasksService.swift:50`'s
+`tasks` array is `[]` until the first load resolves, and `:61` means `.loading` is true ONLY on
+the first cold load (a refetch stays `.loaded`) — so gating the header on `state != .loading` costs
+no flicker on later refreshes, only hides the first-appearance "0 open" flash. **Change:** gate
+`TaskListView.swift:47` on `tasksService.state`.
+
+**Coordinate with arc A's round-8 header change** at the SAME call site/`MomentumTaskBuckets.swift:56-67`
+(round 8 retires "12 OPEN · 2 OVERDUE" → plain "12 open"). Whichever arc lands second re-applies
+the other's edit — say in the report which order actually happened.
+
+#### 2d — INBOX-04: the promote sheet's Create Task
+
+`CapturePromoteSheet.swift:48-80`: `CreateTaskButton` (`:69-72`) sits in-scroll inside the `VStack`,
+after the warning/error labels — can scroll away at large Dynamic Type. **Change:** move it to a
+`.safeAreaInset(edge: .bottom)` on the `ScrollView` (same REACH-2 template), keeping
+`.disabled(hasPromoted)`. Verify the pinned bar reads correctly at `.presentationDetents([.medium,
+.large])`'s `.medium` too (`:92`), not only `.large`.
+
+**Tests that must be REVERSED, not deleted:**
+- None found by grep for `confirmationAction`/`topBarTrailing` pinning any of the eight Save
+  buttons' placement (`JournalHeaderControlsTests.swift:60` matches the string but is unrelated —
+  the Journal header, not a sheet Save).
+- `ToolsRoutinesJourneyUITests.swift:175` — verify, don't reverse (see G1).
+- None found for `MomentumTaskBuckets.headerLine`/"0 OPEN" by source-grep, or for
+  `CapturePromoteSheet`'s button position.
+
+**Acceptance criteria:**
+- [ ] RED first: eight placement assertions (bottom inset, not `ToolbarItem`) for 2a; a
+      loading-state test for 2c; a placement assertion for 2d.
+- [ ] SET-01 reproduced on sim FIRST (screenshot + measured gap) before any fix.
+- [ ] SET-02: RED first for the new requesting seam (a fake proving request-then-reread), then the
+      in-place button gated to `.notDetermined`.
+- [ ] Red-check each sub-item; count failures; restore with `git checkout --`.
+- [ ] `screenshots/sheets-bottom-and-fixlist/` + README: all eight sheets before/after, the
+      Notifications card before/after (gap measured), the "Allow notifications" button, Tasks'
+      loading state, the promote sheet's pinned button — light/dark.
+- [ ] `apple-design` review owed (§7.6) — every sub-item is visible.
+- [ ] No Reduce Motion site added (say so, or name it if the build adds a transition to SET-02).
+- [ ] No new `#available` gate — **Verified paths: "no new gate; 16.0 floor untouched."**
+- [ ] SwiftLint 0, full suite green, build green, pasted.
+
+**Dependencies:** G1 (Places' toolbars must already be pushes before their Save moves). Coordinate
+with arc A on `TaskListView.swift:47`.
+
+**Step 0:** none — SET-01/02 and INBOX-04 are code facts, not design choices. The read-only
+invariant break (2b) is Q8 in effect, not a new decision.
+
+---
+
+### FEATURE: F-G3-TapTwins — up/down buttons and a place-editor Delete button  [ ] NOT STARTED
+
+**What E chose:** Round 10a, **"Tap twins → '↑ ↓ buttons + a Delete button' (Recommended)."**
+*"Arrange mode's life areas and a place's action list show ↑ and ↓ on every row (48pt); drag still
+works. Edit place gains a bottom Delete button with its confirm (GEST-2; Q10 allows the friction).
+GEST-3 is closed by the same buttons."*
+
+**Dependency:** round 3 moves life areas off Today to the Areas tab — **arc E's job.** The shape
+below is written against today's `HomeView`/`HomeAccessoryStrips` as a starting point only —
+**find where `isArranging`/`arrangeAreas`/`reorderList` actually live once arc E lands, and build
+there instead.**
+
+**The shape (verify, do not trust):**
+- Life areas: `HomeAccessoryStrips.swift:12-28` (`reorderList`) — a `List` with one `.onMove`
+  (`:23`) forced into `.environment(\.editMode, .constant(.active))` (`:27`); edit mode alone gives
+  only the drag handle, no ↑/↓. `HomeView.swift:98-102,318-324` hosts arrange mode.
+- Place actions: `PlaceActionsSection.swift:50-66` — `ForEach(actions)` with `.onDelete` (`:55-58`)
+  AND `.onMove` (`:63-66`) on the same `ForEach`; footer at `:110-114` ("Drag to reorder.").
+  `PlaceActionsEditorCallSiteTests.swift:24-38` pins the exactly-one-`.onMove` count and that exact
+  footer string by source-grep — this block touches neither; **verify both stay green.**
+- **GEST-3's other half:** the action row's `.onDelete` (`:55-58`) is ALSO swipe-only, distinct
+  from the reorder gap, and round 10a's fix list only names the delete twin for Edit place
+  (GEST-2). **Recommendation:** fold the action row's own delete into the SAME shape as GEST-2 — a
+  Delete button inside `PlaceActionEditorSheet` (opened by the existing row tap,
+  `PlaceActionsSection.swift:132-148`) — rather than a third control on an already-crowded row.
+  Build-time judgment call, not an E decision (Q7's rule is met either way); state which shape was
+  built.
+
+**The change:**
+- Both reorderable lists gain an explicit ↑/↓ per row, 48pt. House pattern for "row button +
+  sibling control" (not nested buttons, which break `List` hit-testing):
+  `PlacesListView.swift:137-159` (row `Button` + sibling `.borderless` button in one `HStack`).
+  First-row ↑ / last-row ↓ disabled, not hidden. Each needs a label ("Move Home up") — also closes
+  A11Y-03 for these two controls. `.onMove` stays wired — "drag still works", not replaced. Verify
+  the buttons stay tappable under `.environment(\.editMode, .constant(.active))` on the actual sim.
+- `PlaceEditorView` gains a bottom Delete (own `.safeAreaInset`, or folded beside G2's bottom Save
+  as a secondary destructive action). `nil`/disabled when `existing == nil`. Confirm styled like
+  `TaskDetailView.swift:117-129`'s `"Delete this task?"` pattern; existing wording available at
+  `PlacesListView.swift:47-66` ("Anything already tagged with this place keeps its coordinates.").
+  On confirm: `PlacesService.delete`, then `dismiss()`. The existing swipe (`PlacesListView.swift:151-158`)
+  stays as E's named bonus.
+
+**Tests that must be REVERSED, not deleted:**
+- `PlaceActionsEditorCallSiteTests.swift:24-38` — verify, don't reverse.
+- None found by grep for a test asserting `HomeAccessoryStrips`/`PlaceEditorView` has NO up/down or
+  Delete control — net-new surface.
+
+**Acceptance criteria:**
+- [ ] RED first: geometry/call-site tests that each row has labelled 48×48pt up/down controls,
+      disabled at the ends; a `PlaceEditorView` test that Delete exists only when `existing != nil`.
+- [ ] Red-check by restoring pre-block files; count failures; restore with `git checkout --`.
+- [ ] `screenshots/tap-twins/` + README: both reorder lists with visible ↑/↓ and disabled ends,
+      Edit place's Delete + confirm — light/dark.
+- [ ] `apple-design` review owed (§7.6).
+- [ ] No Reduce Motion site added — say so, or name it if a disabled-state transition is added.
+- [ ] **Verified paths per surface** once arc E settles where life areas live; Places stays
+      `@available(iOS 17.0, *)` whole-feature.
+- [ ] SwiftLint 0, full suite green, build green, pasted.
+
+**Dependencies:** arc E (life-areas half only). Do not start that half before arc E lands.
+
+**Step 0 (only if the build session disagrees with the recommendation above):** how the action
+row's own delete gets a tap twin — (a) fold into the action editor as Delete (recommended), or (b)
+a third inline row control. Either satisfies Q7; no E input needed if (a) is built.
+
+---
+
+### FEATURE: F-G4-Refresh — reload on appear, on foreground, and prove writes reach their screens  [ ] NOT STARTED
+
+**What E chose:** Round 10b, **E verbatim:** *"I choose option one With the addition of an
+auto-refresh When a user makes an edit/Change Such as logging a new Journal entry - Then the
+Journal should update automatically. Creating a new quick capture - Should update the Capture
+inbox page automatically."* Option one: *"every screen reloads when it appears and whenever the
+app returns to the front. The pull stays as a bonus, with no new button."*
+
+**The shape (verify, do not trust) — two real gaps, one thing already true:**
+
+1. **Foreground return does almost nothing today.** Only `RootView.swift:389-395`
+   (`focusService.syncNow()` + `LocationTriggerService.refreshRegistrations()`) and
+   `HomeView.swift:306-309` (`refreshLiveRoutine()`) react to `scenePhase == .active`. Grep for
+   `scenePhase` finds it nowhere else (bar `PlaceRoutineScreen.swift`,
+   `FocusNotificationResponse.swift`) — Tasks, Areas, Journal, Nudges, Places, Tools,
+   LifeAreaDetail have no foreground-return reload.
+2. **A warm tab switch doesn't reload either.** `AppTabContent.swift:89-115` keeps every visited
+   tab alive (`visitLog.isBuilt`), only toggling opacity/offset/hit-testing on selection change. A
+   screen's `.task` (the load-on-first-appear hook every screen uses) does not re-run on a warm
+   return — `HomeRoutineCard.swift:122-127`'s own comment says so for the routine card, and it's
+   true everywhere else too.
+3. **Already true, needs proving not building:** `DataChangeSignal` posts after every generic
+   Firestore write (`FirebaseManager.swift:326-341`) and from four batch extensions
+   (`+LifeAreas.swift:39`, `+Tags.swift:32,38,105`, `+Seed.swift:65`, plus the routines arc's own
+   posts). NINE screens already subscribe (`JournalView.swift:157`, `CaptureInboxView.swift:137-140`,
+   `HomeView.swift:376-378`, `TaskListView.swift:138`, `AreasView.swift:120`,
+   `LifeAreaDetailView.swift:84`, `NudgesView.swift:63`, `PlacesListView.swift:69-71`,
+   `ToolsRoutinesSection.swift:73`). A new journal entry
+   (`FirebaseJournalClientAdapter.swift:92-116` `createLog` → `store.appendLog(log)` →
+   `FirebaseManager+Logs.swift:20-22` → generic `save`) and a new quick capture
+   (`FirebaseCaptureClientAdapter.swift:21-46` `createCapture` → `store.saveCapture` →
+   `FirebaseManager+Captures.swift:56-58` → generic `save`) BOTH verified this session to route
+   through the funnel, end to end — not assumed. Both screens also get a direct reload
+   from their composer's completion closure (`JournalView.swift:148-153`,
+   `CaptureInboxView.swift:117-121`). **This block's job for (3) is tests, not new production
+   code**, unless a real stale-screen reproduction turns up.
+   - `FirebaseManager+Storage.swift`'s `uploadMedia` (`:29-31`) doesn't post the signal, but only
+     writes the raw blob — the capture DOCUMENT write goes through `saveCapture` after, which does.
+     No gap.
+   - `ShortcutIntentRunner.swift:50,62` posts the signal explicitly AFTER calling writers that
+     already post it via the generic funnel — a harmless double-post, a fact to record, not a fix.
+
+**The change:** reuse `DataChangeSignal` for both new triggers rather than inventing a parallel
+mechanism — every screen already has the one `.onReceive` it needs.
+- `RootView.swift:389-395`: on `phase == .active`, also call `DataChangeSignal.post()`.
+- `AppTabContent.swift:114`: also call it on every selection change (not only first-visit build).
+  This covers a warm tab switch AND every screen pushed under a tab (Places under Tools, Nudges
+  under Home, `LifeAreaDetailView`) — the signal is a broadcast, so it needs no owning-tab identity
+  threaded down.
+- **This refetches every mounted screen on every switch, not only the destination** — the same
+  cost the app already accepts for a write anywhere. State this trade-off rather than silently
+  narrowing scope; a per-tab-keyed alternative is real but materially more code for a saving that's
+  speculative until measured.
+- Re-scope `DataChangeSignal.swift:9-17`'s doc comment (it now fires on foreground/tab-switch too,
+  not only writes) — annotate, keep the history.
+- **Cold-launch double-fetch is expected and fine** — the existing 600ms debounce
+  (`DataChangeSignal.swift:24,44-48`) coalesces it, and "never flashes loading"
+  (`TasksService.swift:61`) already protects the visible result. **No test may assert "loads
+  exactly once"** — the established pattern (`TasksServiceTests.swift:167`,
+  `HomeServiceTests.swift:236`, `JournalServiceTests.swift:254`) is "never flashes loading", never
+  "loads once".
+
+**Tests that must be REVERSED, not deleted:** none found by grep asserting the signal fires only
+after a write, or that `AppTabContent`'s `.onChange(of: selection)` does nothing but
+`visitLog.select`. The new tests below extend `DataChangeSignalTests.swift`'s existing pattern.
+
+**Acceptance criteria:**
+- [ ] RED first: call-site tests that `RootView.swift`'s active-branch and `AppTabContent.swift`'s
+      selection-change both contain `DataChangeSignal.post()`; new `DataChangeSignalTests` proving
+      a post from either site reaches a subscriber (inject via `debouncedPublisher`, don't touch
+      real `RootView`/`AppTabContent` instances).
+- [ ] A regression test pinning that the journal/capture composer's completion closure calls
+      `load()`/`refresh()` (extend `JournalServiceTests`/`CaptureInboxServiceTests`, or a call-site
+      test on `JournalView.swift:148-153`/`CaptureInboxView.swift:117-121`).
+- [ ] Red-check: restore `RootView.swift`/`AppTabContent.swift`; count failures; restore with
+      `git checkout --`.
+- [ ] No `screenshots/` owed — plumbing/timing only, nothing new to see; say so.
+- [ ] No `apple-design` review owed — say so.
+- [ ] No Reduce Motion site added — say so.
+- [ ] No new `#available` gate — **Verified paths: "no new gate; 16.0 floor untouched."**
+- [ ] SwiftLint 0, full suite green, build green, pasted.
+
+**Dependencies:** none.
+
+---
+
+### FEATURE: F-G5-FreshStart — "Welcome back. Start fresh?" and the Set-aside row  [ ] NOT STARTED
+
+**What E chose:** Round 8b, **"Fresh Start → 'Set them aside in one folded row' (Recommended)."**
+*"After 7+ days away, one tap on Today's 'Welcome back. Start fresh?' card moves the PAST-DUE open
+tasks into one collapsed 'Set aside · N' row at the bottom of Tasks. It sits beside round 6's
+'Anytime · N', in the same shape. Nothing is deleted, dates are kept, and one tap brings any task
+back. Undated tasks already live in Anytime, and future-dated tasks are untouched."* (Research
+§5.8, §5.4.)
+
+**Dependencies:** arc D's "Anytime · N" row shape (round 6, not yet built) and arc E's round 5b
+active-day definition. **Do not build before both land.**
+
+**The shape (verify, do not trust):**
+- `TaskModels.swift:15-58` (`TaskItem`) has `completedAt: Date?` (`:26-30`) as precedent for a
+  nullable stamp written once, cleared on re-open. No "set aside" field exists.
+- `MomentumTaskBuckets.swift:79-97` puts a past-due open task (`dueDay <= today`) in `.dueToday`
+  (`:95`) — exactly the bucket Fresh Start must exclude a set-aside task from.
+- No existing "last active"/"last opened" tracker (grep for `lastOpenedAt`/`lastActiveDate`/
+  `daysAway`/`daysSinceLast` — the only near-hit, `lastClosedAt`, is per-area derived task data,
+  `MomentumScoreboard.swift:109,129,267-288`, not a global signal).
+
+**Step 0 — ask E (two open points, neither settled by the record):**
+
+1. **How "set aside" is stored** (the brief's own named gap). **(a) A task field** — a new
+   `setAsideAt: Date?` property on `TaskItem`, added to its explicit `CodingKeys`
+   (`Tasks/TaskModels.swift:72-81`) as `case setAsideAt = "set_aside_at"`, verified this session to
+   be the exact pattern `completedAt` already uses (`:78`, `"completed_at"`) — `Firestore.Encoder`
+   has no automatic camelCase→snake_case conversion here (`FirestoreDocumentCoder.swift:23-25`
+   calls it with no `keyEncodingStrategy`), so the snake_case key comes ONLY from this enum, by
+   hand, same as every other field on this model. Syncs across devices, survives a reinstall;
+   verify whether `firestore.rules` validates field names on the tasks write (it sits in the
+   generic per-user allow per this file's architecture notes — a republish may not even be owed)
+   before assuming one is. **(b) Derived client state** — a local exclusion set. No schema
+   change, but can't reliably honour "brings it back" across devices/reinstall, and needs a second
+   local `freshStartAt` timestamp to know what was swept. **Recommendation: (a)** — it matches the
+   app's own pattern for exactly this fact and is the only shape that delivers what E asked on any
+   device.
+2. **How "7+ days away" is measured — not settled.** **(a)** the app wasn't OPENED for 7+ days (a
+   local `lastOpenedAt`). **(b)** no ACTIVE day (round 5b's definition) for 7+ days — which would
+   greet a daily-opener who's done nothing as if they'd left. The record doesn't choose; don't
+   decide it — ask E, with a render only if the answer isn't a plain preference.
+
+**The change (once Step 0 is answered and D/E have landed):**
+- A Fresh Start card ("Welcome back. Start fresh?") shown when Step 0.2's condition is true, one
+  tap.
+- The tap stamps every past-due, open task with `set_aside_at` (Step 0.1) in one batch write
+  (house pattern: `FirebaseManager+Tags.swift`'s batch commits; one `DataChangeSignal.post()`
+  after, per `FirebaseManager+LifeAreas.swift:39`).
+- `MomentumTaskBuckets` excludes set-aside tasks from every bucket; Tasks gains a collapsed
+  **"Set aside · N"** row beside arc D's "Anytime · N", reusing its component.
+- Tapping into the row and clearing `set_aside_at` restores a task; its due date is untouched.
+- **The card's appear/disappear is a Reduce-Motion site** (§7.2's "appears" case,
+  `CaptureFanOverlay`'s fade) — this block **owes the RM-on device pass** (§7.3).
+
+**Tests that must be REVERSED, not deleted:** none found by grep for `set_aside`/`freshStart` —
+entirely new surface. Check `MomentumTaskBucketsTests.swift` at build time for an assertion that
+every past-due open task lands in `.dueToday` unconditionally — extend it, don't reverse it.
+
+**Acceptance criteria:**
+- [ ] Step 0 answered by E before any code is written.
+- [ ] RED first: a codec round-trip test for `set_aside_at` (if (a)); a bucket-exclusion test; a
+      Tasks-board test for the row's count and restore-on-tap.
+- [ ] Red-check by restoring pre-block files; count failures; restore with `git checkout --`.
+- [ ] `screenshots/fresh-start/` + README: the card, the batch action, the row, a restore — light/
+      dark, plus the RM-on/RM-off pair for the card's appearance.
+- [ ] `apple-design` review owed (§7.6) — new visible surface.
+- [ ] **RM-on device pass owed** (§7.3) — new reduced site.
+- [ ] No new `#available` gate expected — **Verified paths: "no new gate; 16.0 floor untouched"**
+      unless the build introduces one.
+- [ ] "firestore.rules changes; E republishes" **only if** Step 0.1 → (a) AND the rules actually
+      validate field shape on tasks (verify, don't assume).
+- [ ] SwiftLint 0, full suite green, build green, pasted.
+
+**Dependencies:** arc D and arc E. Do not start until both have landed and Step 0 is answered.
