@@ -97,8 +97,10 @@ private struct MenuButton: View {
     let glyph: String
     let label: String
     let value: String
+    /// L3's thirds are ~132pt wide: an 8pt inset and 4pt gaps keep "15 min" whole (16/8 truncated it to "15…").
+    var compact = false
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: compact ? 4 : 8) {
             Image(systemName: glyph).foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 0) {
                 Text(label).font(.caption.weight(.semibold)).foregroundStyle(Color("LabelSecondary"))
@@ -107,7 +109,7 @@ private struct MenuButton: View {
             Spacer(minLength: 4)
             Image(systemName: "chevron.up.chevron.down").font(.caption.weight(.semibold)).foregroundStyle(Color("LabelSecondary"))
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, compact ? 8 : 16)
         .frame(maxWidth: .infinity, minHeight: 56)
         .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
@@ -213,7 +215,7 @@ private struct ComposerLayout: View {
                 VStack(spacing: 0) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("When").font(.subheadline.weight(.semibold))
-                        WhenSegments(height: 40)
+                        WhenSegments()
                     }
                     .padding(16)
                     Divider().padding(.leading, 16)
@@ -249,15 +251,15 @@ private struct ComposerLayout: View {
                 .padding(.top, 24)
             Spacer(minLength: 0)
             VStack(spacing: 8) {
-                WhenSegments(height: 44)
+                WhenSegments()
                 if typeSize.isAccessibilitySize {
                     MenuButton(glyph: "square.grid.2x2", label: "Area", value: "None")
                     MenuButton(glyph: "timer", label: "Time", value: "15 min")
                     AddButton()
                 } else {
                     HStack(spacing: 8) {
-                        MenuButton(glyph: "square.grid.2x2", label: "Area", value: "None")
-                        MenuButton(glyph: "timer", label: "Time", value: "15 min")
+                        MenuButton(glyph: "square.grid.2x2", label: "Area", value: "None", compact: true)
+                        MenuButton(glyph: "timer", label: "Time", value: "15 min", compact: true)
                         AddButton(compact: true)
                     }
                 }

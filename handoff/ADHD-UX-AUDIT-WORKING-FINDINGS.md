@@ -363,3 +363,110 @@ These are suggestions, not decisions. Each names the ADHD struggle it serves and
 
 **Not recommended:** body-doubling or "work alongside" presence (FOLK/WEAK, §5.7), and energy/mood matching (no
 evidence it helps choose tasks; offer it only as an optional filter).
+
+## L. apple-design review: the composer, three layouts (round 7b, session 3, board 64)
+
+**E chose L3 and "Text, then the date"** (design record, round 7b). The review as delivered follows.
+
+
+HIG pages generated 2026-09-19 (refreshed in place this morning, so no re-pull was owed).
+Pages read for this review: accessibility, layout, typography › Supporting Dynamic Type, color › Best practices,
+designing-for-ios, segmented-controls, pop-up-buttons, virtual-keyboards, entering-data, text-fields, buttons,
+sheets and toolbars. Contrast comes from the colorsets' hex values (`scripts/audit/contrast.py`), not from JPEGs.
+
+### Summary
+All three layouts carry E's settled content (a title, four "when" choices, Area and Time menus, and Add) in one shape
+language and with the real tokens. The rating is **Critical issues**, but every Critical except one comes from the
+token layer, not from a layout, and all of those go to round 9.
+- **The thesis:** "say what it is, tap when, add".
+- **What each is remembered by:** L3, the title owning the page with every choice riding on the keyboard. L1, a
+  tidy equal-width grid. L2, the familiar Settings card.
+
+### Critical
+- **Inherited, shared by all three, routed to round 9 (Q5/Q6; §F):**
+  - **White text on AccentColor is 3.93:1 in light and 3.65:1 in dark.** That covers the selected segment (15pt
+    semibold) and Add (17pt semibold). `accessibility.md › Vision` sets "Up to 17 pts · All · 4.5:1" and
+    "All · Bold · 3:1". Semibold is not bold under WCAG.
+    - **A candidate for round 9, not a decision here:** bold labels clear Apple's 3:1 bold row with no new palette
+      value (Q6). Round 9 owns the Q5/Q6 collision, including its middle option of fixing only the Increase
+      Contrast appearance.
+  - **The placeholder "What needs doing?" fails in every layout.**
+    - As rendered here it is LabelTertiary: 1.88:1 light, 2.33:1 dark.
+    - The live composer's field is inferred to use the system placeholder colour: 1.69:1 and 2.43:1 (§F).
+    - Both fail even the 3:1 large-text bar, and that includes L3's 22pt title.
+  - **The Area and Time captions (L1, L3), and L2's trailing values, are LabelSecondary.** That is 4.25:1 on the card
+    surface in light, which fails 4.5:1. Dark is 5.52:1 and passes.
+- **L3 only: at AX3 it cannot share the screen with the keyboard.**
+  - The stacked bar is four 48pt segments, two menus and Add. That is taller than the 482pt above a 336pt keyboard.
+  - With the keyboard down, the render shows the Area and Time buttons overlapping.
+  - `layout.md › Adaptability`: "containers may need to grow in height so that text isn't cropped or doesn't overlap
+    other content". `typography.md › Supporting Dynamic Type`: "Consider adjusting your layout at large font sizes."
+  - **Fix in the build:** at accessibility sizes, L3 falls back to L1's stacked form. The choices scroll under the
+    title and Add stays pinned to the bottom. The board's L1 AX3 column is exactly that form.
+
+### Improvements
+- **High, all three: the Date segment mixes a glyph with text.** `segmented-controls.md › Content`: "Prefer using
+  either text or images — not a mix of both — in a single segmented control."
+  - Fix: make it text only. Once a date is picked, the segment shows that date ("Fri 26").
+- **Medium, all three: one segment acts inside a selection control.** `segmented-controls.md › Best practices`:
+  "Don't assign actions to segments in a control that otherwise represents selection state."
+  - This is mitigated if Date becomes the selected segment and shows the picked date.
+  - The picker must be a menu or popover, never a second sheet (Q4, one sheet deep).
+- **Medium, all three: one colour means two things in the same control.** Accent is both the selected fill and the
+  Date text. `color.md › Best practices`: "Avoid using the same color to mean different things."
+  - Fix: set the Date text in LabelPrimary, like the other three segments.
+- **Medium, L2: the "When" label is redundant.** `segmented-controls.md › Content`: "A segmented control that
+  displays text labels doesn't need introductory text."
+  - L2 is also the only layout that shows the chosen values in grey (LabelSecondary, 4.25:1 in light).
+- **Medium, L3: the bar is at the crowding limit.** `toolbars.md › Item groupings` says to "aim for a maximum of
+  three" groups. L3 holds three: When, Area and Time, and Add.
+  - `› Item groupings` also says "Keep actions with text labels separate". Add sits 8pt from the Time menu, and both
+    are text.
+  - Keep Add trailing, where `toolbars.md › Actions` puts the primary action: "put it on the trailing side".
+- **Low, all three: gaps between bezelled controls are below the HIG's suggestion.** `accessibility.md › Mobility`
+  suggests "about 12 points of padding around elements that include a bezel". All three use 8pt.
+  - 12 is banned in this app (§2). The house answer is 16 where space allows: L1's Area | Time gap, and L2's rows.
+  - L3 cannot afford 16.
+- **Low, all three: capitalisation.** `segmented-controls.md › Content` and `buttons.md › Content` ask for
+  title-style ("Not Yet", "Add Task"). The app's copy is sentence case throughout.
+  - This is round 10's X-CAPS item. Named here, not fixed here.
+
+### Named divergence (E's Q8 governs)
+`sheets.md › Mobile` puts Done "on the trailing edge" of the top toolbar. All three layouts put Add at the bottom, by
+E's rule. The design record already carries this divergence.
+
+### Craft notes
+- **L3 has the point of view.** The title is the hero, and the choices wait underneath like a keyboard row.
+  - It matches the capture-first rhythm the app is built on: dump it, then decide (research §1.3).
+- **L1 is neat but reads as a form. L2 reads as Settings.** Both are competent and neither has a signature.
+- **Remove one accessory:** the calendar glyph on Date (all three), and L2's "When" label.
+
+### What works
+- **All three offer choices instead of typing.** `entering-data.md › Best practices`: "When possible, offer choices
+  instead of requiring text entry."
+- **Useful defaults are already selected:** Not yet, None and 15 min. `pop-up-buttons.md › Best practices`:
+  "Provide a useful default selection."
+- **Each menu carries its label,** so its options are predictable. `pop-up-buttons.md › Best practices`: "Give
+  people a way to predict a pop-up button's options without opening it."
+- **Close is a 48 × 48pt target on the leading edge,** a way out other than Add. `sheets.md › Best practices`:
+  "Provide an alternative to the Done button."
+- **L3 does what the keyboard page asks.** `virtual-keyboards.md › Mobile (iOS, iPadOS)`: "Place custom controls
+  above the keyboard thoughtfully … make sure they're relevant to the current task." And
+  `designing-for-ios.md › Best practices`: "it tends to be easier and more comfortable for people to reach a control
+  when it's located in the middle or bottom area of the display".
+
+### Platform notes (for the build)
+- **L3 rides the keyboard through `safeAreaInset(edge: .bottom)`.**
+  - SwiftUI's keyboard avoidance lifts it on every OS, which makes it the iOS 16 floor path (§7.1).
+  - `ToolbarItemPlacement.keyboard` is a single row, too small for L3's two.
+- **On 26 and later, the bar's container takes Liquid Glass behind `#available`.** Below 26 it gets a standard
+  material. `virtual-keyboards.md › Mobile`: "apply Liquid Glass to the view that contains your controls".
+  `layout.md › Visual hierarchy`: "Instead of applying a solid or semi-opaque background color beneath controls".
+- **The when-choice picker is a popover or menu,** never a sheet (Q4).
+  - On iPhone a `.popover` adapts to a sheet unless `presentationCompactAdaptation(.popover)` is set (16.4+), which
+    needs a floor path on 16.0–16.3.
+- **L3's promise holds only while the keyboard stays up.** Its choices are stable while typing. If opening Area,
+  Time or the date picker dismisses the keyboard, the bar drops 336pt and jumps back, which is the instability
+  research §3.2 warns about.
+  - The build must keep the keyboard up (or hold the bar at keyboard height) while a menu or the picker is open.
+  - A test must pin it. This is unverified: SwiftUI `Menu`'s effect on the first responder was not checked here.

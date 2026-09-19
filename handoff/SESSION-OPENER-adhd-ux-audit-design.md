@@ -330,6 +330,47 @@ bottom furniture cut out.
   (77×36), the Tasks "+" (27×36) and Journal's "All activity" (38×36) all become 48×48 in their standard places.
   - Stated default: the Live Activity's single +5 min is at least 44pt within its height cap.
 
+**Round 7b: the composer's layout (session 3; board `64-ROUND-7b-composer-layouts.jpg`, frames in
+`screenshots/adhd-ux-audit/round-7b-composer-layouts/`; real-token renders from a throwaway probe, deleted after).**
+
+Before E saw it, board `64` was re-rendered with two corrections:
+- Session 2's `.lineLimit(1)` fix had only turned L3's "15 / min" wrap into a truncated "15…". L3's menus now use a
+  compact 8pt inset with 4pt gaps, and "15 min" shows whole.
+- L2 and L3 had drawn the "when" segments at 40 and 44pt. All three are now 48pt, per round 7 ("the composer's own
+  chips stay 48").
+
+The `apple-design` review of the three layouts is findings §L.
+- **Layout → "L3 · Rides on the keyboard"** (Recommended).
+  - The title owns the page. Every choice and Add sit in one bar just above the keyboard: the four "when" segments on
+    top; Area | Time | Add below, with Add trailing.
+  - With the keyboard up the bar spans 406–518pt of the 874pt screen. L1's choices sat at 252–364pt, and L2's at
+    282–440pt.
+  - Carried in the question, so part of the choice:
+    - **At AX3 the bar cannot share the screen with the keyboard,** and Area and Time overlap in the render. At
+      accessibility sizes the build uses L1's stacked form instead: the choices scroll under the title and Add stays
+      pinned.
+    - **Opening Area, Time or the date picker must NOT dismiss the keyboard,** or the bar drops 336pt and jumps back
+      (research §3.2). A test pins it.
+  - Build notes (findings §L, Platform notes):
+    - The bar rides the keyboard through `safeAreaInset(edge: .bottom)`, which is the 16 floor.
+    - The container takes Liquid Glass on 26+ behind `#available`, and a standard material below.
+    - `ToolbarItemPlacement.keyboard` is one row, so it cannot hold the bar.
+    - The date picker is a popover or menu, never a sheet (Q4). On iPhone a `.popover` needs
+      `presentationCompactAdaptation(.popover)` (16.4+) and a floor path.
+  - Rejected:
+    - L1 · Tidy grid (choices high, 174–286pt above the keyboard).
+    - L2 · Form card (Settings-familiar, but grey values and a redundant "When" label).
+- **The Date segment → "Text, then the date"** (Recommended).
+  - It reads "Date" in LabelPrimary like its neighbours, with no calendar glyph.
+  - Once a date is picked, Date becomes the selected segment and shows that date ("Fri 26").
+  - This fixes all three `apple-design` findings on it:
+    - `segmented-controls.md › Content`: "either text or images — not a mix";
+    - an action segment inside a selection control;
+    - `color.md › Best practices`: accent meaning both "selected" and "opens a picker".
+- **Routed, not decided:** the review's contrast Criticals go to round 9. They are the placeholder, LabelSecondary
+  4.25:1 in light, and white on accent (3.93:1 light / 3.65:1 dark at 15–17pt semibold). "Make the labels bold" is
+  offered there as a candidate, beside the Q5/Q6 middle option.
+
 **Housekeeping note (session 2 hand-off).** Two throwaway render probes were swept into intermediate commits by `git add -A`:
 - the hero probe: in `3f8a187`, removed `952fdd3`;
 - the composer probe: in `d62cda0` and `a715d6b`, removed in the hand-off merge `670dbb7`.
