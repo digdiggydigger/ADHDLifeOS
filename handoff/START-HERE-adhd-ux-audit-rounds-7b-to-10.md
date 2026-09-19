@@ -65,15 +65,18 @@ redesigns. Three layouts were rendered with the real tokens: **`64-ROUND-7b-comp
 - **L3 · Rides on the keyboard.** The title owns the page. Every choice sits in a toolbar just above the keyboard,
   with Add inside it, so all of it is in thumb reach (Q8).
 
-Recommend **L3**: the keyboard is up whenever the composer is, so L3 is the only layout whose choices never move and
-never need scrolling at standard sizes.
-
-**Known mock defect:** at AX3, L3's toolbar is taller than the space above the keyboard, and its menu buttons overlap in
-the render. Name it in the question: the build gives the toolbar a scrolling or two-step AX3 form. L3's Add was
-shortened to "Add" after the first render wrapped it. **Before showing E, re-render L3 once:** its Time value
-still wraps ("15 / min"). The saved probe (`scripts/audit/probes/AuditComposerLayoutProbe.swift.txt`) already carries
-the fix (`.lineLimit(1)` on the menu value). Delete the `L3-*` PNGs first; the two-pass only renders what is missing. Say in the question that the keyboard is drawn as a 336pt block, because the sim hides the
-software keyboard. **Run `apple-design` on the three first (§7.6).** Open the board in Preview, then ask.
+**The sequence, in this order:**
+1. **Re-render L3.** Its Time value still wraps ("15 / min") in board 64. The saved probe
+   (`scripts/audit/probes/AuditComposerLayoutProbe.swift.txt`) already carries the fix (`.lineLimit(1)` on the menu
+   value). Copy it into `ADHD LifeOSTests/` as `.swift`, set its `outDir` to your scratchpad, and run it (§5).
+   Rebuild the `r7-layout` frames that `compose_r7b.py` expects: it needs the status-bar crops from frames `22` and
+   `full/s-home-D-p1`, which are in the repo. Recompose board `64`, and delete the probe from the test folder.
+2. **Run `apple-design` on the three layouts (§7.6).**
+3. **Open board `64` in Preview, then ask.** Recommend **L3**: the keyboard is up whenever the composer is, so L3 is
+   the only layout whose choices never move and never need scrolling at standard sizes.
+   - Say in the question that the keyboard is drawn as a 336pt block (the sim hides the software keyboard).
+   - Name L3's known AX3 defect: its toolbar is taller than the space above the keyboard, and its menu buttons overlap
+     in the render. The build gives it a scrolling or two-step AX3 form.
 
 ## 3. Round 8: shame and pressure copy (board BUILT: `63-ROUND-8-pressure-copy.jpg`)
 
