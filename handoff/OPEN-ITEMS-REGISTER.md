@@ -58,8 +58,14 @@ newer. A scratch re-pull against Apple's live site found `layout.md` (always-loa
 `branding.md` REVISED — **the installed copy carries the old accent-colour paragraph, not the "content
 layer" sentence this register cites as the colour arc's dependency** — plus a NEW
 `designing-for-iphone-duo.md`, the IAP page renamed, and four small edits. §7.6 carries the re-pull
-check. **Open question for E, not work:** refresh the installed copy in place (`node
-scripts/pull-hig.mjs` in `~/.agents/skills/apple-design`) — user-level, shared by every project.
+check.
+
+**E's decision, the same session: refresh IN PLACE, with standing permission (PR #165).** Asked for
+a recommendation, then *"yes, do both"*. The installed pages were refreshed 2026-09-19 (backed up
+first). The diff against the backup was exactly the pages listed above, `SKILL.md` and the curated
+`liquid-glass.md` were untouched, no `doc://` leftovers, and every page `SKILL.md` names exists.
+§7.6's freshness step is now: re-run the pull in place when `hig-lookup.md` is more than 7 days
+old, and always before a colour, branding or layout decision. Nothing about it is outstanding.
 
 ---
 

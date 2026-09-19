@@ -815,7 +815,8 @@ is **when it is owed, how to run it properly, and what it disagrees with here.**
 
 **What it is.** `apple-design` is a user-level skill: `~/.agents/skills/apple-design`, linked from
 `~/.claude/skills/`. It comes from `dickwu/apple-design-skill` at `da2da6dd` and was installed
-2026-09-18. It is a design reviewer. It bundles 122 of Apple's HIG pages in Apple's own wording
+2026-09-18. Its Apple pages were refreshed in place on 2026-09-19 (E's call, see the trap below). It
+is a design reviewer. It bundles 123 of Apple's HIG pages in Apple's own wording
 (`references/hig/*.md`), a routing table (`references/hig-lookup.md`), five audit lenses
 (accessibility, platform conventions, visual craft, interaction, writing) and a report format.
 **Invoke it with the Skill tool (`apple-design`) every time**, so that its `SKILL.md` loads in
@@ -836,8 +837,8 @@ full. Never run it from this summary or from memory.
   same way the RM-on pass (§7.3) is handled.
 
 **How to run it properly:**
-1. **Freshness check first (see the trap below).** Re-pull into the scratchpad and diff against
-   the pages you are about to cite.
+1. **Freshness check first (see the trap below).** If the pages are more than 7 days old, or the
+   work is a colour, branding or layout decision, refresh them in place before reading anything.
 2. **Load what it prescribes and nothing wholesale.** That is the always-load set
    (`accessibility`, `layout`, `typography`, `color`, `designing-for-ios`), plus 3 to 6 pages for
    what is on screen, routed through `hig-lookup.md`.
@@ -855,33 +856,48 @@ full. Never run it from this summary or from memory.
    a candidate. As with every skill, a recommendation is never a mandate for the block in hand.
 
 **THE FRESHNESS TRAP. Its pages are a snapshot, and they were already stale when installed.** The
-skill pulled Apple's site on 2026-09-09, and upstream had nothing newer at install. A scratch
-re-pull against the live site on 2026-09-19 found **six pages changed, one new, one renamed**:
+skill pulled Apple's site on 2026-09-09, and upstream had nothing newer at install. A re-pull
+against the live site on 2026-09-19 found **six pages changed, one new, one renamed**:
 - **`layout.md` was rewritten on 2026-09-09.** It is in the always-load set. It now says to set
   controls apart with Liquid Glass and a scroll edge effect "instead of applying a solid or
   semi-opaque background colour beneath controls".
-- **`branding.md` was revised on 2026-09-09.** The installed copy carries the OLD accent-colour
+- **`branding.md` was revised on 2026-09-09.** The installed copy carried the OLD accent-colour
   paragraph. The new text is the one the register cites as the colour arc's dependency ("move it
   into the content layer, where it scrolls beneath Liquid Glass controls"). So a colour session
-  citing the installed copy would cite the superseded guidance.
+  would have cited the superseded guidance.
 - **`designing-for-iphone-duo.md` is new (2026-09-09).** It covers a two-display iPhone whose
-  system puts tab bars and toolbars on the SIDE. The custom `AppTabBar` knows nothing of this. It
-  is a register candidate, not work.
+  system puts tab bars and toolbars on the SIDE. The custom `AppTabBar` knows nothing of this.
+  It is register §C2, not work.
 - **`in-app-purchase.md` became `apple-in-app-purchase.md` (2026-09-17).** `apple-pay`,
   `collaboration-and-sharing`, `managing-accounts` and `privacy` also changed, but only slightly.
 
-The check, run from the skill's directory (it takes about 150 requests and changes nothing
-installed):
+**E's call, 2026-09-19: refresh the INSTALLED copy in place, and keep it fresh as standing
+permission.** It was refreshed that day, and the skill's own checks passed. A checklist that relies
+on a session remembering to diff is the weakest safeguard this repo has; a fresh default makes
+forgetting cost nothing. **The rule: refresh before a review when `hig-lookup.md`'s
+"Generated … on" line is more than 7 days old, and always before a colour, branding or layout
+decision.** Read the date with `sed -n 3p references/hig-lookup.md`. Run everything from
+`~/.agents/skills/apple-design`, and back up first so the change can be reported:
 
 ```bash
-node scripts/pull-hig.mjs --out <scratchpad>/hig-fresh/hig \
-  --lookup <scratchpad>/hig-fresh/hig-lookup.md --cache <scratchpad>/hig-fresh/.cache --no-prune
-diff -rq references/hig <scratchpad>/hig-fresh/hig
+cp -R ~/.agents/skills/apple-design <scratchpad>/apple-design-backup
+node scripts/pull-hig.mjs                         # ~150 requests, about a minute
+diff -rq <scratchpad>/apple-design-backup .       # what Apple changed: goes in the report
+grep -rl 'doc://' references/hig                  # must print nothing
 ```
 
-If a page you are citing differs, cite the fresh copy and say so. **Refreshing the INSTALLED copy
-is E's call:** it is user-level, shared by every project, and `npx skills` tracks it by folder
-hash. `hig-lookup.md`'s "Generated … on" line says when it was last pulled.
+- **The script rewrites only Apple's text.** It never touches `SKILL.md` or the curated
+  `liquid-glass.md`. It stops itself rather than prune more than a tenth of the files. **Never pass
+  `--force-prune`.** If it stops, the stop goes to E.
+- **`npx skills update apple-design` REVERTS the refresh** to upstream's older pull, silently, until
+  the author re-pulls. The dated line catches it: after an update it reads 2026-09-09 again, and
+  the 7-day rule refreshes it on the next review.
+- **When a refresh changes a page a SETTLED decision here rests on, tell E in the report.** Those
+  pages include `dark-mode` (the appearance override), `tab-bars` (`AppTabBar`), `motion` (§7.2),
+  `branding` and `color` (the colour arc). Apple moving is news. It is not licence to reopen the
+  decision unasked.
+- If the curated `liquid-glass.md` is ever out of step with a refreshed `materials.md` or
+  `color.md`, cite those two and say that the gloss lags.
 
 **Where it disagrees with this file.** Established 2026-09-19 by reading its `SKILL.md` against
 this doc. These are settled unless E reopens one:
