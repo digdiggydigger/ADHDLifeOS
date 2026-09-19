@@ -1,0 +1,270 @@
+//
+//  AuditComposerLayoutProbe.swift
+//  ADHD LifeOSTests
+//
+//  THROWAWAY (ADHD UX audit, round 7b, E's render permission from round 2b). Three LAYOUTS for the
+//  settled composer content (title · Not yet / Today / Tomorrow / Pick a date · area · time), with
+//  the keyboard down and up. Never committed: deleted as soon as E has chosen.
+//
+
+import SwiftUI
+import XCTest
+@testable import ADHD_LifeOS
+
+@MainActor
+final class AuditComposerLayoutProbe: XCTestCase {
+
+    private static let outDir = "/private/tmp/claude-501/-Users-ethan--E--Claude-Code-v1-GoogleAI-ADHDLifeOS-ADHDLifeOS/583f35f8-93dd-4815-8059-9c715c0409e1/scratchpad/r7-layout"
+    /// 874 − 56 status bar − 336 keyboard (iPhone Pro portrait, predictive bar included).
+    static let keyboardUpHeight: CGFloat = 482
+
+    func testRenderComposerLayouts() throws {
+        try FileManager.default.createDirectory(atPath: Self.outDir, withIntermediateDirectories: true)
+        var jobs: [(String, AnyView, ColorScheme, DynamicTypeSize, CGFloat)] = []
+        for layout in Layout.allCases {
+            jobs.append(("\(layout.rawValue)-down-L", AnyView(ComposerLayout(layout: layout, keyboardUp: false)), .light, .large, 818))
+            jobs.append(("\(layout.rawValue)-up-L", AnyView(ComposerLayout(layout: layout, keyboardUp: true)), .light, .large, Self.keyboardUpHeight))
+            jobs.append(("\(layout.rawValue)-up-D", AnyView(ComposerLayout(layout: layout, keyboardUp: true)), .dark, .large, Self.keyboardUpHeight))
+            jobs.append(("\(layout.rawValue)-down-A", AnyView(ComposerLayout(layout: layout, keyboardUp: false)), .light, .accessibility3, 818))
+        }
+        for _ in 0..<3 {
+            for (name, view, scheme, size, height) in jobs where !FileManager.default.fileExists(atPath: "\(Self.outDir)/\(name).png") {
+                let framed = view.environment(\.colorScheme, scheme).dynamicTypeSize(size).frame(width: 402, height: height)
+                let renderer = ImageRenderer(content: framed)
+                renderer.scale = 3
+                renderer.isOpaque = true
+                if let png = renderer.uiImage?.pngData() {
+                    try png.write(to: URL(fileURLWithPath: "\(Self.outDir)/\(name).png"))
+                } else {
+                    RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+                }
+            }
+        }
+        let missing = jobs.filter { !FileManager.default.fileExists(atPath: "\(Self.outDir)/\($0.0).png") }.map(\.0)
+        XCTAssertEqual(missing, [])
+    }
+}
+
+private enum Layout: String, CaseIterable {
+    case grid = "L1-tidy-grid"
+    case form = "L2-form-card"
+    case toolbar = "L3-keyboard-toolbar"
+}
+
+private let whenOptions = ["Not yet", "Today", "Tomorrow"]
+
+/// One segmented control for WHEN: four equal segments in one container, the fourth a date menu.
+private struct WhenSegments: View {
+    var height: CGFloat = 48
+    @Environment(\.dynamicTypeSize) private var typeSize
+    var body: some View {
+        let ax = typeSize.isAccessibilitySize
+        let segments = Group {
+            ForEach(whenOptions, id: \.self) { option in
+                Text(option)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, minHeight: height)
+                    .foregroundStyle(option == "Not yet" ? Color.white : Color.primary)
+                    .background(option == "Not yet" ? Color.accentColor : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            HStack(spacing: 4) {
+                Image(systemName: "calendar")
+                Text("Date")
+            }
+            .font(.subheadline.weight(.semibold))
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, minHeight: height)
+            .foregroundStyle(Color.accentColor)
+        }
+        Group {
+            if ax {
+                VStack(spacing: 4) { segments }
+            } else {
+                HStack(spacing: 4) { segments }
+            }
+        }
+        .padding(4)
+        .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
+    }
+}
+
+/// A pop-up button in the same bordered style as the segments.
+private struct MenuButton: View {
+    let glyph: String
+    let label: String
+    let value: String
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: glyph).foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(label).font(.caption.weight(.semibold)).foregroundStyle(Color("LabelSecondary"))
+                Text(value).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.9)
+            }
+            Spacer(minLength: 4)
+            Image(systemName: "chevron.up.chevron.down").font(.caption.weight(.semibold)).foregroundStyle(Color("LabelSecondary"))
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, minHeight: 56)
+        .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
+    }
+}
+
+private struct TitleField: View {
+    var boxed = true
+    var body: some View {
+        if boxed {
+            Text("What needs doing?")
+                .font(.body)
+                .foregroundStyle(Color("LabelTertiary"))
+                .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
+                .padding(16)
+                .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
+        } else {
+            Text("What needs doing?")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Color("LabelTertiary"))
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+}
+
+private struct AddButton: View {
+    var compact = false
+    var body: some View {
+        Label(compact ? "Add" : "Add task", systemImage: "plus")
+            .font(.headline)
+            .foregroundStyle(.white)
+            .padding(.horizontal, compact ? 16 : 0)
+            .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 48 : 56)
+            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct Header: View {
+    var body: some View {
+        HStack {
+            Text("Close")
+                .font(.body)
+                .padding(.horizontal, 16)
+                .frame(minWidth: 48, minHeight: 48)
+                .background(Color.cardSurface, in: Capsule())
+                .overlay(Capsule().strokeBorder(Color.cardBorder, lineWidth: 1))
+            Spacer()
+            Text("New task").font(.headline)
+            Spacer()
+            Color.clear.frame(width: 80, height: 48)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+}
+
+private struct ComposerLayout: View {
+    let layout: Layout
+    let keyboardUp: Bool
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Header()
+            switch layout {
+            case .grid: grid
+            case .form: form
+            case .toolbar: toolbar
+            }
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(Color.pageBackground)
+    }
+
+    // L1 · one shape language, equal widths: title, WHEN segments, then area | time halves.
+    private var grid: some View {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
+                TitleField()
+                WhenSegments()
+                if typeSize.isAccessibilitySize {
+                    MenuButton(glyph: "square.grid.2x2", label: "Area", value: "None")
+                    MenuButton(glyph: "timer", label: "Time", value: "15 min")
+                } else {
+                    HStack(spacing: 8) {
+                        MenuButton(glyph: "square.grid.2x2", label: "Area", value: "None")
+                        MenuButton(glyph: "timer", label: "Time", value: "15 min")
+                    }
+                }
+            }
+            .padding(16)
+            Spacer(minLength: 0)
+            AddButton().padding(16)
+        }
+    }
+
+    // L2 · a Settings-style card: labelled rows, values on the trailing edge.
+    private var form: some View {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
+                TitleField()
+                VStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("When").font(.subheadline.weight(.semibold))
+                        WhenSegments(height: 40)
+                    }
+                    .padding(16)
+                    Divider().padding(.leading, 16)
+                    formRow("Area", "None")
+                    Divider().padding(.leading, 16)
+                    formRow("Time", "15 min")
+                }
+                .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
+            }
+            .padding(16)
+            Spacer(minLength: 0)
+            AddButton().padding(16)
+        }
+    }
+
+    private func formRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).font(.body)
+            Spacer()
+            Text(value).font(.body).foregroundStyle(Color("LabelSecondary"))
+            Image(systemName: "chevron.up.chevron.down").font(.caption.weight(.semibold)).foregroundStyle(Color("LabelSecondary"))
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 48)
+    }
+
+    // L3 · the title owns the page; every choice rides on the keyboard, in thumb reach (Q8).
+    private var toolbar: some View {
+        VStack(spacing: 0) {
+            TitleField(boxed: false)
+                .padding(.horizontal, 16)
+                .padding(.top, 24)
+            Spacer(minLength: 0)
+            VStack(spacing: 8) {
+                WhenSegments(height: 44)
+                if typeSize.isAccessibilitySize {
+                    MenuButton(glyph: "square.grid.2x2", label: "Area", value: "None")
+                    MenuButton(glyph: "timer", label: "Time", value: "15 min")
+                    AddButton()
+                } else {
+                    HStack(spacing: 8) {
+                        MenuButton(glyph: "square.grid.2x2", label: "Area", value: "None")
+                        MenuButton(glyph: "timer", label: "Time", value: "15 min")
+                        AddButton(compact: true)
+                    }
+                }
+            }
+            .padding(8)
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
+        }
+    }
+}
