@@ -290,3 +290,12 @@ bottom furniture cut out.
 - **The finished-sprint Confirm → "Keep Confirm"** (Recommended was auto-log + undo). A deliberate "claim it" tap that
   fires the Confirm celebration, as today. It also catches sprints that ran out while the user was away.
   - This is E's call over the audit's undo direction and Q10's friction rule. Recorded, not a finding.
+
+**Round 5b:**
+- **Week review door → "Both".** Idea 9's line under the "then" list reads "✓ 3 done today · Week review ›", AND a
+  row sits at the top of the Areas tab.
+- **Weekly streak N → "3 days"** (the default; changeable in Settings).
+- **What counts as an active day → "Anything that moves life on".** Closing a task, finishing a sprint, writing a
+  journal line, or sorting a capture.
+- **"Not this one" → "Back in the list, not re-suggested today".** The skipped task stays tappable in the "then"
+  list, and the card won't offer it again until tomorrow.
