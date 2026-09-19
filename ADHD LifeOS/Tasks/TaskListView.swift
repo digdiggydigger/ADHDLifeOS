@@ -15,6 +15,9 @@ struct TaskListView: View {
     /// The celebration centre, so this screen can tell it when the surface it presents has
     /// gone. `\.celebrate` defaults to an inert requester, so a preview needs nothing.
     @Environment(\.celebrate) private var celebrate
+    /// `F-C1-UndoCapsule`: the app's one undo slot. A site TELLS it what just happened and
+    /// forgets; the default is inert, so a preview renders the list with no capsule and no setup.
+    @Environment(\.recordAction) private var recordAction
     private let taskCreateClient: TaskCreateClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
     /// Starts an app-level focus sprint from a resolved plan. Owned by `RootView` (which holds
@@ -201,6 +204,23 @@ struct TaskListView: View {
         .captureDiscClearance()
     }
 
+    /// The tap-circle and the swipe both land here (`TaskRow.close(poppingFrom:)` funnels them),
+    /// so the capsule can never be attached to one and forgotten on the other.
+    ///
+    /// **Recorded on the OPTIMISTIC edge, beside the haptic and the pop — not after the write.**
+    /// `TasksService.close(_:)` flips the row and regroups before the network write lands, so a
+    /// capsule that waited for confirmation would arrive after the row had already gone. An Undo
+    /// tapped after a write that failed and reloaded is simply a no-op: `reopen(_:)` guards on the
+    /// local status, which the reload has already put back to `.open`.
+    private func closeTask(_ task: TaskItem) {
+        recordAction.record(
+            RecentAction(kind: .taskClosed, subject: task.title) { [tasksService] in
+                await tasksService.reopen(task)
+            }
+        )
+        Task { await tasksService.close(task) }
+    }
+
     private func rowCard(for group: LifeAreaTaskGroup) -> some View {
         // The ▶ sprint launcher rides only the Momentum board's Due-today bucket (E's b11 call:
         // sprint-starting is a today thing; other buckets keep the quieter tap-circle only).
@@ -212,7 +232,7 @@ struct TaskListView: View {
                     task: task,
                     lifeArea: area,
                     showsSprintStart: showsSprintStart,
-                    onClose: { Task { await tasksService.close(task) } },
+                    onClose: { closeTask(task) },
                     onInspect: { inspectingTask = task },
                     onStartFocus: {
                         onStartFocus(FocusSprintPlan(

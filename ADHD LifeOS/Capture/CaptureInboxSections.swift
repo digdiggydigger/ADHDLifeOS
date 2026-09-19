@@ -189,7 +189,10 @@ extension CaptureInboxView {
                 Haptics.play(.success)
                 handle.pop()
                 Task {
-                    if await service.sort(capture: capture, into: area) { sortSelection = nil }
+                    let label = CaptureTriage.areaLabel(id: area, in: lifeAreas)
+                    if await service.sort(capture: capture, into: area, areaLabel: label) {
+                        sortSelection = nil
+                    }
                 }
             } label: {
                 Label("Sorted", systemImage: "checkmark.circle.fill")

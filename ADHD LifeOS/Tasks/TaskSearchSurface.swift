@@ -21,6 +21,11 @@ import SwiftUI
 struct TaskSearchSurface: View {
     @ObservedObject var service: TasksService
     @ObservedObject var searchModel: AppSearchModel
+    /// `F-C1-UndoCapsule`: the same slot every other close writes into. **The capsule itself is
+    /// drawn by `RootBottomOverlay`, which this surface covers** — so a close made here is offered
+    /// its undo the moment the surface is dismissed, not while it is up. Named in the block report
+    /// rather than papered over with a second capsule mounted on this surface.
+    @Environment(\.recordAction) private var recordAction
     let onInspect: (TaskItem) -> Void
 
     @FocusState private var isFieldFocused: Bool
@@ -169,7 +174,14 @@ struct TaskSearchSurface: View {
                             task: task,
                             lifeArea: service.lifeAreas.first { $0.id == task.lifeAreaId },
                             showsSprintStart: false,
-                            onClose: { Task { await service.close(task) } },
+                            onClose: {
+                                recordAction.record(
+                                    RecentAction(kind: .taskClosed, subject: task.title) { [service] in
+                                        await service.reopen(task)
+                                    }
+                                )
+                                Task { await service.close(task) }
+                            },
                             onInspect: {
                                 searchModel.close()
                                 onInspect(task)

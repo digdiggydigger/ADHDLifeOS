@@ -11,7 +11,9 @@ import SwiftUI
 /// today thing — other buckets stay quiet). The whole row opens the detail screen.
 ///
 /// What the old `SwipeableTaskCard` had that this deliberately does not:
-/// - No reopen: a closed row's check is display-only (E's addendum — closing is one-way).
+/// - No reopen CONTROL: a closed row's check is display-only. **"Closing is one-way" (E's
+///   addendum) was retired on 2026-09-20 by `F-C1-UndoCapsule`** — the way back is the shared undo
+///   capsule in the disc row, which the list records into. The row itself is unchanged.
 /// - No swipe-left delete: delete lives on the detail screen now. Swipe-RIGHT-to-close survives
 ///   as a bonus gesture on open rows, resolved by the pure `TaskRowSwipe` below.
 struct TaskRow: View {
@@ -123,7 +125,9 @@ struct TaskRow: View {
             }
 
             if isClosed {
-                // Display-only: closed is closed (no reopen path anywhere in the app).
+                // Display-only. Not "no reopen path anywhere in the app" any more — since
+                // `F-C1-UndoCapsule` the undo capsule reopens the task it just closed — but this
+                // check is still a statement, not a control.
                 Image(systemName: "checkmark.circle.fill")
                     .font(.title3)
                     .foregroundStyle(Color("StateGo"))

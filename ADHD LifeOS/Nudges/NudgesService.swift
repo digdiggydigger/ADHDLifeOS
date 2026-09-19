@@ -30,6 +30,18 @@ final class NudgesService: ObservableObject {
     /// existing test builds this service unchanged.
     private let celebrate: any CelebrationRequesting
 
+    /// **The undo capsule's door** (`F-C1-UndoCapsule`, E's Step 0 answer 3). Held by the SERVICE
+    /// for the same reason `celebrate` is: both `NudgeDueCard` hosts — Today's section and the
+    /// pushed `NudgesView` — share Today's one service, so a recorder in the card would be two
+    /// copies of one rule plus a silent gap wherever a third host appeared.
+    ///
+    /// **A `var`, wired by the host in `.task`, not an `init` parameter.** This service is a
+    /// `@StateObject` built in `HomeView.init`, where an `@Environment` value is not available,
+    /// and `RootView` — which would otherwise thread it down as it threads `celebrate` — is at 398
+    /// of SwiftLint's 400-line ceiling. The default is inert, so every preview and every existing
+    /// test builds this service unchanged and records into nothing.
+    var recordAction: any RecentActionRecording = InertRecentActionRecorder()
+
     init(
         client: NudgesClientAdapting,
         notificationSchedulingClient: NudgeNotificationSchedulingAdapting,
@@ -119,6 +131,34 @@ final class NudgesService: ObservableObject {
             ) {
                 celebrate.request(.milestone(.streakSeven), at: nil)
             }
+            // `F-C1-UndoCapsule`. The nudge captured here is the one from BEFORE the write, so the
+            // reversal restores rather than recomputes — see `FirestoreFieldPayloads.nudgeUnfired`.
+            // **A celebration that already fired is not un-fired**, which is why this records only
+            // after the milestone above has had its say.
+            recordAction.record(
+                RecentAction(kind: .nudgeDismissed, subject: nudge.label) { [weak self] in
+                    await self?.restore(nudge)
+                }
+            )
+            return true
+        } catch {
+            errorMessage = Self.message(for: error)
+            return false
+        }
+    }
+
+    /// The capsule's way back from `dismiss(_:)`. `nudge` is the document as it stood before the
+    /// dismissal, so this is a restore, not a decrement.
+    @discardableResult
+    func restore(_ nudge: Nudge) async -> Bool {
+        errorMessage = nil
+        do {
+            let updated = try await client.unmarkFired(
+                id: nudge.id,
+                previousLastFiredAt: nudge.lastFiredAt,
+                previousCompletionDates: nudge.completionDates ?? []
+            )
+            replace(updated)
             return true
         } catch {
             errorMessage = Self.message(for: error)

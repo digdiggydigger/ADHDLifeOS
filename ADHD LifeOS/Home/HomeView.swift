@@ -101,12 +101,20 @@ struct HomeView: View {
     /// Internal, not private: the arrange header lives in `HomeMomentumSections.swift`.
     @State var isArranging = false
     @State var arrangeAreas: [LifeArea] = []
-    /// The Momentum close-from-Home flow: the just-closed task (drives the celebration card and
-    /// its Undo), the in-flight guard, and the surfaced failure. Internal, not private — the
-    /// sections live in `HomeMomentumSections.swift` to keep this type inside its body budget.
-    @State var celebratedTask: TaskSummary?
+    /// The Momentum close-from-Home flow: the in-flight guard and the surfaced failure. Internal,
+    /// not private — the sections live in `HomeMomentumSections.swift` to keep this type inside
+    /// its body budget.
+    ///
+    /// **`celebratedTask` and the in-place `ClosureCelebrationCard` it drove were retired by
+    /// `F-C1-UndoCapsule`** (2026-09-20): with one undo capsule everywhere, Home's lead section has
+    /// no reason to hold a celebration state of its own — the closed task drops out of
+    /// `homeService.openTasks` on the next `load()` and the next best move recomputes, exactly as
+    /// it already did after an Undo.
     @State var isClosingTask = false
     @State var closeTaskErrorMessage: String?
+    /// `F-C1-UndoCapsule`: the app's one undo slot. Internal, not private — `closeTask` lives in
+    /// `HomeMomentumSections.swift`, and Swift `private` is file-scoped.
+    @Environment(\.recordAction) var recordAction
     /// A Due-now row's pushed task detail — optional-state + `navigationDestination`, the
     /// TaskListView pattern, since the rows live in a LazyVStack inside this stack.
     @State var inspectingTask: TaskSummary?
@@ -120,9 +128,6 @@ struct HomeView: View {
     /// Foregrounding refreshes the routine card — see `refreshLiveRoutine` for why nothing
     /// else covers that case.
     @Environment(\.scenePhase) private var homeScenePhase
-    /// Internal, not private: the closure card's arrival is built in `HomeMomentumSections`,
-    /// and §7.2 has the PARENT read the setting rather than each leaf reaching for it.
-    @Environment(\.accessibilityReduceMotion) var reduceMotion
     let routineRunStore: RoutineRunStoring = UserDefaultsRoutineRunStore()
     /// **The centre, threaded by hand rather than read from `\.celebrate`** (`F-CTACelebrations-5`).
     /// Home builds its `NudgesService` as a `@StateObject` in `init`, where an `@Environment` value
@@ -282,6 +287,11 @@ struct HomeView: View {
                 await refreshInboxCount()
             }
             .task {
+                // `F-C1-UndoCapsule`: the service owns the recording rule (both `NudgeDueCard`
+                // hosts share this one service), and an `@Environment` value cannot be read in the
+                // `init` that builds it — so the wiring happens here, before anything can be
+                // dismissed. `UndoCapsuleCallSiteTests` holds this line.
+                nudgesService.recordAction = recordAction
                 await nudgesService.load()
             }
             .alert(
@@ -333,7 +343,7 @@ struct HomeView: View {
                     // ring and streak, then the one task worth doing next. The Active Goal hero's
                     // slot and start-session funnel live on in BestNextMoveCard.
                     scoreboardSection
-                    momentumLeadSection
+                    bestNextMoveSection
                     // "Arrange" is a reorder affordance over ≥2 cards; hidden below that (§ notes).
                     lifeAreasSection(activeAreas: activeAreas)
                     dueNowSection

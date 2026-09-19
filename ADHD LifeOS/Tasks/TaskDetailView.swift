@@ -21,6 +21,9 @@ struct TaskDetailView: View {
     let onUpdated: () -> Void
 
     @Environment(\.dismiss) var dismiss
+    /// `F-C1-UndoCapsule`: the app's one undo slot. Internal, not private — the Close button lives
+    /// in `TaskDetailFormSections.swift`, and Swift `private` is file-scoped.
+    @Environment(\.recordAction) var recordAction
 
     @State var hasInitializedFields = false
     @State var title = ""

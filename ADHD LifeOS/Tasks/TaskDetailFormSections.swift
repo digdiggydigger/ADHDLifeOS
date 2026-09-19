@@ -87,13 +87,21 @@ extension TaskDetailView {
             )
             .listRowSeparator(.hidden)
 
-            // Closing is one-way since F-V3-Tasks-rebuild (E's addendum): an open task gets the
-            // close button; a closed one gets a quiet, display-only confirmation. No Reopen.
+            // An open task gets the close button; a closed one gets a quiet, display-only
+            // confirmation. There is still no Reopen CONTROL here — since `F-C1-UndoCapsule`
+            // (2026-09-20) the way back is the shared capsule in the disc row, which this button
+            // records into beside its own haptic and pop. The old note ("closing is one-way since
+            // F-V3-Tasks-rebuild, E's addendum") is retired as far as the undo moment goes.
             if task.status == .open {
                 CelebrationPopSource { handle in
                     Button {
                         Haptics.play(.taskClose)
                         handle.pop()
+                        recordAction.record(
+                            RecentAction(kind: .taskClosed, subject: task.title) { [service] in
+                                await service.reopen()
+                            }
+                        )
                         Task { await service.close() }
                     } label: {
                         Label(

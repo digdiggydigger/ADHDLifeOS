@@ -69,4 +69,25 @@ final class FakeNudgesClientAdapting: NudgesClientAdapting, @unchecked Sendable 
         }
         return try result.get()
     }
+
+    var unmarkFiredResult: Result<Nudge, Error>?
+    private(set) var unmarkFiredCallCount = 0
+    private(set) var lastUnmarkFiredArguments: (previousLastFiredAt: Date?, previousCompletionDates: [Date])?
+
+    func unmarkFired(
+        id: UUID, previousLastFiredAt: Date?, previousCompletionDates: [Date]
+    ) async throws -> Nudge {
+        unmarkFiredCallCount += 1
+        lastUnmarkFiredArguments = (previousLastFiredAt, previousCompletionDates)
+        guard let result = unmarkFiredResult else {
+            guard case .success(let existing) = fetchNudgesResult,
+                  var updated = existing.first(where: { $0.id == id }) else {
+                throw NudgesServiceError.notFound
+            }
+            updated.lastFiredAt = previousLastFiredAt
+            updated.completionDates = previousCompletionDates
+            return updated
+        }
+        return try result.get()
+    }
 }

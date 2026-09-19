@@ -26,7 +26,7 @@ extension CaptureInboxService {
     func skip(_ capture: Capture) {
         skippedIds.removeAll { $0 == capture.id }
         skippedIds.append(capture.id)
-        record(.skipped(captureId: capture.id), sortedInto: nil)
+        record(.skipped(captureId: capture.id), kind: .captureSkipped, subject: capture)
     }
 
     /// **Sorted** — the triage verb E asked for on 2026-08-28, and since the A2/A3 audit the ONLY
@@ -38,7 +38,11 @@ extension CaptureInboxService {
     /// the tap happens. Same non-optimistic discipline as every other exit — the row leaves only
     /// once the write has landed, and a failure offers no undo, because nothing happened.
     @discardableResult
-    func sort(capture: Capture, into lifeAreaId: UUID) async -> Bool {
+    /// `areaLabel` is the area's own "💼 Work", for the undo capsule's verb. Passed by the CALLER
+    /// because the areas belong to the screens (`CaptureInboxView` and `CaptureDetailView` each
+    /// hold their own list), not to this service. `nil` — a caller with no list, or an area that
+    /// is gone — degrades the capsule to the bare verb, the rule the retired inbox bar followed.
+    func sort(capture: Capture, into lifeAreaId: UUID, areaLabel: String? = nil) async -> Bool {
         triageErrorMessage = nil
         do {
             _ = try await client.updateCapture(
@@ -52,7 +56,8 @@ extension CaptureInboxService {
             await celebrateIfInboxCleared(capture)   // E's F3, doing verb 1 of 3
             record(
                 .sorted(captureId: capture.id, previousLifeAreaId: capture.lifeAreaId),
-                sortedInto: lifeAreaId
+                kind: .captureSorted(areaLabel: areaLabel),
+                subject: capture
             )
             return true
         } catch {
@@ -69,12 +74,11 @@ extension CaptureInboxService {
     /// nil, since an undone sort must not leave behind the area it only just wrote. The list comes
     /// back through `refresh()`, the quiet path that never blanks a list already on screen.
     @discardableResult
-    func undoLastTriageAction() async -> Bool {
-        guard let action = lastTriageAction else { return false }
+    func undoLastTriageAction(_ action: CaptureTriageAction) async -> Bool {
         switch action {
         case .skipped(let captureId):
             skippedIds.removeAll { $0 == captureId }
-            clearLastTriageAction()
+            recordTriageUndo()
             return true
         case .journaled(let captureId, let logId):
             return await undoJournalEntry(captureId: captureId, logId: logId)
@@ -87,7 +91,7 @@ extension CaptureInboxService {
                         lifeAreaId: .some(previousLifeAreaId), seen: false, clearedAt: .some(nil)
                     )
                 )
-                clearLastTriageAction()
+                recordTriageUndo()
                 await refresh()
                 // `refresh()` only ever corrects the tab being stood on. Undo moved the capture
                 // OFF another slice, so that one is stale in exactly the way an exit leaves it.
@@ -100,15 +104,29 @@ extension CaptureInboxService {
         }
     }
 
+    /// Takes a pending triage undo off the board WITHOUT reversing it — the one path that has to
+    /// say so out loud, because the app's slot is shared now and a bare `clear()` from here would
+    /// also silence a task close made on another tab.
+    ///
+    /// Guarded on the slot still holding a CAPTURE action for exactly that reason.
     func clearLastTriageAction() {
-        lastTriageAction = nil
-        lastSortedAreaId = nil
+        recordAction.clear()
     }
 
-    private func record(_ action: CaptureTriageAction, sortedInto: UUID?) {
-        lastTriageAction = action
-        lastSortedAreaId = sortedInto
+    /// Records a reversible triage into the app's one undo slot (`F-C1-UndoCapsule`).
+    ///
+    /// The words are resolved HERE, at the moment it happens, rather than held as ids the capsule
+    /// would resolve later: an area deleted between the sort and the undo degrades to the bare
+    /// verb, which is the rule the retired inbox bar already followed.
+    private func record(_ action: CaptureTriageAction, kind: RecentActionKind, subject: Capture) {
+        recordAction.record(
+            RecentAction(kind: kind, subject: CaptureDetailPresentation.headline(for: subject)) {
+                [weak self] in
+                await self?.undoLastTriageAction(action)
+            }
+        )
     }
+
 
     /// Discards a capture outright. The triage exit for something that is neither a task nor worth
     /// keeping: without it, a stray thought sat in the inbox forever, because promote-to-task was
@@ -200,7 +218,10 @@ extension CaptureInboxService {
             removeCapture(id: capture.id)
             await refreshCountsAfterExit()
             await celebrateIfInboxCleared(capture)   // E's F3, doing verb 2 of 3
-            record(.journaled(captureId: capture.id, logId: entry.id), sortedInto: nil)
+            record(
+                .journaled(captureId: capture.id, logId: entry.id),
+                kind: .captureJournalled, subject: capture
+            )
             return true
         } catch {
             triageErrorMessage = Self.message(for: error)
@@ -233,7 +254,7 @@ extension CaptureInboxService {
         } catch {
             warningMessage = "Capture is back in your inbox, but its journal entry couldn't be removed."
         }
-        clearLastTriageAction()
+        recordTriageUndo()
         await refresh()
         await refreshCountsAfterExit()
         return true

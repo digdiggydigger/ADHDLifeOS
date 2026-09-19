@@ -166,6 +166,30 @@ enum FirestoreFieldPayloads {
         ]
     }
 
+    /// A nudge firing, TAKEN BACK (`F-C1-UndoCapsule`, E's Step 0 answer 3: *"Yes, a nudge
+    /// dismiss gets the capsule"*).
+    ///
+    /// **Restores rather than decrements, and that is the point.** Both values are the ones the
+    /// caller held BEFORE the dismissal, so an undo puts the document back exactly as it was
+    /// instead of computing a reversal — which would get `last_fired_at` wrong for any nudge whose
+    /// previous firing was not the last entry in `completion_dates`, and would have no answer at
+    /// all for a nudge that had never fired.
+    ///
+    /// `previousLastFiredAt` of `nil` is a nudge that had never fired, so the field is CLEARED
+    /// with `FieldValue.delete()` — the `captureReturnedToInbox` rule, applied here. `updated_at`
+    /// is the client instant, matching `nudgeFired`: this is a moment, not an edit.
+    static func nudgeUnfired(
+        previousLastFiredAt: Date?, completionDates: [Date], now: Date
+    ) -> [String: Any] {
+        var fields: [String: Any] = [
+            "updated_at": Timestamp(date: now),
+            "completion_dates": completionDates.map { Timestamp(date: $0) }
+        ]
+        fields["last_fired_at"] = previousLastFiredAt.map { Timestamp(date: $0) as Any }
+            ?? FieldValue.delete() as Any
+        return fields
+    }
+
     // MARK: - Routine runs (F-RoutineRecord-1): every moment after the offer is PARTIAL
 
     /// The tap. `dismissal_method` says how the OFFER was resolved, and a tap resolves it.

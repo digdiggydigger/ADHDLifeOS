@@ -17,21 +17,29 @@ import SwiftUI
 
 // MARK: - Undo (E, 2026-08-28: "both")
 //
-// Two affordances, deliberately, because they answer different questions. The bar says WHAT just
-// happened at the moment it happens and offers to take it back; the header arrow is the safety net
-// you reach for later, when you have already looked away. Both drive the one spent-once action in
-// `CaptureInboxService+Triage`, so they can never disagree about what would be reversed.
+// Two affordances, deliberately, because they answer different questions. The bar said WHAT just
+// happened at the moment it happened; the header arrow is the safety net you reach for later, when
+// you have already looked away.
+//
+// **The BAR is gone as of `F-C1-UndoCapsule` (2026-09-20).** E chose "one bottom bar everywhere"
+// (round 2, Option 1) and then its shape (round 2b, "A · Capsule in the disc row"), so this
+// screen's own bar is now the app-wide `UndoCapsule` — same job, same words, one implementation
+// for five surfaces instead of one for this screen. What is left here is the warning bar, which is
+// this screen's alone, and the header arrow.
+//
+// **E kept the header arrow, and made it read the SAME slot** (Step 0 answer 2, chosen over the
+// recommendation to retire it): it is shown by the shared `RecentActionCenter` holding a capture
+// action, not by anything this screen remembers, so it cannot offer an undo the capsule has
+// already spent — which is exactly what a second, mirrored copy would do the moment a task was
+// closed on another tab.
 
 extension CaptureInboxView {
-    /// The bottom bar has two jobs and they are mutually exclusive: offer the undo, or report what
-    /// an undo left behind. The warning wins — it is news, and the offer it would replace has
-    /// already been spent.
+    /// What is left of this screen's own bottom furniture: the partial-failure warning, and
+    /// nothing else. The undo half moved to the app-wide capsule.
     @ViewBuilder
     var bottomBar: some View {
         if service.warningMessage != nil {
             triageWarningBar
-        } else {
-            undoBar
         }
     }
 
@@ -71,56 +79,41 @@ extension CaptureInboxView {
         }
     }
 
+    /// Always present once there is something to take back, so the net does not depend on noticing
+    /// the capsule before it goes. Draws nothing without a centre — a preview, a snapshot — which
+    /// is the same inert default every other site gets.
     @ViewBuilder
-    var undoBar: some View {
-        if let action = service.lastTriageAction {
-            HStack(spacing: 8) {
-                Label(
-                    CaptureTriage.confirmation(
-                        for: action, sortedInto: service.lastSortedAreaId, lifeAreas: lifeAreas
-                    ),
-                    systemImage: "arrow.uturn.backward"
-                )
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                Spacer(minLength: 8)
-                Button("Undo") {
-                    Task { await undoLastTriage() }
-                }
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tint)
-                .frame(minHeight: 44)
-            }
-            .padding(.leading, 16)
-            // Trailing room for the capture disc, which otherwise floats directly over the Undo
-            // button and makes it untappable (E's screenshot, 2026-08-28).
-            .padding(.trailing, CaptureDiscMetrics.clearance)
-            .padding(.vertical, 8)
-            .background(.ultraThinMaterial)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-            .animation(
-                .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0),
-                value: service.lastTriageAction
-            )
-            // `.contain`, not `.combine`. Combining merged the Undo button INTO the bar, leaving
-            // one element carrying a label and an action fused together — the button could not be
-            // addressed, reasoned about, or reached on its own. The bar is a container holding a
-            // control, which is what `.contain` means. Same correction as the nudges section on
-            // Today, and the reason this screen now has a journey that taps that button.
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("captureInboxUndoBar")
+    var undoHeaderButton: some View {
+        if let recentActionCenter {
+            CaptureInboxUndoHeaderButton(center: recentActionCenter)
+        }
+    }
+}
+
+/// The header ↶, reading the app's shared slot.
+///
+/// **An `@ObservedObject` child rather than an `@Environment` read in the screen itself**, because
+/// `@Environment` hands over the object without subscribing to it: a header that read
+/// `center.pendingAction` directly would appear and vanish only when something else redrew the
+/// screen. `CelebrationLayer` is the precedent.
+///
+/// It shows for a CAPTURE action alone. The slot is shared now, so a task closed on another tab can
+/// be sitting in it — and an arrow in the Capture Inbox's header that reopened a task would be the
+/// wrong promise in the wrong place. The capsule itself is where that undo is offered.
+struct CaptureInboxUndoHeaderButton: View {
+    @ObservedObject var center: RecentActionCenter
+
+    private var isCaptureAction: Bool {
+        switch center.pendingAction?.kind {
+        case .captureSorted, .captureSkipped, .captureJournalled: return true
+        case .taskClosed, .nudgeDismissed, nil: return false
         }
     }
 
-    /// Always present once there is something to take back, so the net does not depend on noticing
-    /// the bar before it goes.
-    @ViewBuilder
-    var undoHeaderButton: some View {
-        if service.lastTriageAction != nil {
+    var body: some View {
+        if isCaptureAction {
             Button {
-                Task { await undoLastTriage() }
+                Task { await center.undo() }
             } label: {
                 Image(systemName: "arrow.uturn.backward.circle")
                     .font(.title3)

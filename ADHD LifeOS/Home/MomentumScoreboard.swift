@@ -294,28 +294,6 @@ enum MomentumScoreboard {
         return AreaStatusLine(text: "\(closedThisWeek) of \(total) tasks closed", tone: .plain)
     }
 
-    /// The moment-after-a-close line: the day's ordinal, then where that puts the area's week
-    /// (v3's "Third today. Admin & Home is up to 75% this week.").
-    static func celebrationLine(closedTodayCount: Int, areaName: String?, areaRate: Double?) -> String {
-        let ordinal: String
-        switch closedTodayCount {
-        case 1: ordinal = "First today."
-        case 2: ordinal = "Second today."
-        case 3: ordinal = "Third today."
-        default: ordinal = "\(closedTodayCount) closed today."
-        }
-        guard let areaName, let areaRate else { return ordinal }
-        if areaRate >= 1 {
-            return "\(ordinal) \(areaName) is all clear this week."
-        }
-        return "\(ordinal) \(areaName) is up to \(Int((areaRate * 100).rounded()))% this week."
-    }
-
-    /// The celebration card's second button: what the next move costs, if it names a cost.
-    static func nextButtonLabel(effortSeconds: Int?) -> String {
-        effortLabel(seconds: effortSeconds).map { "Next: \($0)" } ?? "Next"
-    }
-
     private static func priorityRank(_ priority: TaskPriority) -> Int {
         switch priority {
         case .p1: return 0

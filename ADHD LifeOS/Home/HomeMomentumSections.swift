@@ -10,37 +10,6 @@
 import SwiftUI
 
 extension HomeView {
-    var momentumLeadSection: some View {
-        Group {
-            if let celebrated = celebratedTask {
-                let area = homeService.activeAreas.first { $0.id == celebrated.lifeAreaId }
-                let momentum = area.flatMap {
-                    MomentumScoreboard.areaMomentum(
-                        areas: [$0], openTasks: homeService.openTasks, allTasks: homeService.allTasks
-                    ).first
-                }
-                ClosureCelebrationCard(
-                    taskTitle: celebrated.title,
-                    line: MomentumScoreboard.celebrationLine(
-                        closedTodayCount: closedToday.count,
-                        areaName: area?.name,
-                        areaRate: momentum?.rate
-                    ),
-                    nextLabel: MomentumScoreboard.nextButtonLabel(
-                        effortSeconds: MomentumScoreboard.bestNextMove(
-                            in: homeService.openTasks
-                        )?.focusDurationSeconds
-                    ),
-                    onUndo: { Task { await undoClose(celebrated) } },
-                    onNext: { setCelebratedTask(nil) }
-                )
-                .transition(reduceMotion ? .opacity : .scale(scale: 0.9).combined(with: .opacity))
-            } else {
-                bestNextMoveSection
-            }
-        }
-    }
-
     var closedToday: [TaskItem] {
         TaskCompletionStamp.completedTasks(in: homeService.allTasks)
     }
@@ -224,44 +193,35 @@ extension HomeView {
         .accessibilityIdentifier("homeDueNowRow-\(task.id)")
     }
 
-    // MARK: - The closure card's arrival
-
-    /// E's #8: the card springs in instead of appearing unanimated. The house pattern is
-    /// `Capture/CaptureFanOverlay.swift:89-97` — under Reduce Motion the spring is replaced by
-    /// a plain ease, not removed, because §7.2's rule for something that APPEARS is to swap
-    /// motion for a fade rather than to strip the feedback. Paired with the card's
-    /// opacity-only transition, the first reduced frame is already at final geometry and only
-    /// the fade travels (the opening-pose rule).
-    var closureCardAnimation: Animation {
-        reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8)
-    }
-
-    /// The ONLY writer of `celebratedTask`. Three paths move it — the card's Next, a close
-    /// from Home, and Undo — and a transition only runs if every one of them is animated, so
-    /// they share a setter rather than each remembering to wrap itself.
-    func setCelebratedTask(_ task: TaskSummary?) {
-        withAnimation(closureCardAnimation) { celebratedTask = task }
-    }
-
     // MARK: - Close-from-Home
 
+    /// **Recorded AFTER the write lands, and this is the one site of the five that waits.** The
+    /// other four are optimistic — their row flips before the network answers, so a capsule that
+    /// waited would arrive after the thing it names had gone. Home is not: the hero's button holds
+    /// a spinner (`isClosingTask`) until the write returns and surfaces `closeTaskErrorMessage` if
+    /// it fails, so a capsule offered on the optimistic edge would sit beside an error saying the
+    /// close never happened. Recording on success is what the user is already being shown.
     func closeTask(_ task: TaskSummary) async {
         guard !isClosingTask else { return }
         isClosingTask = true
         defer { isClosingTask = false }
         do {
             _ = try await taskDetailClient.updateStatus(id: task.id, status: .done)
-            setCelebratedTask(task)
+            recordAction.record(
+                RecentAction(kind: .taskClosed, subject: task.title) { await undoClose(task) }
+            )
             await homeService.load()
         } catch {
             closeTaskErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
     }
 
+    /// The capsule's way back. **Reopening was never new capability here** — this method predates
+    /// `F-C1-UndoCapsule` and drove the retired closure card's own Undo button; all that changed
+    /// is who calls it.
     func undoClose(_ task: TaskSummary) async {
         do {
             _ = try await taskDetailClient.updateStatus(id: task.id, status: .open)
-            setCelebratedTask(nil)
             await homeService.load()
         } catch {
             closeTaskErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

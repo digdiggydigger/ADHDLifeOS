@@ -98,12 +98,27 @@ final class TaskDetailService: ObservableObject {
         }
     }
 
-    /// One-way close (F-V3-Tasks-rebuild, E's addendum): a done task never reopens, so this is a
-    /// no-op unless the task is open.
+    /// Closes the task. A no-op unless it is open.
+    ///
+    /// **"One-way … a done task never reopens" was retired on 2026-09-20 by `F-C1-UndoCapsule`**
+    /// (E's round 1). `reopen()` below is the way back; the close itself is unchanged.
     func close() async {
         guard let original = task, original.status == .open else { return }
         do {
             let updated = try await client.updateStatus(id: taskId, status: .done)
+            task = updated
+            state = .loaded(updated)
+        } catch {
+            errorMessage = Self.message(for: error)
+        }
+    }
+
+    /// The undo capsule's way back from `close()`. Guarded on the task as it stands NOW, so an
+    /// Undo tapped after a close that failed is a no-op rather than a stray `.open` write.
+    func reopen() async {
+        guard let original = task, original.status == .done else { return }
+        do {
+            let updated = try await client.updateStatus(id: taskId, status: .open)
             task = updated
             state = .loaded(updated)
         } catch {

@@ -30,12 +30,6 @@ private struct MomentumScoreboardGallery: View {
                     loggedTodayLabel: "1 session · 12 min today",
                     onClose: {}, onStartSession: {}
                 )
-                ClosureCelebrationCard(
-                    taskTitle: "Sort through mail pile",
-                    line: "Third today. Admin & Home is up to 75% this week.",
-                    nextLabel: "Next: 20 min",
-                    onUndo: {}, onNext: {}
-                )
                 AreaMomentumList(items: MomentumScoreboard.areaMomentum(
                     areas: [
                         LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 0),

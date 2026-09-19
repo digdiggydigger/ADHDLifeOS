@@ -50,6 +50,13 @@ struct CaptureInboxView: View {
     /// The celebration centre, so this screen can tell it when the surface it presents has
     /// gone. `\.celebrate` defaults to an inert requester, so a preview needs nothing.
     @Environment(\.celebrate) private var celebrate
+    /// `F-C1-UndoCapsule`: the app's one undo slot. Read here and wired into the service in
+    /// `.task` — an `@Environment` value is not available in an `init`.
+    @Environment(\.recordAction) private var recordAction
+    /// The same slot as an object, for the header ↶ — see `CaptureInboxUndoHeaderButton` for why
+    /// the observation has to happen in a child. Internal, not private: the header lives in
+    /// `CaptureInboxUndoSections.swift`.
+    @Environment(\.recentActionCenter) var recentActionCenter
     /// The top card's "Task it" — the existing promote sheet over the first waiting capture.
     @State var promotingCapture: Capture?
     @State var momentumPreferences: MomentumPreferences = .default
@@ -129,6 +136,10 @@ struct CaptureInboxView: View {
             }
         }
         .task {
+            // `F-C1-UndoCapsule`: the service owns the recording rule (five hosts call the same
+            // three verbs), and an `@Environment` value cannot be read in the `init` that builds
+            // it — so the wiring happens here, before anything can be triaged.
+            service.recordAction = recordAction
             await service.load()
             momentumPreferences = UserDefaultsMomentumPreferencesStore().read()
             allTags = await service.fetchAllTags()
@@ -143,6 +154,11 @@ struct CaptureInboxView: View {
             }
         }
         .safeAreaInset(edge: .bottom) { bottomBar.appTabBarClearance() }
+        // E's 2026-08-28 call, kept working now that the tap is on the app-wide capsule rather
+        // than on this screen: after an undo the area has to be chosen again. Leaving the pick
+        // would let the next tap of Sorted file a capture into an area chosen for a DIFFERENT
+        // one — and on the restored capture it would present a decision E had just taken back.
+        .onChange(of: service.triageUndoCount) { _ in sortSelection = nil }
         // Triage's failures were being published and rendered NOWHERE on this screen: a Sorted
         // that could not write, or an undo that could not restore, both set `triageErrorMessage`
         // and looked exactly like a button that does nothing. That mattered little while every
@@ -229,17 +245,6 @@ struct CaptureInboxView: View {
                 Task { await service.select(filter: newValue) }
             }
         )
-    }
-
-    /// Taking a decision back also drops whatever was staged on the card.
-    ///
-    /// E's 2026-08-28 call: after an undo the area has to be chosen again. Leaving the pick would
-    /// let the next tap of Sorted file a capture into an area chosen for a DIFFERENT one — and on
-    /// the restored capture it would present a decision E had just said they wanted back.
-    func undoLastTriage() async {
-        Haptics.play(.light)
-        await service.undoLastTriageAction()
-        sortSelection = nil
     }
 
     /// An empty inbox is the goal state, not an error and not a void — so it reads as an
