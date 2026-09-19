@@ -20,6 +20,8 @@ CLOSED. This session builds.**
      intro, then **Arc C**, blocks `F-C1` to `F-C4`. That is your work queue.
    - `handoff/SESSION-OPENER-adhd-ux-audit-design.md`, rounds 1, 2 and 2b, for the decisions behind
      arc C, in E's words.
+   - **`handoff/ADHD-AUDIT-BUILD-LOG.md`** — the thread across every build session: what has landed,
+     what departed from its spec, what is owed to E, and the close-out contract you owe at the end.
    - `handoff/OPEN-ITEMS-REGISTER.md`, the outstanding list.
    - Memory: `adhd-ux-audit-arc`, `build-in-a-fresh-session`, `audit-sim-drive-lessons`,
      `never-destroy-uncommitted-work`.
@@ -71,6 +73,15 @@ changes one (the inbox bar's slide). `F-C1` needs two renders board `54` never p
 disc row** (default and AX3) and **compact-height landscape with a sprint card up**.
 
 Land each block through a PR (`main` is protected), and verify `origin/main` carries it.
+
+**Then the close-out contract, in full** (E's instruction, 2026-09-19: every session's progress is
+logged so the next one starts with full context). It is written out in
+`handoff/ADHD-AUDIT-BUILD-LOG.md`, and it is six steps: the block's `[x] COMPLETED` plus a "where it
+departs from the spec" note; a session entry in the build log with that block's row updated; a line
+in the `adhd-audit-build-progress` memory; the register rewritten; the successor opener written and
+this one archived in the same commit; the PR landed and verified. **If you run out of context
+mid-block, you still owe the log entry, the memory line and an opener that resumes** — a `WIP:`
+commit and an honest "here is what is half-done".
 
 ## 4. The state you inherit
 
