@@ -371,6 +371,72 @@ The `apple-design` review of the three layouts is findings §L.
   4.25:1 in light, and white on accent (3.93:1 light / 3.65:1 dark at 15–17pt semibold). "Make the labels bold" is
   offered there as a candidate, beside the Q5/Q6 middle option.
 
+**Round 8: shame and pressure words (session 3; board `63-ROUND-8-pressure-copy.jpg`).**
+
+`apple-design` check before asking: pages read were `writing.md`, `color.md › Best practices` and
+`tab-bars.md › Best practices`.
+- **The word for past-due → "Still open"** (Recommended).
+  - It replaces "Overdue" on rows: `Tasks/TaskRowPresentation.swift:72` and `LifeAreaDetail/AreaTaskRow.swift:92`.
+  - Carried in the option: every open task is still open, so the word alone doesn't say the task was due earlier.
+    Where the row sits in the list must say that, and the build owns it.
+- **The header count → "Remove it; the rows say it"** (Recommended).
+  - "12 OPEN · 2 OVERDUE" becomes "12 open", and "0 OVERDUE" never prints (`Tasks/MomentumTaskBuckets.swift:67`).
+  - Research §5.4; the brief applies `tab-bars.md`'s badge rule by analogy.
+- **Quiet areas → "Neutral 'last closed Tue', no colour"** (Recommended).
+  - Orange "quiet since Tuesday" and "quiet all week" (`Home/MomentumScoreboard.swift:284-290`, StateWarn via
+    `Home/AreaMomentumList.swift:86` and `Areas/AreasComponents.swift:185`) become plain secondary text.
+  - The word is "closed" because the app records only `lastClosedAt`. Widening it to any activity, per round 5b's
+    active-day rule, is a build choice. `color.md › Best practices`: "Avoid using the same color to mean different
+    things."
+- **Inbox pressure → E, verbatim (in place of the offered options):** *"The stats section is a very popular thing
+  with ADHD users. Gamifiying Set an element throughout the entire of this app is essential"*.
+  - The stats stay. What was offered:
+    - (Recommended) "5 to sort" with no age line and no health section;
+    - neutral words, keeping the stats;
+    - removing the stats section only.
+  - The note in the question said the age line (M5) and the captured/cleared line (S1) are both Concept C
+    counterweights.
+  - E's sentence also reads as a standing principle: **gamification is essential throughout the app.** Its framing
+    and its reach are asked in the follow-up (round 8, follow-up).
+  - **This is E's call over research §5.3,** where the gamification evidence is low quality and 8 of 26 reviews
+    reported adverse effects. It follows the precedent of sounds in round 1: a recorded decision, not a contradiction
+    to re-raise.
+
+**Round 8, follow-up.** The question quoted E's sentence and invited a correction; E made none.
+- **Inbox stats → "Framed as progress"** (Recommended).
+  - The section stays, re-headed "This week" (was "INBOX HEALTH"). Its bars and "2 sorted · 7 captured this week"
+    lead with what was DONE.
+  - The header reads "5 to sort", no longer orange, and keeps its progress bar and kinds line.
+  - Gone: the age line "oldest is 13 hours old" (Concept C's M5) and "Four are still sitting here — decide or bin
+    them" (`Capture/CaptureInboxSummary.swift:31-41,124-129`).
+  - Concept C's S1 capture/clear counterweight survives, reframed done-first.
+- **What "gamification throughout" means → E, verbatim: *"Do option 1 & option 3"*.**
+  - Option 1: the game layer already chosen IS the game layer. That is the weekly chain with auto repair, Week
+    review, the goals the user sets, the celebrations and the inbox stats. Every screen may show what was done; none
+    tallies what was missed.
+  - Option 3: a **points / levels / badges system, as its own arc AFTER the audit.** The question carried research
+    §4: points and variable rewards are weakly supported, and expected tangible rewards reduce intrinsic motivation
+    (Deci 1999, d −.28 to −.40).
+  - It joins the end-of-audit gaps list as a WANTED new arc. It is not built inside the audit's blocks.
+  - Option 2 ("a progress element on every tab", proposed in round 10) was NOT chosen.
+  - Round 3's calls stand: the weekly chain, the one Week review chart, and goals off until set.
+
+**Round 8b.**
+- **Fresh Start → "Set them aside in one folded row"** (Recommended).
+  - After 7+ days away, one tap on Today's "Welcome back. Start fresh?" card moves the PAST-DUE open tasks into one
+    collapsed "Set aside · N" row at the bottom of Tasks. It sits beside round 6's "Anytime · N", in the same shape.
+  - Nothing is deleted, dates are kept, and one tap brings any task back.
+  - Undated tasks already live in Anytime, and future-dated tasks are untouched.
+  - Research §5.8 and §5.4 (Dai 2014).
+- **The task-detail Close button → "'Close it — makes today count'"** (Recommended).
+  - It shows only while today has no activity yet. Once today counts, the button reads plain "Close it".
+  - It replaces "Close it — keeps a N-day streak" (`Tasks/MomentumTaskContext.swift:27`).
+  - It is the gamification principle framed as a gain toward the weekly chain, never a loss.
+- **Today's three day-streak lines → "They go with the scoreboard"** (Recommended).
+  - The lines: "One day closed. Keep it alive today.", "N days closed in a row." and "Streak kept. Best is N."
+    (`Home/MomentumScoreboard.swift:246-252`).
+  - The weekly chain speaks through Week review and the done-today line.
+
 **Housekeeping note (session 2 hand-off).** Two throwaway render probes were swept into intermediate commits by `git add -A`:
 - the hero probe: in `3f8a187`, removed `952fdd3`;
 - the composer probe: in `d62cda0` and `a715d6b`, removed in the hand-off merge `670dbb7`.
