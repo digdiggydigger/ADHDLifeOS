@@ -556,6 +556,36 @@ contact picker (sheet 3). The frames are in board `67`.
   - This is the house style against `buttons.md › Content`'s title-style, under `writing.md › Best practices`
     ("Choose a style for each UI element type and use it consistently").
 
+**Round 10b, the missed item (asked after round 10b; the hand-off listed it, and round 10b had skipped it).**
+- **The empty inbox line → "'Captures wait here to be sorted'"** (Recommended).
+  - It replaces "Nothing waiting to be triaged. Anything you capture lands here first, so your head doesn't have to
+    hold it." (`Capture/CaptureInboxView.swift:286`).
+  - That line was untrue, because a Task from the disc skips the inbox (CAPT-04).
+  - "Inbox clear" and its "Capture something" button stay (INBOX-05 unchanged).
+  - Today's copy of the line (`Home/HomeAccessoryStrips.swift:55`) leaves with the inbox peek (round 3).
+
+**Decision A and the build order (session 3, after round 10).**
+
+The opinion given in the question: build in FRESH sessions, one arc per session (memory `build-in-a-fresh-session`).
+- **Where the specs are written → "Specs here, then hand off"** (Recommended).
+  - Session 3 writes every decision as a FEATURE block in `TODO-CLAUDE-CODE.md`, then closes the audit and hands the
+    first arc to a fresh session.
+- **The first arc → "C · Nothing lost first"** (Recommended).
+  - It holds the audit's data-loss Criticals (CAPT-01, TASKS-01), and it builds the undo capsule the later arcs
+    reuse.
+- **The seven arcs, grouped by dependency:**
+  - A · Copy and colour jobs.
+  - B · Accessibility.
+  - C · Nothing lost.
+  - D · The composer.
+  - E · Today.
+  - F · The sprint.
+  - G · Places, sheets, refresh and Fresh Start.
+  - The order after C is proposed in the opener.
+- **The audit's own findings on in-app refresh** (round 10b): journal entries and captures write through the generic
+  `save` (`FirebaseManager+Logs.swift:21`, `+Captures.swift:57`), which posts `DataChangeSignal`. In code, both
+  screens already refresh; E was asked in the closing text whether they have seen them fail.
+
 **Housekeeping note (session 2 hand-off).** Two throwaway render probes were swept into intermediate commits by `git add -A`:
 - the hero probe: in `3f8a187`, removed `952fdd3`;
 - the composer probe: in `d62cda0` and `a715d6b`, removed in the hand-off merge `670dbb7`.
