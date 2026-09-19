@@ -134,3 +134,25 @@ be happy for you to use as many subagents to assist your current workload."*
 - **Gym steps (a check, not a decision):** E's own screenshots show the departure step saved as a Journal line ("Log today's
   workout") and no arrival journal line; the editor also shows Save at the top, jargon footers ("monitoring slots", "At-Place
   tasks") and "Drag to reorder" with no tap alternative.
+
+**Round 2: nothing lost, everything undoable (2026-09-19, session 2; evidence board `53-ROUND-2-evidence-board.jpg`).**
+
+Every option, whichever was chosen, also carried two things. Task detail's blocking "Discard changes?" becomes autosave
+with swipe-back restored. And Cancel becomes "Close", because `sheets.md` says Cancel means "without saving".
+- **Unsent text → "Inbox catches it".** A composer closed with text files it into the Capture Inbox as a note. A bar,
+  "Kept in your inbox · Reopen", stays until the next action.
+- **Undo shape → E, verbatim:** *"'Option 1.' But the "bottom bar" Needs A visual overhaul"*.
+  - Option 1 = one bottom bar everywhere: the same spot above the tab bar, clear of the disc, a 48pt Undo with the
+    standard ↶ symbol, naming what it undoes.
+  - The overhaul's look is a follow-up (renders owed).
+- **Where Recently Deleted lives → "One row in Tools"** (not in context, not Settings). Kept 30 days (stated as the
+  default in the question; E did not object).
+- **What goes to Recently Deleted → E, verbatim:** *"Tasks + Captures + Tags (If A recently deleted tag is restored,
+  What happens to Items that previously had this tag? - Such as a photo capture having a tag. The tag then gets deleted.
+  But Then the tag is restored. What then happens? Can the tag be restored to the original photo capture it was assigned
+  to?)"*
+  - Places, nudges and place actions keep confirm-then-permanent delete (Q10).
+  - Journal delete goes to the gaps list.
+  - Code fact behind E's question: membership is a `tag_ids` array on each task or capture document. Today's delete
+    (`FirebaseManager+Tags.swift`, `removeTagEverywhere(_:replacingWith: nil)`) strips the id from every item in one
+    batch, so a restore would come back with no links. The answer is a follow-up question.

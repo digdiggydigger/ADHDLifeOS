@@ -38,4 +38,5 @@ project. The simulator is to be erased at close-out.
 | `47`, `48` Today close undo card / Inbox undo bar | the two existing undo shapes (Inbox Undo 34x16pt) |
 | `49`, `50` toolbar + New task / board after adding "Book an eye test" (Not yet) | **an undated task vanishes from the board it was added from** |
 | `52` round 1 evidence board | the labelled board method (built with `scripts/audit/board.py`, opened in Preview for E) |
+| `53` round 2 evidence board | drafts (Task composer loses text, Journal keeps it until quit), the two undo shapes (in-place card vs a 34x16pt bar under the disc), and where a Recently Deleted list could live |
 | `full/` | **every seeded tab frame** — `s-<tab>-L|D|A-pN.jpg` (light / dark / AX3, top→bottom) and `s-taskdetail-L-*`; the HIG reviews cite these (rounds 3, 4, 9) |
