@@ -23,7 +23,7 @@ project. The simulator is to be erased at close-out.
 | `16`, `17` Tasks light / AX3 | overdue rows under "DUE TODAY"; "Overdue" meta; ▶ + ○ per row |
 | `18`–`20` task detail | "Close it — keeps a 6-day streak"; sprint configurator; tags run off-screen; Save directly above Delete |
 | `21`–`24` capture fan → Task composer → typed → reopened after Cancel | **Cancel silently discards typed text** |
-| `25`–`27` Journal composer typed → reopened after Cancel → after app quit | Journal keeps text across Cancel in-session; **loses it when the app quits** |
+| `25`–`27` Journal composer typed → reopened after swipe-down → after app quit | Journal keeps text across Cancel in-session; **loses it when the app quits** |
 | `28`, `29` Capture Inbox | triage card + "Four are still sitting here — decide or bin them." |
 | `30`, `31` Journal, Tools | timeline; Tools empty-state copy |
 | `32`–`35` sprint card expanded / collapsed / full sheet p1–p2 | sprint surfaces vs E's Q2 "timer + task + +5m/End ONLY" |
@@ -31,3 +31,6 @@ project. The simulator is to be erased at close-out.
 | `37`, `38` full right-swipe mid / after | **a full swipe closes a task with no confirm and no undo** |
 | `39`, `40` nudge before / after "Done for now" | **nudge dismissal has no undo** |
 | `41` Tasks while loading | reads "0 OPEN · 0 OVERDUE" before data arrives |
+| `42` finished sprint card | "Take a 10-minute walk · 15m focused · 2 checkpoints · Confirm" |
+| `43`, `44` Confirm celebration at 1.5 s / 3 s | full-screen dim + confetti + fireworks for a routine 15-minute sprint (settled design; recorded as evidence for the celebration-tier tension only) |
+| `45` Tasks after ○ close | the closed task went straight to "Closed today": **no undo** |
