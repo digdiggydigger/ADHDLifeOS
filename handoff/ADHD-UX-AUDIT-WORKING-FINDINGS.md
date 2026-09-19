@@ -319,3 +319,47 @@ Rating **Critical issues**. Thesis: "dump it, see it, start it"; the loop leaks.
   at the gym" was not added, and the departure step is a Journal line rather than a Capture. Not evidence against the
   editor's direction control; the Capture-vs-Journal choice may be easy to mix up (unconfirmed). Voice transcript "Remember to ask Freya about the Q4 on Monday" (speech
   recogniser, not the app; the capture shows only the transcript).
+
+## K. Today: alternative ideas (E's side request, 2026-09-19, after round 3 chose "C · One next thing")
+
+These are suggestions, not decisions. Each names the ADHD struggle it serves and its evidence grade (research brief
+§), says whether it needs a new capability, and how it fits C.
+
+1. **"Leave by" time card.** When a fixed commitment is ahead, the one card reads "Leave by 14:20 · 1h 50m free · a
+   25-min sprint fits".
+   - Serves: time blindness and waiting mode. STRONG timing deficit (§5.1, addendum 2).
+   - Needs: calendar read (EventKit).
+   - Fit with C: it takes the one slot when a commitment is near.
+2. **Work sized to the gap.** The card offers a task that fits the time you actually have.
+   - Serves: §5.1, addendum 2.
+   - Needs: a task estimate field (the round 5 schema question).
+3. **Morning first-unlock surface.** The first open after waking shows one pre-chosen first step, with no decisions.
+   A routine can be anchored to waking.
+   - Serves: sleep inertia, STRONG [gen]; the delayed body clock, MODERATE (addendum 7–8).
+   - Needs: wake-event triggers (a Scope C gap).
+4. **Evening "tomorrow's first thing".** After a set hour, the card asks one tap: which item from the then-list goes
+   first tomorrow. That pre-decides the morning.
+   - Serves: implementation intentions, MODERATE (§5.5).
+   - Needs: nothing new beyond pinning (round 5).
+5. **Resume card.** "You were on 'Reply to Priya', 12 min in · Pick up".
+   - Serves: resuming after interruption. The mechanism is MODERATE; there is no ADHD-specific study (§2.5).
+   - Needs: sprint pause state, which exists.
+6. **Fresh Start greeting.** After 7+ days away, one card: "Welcome back. Start fresh?" One tap moves the backlog
+   out of sight. No tallies.
+   - Serves: E's Q9 (§5.4, §5.8).
+   - Needs: a new flow.
+7. **"Not this one" swap.** One tap on the card offers the next suggestion, until you pin one.
+   - Serves: working-memory load when choosing (§1.3). Choice paralysis itself is FOLK.
+   - Needs: fits E's Q1 "suggested then pinned".
+8. **Time you can see.** A thin bar on the card shrinks from now to the next commitment. It reads without numerals.
+   - Serves: §5.1 test.
+   - Needs: a calendar or a task deadline.
+9. **One quiet "done today" line under the card.**
+   - Serves: immediate informational feedback (§5.2–5.3).
+   - Conflicts slightly with C's "nothing else", so it is optional.
+10. **The one card on the Lock Screen.** An accessory widget.
+    - Serves: out of sight, out of mind (addendum 1).
+    - Needs: a new widget family (a Scope C gap).
+
+**Not recommended:** body-doubling or "work alongside" presence (FOLK/WEAK, §5.7), and energy/mood matching (no
+evidence it helps choose tasks; offer it only as an optional filter).
