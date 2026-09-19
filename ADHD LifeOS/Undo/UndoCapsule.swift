@@ -220,13 +220,14 @@ private struct UndoCapsuleButtonStyle: ButtonStyle {
 #if DEBUG
 private enum UndoCapsulePreviewData {
     static let closed = RecentAction(
-        kind: .taskClosed, subject: "Pay the council tax instalment", undo: {}
+        kind: .taskClosed, subject: "Pay the council tax instalment", undo: { true }
     )
     static let journalled = RecentAction(
-        kind: .captureJournalled, subject: "Bike repair receipt", undo: {}
+        kind: .captureJournalled, subject: "Bike repair receipt", undo: { true }
     )
     static let sorted = RecentAction(
-        kind: .captureSorted(areaLabel: "💼 Work"), subject: "Ask Sam about the spare key", undo: {}
+        kind: .captureSorted(areaLabel: "💼 Work"), subject: "Ask Sam about the spare key",
+        undo: { true }
     )
 }
 

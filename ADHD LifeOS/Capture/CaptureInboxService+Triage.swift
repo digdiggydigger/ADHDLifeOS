@@ -122,7 +122,9 @@ extension CaptureInboxService {
         recordAction.record(
             RecentAction(kind: kind, subject: CaptureDetailPresentation.headline(for: subject)) {
                 [weak self] in
-                await self?.undoLastTriageAction(action)
+                // A service that has gone reversed nothing, so the offer stands rather than
+                // silently reporting success.
+                await self?.undoLastTriageAction(action) ?? false
             }
         )
     }

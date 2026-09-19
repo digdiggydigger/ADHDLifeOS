@@ -112,9 +112,16 @@ struct RecentAction: Identifiable {
     /// because only the site knows which of its models is the thing the user was looking at.
     let subject: String
     /// The reversal, supplied by the site. `async` because every one of them is a network write.
-    let undo: () async -> Void
+    ///
+    /// **It answers whether anything was actually reversed, and that is load-bearing.** The Capture
+    /// Inbox has always kept its offer standing when an undo could not land — *"nothing happened,
+    /// so the offer still stands"*, and for "Journal it" that is a safety argument, not a nicety:
+    /// a failed restore must leave the journal entry alone, because it is the only copy of the
+    /// thought left. `false` puts the capsule back rather than leaving the user with a failure and
+    /// no way to retry.
+    let undo: () async -> Bool
 
-    init(id: UUID = UUID(), kind: RecentActionKind, subject: String, undo: @escaping () async -> Void) {
+    init(id: UUID = UUID(), kind: RecentActionKind, subject: String, undo: @escaping () async -> Bool) {
         self.id = id
         self.kind = kind
         self.subject = subject

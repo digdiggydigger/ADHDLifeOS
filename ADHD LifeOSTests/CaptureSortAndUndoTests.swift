@@ -29,17 +29,37 @@ final class CaptureSortAndUndoTests: XCTestCase {
         )
     }
 
+    /// **The undo moved out of this service in `F-C1-UndoCapsule`.** It used to hold its own
+    /// `lastTriageAction`, which both inbox affordances read; E chose "one bottom bar everywhere",
+    /// so the slot is the app-level `RecentActionCenter` now and this service only records into it.
+    /// These tests therefore assert what was RECORDED and what running its reversal does, which is
+    /// strictly more than the old field could say — the capsule's words are checked too.
+    /// **The REAL centre, not a double.** The spent-once rule and the put-the-offer-back-on-failure
+    /// rule now live there rather than in this service, so a recording double would let these tests
+    /// pass on a build where undo looped or where a failed reversal lost its offer. The centre has
+    /// its own unit tests; this is where the two halves are checked together.
     private struct SUT {
         let service: CaptureInboxService
         let client: FakeCaptureClientAdapting
+        let centre: RecentActionCenter
+
+        /// What the capsule is offering right now, or `nil` if there is nothing to take back.
+        @MainActor var pending: RecentAction? { centre.pendingAction }
+
+        /// Takes it back, the way the capsule's Undo button does.
+        @MainActor func undo() async {
+            await centre.undo()
+        }
     }
 
     private func makeSUT(loaded: [Capture]) async -> SUT {
         let client = FakeCaptureClientAdapting()
         client.fetchUnprocessedCapturesResult = .success(loaded)
         let service = CaptureInboxService(client: client, transcriber: FakeVoiceTranscribing())
+        let centre = RecentActionCenter()
+        service.recordAction = centre
         await service.load()
-        return SUT(service: service, client: client)
+        return SUT(service: service, client: client, centre: centre)
     }
 
     // MARK: - The rule: a life area is required
@@ -116,25 +136,31 @@ final class CaptureSortAndUndoTests: XCTestCase {
         XCTAssertFalse(succeeded)
         XCTAssertEqual(env.service.captures.count, 1)
         XCTAssertNotNil(env.service.triageErrorMessage)
-        XCTAssertNil(
-            env.service.lastTriageAction,
-            "nothing happened, so there must be nothing to take back"
-        )
+        XCTAssertNil(env.pending, "nothing happened, so there must be nothing to take back")
     }
 
     // MARK: - Undo
 
-    func testSort_recordsWhatItDidAndWhatItWouldTakeBack() async {
+    func testSort_recordsWhatItDidInTheWordsTheCapsuleWillSay() async {
         let noted = capture("Interesting", lifeAreaId: health.id)
+        let env = await makeSUT(loaded: [noted])
+
+        await env.service.sort(capture: noted, into: work.id, areaLabel: "💼 Work")
+
+        XCTAssertEqual(env.pending?.kind, .captureSorted(areaLabel: "💼 Work"))
+        XCTAssertEqual(env.pending?.subject, "Interesting", "the capsule names the capture, not the verb alone")
+    }
+
+    /// The label is resolved by the CALLER at the moment of the sort, so an area deleted before
+    /// the undo is taken degrades to the bare verb rather than the capsule quoting a raw id — the
+    /// rule the retired inbox bar held, carried over.
+    func testSort_withNoResolvableArea_recordsTheBareVerb() async {
+        let noted = capture("Interesting")
         let env = await makeSUT(loaded: [noted])
 
         await env.service.sort(capture: noted, into: work.id)
 
-        XCTAssertEqual(
-            env.service.lastTriageAction,
-            .sorted(captureId: noted.id, previousLifeAreaId: health.id),
-            "undo has to restore the area it REPLACED, not just clear the exit stamp"
-        )
+        XCTAssertEqual(env.pending?.kind, .captureSorted(areaLabel: nil))
     }
 
     func testUndoSort_reversesTheExitStampAndTheArea() async {
@@ -142,9 +168,8 @@ final class CaptureSortAndUndoTests: XCTestCase {
         let env = await makeSUT(loaded: [noted])
         await env.service.sort(capture: noted, into: work.id)
 
-        let undone = await env.service.undoLastTriageAction()
+        await env.undo()
 
-        XCTAssertTrue(undone)
         XCTAssertEqual(env.client.lastUpdateCaptureChanges?.seen, false)
         XCTAssertNil(
             env.client.lastUpdateCaptureChanges?.clearedAt.flatMap { $0 },
@@ -158,7 +183,7 @@ final class CaptureSortAndUndoTests: XCTestCase {
         let env = await makeSUT(loaded: [noted])
         await env.service.sort(capture: noted, into: work.id)
 
-        await env.service.undoLastTriageAction()
+        await env.undo()
 
         XCTAssertEqual(
             env.client.lastUpdateCaptureChanges?.lifeAreaId, .some(nil),
@@ -166,16 +191,24 @@ final class CaptureSortAndUndoTests: XCTestCase {
         )
     }
 
-    /// One undo, not a repeatable loop — a second tap must not re-reverse anything.
+    /// One undo, not a repeatable loop — a second tap must not re-reverse anything. **The
+    /// spent-once rule moved to `RecentActionCenter` with the slot** (`RecentActionCenterTests`
+    /// holds it); what this pins is that the service itself declines a repeat, so the guarantee
+    /// does not rest on the centre alone.
     func testUndo_isSpentOnceUsed() async {
         let noted = capture("Interesting")
         let env = await makeSUT(loaded: [noted])
         await env.service.sort(capture: noted, into: work.id)
-        await env.service.undoLastTriageAction()
+        await env.undo()
+        let writesAfterOneUndo = env.client.updateCaptureCallCount
 
-        XCTAssertNil(env.service.lastTriageAction)
-        let secondAttempt = await env.service.undoLastTriageAction()
-        XCTAssertFalse(secondAttempt)
+        await env.undo()
+
+        XCTAssertNil(env.pending, "the offer survived being taken")
+        XCTAssertEqual(
+            env.client.updateCaptureCallCount, writesAfterOneUndo,
+            "a second Undo wrote again, so the reversal is a loop rather than a spent offer"
+        )
     }
 
     /// The queue is newest-first by default, so skipping the capture at the FRONT is the only
@@ -191,9 +224,8 @@ final class CaptureSortAndUndoTests: XCTestCase {
             "skipping the front of the queue must actually move it"
         )
 
-        let undone = await env.service.undoLastTriageAction()
+        await env.undo()
 
-        XCTAssertTrue(undone)
         XCTAssertEqual(env.service.displayedCaptures.map(\.content), before)
     }
 
@@ -203,7 +235,8 @@ final class CaptureSortAndUndoTests: XCTestCase {
 
         env.service.skip(first)
 
-        XCTAssertEqual(env.service.lastTriageAction, .skipped(captureId: first.id))
+        XCTAssertEqual(env.pending?.kind, .captureSkipped)
+        XCTAssertEqual(env.pending?.subject, "First")
     }
 
     // MARK: - The button only lights up when it can actually be used
@@ -239,35 +272,22 @@ final class CaptureSortAndUndoTests: XCTestCase {
         )
     }
 
-    // MARK: - What the undo bar says
+    // MARK: - What the capsule's verb is built from
 
-    func testConfirmation_namesTheAreaItSortedInto() {
-        let line = CaptureTriage.confirmation(
-            for: .sorted(captureId: UUID(), previousLifeAreaId: nil),
-            sortedInto: work.id,
-            lifeAreas: [work, health]
-        )
-
-        XCTAssertEqual(line, "Sorted to 💼 Work")
+    /// **`confirmation(for:sortedInto:lifeAreas:)` was replaced by `areaLabel(id:in:)` in
+    /// `F-C1-UndoCapsule`.** It built the retired bar's WHOLE sentence — "Sorted to 💼 Work",
+    /// "Skipped — it'll come back round" — because that bar had one line. The capsule carries the
+    /// capture's own words on a second line, so the verb is `RecentActionKind.verb`'s job
+    /// (`UndoCapsulePresentationTests`) and the area's label is all that is left here.
+    func testAreaLabel_namesTheAreaItSortedInto() {
+        XCTAssertEqual(CaptureTriage.areaLabel(id: work.id, in: [work, health]), "💼 Work")
     }
 
-    func testConfirmation_skipSaysItIsComingBack() {
-        let line = CaptureTriage.confirmation(
-            for: .skipped(captureId: UUID()), sortedInto: nil, lifeAreas: [work]
-        )
-
-        XCTAssertEqual(line, "Skipped — it'll come back round")
-    }
-
-    /// A deleted area must degrade to a plain sentence, never a raw UUID.
-    func testConfirmation_danglingArea_staysReadable() {
-        let line = CaptureTriage.confirmation(
-            for: .sorted(captureId: UUID(), previousLifeAreaId: nil),
-            sortedInto: UUID(),
-            lifeAreas: [work]
-        )
-
-        XCTAssertEqual(line, "Sorted")
+    /// A deleted area must degrade to nothing, never a raw UUID — the rule that survived the
+    /// replacement, because it is the one that protects the user from seeing an id.
+    func testAreaLabel_danglingArea_staysReadable() {
+        XCTAssertNil(CaptureTriage.areaLabel(id: UUID(), in: [work]))
+        XCTAssertNil(CaptureTriage.areaLabel(id: nil, in: [work]))
     }
 }
 

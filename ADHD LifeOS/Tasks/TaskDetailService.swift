@@ -115,14 +115,17 @@ final class TaskDetailService: ObservableObject {
 
     /// The undo capsule's way back from `close()`. Guarded on the task as it stands NOW, so an
     /// Undo tapped after a close that failed is a no-op rather than a stray `.open` write.
-    func reopen() async {
-        guard let original = task, original.status == .done else { return }
+    @discardableResult
+    func reopen() async -> Bool {
+        guard let original = task, original.status == .done else { return false }
         do {
             let updated = try await client.updateStatus(id: taskId, status: .open)
             task = updated
             state = .loaded(updated)
+            return true
         } catch {
             errorMessage = Self.message(for: error)
+            return false
         }
     }
 

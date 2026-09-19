@@ -194,14 +194,17 @@ struct LifeAreaDetailView: View {
     /// The capsule's way back from `closeTask`. The same write in reverse — `updateStatus` to
     /// `.open`, which `TaskCompletionStamp.applying` already clears `completedAt` for — then a
     /// reload, so the row's tick and its strike come back together.
-    func reopenTask(_ task: TaskItem) async {
-        guard service.allTasks.first(where: { $0.id == task.id })?.status == .done else { return }
+    @discardableResult
+    func reopenTask(_ task: TaskItem) async -> Bool {
+        guard service.allTasks.first(where: { $0.id == task.id })?.status == .done else { return false }
         do {
             _ = try await taskDetailClient.updateStatus(id: task.id, status: .open)
             await service.load()
+            return true
         } catch {
             toggleErrorMessage =
                 (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
         }
     }
 }

@@ -94,6 +94,37 @@ final class RecentActionCenterTests: XCTestCase {
         XCTAssertEqual(secondReversals.count, 1)
     }
 
+    /// **A reversal that could not land puts its offer back.** The Capture Inbox has always
+    /// promised this — *"nothing happened, so the offer still stands"* — and for "Journal it" it is
+    /// a safety argument rather than a nicety: a failed restore deliberately leaves the journal
+    /// entry alone, because it is the only copy of the thought left, so the user must be able to
+    /// try again.
+    func testAReversalThatDeclinesPutsTheOfferBack() async {
+        let center = RecentActionCenter()
+        let action = Self.action(kind: .captureJournalled, subject: "Rain smelled like school", reversed: false)
+        center.record(action)
+
+        await center.undo()
+
+        XCTAssertEqual(center.pendingAction, action, "A failed undo left the user with no way to retry.")
+    }
+
+    /// …but only into a slot nothing else has claimed. A reversal takes a network round trip, and
+    /// a close made while it was in flight owns the capsule now — restoring over it would show an
+    /// undo for something two actions ago.
+    func testAFailedReversalNeverEvictsAnActionRecordedWhileItWasInFlight() async {
+        let center = RecentActionCenter()
+        let slow = RecentAction(kind: .captureSkipped, subject: "Old one") {
+            center.record(Self.action(kind: .taskClosed, subject: "Closed meanwhile"))
+            return false
+        }
+        center.record(slow)
+
+        await center.undo()
+
+        XCTAssertEqual(center.pendingAction?.subject, "Closed meanwhile")
+    }
+
     // MARK: - Clearing
 
     func testClearEmptiesTheSlotWithoutRunningTheReversal() {
@@ -123,9 +154,12 @@ final class RecentActionCenterTests: XCTestCase {
     // MARK: - Helpers
 
     private static func action(
-        kind: RecentActionKind, subject: String, undo: @escaping () -> Void = {}
+        kind: RecentActionKind, subject: String, reversed: Bool = true, undo: @escaping () -> Void = {}
     ) -> RecentAction {
-        RecentAction(kind: kind, subject: subject) { undo() }
+        RecentAction(kind: kind, subject: subject) {
+            undo()
+            return reversed
+        }
     }
 
     /// A reference box, so a `@Sendable` reversal closure can count itself without capturing a

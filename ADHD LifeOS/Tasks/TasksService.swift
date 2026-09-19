@@ -104,16 +104,19 @@ final class TasksService: ObservableObject {
     /// Guarded on the LOCAL status rather than the caller's copy, so an Undo tapped after a failed
     /// write the reload already reverted is a no-op rather than a second write — which is the
     /// state the capsule is deliberately not modelling with a "pending" flag of its own.
-    func reopen(_ task: TaskItem) async {
+    @discardableResult
+    func reopen(_ task: TaskItem) async -> Bool {
         guard hasLoadedOnce, let index = tasks.firstIndex(where: { $0.id == task.id }),
-              tasks[index].status == .done else { return }
+              tasks[index].status == .done else { return false }
         tasks[index] = TaskCompletionStamp.applying(status: .open, to: tasks[index])
         recomputeGroups()
         do {
             try await client.setStatus(taskId: task.id, status: .open)
+            return true
         } catch {
             mutationErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             await load()
+            return false
         }
     }
 

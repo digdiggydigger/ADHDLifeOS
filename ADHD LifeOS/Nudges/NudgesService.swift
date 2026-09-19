@@ -137,7 +137,9 @@ final class NudgesService: ObservableObject {
             // after the milestone above has had its say.
             recordAction.record(
                 RecentAction(kind: .nudgeDismissed, subject: nudge.label) { [weak self] in
-                    await self?.restore(nudge)
+                    // A service that has gone reversed nothing, so the offer stands rather than
+                    // silently reporting success.
+                    await self?.restore(nudge) ?? false
                 }
             )
             return true

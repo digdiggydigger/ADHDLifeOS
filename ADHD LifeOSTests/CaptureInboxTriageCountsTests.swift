@@ -38,6 +38,13 @@ final class CaptureInboxTriageCountsTests: XCTestCase {
         let service: CaptureInboxService
         let client: FakeCaptureClientAdapting
         let journal: FakeJournalClientAdapting
+        /// The app's one undo slot (`F-C1-UndoCapsule`) — the real one, since the spent-once rule
+        /// lives there now rather than on this service.
+        let centre: RecentActionCenter
+
+        @MainActor func undo() async {
+            await centre.undo()
+        }
     }
 
     /// Three filters on purpose: the bug is invisible on a single-filter service, because there is
@@ -56,8 +63,10 @@ final class CaptureInboxTriageCountsTests: XCTestCase {
             client: client, journalClient: journal, transcriber: FakeVoiceTranscribing(),
             availableFilters: [.unprocessed, .seen, .promoted]
         )
+        let centre = RecentActionCenter()
+        service.recordAction = centre
         await service.load()
-        return SUT(service: service, client: client, journal: journal)
+        return SUT(service: service, client: client, journal: journal, centre: centre)
     }
 
     /// The exact shape of E's screenshot: journal one of two, and read both numbers back.
@@ -178,9 +187,8 @@ final class CaptureInboxTriageCountsTests: XCTestCase {
         env.client.fetchUnprocessedCapturesResult = .success([thought])
         env.client.fetchProcessedCapturesResult = .success([alreadyThere])
 
-        let undone = await env.service.undoLastTriageAction()
+        await env.undo()
 
-        XCTAssertTrue(undone)
         XCTAssertEqual(env.service.counts[.unprocessed], 1, "it came back")
         XCTAssertEqual(env.service.counts[.promoted], 1, "and it left where it had gone")
     }
@@ -195,9 +203,8 @@ final class CaptureInboxTriageCountsTests: XCTestCase {
         env.client.fetchUnprocessedCapturesResult = .success([filed])
         env.client.fetchSeenCapturesResult = .success([])
 
-        let undone = await env.service.undoLastTriageAction()
+        await env.undo()
 
-        XCTAssertTrue(undone)
         XCTAssertEqual(env.service.counts[.unprocessed], 1)
         XCTAssertEqual(env.service.counts[.seen], 0)
     }

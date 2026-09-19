@@ -16,6 +16,7 @@
 //  built in `RootView` it would be rebuilt on every auth-state swap, dropping whatever was pending.
 //
 
+import Combine
 import Foundation
 
 /// The one pending undo, and the only thing that can run it.
@@ -36,13 +37,21 @@ final class RecentActionCenter: ObservableObject, RecentActionRecording {
         setPendingAction(nil)
     }
 
-    /// Takes the pending action back, and is then SPENT. The slot is emptied BEFORE the reversal
-    /// is awaited, so a second tap during a slow network write cannot run the same reversal twice —
-    /// which on a task close would reopen and then re-close it.
+    /// Takes the pending action back, and is then SPENT.
+    ///
+    /// **Emptied BEFORE the reversal is awaited, and put back if the reversal declines.** Clearing
+    /// first is what stops a second tap during a slow network write running the same reversal
+    /// twice. Restoring on `false` is what keeps the Capture Inbox's existing promise that a
+    /// failed undo leaves its offer standing — see `RecentAction.undo`. A reversal that declined
+    /// changed nothing, so the action it describes is still exactly as reversible as it was.
     func undo() async {
         guard let action = pendingAction else { return }
         setPendingAction(nil)
-        await action.undo()
+        guard await action.undo() == false else { return }
+        // Only if nothing else has claimed the slot meanwhile — a reversal that took a round trip
+        // must not evict a close the user made while it was in flight.
+        guard pendingAction == nil else { return }
+        setPendingAction(action)
     }
 
     /// The ONLY writer. Kept private and singular so no site can leave the slot in a state the

@@ -127,9 +127,11 @@ extension HomeView {
     /// task detail. Excludes whichever task the Best-next-move card is already headlining.
     @ViewBuilder
     var dueNowSection: some View {
-        let headline = celebratedTask == nil
-            ? MomentumScoreboard.bestNextMove(in: homeService.openTasks)?.id
-            : nil
+        // Unconditional since `F-C1-UndoCapsule` retired the closure card: the lead section is
+        // always the Best-next-move card now, so the task it headlines is always the one to
+        // exclude. The old `celebratedTask == nil ?` guard existed because the card REPLACED the
+        // hero, which meant nothing was being headlined while it was up.
+        let headline = MomentumScoreboard.bestNextMove(in: homeService.openTasks)?.id
         let today = Calendar.current.startOfDay(for: .now)
         let dueNow = homeService.openTasks.filter { task in
             guard task.id != headline, let due = task.dueDate else { return false }
@@ -219,12 +221,15 @@ extension HomeView {
     /// The capsule's way back. **Reopening was never new capability here** — this method predates
     /// `F-C1-UndoCapsule` and drove the retired closure card's own Undo button; all that changed
     /// is who calls it.
-    func undoClose(_ task: TaskSummary) async {
+    @discardableResult
+    func undoClose(_ task: TaskSummary) async -> Bool {
         do {
             _ = try await taskDetailClient.updateStatus(id: task.id, status: .open)
             await homeService.load()
+            return true
         } catch {
             closeTaskErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
         }
     }
 
