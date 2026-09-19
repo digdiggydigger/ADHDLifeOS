@@ -314,6 +314,8 @@ Rating **Critical issues**. Thesis: "dump it, see it, start it"; the loop leaks.
   crossing. Routine screen = ROUTINE eyebrow, "You're at Gym, arrived 41 secs ago", "0 of 3 done", NEXT — STEP 1 OF 3 card with
   one big "Open Fitness" + "Skip this step", later steps listed quietly — **the strongest ADHD pattern in the app** (reference for
   the Today hero). Today shows "AT GYM · ROUTINE LIVE · 3 steps left · Next: Open Fitness · Continue routine".
-- **E's hand entry:** the Gym's journal line was saved as a DEPARTURE step and the "Log today's workout" capture is absent
-  (editor direction choice may be unclear — ask E). Voice transcript "Remember to ask Freya about the Q4 on Monday" (speech
+- **E's hand entry (corrected from E's screenshots):** the Gym has FOUR actions — Open Fitness, Text Sam Taylor, Open
+  www.nhs.uk (all on arrival) and Journal "Log today's workout" (when leaving). The requested arrival journal line "Arrived
+  at the gym" was not added, and the departure step is a Journal line rather than a Capture. Not evidence against the
+  editor's direction control; the Capture-vs-Journal choice may be easy to mix up (unconfirmed). Voice transcript "Remember to ask Freya about the Q4 on Monday" (speech
   recogniser, not the app; the capture shows only the transcript).

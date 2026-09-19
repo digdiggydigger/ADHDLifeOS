@@ -37,3 +37,5 @@ project. The simulator is to be erased at close-out.
 | `46` routine screen | one next step, one big button, skip, quiet list: the reference pattern |
 | `47`, `48` Today close undo card / Inbox undo bar | the two existing undo shapes (Inbox Undo 34x16pt) |
 | `49`, `50` toolbar + New task / board after adding "Book an eye test" (Not yet) | **an undated task vanishes from the board it was added from** |
+| `52` round 1 evidence board | the labelled board method (built with `scripts/audit/board.py`, opened in Preview for E) |
+| `full/` | **every seeded tab frame** — `s-<tab>-L|D|A-pN.jpg` (light / dark / AX3, top→bottom) and `s-taskdetail-L-*`; the HIG reviews cite these (rounds 3, 4, 9) |

@@ -21,7 +21,7 @@ re-ask or re-audit anything below. It is settled or measured. Pick up at round 2
      **verified on the simulator** (these override code-only claims); F = contrast computed from colorset hex; G, H, I =
      three `apple-design` HIG reviews with citations.
    - `handoff/SESSION-OPENER-adhd-ux-audit-research.md`: the evidence-graded research brief. Cite its section numbers.
-   - `screenshots/adhd-ux-audit/README.md`: 51 evidence frames, file → claim.
+   - `screenshots/adhd-ux-audit/README.md`: 53 curated evidence frames (file → claim), plus `full/` with every seeded tab frame in light / dark / AX3.
    - Memory `adhd-ux-audit-arc` (the round log) and `audit-sim-drive-lessons` (how to drive the simulator without losing
      an hour).
 
@@ -34,6 +34,11 @@ re-ask or re-audit anything below. It is settled or measured. Pick up at round 2
   - **E: the app targets ADHD specifically, NOT autistic people.** Weight ADHD evidence; demote autism-specific items
     (sensory over-responsivity, intolerance of uncertainty).
 - **Rounds 2–10 are OWED.** Nothing has been edited in Swift. Nothing is built.
+- **Tool yield, honestly:** `apple-design` ran properly (three HIG reviews, sections G–I). `apple-skills`
+  `ios/ui-review` and `ios/accessibility-audit` were **never invoked**, so run them in a later round or say why
+  not. `ui-ux-pro-max` (`--domain ux`, `--stack swiftui`) returned generic web rules or zero matches for every ADHD
+  query. Its useful lines were 44pt with 8pt spacing, empty states with an action, and confirm-before-delete. The last
+  one conflicts with E's soft-delete choice. Report it as low-yield rather than padding with it.
 - **Decision A (build here or fresh?) is owed only AFTER all rounds.** The honest answer, per memory
   `build-in-a-fresh-session`: build in fresh session(s), as FEATURE blocks in `TODO-CLAUDE-CODE.md`. Give it when E has
   selected everything, not before.
@@ -200,7 +205,11 @@ chips 36→48 grows every composer):
   - If it's down: `./scripts/emulators.sh --import scripts/audit/emulator-state` (a git-ignored export of everything:
     the account, the 33 seeded documents, E's Gym and Office, the photo, voice and task entries).
   - Relaunch the app with `SIMCTL_CHILD_LIFEOS_FIREBASE_EMULATOR_HOST=127.0.0.1 xcrun simctl launch 02AE86FA-… com.ethananthony.ADHD-LifeOS`.
-  - If the app shows sign-in, **ask E to sign in by hand** (never automate auth).
+  - The emulator was a background child of the old session and **will almost certainly have died with it**.
+    `--import` restores `audit@test.local` with the password E chose. If the app shows sign-in, **ask E to sign in by hand
+    with those same credentials** (never automate auth).
+  - **Never run the unit suite on the 18 Pro.** It is signed in against an emulator that may be down, which is
+    CLAUDE.md's poisoned-sim trap. Tests stay on `iPhone 17 Pro, OS=26.5`. The audit's close-out erase covers the 18 Pro.
 - **Tools** in `scripts/audit/`:
   - `ax.py`: a compact accessibility tree; `--small` flags <44 / <48.
   - `tapid.py <id>` or `tapid.py <label> --label`.
