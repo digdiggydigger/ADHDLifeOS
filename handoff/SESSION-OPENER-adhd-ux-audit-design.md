@@ -175,3 +175,23 @@ with swipe-back restored. And Cancel becomes "Close", because `sheets.md` says C
     - The draft bar ("Kept in your inbox · Reopen") uses the same design.
     - Rejected: B (a card above the tab bar; the disc jumps ~88pt, breaking research 3.2) and C (a floating pill over
       the list).
+
+**Round 3: Today (2026-09-19; board `55-ROUND-3-today-options.jpg`, stitched frame `56-today-full-length-stitched.jpg`).**
+
+Sim state note: the Today frames for this round were captured after a clean-up. A throwaway 5-minute sprint was
+confirmed, and the leftover Home close ("Reply to Priya") was undone. So the ring reads "3 of 5", where frame `47` read 4.
+Frame `56` is the first clean full-length Today in the audit: 3,125pt stitched from 350pt slow scrolls, with the
+bottom furniture cut out.
+- **Structure → "C · One next thing".** Today shows ONE card, then a short "then" list, and nothing else. At a place,
+  the live routine takes the slot; elsewhere the hero does (480pt, half a screen). Rejected: B "Today is only 'now'"
+  (Recommended, 880pt) and A "Now first, rest below" (1,517pt).
+  - Consequences, owed to round 5: what takes the one slot (a pinned task vs a live routine vs a due nudge, in what
+    order), where a due nudge goes, and where the Week review door lives now that Today has none.
+  - Life areas leave Today (the Areas tab has them), and so does the inbox peek (the Captures tab and its badge).
+- **Streaks → "Weekly chain + auto repair".** A week "counts" once the user is active on N days they choose. One
+  missed week a month is repaired automatically. The other two streaks go: the closing streak "6 days · Best is 6"
+  and the focus "2 Day Streak". The nudge "best 2" goes too. Open detail: the default N.
+- **Charts → "One bar chart in Week review".** Keep the Mon–Sun bars and drop the 7-day trend line (its smoothing
+  drew values below zero). Both charts come off Today.
+- **Preset goals → "Off until you set one".** No ring and no percentage until the user chooses a goal in Settings.
+  This covers the daily close goal (5) and the daily focus goal (30m).
