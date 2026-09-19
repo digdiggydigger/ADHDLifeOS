@@ -298,3 +298,22 @@ Rating **Critical issues**. Thesis: "dump it, see it, start it"; the loop leaks.
 - **What works:** composers pin primary at bottom + disable until text (Q8 template); every choice defaulted, nothing required;
   "One honest line about now is enough."; due-today ▶ 1-tap sprint; ○ tap twin for swipe; triage undo persists (Q3 pattern);
   informational feedback; nothing moves at rest; dark matches light.
+
+## J. More sim-verified (after E's hand entry)
+
+- **TASKS-03 VERIFIED:** Tasks toolbar "+" opens a DIFFERENT "New task" sheet ("When is it due? Not yet / Today / Tomorrow /
+  Pick a date"); a task added there with "Not yet" ("Book an eye test") **does not appear on the Momentum board it was added
+  from** — the header rose to 11 OPEN, the row is only under "Open". E, asked to use the toolbar "+", reached the disc's quick
+  Task composer instead ("Renew passport" saved DUE TODAY — CAPT-02 forced date) → the two "+" doors are confusable.
+- **Inbox Undo button is 34×16pt** — the one working forgiveness control is among the smallest targets; the inbox header also
+  gains an undo glyph.
+- **Home close → in-place green card** "… — closed · Undo | Next: 15 min" (Undo large). Two undo shapes exist: in-place card
+  (Today) vs bottom text bar (Inbox).
+- **Routines:** arrival notification (via the debug "Simulate arrival", which drives the real handler — sim geofencing did not
+  fire from `simctl location`): "You're at Gym · 3 steps ready — Open Fitness · Text Sam Taylor · +1 more. Tap to run." One per
+  crossing. Routine screen = ROUTINE eyebrow, "You're at Gym, arrived 41 secs ago", "0 of 3 done", NEXT — STEP 1 OF 3 card with
+  one big "Open Fitness" + "Skip this step", later steps listed quietly — **the strongest ADHD pattern in the app** (reference for
+  the Today hero). Today shows "AT GYM · ROUTINE LIVE · 3 steps left · Next: Open Fitness · Continue routine".
+- **E's hand entry:** the Gym's journal line was saved as a DEPARTURE step and the "Log today's workout" capture is absent
+  (editor direction choice may be unclear — ask E). Voice transcript "Remember to ask Freya about the Q4 on Monday" (speech
+  recogniser, not the app; the capture shows only the transcript).

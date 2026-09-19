@@ -34,3 +34,6 @@ project. The simulator is to be erased at close-out.
 | `42` finished sprint card | "Take a 10-minute walk · 15m focused · 2 checkpoints · Confirm" |
 | `43`, `44` Confirm celebration at 1.5 s / 3 s | full-screen dim + confetti + fireworks for a routine 15-minute sprint (settled design; recorded as evidence for the celebration-tier tension only) |
 | `45` Tasks after ○ close | the closed task went straight to "Closed today": **no undo** |
+| `46` routine screen | one next step, one big button, skip, quiet list: the reference pattern |
+| `47`, `48` Today close undo card / Inbox undo bar | the two existing undo shapes (Inbox Undo 34x16pt) |
+| `49`, `50` toolbar + New task / board after adding "Book an eye test" (Not yet) | **an undated task vanishes from the board it was added from** |
