@@ -1,21 +1,51 @@
-# Open items register — 2026-09-19 (sixty-sixth edition; **the ADHD / neurodivergent UX audit, session 2: options rounds 2–7 DONE** (drafts, undo, Recently Deleted, Today = one card, the sprint, the hero, composers, targets) plus E's nine Today ideas; every answer verbatim in `handoff/SESSION-OPENER-adhd-ux-audit-design.md`. **No Swift changed.** Handed off at round 7b by E's call at 60% context.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`. *(Edition 65's header, superseded: Open items register — 2026-09-19 (sixty-fifth edition; **E opened the ADHD / neurodivergent UX audit** — research, E's ten answers, a full iPhone 18 Pro / iOS 27.0 simulator audit (~80 findings, 51 frames) and options round 1. **No Swift changed.** Handed off at round 1 by E's call.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds.md`.)*
+# Open items register — 2026-09-19 (sixty-seventh edition; **the ADHD / neurodivergent UX audit is CLOSED**: session 3 ran rounds 7b–10, collected Decision A, and specced **all 31 FEATURE blocks** across seven arcs in `TODO-CLAUDE-CODE.md`. **No Swift changed in the whole audit — three sessions of records, evidence and specs.**) Opener: `handoff/START-HERE-adhd-audit-arc-C.md`, which builds arc C. *(Edition 66's header, superseded: # Open items register — 2026-09-19 (sixty-sixth edition; **the ADHD / neurodivergent UX audit, session 2: options rounds 2–7 DONE** (drafts, undo, Recently Deleted, Today = one card, the sprint, the hero, composers, targets) plus E's nine Today ideas; every answer verbatim in `handoff/SESSION-OPENER-adhd-ux-audit-design.md`. **No Swift changed.** Handed off at round 7b by E's call at 60% context.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`. *(Edition 65's header, superseded: Open items register — 2026-09-19 (sixty-fifth edition; **E opened the ADHD / neurodivergent UX audit** — research, E's ten answers, a full iPhone 18 Pro / iOS 27.0 simulator audit (~80 findings, 51 frames) and options round 1. **No Swift changed.** Handed off at round 1 by E's call.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds.md`.)*)*
 
-> ## Edition 66 in five lines (2026-09-19, the ADHD UX audit, session 2)
+> ## Edition 67 in six lines (2026-09-19, the ADHD UX audit, session 3 — the audit closes)
 >
-> - **`main` @ `670dbb7`.** No app Swift changed since edition 65, so the suite, lint and coverage figures
->   recorded below (at `93beff2`) still stand.
-> - **Shipped: records only.** Options rounds 2–7 + E's nine Today ideas, verbatim in
->   `handoff/SESSION-OPENER-adhd-ux-audit-design.md`; evidence boards `53`–`64`.
-> - **Outstanding:** audit rounds 7b–10, then the Scope C gaps list, the phone-checks list, and Decision A.
->   Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`.
-> - **New commitments awaiting build** (from the rounds):
->   - calendar READ + WRITE, a new permission, time-blocking only;
->   - a `next_step` task field;
->   - `deleted_at` soft delete for tasks, captures and tags.
->
->   All three change Firestore and/or `firestore.rules`, so E republishes.
-> - **Parked, unchanged:** the colour-arc HOLD below; everything in §A–§D.
+> - **`main` @ the merge of this hand-off.** No app Swift changed since edition 65, so the suite,
+>   lint and coverage figures below still stand: suite **3,085 / 0**, SwiftLint **0 / 831** at
+>   `061dbaa`; coverage 24.72% at `93beff2`.
+> - **Shipped: records and specs only.** Rounds 7b–10 (composer layout, pressure copy, accessibility
+>   and colour, modals/Settings/polish), boards `65`–`68`, findings §L and §M, and **31 FEATURE
+>   blocks** in `TODO-CLAUDE-CODE.md` (section "The ADHD UX audit's seven arcs").
+> - **Next: BUILD arc C, "Nothing lost"** (E's call: *"C · Nothing lost first"*), one block at a
+>   time, in a fresh session, per `handoff/START-HERE-adhd-audit-arc-C.md`. Proposed order after C:
+>   D composer → E Today → F sprint → A copy/colour → B accessibility → G places/refresh.
+> - **E's new standing principle (round 8): gamification is essential throughout the app**, framed as
+>   progress, never debt. It is E's call over research §5.3, like sounds in round 1 — do not re-raise.
+>   It also adds a WANTED arc: **points / levels / badges, after the audit**.
+> - **Contrast is NOT in any block.** Round 9: *"Leave it to the colour arc"*, which stays HELD. The
+>   measured numbers (board `66`) are that arc's input, and **Sufficient Contrast cannot be claimed
+>   as an App Store accessibility label until it lands**.
+> - **Schema, corrected and verified this session:** `firestore.rules` has NO field-level validation,
+>   so neither `next_step` (arc E) nor soft delete (arc C) needs a rules change. Only the optional
+>   hardening rule arc C names would, and then E republishes.
 
+## §Z. The audit's own outstanding lists (2026-09-19)
+
+**Gaps E wants that nothing in the 31 blocks builds** (Scope C; all WANTED unless marked):
+- the leave-by countdown on Today (needs calendar read, which arc F adds);
+- wake-event routines, for a morning surface;
+- the one card on the Lock Screen, a new accessory-widget family;
+- an app-wide daily notification cap (never requested; the audit's own suggestion);
+- journal edit and delete (JRNL-03; until it ships, the Journal keeps "Entries can't be changed
+  after saving");
+- **points / levels / badges, as its own arc after the audit** (E, round 8).
+
+**Phone checks owed once the blocks land** (E's device, iOS 27):
+- the Dynamic Island in compact, minimal and expanded;
+- the haptics that differ by meaning, and sounds with the silent switch both ways;
+- the Live Activity's +5 min hit area, and the 5-minute heads-up notification;
+- Password AutoFill, and Always-On dimming;
+- **the composer's bar staying put while Area, Time or the date picker is open** (arc D);
+- **a Reduce-Motion-on pass** for the undo capsule (arc C) and the sprint ring (arc F);
+- Differentiate Without Color, and Smart Invert on photos (arc B);
+- whether the voice-capture transcript counts as Captions — E's judgment;
+- the Settings Notifications gap after a relaunch (arc G).
+
+**Advisory, from the first `apple-skills` accessibility audit (findings §M):** none of the nine App
+Store accessibility labels can be claimed today. Arc B moves VoiceOver, Larger Text, Reduced Motion
+and Dark Interface toward claimable; Sufficient Contrast waits for the colour arc.
 
 
 *Close-out of the session that opened the iOS 27 arc on the day iOS 27 shipped, researched it to

@@ -363,3 +363,176 @@ These are suggestions, not decisions. Each names the ADHD struggle it serves and
 
 **Not recommended:** body-doubling or "work alongside" presence (FOLK/WEAK, §5.7), and energy/mood matching (no
 evidence it helps choose tasks; offer it only as an optional filter).
+
+## L. apple-design review: the composer, three layouts (round 7b, session 3, board 64)
+
+**E chose L3 and "Text, then the date"** (design record, round 7b). The review as delivered follows.
+
+
+HIG pages generated 2026-09-19 (refreshed in place this morning, so no re-pull was owed).
+Pages read for this review: accessibility, layout, typography › Supporting Dynamic Type, color › Best practices,
+designing-for-ios, segmented-controls, pop-up-buttons, virtual-keyboards, entering-data, text-fields, buttons,
+sheets and toolbars. Contrast comes from the colorsets' hex values (`scripts/audit/contrast.py`), not from JPEGs.
+
+### Summary
+All three layouts carry E's settled content (a title, four "when" choices, Area and Time menus, and Add) in one shape
+language and with the real tokens. The rating is **Critical issues**, but every Critical except one comes from the
+token layer, not from a layout, and all of those go to round 9.
+- **The thesis:** "say what it is, tap when, add".
+- **What each is remembered by:** L3, the title owning the page with every choice riding on the keyboard. L1, a
+  tidy equal-width grid. L2, the familiar Settings card.
+
+### Critical
+- **Inherited, shared by all three, routed to round 9 (Q5/Q6; §F):**
+  - **White text on AccentColor is 3.93:1 in light and 3.65:1 in dark.** That covers the selected segment (15pt
+    semibold) and Add (17pt semibold). `accessibility.md › Vision` sets "Up to 17 pts · All · 4.5:1" and
+    "All · Bold · 3:1". Semibold is not bold under WCAG.
+    - **A candidate for round 9, not a decision here:** bold labels clear Apple's 3:1 bold row with no new palette
+      value (Q6). Round 9 owns the Q5/Q6 collision, including its middle option of fixing only the Increase
+      Contrast appearance.
+  - **The placeholder "What needs doing?" fails in every layout.**
+    - As rendered here it is LabelTertiary: 1.88:1 light, 2.33:1 dark.
+    - The live composer's field is inferred to use the system placeholder colour: 1.69:1 and 2.43:1 (§F).
+    - Both fail even the 3:1 large-text bar, and that includes L3's 22pt title.
+  - **The Area and Time captions (L1, L3), and L2's trailing values, are LabelSecondary.** That is 4.25:1 on the card
+    surface in light, which fails 4.5:1. Dark is 5.52:1 and passes.
+- **L3 only: at AX3 it cannot share the screen with the keyboard.**
+  - The stacked bar is four 48pt segments, two menus and Add. That is taller than the 482pt above a 336pt keyboard.
+  - With the keyboard down, the render shows the Area and Time buttons overlapping.
+  - `layout.md › Adaptability`: "containers may need to grow in height so that text isn't cropped or doesn't overlap
+    other content". `typography.md › Supporting Dynamic Type`: "Consider adjusting your layout at large font sizes."
+  - **Fix in the build:** at accessibility sizes, L3 falls back to L1's stacked form. The choices scroll under the
+    title and Add stays pinned to the bottom. The board's L1 AX3 column is exactly that form.
+
+### Improvements
+- **High, all three: the Date segment mixes a glyph with text.** `segmented-controls.md › Content`: "Prefer using
+  either text or images — not a mix of both — in a single segmented control."
+  - Fix: make it text only. Once a date is picked, the segment shows that date ("Fri 26").
+- **Medium, all three: one segment acts inside a selection control.** `segmented-controls.md › Best practices`:
+  "Don't assign actions to segments in a control that otherwise represents selection state."
+  - This is mitigated if Date becomes the selected segment and shows the picked date.
+  - The picker must be a menu or popover, never a second sheet (Q4, one sheet deep).
+- **Medium, all three: one colour means two things in the same control.** Accent is both the selected fill and the
+  Date text. `color.md › Best practices`: "Avoid using the same color to mean different things."
+  - Fix: set the Date text in LabelPrimary, like the other three segments.
+- **Medium, L2: the "When" label is redundant.** `segmented-controls.md › Content`: "A segmented control that
+  displays text labels doesn't need introductory text."
+  - L2 is also the only layout that shows the chosen values in grey (LabelSecondary, 4.25:1 in light).
+- **Medium, L3: the bar is at the crowding limit.** `toolbars.md › Item groupings` says to "aim for a maximum of
+  three" groups. L3 holds three: When, Area and Time, and Add.
+  - `› Item groupings` also says "Keep actions with text labels separate". Add sits 8pt from the Time menu, and both
+    are text.
+  - Keep Add trailing, where `toolbars.md › Actions` puts the primary action: "put it on the trailing side".
+- **Low, all three: gaps between bezelled controls are below the HIG's suggestion.** `accessibility.md › Mobility`
+  suggests "about 12 points of padding around elements that include a bezel". All three use 8pt.
+  - 12 is banned in this app (§2). The house answer is 16 where space allows: L1's Area | Time gap, and L2's rows.
+  - L3 cannot afford 16.
+- **Low, all three: capitalisation.** `segmented-controls.md › Content` and `buttons.md › Content` ask for
+  title-style ("Not Yet", "Add Task"). The app's copy is sentence case throughout.
+  - This is round 10's X-CAPS item. Named here, not fixed here.
+
+### Named divergence (E's Q8 governs)
+`sheets.md › Mobile` puts Done "on the trailing edge" of the top toolbar. All three layouts put Add at the bottom, by
+E's rule. The design record already carries this divergence.
+
+### Craft notes
+- **L3 has the point of view.** The title is the hero, and the choices wait underneath like a keyboard row.
+  - It matches the capture-first rhythm the app is built on: dump it, then decide (research §1.3).
+- **L1 is neat but reads as a form. L2 reads as Settings.** Both are competent and neither has a signature.
+- **Remove one accessory:** the calendar glyph on Date (all three), and L2's "When" label.
+
+### What works
+- **All three offer choices instead of typing.** `entering-data.md › Best practices`: "When possible, offer choices
+  instead of requiring text entry."
+- **Useful defaults are already selected:** Not yet, None and 15 min. `pop-up-buttons.md › Best practices`:
+  "Provide a useful default selection."
+- **Each menu carries its label,** so its options are predictable. `pop-up-buttons.md › Best practices`: "Give
+  people a way to predict a pop-up button's options without opening it."
+- **Close is a 48 × 48pt target on the leading edge,** a way out other than Add. `sheets.md › Best practices`:
+  "Provide an alternative to the Done button."
+- **L3 does what the keyboard page asks.** `virtual-keyboards.md › Mobile (iOS, iPadOS)`: "Place custom controls
+  above the keyboard thoughtfully … make sure they're relevant to the current task." And
+  `designing-for-ios.md › Best practices`: "it tends to be easier and more comfortable for people to reach a control
+  when it's located in the middle or bottom area of the display".
+
+### Platform notes (for the build)
+- **L3 rides the keyboard through `safeAreaInset(edge: .bottom)`.**
+  - SwiftUI's keyboard avoidance lifts it on every OS, which makes it the iOS 16 floor path (§7.1).
+  - `ToolbarItemPlacement.keyboard` is a single row, too small for L3's two.
+- **On 26 and later, the bar's container takes Liquid Glass behind `#available`.** Below 26 it gets a standard
+  material. `virtual-keyboards.md › Mobile`: "apply Liquid Glass to the view that contains your controls".
+  `layout.md › Visual hierarchy`: "Instead of applying a solid or semi-opaque background color beneath controls".
+- **The when-choice picker is a popover or menu,** never a sheet (Q4).
+  - On iPhone a `.popover` adapts to a sheet unless `presentationCompactAdaptation(.popover)` is set (16.4+), which
+    needs a floor path on 16.0–16.3.
+- **L3's promise holds only while the keyboard stays up.** Its choices are stable while typing. If opening Area,
+  Time or the date picker dismisses the keyboard, the bar drops 336pt and jumps back, which is the instability
+  research §3.2 warns about.
+  - The build must keep the keyboard up (or hold the bar at keyboard height) while a menu or the picker is open.
+  - A test must pin it. This is unverified: SwiftUI `Menu`'s effect on the first responder was not checked here.
+
+## M. apple-skills ios `ui-review` + `accessibility-audit` (round 9, session 3; two read-only sub-agents, static only)
+
+These are the first runs of both modules in the audit. They were static, because the live passes (Accessibility
+Inspector, VoiceOver, Voice Control and Smart Invert on the device) cannot run from here. Claims marked **✓** were
+re-read in code by the main session.
+- **A11Y-01 High ✓ The promote sheet's chips have no `.isSelected` trait.**
+  - `Capture/CapturePromoteSheet.swift:132-142` holds `chip()`, used for Effort, When and Priority.
+  - Which chip is chosen reaches VoiceOver by colour alone. Five other users of `ChoiceChipButtonStyle` add the trait.
+- **A11Y-02 High ✓ The inbox's top decision card reads as text, not a button.**
+  - `Capture/CaptureInboxSections.swift:58-59` has `.onTapGesture` and an identifier only: no button trait, and no
+    combined element.
+  - Home's Due-now row (`Home/HomeMomentumSections.swift:222-224`) has the trait but is not combined.
+- **A11Y-03 High: icon-only controls with no label.**
+  - The tag remove "x" at `Capture/CaptureRowTagEditor.swift:83-93` is the same for every tag. The pattern already
+    exists as "Remove tag \(name)" in `Tasks/TaskDetailChipsRow.swift:158`.
+  - The voice Play/Pause at `Capture/CaptureRowComponents.swift:129-152` has no label or value.
+  - The Tasks "+" at `Tasks/TaskListView.swift:114-122` ✓ has no label. This is separate from X-TGT-1, which is its
+    size.
+- **A11Y-04 High ✓ Smart Invert: zero `accessibilityIgnoresInvertColors` app-wide.**
+  - That includes the photo lightbox (`CaptureRowComponents.swift:238`) and the composer's preview
+    (`QuickCaptureComponents.swift:305`). It blocks the Dark Interface label.
+- **RM-01 High ✓ The sprint sheet's 236pt ring springs every second under Reduce Motion.**
+  - `Focus/FocusSprintDetailView.swift:151` feeds `ClosureRing`, whose spring (`Home/MomentumScoreboardViews.swift:39`)
+    has no gate.
+  - The card's own ring IS gated (`FocusTimerBarContent.swift:203-206`, `.transaction`).
+  - This is §7.2's continuous case, so `nil` is correct. It rides into round 4b's Focus screen build.
+- **RM-02 High ✓ The inbox's undo and warning bars slide in on every triage with no Reduce Motion read.**
+  - `Capture/CaptureInboxUndoSections.swift:69,102-106` (`.move(edge: .bottom)` plus a spring).
+  - This is §7.2's "appears" case: a fade, per `CaptureFanOverlay`. It rides into round 2b's undo capsule build.
+- **RM-03 Medium: two more springs with no Reduce Motion read.**
+  - The Daily Summary state swap (`Home/DailySummaryView.swift:63`, which now lives in Week review).
+  - The sign-in mode swap (`Auth/LoginView.swift:98-105`).
+- **A11Y-05 Medium: the charts give VoiceOver no per-point data.**
+  - `Focus/ProductivityTrendChart.swift:132` and `Focus/WeeklyFocusSummaryWidget.swift:126` carry one label each and
+    no `accessibilityChartDescriptor`.
+  - After round 3 only Week review's bar chart remains.
+- **A11Y-06 Medium: the countdown text has no `.updatesFrequently`.** See `FocusSprintDetailView.swift:165` and
+  `FocusTimerBarContent.swift:197`.
+- **A11Y-07 Medium ✓ There are zero `performAccessibilityAudit` calls and no `.xctestplan`.**
+  - Natural homes are the existing journeys: FirstRun, SignedIn, Journal, Routine/ToolsRoutines, SprintBarFurniture
+    and the auth tests.
+  - Each audit must sit in its own deliberate test plan, because UI tests are skipped in the standard run.
+- **A11Y-08 Medium: nothing reads Differentiate Without Color, Reduce Transparency, `colorSchemeContrast`, or sets
+  `accessibilityInputLabels`.**
+  - No clean colour-only violation was found. This flags a missing mechanism, not a proven failure.
+- **A11Y-09 Medium, Dynamic Type: `DailyMetricCard` labels truncate at AX sizes.** The label at
+  `Home/DailySummaryView.swift:296-318` is `lineLimit(1)` with a 0.8 scale.
+- **Low:**
+  - The 13 decorative `chevron.right` glyphs and the closure card's checkmark are not hidden from VoiceOver.
+  - The Close button's accessible label embeds a shifting streak number (retired by round 8b's "makes today count").
+- **GEST-3 was inferred and is now read in code:** `.onMove` in `Home/HomeAccessoryStrips.swift:23` and
+  `Places/PlaceActionsSection.swift:63` has no `accessibilityAction` twin.
+- **What works (keep):**
+  - `FocusTimerBar` deliberately does NOT combine. It exposes the whole-card tap as a named action ("Open the full
+    sprint view"); don't "fix" it.
+  - `TaskRow`/`AreaTaskRow` combine with a labelled close action.
+  - The discs use `.accessibilityHidden(!acceptsTouches)`.
+  - The `JournalAllActivityButton` glyph carries `.isSelected` and a hint.
+  - Settings' permission status is a `Label` (icon + text + colour).
+- **Nutrition Labels (iPhone), advisory:** none can be claimed today.
+  - Not yet: VoiceOver, Voice Control, Larger Text, Sufficient Contrast, Dark Interface (Smart Invert) and Reduced
+    Motion.
+  - Unknown, needing a device pass: Differentiate Without Color, and Captions (voice captures show a transcript; E's
+    call whether that meets the criterion).
+  - N/A: Audio Descriptions.

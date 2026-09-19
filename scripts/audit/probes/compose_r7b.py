@@ -40,13 +40,13 @@ def main():
     titles = {"L1-tidy-grid": "L1 · Tidy grid (one shape, equal widths)",
               "L2-form-card": "L2 · Form card (labelled rows)",
               "L3-keyboard-toolbar": "L3 · Rides on the keyboard"}
-    rows = [("Keyboard UP, light (how you'll actually see it)", "up-L"), ("Keyboard UP, dark", "up-D"),
+    rows = [("Keyboard UP, light (how you'll actually see it) · the keyboard is a drawn 336pt block: the sim hides it", "up-L"), ("Keyboard UP, dark", "up-D"),
             ("Keyboard down, light", "down-L"), ("AX3, keyboard down", "down-A")]
     W = pad + 3 * (cw + pad)
     H = head + len(rows) * (ch + lab + pad + 30)
     B = Image.new("RGB", (W, H), (245, 245, 247))
     d = ImageDraw.Draw(B)
-    d.text((pad, 30), "Round 7b · Your composer content, three layouts (real tokens; keyboard drawn as a block — the sim hides it)", font=ft, fill=(20, 20, 24))
+    d.text((pad, 30), "Round 7b · Your composer content, three layouts (real tokens)", font=ft, fill=(20, 20, 24))
     y = head
     for rtitle, suffix in rows:
         d.text((pad, y), rtitle, font=fc, fill=(60, 60, 66))

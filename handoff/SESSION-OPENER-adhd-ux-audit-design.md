@@ -330,6 +330,262 @@ bottom furniture cut out.
   (77×36), the Tasks "+" (27×36) and Journal's "All activity" (38×36) all become 48×48 in their standard places.
   - Stated default: the Live Activity's single +5 min is at least 44pt within its height cap.
 
+**Round 7b: the composer's layout (session 3; board `64-ROUND-7b-composer-layouts.jpg`, frames in
+`screenshots/adhd-ux-audit/round-7b-composer-layouts/`; real-token renders from a throwaway probe, deleted after).**
+
+Before E saw it, board `64` was re-rendered with two corrections:
+- Session 2's `.lineLimit(1)` fix had only turned L3's "15 / min" wrap into a truncated "15…". L3's menus now use a
+  compact 8pt inset with 4pt gaps, and "15 min" shows whole.
+- L2 and L3 had drawn the "when" segments at 40 and 44pt. All three are now 48pt, per round 7 ("the composer's own
+  chips stay 48").
+
+The `apple-design` review of the three layouts is findings §L.
+- **Layout → "L3 · Rides on the keyboard"** (Recommended).
+  - The title owns the page. Every choice and Add sit in one bar just above the keyboard: the four "when" segments on
+    top; Area | Time | Add below, with Add trailing.
+  - With the keyboard up the bar spans 406–518pt of the 874pt screen. L1's choices sat at 252–364pt, and L2's at
+    282–440pt.
+  - Carried in the question, so part of the choice:
+    - **At AX3 the bar cannot share the screen with the keyboard,** and Area and Time overlap in the render. At
+      accessibility sizes the build uses L1's stacked form instead: the choices scroll under the title and Add stays
+      pinned.
+    - **Opening Area, Time or the date picker must NOT dismiss the keyboard,** or the bar drops 336pt and jumps back
+      (research §3.2). A test pins it.
+  - Build notes (findings §L, Platform notes):
+    - The bar rides the keyboard through `safeAreaInset(edge: .bottom)`, which is the 16 floor.
+    - The container takes Liquid Glass on 26+ behind `#available`, and a standard material below.
+    - `ToolbarItemPlacement.keyboard` is one row, so it cannot hold the bar.
+    - The date picker is a popover or menu, never a sheet (Q4). On iPhone a `.popover` needs
+      `presentationCompactAdaptation(.popover)` (16.4+) and a floor path.
+  - Rejected:
+    - L1 · Tidy grid (choices high, 174–286pt above the keyboard).
+    - L2 · Form card (Settings-familiar, but grey values and a redundant "When" label).
+- **The Date segment → "Text, then the date"** (Recommended).
+  - It reads "Date" in LabelPrimary like its neighbours, with no calendar glyph.
+  - Once a date is picked, Date becomes the selected segment and shows that date ("Fri 26").
+  - This fixes all three `apple-design` findings on it:
+    - `segmented-controls.md › Content`: "either text or images — not a mix";
+    - an action segment inside a selection control;
+    - `color.md › Best practices`: accent meaning both "selected" and "opens a picker".
+- **Routed, not decided:** the review's contrast Criticals go to round 9. They are the placeholder, LabelSecondary
+  4.25:1 in light, and white on accent (3.93:1 light / 3.65:1 dark at 15–17pt semibold). "Make the labels bold" is
+  offered there as a candidate, beside the Q5/Q6 middle option.
+
+**Round 8: shame and pressure words (session 3; board `63-ROUND-8-pressure-copy.jpg`).**
+
+`apple-design` check before asking: pages read were `writing.md`, `color.md › Best practices` and
+`tab-bars.md › Best practices`.
+- **The word for past-due → "Still open"** (Recommended).
+  - It replaces "Overdue" on rows: `Tasks/TaskRowPresentation.swift:72` and `LifeAreaDetail/AreaTaskRow.swift:92`.
+  - Carried in the option: every open task is still open, so the word alone doesn't say the task was due earlier.
+    Where the row sits in the list must say that, and the build owns it.
+- **The header count → "Remove it; the rows say it"** (Recommended).
+  - "12 OPEN · 2 OVERDUE" becomes "12 open", and "0 OVERDUE" never prints (`Tasks/MomentumTaskBuckets.swift:67`).
+  - Research §5.4; the brief applies `tab-bars.md`'s badge rule by analogy.
+- **Quiet areas → "Neutral 'last closed Tue', no colour"** (Recommended).
+  - Orange "quiet since Tuesday" and "quiet all week" (`Home/MomentumScoreboard.swift:284-290`, StateWarn via
+    `Home/AreaMomentumList.swift:86` and `Areas/AreasComponents.swift:185`) become plain secondary text.
+  - The word is "closed" because the app records only `lastClosedAt`. Widening it to any activity, per round 5b's
+    active-day rule, is a build choice. `color.md › Best practices`: "Avoid using the same color to mean different
+    things."
+- **Inbox pressure → E, verbatim (in place of the offered options):** *"The stats section is a very popular thing
+  with ADHD users. Gamifiying Set an element throughout the entire of this app is essential"*.
+  - The stats stay. What was offered:
+    - (Recommended) "5 to sort" with no age line and no health section;
+    - neutral words, keeping the stats;
+    - removing the stats section only.
+  - The note in the question said the age line (M5) and the captured/cleared line (S1) are both Concept C
+    counterweights.
+  - E's sentence also reads as a standing principle: **gamification is essential throughout the app.** Its framing
+    and its reach are asked in the follow-up (round 8, follow-up).
+  - **This is E's call over research §5.3,** where the gamification evidence is low quality and 8 of 26 reviews
+    reported adverse effects. It follows the precedent of sounds in round 1: a recorded decision, not a contradiction
+    to re-raise.
+
+**Round 8, follow-up.** The question quoted E's sentence and invited a correction; E made none.
+- **Inbox stats → "Framed as progress"** (Recommended).
+  - The section stays, re-headed "This week" (was "INBOX HEALTH"). Its bars and "2 sorted · 7 captured this week"
+    lead with what was DONE.
+  - The header reads "5 to sort", no longer orange, and keeps its progress bar and kinds line.
+  - Gone: the age line "oldest is 13 hours old" (Concept C's M5) and "Four are still sitting here — decide or bin
+    them" (`Capture/CaptureInboxSummary.swift:31-41,124-129`).
+  - Concept C's S1 capture/clear counterweight survives, reframed done-first.
+- **What "gamification throughout" means → E, verbatim: *"Do option 1 & option 3"*.**
+  - Option 1: the game layer already chosen IS the game layer. That is the weekly chain with auto repair, Week
+    review, the goals the user sets, the celebrations and the inbox stats. Every screen may show what was done; none
+    tallies what was missed.
+  - Option 3: a **points / levels / badges system, as its own arc AFTER the audit.** The question carried research
+    §4: points and variable rewards are weakly supported, and expected tangible rewards reduce intrinsic motivation
+    (Deci 1999, d −.28 to −.40).
+  - It joins the end-of-audit gaps list as a WANTED new arc. It is not built inside the audit's blocks.
+  - Option 2 ("a progress element on every tab", proposed in round 10) was NOT chosen.
+  - Round 3's calls stand: the weekly chain, the one Week review chart, and goals off until set.
+
+**Round 8b.**
+- **Fresh Start → "Set them aside in one folded row"** (Recommended).
+  - After 7+ days away, one tap on Today's "Welcome back. Start fresh?" card moves the PAST-DUE open tasks into one
+    collapsed "Set aside · N" row at the bottom of Tasks. It sits beside round 6's "Anytime · N", in the same shape.
+  - Nothing is deleted, dates are kept, and one tap brings any task back.
+  - Undated tasks already live in Anytime, and future-dated tasks are untouched.
+  - Research §5.8 and §5.4 (Dai 2014).
+- **The task-detail Close button → "'Close it — makes today count'"** (Recommended).
+  - It shows only while today has no activity yet. Once today counts, the button reads plain "Close it".
+  - It replaces "Close it — keeps a N-day streak" (`Tasks/MomentumTaskContext.swift:27`).
+  - It is the gamification principle framed as a gain toward the weekly chain, never a loss.
+- **Today's three day-streak lines → "They go with the scoreboard"** (Recommended).
+  - The lines: "One day closed. Keep it alive today.", "N days closed in a row." and "Streak kept. Best is N."
+    (`Home/MomentumScoreboard.swift:246-252`).
+  - The weekly chain speaks through Week review and the done-today line.
+
+**Round 9: accessibility and colour, an approve-the-list round (session 3; boards `65-ROUND-9-dynamic-type-AX3.jpg`
+and `66-ROUND-9-contrast-and-colour.jpg`).**
+
+Before asking, the `apple-skills` iOS `ui-review` and `accessibility-audit` modules ran for the first time in the
+audit, as two read-only sub-agents. They are findings §M.
+- **Contrast → "Leave it to the colour arc"** (Recommended was "Increase Contrast versions only").
+  - Nothing about contrast is built in the audit. That includes the bold-labels-on-blue fix, which rode only with the
+    Recommended option.
+  - The measured numbers become the colour arc's input, and they include round 7b's composer findings. Light: grey
+    meta 4.25, tertiary/placeholder 1.88, orange on card 3.02, on page 2.72, green on page 2.82, blue link 3.55, and
+    white on blue 3.93. Dark: tertiary 2.33 and white on blue 3.65. The tab badge (settled) is 4.21 light and 3.41
+    dark.
+  - This is E's choice of the Q6 hold over Q5's accessibility exception.
+  - Consequence to name at the close: until the colour arc lands, Increase Contrast does nothing, and the Sufficient
+    Contrast nutrition label cannot be claimed.
+- **AX3 layout → "Approve, but keep Areas in 2 columns"**.
+  - Approved: at accessibility sizes, task rows stack (the title wraps in full, the meta sits under it, and ▶ and ○
+    stay trailing).
+  - Approved: the sign-in segments grow; they are AUTH-01 and the only route to Create account.
+  - Approved: no button breaks mid-word ("Arran/ge"; icon only if needed).
+  - Approved: metric labels wrap to 2 lines (A11Y-09).
+  - **Kept:** the Areas grid stays 2 columns at every size (AREAS-01 is E's call). Names wrap inside the cards
+    instead of truncating.
+- **Colour jobs → "Approve all four"** (Recommended).
+  1. **Blue comes off labels that aren't tappable** ("TOMORROW", "WHERE DOES THIS LIVE?", "THEN").
+     - The eyebrows become DUE TODAY orange, TOMORROW grey (`MomentumTaskBuckets.swift:75`) and CLOSED TODAY green.
+     - Blue always means "tap me".
+  2. **The raw `.green`, `.orange` and `.red` become StateGo, StateWarn and StateRisk,** with StateGo shared with the
+     widget target.
+     - The places: `NotificationPermissionState.swift:72-74`, `WeeklyFocusSummaryWidget.swift:138,141`,
+       `FocusSprintPresentation.swift:88` and the widget's `FocusActivityComponents.swift:115`.
+     - The notification status cited §4 ("adaptive system colours") on purpose. E chose consistency over that
+       reading.
+  3. **The "Nudges Due" flame goes neutral.** It is StateRisk in Week review, at `DailySummaryView.swift:223`.
+  4. **In the inbox, a disabled "Sorted" looks disabled** beside an enabled "Skip" (INBOX-03).
+- **The §M accessibility list → "Approve all, plus automated audits"** (Recommended).
+  - **VoiceOver:**
+    - labels for the Tasks "+" ("New task"), each tag's remove ("Remove tag Work") and voice Play/Pause;
+    - the inbox top card and Home's Due-now rows become one element with a button trait;
+    - the promote sheet's chips carry `.isSelected`;
+    - the 13 decorative chevrons are hidden;
+    - the countdown gets `.updatesFrequently` (§M's list).
+  - **Reduce Motion:**
+    - the sprint ring stops re-springing every second (§7.2's continuous case, `nil`, as `FocusTimerBarContent`
+      already does);
+    - the undo bar fades in instead of sliding (§7.2's "appears" case);
+    - the Daily Summary and sign-in swaps are covered too;
+    - each is a reduced site and owes E's RM-on phone pass when built (§7.3).
+  - **Smart Invert:** `accessibilityIgnoresInvertColors` on photos.
+  - **Charts:** `accessibilityChartDescriptor` on Week review's chart.
+  - **Automated:** `performAccessibilityAudit` per screen in the UI journeys, in its own test plan. UI tests stay out
+    of the standard run, and the audit needs a 17+ test runtime (27.0 is fine).
+- **Nutrition Labels (advisory, recorded):** none can be claimed today. Findings §M holds the table.
+
+**Round 10a: sheets, Save placement, tap twins and footers (session 3; board `67-ROUND-10a-sheets-save-gestures.jpg`).**
+
+The Places chain was sim-verified this session: Places → Edit place (sheet 1) → Edit action (sheet 2) → Apple's
+contact picker (sheet 3). The frames are in board `67`.
+- **Sheet depth → "One sheet, pushes inside it"** (Recommended).
+  - Edit place stays the one sheet. An action's editor, and the app's own app picker, push INSIDE it, with Back to
+    return.
+  - Only Apple's system screens (the contact picker, the camera) open over it.
+  - sheets.md › Best practices; research §2.3.
+- **The fix list → "Approve all four"** (Recommended).
+  1. **Save and Add move to the bottom of eight sheets** (REACH-1): Edit place, Edit action, the tag and life-area
+     editors, the nudge editor and the capture detail. The sprint sheet is round 4b's.
+  2. **The Settings Notifications card loses its ~310pt gap** (SET-01). "Not requested yet" gains an in-place
+     "Allow notifications" button (SET-02); the app already asks when the first nudge is created.
+  3. **Tasks shows a loading state** instead of "0 open" (TASKS-07).
+  4. **The inbox promote sheet's "Create Task" pins to the bottom** (INBOX-04).
+- **Tap twins → "↑ ↓ buttons + a Delete button"** (Recommended).
+  - Arrange mode (life areas) and a place's action list show ↑ and ↓ on every row (48pt); drag still works.
+  - Edit place gains a bottom Delete button with its confirm (GEST-2; Q10 allows the friction). GEST-3 is closed by
+    the same buttons.
+- **Footers → "One sentence, the rest behind 'More'"** (Recommended).
+  - Each Settings footer, and Tools' empty Routines card, becomes one plain sentence. The full text sits behind a
+    "More about this" disclosure (SET-03, TOOLS-01).
+
+**Round 10b: the words (session 3; board `68-ROUND-10b-words.jpg`).**
+- **Jargon → "Approve all"** (Recommended). Round 4 already retires the checkpoints, "Flow calibration"
+  (`Focus/FocusModels.swift:107`) and the "Nudge cadence" card. The renames:
+  - "Deep entry" → "Getting started" (`Focus/FocusSprintTimelineCard.swift:202`);
+  - "Sprint target 15m · Logged on finish" → "Length 15 min · saved when it ends" (`:212`);
+  - "1 of 15 min logged" → "1 of 15 min done" (`Focus/FocusSprintDetailView.swift:167`);
+  - "monitoring slots" and "At-Place tasks" → "iOS lets the app watch 20 places" and "tasks for this place"
+    (`Places/PlaceEditorView.swift:250-252`, `Places/PlaceActionsSection.swift:111`);
+  - "session" → "sprint" everywhere ("Start another session", "1 session · 15 min");
+  - "To triage" → "To sort";
+  - "Decide later" and "No life area" → **"None"**, as in the round 7b composer
+    (`Capture/QuickCaptureComponents.swift:188`, `Tasks/TaskCreateView.swift:141`, `Theme/ComposerChips.swift:256,271`);
+  - "WORKSHOP" goes (`Tools/ToolsView.swift:110`);
+  - "Entries are append-only — saved means saved" → "Entries can't be changed after saving"
+    (`Journal/LogComposerCopy.swift:13`). The line goes once journal edit ships (gaps list);
+  - Settings' "…light and dark variants for every token" → "Follows your device"
+    (`Settings/AppearancePreference.swift:49`).
+- **The inbox's "Promoted" segment → "Tasked"** (Recommended). The segments read To sort · Sorted · Tasked, matching
+  round 6's "Task it".
+- **Refresh → E, verbatim:** *"I choose option one With the addition of an auto-refresh When a user makes an
+  edit/Change Such as logging a new Journal entry - Then the Journal should update automatically. Creating a new
+  quick capture - Should update the Capture inbox page automatically"*.
+  - Option one: every screen reloads when it appears and whenever the app returns to the front. The pull stays as a
+    bonus, with no new button.
+  - Returning to the app does not reload data today. Only the sprint sync and the live routine run
+    (`RootView.swift:389`, `Home/HomeView.swift:306`).
+  - E's addition, and the code fact behind it: every generic Firestore `save`, `delete` and `update` posts
+    `DataChangeSignal` (`Firebase/FirebaseManager.swift:326-340`). Journal and the Capture inbox already listen
+    (`Journal/JournalView.swift:157`, `Capture/CaptureInboxView.swift:139`), and so do Today, Tasks, Areas, an
+    area's page, Nudges, Places and Tools.
+  - So the build must PROVE, with tests, that a new journal entry and a new quick capture appear on their screens
+    with no pull.
+  - Any write path that bypasses the generic methods (a photo upload through `+Storage`, the Shortcut runner) must be
+    checked for the signal.
+  - If E has seen either screen fail to update, that is a bug to reproduce, not a design point.
+- **Capitals → "Sentence case everywhere"** (Recommended).
+  - It confirms what E approved by sight. "Add to Today", "Delete Task" and "Keep Editing" become sentence case
+    (X-CAPS).
+  - This is the house style against `buttons.md › Content`'s title-style, under `writing.md › Best practices`
+    ("Choose a style for each UI element type and use it consistently").
+
+**Round 10b, the missed item (asked after round 10b; the hand-off listed it, and round 10b had skipped it).**
+- **The empty inbox line → "'Captures wait here to be sorted'"** (Recommended).
+  - It replaces "Nothing waiting to be triaged. Anything you capture lands here first, so your head doesn't have to
+    hold it." (`Capture/CaptureInboxView.swift:286`).
+  - That line was untrue, because a Task from the disc skips the inbox (CAPT-04).
+  - "Inbox clear" and its "Capture something" button stay (INBOX-05 unchanged).
+  - Today's copy of the line (`Home/HomeAccessoryStrips.swift:55`) leaves with the inbox peek (round 3).
+
+**Decision A and the build order (session 3, after round 10).**
+
+The opinion given in the question: build in FRESH sessions, one arc per session (memory `build-in-a-fresh-session`).
+- **Where the specs are written → "Specs here, then hand off"** (Recommended).
+  - Session 3 writes every decision as a FEATURE block in `TODO-CLAUDE-CODE.md`, then closes the audit and hands the
+    first arc to a fresh session.
+- **The first arc → "C · Nothing lost first"** (Recommended).
+  - It holds the audit's data-loss Criticals (CAPT-01, TASKS-01), and it builds the undo capsule the later arcs
+    reuse.
+- **The seven arcs, grouped by dependency:**
+  - A · Copy and colour jobs.
+  - B · Accessibility.
+  - C · Nothing lost.
+  - D · The composer.
+  - E · Today.
+  - F · The sprint.
+  - G · Places, sheets, refresh and Fresh Start.
+  - The order after C is proposed in the opener.
+- **The audit's own findings on in-app refresh** (round 10b): journal entries and captures write through the generic
+  `save` (`FirebaseManager+Logs.swift:21`, `+Captures.swift:57`), which posts `DataChangeSignal`. In code, both
+  screens already refresh; E was asked in the closing text whether they have seen them fail.
+
 **Housekeeping note (session 2 hand-off).** Two throwaway render probes were swept into intermediate commits by `git add -A`:
 - the hero probe: in `3f8a187`, removed `952fdd3`;
 - the composer probe: in `d62cda0` and `a715d6b`, removed in the hand-off merge `670dbb7`.
