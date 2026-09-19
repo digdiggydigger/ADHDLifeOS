@@ -223,3 +223,23 @@ bottom furniture cut out.
   stepper, `FocusNotificationPlanning.checkpoint`) and their jargon go.
 - **Pause → "Keep Pause in the app".** The in-app set is Pause · extensions · End. A paused sprint shows "Paused · N
   min in · Resume", which feeds the Resume card (Today idea 4).
+
+**Round 4b (same board):**
+- **The sprint sheet → "Focus screen + Details".** A big ring with the time left, the task title, and the controls
+  pinned at the bottom (Q8). One "Details" row reveals the timeline and session stats.
+  - Every option carried: the card's timer grows (11pt today), every control gets a haptic, and the grabber stops
+    stealing taps from the title.
+- **Ending a sprint → "End".** The word is End everywhere, and the confirm reads "End sprint?". "Close it" only ever
+  means "the task is done".
+- **Calendar access → E, verbatim:** *"Yes - add BOTH read-AND-write capabilities."*
+  - Asked in context, never at launch.
+  - Build notes:
+    - Read + write is FULL calendar access: `requestFullAccessToEvents` on 17+, `requestAccess(to: .event)` on the 16
+      floor (§7.1).
+    - It needs a privacy-manifest line and a purpose string that says what the app WRITES. That write purpose is
+      asked in round 4c.
+- **Extensions → E, verbatim:** *"Instead of five controls, Add a sixth control, allowing the user to enter a custom
+  time extension"*.
+  - The in-app set is Pause · +30 sec · +1 min · +5 min · Custom · End. The Lock Screen keeps +5 min alone (4a).
+  - How six controls fit the card (338pt inner width), and how a custom time is entered without a second sheet (Q4
+    max-1), are asked in round 4c with renders.
