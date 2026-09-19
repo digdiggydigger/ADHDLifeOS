@@ -243,3 +243,18 @@ bottom furniture cut out.
   - The in-app set is Pause · +30 sec · +1 min · +5 min · Custom · End. The Lock Screen keeps +5 min alone (4a).
   - How six controls fit the card (338pt inner width), and how a custom time is entered without a second sheet (Q4
     max-1), are asked in round 4c with renders.
+
+**Round 4c: six controls, custom time, calendar write (board `58-ROUND-4c-sprint-controls.jpg`, frames in
+`screenshots/adhd-ux-audit/round-4c-sprint-controls/`; real-token renders from a throwaway probe, deleted after).**
+- **The card's six controls → "V2 · two rows".**
+  - The four time buttons sit on top (+30 sec · +1 min · +5 min · Custom, text only); big Pause and End sit below.
+  - Card 222pt, against 148pt today. At AX3 the time row wraps to 2×2. The collapsed card keeps Pause only.
+  - The focus screen uses the same two-row block, taller (56pt).
+  - At accessibility sizes the card's ring grows (128pt) and sits above the title, so the timer never truncates.
+  - Rejected: V1 (six in one row, 174pt, 11pt labels) and V3 (an "Add time" menu, 166pt, extensions become 2 taps).
+- **Custom time → "Inline stepper".** Custom opens a row on the focus screen: − N min + · Add. Tapping Custom on the
+  card opens the screen with that row ready. Whole minutes, no keyboard, no second sheet (Q4 max-1).
+- **Calendar write → "Block time for a task".** From a task, the user picks a free slot and it becomes an event; the
+  event opens the task.
+  - The app writes ONLY to its own "ADHD LifeOS" calendar and never edits or deletes the user's existing events.
+  - The purpose string says exactly that.

@@ -43,4 +43,7 @@ project. The simulator is to be erased at close-out.
 | `round-2b-undo-bar/` | the 15 full-size composites behind board `54` (`<option>-<state>.jpg`) |
 | `55` round 3 Today options | Today now (12 sections, 3,125pt) vs A (1,517pt) / B (880pt) / C (480pt), cut from the stitched frame `56` and rearranged — real pixels, no drawing. **E chose C** (one next thing) |
 | `56` Today, full length | the first clean full-length Today: 350pt slow scrolls (no momentum) stitched by the `homeTitle` offset, bottom furniture cut out; routine live at the Gym, ring 3 of 5 (after the round 3 clean-up) |
+| `57` round 4 sprint evidence | the sprint's four surfaces and four control sets (card, collapsed card, sheet p1–p2, Lock Screen, finished card) |
+| `58` round 4c sprint controls | E's six controls on the card (V1 one row 174pt / V2 two rows 222pt / V3 'Add time' menu 166pt, vs today 148pt), light + dark on the real sprint frame, AX3, and the 'Focus screen + Details' with the Custom stepper. Real-token `ImageRenderer` probe (deleted after); the card's `.regularMaterial` approximated by the card surface. **E chose V2 + the inline stepper** |
+| `round-4c-sprint-controls/` | the full-size composites behind board `58` |
 | `full/` | **every seeded tab frame** — `s-<tab>-L|D|A-pN.jpg` (light / dark / AX3, top→bottom) and `s-taskdetail-L-*`; the HIG reviews cite these (rounds 3, 4, 9) |
