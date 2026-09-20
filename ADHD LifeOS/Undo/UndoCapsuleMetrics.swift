@@ -22,11 +22,16 @@ enum UndoCapsuleMetrics {
     /// sizes. 44 is also §3's touch floor, so the capsule is itself exactly one touch target tall.
     static let minHeight: CGFloat = 44
 
-    /// What the Undo pill is DRAWN at. **Its TARGET is still 44** — see `undoHitOverflow`.
+    /// The Undo control's LAYOUT height. **Its TARGET is still 44** — see `undoHitOverflow`.
     ///
     /// Round 7's *"48pt for anything that … undoes"* cannot be drawn inside a 44pt band, and E
     /// chose the trade explicitly over keeping the capsule tall: *"Yes — draw 32, tap 44"*. Round
     /// 7's number was written for a control that owns its space; this one now sits inside one.
+    ///
+    /// **Since E's shape round this is pure mechanism: nothing is drawn behind the control at
+    /// all.** While the chip existed, 32 was a visible pill and a shrunken target had a second
+    /// witness on screen. E removed the chip, so these two numbers and the two padding lines that
+    /// spend them are the whole of §3's 44pt floor here, and the tests are the only witness left.
     static let undoDrawnHeight: CGFloat = 32
 
     /// The tab bar's own trick (`AppTabBarMetrics.slotHitOverflow`), applied here: negative
@@ -34,9 +39,39 @@ enum UndoCapsuleMetrics {
     /// while taps a little above and below it still land. §3's 44pt is kept without drawing 44pt.
     static var undoHitOverflow: CGFloat { max(0, (44 - undoDrawnHeight) / 2) }
 
-    /// It stands in for the search row, so it wears that row's corner rather than inventing one.
-    /// A second radius in the same slot would read as a different control having replaced the row.
-    static var cornerRadius: CGFloat { AppSearchRowMetrics.fieldCornerRadius }
+    /// **Fully rounded since E's shape round, 2026-09-20 — a shape, not a radius number.**
+    ///
+    /// It shipped wearing `AppSearchRowMetrics.fieldCornerRadius`, on the reasoning that a second
+    /// radius beside the row it stands in for would read as a different control in the same slot.
+    /// E overruled that on the phone — *"increase the corner radius of the entire UndoCapsule
+    /// card"* — and then, shown eight shapes rendered on the real Tasks screen, chose by looking:
+    /// *"from the images you've made Option C, 'Fully rounded' looks the best"*.
+    ///
+    /// **A concrete shape, deliberately not erased.** `strokeBorder` requires an
+    /// `InsettableShape`; `AnyShape` is not one, which is what bit the render build.
+    /// `UndoCapsuleCardShape` is, so the fill and the border can read the same value.
+    static var cardShape: UndoCapsuleCardShape { UndoCapsuleCardShape() }
+
+    /// How round the card is at a given height. **Fully rounded up to the height E chose, and no
+    /// rounder above it.**
+    ///
+    /// **The cap is E's own second call, 2026-09-20, made by looking at the accessibility layout.**
+    /// A bare `Capsule` takes its radius from half the card's height, and every frame of the shape
+    /// round was rendered at the DEFAULT text size, where the card is 44pt and that radius is a
+    /// harmless 22. At Accessibility XL the stacked card measures **194.3pt**: the caps grow to
+    /// **97.2pt**, the curve eats the corners the content sits in, and the completion glyph was
+    /// drawn **59pt** outside the card's own fill with the ↶ Undo control **30pt** outside it —
+    /// measured off the render, not estimated. Shown both shapes on the real screen, E chose the
+    /// cap.
+    ///
+    /// **This is not a compromise on what E approved.** At 44pt `min(44, 44) / 2` IS 22 — the
+    /// capsule's own radius — and the two renders of the real Tasks screen came back byte-identical
+    /// over the capsule band (max channel delta 0, zero differing pixels). The cap changes the
+    /// accessibility layout and nothing else. It is a CEILING, not a fixed corner: a card shorter
+    /// than the floor is still fully rounded.
+    static func cardCornerRadius(forHeight height: CGFloat) -> CGFloat {
+        min(height, minHeight) / 2
+    }
 
     // MARK: - §2's grid, one name per gap
 
@@ -52,8 +87,15 @@ enum UndoCapsuleMetrics {
     static let undoSpacing: CGFloat = 8
     /// The stacked (accessibility) layout's row gap.
     static let stackedSpacing: CGFloat = 8
-    /// Inside the Undo pill.
-    static let undoHorizontalPadding: CGFloat = 16
+    /// Glyph to word inside the Undo control.
+    ///
+    /// **There is no `undoHorizontalPadding` beside it any more, and it is DELETED rather than
+    /// zeroed** (E's shape round, 2026-09-20). Its 16pt a side padded the INSIDE of the chip E
+    /// removed; with nothing drawn behind the control it was 32pt of invisible dead space taken
+    /// from the subject next to it, which is what had been truncating task titles. Spending it on
+    /// the one line is what let E keep the 44pt card rather than pay 15pt for a second line.
+    /// Zeroed, it would FAIL `testEveryCapsuleSpacingIsOnTheGrid` — 0 is not in {4, 8, 16, 24} —
+    /// and the tempting fix would weaken a rule protecting every other value here.
     static let undoGlyphSpacing: CGFloat = 8
 
     /// Every gap the capsule spends, so §2's grid is a property a test can sweep rather than a
@@ -66,7 +108,6 @@ enum UndoCapsuleMetrics {
             ("verbToSubjectSpacing", verbToSubjectSpacing),
             ("undoSpacing", undoSpacing),
             ("stackedSpacing", stackedSpacing),
-            ("undoHorizontalPadding", undoHorizontalPadding),
             ("undoGlyphSpacing", undoGlyphSpacing)
         ]
     }
@@ -91,5 +132,31 @@ enum UndoCapsuleMotion {
     /// That is why this is one curve rather than a curve plus a set of pinned offsets.
     static func appearance(reduceMotion: Bool) -> Animation {
         reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)
+    }
+}
+
+/// The capsule's card, drawn as a shape rather than a radius number so `UndoCapsuleMetrics`'s one
+/// rule decides how round it is at every height (`cardCornerRadius(forHeight:)`).
+///
+/// **Insettable on purpose.** `strokeBorder` — the only way to stroke a border that sits INSIDE
+/// the fill rather than straddling it — requires `InsettableShape`, and `AnyShape` is not one.
+/// That is what bit the redesign round's render build, so the shape stays concrete and implements
+/// `inset(by:)` itself.
+struct UndoCapsuleCardShape: InsettableShape {
+    private var insetAmount: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let inset = rect.insetBy(dx: insetAmount, dy: insetAmount)
+        return Path(
+            roundedRect: inset,
+            cornerRadius: UndoCapsuleMetrics.cardCornerRadius(forHeight: inset.height),
+            style: .continuous
+        )
+    }
+
+    func inset(by amount: CGFloat) -> UndoCapsuleCardShape {
+        var copy = self
+        copy.insetAmount += amount
+        return copy
     }
 }

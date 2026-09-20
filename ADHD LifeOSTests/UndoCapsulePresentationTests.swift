@@ -74,18 +74,63 @@ final class UndoCapsulePresentationTests: XCTestCase {
         )
     }
 
-    /// It stands in for the search row, so it wears the row's corner rather than inventing one —
-    /// §2's grid governs spacing, and a second radius beside the row it replaces would read as a
-    /// different control in the same slot.
-    func testItWearsTheSearchRowsCornerRatherThanANewNumber() {
-        XCTAssertEqual(UndoCapsuleMetrics.cornerRadius, AppSearchRowMetrics.fieldCornerRadius)
+    /// **Reversed by E's shape round, 2026-09-20, not deleted.** It pinned the search row's own
+    /// corner, reasoning that *"a second radius beside the row it replaces would read as a
+    /// different control in the same slot"*. E overruled that reasoning by LOOKING, on the phone:
+    /// *"I also recommend that we remove the blue chip background colour behind the "Undo" Button
+    /// and increase the corner radius of the entire UndoCapsule card"* — then, shown eight shapes
+    /// rendered on the real Tasks screen, *"from the images you've made Option C, 'Fully rounded'
+    /// looks the best"*.
+    ///
+    /// So the card is fully rounded — **up to the height E chose, and no rounder above it.**
+    ///
+    /// **The cap is E's own second call, made the same day by looking at the accessibility
+    /// layout** (`screenshots/undo-capsule/`'s AX3 frames). A true `Capsule` takes its radius from
+    /// half the card's height, and every frame of the shape round was rendered at the DEFAULT text
+    /// size, where the card is 44pt and that radius is a harmless 22. At Accessibility XL the
+    /// stacked card measures **194.3pt**, so the caps grow to **97.2pt** and the curve eats the
+    /// corners the content sits in: the completion glyph was drawn **59pt** outside the card's own
+    /// fill and the ↶ Undo control **30pt** outside it — measured, not estimated. Shown both, E
+    /// chose the cap.
+    ///
+    /// **It is not a compromise on what E approved.** At 44pt `min(44, 44) / 2` IS 22, the
+    /// capsule's own radius — the two renders of the real screen were byte-identical over the
+    /// capsule band (max channel delta 0, zero differing pixels). The cap changes the accessibility
+    /// layout and nothing else.
+    func testTheCardIsFullyRoundedUpToTheHeightEChoseAndNoRounderAboveIt() {
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardCornerRadius(forHeight: UndoCapsuleMetrics.minHeight),
+            UndoCapsuleMetrics.minHeight / 2,
+            "At the height E approved the card must be a true capsule — the frames E chose from"
+                + " were all rendered at this height."
+        )
+
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardCornerRadius(forHeight: 194.3), UndoCapsuleMetrics.minHeight / 2,
+            "The radius grew with the accessibility layout's height. 194.3pt is the stacked card"
+                + " measured at Accessibility XL, where a true capsule's 97.2pt caps drew the glyph"
+                + " and the Undo control off the card."
+        )
+
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardCornerRadius(forHeight: 30), 15,
+            "A card SHORTER than the floor must still be fully rounded — the cap is a ceiling on"
+                + " the radius, never a fixed corner."
+        )
     }
 
-    /// **Reversed with the height above, and the GUARANTEE is what survived.** Round 7's 48pt
-    /// cannot be drawn inside a 44pt band, and E chose the trade by name: *"Yes — draw 32, tap
-    /// 44"*. So the pill is drawn at 32 and its hit area is grown back to §3's 44 with the tab
-    /// bar's own negative-padding trick. A test that only checked the drawn height would pass on a
-    /// build where the target had quietly shrunk with it, which is the whole risk here.
+    /// **Reversed with the height round, then STRENGTHENED by E's shape round — and it is now the
+    /// ONLY guard.** Round 7's 48pt cannot be drawn inside a 44pt band, and E chose the trade by
+    /// name: *"Yes — draw 32, tap 44"*. So the pill is drawn at 32 and its hit area is grown back
+    /// to §3's 44 with the tab bar's own negative-padding trick.
+    ///
+    /// Until the shape round the drawn 32 was VISIBLE — a tinted chip — so a target that had
+    /// quietly shrunk with it had a second witness on screen. **E removed the chip, so nothing on
+    /// screen shows the tap target any more** and this assertion is all that stands between §3's
+    /// 44pt floor and a silent regression. It is `apple-design`'s one Medium finding on the round
+    /// (`buttons.md › Best practices`: *"a button needs a hit region of at least 44x44 pt"*).
+    /// `undoDrawnHeight` and `undoHitOverflow` are pure layout mechanism now rather than a pill,
+    /// which is why `UndoCapsuleCallSiteTests` also pins the two lines that spend them.
     func testTheUndoControlIsDrawnSmallerThanItsTapTargetAndTheTargetIsStillFortyFour() {
         XCTAssertEqual(UndoCapsuleMetrics.undoDrawnHeight, 32)
         XCTAssertEqual(
@@ -110,11 +155,83 @@ final class UndoCapsulePresentationTests: XCTestCase {
     /// Every padding the capsule spends is on §2's 4/8/16/24 grid. The two sanctioned off-grid
     /// values in this app (`peekStep`, `floatingPaddingHorizontal`) are named waivers for other
     /// controls and do not reach here.
+    ///
+    /// **This is why E's reclaimed Undo padding is DELETED rather than zeroed** (shape round,
+    /// 2026-09-20): 0 is not in the grid, so a zeroed constant would FAIL here rather than lapse,
+    /// and the tempting fix — widening the set — would quietly weaken a rule protecting every
+    /// other value in the file.
     func testEveryCapsuleSpacingIsOnTheGrid() {
         let grid: Set<CGFloat> = [4, 8, 16, 24]
         for (name, value) in UndoCapsuleMetrics.spacings {
             XCTAssertTrue(grid.contains(value), "`\(name)` is \(value), which is off §2's 4/8/16/24 grid.")
         }
+    }
+
+    /// **The bug E fixed, written as geometry: is the content's own corner ON the card?**
+    ///
+    /// This is the assertion the whole cap exists for, and it is the one a radius number cannot
+    /// make. The capsule's content sits `horizontalPadding` in from the leading edge with the
+    /// completion glyph near the top, so the card's fill has to reach that point at EVERY height
+    /// the layout can take — including the 194.3pt stacked card measured at Accessibility XL,
+    /// which is where a true capsule's 97.2pt caps left the glyph 59pt outside its own fill.
+    ///
+    /// Sampling the drawn path rather than the radius is deliberate: it is the only form of this
+    /// test that stays true if the shape is ever rebuilt a different way.
+    func testTheContentsOwnCornerSitsOnTheCardAtEveryHeightTheLayoutCanTake() {
+        let width: CGFloat = 361   // the capsule's width on an iPhone 17 Pro, measured
+        let contentCorner = CGPoint(x: UndoCapsuleMetrics.horizontalPadding, y: 8)
+
+        for height in [UndoCapsuleMetrics.minHeight, 100, 194.3, 260] as [CGFloat] {
+            let path = UndoCapsuleMetrics.cardShape.path(
+                in: CGRect(x: 0, y: 0, width: width, height: height)
+            )
+            XCTAssertTrue(
+                path.contains(contentCorner),
+                "At \(height)pt the card's fill does not reach \(contentCorner) — the corner the"
+                    + " completion glyph is drawn in. That is E's Accessibility XL break: the"
+                    + " radius grew with the card and the curve ate the content's corner."
+            )
+        }
+    }
+
+    /// **`strokeBorder` draws INSIDE the fill, and that needs a shape that insets itself.**
+    /// `AnyShape` is not `InsettableShape`, which is what bit the redesign round's render build;
+    /// the house answer is a concrete shape that implements `inset(by:)`. A shape that ignored the
+    /// amount would compile, satisfy `strokeBorder`, and quietly stroke ON the card's edge, so the
+    /// border would straddle the boundary and read as a half-pixel smudge in both appearances.
+    ///
+    /// The insets must also ACCUMULATE, because SwiftUI applies `strokeBorder`'s half-line-width
+    /// through the same call the view's own inset would come through.
+    func testTheBorderInsetsItselfInsideTheFillAndTheInsetsAccumulate() {
+        let rect = CGRect(x: 0, y: 0, width: 361, height: UndoCapsuleMetrics.minHeight)
+
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardShape.inset(by: 1).path(in: rect).boundingRect,
+            rect.insetBy(dx: 1, dy: 1),
+            "The shape ignores its inset, so the card's border straddles the fill's edge instead"
+                + " of sitting inside it."
+        )
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardShape.inset(by: 1).inset(by: 2).path(in: rect).boundingRect,
+            rect.insetBy(dx: 3, dy: 3),
+            "Insets replace one another rather than accumulating, so a second inset silently"
+                + " discards the first."
+        )
+    }
+
+    /// **E's shape round reclaimed the Undo control's horizontal padding, 16 → 0.** With the chip
+    /// gone its 16pt a side was padding the inside of nothing — 32pt of invisible dead space beside
+    /// the subject, which is what had been truncating task titles. Spending it on the one line is
+    /// what let E keep the 44pt card instead of paying 15pt for a second line.
+    ///
+    /// This is the metrics half of the guard. The view half is in `UndoCapsuleCallSiteTests`,
+    /// because a padding reinstated inline would pass here and still undo E's decision.
+    func testTheUndoControlSpendsNoHorizontalPaddingSinceEReclaimedIt() {
+        XCTAssertFalse(
+            UndoCapsuleMetrics.spacings.contains { $0.name.localizedCaseInsensitiveContains("undoHorizontal") },
+            "A horizontal padding is back on the Undo control — the 32pt E reclaimed to widen the"
+                + " single subject line."
+        )
     }
 
     // MARK: - The one motion (§7.4: pure logic is tested by CALLING it)

@@ -12,9 +12,10 @@
 //  drew from it would show the capsule only when something ELSE happened to redraw the bottom
 //  overlay. `CelebrationLayer` / `CelebrationSurfaceLayer` is the precedent this copies exactly.
 //
-//  **No `#available` site** (§7.1): the tint is the tab bar's existing accent wash composed the
-//  way `AppTabBar` composes it, not a Liquid Glass material, and the symbol is an iOS 13 one. So
-//  no gate, no floor branch, and no "Verified paths" line is owed by this file.
+//  **No `#available` site** (§7.1): the card is a plain `Capsule` over `Color.cardSurface`, not a
+//  Liquid Glass material, and the symbols are iOS 13 ones. So no gate, no floor branch, and no
+//  "Verified paths" line is owed by this file. (E's shape round retired the tab bar's accent wash
+//  from behind the Undo control; nothing that replaced it is newer than the floor either.)
 //
 
 import SwiftUI
@@ -93,7 +94,6 @@ struct UndoCapsule: View {
     let onUndo: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Environment(\.colorScheme) private var colorScheme
 
     private var isStacked: Bool { UndoCapsuleLayout.isStacked(dynamicTypeSize) }
 
@@ -105,14 +105,10 @@ struct UndoCapsule: View {
             // A FLOOR, never `.frame(height:)`: the stacked layout at accessibility sizes is
             // taller than 48 and a fixed frame would clip it.
             .frame(minHeight: UndoCapsuleMetrics.minHeight)
-            .background(
-                Color.cardSurface,
-                in: RoundedRectangle(cornerRadius: UndoCapsuleMetrics.cornerRadius, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: UndoCapsuleMetrics.cornerRadius, style: .continuous)
-                    .strokeBorder(Color.cardBorder, lineWidth: 1)
-            )
+            // E's shape round: *"Option C, 'Fully rounded'"*. Both sites read the one shape, and
+            // it stays a concrete `Capsule` because `strokeBorder` needs an `InsettableShape`.
+            .background(Color.cardSurface, in: UndoCapsuleMetrics.cardShape)
+            .overlay(UndoCapsuleMetrics.cardShape.strokeBorder(Color.cardBorder, lineWidth: 1))
             .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
             // `.contain`, not `.combine`: combining would fuse the Undo button into the capsule,
             // leaving one element carrying a label and an action together — the button could not
@@ -181,13 +177,22 @@ struct UndoCapsule: View {
             .foregroundStyle(Color("LabelPrimary"))
             // ONE line since the height round: a title that wrapped made the card 74pt and one
             // that did not made it ~52, so the capsule's height depended on the task's name.
+            // **E re-confirmed it at the shape round** after being shown that a second line costs
+            // 15pt on every title: the 32pt reclaimed from the Undo control widens THIS line
+            // instead, which is where "Capture three thi…" became "Capture three things on…".
             .lineLimit(isStacked ? 2 : 1)
             .minimumScaleFactor(0.8)
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// The standard ↶ and the word, on the tab bar's selected-pill wash — E's round 2b, read
-    /// exactly as `AppTabBar` composes it rather than re-derived.
+    /// The standard ↶ and the word. **Bare since E's shape round, 2026-09-20** — it shipped on the
+    /// tab bar's selected-pill wash (E's round 2b) and E removed it by looking, on the phone:
+    /// *"remove the blue chip background colour behind the "Undo" Button"*.
+    ///
+    /// **The chip's own inner padding went with it, and that is the point rather than tidying.**
+    /// 16pt a side padding the inside of nothing is 32pt taken from the subject beside it — the
+    /// dead space that had been truncating task titles. Spent on the one line instead, it is what
+    /// let E keep the 44pt card rather than pay 15pt for a second line. Do not reinstate either.
     private var undoButton: some View {
         Button {
             Haptics.play(.light)
@@ -203,14 +208,15 @@ struct UndoCapsule: View {
                 // row lays out around. It still GROWS with Dynamic Type — the fix is to the
                 // horizontal squeeze, not to the type.
                 .fixedSize(horizontal: true, vertical: false)
-                .padding(.horizontal, UndoCapsuleMetrics.undoHorizontalPadding)
                 .frame(minHeight: UndoCapsuleMetrics.undoDrawnHeight)
-                .background(chipTint, in: Capsule(style: .continuous))
-                // **The tab bar's own trick, and it is what keeps §3 intact at 44pt.** The pill is
-                // DRAWN at 32 so the capsule can be the height E marked; the hit area is grown back
-                // to 44 with negative vertical padding around the `contentShape`, exactly as
-                // `AppTabBarMetrics.slotHitOverflow` does for a 44pt slot in a shorter card. The
-                // layout stays the pill's height; a tap a little above or below it still lands.
+                // **The tab bar's own trick, and with the chip gone it IS §3 on this control.**
+                // The control lays out at 32 so the capsule can be the height E marked; the hit
+                // area is grown back to 44 with negative vertical padding around the
+                // `contentShape`, exactly as `AppTabBarMetrics.slotHitOverflow` does for a 44pt
+                // slot in a shorter card. The layout stays 32; a tap a little above or below it
+                // still lands. Nothing on screen shows this any more, so the three lines below are
+                // pinned in order by `UndoCapsuleCallSiteTests` and their arithmetic by
+                // `UndoCapsulePresentationTests` — between them they are the only witness left.
                 .padding(.vertical, UndoCapsuleMetrics.undoHitOverflow)
                 .contentShape(Capsule(style: .continuous))
                 .padding(.vertical, -UndoCapsuleMetrics.undoHitOverflow)
@@ -223,14 +229,6 @@ struct UndoCapsule: View {
         // what `SignedInJourneyUITests` addresses the control by, and that journey is skipped in
         // the standard run, so a longer label would have broken it silently.
         .accessibilityIdentifier("undoCapsuleButton")
-    }
-
-    /// Accent at 12% in light and 20% in dark — the same two numbers the selected tab pill uses,
-    /// because E asked for the capsule to be tinted like it.
-    private var chipTint: Color {
-        Color.accentColor.opacity(
-            colorScheme == .dark ? AppTabBarMetrics.chipTintDark : AppTabBarMetrics.chipTintLight
-        )
     }
 
     private static func tint(_ tint: RecentActionGlyphTint) -> Color {
