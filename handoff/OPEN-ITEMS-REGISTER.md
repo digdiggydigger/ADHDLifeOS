@@ -1,4 +1,30 @@
-# Open items register — 2026-09-20 (sixty-ninth edition; **`F-C1-UndoCapsule` built, landed, then RESIZED on E's call**: the capsule went 74pt → **44pt** — *"it looks ugly with the UndoCapsule at the same height as the FAB Icon"* — with E choosing the shape and the Undo control's draw-32/tap-44 trade from real renders. Suite 3,132 / 0, SwiftLint 0 / 842.) Opener: `handoff/START-HERE-adhd-audit-arc-C2.md`. **E's phone must be RECONNECTED — the device look is owed and has never happened.** *(Edition 68's header, superseded: Open items register — 2026-09-20 (sixty-eighth edition; **the ADHD audit's first block is BUILT**: `F-C1-UndoCapsule` — one undo capsule in the disc row for every close — merged, suite 3,130 / 0, SwiftLint 0 / 842. **The first app Swift the audit has produced.**) Opener: `handoff/START-HERE-adhd-audit-arc-C2.md`, which builds `F-C2-DraftsToInbox`. *(Edition 67's header, superseded: Open items register — 2026-09-19 (sixty-seventh edition; **the ADHD / neurodivergent UX audit is CLOSED**: session 3 ran rounds 7b–10, collected Decision A, and specced **all 31 FEATURE blocks** across seven arcs in `TODO-CLAUDE-CODE.md`. **No Swift changed in the whole audit — three sessions of records, evidence and specs.**) Opener: `handoff/START-HERE-adhd-audit-arc-C.md`, which builds arc C. *(Edition 66's header, superseded: # Open items register — 2026-09-19 (sixty-sixth edition; **the ADHD / neurodivergent UX audit, session 2: options rounds 2–7 DONE** (drafts, undo, Recently Deleted, Today = one card, the sprint, the hero, composers, targets) plus E's nine Today ideas; every answer verbatim in `handoff/SESSION-OPENER-adhd-ux-audit-design.md`. **No Swift changed.** Handed off at round 7b by E's call at 60% context.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`. *(Edition 65's header, superseded: Open items register — 2026-09-19 (sixty-fifth edition; **E opened the ADHD / neurodivergent UX audit** — research, E's ten answers, a full iPhone 18 Pro / iOS 27.0 simulator audit (~80 findings, 51 frames) and options round 1. **No Swift changed.** Handed off at round 1 by E's call.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds.md`.)*)*)*)*
+# Open items register — 2026-09-20 (seventieth edition; **`F-C1-UndoCapsule` went to E's phone for the FIRST time and the shape came back**. The **Reduce-Motion-ON pass PASSED** — *"Passes your request requested checks"* — so §7.3's pass is DISCHARGED, not owed. RM-off sent the capsule back: no chip, fully rounded, and E then chose **44pt with ONE wider line** over a 59pt two-line card. **No Swift shipped** — the round's code was removed before merging. Suite 3,132 / 0, SwiftLint 0 / 842.) Opener: `handoff/START-HERE-adhd-audit-arc-C1-shape.md`, which BUILDS the chosen shape then `F-C2-DraftsToInbox`. **Nothing is owed to E.** *(Edition 69's header, superseded: Open items register — 2026-09-20 (sixty-ninth edition; **`F-C1-UndoCapsule` built, landed, then RESIZED on E's call**: the capsule went 74pt → **44pt** — *"it looks ugly with the UndoCapsule at the same height as the FAB Icon"* — with E choosing the shape and the Undo control's draw-32/tap-44 trade from real renders. Suite 3,132 / 0, SwiftLint 0 / 842.) Opener: `handoff/START-HERE-adhd-audit-arc-C2.md`. **E's phone must be RECONNECTED — the device look is owed and has never happened.** *(Edition 68's header, superseded: Open items register — 2026-09-20 (sixty-eighth edition; **the ADHD audit's first block is BUILT**: `F-C1-UndoCapsule` — one undo capsule in the disc row for every close — merged, suite 3,130 / 0, SwiftLint 0 / 842. **The first app Swift the audit has produced.**) Opener: `handoff/START-HERE-adhd-audit-arc-C2.md`, which builds `F-C2-DraftsToInbox`. *(Edition 67's header, superseded: Open items register — 2026-09-19 (sixty-seventh edition; **the ADHD / neurodivergent UX audit is CLOSED**: session 3 ran rounds 7b–10, collected Decision A, and specced **all 31 FEATURE blocks** across seven arcs in `TODO-CLAUDE-CODE.md`. **No Swift changed in the whole audit — three sessions of records, evidence and specs.**) Opener: `handoff/START-HERE-adhd-audit-arc-C.md`, which builds arc C. *(Edition 66's header, superseded: # Open items register — 2026-09-19 (sixty-sixth edition; **the ADHD / neurodivergent UX audit, session 2: options rounds 2–7 DONE** (drafts, undo, Recently Deleted, Today = one card, the sprint, the hero, composers, targets) plus E's nine Today ideas; every answer verbatim in `handoff/SESSION-OPENER-adhd-ux-audit-design.md`. **No Swift changed.** Handed off at round 7b by E's call at 60% context.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`. *(Edition 65's header, superseded: Open items register — 2026-09-19 (sixty-fifth edition; **E opened the ADHD / neurodivergent UX audit** — research, E's ten answers, a full iPhone 18 Pro / iOS 27.0 simulator audit (~80 findings, 51 frames) and options round 1. **No Swift changed.** Handed off at round 1 by E's call.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds.md`.)*)*)*)*)*
+
+> ## Edition 70 in six lines (2026-09-20, the capsule's first device round)
+>
+> - **The RM-on device pass is DONE and no longer outstanding.** E ran both passes on `main` @
+>   `3f7932c` and Reduce Motion ON **PASSED**. The phone-checks list below is corrected accordingly.
+> - **E's phone was NEVER disconnected.** Edition 69's header said it must be reconnected; it was
+>   `available (paired)` over a live local-network tunnel, and build → install → launch went clean
+>   **wirelessly, with no cable and nothing for E to do**. Probe with
+>   `devicectl device info details` before ever asking E for a cable again.
+> - **RM-off sent the shape back**, verbatim: *"Bringing back a second line is smart. I also
+>   recommend that we remove the blue chip background colour behind the "Undo" Button and increase
+>   the corner radius of the entire UndoCapsule card."*
+> - **THE FINAL SHAPE HAS NO SECOND LINE, and that is E's own reversal.** Eight shapes were rendered
+>   on the real screen (`screenshots/undo-capsule-redesign/`). E chose fully rounded, no chip, and
+>   the Undo control's 16pt padding deleted — then, shown that a second line costs 15pt on every
+>   realistic task title, chose **44pt with one wider line**. Spec: the "THE FINAL SHAPE — build
+>   exactly this" block in `TODO-CLAUDE-CODE.md`. **NOT BUILT — it is the next session's first job.**
+> - **The colour-arc input MOVED the right way:** dropping the chip takes the Undo label from
+>   **3.38 → 3.93:1** light and **3.48 → 4.47:1** dark. Still short of 4.5:1, still the HELD arc's.
+>   Recorded, not fixed.
+> - **Three render lessons worth more than the shape:** a combination of decisions must be RENDERED,
+>   not reasoned about (two of E's picks interacted and one stopped serving its own reason); a
+>   measurement must be validated against a known value before it is believed (five identical card
+>   heights were a tolerance bug, not a design that had not changed); and a variant must stamp its
+>   own name onto an accessibility identifier and ASSERT it — one render failed with "the variant
+>   did not reach the app" instead of photographing the shipped shape and mislabelling it.
 
 > ## Edition 69 in five lines (2026-09-20, the capsule's height round)
 >
@@ -89,8 +115,9 @@
 - the Live Activity's +5 min hit area, and the 5-minute heads-up notification;
 - Password AutoFill, and Always-On dimming;
 - **the composer's bar staying put while Area, Time or the date picker is open** (arc D);
-- **a Reduce-Motion-on pass** for the undo capsule (**arc C — NOW OWED, `F-C1` is merged and has
-  never been on the phone**) and the sprint ring (arc F);
+- **a Reduce-Motion-on pass** for the sprint ring (arc F). **The undo capsule's is DONE** — E ran
+  it on 2026-09-20 and it PASSED (*"Passes your request requested checks"*); the shape round that
+  followed changes geometry and fill only, so it does not re-open the pass;
 - Differentiate Without Color, and Smart Invert on photos (arc B);
 - whether the voice-capture transcript counts as Captions — E's judgment;
 - the Settings Notifications gap after a relaunch (arc G).

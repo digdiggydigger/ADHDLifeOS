@@ -96,8 +96,6 @@ struct UndoCapsule: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var isStacked: Bool { UndoCapsuleLayout.isStacked(dynamicTypeSize) }
-    /// REDESIGN ROUND (temporary) — `.current` everywhere but a render run.
-    private var variant: UndoCapsuleVariant { UndoCapsuleVariant.active }
 
     var body: some View {
         content
@@ -107,30 +105,20 @@ struct UndoCapsule: View {
             // A FLOOR, never `.frame(height:)`: the stacked layout at accessibility sizes is
             // taller than 48 and a fixed frame would clip it.
             .frame(minHeight: UndoCapsuleMetrics.minHeight)
-            // REDESIGN ROUND (temporary): the shape comes from `UndoCapsuleVariant.active`, which
-            // is `.current` — radius 12, the search row's own — in every build but a render run.
-            .background(Color.cardSurface, in: variant.cardShape)
-            .overlay(cardBorder)
+            .background(
+                Color.cardSurface,
+                in: RoundedRectangle(cornerRadius: UndoCapsuleMetrics.cornerRadius, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: UndoCapsuleMetrics.cornerRadius, style: .continuous)
+                    .strokeBorder(Color.cardBorder, lineWidth: 1)
+            )
             .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 4)
             // `.contain`, not `.combine`: combining would fuse the Undo button into the capsule,
             // leaving one element carrying a label and an action together — the button could not
             // be addressed or reached on its own. Same correction the retired inbox bar carried.
             .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("undoCapsule\(variant.identifierSuffix)")
-    }
-
-    /// REDESIGN ROUND (temporary). `strokeBorder` needs `InsettableShape`, which `AnyShape` is
-    /// not — so the border branches on the real shape rather than the erased one, keeping the
-    /// shipped inset-stroke geometry instead of quietly swapping in a straddling `stroke`.
-    @ViewBuilder
-    private var cardBorder: some View {
-        if let radius = variant.cardCornerRadius {
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .strokeBorder(Color.cardBorder, lineWidth: 1)
-        } else {
-            Capsule(style: .continuous)
-                .strokeBorder(Color.cardBorder, lineWidth: 1)
-        }
+            .accessibilityIdentifier("undoCapsule")
     }
 
     @ViewBuilder
@@ -193,12 +181,7 @@ struct UndoCapsule: View {
             .foregroundStyle(Color("LabelPrimary"))
             // ONE line since the height round: a title that wrapped made the card 74pt and one
             // that did not made it ~52, so the capsule's height depended on the task's name.
-            // REDESIGN ROUND (temporary). `lineLimit(_:reservesSpace:)` is iOS 16.0, so holding
-            // the second line's space needs no availability gate.
-            .lineLimit(
-                isStacked ? 2 : variant.subjectLineLimit,
-                reservesSpace: !isStacked && variant.reservesSecondLine
-            )
+            .lineLimit(isStacked ? 2 : 1)
             .minimumScaleFactor(0.8)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -220,10 +203,9 @@ struct UndoCapsule: View {
                 // row lays out around. It still GROWS with Dynamic Type — the fix is to the
                 // horizontal squeeze, not to the type.
                 .fixedSize(horizontal: true, vertical: false)
-                .padding(.horizontal, variant.undoHorizontalPadding)
+                .padding(.horizontal, UndoCapsuleMetrics.undoHorizontalPadding)
                 .frame(minHeight: UndoCapsuleMetrics.undoDrawnHeight)
-                // REDESIGN ROUND (temporary): E asked for the chip gone.
-                .background(variant.drawsUndoChip ? chipTint : Color.clear, in: Capsule(style: .continuous))
+                .background(chipTint, in: Capsule(style: .continuous))
                 // **The tab bar's own trick, and it is what keeps §3 intact at 44pt.** The pill is
                 // DRAWN at 32 so the capsule can be the height E marked; the hit area is grown back
                 // to 44 with negative vertical padding around the `contentShape`, exactly as
