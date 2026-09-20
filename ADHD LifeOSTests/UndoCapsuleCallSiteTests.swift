@@ -226,6 +226,29 @@ final class UndoCapsuleCallSiteTests: XCTestCase {
         )
     }
 
+    /// **`SignedInJourneyUITests` addresses the Undo control by the plain label "Undo"**, and UI
+    /// tests are skipped in the standard run — so a richer `accessibilityLabel` would have broken
+    /// that journey silently, with a green suite and a green build. The spec named that journey as
+    /// one to REVERSE rather than delete; this is the half of it a unit test can hold.
+    func testTheUndoControlKeepsThePlainLabelTheSignedInJourneyAddressesItBy() throws {
+        let capsule = try Self.appCode("Undo/UndoCapsule.swift")
+        XCTAssertTrue(
+            capsule.contains("""
+            Label("Undo", systemImage: "arrow.uturn.backward")
+            """.trimmingCharacters(in: .whitespacesAndNewlines)),
+            "The Undo control no longer carries the plain word, so `app.buttons[\"Undo\"]` misses it."
+        )
+        XCTAssertFalse(
+            capsule.contains("accessibilityLabel(\"Undo —"),
+            "The Undo button took a richer accessibility label, which overrides the plain one the"
+                + " capture journey addresses it by — and that journey does not run in the standard suite."
+        )
+        XCTAssertTrue(
+            try Self.appCode("../ADHD LifeOSUITests/SignedInJourneyUITests.swift").contains("undoCapsule"),
+            "The capture journey still names the retired `captureInboxUndoBar` in its failure."
+        )
+    }
+
     // MARK: - What the block retired
 
     /// The `dead-shared-component-pattern` memory, applied: seven prior instances, always found by
