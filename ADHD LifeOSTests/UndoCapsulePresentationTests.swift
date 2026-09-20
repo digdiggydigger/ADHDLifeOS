@@ -92,6 +92,40 @@ final class UndoCapsulePresentationTests: XCTestCase {
         }
     }
 
+    // MARK: - The one motion (§7.4: pure logic is tested by CALLING it)
+
+    /// **Found by reading the coverage report, not by a failing test.** The two-branch guard in
+    /// `CTAHapticTidyCallSiteTests` matches this function's SOURCE, which kept it at 0% — a string
+    /// assertion proves the branch is written, never that it resolves. §7.4 asks for both: the
+    /// call-site test for the shape, an ordinary unit test for the answer.
+    func testTheArrivalIsASpringNormallyAndAPlainEaseUnderReduceMotion() {
+        XCTAssertEqual(
+            UndoCapsuleMotion.appearance(reduceMotion: false),
+            .spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)
+        )
+        XCTAssertEqual(UndoCapsuleMotion.appearance(reduceMotion: true), .default)
+    }
+
+    /// Never `nil`. §7.2: the capsule APPEARS and DISAPPEARS, which is the case a hard cut is
+    /// wrong for — `reduceMotion ? nil : …` is correct only for continuous re-layout.
+    func testTheReducedPathIsAFadeRatherThanNoAnimationAtAll() {
+        XCTAssertNotEqual(
+            UndoCapsuleMotion.appearance(reduceMotion: true),
+            UndoCapsuleMotion.appearance(reduceMotion: false),
+            "Both modes resolve the same curve, so one of the two branches is doing nothing."
+        )
+    }
+
+    // MARK: - The inert default
+
+    /// Both halves of the environment default do nothing and neither traps, so a preview or a
+    /// snapshot renders a close button with no capsule and no setup.
+    func testTheInertRecorderSwallowsBothVerbs() {
+        let inert = InertRecentActionRecorder()
+        inert.record(RecentAction(kind: .taskClosed, subject: "x", undo: { true }))
+        inert.clear()
+    }
+
     // MARK: - What VoiceOver is told (`voiceover.md` — report a visible change)
 
     /// The capsule is the LAST element on the screen and on Tasks it takes the search row's place,
