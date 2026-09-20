@@ -21,6 +21,10 @@
 >   light / 3.48:1 dark** — it is the tab bar's own selected-pill wash — and the verb line **4.25:1
 >   light**. Round 9's *"Leave it to the colour arc"* holds; these are the first measured numbers
 >   for that relationship written anywhere.
+> - **A new standing hazard, learned the hard way:** a visible change can break a UI JOURNEY while
+>   every gate stays green, because **UI tests are skipped in the standard run**. `F-C1` shipped
+>   with the capture journey broken and it was caught only on a deliberate re-read (PR #174).
+>   Grep `ADHD LifeOSUITests` for any identifier or label a block changes, and run what it touches.
 > - **Next: `F-C2-DraftsToInbox`**, arc C block 2, from `handoff/START-HERE-adhd-audit-arc-C2.md`.
 >   The build thread is `handoff/ADHD-AUDIT-BUILD-LOG.md` and it now has a session entry.
 

@@ -164,8 +164,8 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 ### Session 1 — 2026-09-20, arc C, block `F-C1-UndoCapsule`
 
-- **Landed:** `F-C1-UndoCapsule` at `ea9cbed` (PR #172). Suite **3,130 / 0**, SwiftLint **0 / 842**.
-  The first app Swift the audit has produced.
+- **Landed:** `F-C1-UndoCapsule` at `ea9cbed` (PR #172). Suite **3,130 / 0**, SwiftLint **0 / 842**
+  (3,131 / 842 after PR #174's follow-up). The first app Swift the audit has produced.
 - **Where the build departed from the spec, and why:** five departures, written out in full in the
   block's own note in `TODO-CLAUDE-CODE.md`. The two the next block will feel:
   **(a)** `RecentAction.undo` returns `Bool` and the centre puts the offer back on `false` — C2's
@@ -183,6 +183,15 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **What the renders caught that the tests could not:** the Undo button truncated to "Un…" beside a
   two-line subject. Fixed and pinned. **Worth carrying into every later arc-C block:** the capsule
   is drawn in a tight `HStack` and any new content in it can take the control's width.
+- **Found AFTER the block landed, fixed in PR #174 — and the lesson generalises:** the capsule
+  **names what it would take back**, so a capture's own words are on screen the moment it is
+  sorted. `SignedInJourneyUITests` waited app-wide for exactly those words to disappear and could
+  not survive it. **UI tests are skipped in the standard run**, so a green suite, a green build and
+  a green red-check all said nothing. Two more went with it: the capsule's richer
+  `accessibilityLabel` stopped `app.buttons["Undo"]` matching, and
+  `CaptureInboxService.clearLastTriageAction()` was left dead with a doc comment claiming a guard
+  it did not have. **Every later arc-C block should grep `ADHD LifeOSUITests` for the identifiers
+  and labels it changes, and RUN any journey it touches** — the suite will not.
 - **Next session starts at:** `F-C2-DraftsToInbox`, from `handoff/START-HERE-adhd-audit-arc-C2.md`.
 
 ### Session 0 — 2026-09-19 · the audit (3 sessions), no build
