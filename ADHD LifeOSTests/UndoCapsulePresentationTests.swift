@@ -74,18 +74,33 @@ final class UndoCapsulePresentationTests: XCTestCase {
         )
     }
 
-    /// It stands in for the search row, so it wears the row's corner rather than inventing one —
-    /// §2's grid governs spacing, and a second radius beside the row it replaces would read as a
-    /// different control in the same slot.
-    func testItWearsTheSearchRowsCornerRatherThanANewNumber() {
-        XCTAssertEqual(UndoCapsuleMetrics.cornerRadius, AppSearchRowMetrics.fieldCornerRadius)
+    /// **Reversed by E's shape round, 2026-09-20, not deleted.** It pinned the search row's own
+    /// corner, reasoning that *"a second radius beside the row it replaces would read as a
+    /// different control in the same slot"*. E overruled that reasoning by LOOKING, on the phone:
+    /// *"I also recommend that we remove the blue chip background colour behind the "Undo" Button
+    /// and increase the corner radius of the entire UndoCapsule card"* — then, shown eight shapes
+    /// rendered on the real Tasks screen, *"from the images you've made Option C, 'Fully rounded'
+    /// looks the best"*.
+    ///
+    /// So the card is a `Capsule`, not a radius number. `cardShape`'s return type IS `Capsule`, so
+    /// this method failing to compile is half the assertion; `.continuous` is the half a number
+    /// could still get wrong.
+    func testTheCardIsFullyRoundedRatherThanWearingTheSearchRowsCorner() {
+        XCTAssertEqual(UndoCapsuleMetrics.cardShape.style, .continuous)
     }
 
-    /// **Reversed with the height above, and the GUARANTEE is what survived.** Round 7's 48pt
-    /// cannot be drawn inside a 44pt band, and E chose the trade by name: *"Yes — draw 32, tap
-    /// 44"*. So the pill is drawn at 32 and its hit area is grown back to §3's 44 with the tab
-    /// bar's own negative-padding trick. A test that only checked the drawn height would pass on a
-    /// build where the target had quietly shrunk with it, which is the whole risk here.
+    /// **Reversed with the height round, then STRENGTHENED by E's shape round — and it is now the
+    /// ONLY guard.** Round 7's 48pt cannot be drawn inside a 44pt band, and E chose the trade by
+    /// name: *"Yes — draw 32, tap 44"*. So the pill is drawn at 32 and its hit area is grown back
+    /// to §3's 44 with the tab bar's own negative-padding trick.
+    ///
+    /// Until the shape round the drawn 32 was VISIBLE — a tinted chip — so a target that had
+    /// quietly shrunk with it had a second witness on screen. **E removed the chip, so nothing on
+    /// screen shows the tap target any more** and this assertion is all that stands between §3's
+    /// 44pt floor and a silent regression. It is `apple-design`'s one Medium finding on the round
+    /// (`buttons.md › Best practices`: *"a button needs a hit region of at least 44x44 pt"*).
+    /// `undoDrawnHeight` and `undoHitOverflow` are pure layout mechanism now rather than a pill,
+    /// which is why `UndoCapsuleCallSiteTests` also pins the two lines that spend them.
     func testTheUndoControlIsDrawnSmallerThanItsTapTargetAndTheTargetIsStillFortyFour() {
         XCTAssertEqual(UndoCapsuleMetrics.undoDrawnHeight, 32)
         XCTAssertEqual(
@@ -110,11 +125,31 @@ final class UndoCapsulePresentationTests: XCTestCase {
     /// Every padding the capsule spends is on §2's 4/8/16/24 grid. The two sanctioned off-grid
     /// values in this app (`peekStep`, `floatingPaddingHorizontal`) are named waivers for other
     /// controls and do not reach here.
+    ///
+    /// **This is why E's reclaimed Undo padding is DELETED rather than zeroed** (shape round,
+    /// 2026-09-20): 0 is not in the grid, so a zeroed constant would FAIL here rather than lapse,
+    /// and the tempting fix — widening the set — would quietly weaken a rule protecting every
+    /// other value in the file.
     func testEveryCapsuleSpacingIsOnTheGrid() {
         let grid: Set<CGFloat> = [4, 8, 16, 24]
         for (name, value) in UndoCapsuleMetrics.spacings {
             XCTAssertTrue(grid.contains(value), "`\(name)` is \(value), which is off §2's 4/8/16/24 grid.")
         }
+    }
+
+    /// **E's shape round reclaimed the Undo control's horizontal padding, 16 → 0.** With the chip
+    /// gone its 16pt a side was padding the inside of nothing — 32pt of invisible dead space beside
+    /// the subject, which is what had been truncating task titles. Spending it on the one line is
+    /// what let E keep the 44pt card instead of paying 15pt for a second line.
+    ///
+    /// This is the metrics half of the guard. The view half is in `UndoCapsuleCallSiteTests`,
+    /// because a padding reinstated inline would pass here and still undo E's decision.
+    func testTheUndoControlSpendsNoHorizontalPaddingSinceEReclaimedIt() {
+        XCTAssertFalse(
+            UndoCapsuleMetrics.spacings.contains { $0.name.localizedCaseInsensitiveContains("undoHorizontal") },
+            "A horizontal padding is back on the Undo control — the 32pt E reclaimed to widen the"
+                + " single subject line."
+        )
     }
 
     // MARK: - The one motion (§7.4: pure logic is tested by CALLING it)
