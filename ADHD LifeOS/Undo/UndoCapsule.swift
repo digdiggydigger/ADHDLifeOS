@@ -146,7 +146,15 @@ struct UndoCapsule: View {
                     subject
                 }
                 Spacer(minLength: UndoCapsuleMetrics.undoSpacing)
+                // **`layoutPriority`, and it is not belt-and-braces — the first render on the
+                // simulator showed "Un…".** In a tight `HStack` SwiftUI compresses whichever child
+                // will give, and with a two-line subject beside it the control that gave was the
+                // Undo button: the one thing in the capsule that must never be ambiguous. §1's
+                // Layout Safety rule names `.layoutPriority(1)` for exactly this. The subject
+                // takes the squeeze instead, which it is already dressed for — two lines and a
+                // 0.8 minimum scale.
                 undoButton
+                    .layoutPriority(1)
             }
         }
     }
@@ -178,6 +186,11 @@ struct UndoCapsule: View {
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(.tint)
                 .lineLimit(1)
+                // Never narrower than the word. `lineLimit(1)` alone permits truncation, which is
+                // how "Undo" became "Un…"; this makes the button's width a floor the rest of the
+                // row lays out around. It still GROWS with Dynamic Type — the fix is to the
+                // horizontal squeeze, not to the type.
+                .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, UndoCapsuleMetrics.undoHorizontalPadding)
                 .frame(minHeight: UndoCapsuleMetrics.undoMinHeight)
                 .background(chipTint, in: Capsule(style: .continuous))

@@ -81,6 +81,28 @@ final class UndoCapsuleCallSiteTests: XCTestCase {
         )
     }
 
+    /// **Found by LOOKING, not by a test** — the first simulator render showed the Undo button as
+    /// "Un…". In a tight `HStack` SwiftUI compresses whichever child will give, and beside a
+    /// two-line subject the child that gave was the one control in the capsule that must never be
+    /// ambiguous. Truncation is not a property a unit test can see, so the two modifiers that fix
+    /// it are pinned by name here instead — §1's Layout Safety rule names `.layoutPriority(1)` for
+    /// exactly this case.
+    func testTheUndoControlCannotBeSqueezedOrTruncated() throws {
+        let capsule = try Self.appCode("Undo/UndoCapsule.swift")
+        XCTAssertTrue(
+            capsule.contains(".fixedSize(horizontal: true, vertical: false)"),
+            "The Undo label may compress again, which is how \"Undo\" became \"Un…\"."
+        )
+        XCTAssertTrue(
+            capsule.contains(".layoutPriority(1)"),
+            "The Undo button has no layout priority, so a long subject takes its width."
+        )
+        XCTAssertTrue(
+            capsule.contains(".minimumScaleFactor(0.8)"),
+            "Nothing lets the SUBJECT give instead, so the row has no slack anywhere."
+        )
+    }
+
     // MARK: - The five close surfaces (E, round 1 + Step 0 answers 1 and 3)
 
     /// One row per surface: the file, and the recording it must contain. A table rather than five
