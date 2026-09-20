@@ -101,7 +101,7 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
 | `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED**, + the height round, + E's SHAPE ROUND | `ea9cbed` (PR #172), shape round PR #178 | **the RM-off device look on the new shape** — nothing else |
-| `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | NOT STARTED | — | — |
+| `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | **MERGED** | PR #180 | **a device look** (RM-off) + `screenshots/drafts-to-inbox/` |
 | `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | NOT STARTED | — | — |
 | `F-C4-TagsRecentlyDeleted` | tags in Recently Deleted; hidden links, restore-to-everywhere, merge | NOT STARTED | — | — |
 
@@ -307,6 +307,41 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
      the file.
 - **Next session starts at:** `F-C2-DraftsToInbox`, from
   `handoff/START-HERE-adhd-audit-arc-C2-drafts.md`.
+
+### Session 4 — 2026-09-20, arc C, `F-C2-DraftsToInbox`
+
+- **Landed:** `F-C2-DraftsToInbox` at PR #180. Suite **3,174 / 0**, SwiftLint **0 / 853**, build
+  green. **`SignedInJourneyUITests` + `JournalJourneyUITests` run deliberately: 6/6 PASSED** —
+  the opener's own lesson, since this block relabels three controls and UI tests are skipped.
+- **Where the build departed from the spec, and why:** four, all in the TODO's "Built" note.
+  A **spec correction** (`QuickCaptureView` is presented TWICE — a cover from the disc and a
+  `.sheet` from the inbox, so "swipe-down is impossible" held for one route only);
+  **`.onDisappear` and no `.interactiveDismissDisabled`**; **autosave on leaving, not on blur**
+  (saving sets `state = .loaded`, which resets the Form's scroll — a per-blur save would yank the
+  user's position); and **the capsule's control is no longer always "Undo"** (E asked for
+  "Reopen", which reverses nothing).
+- **What E saw, and said:** nothing yet — not shown.
+- **Owed to E:** a **device look, RM-off**, on this block AND on `F-C1`'s shape round, which is
+  still owed from session 3. Ask for both in one message. **No RM-on pass** — no reduced site was
+  added or changed; the capsule's motion is F-C1's and untouched.
+- **Owed to the code:** **`screenshots/drafts-to-inbox/` was NOT produced** — the one acceptance
+  criterion unmet. The block was settled by assertion, not by looking, but the spec asks for it.
+- **Four things learned:**
+  1. **A `let` with a default value is EXCLUDED from a struct's synthesised memberwise init**, so a
+     defaulted dependency on a view with no hand-written `init` must be a `var` — and it must be
+     declared BEFORE any trailing-closure member, since the init takes parameters in declaration
+     order. Cost three compile rounds.
+  2. **Four files hit SwiftLint ceilings in one block.** `RootView.swift` was at 400/400 and had to
+     give up `capturesTab` to `RootView+Doors`; `TaskCreateView` and `LogComposerView` both needed
+     `+Drafts` extensions, and the latter also a `+Ink`. Budget for it when adding to any view.
+  3. **Moving a call site breaks call-site tests, and that is them working.**
+     `CelebrationMilestoneCallSiteTests` failed on the Captures tab moving file. Re-pointed at the
+     new file rather than widened to "any file", which would have stopped it catching a real drop.
+  4. **An exhaustive `switch` earns itself.** Adding a sixth `RecentActionKind` failed the BUILD at
+     the inbox's header-arrow check rather than silently inheriting a branch — exactly what that
+     test's failure message had predicted a year of sessions earlier.
+- **Next session starts at:** `F-C3-RecentlyDeleted`, from
+  `handoff/START-HERE-adhd-audit-arc-C3-deleted.md`.
 
 ### Session 0 — 2026-09-19 · the audit (3 sessions), no build
 
