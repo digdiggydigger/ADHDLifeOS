@@ -26,9 +26,16 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
     /// Five screens host a `CaptureInboxService`. Three of them can reach a doing verb, and each
     /// needs the centre threaded to it by hand — an `@Environment` read is not available in the
     /// `init` where a `@StateObject` service is built.
+    ///
+    /// **The Captures tab moved file in `F-C2-DraftsToInbox`, and this test is what noticed.**
+    /// `RootView.swift` was AT SwiftLint's 400-line ceiling when the Reopen door needed a binding
+    /// passed to `CaptureInboxView`, so its construction went to `RootView+Doors.capturesTab`.
+    /// Nothing about the celebration wiring changed — only where it is written — so the file is
+    /// re-pointed rather than the assertion weakened. A sweep across "any file" would have been
+    /// the lazy fix and would stop catching a tab that drops the centre entirely.
     func testTheCapturesTabHandsItsServiceTheCentre() throws {
         try assertPasses(
-            "celebrate: celebrationCenter", toCall: "CaptureInboxView(", in: "RootView.swift",
+            "celebrate: celebrationCenter", toCall: "CaptureInboxView(", in: "RootView+Doors.swift",
             because: "the Captures tab is where all three doing verbs live"
         )
         try assertPasses(
