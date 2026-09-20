@@ -5527,7 +5527,7 @@ identical 74pt. The fix both times: **one test method per variant** — a method
 swallowed.
 
 
-**E's SHAPE ROUND, 2026-09-20 — the FIRST device look, and it sent the shape back. NOT YET BUILT.**
+**E's SHAPE ROUND, 2026-09-20 — the FIRST device look, and it sent the shape back. BUILT 2026-09-20 — see "Built, and where it departs from the spec" at the end of this section.**
 `main` @ `3f7932c` went onto E's phone (build, install and launch clean in one WIRELESS pass — the
 phone was never disconnected, whatever the opener said). E ran both passes.
 
@@ -5631,7 +5631,56 @@ F-C1's RM-on pass has already PASSED on E's phone. No `firestore.rules` change.
 
 **Still owed when it is built:** re-render `screenshots/undo-capsule/` at the chosen shape (its
 README already carries a re-render note from the height round; this is the second), and the two
-landscape frames still suffixed `-PRE-HEIGHT-ROUND` are now two rounds stale.
+landscape frames still suffixed `-PRE-HEIGHT-ROUND` are now two rounds stale. **Both done — see
+below.**
+
+### Built 2026-09-20, and where it departs from the spec
+
+All four changes landed exactly as specified — `Capsule(style: .continuous)`, no chip,
+`undoHorizontalPadding` DELETED from the constant and from `spacings`, `lineLimit(1)` and
+`minHeight` 44 untouched. **No second line.** Suite **3,137 / 0**, SwiftLint **0 / 843**, build
+green.
+
+**ONE departure, and E made it: the card's radius is CAPPED at `minHeight / 2`.**
+
+The spec said `Capsule(style: .continuous)`, "not a radius number", and that is what was built and
+rendered first. **Then the stacked accessibility layout was rendered at the new shape for the first
+time — and no frame in the whole redesign round had ever been taken above the default text size.**
+A `Capsule` takes its radius from half the card's height. At the default 44pt that is a harmless
+22. At Accessibility XL the stacked card measures **194.3pt**, so the caps grow to **97.2pt** and
+the curve eats the corners the content sits in:
+
+- the completion glyph was drawn **59.0pt** outside the card's own fill;
+- the ↶ Undo control — the one affordance this whole feature exists for — **30.3pt** outside it.
+
+Measured off the render, and the method was validated against a known value first: the middle row
+reads 17.0pt against the 16pt `horizontalPadding` it should be.
+
+E was shown both shapes rendered on the real Tasks screen at Accessibility XL and **chose the cap**.
+**It is not a compromise on what E approved at the shape round**: `min(height, minHeight) / 2` is 22
+at 44pt — the capsule's own radius — and the two builds' renders came back **byte-identical over the
+capsule band (max channel delta 0, zero differing pixels across 1206×175)**. The cap changes the
+accessibility layout and nothing else, and it is a CEILING rather than a fixed corner, so a card
+shorter than the floor is still fully rounded.
+
+`UndoCapsuleCardShape` is a concrete `InsettableShape` (the spec's own warning: `strokeBorder` needs
+one and `AnyShape` is not) that asks `UndoCapsuleMetrics.cardCornerRadius(forHeight:)` rather than
+deciding anything itself.
+
+**The lesson generalises, and it is this block's third instance of the same one:** a combination has
+to be RENDERED, not reasoned about. The height round found it when two of E's picks interacted; the
+shape round found it when the winning variant did not exist at design time; this found it because
+every frame E ever chose from was at one text size. **When a shape's geometry is DERIVED from its
+content's size, the accessibility layout is a different shape — render it before calling the round
+closed.**
+
+**Tests, beyond the four the spec named.** `testTheContentsOwnCornerSitsOnTheCardAtEveryHeightTheLayoutCanTake`
+samples the drawn path at the glyph's own corner across four heights, so E's break is pinned as
+geometry rather than as a radius number; mutated back to a true capsule it fails at 100, 194.3 and
+260pt and PASSES at 44, which is the control. `testTheBorderInsetsItselfInsideTheFillAndTheInsetsAccumulate`
+pins what `strokeBorder` relies on. Both were added because the shape dropped
+`UndoCapsuleMetrics.swift` from 100% to 58.33% — `path(in:)` and `inset(by:)` are pure functions
+SwiftUI alone was calling.
 
 ---
 
