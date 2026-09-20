@@ -82,11 +82,41 @@ final class UndoCapsulePresentationTests: XCTestCase {
     /// rendered on the real Tasks screen, *"from the images you've made Option C, 'Fully rounded'
     /// looks the best"*.
     ///
-    /// So the card is a `Capsule`, not a radius number. `cardShape`'s return type IS `Capsule`, so
-    /// this method failing to compile is half the assertion; `.continuous` is the half a number
-    /// could still get wrong.
-    func testTheCardIsFullyRoundedRatherThanWearingTheSearchRowsCorner() {
-        XCTAssertEqual(UndoCapsuleMetrics.cardShape.style, .continuous)
+    /// So the card is fully rounded — **up to the height E chose, and no rounder above it.**
+    ///
+    /// **The cap is E's own second call, made the same day by looking at the accessibility
+    /// layout** (`screenshots/undo-capsule/`'s AX3 frames). A true `Capsule` takes its radius from
+    /// half the card's height, and every frame of the shape round was rendered at the DEFAULT text
+    /// size, where the card is 44pt and that radius is a harmless 22. At Accessibility XL the
+    /// stacked card measures **194.3pt**, so the caps grow to **97.2pt** and the curve eats the
+    /// corners the content sits in: the completion glyph was drawn **59pt** outside the card's own
+    /// fill and the ↶ Undo control **30pt** outside it — measured, not estimated. Shown both, E
+    /// chose the cap.
+    ///
+    /// **It is not a compromise on what E approved.** At 44pt `min(44, 44) / 2` IS 22, the
+    /// capsule's own radius — the two renders of the real screen were byte-identical over the
+    /// capsule band (max channel delta 0, zero differing pixels). The cap changes the accessibility
+    /// layout and nothing else.
+    func testTheCardIsFullyRoundedUpToTheHeightEChoseAndNoRounderAboveIt() {
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardCornerRadius(forHeight: UndoCapsuleMetrics.minHeight),
+            UndoCapsuleMetrics.minHeight / 2,
+            "At the height E approved the card must be a true capsule — the frames E chose from"
+                + " were all rendered at this height."
+        )
+
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardCornerRadius(forHeight: 194.3), UndoCapsuleMetrics.minHeight / 2,
+            "The radius grew with the accessibility layout's height. 194.3pt is the stacked card"
+                + " measured at Accessibility XL, where a true capsule's 97.2pt caps drew the glyph"
+                + " and the Undo control off the card."
+        )
+
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardCornerRadius(forHeight: 30), 15,
+            "A card SHORTER than the floor must still be fully rounded — the cap is a ceiling on"
+                + " the radius, never a fixed corner."
+        )
     }
 
     /// **Reversed with the height round, then STRENGTHENED by E's shape round — and it is now the

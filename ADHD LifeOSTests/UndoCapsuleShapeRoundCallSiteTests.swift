@@ -31,7 +31,7 @@ final class UndoCapsuleShapeRoundCallSiteTests: XCTestCase {
     /// `InsettableShape` and the two temptations when that fails are to erase the type (`AnyShape`
     /// is NOT insettable — this bit the redesign round's render build) or to stroke a radius
     /// instead, either of which lets the fill and the outline drift apart.
-    func testTheCardIsDrawnAsACapsuleAtBothItsFillAndItsBorder() throws {
+    func testTheCardIsDrawnWithTheSharedShapeAtBothItsFillAndItsBorder() throws {
         let capsule = try Self.appCode("Undo/UndoCapsule.swift")
         XCTAssertEqual(
             capsule.components(separatedBy: "UndoCapsuleMetrics.cardShape").count - 1, 2,
@@ -39,8 +39,37 @@ final class UndoCapsuleShapeRoundCallSiteTests: XCTestCase {
         )
         XCTAssertFalse(
             capsule.contains("RoundedRectangle"),
-            "A `RoundedRectangle` is back in the capsule's tree. E chose \"Option C, 'Fully"
-                + " rounded'\" by looking at eight shapes rendered on the real screen."
+            "A raw `RoundedRectangle` is back in the capsule's tree, so the card wears a fixed"
+                + " corner instead of E's fully-rounded shape."
+        )
+        XCTAssertFalse(
+            capsule.contains("Capsule(style: .continuous))\n            )"),
+            "The card is drawn as a bare `Capsule` again. Its radius would then grow with the"
+                + " card's height, which at Accessibility XL draws the glyph and the Undo control"
+                + " off the card — the break E capped the radius to fix."
+        )
+    }
+
+    /// **The shape has to ASK the metrics for its radius, and a bare `Capsule` is the regression.**
+    /// `cardCornerRadius(forHeight:)` is a pure function with its own unit test, but a shape that
+    /// ignored it and returned `Capsule()` would pass that test and still draw the accessibility
+    /// layout off its own card — the rule proved correct beside a call site that never reads it,
+    /// which is the `dead-shared-component-pattern` failure this project has hit seven times.
+    func testTheCardShapeTakesItsRadiusFromTheCappedRule() throws {
+        let metrics = try Self.appCode("Undo/UndoCapsuleMetrics.swift")
+        XCTAssertTrue(
+            metrics.contains("UndoCapsuleMetrics.cardCornerRadius(forHeight:"),
+            "The card's shape does not read the capped rule, so its radius can grow with the"
+                + " card's height again."
+        )
+        XCTAssertTrue(
+            metrics.contains("style: .continuous"),
+            "The card lost its continuous (squircle) curve."
+        )
+        XCTAssertTrue(
+            metrics.contains("func inset(by amount: CGFloat)"),
+            "The shape is no longer insettable, so `strokeBorder` cannot draw the card's border"
+                + " and the fill and the outline will drift apart."
         )
     }
 
