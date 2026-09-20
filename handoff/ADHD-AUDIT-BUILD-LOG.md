@@ -202,6 +202,56 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Next session starts at:** the device look, then `F-C2-DraftsToInbox`, from
   `handoff/START-HERE-adhd-audit-arc-C2.md`.
 
+### Session 2 — 2026-09-20, arc C, `F-C1-UndoCapsule`'s DEVICE ROUND (no block built)
+
+- **Landed:** no Swift. Evidence, a spec and this handoff, at PR #177. Suite **3,132 / 0**,
+  SwiftLint **0 / 842** — unchanged, because the round-scoped code was removed before merging and
+  `UndoCapsule.swift` is byte-identical to its shipped state.
+- **What E saw, and said.** `main` @ `3f7932c` went onto E's phone — **build, install and launch
+  clean in ONE WIRELESS pass, with no cable and nothing for E to do.** The opener and register both
+  said the phone was DISCONNECTED and must be reconnected; it was `available (paired)` over a live
+  `localNetwork` tunnel the whole time. **Probe before asking E for a cable** —
+  `devicectl device info details --device <udid>` answering at all is the proof, and it costs one
+  command. Recorded in the `device-build-lag` memory.
+  - **Reduce Motion ON: PASSED.** E: *"Passes your request requested checks"*. **That discharges the
+    §7.3 RM-on pass F-C1 owed — it is DONE, not outstanding.**
+  - **Reduce Motion OFF: the shape came back.** E, verbatim: *"Bringing back a second line is smart.
+    I also recommend that we remove the blue chip background colour behind the "Undo" Button and
+    increase the corner radius of the entire UndoCapsule card."*
+  - Two things E's own frames settled that no test reaches: `IMG_8565`→`IMG_8566` is the reversal
+    landing against real Firestore (the "Closed" chip gone, "Close it" back), and `IMG_8562` is a
+    capsule recorded on Today still standing on the Capture Inbox tab — the one-slot design working.
+- **What was decided, and it took TWO rounds because the first answer did not survive measurement.**
+  Eight shapes rendered on the real screen from one build (`screenshots/undo-capsule-redesign/`).
+  E chose **fully rounded** (*"Option C, 'Fully rounded' looks the best"*), the Undo control's
+  padding **reclaimed 16 → 0**, and — first time round — "up to two lines". Rendering that exact
+  combination showed the third pick does not do what it was for: at the reclaimed width the subject
+  column holds ~12–14 characters per line, so every realistic task title wraps and the card is
+  **59pt either way**. Shown the binary choice, **E chose 44pt with ONE wider line.**
+  **So E's own opening words — "bringing back a second line is smart" — are SUPERSEDED by E's later
+  look. The final shape has NO second line.** That is the single most mis-buildable thing here.
+- **Owed to E:** nothing. Both passes are done and every design question is answered.
+- **Owed to the code:** `F-C1`'s shape round is specced and **NOT BUILT** — that is the next
+  session's first job. The Undo label's contrast is still a colour-arc candidate, and E's change
+  IMPROVES it (3.38 → 3.93 light, 3.48 → 4.47 dark), which is recorded, not fixed.
+- **What the renders caught that no test could — three, and all three generalise:**
+  **(a)** two lines alone did NOT fix the truncation E complained about, because
+  `undoHorizontalPadding = 16` was padding the inside of the chip E removed and became 32pt of
+  invisible dead space. **Found by reading a frame, not by planning** — the winning variant did not
+  exist when the round was designed. **(b)** Two of the decisions INTERACT: an earlier frame measured
+  52.7pt only because its narrower column made `.minimumScaleFactor(0.8)` shrink the text. A
+  combination has to be rendered, not reasoned about. **(c)** A render that measured five identical
+  heights was a TOLERANCE BUG, not a design that had not changed — the white card differs from the
+  page background by only 13. Validate a measurement against a known value (the shipped 44pt) before
+  believing it.
+- **The harness guard worked, and it is worth keeping.** Every variant asserts the capsule's
+  accessibility identifier carries its own name. One light render failed with *"the variant did not
+  reach the app"* rather than photographing the shipped shape and labelling it as the alternative —
+  exactly the trap the height round fell into twice.
+- **Next session starts at:** `F-C1-UndoCapsule`'s **shape round** (the spec is the
+  "THE FINAL SHAPE — build exactly this" block in `TODO-CLAUDE-CODE.md`), then
+  `F-C2-DraftsToInbox`. From `handoff/START-HERE-adhd-audit-arc-C1-shape.md`.
+
 ### Session 0 — 2026-09-19 · the audit (3 sessions), no build
 
 - **Landed:** records, evidence and specs only. `main` @ `53b3ebe`. No Swift changed, so no suite or
