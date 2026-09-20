@@ -5207,7 +5207,7 @@ read as of the audit, `feature/adhd-ux-audit-rounds-3`.**
 
 ---
 
-### FEATURE: F-C1-UndoCapsule — one undo capsule, in the disc row, for every task close  [ ] NOT STARTED
+### FEATURE: F-C1-UndoCapsule — one undo capsule, in the disc row, for every task close  [x] COMPLETED
 
 **What E chose.** Round 1: *"Every close (the circle, a full swipe, Today's hero) shows the same
 undo, which stays until the user's next action; after that, closing is final again. This RETIRES
@@ -5438,6 +5438,64 @@ capsule's visual design for their own bars, so they depend on this block landing
 5. **The cross-kind collision was NOT asked.** It follows from E's own "one bottom bar everywhere",
    so the build report NAMES the consequence (a task close spends a pending capture undo) rather
    than re-opening the decision.
+
+
+**Built 2026-09-20, and where it departs from the spec.** Suite **3,130 / 0**, SwiftLint **0 / 842**,
+build green. Everything E answered in Step 0 shipped as answered: all five close surfaces including
+the Life Area tick, the inbox header ↶ kept and repointed at the shared slot, the nudge dismiss as a
+fifth kind with its new `unmarkFired` write, the Journal capsule standing in for the pencil, and the
+cross-kind collision named rather than softened.
+
+**Five departures, each deliberate:**
+
+1. **The reversal reports whether it landed** — `RecentAction.undo` is `() async -> Bool`, not
+   `-> Void`, and the centre puts the offer BACK on `false`. The spec did not ask for this, and
+   without it the block would have silently dropped a promise the Capture Inbox already made:
+   *"nothing happened, so the offer still stands"*. For "Journal it" that is a safety argument —
+   a failed restore deliberately leaves the journal entry alone because it is the only copy of the
+   thought left, so the user has to be able to try again. Every reversal is `@discardableResult ->
+   Bool` now, including the two the spec described as `Void`.
+2. **The capsule WRAPS the disc row's leading band rather than joining it.** The spec called it "a
+   THIRD optional occupant of this same slot". As a sibling it would have shown beside the search
+   row and pushed the + disc off the row; as a wrapper it stands IN FOR the band, which is what E
+   actually asked for, and it gives the outgoing occupant the same fade the capsule arrives on
+   (§7.2's disappears case, which the spec did not name).
+3. **`RecentActionCenter` is injected from `ADHD_LifeOSApp`, not from `RootView.body`.** The spec
+   said "inject one `.environment(\.recentAction, …)` line in `RootView.body`", but RootView is at
+   398 of SwiftLint's 400-line ceiling and holding the object needs a property plus its comment.
+   Two lines in the App, zero in RootView. Also **two** environment keys, not one: `@Environment`
+   does not subscribe to an `ObservableObject`, so the drawing side takes the object and hands it
+   to an `@ObservedObject` child — `CelebrationLayer`'s shape exactly.
+4. **`CaptureInboxService` and `NudgesService` take the recorder as a settable `var` wired by their
+   host in `.task`**, not as an `init` parameter like `celebrate`. Both are `@StateObject`s built
+   in an `init`, where an `@Environment` value is not available, and threading it through RootView
+   hits (3)'s ceiling. Pinned by `UndoCapsuleCallSiteTests`.
+5. **`CaptureTriage.confirmation(for:sortedInto:lifeAreas:)` was DELETED**, replaced by
+   `areaLabel(id:in:)`. It built the retired bar's whole sentence ("Skipped — it'll come back
+   round") because that bar had one line; the capsule carries the subject underneath, so the verb
+   is `RecentActionKind.verb`'s job. The degrade-to-the-bare-verb rule survived. Its three tests
+   went with it, recorded in place rather than silently dropped. `MomentumScoreboard.celebrationLine`
+   and `.nextButtonLabel` were deleted with the closure card, and their four tests with them.
+
+**Two things found by looking, not by a test** — both fixed in the block:
+- **The Undo button truncated to "Un…"** beside a two-line subject (first simulator render). SwiftUI
+  compresses whichever child will give, and the child that gave was the one control that must never
+  be ambiguous. `.layoutPriority(1)` + `.fixedSize`, pinned by name.
+- **The capsule arrived silently for VoiceOver** (`apple-design`, `voiceover.md › Best practices`).
+  It is the last element on screen and on Tasks it replaces the search row, so both halves of what
+  happened were out of reach. It now posts an announcement in the action's own words.
+
+**And one found by reading the coverage report:** `UndoCapsuleMotion.appearance` sat at 0% — the
+two-branch guard matches its SOURCE, which proves the branch is written and never that it resolves.
+§7.4 wants both, so it has an ordinary unit test now. All four non-view files in `Undo/` are at 100%.
+
+**Owed to E, and NOT done in this session:** the device look, and the **Reduce-Motion-on device
+pass** (§7.3) — this block adds a reduced site (the capsule's appear-fade) and changes one (the
+inbox bar's `.move(edge: .bottom)` slide is gone). Reduced: run on sim (injected) + unit-tested;
+**NOT on device**. No `#available` site was touched, so no "Verified paths" line is owed; the one
+tier considered (`AccessibilityNotification.Announcement`, iOS 17+) was declined because it adds
+only a priority. No `firestore.rules` change: soft delete is arc C3's, and this block's writes are
+the already-permitted task status and nudge stamp fields.
 
 ---
 

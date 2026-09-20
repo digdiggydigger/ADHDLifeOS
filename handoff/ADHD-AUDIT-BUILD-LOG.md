@@ -40,9 +40,15 @@ where it stopped and what is half-done, and an opener that resumes rather than r
 
 ## Status
 
-**Nothing is built yet.** The audit's three sessions produced records, evidence and specs only; no
-app Swift has changed. Suite **3,085 / 0** and SwiftLint **0 / 831** at `061dbaa` are carried, not
-re-run; the next session to touch Swift re-measures.
+**Arc C's first block has landed.** `F-C1-UndoCapsule` merged 2026-09-20. Suite **3,130 / 0**,
+SwiftLint **0 / 842**, build green — re-measured, not carried (the 3,085 / 831 figures from
+`061dbaa` were the audit's, and no Swift had changed then).
+
+App-target coverage moved **24.72% → 29.07% (14,225/48,930)**. The denominator moved because the
+TREE grew, and both runs measured 100% of the app target, so the figures are comparable in the
+sense CLAUDE.md's rule asks for — but note the earlier figure was measured at `93beff2` on
+2026-09-07 and two weeks of other work sit between them, so the delta is not this block's alone.
+What IS this block's: all four non-view files in `Undo/` at 100%.
 
 **Build order** (E chose C first; the rest is the proposal in the specs' intro):
 **C → D → E → F → A → B → G.**
@@ -78,7 +84,7 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | NOT STARTED | — | — |
+| `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED** | `<sha>` (PR #<n>) | **device look + the RM-on pass** (§7.3) |
 | `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | NOT STARTED | — | — |
 | `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | NOT STARTED | — | — |
 | `F-C4-TagsRecentlyDeleted` | tags in Recently Deleted; hidden links, restore-to-everywhere, merge | NOT STARTED | — | — |
@@ -155,6 +161,29 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Owed to the code:** <anything parked, any test left reversed, any register item added>.
 - **Next session starts at:** <block id>, from `<opener>`.
 ```
+
+### Session 1 — 2026-09-20, arc C, block `F-C1-UndoCapsule`
+
+- **Landed:** `F-C1-UndoCapsule` at `<sha>` (PR #<n>). Suite **3,130 / 0**, SwiftLint **0 / 842**.
+  The first app Swift the audit has produced.
+- **Where the build departed from the spec, and why:** five departures, written out in full in the
+  block's own note in `TODO-CLAUDE-CODE.md`. The two the next block will feel:
+  **(a)** `RecentAction.undo` returns `Bool` and the centre puts the offer back on `false` — C2's
+  draft bar and C3's delete bar must return it too, or a failed undo will silently vanish;
+  **(b)** the capsule WRAPS the disc row's leading band (`UndoCapsuleSlot { leadingBand }`) rather
+  than sitting beside it, which is what makes it stand IN FOR the search row and the pencil.
+- **What E saw, and said:** **not yet shown.** Nothing has been on the phone.
+- **Owed to E:** the device look, and the **Reduce-Motion-on device pass** (§7.3) — this block adds
+  a reduced site (the capsule's appear-fade) and changes one (the inbox bar's slide is gone). Ask
+  for both passes in ONE message so E flips the setting once.
+- **Owed to the code:** nothing parked, no test left reversed. Two register candidates, both
+  routed rather than fixed: the Undo label's **3.38:1 light / 3.48:1 dark** (it is the tab bar's own
+  selected-pill wash, and contrast is the HELD colour arc's), and the Capture Inbox's content
+  scrolling under the capsule now that the screen's own bottom bar is gone.
+- **What the renders caught that the tests could not:** the Undo button truncated to "Un…" beside a
+  two-line subject. Fixed and pinned. **Worth carrying into every later arc-C block:** the capsule
+  is drawn in a tight `HStack` and any new content in it can take the control's width.
+- **Next session starts at:** `F-C2-DraftsToInbox`, from `handoff/START-HERE-adhd-audit-arc-C2.md`.
 
 ### Session 0 — 2026-09-19 · the audit (3 sessions), no build
 
