@@ -36,6 +36,61 @@ final class UndoCapsulePresentationTests: XCTestCase {
         XCTAssertEqual(RecentActionKind.captureSorted(areaLabel: nil).verb, "Sorted")
     }
 
+    /// **`F-C2-DraftsToInbox`: E's fourth verb.** Round 2, verbatim: *"A composer closed with text
+    /// files it into the Capture Inbox as a note. A bar, 'Kept in your inbox · Reopen', stays until
+    /// the next action."* The words are E's own, so they are pinned rather than paraphrased.
+    func testAFiledDraftSaysWhereTheTextWent() {
+        XCTAssertEqual(RecentActionKind.draftKeptInInbox.verb, "Kept in your inbox")
+    }
+
+    // MARK: - What the capsule's control OFFERS (F-C2: it is not always an undo)
+
+    /// **Every kind that reverses something says "Undo", and one that does not says "Reopen".**
+    /// E asked for *"Kept in your inbox · Reopen"*, and Reopen is not an undo: the draft stays
+    /// filed and the capsule takes the user TO it (E's Step 0 answer 1, *"Open it in the inbox"*).
+    /// Labelling that "Undo" would promise to unfile something the app then keeps.
+    ///
+    /// **The five existing kinds must keep the exact word "Undo"**, because
+    /// `SignedInJourneyUITests` addresses the control as `app.buttons["Undo"]` and UI tests are
+    /// skipped in the standard run — a relabel here would break that journey with every gate green,
+    /// which is precisely how `F-C1` shipped it broken once already.
+    func testOnlyTheFiledDraftOffersReopenAndEveryReversalStillSaysUndo() {
+        let reversals: [RecentActionKind] = [
+            .taskClosed, .nudgeDismissed, .captureSorted(areaLabel: "💼 Work"), .captureSkipped,
+            .captureJournalled
+        ]
+        for kind in reversals {
+            XCTAssertEqual(
+                kind.actionLabel, "Undo",
+                "\(kind) stopped saying \"Undo\" — `SignedInJourneyUITests` addresses this control"
+                    + " by that exact word, and it does not run in the standard suite."
+            )
+        }
+        XCTAssertEqual(RecentActionKind.draftKeptInInbox.actionLabel, "Reopen")
+    }
+
+    /// The glyph follows the promise. A `.uturn` arrow beside "Reopen" would draw the undo the word
+    /// declines to offer.
+    func testTheControlsGlyphMatchesWhatItPromises() {
+        XCTAssertEqual(RecentActionKind.taskClosed.actionSystemImage, "arrow.uturn.backward")
+        XCTAssertEqual(RecentActionKind.draftKeptInInbox.actionSystemImage, "arrow.up.forward.square")
+    }
+
+    /// **The announcement says what is on offer, and for the five reversals the string is
+    /// unchanged.** `testTheAnnouncementNamesWhatHappenedWhatItHappenedToAndTheOffer` below still
+    /// expects "Undo available." verbatim, which is the control that this generalisation did not
+    /// quietly reword every existing kind's VoiceOver line.
+    func testAFiledDraftIsAnnouncedAsReopenableRatherThanUndoable() {
+        let action = RecentAction(
+            kind: .draftKeptInInbox, subject: "Book the dentist before Friday", undo: { true }
+        )
+
+        XCTAssertEqual(
+            action.accessibilityAnnouncement,
+            "Kept in your inbox. Book the dentist before Friday. Reopen available."
+        )
+    }
+
     // MARK: - The glyph
 
     func testACloseAndANudgeCarryTheCompletionGlyphInTheGoTint() {
@@ -49,6 +104,13 @@ final class UndoCapsulePresentationTests: XCTestCase {
         XCTAssertEqual(RecentActionKind.captureSorted(areaLabel: nil).systemImage, "tray.full.fill")
         XCTAssertEqual(RecentActionKind.captureJournalled.systemImage, "book.closed.fill")
         XCTAssertEqual(RecentActionKind.captureSkipped.systemImage, "arrow.triangle.2.circlepath")
+    }
+
+    /// A filed draft went INTO the tray, so it wears the tray being filled rather than the full
+    /// tray a sort lands in. It is an arrival, not a completion — accented, never the go tint.
+    func testAFiledDraftWearsTheTrayItWentInto() {
+        XCTAssertEqual(RecentActionKind.draftKeptInInbox.systemImage, "tray.and.arrow.down.fill")
+        XCTAssertEqual(RecentActionKind.draftKeptInInbox.glyphTint, .accent)
     }
 
     /// A skip is not a completion and must not read as one — it is the one kind whose glyph is

@@ -185,7 +185,11 @@ struct UndoCapsule: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// The standard ↶ and the word. **Bare since E's shape round, 2026-09-20** — it shipped on the
+    /// The action's own glyph and word — ↶ Undo for the five kinds that reverse something, and
+    /// **↗ Reopen for a filed draft, which does not** (`F-C2-DraftsToInbox`). Read from the kind
+    /// rather than written here, so a control can never offer to take back something the app keeps.
+    ///
+    /// **Bare since E's shape round, 2026-09-20** — it shipped on the
     /// tab bar's selected-pill wash (E's round 2b) and E removed it by looking, on the phone:
     /// *"remove the blue chip background colour behind the "Undo" Button"*.
     ///
@@ -198,7 +202,7 @@ struct UndoCapsule: View {
             Haptics.play(.light)
             onUndo()
         } label: {
-            Label("Undo", systemImage: "arrow.uturn.backward")
+            Label(action.kind.actionLabel, systemImage: action.kind.actionSystemImage)
                 .labelStyle(UndoCapsuleLabelStyle())
                 .font(.callout.weight(.semibold))
                 .foregroundStyle(.tint)

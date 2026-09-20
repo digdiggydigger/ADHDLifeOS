@@ -97,16 +97,23 @@ extension CaptureInboxView {
 /// `center.pendingAction` directly would appear and vanish only when something else redrew the
 /// screen. `CelebrationLayer` is the precedent.
 ///
-/// It shows for a CAPTURE action alone. The slot is shared now, so a task closed on another tab can
-/// be sitting in it — and an arrow in the Capture Inbox's header that reopened a task would be the
-/// wrong promise in the wrong place. The capsule itself is where that undo is offered.
+/// It shows for a reversible CAPTURE action alone. The slot is shared now, so a task closed on
+/// another tab can be sitting in it — and an arrow in the Capture Inbox's header that reopened a
+/// task would be the wrong promise in the wrong place. The capsule itself is where that undo is
+/// offered.
+///
+/// **`draftKeptInInbox` is a capture action and is still excluded** (`F-C2-DraftsToInbox`), which
+/// is why the list below is not simply "the capture cases". This glyph is `arrow.uturn.backward`:
+/// it promises to take something BACK, and a filed draft is kept rather than reversed — its
+/// capsule offers "Reopen", not "Undo". Pointing a ↶ at a draft that is sitting in the very list
+/// the user is looking at would promise an undo that does not exist.
 struct CaptureInboxUndoHeaderButton: View {
     @ObservedObject var center: RecentActionCenter
 
     private var isCaptureAction: Bool {
         switch center.pendingAction?.kind {
         case .captureSorted, .captureSkipped, .captureJournalled: return true
-        case .taskClosed, .nudgeDismissed, nil: return false
+        case .taskClosed, .nudgeDismissed, .draftKeptInInbox, nil: return false
         }
     }
 
