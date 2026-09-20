@@ -36,9 +36,18 @@ thing E owes you is a LOOK, and §0.1 says how to ask for it.**
 - **Ask for RM-OFF only.** **No RM-on pass is owed** and asking for one wastes E's time: the round
   changed geometry and fill only, `UndoCapsuleMotion` is untouched, and F-C1's RM-on pass PASSED on
   2026-09-20.
-- **What to point E at:** close a task on Tasks and look at the capsule — fully rounded, no blue chip
-  behind Undo, one line, and a task title that now reads much further before truncating. **The
-  profile expires 2026-09-24T19:49:37Z**; a build after that re-issues it.
+- **THE BUILD IS ALREADY ON E'S PHONE.** The session that wrote this installed `main` @ `fea8c9e`
+  (a Debug build) over the wireless tunnel. Confirm it is still there before rebuilding, and
+  **force-quit the app before E judges anything**.
+- **Ask for TWO looks in one message, both Reduce Motion OFF**, because they prove different things:
+  1. **At E's usual text size** — the first time the shape round has been on hardware at all. Close
+     a task on Tasks: fully rounded, no blue chip behind Undo, one line, and a task title that now
+     reads much further before truncating.
+  2. **With Settings → Accessibility → Display & Text Size → Larger Text turned up** — this is the
+     only thing that can tell E anything new about the RADIUS CAP. At the default size the capped
+     shape and a true capsule render byte-identically, so the cap is invisible there by design; the
+     accessibility layout is the whole reason it exists, and E chose it from a render.
+- **The profile expires 2026-09-24T19:49:37Z**; a build after that re-issues it.
 
 ## 1. What shipped in the shape round, so you do not re-litigate it
 
