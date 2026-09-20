@@ -20,8 +20,9 @@ enum MomentumTaskContext {
     }
 
     /// S3's button: the consequence stated where the choice is made. No streak, no invented
-    /// consequence. Only open tasks show the button — closing is one-way since F-V3-Tasks-rebuild
-    /// (E's addendum removed Reopen everywhere), so there is no done-state label.
+    /// consequence. Only open tasks show the button, so there is no done-state label — and that is
+    /// still true after `F-C1-UndoCapsule` (2026-09-20) retired "closing is one-way": the way back
+    /// is the shared undo capsule, never a Reopen button on the closed state.
     static func closeButtonLabel(streak: Int) -> String {
         guard streak > 0 else { return "Close it" }
         return "Close it — keeps a \(streak)-day streak"

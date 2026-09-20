@@ -1,4 +1,29 @@
-# Open items register — 2026-09-19 (sixty-seventh edition; **the ADHD / neurodivergent UX audit is CLOSED**: session 3 ran rounds 7b–10, collected Decision A, and specced **all 31 FEATURE blocks** across seven arcs in `TODO-CLAUDE-CODE.md`. **No Swift changed in the whole audit — three sessions of records, evidence and specs.**) Opener: `handoff/START-HERE-adhd-audit-arc-C.md`, which builds arc C. *(Edition 66's header, superseded: # Open items register — 2026-09-19 (sixty-sixth edition; **the ADHD / neurodivergent UX audit, session 2: options rounds 2–7 DONE** (drafts, undo, Recently Deleted, Today = one card, the sprint, the hero, composers, targets) plus E's nine Today ideas; every answer verbatim in `handoff/SESSION-OPENER-adhd-ux-audit-design.md`. **No Swift changed.** Handed off at round 7b by E's call at 60% context.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`. *(Edition 65's header, superseded: Open items register — 2026-09-19 (sixty-fifth edition; **E opened the ADHD / neurodivergent UX audit** — research, E's ten answers, a full iPhone 18 Pro / iOS 27.0 simulator audit (~80 findings, 51 frames) and options round 1. **No Swift changed.** Handed off at round 1 by E's call.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds.md`.)*)*
+# Open items register — 2026-09-20 (sixty-eighth edition; **the ADHD audit's first block is BUILT**: `F-C1-UndoCapsule` — one undo capsule in the disc row for every close — merged, suite 3,130 / 0, SwiftLint 0 / 842. **The first app Swift the audit has produced.**) Opener: `handoff/START-HERE-adhd-audit-arc-C2.md`, which builds `F-C2-DraftsToInbox`. *(Edition 67's header, superseded: Open items register — 2026-09-19 (sixty-seventh edition; **the ADHD / neurodivergent UX audit is CLOSED**: session 3 ran rounds 7b–10, collected Decision A, and specced **all 31 FEATURE blocks** across seven arcs in `TODO-CLAUDE-CODE.md`. **No Swift changed in the whole audit — three sessions of records, evidence and specs.**) Opener: `handoff/START-HERE-adhd-audit-arc-C.md`, which builds arc C. *(Edition 66's header, superseded: # Open items register — 2026-09-19 (sixty-sixth edition; **the ADHD / neurodivergent UX audit, session 2: options rounds 2–7 DONE** (drafts, undo, Recently Deleted, Today = one card, the sprint, the hero, composers, targets) plus E's nine Today ideas; every answer verbatim in `handoff/SESSION-OPENER-adhd-ux-audit-design.md`. **No Swift changed.** Handed off at round 7b by E's call at 60% context.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds-7b-to-10.md`. *(Edition 65's header, superseded: Open items register — 2026-09-19 (sixty-fifth edition; **E opened the ADHD / neurodivergent UX audit** — research, E's ten answers, a full iPhone 18 Pro / iOS 27.0 simulator audit (~80 findings, 51 frames) and options round 1. **No Swift changed.** Handed off at round 1 by E's call.) Opener: `handoff/START-HERE-adhd-ux-audit-rounds.md`.)*)*)*
+
+> ## Edition 68 in six lines (2026-09-20, arc C block 1 — the audit starts shipping)
+>
+> - **`main` @ the merge of `F-C1-UndoCapsule`.** Suite **3,130 / 0**, SwiftLint **0 / 842**, build
+>   green — **re-measured, not carried**; the 3,085 / 831 figures below were the audit's, from before
+>   any Swift changed. App-target coverage **29.07% (14,225/48,930)**, up from 24.72% at `93beff2`
+>   two weeks and much other work ago, so the delta is not this block's alone. What IS: all four
+>   non-view files in `ADHD LifeOS/Undo/` at 100%.
+> - **Shipped:** one undo capsule for every close — five task surfaces (including the Life Area tick
+>   E added in Step 0), the nudge "Done for now" with its new `unmarkFired` write, and the three
+>   capture triage verbs, all through ONE app-level `RecentActionCenter`. Home's in-place
+>   `ClosureCelebrationCard` and the Capture Inbox's own bottom undo bar are both retired onto it.
+> - **OWED TO E, and it is the top of the next session:** the device look **and** the
+>   Reduce-Motion-on pass (§7.3). Nothing has been on the phone. Ask for both in ONE message so E
+>   flips the setting once — and install the build first.
+> - **Two things the renders caught that no test could**, both fixed in the block: the Undo button
+>   truncated to "Un…" beside a two-line subject, and the capsule arrived silently for VoiceOver.
+>   Evidence and the numbers: `screenshots/undo-capsule/` (26 frames + README).
+> - **Two new colour-arc inputs, routed not fixed** (§A below): the Undo label measures **3.38:1
+>   light / 3.48:1 dark** — it is the tab bar's own selected-pill wash — and the verb line **4.25:1
+>   light**. Round 9's *"Leave it to the colour arc"* holds; these are the first measured numbers
+>   for that relationship written anywhere.
+> - **Next: `F-C2-DraftsToInbox`**, arc C block 2, from `handoff/START-HERE-adhd-audit-arc-C2.md`.
+>   The build thread is `handoff/ADHD-AUDIT-BUILD-LOG.md` and it now has a session entry.
+
 
 > ## Edition 67 in six lines (2026-09-19, the ADHD UX audit, session 3 — the audit closes)
 >
@@ -38,7 +63,8 @@
 - the Live Activity's +5 min hit area, and the 5-minute heads-up notification;
 - Password AutoFill, and Always-On dimming;
 - **the composer's bar staying put while Area, Time or the date picker is open** (arc D);
-- **a Reduce-Motion-on pass** for the undo capsule (arc C) and the sprint ring (arc F);
+- **a Reduce-Motion-on pass** for the undo capsule (**arc C — NOW OWED, `F-C1` is merged and has
+  never been on the phone**) and the sprint ring (arc F);
 - Differentiate Without Color, and Smart Invert on photos (arc B);
 - whether the voice-capture transcript counts as Captions — E's judgment;
 - the Settings Notifications gap after a relaunch (arc G).
@@ -841,6 +867,25 @@ Opener (this edition): **`handoff/START-HERE-three-device-looks.md`** — the si
   file's §7 does say so elsewhere — but the "Architecture notes" bullet does not. (NEW)
 
 ## A · Decisions only E can make — minutes each
+
+### A0 · The undo capsule's two contrast readings — colour-arc input, NOT a decision yet (2026-09-20)
+
+Measured from the colorsets during `F-C1-UndoCapsule`'s `apple-design` review, not estimated from a
+screenshot. **No action is asked for**: round 9 settled that contrast belongs to the HELD colour
+arc, and both readings are of relationships E already approved elsewhere. They are recorded because
+nobody had written a number down for either.
+
+| what | light | dark | the bar |
+|---|---|---|---|
+| Undo label — accent on the tab bar's selected-pill wash | **3.38:1** | **3.48:1** | 4.5:1 (16pt semibold) |
+| The verb line — `LabelSecondary` on `CardSurface` | **4.25:1** | 5.52:1 | 4.5:1 |
+| The subject — `LabelPrimary` on `CardSurface` | 19.26:1 | 14.97:1 | passes comfortably |
+
+The first row is **the tab bar's own selected pill**, which E approved by looking; changing it here
+would silently re-tune an approved token in one place and not the other. The second is the app's
+`LabelSecondary`, used on every screen. Both are palette questions.
+
+### A1 · Everything below predates edition 68
 
 **Every device check on the CTA-CELEBRATIONS ARC and the FOCUS CARD is clear** — E settled four at
 the sitting on 2026-09-12/13, then `-6`'s and `-7`'s verdicts, then `-Surfaces`' and `-Corners`' on

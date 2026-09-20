@@ -200,6 +200,11 @@ struct ADHD_LifeOSApp: App {
             AppCelebrationChime.shared.play()
         }
     )
+    /// `F-C1-UndoCapsule`: the app's ONE undo slot, held here for the same reason the celebration
+    /// centre is — built in `RootView` it would be rebuilt on every auth-state swap and drop
+    /// whatever was pending, and a `@StateObject` cannot live in the extension files RootView
+    /// needs for its 400-line bar.
+    @StateObject private var recentActionCenter = RecentActionCenter()
     private let homeClient: HomeClientAdapting
     private let tasksClient: TasksClientAdapting
     private let taskCreateClient: TaskCreateClientAdapting
@@ -243,6 +248,14 @@ struct ADHD_LifeOSApp: App {
                 nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
                 lifeAreaDetailClient: lifeAreaDetailClient
             )
+                // `F-C1-UndoCapsule`: applied HERE rather than inside `RootView` — that file is at
+                // 398 of SwiftLint's 400-line ceiling and an `@ObservedObject` property with its
+                // doc comment does not fit. Outside every cover and sheet RootView presents, so
+                // each one inherits the slot, exactly as `.environment(\.celebrate, …)` does from
+                // its own position. Asserted by `UndoCapsuleCallSiteTests`, because a site that
+                // cannot see the centre records into the inert default and says nothing about it.
+                .environment(\.recordAction, recentActionCenter)
+                .environment(\.recentActionCenter, recentActionCenter)
                 .onOpenURL { url in
                     // A widget tap arrives on the same registered scheme as the auth callback;
                     // launching the app is the whole action, so it must NOT reach the auth layer.

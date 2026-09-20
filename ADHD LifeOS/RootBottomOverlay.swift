@@ -188,28 +188,15 @@ struct RootBottomOverlay: View {
     /// disc and its margins and the cards get the rest.
     private var discRow: some View {
         HStack(spacing: AppSearchRowMetrics.rowSpacing) {
-            if let placeholder = searchScope.placeholder {
-                AppSearchRow(placeholder: placeholder, action: onOpenSearch)
-            }
-            // F-JournalPencilDisc (E, 2026-09-18): *"move the filled pencil icon disc down to the
-            // left-hand side of the FAB Icon. make the filled pencil disc inline with the FAB
-            // icon"*. In this `HStack`, so the shared centre line is by construction and the +
-            // never moves: the row grows leftward by the disc and the 16pt gap.
-            //
-            // While the fan is open it steps aside WITH the cards — invisible and untouchable, by
-            // the same rule (decision 6; `F-FanCardsFade` is the precedent) — and it arrives and
-            // leaves on a fade whose Reduce Motion path is a plain ease, never a cut (§7.2). The
-            // arrival's curve rides on the TRANSITION, so this row's other animations (the search
-            // row's, keyed on the scope) are untouched when both change on one tab switch.
-            if showsJournalCompose {
-                JournalComposeDisc(showsPill: showsPill, action: onWriteEntry)
-                    .opacity(fanPresence.opacity)
-                    .allowsHitTesting(fanPresence.acceptsTouches)
-                    // …and out of VoiceOver's reach with it: hit-testing stops a finger, not
-                    // VoiceOver's activate, which could otherwise open the composer under the scrim.
-                    .accessibilityHidden(!fanPresence.acceptsTouches)
-                    .animation(fanFade, value: isFabOpen)
-                    .transition(.opacity.animation(JournalComposeDoor.appearAnimation(reduceMotion: reduceMotion)))
+            // `F-C1-UndoCapsule` (E's round 2b, shape A): the row's THIRD occupant, and the one
+            // that displaces the other two. E: *"It sits exactly where the search row is, left of
+            // the + disc. Nothing moves and nothing stacks... On Tasks it stands in for the search
+            // row until the next action"*, and E's Step 0 answer 4 says the same for the Journal's
+            // pencil disc. So it wraps the whole leading band rather than joining it as a fourth
+            // thing: the + disc never moves either way, and the outgoing occupant leaves on the
+            // same fade the capsule arrives on.
+            UndoCapsuleSlot {
+                leadingBand
             }
             Button {
                 withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
@@ -225,6 +212,35 @@ struct RootBottomOverlay: View {
         // passes. The field takes the page's 16pt margin on the leading side.
         .padding(.leading, 16)
         .padding(.trailing, CaptureDiscMetrics.edgeMargin)
+    }
+
+    /// What the leading band holds when no undo is pending: the search row on the tabs that have
+    /// one, the Journal's pencil disc on the Journal, nothing anywhere else.
+    @ViewBuilder
+    private var leadingBand: some View {
+        if let placeholder = searchScope.placeholder {
+            AppSearchRow(placeholder: placeholder, action: onOpenSearch)
+        }
+        // F-JournalPencilDisc (E, 2026-09-18): *"move the filled pencil icon disc down to the
+        // left-hand side of the FAB Icon. make the filled pencil disc inline with the FAB
+        // icon"*. In this `HStack`, so the shared centre line is by construction and the +
+        // never moves: the row grows leftward by the disc and the 16pt gap.
+        //
+        // While the fan is open it steps aside WITH the cards — invisible and untouchable, by
+        // the same rule (decision 6; `F-FanCardsFade` is the precedent) — and it arrives and
+        // leaves on a fade whose Reduce Motion path is a plain ease, never a cut (§7.2). The
+        // arrival's curve rides on the TRANSITION, so this row's other animations (the search
+        // row's, keyed on the scope) are untouched when both change on one tab switch.
+        if showsJournalCompose {
+            JournalComposeDisc(showsPill: showsPill, action: onWriteEntry)
+                .opacity(fanPresence.opacity)
+                .allowsHitTesting(fanPresence.acceptsTouches)
+                // …and out of VoiceOver's reach with it: hit-testing stops a finger, not
+                // VoiceOver's activate, which could otherwise open the composer under the scrim.
+                .accessibilityHidden(!fanPresence.acceptsTouches)
+                .animation(fanFade, value: isFabOpen)
+                .transition(.opacity.animation(JournalComposeDoor.appearAnimation(reduceMotion: reduceMotion)))
+        }
     }
 
     /// The column under the disc row (regular height) or beside it (compact height): the away

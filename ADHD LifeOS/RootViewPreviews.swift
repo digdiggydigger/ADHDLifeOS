@@ -107,6 +107,11 @@ import SwiftUI
         func markFired(id: UUID, existingCompletionDates: [Date]) async throws -> Nudge {
         fatalError("unused in preview")
     }
+            func unmarkFired(
+                id: UUID, previousLastFiredAt: Date?, previousCompletionDates: [Date]
+            ) async throws -> Nudge {
+                throw NudgesServiceError.notFound
+            }
     }
 
     struct PreviewJournalClient: JournalClientAdapting {

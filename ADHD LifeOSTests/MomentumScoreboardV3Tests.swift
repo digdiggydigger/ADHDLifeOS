@@ -157,33 +157,14 @@ final class MomentumScoreboardV3Tests: XCTestCase {
         XCTAssertNil(momentum[1].lastClosedAt)
     }
 
-    // MARK: - Celebration line
+    // MARK: - Retired with the closure card (`F-C1-UndoCapsule`, 2026-09-20)
 
-    func testCelebrationLine_pairsOrdinalWithAreaRate() {
-        XCTAssertEqual(
-            MomentumScoreboard.celebrationLine(closedTodayCount: 3, areaName: "Admin & Home", areaRate: 0.75),
-            "Third today. Admin & Home is up to 75% this week."
-        )
-    }
-
-    func testCelebrationLine_allClearArea() {
-        XCTAssertEqual(
-            MomentumScoreboard.celebrationLine(closedTodayCount: 1, areaName: "Health", areaRate: 1),
-            "First today. Health is all clear this week."
-        )
-    }
-
-    func testCelebrationLine_ordinalAloneWithoutAnArea() {
-        XCTAssertEqual(
-            MomentumScoreboard.celebrationLine(closedTodayCount: 5, areaName: nil, areaRate: nil),
-            "5 closed today."
-        )
-    }
-
-    // MARK: - Next button label
-
-    func testNextButtonLabel_carriesTheEffort() {
-        XCTAssertEqual(MomentumScoreboard.nextButtonLabel(effortSeconds: 1200), "Next: 20 min")
-        XCTAssertEqual(MomentumScoreboard.nextButtonLabel(effortSeconds: nil), "Next")
-    }
+    // `celebrationLine(closedTodayCount:areaName:areaRate:)` and `nextButtonLabel(effortSeconds:)`
+    // were DELETED with `ClosureCelebrationCard`, and their four tests with them. Both had exactly
+    // one call site each — the retired card's text — so they were dead the moment the card was.
+    //
+    // Recorded rather than silently dropped, because this is the `dead-shared-component-pattern`
+    // in its other direction: seven prior instances in this repo were components whose tests kept
+    // passing after nothing called them any more. `UndoCapsuleCallSiteTests` now sweeps the whole
+    // app target for these two names, so a later block cannot reintroduce them untethered.
 }

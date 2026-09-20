@@ -72,11 +72,15 @@ final class TasksService: ObservableObject {
         }
     }
 
-    /// Tap-circle or swipe-right: close an open task. One-way since F-V3-Tasks-rebuild (E's
-    /// addendum) — there is no reopen, so a done task is left untouched. Optimistic: the local
-    /// flip and regroup happen immediately (status and `completed_at` move together, so "Closed
-    /// today" can never disagree with the list), then the write-through persists to Firestore.
-    /// A failed write reloads from the server so the UI never diverges from stored truth.
+    /// Tap-circle or swipe-right: close an open task. Optimistic: the local flip and regroup
+    /// happen immediately (status and `completed_at` move together, so "Closed today" can never
+    /// disagree with the list), then the write-through persists to Firestore. A failed write
+    /// reloads from the server so the UI never diverges from stored truth.
+    ///
+    /// **"One-way since F-V3-Tasks-rebuild" was retired on 2026-09-20 by `F-C1-UndoCapsule`** (E's
+    /// round 1: *"Every close … shows the same undo, which stays until the user's next action"*).
+    /// `reopen(_:)` below is the way back. The close itself is unchanged — the undo is offered by
+    /// the capsule, not by this method, and the view records it on this same optimistic edge.
     func close(_ task: TaskItem) async {
         guard hasLoadedOnce, task.status == .open,
               let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
@@ -87,6 +91,32 @@ final class TasksService: ObservableObject {
         } catch {
             mutationErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             await load()
+        }
+    }
+
+    /// The undo capsule's way back from `close(_:)` (`F-C1-UndoCapsule`).
+    ///
+    /// **Not new capability — this path was built for Home's own undo and is reused here.**
+    /// `TaskCompletionStamp.applying` already clears `completedAt` on a reopen, and the adapter's
+    /// own comment records that a reopen "must not even request a fix". The mirror of `close`
+    /// exactly: the same optimistic flip, the same regroup, the same reload-on-failure.
+    ///
+    /// Guarded on the LOCAL status rather than the caller's copy, so an Undo tapped after a failed
+    /// write the reload already reverted is a no-op rather than a second write — which is the
+    /// state the capsule is deliberately not modelling with a "pending" flag of its own.
+    @discardableResult
+    func reopen(_ task: TaskItem) async -> Bool {
+        guard hasLoadedOnce, let index = tasks.firstIndex(where: { $0.id == task.id }),
+              tasks[index].status == .done else { return false }
+        tasks[index] = TaskCompletionStamp.applying(status: .open, to: tasks[index])
+        recomputeGroups()
+        do {
+            try await client.setStatus(taskId: task.id, status: .open)
+            return true
+        } catch {
+            mutationErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            await load()
+            return false
         }
     }
 

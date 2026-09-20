@@ -64,6 +64,24 @@ struct FirebaseNudgesClientAdapter: NudgesClientAdapting {
         }
     }
 
+    func unmarkFired(
+        id: UUID, previousLastFiredAt: Date?, previousCompletionDates: [Date]
+    ) async throws -> Nudge {
+        do {
+            try await store.updateNudge(
+                id: id,
+                fields: FirestoreFieldPayloads.nudgeUnfired(
+                    previousLastFiredAt: previousLastFiredAt,
+                    completionDates: previousCompletionDates,
+                    now: Date()
+                )
+            )
+            return try await store.fetchNudge(id: id)
+        } catch {
+            throw Self.mapped(error)
+        }
+    }
+
     private static func mapped(_ error: Error) -> Error {
         if FirestoreErrorMapping.isNotFound(error) {
             return NudgesServiceError.notFound

@@ -195,7 +195,8 @@ struct CaptureDetailView: View {
         guard !isSorting, let lifeAreaId = selectedLifeAreaId else { return }
         isSorting = true
         defer { isSorting = false }
-        if await service.sort(capture: capture, into: lifeAreaId) {
+        let label = CaptureTriage.areaLabel(id: lifeAreaId, in: lifeAreas)
+        if await service.sort(capture: capture, into: lifeAreaId, areaLabel: label) {
             dismiss()
         }
     }

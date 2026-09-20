@@ -61,8 +61,13 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
         return try result.get()
     }
 
+    /// Every status written, in order. `F-C1-UndoCapsule` added a `.open` write beside the `.done`
+    /// one, so a bare count can no longer say WHICH way the task was moved.
+    private(set) var updateStatusCalls: [TaskStatus] = []
+
     func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail {
         updateStatusCallCount += 1
+        updateStatusCalls.append(status)
         guard let result = updateStatusResult else {
             var updated = try fetchTaskResult.get()
             updated.status = status

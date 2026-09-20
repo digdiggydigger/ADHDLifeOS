@@ -20,10 +20,21 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
         )
     }
 
+    /// **The REAL centre, not a double** (`F-C1-UndoCapsule`). The spent-once rule and the
+    /// put-the-offer-back-on-failure rule moved out of this service and into the app's one slot, so
+    /// a recording double would let these tests pass on a build where undo looped or where a failed
+    /// reversal lost its offer — and the journal half-failure below is precisely where that matters.
     private struct SUT {
         let service: CaptureInboxService
         let client: FakeCaptureClientAdapting
         let journal: FakeJournalClientAdapting
+        let centre: RecentActionCenter
+
+        @MainActor var pending: RecentAction? { centre.pendingAction }
+
+        @MainActor func undo() async {
+            await centre.undo()
+        }
     }
 
     private func makeSUT(loaded: [Capture]) async -> SUT {
@@ -38,8 +49,10 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
         let service = CaptureInboxService(
             client: client, journalClient: journal, transcriber: FakeVoiceTranscribing()
         )
+        let centre = RecentActionCenter()
+        service.recordAction = centre
         await service.load()
-        return SUT(service: service, client: client, journal: journal)
+        return SUT(service: service, client: client, journal: journal, centre: centre)
     }
 
     // MARK: - Discard
@@ -154,8 +167,11 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
 
         _ = await env.service.logToJournal(capture: thought)
 
+        XCTAssertEqual(env.pending?.kind, .captureJournalled)
+        XCTAssertEqual(env.pending?.subject, "Rain smelled like school")
+        await env.undo()
         XCTAssertEqual(
-            env.service.lastTriageAction, .journaled(captureId: thought.id, logId: logId),
+            env.journal.lastDeleteLogId, logId,
             "undo has to know WHICH entry to delete — the capture id alone cannot find it"
         )
     }
@@ -174,9 +190,8 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
         )
         _ = await env.service.logToJournal(capture: thought)
 
-        let undone = await env.service.undoLastTriageAction()
+        await env.undo()
 
-        XCTAssertTrue(undone)
         XCTAssertEqual(env.client.lastMarkUnprocessedCaptureId, thought.id)
         XCTAssertEqual(env.journal.lastDeleteLogId, logId)
         XCTAssertEqual(
@@ -190,11 +205,16 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
         let thought = capture("Rain smelled like school")
         let env = await makeSUT(loaded: [thought])
         _ = await env.service.logToJournal(capture: thought)
-        _ = await env.service.undoLastTriageAction()
+        await env.undo()
+        let restoresAfterOneUndo = env.client.callLog.filter { $0 == "markUnprocessed" }.count
 
-        XCTAssertNil(env.service.lastTriageAction)
-        let secondAttempt = await env.service.undoLastTriageAction()
-        XCTAssertFalse(secondAttempt)
+        await env.undo()
+
+        XCTAssertNil(env.pending, "the offer survived being taken")
+        XCTAssertEqual(
+            env.client.callLog.filter { $0 == "markUnprocessed" }.count, restoresAfterOneUndo,
+            "a second Undo restored again, so the reversal is a loop rather than a spent offer"
+        )
     }
 
     /// The capture never came back, so nothing was undone and the offer stands. Critically the
@@ -205,12 +225,11 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
         _ = await env.service.logToJournal(capture: thought)
         env.client.markUnprocessedResult = .failure(CaptureServiceError.fetchFailed("offline"))
 
-        let undone = await env.service.undoLastTriageAction()
+        await env.undo()
 
-        XCTAssertFalse(undone)
         XCTAssertNil(env.journal.lastDeleteLogId, "the entry is the only copy left — never delete it blind")
         XCTAssertEqual(env.service.triageErrorMessage, "offline")
-        XCTAssertNotNil(env.service.lastTriageAction, "nothing happened, so the offer still stands")
+        XCTAssertNotNil(env.pending, "nothing happened, so the offer still stands")
     }
 
     /// The half-failure worth naming: the capture IS back, so the undo did the thing the user
@@ -222,22 +241,25 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
         _ = await env.service.logToJournal(capture: thought)
         env.journal.deleteLogResult = .failure(JournalServiceError.fetchFailed("offline"))
 
-        let undone = await env.service.undoLastTriageAction()
+        await env.undo()
 
-        XCTAssertTrue(undone, "the capture came back, which is what undo promised")
-        XCTAssertNil(env.service.lastTriageAction, "and the offer is spent")
+        XCTAssertNil(env.pending, "the capture came back — undo did what it promised, and is spent")
         XCTAssertEqual(
             env.service.warningMessage,
             "Capture is back in your inbox, but its journal entry couldn't be removed."
         )
     }
 
-    func testConfirmation_journalledSaysWhatHappened() {
-        XCTAssertEqual(
-            CaptureTriage.confirmation(
-                for: .journaled(captureId: UUID(), logId: UUID()), sortedInto: nil, lifeAreas: []
-            ),
-            "Journalled — it's in your journal"
-        )
+    /// **The verb moved to `RecentActionKind.verb` in `F-C1-UndoCapsule`**, and shortened with it:
+    /// the retired bar said "Journalled — it's in your journal" because it had one line, while the
+    /// capsule carries the capture's own words underneath. `UndoCapsulePresentationTests` holds the
+    /// word; what belongs here is that this verb reaches the capsule at all.
+    func testJournallingIsTheKindTheCapsuleWillName() async {
+        let thought = capture("Rain smelled like school")
+        let env = await makeSUT(loaded: [thought])
+
+        _ = await env.service.logToJournal(capture: thought)
+
+        XCTAssertEqual(env.pending?.kind, .captureJournalled)
     }
 }

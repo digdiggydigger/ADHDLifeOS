@@ -141,12 +141,35 @@ final class CaptureInboxService: ObservableObject {
     /// `+Triage` extension file with `displayedCaptures`.
     @Published var skippedIds: [UUID] = []
 
-    /// The last reversible triage action, driving both undo affordances (E, 2026-08-28: "both").
-    /// Settable on the `skippedIds` precedent — its writers live in the `+Triage` extension file.
-    @Published var lastTriageAction: CaptureTriageAction?
-    /// The area the last sort filed into, for the bar's wording. Deliberately NOT part of the
-    /// action: the action describes the reversal, this describes what just happened.
-    @Published var lastSortedAreaId: UUID?
+    /// **The undo capsule's door** (`F-C1-UndoCapsule`, 2026-09-20). This service used to hold its
+    /// own `lastTriageAction`/`lastSortedAreaId` and both inbox affordances read them; E chose
+    /// "one bottom bar everywhere", so the slot moved to the app-level `RecentActionCenter` and
+    /// this screen keeps no copy. A mirrored copy is what would go stale the moment a task closed
+    /// elsewhere, which is exactly the disagreement E's *"the header ↶ reads the same undo"*
+    /// answer rules out.
+    ///
+    /// Held by the SERVICE, not by the screens, for the reason `celebrate` is: five hosts call the
+    /// same three verbs, and a per-screen recorder would be five copies of one rule plus a silent
+    /// gap wherever a sixth door appeared.
+    ///
+    /// **A `var` wired by the host in `.task`, not an `init` parameter.** This is a `@StateObject`
+    /// built in `CaptureInboxView.init`, where an `@Environment` value is not available, and
+    /// `RootView` — which threads `celebrate` down — is at 398 of SwiftLint's 400-line ceiling.
+    /// The default is inert, so every preview and every existing test builds it unchanged.
+    var recordAction: any RecentActionRecording = InertRecentActionRecorder()
+
+    /// How many triage undos have landed. **A counter, because the EVENT is what the screen needs
+    /// and the event no longer passes through it.** Undo used to be `CaptureInboxView`'s own
+    /// method, which cleared the card's staged area pick on the way through (E, 2026-08-28: after
+    /// an undo the area has to be chosen again); since `F-C1-UndoCapsule` the tap is on the
+    /// app-wide capsule, so the screen observes this instead. The same shape as
+    /// `FocusSessionService.confirmationCount`.
+    @Published private(set) var triageUndoCount = 0
+
+    /// Its one writer, in the `+Triage` extension file — `private` is file-scoped.
+    func recordTriageUndo() {
+        triageUndoCount += 1
+    }
 
     /// Per-tab counts for the filter picker, so both tabs carry a number the way the web original's
     /// do ("Unprocessed (3)"). A filter with no entry has simply never loaded — the tab renders

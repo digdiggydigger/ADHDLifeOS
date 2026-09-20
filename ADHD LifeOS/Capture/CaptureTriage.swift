@@ -79,21 +79,16 @@ enum CaptureTriage {
         canSort(area: area) ? .ready : .waiting
     }
 
-    /// What the undo bar says happened. A deleted area degrades to the bare verb rather than
-    /// quoting a raw UUID — the `CapturePlaceLabel` rule, applied to areas.
-    static func confirmation(
-        for action: CaptureTriageAction, sortedInto: UUID?, lifeAreas: [LifeArea]
-    ) -> String {
-        switch action {
-        case .skipped:
-            return "Skipped — it'll come back round"
-        case .journaled:
-            return "Journalled — it's in your journal"
-        case .sorted:
-            guard let sortedInto, let area = lifeAreas.first(where: { $0.id == sortedInto }) else {
-                return "Sorted"
-            }
-            return "Sorted to \(area.colour) \(area.name)"
-        }
+    /// An area's own "💼 Work", for the undo capsule's verb — or `nil` for an area that is gone.
+    ///
+    /// **This replaced `confirmation(for:sortedInto:lifeAreas:)` in `F-C1-UndoCapsule`.** That
+    /// method built the retired inbox bar's WHOLE sentence ("Sorted to 💼 Work", "Skipped — it'll
+    /// come back round") because the bar had one line to work with. The capsule carries the
+    /// capture's own words underneath, so the verb is `RecentActionKind.verb`'s job now and the
+    /// only thing left for this file is the area's label. The degrade-to-the-bare-verb rule it
+    /// held — a deleted area must never make the app quote a raw UUID — survives here.
+    static func areaLabel(id: UUID?, in lifeAreas: [LifeArea]) -> String? {
+        guard let id, let area = lifeAreas.first(where: { $0.id == id }) else { return nil }
+        return "\(area.colour) \(area.name)"
     }
 }

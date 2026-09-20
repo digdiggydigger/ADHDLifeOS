@@ -6,8 +6,12 @@
 import SwiftUI
 
 /// One task row: effort chip (the next open task's chip carries the identity tint), title with
-/// the done strike, the meta line, and the 44pt tick that closes in place. Closing is one-way
-/// (F-V3-Tasks-rebuild, E's addendum) — a done row's tick is display-only.
+/// the done strike, the meta line, and the 44pt tick that closes in place. A done row's tick is
+/// display-only.
+///
+/// **"Closing is one-way" (F-V3-Tasks-rebuild, E's addendum) was retired on 2026-09-20 by
+/// `F-C1-UndoCapsule`.** E's Step 0 answer put this surface in scope by name — *"Yes, every close
+/// gets the undo"* — so the tick records into the shared capsule; the row is otherwise unchanged.
 struct AreaTaskRow: View {
     let task: TaskItem
     let family: AreaPalette

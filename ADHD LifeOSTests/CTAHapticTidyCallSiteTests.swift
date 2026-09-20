@@ -100,44 +100,52 @@ final class CTAHapticTidyCallSiteTests: XCTestCase {
         )
     }
 
-    // MARK: - The closure card's spring-in
+    // MARK: - The undo capsule's arrival (was: the closure card's spring-in)
 
-    /// E's #8. Both branches are asserted by string: a test that pinned only the spring would stay
-    /// green on a build that dropped the reduced path, which is the failure CLAUDE.md §7.4 exists
-    /// to catch. Under Reduce Motion the transition is opacity ALONE, so the card's first frame is
-    /// already at final geometry and only the fade travels (§7.2's opening-pose rule).
-    func testTheClosureCardSpringsInAndCrossFadesInsteadUnderReduceMotion() throws {
-        let sections = try Self.appCode("Home/HomeMomentumSections.swift")
+    /// **Retargeted by `F-C1-UndoCapsule`, not deleted.** This was E's #8 — the closure card's
+    /// two-branch arrival — and the card is gone, replaced by the app-wide undo capsule. The guard
+    /// it carried is CLAUDE.md §7.4's "assert BOTH branches by string", and the capsule needs one
+    /// just as much as the card did: a test that pinned only the spring would stay green on a
+    /// build that dropped the reduced path.
+    ///
+    /// The shape differs from the card's in one way worth naming. The card scaled, so its reduced
+    /// branch had to swap the transition as well as the curve; the capsule arrives in the slot the
+    /// search row already occupied and moves NOTHING, so opacity alone is the transition in both
+    /// modes and only the curve branches. That satisfies §7.2's opening-pose rule by construction.
+    func testTheUndoCapsuleFadesInOnASpringAndOnAPlainEaseUnderReduceMotion() throws {
+        let motion = try Self.appCode("Undo/UndoCapsuleMetrics.swift")
         XCTAssertTrue(
-            sections.contains(
-                ".transition(reduceMotion ? .opacity : .scale(scale: 0.9).combined(with: .opacity))"
-            ),
-            "The closure card has no two-branch transition, so it either pops in unanimated or"
-                + " scales under Reduce Motion."
+            motion.contains("reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8"),
+            "The capsule's arrival is not the record's spring with a plain ease beside it — so"
+                + " Reduce Motion gets either a hard cut or the spring itself."
+        )
+        let capsule = try Self.appCode("Undo/UndoCapsule.swift")
+        XCTAssertTrue(
+            capsule.contains(".transition(.opacity)"),
+            "The capsule has no transition, so it pops in and out unanimated whatever the curve"
+                + " above says."
         )
         XCTAssertTrue(
-            sections.contains("reduceMotion ? .default : .spring(response: 0.35, dampingFraction: 0.8)"),
-            "The card's arrival animation is not the record's spring with a plain ease beside it."
-        )
-        XCTAssertTrue(
-            sections.contains("withAnimation(closureCardAnimation)"),
-            "Nothing wraps the write in `withAnimation`, so the transition never runs."
+            capsule.contains("UndoCapsuleMotion.appearance(reduceMotion: reduceMotion)"),
+            "Nothing drives the transition with the resolved curve, so it never runs."
         )
     }
 
-    /// The transition only plays if EVERY write to `celebratedTask` is animated. Three writers move
-    /// it today — the celebration card's Next, the close-from-Home success and Undo — so the guard
-    /// is that exactly one bare assignment exists, and that it is the one inside the animated
-    /// setter.
+    /// **Retargeted by `F-C1-UndoCapsule`, not deleted — and its MEANING moved with it.** It used
+    /// to guard `celebratedTask`, whose three writers each had to animate or the closure card would
+    /// appear unanimated; the animation now lives on the capsule's own view, so what is left to
+    /// protect is the SINGLE-WRITER half. That half matters more than it did: five unrelated
+    /// surfaces record into this one slot, and a site that assigned it directly would sidestep the
+    /// centre entirely — no transition, and no way for the spent-once rule to hold.
     ///
-    /// Swept over the WHOLE app target, not just the sections file: `celebratedTask` is internal on
-    /// `HomeView`, so any of that type's extension files could write it, and a guard that read one
-    /// file would have called itself "every write" while watching a third of them.
-    func testEveryWriteToTheCelebratedTaskGoesThroughTheAnimatedSetter() throws {
+    /// Swept over the WHOLE app target, the same reason as before: the property is internal, so any
+    /// file could write it, and a guard that read one would have called itself "every write" while
+    /// watching a fraction of them.
+    func testEveryWriteToThePendingActionGoesThroughTheCentresOneSetter() throws {
         var bareWrites = 0
         var writingFiles: [String] = []
         for file in try Self.everyAppSourceFile() {
-            let occurrences = try Self.appCode(file).components(separatedBy: "celebratedTask = ").count - 1
+            let occurrences = try Self.appCode(file).components(separatedBy: "pendingAction = ").count - 1
             if occurrences > 0 {
                 bareWrites += occurrences
                 writingFiles.append("\(file) x\(occurrences)")
@@ -145,26 +153,20 @@ final class CTAHapticTidyCallSiteTests: XCTestCase {
         }
         XCTAssertEqual(
             bareWrites, 1,
-            "There are \(bareWrites) bare writes to `celebratedTask` (\(writingFiles.joined(separator: ", ")))"
-                + ", not the single one inside `setCelebratedTask`. A writer that bypasses the"
-                + " setter makes the card appear or vanish with no animation at all."
+            "There are \(bareWrites) bare writes to `pendingAction` (\(writingFiles.joined(separator: ", ")))"
+                + ", not the single one inside `setPendingAction`. A writer that bypasses the"
+                + " setter leaves the slot in a state the capsule never animates into."
         )
         let setter = try Self.closure(
-            in: "Home/HomeMomentumSections.swift",
-            from: "func setCelebratedTask(",
-            to: "celebratedTask = ",
-            missing: "There is no `setCelebratedTask`, so the three writers animate individually."
+            in: "Undo/RecentActionCenter.swift",
+            from: "private func setPendingAction(_ action: RecentAction?) {",
+            to: "}",
+            missing: "There is no `setPendingAction`, so record/clear/undo each write the slot."
         )
-        XCTAssertTrue(
-            setter.contains("withAnimation(closureCardAnimation)"),
-            "`setCelebratedTask` writes without animating."
-        )
-        let home = try Self.appCode("Home/HomeView.swift")
-        XCTAssertTrue(
-            home.contains("@Environment(\\.accessibilityReduceMotion)")
-                && home.contains("var reduceMotion"),
-            "`HomeView` never reads Reduce Motion, so the sections file cannot resolve it — §7.2's"
-                + " rule that the parent reads the setting and passes the resolved value down."
+        XCTAssertEqual(
+            setter.trimmingCharacters(in: .whitespacesAndNewlines), "pendingAction = action",
+            "`setPendingAction` is meant to be the assignment and nothing else — anything it did"
+                + " beyond that would be a rule one of its three callers could not see."
         )
     }
 

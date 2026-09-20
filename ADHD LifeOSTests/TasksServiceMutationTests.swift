@@ -7,9 +7,12 @@ import XCTest
 @testable import ADHD_LifeOS
 
 /// Covers the row's close write-through: optimistic local flip, the exact adapter call, and the
-/// revert-on-failure path that keeps the list in sync with stored truth. Closing is one-way
-/// (F-V3-Tasks-rebuild, E's addendum): there is no reopen, and delete lives on the detail screen
-/// now, so neither has a service path here.
+/// revert-on-failure path that keeps the list in sync with stored truth. Delete lives on the detail
+/// screen, so it has no service path here.
+///
+/// **"Closing is one-way … there is no reopen" was retired on 2026-09-20 by `F-C1-UndoCapsule`.**
+/// `TasksService.reopen(_:)` now exists; its own tests are in `UndoCapsuleReopenTests`, kept apart
+/// so this file stays the record of the FORWARD write.
 @MainActor
 final class TasksServiceMutationTests: XCTestCase {
     private let work = LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 0)

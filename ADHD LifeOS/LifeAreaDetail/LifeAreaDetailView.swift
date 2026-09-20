@@ -30,6 +30,10 @@ struct LifeAreaDetailView: View {
     @State var momentumPreferences: MomentumPreferences = .default
     @State var isPresentingAdd = false
     @State var togglingTaskId: UUID?
+    /// `F-C1-UndoCapsule`: the app's one undo slot. This screen's tick is the fourth close
+    /// surface — not named in E's round-1 list ("the circle, a full swipe, Today's hero") but
+    /// INCLUDED by E's Step 0 answer: *"Yes, every close gets the undo"*.
+    @Environment(\.recordAction) private var recordAction
     @State var toggleErrorMessage: String?
 
     var family: AreaPalette { AreaPalette.family(for: lifeArea) }
@@ -158,10 +162,22 @@ struct LifeAreaDetailView: View {
 
     // MARK: - Actions (the components call these)
 
-    /// One-way close (F-V3-Tasks-rebuild, E's addendum): a done row's tick is display-only, so
-    /// this only ever sends `.done` — and guards anyway, in case a stale row calls through.
+    /// A done row's tick is display-only, so this only ever sends `.done` — and guards anyway, in
+    /// case a stale row calls through.
+    ///
+    /// **The "one-way" half of that rule (F-V3-Tasks-rebuild, E's addendum) was retired on
+    /// 2026-09-20 by `F-C1-UndoCapsule`.** The row still has no reopen control; the way back is
+    /// the shared capsule, recorded here.
+    ///
+    /// Recorded BEFORE the write, on the same edge the tap's own haptic and pop fire — the row
+    /// shows its spinner immediately, so a capsule that waited for the round trip would arrive
+    /// after the user had already looked away. `reopenTask` guards on stored truth, so an Undo
+    /// after a failed close writes nothing.
     func closeTask(_ task: TaskItem) {
         guard togglingTaskId == nil, task.status == .open else { return }
+        recordAction.record(
+            RecentAction(kind: .taskClosed, subject: task.title) { await reopenTask(task) }
+        )
         togglingTaskId = task.id
         Task {
             defer { togglingTaskId = nil }
@@ -172,6 +188,23 @@ struct LifeAreaDetailView: View {
                 toggleErrorMessage =
                     (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
+        }
+    }
+
+    /// The capsule's way back from `closeTask`. The same write in reverse — `updateStatus` to
+    /// `.open`, which `TaskCompletionStamp.applying` already clears `completedAt` for — then a
+    /// reload, so the row's tick and its strike come back together.
+    @discardableResult
+    func reopenTask(_ task: TaskItem) async -> Bool {
+        guard service.allTasks.first(where: { $0.id == task.id })?.status == .done else { return false }
+        do {
+            _ = try await taskDetailClient.updateStatus(id: task.id, status: .open)
+            await service.load()
+            return true
+        } catch {
+            toggleErrorMessage =
+                (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
         }
     }
 }

@@ -29,4 +29,10 @@ protocol NudgesClientAdapting: Sendable {
     /// `existingCompletionDates` is the current stamp array; the adapter appends the firing
     /// instant and writes the whole array (see `FirestoreFieldPayloads.nudgeFired`).
     func markFired(id: UUID, existingCompletionDates: [Date]) async throws -> Nudge
+    /// Takes a "Done for now" back (`F-C1-UndoCapsule`). Both values are the nudge as it stood
+    /// BEFORE the dismissal — restoring is exact where recomputing would not be. **A 7-day
+    /// celebration that already fired is not un-fired**; only the stamps are.
+    func unmarkFired(
+        id: UUID, previousLastFiredAt: Date?, previousCompletionDates: [Date]
+    ) async throws -> Nudge
 }
