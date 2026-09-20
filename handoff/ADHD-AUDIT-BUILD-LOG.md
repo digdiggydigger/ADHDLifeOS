@@ -40,15 +40,31 @@ where it stopped and what is half-done, and an opener that resumes rather than r
 
 ## Status
 
-**Arc C's first block has landed.** `F-C1-UndoCapsule` merged 2026-09-20. Suite **3,130 / 0**,
-SwiftLint **0 / 842**, build green — re-measured, not carried (the 3,085 / 831 figures from
-`061dbaa` were the audit's, and no Swift had changed then).
+**Arc C's first block has landed, and its shape round with it.** `F-C1-UndoCapsule` merged
+2026-09-20, was resized on E's call, then reshaped on E's first device look. Suite **3,137 / 0**,
+SwiftLint **0 / 843**, build green.
 
-App-target coverage moved **24.72% → 29.07% (14,225/48,930)**. The denominator moved because the
-TREE grew, and both runs measured 100% of the app target, so the figures are comparable in the
-sense CLAUDE.md's rule asks for — but note the earlier figure was measured at `93beff2` on
-2026-09-07 and two weeks of other work sit between them, so the delta is not this block's alone.
-What IS this block's: all four non-view files in `Undo/` at 100%.
+**The shape round found a Critical nobody had rendered.** E chose "fully rounded" from eight frames,
+every one at the DEFAULT text size. A `Capsule`'s radius is derived from its height, so the stacked
+accessibility layout (194.3pt) is a *different shape*: 6,329 glyph pixels and 2,604 Undo-control
+pixels were drawn outside the card. E was shown both and chose to cap the radius at `minHeight / 2`
+— which is pixel-identical to a capsule at the 44pt E approved (max channel delta 0). **The lesson
+to carry into every later arc: when a shape's geometry is DERIVED from its content's size, the
+accessibility layout is a different shape. Render it before calling a shape round closed.**
+
+App-target coverage is **29.83% (14,612/48,985)** at the shape round's merge, measured with the
+documented command and the emulator UP. **Against the 29.07% (14,225/48,930) recorded above, the
+denominator barely moved (+55, the `Undo/` edits) but the numerator moved +387 — which four
+assertion-only tests cannot account for, so the delta is NOT this round's and its cause was not
+established.** What was ruled out: the six emulator-backed suites ran in this measurement and the
+four extensions CLAUDE.md documents match their recorded figures exactly (97.67 / 98.31 / 95.83 /
+90.20), so a skipped emulator is not the explanation. Reported rather than explained, per
+CLAUDE.md's "establish WHY before you compare" — the honest answer here is that it was not
+established.
+
+`Undo/`'s four non-view files are back at 100% each. The shape briefly took
+`UndoCapsuleMetrics.swift` to 58.33%: `path(in:)` and `inset(by:)` are pure functions only SwiftUI
+was calling, and they now have behavioural tests rather than being written off as view-body 0%.
 
 **Build order** (E chose C first; the rest is the proposal in the specs' intro):
 **C → D → E → F → A → B → G.**
@@ -84,7 +100,7 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED** | `ea9cbed` (PR #172) | **device look + the RM-on pass** (§7.3) |
+| `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED**, + the height round, + E's SHAPE ROUND | `ea9cbed` (PR #172), shape round PR #178 | **the RM-off device look on the new shape** — nothing else |
 | `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | NOT STARTED | — | — |
 | `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | NOT STARTED | — | — |
 | `F-C4-TagsRecentlyDeleted` | tags in Recently Deleted; hidden links, restore-to-everywhere, merge | NOT STARTED | — | — |
@@ -251,6 +267,46 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Next session starts at:** `F-C1-UndoCapsule`'s **shape round** (the spec is the
   "THE FINAL SHAPE — build exactly this" block in `TODO-CLAUDE-CODE.md`), then
   `F-C2-DraftsToInbox`. From `handoff/START-HERE-adhd-audit-arc-C1-shape.md`.
+
+### Session 3 — 2026-09-20, arc C, `F-C1-UndoCapsule`'s SHAPE ROUND
+
+- **Landed:** the shape round at PR #178. Suite **3,137 / 0**, SwiftLint **0 / 843**, build green.
+  App-target coverage **29.83% (14,612/48,985)**.
+- **Where the build departed from the spec, and why:** ONE departure, and **E made it**. The spec
+  said `Capsule(style: .continuous)`, "not a radius number"; that was built, rendered, and then the
+  stacked accessibility layout was rendered at it **for the first time in the whole arc**. A capsule
+  takes its radius from half the card's height — 22 at the default 44pt, **97.2pt** at Accessibility
+  XL's 194.3pt card — so the curve ate the corners the content sits in: **6,329 pixels of the
+  completion glyph and 2,604 of the ↶ Undo control drawn OUTSIDE the card's fill**, the glyph 59.0pt
+  clear of it. E was shown both shapes rendered on the real Tasks screen and chose to cap the radius
+  at `minHeight / 2`. After the cap both counts are **0**. Everything else shipped exactly as
+  specified, including the part most likely to be mis-built: **no second line.**
+- **What E saw, and said:** E chose the cap from `screenshots/undo-capsule/11-…`. **The RM-off
+  device look on the new shape has NOT happened** — E has only seen renders of it.
+- **Owed to E:** **the RM-off device look**, on a build installed on the phone. Nothing else. No
+  RM-on pass is owed (geometry and fill only, `UndoCapsuleMotion` untouched, and F-C1's RM-on pass
+  PASSED on 2026-09-20); no "Verified paths" line (no `#available` site touched); no rules change.
+- **Owed to the code:** nothing parked, no test left reversed. The Undo label's contrast is still a
+  colour-arc candidate and E's change IMPROVED it (3.38 → 3.93 light, 3.48 → 4.47 dark) — recorded,
+  not fixed. The coverage numerator delta above is unexplained and flagged rather than claimed.
+- **Four things this session learned, and three generalise past this block:**
+  1. **When a shape's geometry is DERIVED from its content's size, the accessibility layout is a
+     different shape.** This is the third instance in ONE block of "a combination has to be
+     RENDERED, not reasoned about" — the height round found it when two of E's picks interacted, the
+     shape round when the winning variant did not exist at design time, and this when every frame E
+     ever chose from was at one text size.
+  2. **The AX3 render pass needs a FRESHLY ERASED simulator.** The harness signs out of any existing
+     session first, and at accessibility text sizes the taller Settings rows put `signOutButton`
+     beyond its 8 swipe attempts — it fails with *"Settings opened but presented no sign-out
+     control"*, which reads like a capsule bug and is not one.
+  3. **Ask the direct question of a frame.** Scanning for "where does the fill begin on this row"
+     gave a number that contradicted the unit test; counting *content pixels drawn outside the fill*
+     answered cleanly (6,329 / 2,604 → 0 / 0) and is the claim that actually mattered.
+  4. **`| head -N` on a piped `xcodebuild` truncates the run's own result**, closing the pipe before
+     `** TEST FAILED **` is reached, so the exit status is never seen. Redirect to a file and grep
+     the file.
+- **Next session starts at:** `F-C2-DraftsToInbox`, from
+  `handoff/START-HERE-adhd-audit-arc-C2-drafts.md`.
 
 ### Session 0 — 2026-09-19 · the audit (3 sessions), no build
 
