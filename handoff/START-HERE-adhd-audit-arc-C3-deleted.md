@@ -79,6 +79,21 @@ it already signs in against the emulator, drives real screens and attaches frame
 4. **An exhaustive `switch` earns itself.** A sixth `RecentActionKind` failed the BUILD rather than
    silently inheriting a branch.
 
+## 2b. One `apple-design` finding that is recorded but NOT actioned
+
+**`sheets.md` lists "Close" as a SYNONYM for "Cancel", not as a different promise.** Apple's
+sentence is: *"The **Cancel** (or Close) button dismisses a sheet without saving any changes."*
+E's reason for the relabel was *"Cancel becomes 'Close', because `sheets.md` says Cancel means
+'without saving'"* — which slightly overstates the page. The rename alone therefore does not
+resolve the mismatch: the behaviour is now *"dismiss and keep your text elsewhere"*, which neither
+word states.
+
+**What resolves it is the capsule**, which says "Kept in your inbox" — `feedback.md`'s rule that
+feedback belongs in the interface. The pairing is sound even though the label alone is not.
+**Recorded for E, not actioned**: the relabel is E's decision and shipped as asked. If E ever wants
+the label itself to carry the promise, "Done" is wrong (it implies saving the composer's own thing)
+and the honest options are leaving it as Close or dropping the word for a glyph.
+
 ## 3. What is NOT owed
 
 - No RM-on pass (§0.1). No `firestore.rules` change — drafts are ordinary `.note` captures through
@@ -88,11 +103,17 @@ it already signs in against the emulator, drives real screens and attaches frame
   disc, the appearance override, the Confirm celebration's RM waiver, **or the capsule's radius
   cap** (E's call, 2026-09-20).
 
-## 4. The state you inherit
+## 4. The state you inherit — VERIFIED at close-out, not assumed
 
-- **`main` @ PR #180's merge.** Suite **3,174 / 0**, SwiftLint **0 / 853**, build green.
-- **The simulator (`9181EBF9-…`) was ERASED at close-out** after the UI journeys.
-- **The Firebase emulator was left RUNNING** with the audit's imported state —
+*Every line below was checked with a command at 2026-09-20 close-out, after the last merge.*
+
+- **`main` @ `cf725cb`** (PR #181, the last of four this session). `git status` clean, local
+  and `origin/main` identical. Suite **3,174 / 0**, SwiftLint **0 / 853**, build green, and
+  `SignedInJourneyUITests` + `JournalJourneyUITests` **6/6**.
+- **The simulator (`9181EBF9-…`) was ERASED and is Shutdown** — confirmed. A UI run poisons it
+  for the next unit suite, so this is not optional hygiene.
+- **The Firebase emulator is UP** (Firestore answered 200 at close-out) with the audit's
+  imported state —
   `./scripts/emulators.sh --import scripts/audit/emulator-state` if it is down.
 - **E's phone already has `main` @ `4917955`** — BOTH blocks, installed wirelessly at close-out.
   Confirm it is still there and **force-quit the app**, but do not rebuild before asking for the

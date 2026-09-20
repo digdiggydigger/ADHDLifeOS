@@ -19,6 +19,13 @@
 >   changed.
 > - **`screenshots/drafts-to-inbox/` was NOT produced** and is the one acceptance criterion unmet.
 >   The block was settled by assertion rather than by looking, but the spec asks for it.
+> - **One `apple-design` finding recorded and NOT actioned:** `sheets.md` lists **"Close" as a
+>   SYNONYM for "Cancel"** — *"The Cancel (or Close) button dismisses a sheet without saving any
+>   changes."* E's stated reason for the relabel slightly overstates the page, so the rename alone
+>   does not resolve the mismatch; the behaviour is now "dismiss and keep your text elsewhere",
+>   which neither word states. **The capsule is what resolves it** ("Kept in your inbox" —
+>   `feedback.md`'s rule that feedback belongs in the interface), so the pairing is sound. E's
+>   decision, shipped as asked; recorded here so it is not rediscovered as a bug later.
 > - **Accepted costs, recorded so nobody invents a richer draft type:** only the primary text field
 >   is caught; a filed draft is an ordinary `.note`; voice and photo captures are untouched; and
 >   **filing a draft SPENDS whatever undo was pending**, the same one-slot cost E already accepted.
