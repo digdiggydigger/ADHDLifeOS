@@ -245,11 +245,12 @@ final class SignedInJourneyUITests: XCTestCase {
     /// unavailable until a life area is picked, sorting files it and clears it, and Undo puts it
     /// back.
     ///
-    /// This screen was rebuilt across three blocks — the audit rewrote its rules, the IA
-    /// restructure made it a tab and folded the archive into it, and the undo work changed what
-    /// its bottom bar does — with no end-to-end coverage at all. The unit suite cannot see any of
-    /// what this asserts: that the tab exists, that the disabled button is genuinely disabled,
-    /// that a write lands, and that a bar built from `lastTriageAction` can actually be tapped.
+    /// This screen was rebuilt across four blocks — the audit rewrote its rules, the IA restructure
+    /// made it a tab and folded the archive into it, the undo work changed what its bottom bar
+    /// does, and `F-C1-UndoCapsule` retired that bar onto the app-wide capsule — with no
+    /// end-to-end coverage at all. The unit suite cannot see any of what this asserts: that the tab
+    /// exists, that the disabled button is genuinely disabled, that a write lands, and that the
+    /// undo control can actually be tapped and actually restores the capture.
     @MainActor
     func testCapturesTab_sortsACaptureIntoAnAreaAndTakesItBack() throws {
         let account = try UITestSession.createAccount(label: "capture")
@@ -295,28 +296,64 @@ final class SignedInJourneyUITests: XCTestCase {
         scrollUntilHittable(sorted, in: app)
         sorted.tap()
 
+        sortLeavesTheQueueAndUndoBringsItBack(app, content: content)
+    }
+
+    /// The second half of the journey, in its own method so the body above stays inside SwiftLint's
+    /// 50 lines — it grew past them when `F-C1-UndoCapsule` added the capsule's own assertions.
+    @MainActor
+    private func sortLeavesTheQueueAndUndoBringsItBack(_ app: XCUIApplication, content: String) {
         // Sorted files AND clears in one write, so the capture leaves the queue...
+        //
+        // **Scoped to the decision card since `F-C1-UndoCapsule` (2026-09-20), and the scope is
+        // the point.** This waited on `app.staticTexts[content]` app-wide, which can no longer go:
+        // the undo capsule names what it would take back, so the capture's own words are on screen
+        // immediately after the sort — in the capsule, which is exactly where they should be. The
+        // claim this journey makes is that the capture left the QUEUE, so the queue is what it now
+        // asks about.
         let gone = XCTNSPredicateExpectation(
-            predicate: .init(format: "exists == false"), object: app.staticTexts[content]
+            predicate: .init(format: "exists == false"),
+            object: app.otherElements["captureInboxTopCard"].staticTexts[content]
         )
         XCTAssertEqual(
             XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout), .completed,
-            "The capture was still in the inbox after being sorted"
+            "The capture was still on the inbox's decision card after being sorted"
+        )
+        XCTAssertTrue(
+            app.otherElements["undoCapsule"].staticTexts[content].exists,
+            "The capsule does not name the capture it would take back, so the user is offered an"
+                + " undo without being told what it undoes"
         )
 
-        // ...and the bar offers it back. Tapping the bar's own button is the point: it was fused
-        // into the bar by `.combine` until this journey existed to press it.
+        // ...and the undo offers it back. Tapping the control itself is the point: it was fused
+        // into its container by `.combine` until this journey existed to press it.
+        //
+        // **`F-C1-UndoCapsule` (2026-09-20) moved the control, not the contract.** This screen's
+        // own `captureInboxUndoBar` was retired onto the app-wide capsule in the disc row, so the
+        // element named in the failure below is `undoCapsule` now. The button is still addressed
+        // by the plain label "Undo", and keeping it that way is why the capsule's own
+        // `accessibilityLabel` was left off.
         let undo = app.buttons["Undo"]
         XCTAssertTrue(
             undo.waitForExistence(timeout: UITestSession.timeout),
-            "Sorting offered no undo bar"
-                + (app.otherElements["captureInboxUndoBar"].exists
-                    ? " (the bar is there but its button is not addressable)"
-                    : " (no bar at all)")
+            "Sorting offered no undo"
+                + (app.otherElements["undoCapsule"].exists
+                    ? " (the capsule is there but its button is not addressable)"
+                    : " (no capsule at all)")
         )
         scrollUntilHittable(undo, in: app)
         undo.tap()
 
+        // **App-wide again here, and that is sound precisely because the capsule is spent.** The
+        // assertion after the SORT had to be scoped, because the capsule was on screen naming the
+        // capture; after the undo the capsule has gone, so the capture's words being anywhere on
+        // the Captures tab means it is back in the queue. It does not have to be on the decision
+        // card — the queue is newest-first and the restored capture may sit under "Then", which is
+        // what a scoped version of this assertion got wrong.
+        XCTAssertFalse(
+            app.otherElements["undoCapsule"].exists,
+            "The capsule survived its own Undo, so the offer is a loop rather than spent once"
+        )
         XCTAssertTrue(
             app.staticTexts[content].waitForExistence(timeout: UITestSession.timeout),
             "Undo did not bring the sorted capture back to the inbox"

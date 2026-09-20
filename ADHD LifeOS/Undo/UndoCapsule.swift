@@ -159,10 +159,13 @@ struct UndoCapsule: View {
         }
     }
 
+    /// Hidden from VoiceOver: it restates the verb beside it, and unhidden it reads its SF Symbol
+    /// name ("checkmark circle fill") before the word the user actually needs.
     private var glyph: some View {
         Image(systemName: action.kind.systemImage)
             .font(.title3)
             .foregroundStyle(Self.tint(action.kind.glyphTint))
+            .accessibilityHidden(true)
     }
 
     private var subject: some View {
@@ -197,7 +200,12 @@ struct UndoCapsule: View {
                 .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(UndoCapsuleButtonStyle())
-        .accessibilityLabel("Undo — \(action.kind.verb), \(action.subject)")
+        // **The plain word, and it is deliberate.** The capsule is `.contain`, so VoiceOver reads
+        // the verb and the subject as their own elements either side of this button — a label that
+        // repeated them would say the whole thing twice, and the arrival announcement has already
+        // said it once. `buttons.md › Content` asks for a concise, title-style label. It is also
+        // what `SignedInJourneyUITests` addresses the control by, and that journey is skipped in
+        // the standard run, so a longer label would have broken it silently.
         .accessibilityIdentifier("undoCapsuleButton")
     }
 

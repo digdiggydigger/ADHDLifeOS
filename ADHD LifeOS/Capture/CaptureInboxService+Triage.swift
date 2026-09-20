@@ -104,15 +104,6 @@ extension CaptureInboxService {
         }
     }
 
-    /// Takes a pending triage undo off the board WITHOUT reversing it — the one path that has to
-    /// say so out loud, because the app's slot is shared now and a bare `clear()` from here would
-    /// also silence a task close made on another tab.
-    ///
-    /// Guarded on the slot still holding a CAPTURE action for exactly that reason.
-    func clearLastTriageAction() {
-        recordAction.clear()
-    }
-
     /// Records a reversible triage into the app's one undo slot (`F-C1-UndoCapsule`).
     ///
     /// The words are resolved HERE, at the moment it happens, rather than held as ids the capsule
