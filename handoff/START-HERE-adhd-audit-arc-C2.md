@@ -56,7 +56,15 @@ Three, and the first two will bite:
 2. **The capsule WRAPS the disc row's leading band** — `UndoCapsuleSlot { leadingBand }` in
    `RootBottomOverlay` — rather than sitting beside it. That is what makes it stand IN FOR the
    search row and the Journal pencil while the + disc never moves. Do not add a second occupant.
-3. **It is drawn in a tight `HStack`, so new content steals the control's width.** The first render
+3. **A visible change here can break a UI JOURNEY that the standard suite never runs.** `F-C1`
+   shipped with `SignedInJourneyUITests` broken and every gate green: the capsule NAMES what it
+   would take back, so a sorted capture's own words are on screen immediately, and that journey
+   waited app-wide for exactly those words to go. **Before you finish: `grep -rn "<any identifier
+   or label you changed>" "ADHD LifeOSUITests"`, and RUN any journey you touched**
+   (`-only-testing:"ADHD LifeOSUITests/<Suite>/<test>"`, emulator up, then `simctl erase`).
+   The same episode also cost a `accessibilityLabel`: keep the Undo control's label the plain word
+   "Undo", because that journey addresses it by label.
+4. **It is drawn in a tight `HStack`, so new content steals the control's width.** The first render
    showed the Undo button as "Un…". If C2's bar needs a second control ("Reopen" beside a dismiss,
    say), give it the same `.layoutPriority(1)` + `.fixedSize` treatment and **render it before
    believing it** — no unit test can see truncation.
