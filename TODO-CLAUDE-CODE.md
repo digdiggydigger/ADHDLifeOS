@@ -5497,6 +5497,35 @@ tier considered (`AccessibilityNotification.Announcement`, iOS 17+) was declined
 only a priority. No `firestore.rules` change: soft delete is arc C3's, and this block's writes are
 the already-permitted task status and nudge stamp fields.
 
+
+**E's HEIGHT ROUND, 2026-09-20 — after the block had landed.** E looked at the evidence folder and
+marked a band on `02-…-EDITED.jpg`: *"the UndoCapsule must be made smaller in height, it looks ugly
+with the UndoCapsule at the same height as the FAB Icon."* Measured: the red lines are **45.3pt**
+against a capsule drawn at **74pt** and a 60pt capture disc.
+
+45pt could not hold the shape E approved on board `54` — the verb line, the gap and two lines of
+`.callout` subject are ~62pt of text before padding, and the Undo pill's own 48pt floor was taller
+than the whole band. So four shapes were rendered on the real Tasks screen from one build
+(`screenshots/undo-capsule-height/`) and **E chose "two lines, a size smaller"**: board 54's
+arrangement kept, verb `.footnote` → `.caption2`, subject `.callout` → `.footnote` and ONE line.
+The card is **44pt**, which is also §3's touch floor and the search row's own height — it stands in
+that slot, so matching it is deliberate rather than a coincidence.
+
+**E also chose the Undo control's trade by name — *"Yes — draw 32, tap 44"*.** The pill is drawn at
+32pt and its hit area is grown back to §3's 44pt with the tab bar's own negative-padding trick
+(`AppTabBarMetrics.slotHitOverflow`). **This overrides round 7's "48pt for anything that … undoes"
+for this one control**, and only for it: round 7's number was written for a control that owns its
+space, and this one now sits inside a 44pt band. The two tests that pinned 48 were REVERSED, not
+deleted, and the one that matters now asserts the drawn height plus its overflow still reaches 44 —
+a test that only checked the drawn size would pass on a build where the target shrank with it.
+
+**Two harness traps cost a render round each, and both are the same trap:** a switch the app never
+received. `-undoShape-oneLine` is swallowed because a leading `-` makes iOS expect a value after
+the key; `xcodebuild`'s own environment does not reach the TEST RUNNER, which is what silently
+defeated the AX3 pass earlier in this block too. Every run photographed the default and measured an
+identical 74pt. The fix both times: **one test method per variant** — a method name cannot be
+swallowed.
+
 ---
 
 ### FEATURE: F-C2-DraftsToInbox — unsent text goes to the inbox; Cancel becomes Close; task detail autosaves  [ ] NOT STARTED

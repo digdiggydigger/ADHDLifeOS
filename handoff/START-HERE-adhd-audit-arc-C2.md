@@ -28,14 +28,24 @@ in context and memory into the new session."* Nothing below needs re-deciding.
 
 ## 1. THE FIRST THING TO DO, before writing any code
 
+**E's phone is DISCONNECTED and must be reconnected — say so in your first message.** It was
+unplugged during the height round below, and nothing has been on it.
+
 **E has not seen `F-C1-UndoCapsule` on the phone.** It is merged and green but nothing has been on
 a device. Two passes are owed and they must be asked for **in one message** so E flips the setting
 only once (§7.3):
 
 > Reduce Motion **OFF**: close a task from Tasks, from Today's hero, from a life area and from task
-> detail; dismiss a nudge; triage a capture. Does the capsule read right, and does Undo take it back?
-> Then Reduce Motion **ON** (Settings → Accessibility → Motion): the capsule should **fade** in and
-> out, never cut. The inbox's old bar used to slide up from the bottom; that slide is gone.
+> detail; dismiss a nudge; triage a capture. Is the 44pt capsule the right height on the real
+> screen, and does Undo take it back? Then Reduce Motion **ON** (Settings → Accessibility →
+> Motion): the capsule should **fade** in and out, never cut. The inbox's old bar used to slide up
+> from the bottom; that slide is gone.
+
+**The capsule was RESIZED after the block landed** (E's height round, 2026-09-20): 74pt → **44pt**,
+two lines a size smaller, and the Undo pill drawn at 32 with its tap target held at 44. E chose
+both by looking at renders, not on the device — so the device look is the first real test of the
+new size. If it sends the shape back, that is a fresh session's job, not this one's (memory:
+`build-in-a-fresh-session`).
 
 **Install the build BEFORE asking** (memory: `ask-for-device-checks-on-a-build-e-has` — "owed a
 device check" ≠ "it's on the phone"; asking without installing cost E a wasted look once already).
@@ -56,7 +66,12 @@ Three, and the first two will bite:
 2. **The capsule WRAPS the disc row's leading band** — `UndoCapsuleSlot { leadingBand }` in
    `RootBottomOverlay` — rather than sitting beside it. That is what makes it stand IN FOR the
    search row and the Journal pencil while the + disc never moves. Do not add a second occupant.
-3. **A visible change here can break a UI JOURNEY that the standard suite never runs.** `F-C1`
+3. **The capsule is 44pt and every number in it is E-approved** — `minHeight` 44,
+   `verticalPadding` 4, `undoDrawnHeight` 32 with `undoHitOverflow` 6 holding §3's target. **Do not
+   re-tune any of them**, and note that this one control overrides round 7's 48pt rule by E's
+   explicit choice. C2's draft bar is a `RecentActionKind` case in the same capsule, so it inherits
+   all of it.
+4. **A visible change here can break a UI JOURNEY that the standard suite never runs.** `F-C1`
    shipped with `SignedInJourneyUITests` broken and every gate green: the capsule NAMES what it
    would take back, so a sorted capture's own words are on screen immediately, and that journey
    waited app-wide for exactly those words to go. **Before you finish: `grep -rn "<any identifier
@@ -64,7 +79,7 @@ Three, and the first two will bite:
    (`-only-testing:"ADHD LifeOSUITests/<Suite>/<test>"`, emulator up, then `simctl erase`).
    The same episode also cost a `accessibilityLabel`: keep the Undo control's label the plain word
    "Undo", because that journey addresses it by label.
-4. **It is drawn in a tight `HStack`, so new content steals the control's width.** The first render
+5. **It is drawn in a tight `HStack`, so new content steals the control's width.** The first render
    showed the Undo button as "Un…". If C2's bar needs a second control ("Reopen" beside a dismiss,
    say), give it the same `.layoutPriority(1)` + `.fixedSize` treatment and **render it before
    believing it** — no unit test can see truncation.
@@ -73,6 +88,11 @@ Three, and the first two will bite:
 `RecentActionRecording`, `UndoCapsule`, `UndoCapsuleMetrics`). A new kind is a case on
 `RecentActionKind` plus its verb, glyph and tint — `UndoCapsulePresentationTests` will make you say
 what all three are.
+
+**And one more trap that cost two render rounds:** a switch the app never receives. A launch
+argument beginning with `-` is parsed as a UserDefaults key expecting a value, and `xcodebuild`'s
+own environment does not reach the TEST RUNNER. Both failures look identical — every variant
+renders the default. **One test method per variant** is the fix; a method name cannot be swallowed.
 
 ## 4. What this session must NOT do
 

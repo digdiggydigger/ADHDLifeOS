@@ -68,11 +68,16 @@ enum UITestSession {
     /// for the one seed that exists and why it is spelled the way it is.
     @MainActor
     static func launchSignedIn(
-        as account: UITestAccount, launchArguments: [String] = []
+        as account: UITestAccount, launchArguments: [String] = [], environment: [String: String] = [:]
     ) throws -> XCUIApplication {
         let email = account.email
         resetToPortrait()
         let app = XCUIApplication()
+        // A render harness needs a switch the app reads before its first body, and the argument
+        // domain proved unreliable for it (`UndoCapsuleRenderUITests` records both attempts).
+        for (key, value) in environment {
+            app.launchEnvironment[key] = value
+        }
         // This is what keeps the journey off the live project. `launchEnvironment` becomes the
         // app process's environment, and `FirebaseEmulatorSettings.resolve()` reads it at
         // `FirebaseManager` init — before any Firestore call can happen.

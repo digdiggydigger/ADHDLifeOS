@@ -11,17 +11,28 @@ import SwiftUI
 
 /// E's round-2b shape, as numbers.
 enum UndoCapsuleMetrics {
-    /// Round 7: *"48pt for anything that starts, closes, adds, undoes, ends or saves"*.
+    /// **44 since E's height round, 2026-09-20.** It shipped at 48 with a two-line `.callout`
+    /// subject, which drew a **74pt** card — E marked a **45.3pt** band on
+    /// `screenshots/undo-capsule/02-…-EDITED.jpg`: *"the UndoCapsule must be made smaller in
+    /// height, it looks ugly with the UndoCapsule at the same height as the FAB Icon."* (The
+    /// capture disc is 60.) E was shown four shapes rendered on the real screen and chose **two
+    /// lines, a size smaller** — board `54`'s arrangement kept, the type stepped down.
     ///
-    /// **A floor, not a frame, and deliberately NOT `AppSearchRowMetrics.fieldHeight` (44).** The
-    /// search field's 44 is §3's floor for a control that must never out-grow the capture disc;
-    /// this is a taller metric for the one control round 7 names, and it has to be able to grow —
-    /// a fixed height would clip the stacked layout at accessibility sizes.
-    static let minHeight: CGFloat = 48
+    /// **A floor, not a frame.** A fixed height would clip the stacked layout at accessibility
+    /// sizes. 44 is also §3's touch floor, so the capsule is itself exactly one touch target tall.
+    static let minHeight: CGFloat = 44
 
-    /// The Undo control's own target. It is the reason the capsule exists, so it takes round 7's
-    /// 48 rather than §3's 44 floor.
-    static let undoMinHeight: CGFloat = 48
+    /// What the Undo pill is DRAWN at. **Its TARGET is still 44** — see `undoHitOverflow`.
+    ///
+    /// Round 7's *"48pt for anything that … undoes"* cannot be drawn inside a 44pt band, and E
+    /// chose the trade explicitly over keeping the capsule tall: *"Yes — draw 32, tap 44"*. Round
+    /// 7's number was written for a control that owns its space; this one now sits inside one.
+    static let undoDrawnHeight: CGFloat = 32
+
+    /// The tab bar's own trick (`AppTabBarMetrics.slotHitOverflow`), applied here: negative
+    /// vertical padding around the `contentShape`, so the layout stays the pill's drawn height
+    /// while taps a little above and below it still land. §3's 44pt is kept without drawing 44pt.
+    static var undoHitOverflow: CGFloat { max(0, (44 - undoDrawnHeight) / 2) }
 
     /// It stands in for the search row, so it wears that row's corner rather than inventing one.
     /// A second radius in the same slot would read as a different control having replaced the row.
@@ -31,7 +42,8 @@ enum UndoCapsuleMetrics {
 
     /// The page margin, matching `AppSearchRow`'s own.
     static let horizontalPadding: CGFloat = 16
-    static let verticalPadding: CGFloat = 8
+    /// 4 since the height round — 8 top and bottom is a fifth of E's whole band.
+    static let verticalPadding: CGFloat = 4
     /// Asset-to-text: the glyph and the verb beside it.
     static let glyphSpacing: CGFloat = 8
     /// Micro positioning: the verb over the subject it names.
