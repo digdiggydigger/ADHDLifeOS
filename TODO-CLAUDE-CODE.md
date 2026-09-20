@@ -5526,6 +5526,91 @@ defeated the AX3 pass earlier in this block too. Every run photographed the defa
 identical 74pt. The fix both times: **one test method per variant** — a method name cannot be
 swallowed.
 
+
+**E's SHAPE ROUND, 2026-09-20 — the FIRST device look, and it sent the shape back. NOT YET BUILT.**
+`main` @ `3f7932c` went onto E's phone (build, install and launch clean in one WIRELESS pass — the
+phone was never disconnected, whatever the opener said). E ran both passes.
+
+**The Reduce-Motion-ON pass PASSED** — E: *"Passes your request requested checks"*. **That discharges
+the §7.3 RM-on pass F-C1 owed.** E's frames also settled two things on hardware that no test reaches:
+`IMG_8565`→`IMG_8566` is task detail with the capsule, then the same screen with "Close it" back and
+the capsule gone — the reversal landing against real Firestore; and `IMG_8562` is the capsule
+recorded on Today still standing on the Capture Inbox tab, which is the one-slot design working.
+Both are in `screenshots/undo-capsule-redesign/`'s README as the round's provenance.
+
+**The Reduce-Motion-OFF look sent the shape back, verbatim:** *"Bringing back a second line is smart.
+I also recommend that we remove the blue chip background colour behind the "Undo" Button and increase
+the corner radius of the entire UndoCapsule card."*
+
+**Six shapes were rendered on the real Tasks screen from one build** (`screenshots/undo-capsule-redesign/`),
+each closing the longest seeded task so the second line had something to do, and each in a test
+method of its own asserting its own accessibility identifier. **E chose, by looking:**
+
+- **Fully rounded** — E: *"from the images you've made Option C, 'Fully rounded' looks the best"*.
+  A `Capsule`, not a radius number: at a height that now varies, a fixed radius cannot stay round.
+- **The Undo control's horizontal padding reclaimed, 16 → 0.**
+- **Up to two lines, NOT two reserved** — 44pt for a short subject, ~53pt when the title needs the
+  second line.
+
+**The finding that changed the round, and it is the reason `roomy` exists.** Two lines ALONE does not
+fix the truncation E was complaining about: shapes A, B and C all still read *"Capture three things on
+your mi…"*. `UndoCapsuleMetrics.undoHorizontalPadding` is 16 and it was padding the INSIDE of the chip
+E had just removed — with no chip it is **32pt of invisible dead space** either side of the word,
+taken from the subject. Reclaiming it is the only thing that makes the title fit whole. It was found
+by reading frame `01`, not by planning; the variant did not exist when the round was designed.
+
+**Measured from the frames, validated against the shipped value** (the reference reads exactly
+44.0pt): current **44pt**; every two-lines-reserved shape **59pt**; up-to-two **53pt** with the long
+title and 44pt without. **E was given the 59-vs-60 tension explicitly** — 59pt sits level with the
+60pt capture disc, which is close to the *"same height as the FAB Icon"* E rejected at 74 — and chose
+the variable height over the steady one with that cost named.
+
+**Contrast IMPROVES, and this is not a licence to touch the colour arc.** Computed from the
+colorsets, the Undo label goes **3.38 → 3.93:1** light and **3.48 → 4.47:1** dark once it sits on
+`cardSurface` instead of the 12%/20% accent wash. Both still fall short of `accessibility.md`'s 4.5:1
+for 16pt text. The 3.38/3.48 pair reproduces the register's existing figures exactly, which is what
+validates the method. **Round 9's "Leave it to the colour arc" still holds — record the improvement,
+fix nothing.**
+
+**What the build does.** Delete `ADHD LifeOS/Undo/UndoCapsuleVariant.swift` and
+`ADHD LifeOSUITests/UndoCapsuleRedesignRenderUITests.swift` — both are round-scoped — and apply the
+chosen shape directly to `UndoCapsule`/`UndoCapsuleMetrics`:
+- the card's background and border become `Capsule(style: .continuous)`. **`strokeBorder` needs
+  `InsettableShape`, which `AnyShape` is NOT** — that bit the render build; `Capsule` itself is
+  insettable, so the shipped code has no erasure problem the variant switch had.
+- the `chipTint` background goes, and `chipTint` with it if nothing else reads it.
+- `undoHorizontalPadding` is DELETED, not set to 0 — see the reversed test below.
+- the subject becomes `.lineLimit(2)` with **no** `reservesSpace:`.
+- `minHeight` 44 stays: it is the floor the short-subject case lands on.
+
+**Tests that must be REVERSED, not deleted** (all in `ADHD LifeOSTests/UndoCapsulePresentationTests.swift`):
+1. `testItWearsTheSearchRowsCornerRatherThanANewNumber` — the capsule no longer inherits
+   `AppSearchRowMetrics.fieldCornerRadius`. Its reasoning ("a second radius beside the row it
+   replaces would read as a different control") is what E overruled by looking, and the replacement
+   test should say so and assert the card is a `Capsule`.
+2. `testEveryCapsuleSpacingIsOnTheGrid` — **this one FAILS rather than lapses, and that is why the
+   constant is deleted rather than zeroed.** `spacings` sweeps for membership of {4, 8, 16, 24} and
+   0 is not in it. Removing `undoHorizontalPadding` from the constant and from `spacings` keeps the
+   guard honest; adding 0 to the grid would quietly widen a rule that protects every other value.
+3. `testTheDrawnControlFitsInsideTheCardWithItsPaddingToSpare` still passes (32 + 8 ≤ 44) — check,
+   do not assume, once the height varies.
+
+**The test that must be KEPT and STRENGTHENED** —
+`testTheUndoControlIsDrawnSmallerThanItsTapTargetAndTheTargetIsStillFortyFour`. This is
+`apple-design`'s one Medium finding on the round (`buttons.md › Best practices`: *"a button needs a
+hit region of at least 44x44 pt"*): with the chip gone **nothing on screen shows the tap target any
+more**, so this assertion stops being a double-check and becomes the only guard. `undoDrawnHeight`
+32 and `undoHitOverflow` 6 are now pure layout/target mechanism rather than a visible pill, and the
+comment should say that.
+
+**What is NOT owed.** No `#available` site is touched, so no "Verified paths" line. **No RM-on device
+pass**: the shape round changes geometry and fill only — `UndoCapsuleMotion` is untouched — and
+F-C1's RM-on pass has already passed on E's phone. No `firestore.rules` change.
+
+**Still owed when it is built:** re-render `screenshots/undo-capsule/` at the chosen shape (its
+README already carries a re-render note from the height round; this is the second), and the two
+landscape frames still suffixed `-PRE-HEIGHT-ROUND` are now two rounds stale.
+
 ---
 
 ### FEATURE: F-C2-DraftsToInbox — unsent text goes to the inbox; Cancel becomes Close; task detail autosaves  [ ] NOT STARTED

@@ -26,6 +26,8 @@ final class UndoCapsuleRedesignRenderUITests: XCTestCase {
 
     /// The seeded task whose title wraps. See the file comment.
     private static let longSubject = "Capture three things on your mind"
+    /// The shortest seeded task title.
+    private static let shortSubject = "Take a 10-minute walk"
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -39,13 +41,24 @@ final class UndoCapsuleRedesignRenderUITests: XCTestCase {
     @MainActor func testRenderVariantRadiusFull() throws { try render(.radiusFull) }
     @MainActor func testRenderVariantUpToTwoLines() throws { try render(.upToTwo) }
     @MainActor func testRenderVariantRoomyNoUndoPadding() throws { try render(.roomy) }
+    @MainActor func testRenderVariantChosen() throws { try render(.chosen) }
+    /// The other half of "up to two lines": a subject that does NOT need the second line, so the
+    /// card falls back to the 44pt E approved in the height round. A frame of the long title alone
+    /// would show only the grown state and say nothing about the one the user sees most.
+    @MainActor func testRenderVariantChosenShortSubject() throws {
+        try render(.chosen, subject: Self.shortSubject, tag: "short")
+    }
 
     // MARK: - The drive
 
     @MainActor
-    private func render(_ variant: UndoCapsuleVariantName) throws {
+    private func render(_ variant: UndoCapsuleVariantName, subject: String? = nil, tag: String = "") throws {
         try UITestEmulator.skipUnlessRunning()
-        let account = try UITestSession.createAccount(label: "undoredesign\(variant.rawValue.lowercased())")
+        let wanted = subject ?? Self.longSubject
+        let suffix = tag.isEmpty ? "" : "-\(tag)"
+        let account = try UITestSession.createAccount(
+            label: "undoredesign\(variant.rawValue.lowercased())\(tag.lowercased())"
+        )
         let app = try UITestSession.launchSignedIn(
             as: account,
             environment: ["LIFEOS_UNDO_VARIANT": variant.rawValue]
@@ -69,10 +82,10 @@ final class UndoCapsuleRedesignRenderUITests: XCTestCase {
         // whole variant. `untilExists:` re-taps; the row this round needs is the proof it landed.
         let openFilter = app.buttons["Open"]
         if openFilter.waitForExistence(timeout: 15) {
-            UITestSession.tap(openFilter, untilExists: app.staticTexts[Self.longSubject])
+            UITestSession.tap(openFilter, untilExists: app.staticTexts[wanted])
         }
-        guard let circle = closeCircle(besideTitle: Self.longSubject, in: app) else {
-            return XCTFail("No seeded task titled '\(Self.longSubject)' — seeding did not land")
+        guard let circle = closeCircle(besideTitle: wanted, in: app) else {
+            return XCTFail("No seeded task titled '\(wanted)' — seeding did not land")
         }
         circle.tap()
 
@@ -84,14 +97,14 @@ final class UndoCapsuleRedesignRenderUITests: XCTestCase {
             "No capsule with identifier 'undoCapsule\(variant.identifierSuffix)' — the variant did"
                 + " not reach the app, so this frame would have photographed \(UndoCapsuleVariantName.current.rawValue)"
         )
-        attach(app, named: "\(variant.fileOrder)-tasks-\(variant.rawValue)")
+        attach(app, named: "\(variant.fileOrder)-tasks-\(variant.rawValue)\(suffix)")
 
         // The dense-content case: on Tasks the capsule replaces the search row over empty space and
         // looks settled; over a full screen it reads differently, and a bigger radius is exactly the
         // kind of change that helps in one place and hurts in the other.
         UITestSession.openTab("Captures", in: app)
         guard capsule.waitForExistence(timeout: 10) else { return }
-        attach(app, named: "\(variant.fileOrder)-inbox-\(variant.rawValue)")
+        attach(app, named: "\(variant.fileOrder)-inbox-\(variant.rawValue)\(suffix)")
     }
 
     // MARK: - Driving
@@ -104,7 +117,12 @@ final class UndoCapsuleRedesignRenderUITests: XCTestCase {
     private func closeCircle(besideTitle title: String, in app: XCUIApplication) -> XCUIElement? {
         // 20s, not the session's 45: once the Open filter is tapped the row is there or it is not,
         // and a miss should cost seconds rather than most of a minute five times over.
-        let label = app.staticTexts[title]
+        // **`.firstMatch`, not the bare subscript.** "Take a 10-minute walk" resolves to more than
+        // one static text — the row's own title and the element an ancestor exposes — and resolving
+        // the subscript alone raises "Multiple matching elements found" instead of picking one.
+        // `matching(identifier:)` is the wrong correction here: it matches IDENTIFIERS, and these
+        // rows carry the title as a LABEL, which is what the subscript searches.
+        let label = app.staticTexts[title].firstMatch
         guard label.waitForExistence(timeout: 20) else { return nil }
         let circles = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'taskCheckbox-'"))
         guard circles.firstMatch.waitForExistence(timeout: UITestSession.timeout) else { return nil }
@@ -128,7 +146,7 @@ final class UndoCapsuleRedesignRenderUITests: XCTestCase {
 /// The variant names, duplicated here because the UI-test target does not link the app target.
 /// Kept in lockstep with `UndoCapsuleVariant` by `testTheRenderHarnessKnowsEveryVariant` below.
 enum UndoCapsuleVariantName: String, CaseIterable {
-    case current, base, radius16, radiusFull, upToTwo, roomy
+    case current, base, radius16, radiusFull, upToTwo, roomy, chosen
 
     var identifierSuffix: String { self == .current ? "" : "-\(rawValue)" }
 
@@ -141,6 +159,7 @@ enum UndoCapsuleVariantName: String, CaseIterable {
         case .radiusFull: return "03"
         case .upToTwo: return "04"
         case .roomy: return "05"
+        case .chosen: return "06"
         }
     }
 }

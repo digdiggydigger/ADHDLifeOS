@@ -45,6 +45,12 @@ enum UndoCapsuleVariant: String, CaseIterable {
     /// truncating on the second line. Reclaiming it gives the subject those 32pt back, which is
     /// what E's "second line" was for.
     case roomy
+    /// **E'S CHOSEN SHAPE, 2026-09-20.** Fully rounded (E: *"Option C, 'Fully rounded' looks the
+    /// best"*), no chip, the Undo control's padding reclaimed, and the second line ALLOWED rather
+    /// than reserved — so a short subject keeps the 44pt card E approved in the height round and a
+    /// long one grows to ~53pt, staying clear of the 60pt capture disc. E chose the variable height
+    /// over a steady 59pt with the disc's own height named as the cost.
+    case chosen
 
     /// **Read once, and only in DEBUG.** A release build can never be a variant, whatever the
     /// environment says — the render switch is the thing that must not ship, not the shapes.
@@ -71,7 +77,7 @@ enum UndoCapsuleVariant: String, CaseIterable {
             return 16
         case .base, .upToTwo, .roomy:
             return 20
-        case .radiusFull:
+        case .radiusFull, .chosen:
             return nil
         }
     }
@@ -96,14 +102,14 @@ enum UndoCapsuleVariant: String, CaseIterable {
     /// name"*). Not reserved lets a short subject sit in a shorter card.
     var reservesSecondLine: Bool {
         switch self {
-        case .current, .upToTwo: return false
+        case .current, .upToTwo, .chosen: return false
         case .base, .radius16, .radiusFull, .roomy: return true
         }
     }
 
     /// What the Undo control pads itself by. 16 is the shipped value and it lived inside the chip.
     var undoHorizontalPadding: CGFloat {
-        self == .roomy ? 0 : UndoCapsuleMetrics.undoHorizontalPadding
+        (self == .roomy || self == .chosen) ? 0 : UndoCapsuleMetrics.undoHorizontalPadding
     }
 
     /// Stamped onto the capsule's accessibility identifier so a render PROVES which shape it
