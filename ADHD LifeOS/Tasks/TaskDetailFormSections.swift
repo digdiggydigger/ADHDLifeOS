@@ -259,6 +259,40 @@ extension TaskDetailView {
         }
     }
 
+    /// **`F-C2-DraftsToInbox`: leaving the screen commits.** E's round 2 replaced the blocking
+    /// "Discard changes?" with autosave, and Q4's rule is *"never block with a modal and never lose
+    /// user input"*.
+    ///
+    /// **Silent, and deliberately so.** `performSave()` shows a 2-second "Saved" toast, buzzes and
+    /// then reloads the parent list; none of that can be seen from a screen that is already going
+    /// away, and the sleep would be a detached `Task` waiting to animate a view that no longer
+    /// exists. What DOES still matter is `onUpdated()` — the Tasks list behind this screen must
+    /// show the edit — so this path keeps that and drops the theatre.
+    ///
+    /// **Why not autosave on every field blur, which the spec offered as an option.** `service.save`
+    /// sets `state = .loaded(updated)`, and this screen's own header comment records what that
+    /// does: it *"tears down and rebuilds the Form (and resets its scroll to the top)"*. Saving on
+    /// each blur would therefore yank the user's scroll position back to the top every time they
+    /// moved between fields — on a screen whose whole purpose is unhurried editing. The explicit
+    /// Save button remains for anyone who wants the edit confirmed before they walk away.
+    ///
+    /// **Not `async`, because the screen is leaving.** The write is a detached `Task` on the
+    /// `@StateObject` service, which outlives this view's body — the same shape `performSave()`
+    /// already relies on for its own trailing `onUpdated()`.
+    func autosaveOnLeaving() {
+        guard case .loaded(let task) = service.state else { return }
+        guard TaskDetailAutosave.shouldSave(
+            hasUnsavedChanges: dirtyState(for: task).hasUnsavedChanges,
+            trimmedTitle: title,
+            isSaving: service.isSaving
+        ) else { return }
+
+        Task {
+            guard await service.save(edited: currentEditedFields) else { return }
+            onUpdated()
+        }
+    }
+
     /// Only on success: fire the confirmation, haptic and a VoiceOver announcement, then auto-fade.
     /// A failed save leaves `taskDetailErrorMessage` to carry it and never buzzes or confirms as if it
     /// landed (same rule as `4162290`'s promote haptic). Save is disabled unless dirty, so the

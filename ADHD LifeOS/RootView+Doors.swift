@@ -64,6 +64,42 @@ extension RootView {
         }
     }
 
+    /// The Captures tab, and the one screen that can answer `openCaptureDoor` below.
+    ///
+    /// **Out of `RootView.body` because that file is AT SwiftLint's 400-line ceiling**, which is
+    /// the same pressure that created this file. The binding is what lets the door work: the door
+    /// parks a capture id, this screen takes it when it mounts and clears it, exactly as
+    /// `drainPendingDoors` does for the other three.
+    @ViewBuilder
+    var capturesTab: some View {
+        NavigationStack {
+            CaptureInboxView(
+                client: captureClient,
+                journalClient: journalClient,
+                homeClient: homeClient,
+                celebrate: celebrationCenter,
+                pendingCaptureToInspect: $pendingCaptureToInspect
+            )
+        }
+    }
+
+    /// **`F-C2-DraftsToInbox`'s door: a filed draft's "Reopen".** E's Step 0 answer 1: *"Open it
+    /// in the inbox (Recommended)"* — chosen over reopening the composer because it is
+    /// composer-agnostic and survives arc D's composer unification unchanged.
+    ///
+    /// **It lives with the other doors rather than in `RootView.body` for one blunt reason:**
+    /// `RootView.swift` sits within a couple of lines of SwiftLint's 400-line ceiling, which is
+    /// why this file exists at all. It is also genuinely the same shape as the three doors above —
+    /// something outside the tabs asking for a tab, with a slot the destination drains when it
+    /// mounts.
+    ///
+    /// Unlike them it takes no signed-in check: the only thing that can call it is a composer,
+    /// and a composer is only reachable from inside the signed-in tabs.
+    func openCaptureDoor(_ captureId: UUID) {
+        pendingCaptureToInspect = captureId
+        selectedTab = .captures
+    }
+
     /// The routine door (F-Routines-3). The tap carries only the minted run key; the STORE is
     /// the source of truth, and a mismatch — an old notification, an ended run, a broken
     /// payload, a pre-17 device — is the stale-tap rule: open Today, nothing else. Never a

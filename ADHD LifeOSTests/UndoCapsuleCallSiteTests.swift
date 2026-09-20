@@ -205,9 +205,14 @@ final class UndoCapsuleCallSiteTests: XCTestCase {
     }
 
     /// E chose to KEEP the header ↶ over the recommendation to retire it, *as a second route
-    /// reading the SAME undo*. So it reads the shared centre, and only for a capture action — an
-    /// arrow in the Capture Inbox that reopened a task would be the wrong promise in the wrong
-    /// place.
+    /// reading the SAME undo*. So it reads the shared centre, and only for a REVERSIBLE capture
+    /// action — an arrow in the Capture Inbox that reopened a task would be the wrong promise in
+    /// the wrong place.
+    ///
+    /// **The exhaustive `switch` earned itself in `F-C2`.** Adding `draftKeptInInbox` failed the
+    /// BUILD rather than silently inheriting a branch, which is what this test's own failure
+    /// message predicted. A filed draft is a capture action and is still excluded: this glyph
+    /// promises to take something back, and a draft is kept.
     func testTheHeaderArrowReadsTheSharedSlotAndOnlyForACaptureAction() throws {
         let sections = try Self.appCode("Capture/CaptureInboxUndoSections.swift")
         XCTAssertTrue(
@@ -220,28 +225,34 @@ final class UndoCapsuleCallSiteTests: XCTestCase {
             "The header arrow does not restrict itself to capture actions."
         )
         XCTAssertTrue(
-            sections.contains("case .taskClosed, .nudgeDismissed, nil: return false"),
+            sections.contains("case .taskClosed, .nudgeDismissed, .draftKeptInInbox, nil: return false"),
             "The header arrow's kind check is not exhaustive, so a sixth kind would silently"
                 + " inherit whichever branch it fell into."
         )
     }
 
-    /// **`SignedInJourneyUITests` addresses the Undo control by the plain label "Undo"**, and UI
-    /// tests are skipped in the standard run — so a richer `accessibilityLabel` would have broken
-    /// that journey silently, with a green suite and a green build. The spec named that journey as
-    /// one to REVERSE rather than delete; this is the half of it a unit test can hold.
-    func testTheUndoControlKeepsThePlainLabelTheSignedInJourneyAddressesItBy() throws {
+    /// **Reversed by `F-C2-DraftsToInbox`, not deleted — and what it protects is unchanged.** It
+    /// used to pin the literal `Label("Undo", systemImage: "arrow.uturn.backward")`, because
+    /// `SignedInJourneyUITests` addresses the control as `app.buttons["Undo"]` and UI tests are
+    /// skipped in the standard run, so a relabel would break that journey with every gate green.
+    ///
+    /// E's *"Kept in your inbox · Reopen"* means the control's word is no longer always "Undo", so
+    /// the literal had to go. **The protection moved rather than lapsed**, and it now takes two
+    /// tests: this one reads that the view asks the KIND for its word, and
+    /// `testOnlyTheFiledDraftOffersReopenAndEveryReversalStillSaysUndo` pins that every kind the
+    /// journey can reach still answers "Undo". Split this way neither half can drift; pinned as a
+    /// literal it could only have been deleted.
+    func testTheUndoControlTakesItsWordFromTheActionRatherThanALiteral() throws {
         let capsule = try Self.appCode("Undo/UndoCapsule.swift")
         XCTAssertTrue(
-            capsule.contains("""
-            Label("Undo", systemImage: "arrow.uturn.backward")
-            """.trimmingCharacters(in: .whitespacesAndNewlines)),
-            "The Undo control no longer carries the plain word, so `app.buttons[\"Undo\"]` misses it."
+            capsule.contains("Label(action.kind.actionLabel, systemImage: action.kind.actionSystemImage)"),
+            "The control does not read its word and glyph from the action, so a filed draft would"
+                + " offer to \"Undo\" something the app then keeps."
         )
         XCTAssertFalse(
-            capsule.contains("accessibilityLabel(\"Undo —"),
+            capsule.contains("accessibilityLabel(\"Undo \u{2014}"),
             "The Undo button took a richer accessibility label, which overrides the plain one the"
-                + " capture journey addresses it by — and that journey does not run in the standard suite."
+                + " capture journey addresses it by \u{2014} and that journey does not run in the standard suite."
         )
         XCTAssertTrue(
             try Self.appCode("../ADHD LifeOSUITests/SignedInJourneyUITests.swift").contains("undoCapsule"),

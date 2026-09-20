@@ -97,16 +97,23 @@ extension CaptureInboxView {
 /// `center.pendingAction` directly would appear and vanish only when something else redrew the
 /// screen. `CelebrationLayer` is the precedent.
 ///
-/// It shows for a CAPTURE action alone. The slot is shared now, so a task closed on another tab can
-/// be sitting in it — and an arrow in the Capture Inbox's header that reopened a task would be the
-/// wrong promise in the wrong place. The capsule itself is where that undo is offered.
+/// It shows for a reversible CAPTURE action alone. The slot is shared now, so a task closed on
+/// another tab can be sitting in it — and an arrow in the Capture Inbox's header that reopened a
+/// task would be the wrong promise in the wrong place. The capsule itself is where that undo is
+/// offered.
+///
+/// **`draftKeptInInbox` is a capture action and is still excluded** (`F-C2-DraftsToInbox`), which
+/// is why the list below is not simply "the capture cases". This glyph is `arrow.uturn.backward`:
+/// it promises to take something BACK, and a filed draft is kept rather than reversed — its
+/// capsule offers "Reopen", not "Undo". Pointing a ↶ at a draft that is sitting in the very list
+/// the user is looking at would promise an undo that does not exist.
 struct CaptureInboxUndoHeaderButton: View {
     @ObservedObject var center: RecentActionCenter
 
     private var isCaptureAction: Bool {
         switch center.pendingAction?.kind {
         case .captureSorted, .captureSkipped, .captureJournalled: return true
-        case .taskClosed, .nudgeDismissed, nil: return false
+        case .taskClosed, .nudgeDismissed, .draftKeptInInbox, nil: return false
         }
     }
 
@@ -125,5 +132,30 @@ struct CaptureInboxUndoHeaderButton: View {
             .accessibilityLabel("Undo the last triage action")
             .accessibilityIdentifier("captureInboxUndoHeaderButton")
         }
+    }
+}
+
+// MARK: - The Reopen door (F-C2-DraftsToInbox)
+
+extension CaptureInboxView {
+    /// Opens the capture a filed draft's "Reopen" parked, then clears the slot.
+    ///
+    /// **It REFRESHES before it opens, and that is not belt-and-braces.** The draft was written
+    /// seconds ago from a composer on another tab; this screen's list predates it, so without the
+    /// refresh the capture would open over a list that does not contain it and closing the sheet
+    /// would leave the user looking at an inbox missing the thing they were just told was kept.
+    ///
+    /// **Fetched by id rather than found in the list.** The list is filtered — the user may be on
+    /// Sorted or Promoted — so a search through what happens to be loaded would silently fail on
+    /// the two tabs out of three where the draft is not shown. A capture that has been deleted in
+    /// between simply does not open; the slot is cleared either way so a failure cannot wedge the
+    /// door shut.
+    func drainReopenDoor() async {
+        guard let captureId = pendingCaptureToInspect else { return }
+        pendingCaptureToInspect = nil
+
+        await service.refresh()
+        guard let capture = try? await captureClient.fetchCapture(id: captureId) else { return }
+        inspectingCapture = capture
     }
 }

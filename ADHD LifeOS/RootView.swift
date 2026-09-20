@@ -62,6 +62,7 @@ struct RootView: View {
     /// first. Internal: RootView+Doors presents it.
     @State var presentedRoutineRun: RoutineRun?
     /// A routine tap that arrived signed-out or mid-restore — the pending-door pattern.
+    @State var pendingCaptureToInspect: UUID?  // Internal: RootView+Doors drains it (F-C2).
     @State var pendingRoutineRunKey: UUID?
     /// The doors' read of the one live run. Internal: RootView+Doors resolves against it.
     let routineRunStore: RoutineRunStoring = UserDefaultsRoutineRunStore()
@@ -116,6 +117,7 @@ struct RootView: View {
                             tasksClient: tasksClient,
                             taskCreateClient: taskCreateClient,
                             taskDetailClient: taskDetailClient,
+                            captureClient: captureClient,
                             onStartFocus: startFocus
                         )
                     case .areas:
@@ -147,14 +149,7 @@ struct RootView: View {
                         // `NudgesView` survives, pushed from that section, holding everything a
                         // section cannot: create, edit, reschedule, history. Its count rides the
                         // bar's badge; `AppTabBarPresentation` keeps `.badge(0)`'s silence.
-                        NavigationStack {
-                            CaptureInboxView(
-                                client: captureClient,
-                                journalClient: journalClient,
-                                homeClient: homeClient,
-                                celebrate: celebrationCenter
-                            )
-                        }
+                        capturesTab   // RootView+Doors — it drains the Reopen door (F-C2).
                     case .tools:
                         // The sixth station (F-Tools-1-Bar), filled in F-Tools-3-Page: bento
                         // doors to Places and the Life Areas editor, and nothing else — E wants
@@ -270,6 +265,7 @@ struct RootView: View {
                 // centre — the reason `.environmentObject(searchModel)` sits here too. A layer
                 // that cannot see the centre draws nothing and says nothing about it, so the
                 // position is asserted by `CelebrationMountCallSiteTests`.
+                .environment(\.openCapture, openCaptureDoor)
                 .environment(\.celebrate, celebrationCenter)
                 .environment(\.celebrationCenter, celebrationCenter)
                 .environmentObject(searchModel)

@@ -41,11 +41,16 @@ struct CaptureInboxView: View {
     private let homeClient: HomeClientAdapting
     /// Retained so the empty state can offer a capture action of its own — reaching the inbox and
     /// finding it empty is exactly when a user is most likely to want to put something in it.
-    private let captureClient: CaptureClientAdapting
+    /// Internal, not private: `CaptureInboxUndoSections` reads it to drain the Reopen door,
+    /// and Swift `private` is file-scoped.
+    let captureClient: CaptureClientAdapting
     /// The row whose full-screen detail is pushed. Optional-state + `navigationDestination`
     /// (the `TaskListView` precedent) rather than `NavigationLink` rows, because the rows live in
     /// a `LazyVStack` inside Home's existing stack.
     @State var inspectingCapture: Capture?
+    /// `F-C2-DraftsToInbox`: a filed draft waiting to be opened here. `RootView` parks the id when
+    /// the capsule's "Reopen" is tapped; this screen takes it and clears it.
+    @Binding var pendingCaptureToInspect: UUID?
     @State private var isPresentingQuickCapture = false
     /// The celebration centre, so this screen can tell it when the surface it presents has
     /// gone. `\.celebrate` defaults to an inert requester, so a preview needs nothing.
@@ -75,8 +80,12 @@ struct CaptureInboxView: View {
         // service is a `@StateObject` built HERE and an `@Environment` value is not available in an
         // `init`. `RootView` holds the centre and passes it; the default is inert, so every preview
         // builds this screen unchanged.
-        celebrate: any CelebrationRequesting = InertCelebrationRequester()
+        celebrate: any CelebrationRequesting = InertCelebrationRequester(),
+        // `F-C2-DraftsToInbox`: the Reopen door's slot, owned by `RootView`. Defaulted so every
+        // preview and every other caller builds this screen unchanged.
+        pendingCaptureToInspect: Binding<UUID?> = .constant(nil)
     ) {
+        _pendingCaptureToInspect = pendingCaptureToInspect
         _service = StateObject(
             wrappedValue: CaptureInboxService(
                 client: client,
@@ -121,6 +130,12 @@ struct CaptureInboxView: View {
         .navigationBarTitleDisplayMode(.inline)
         // The tab re-tap (E, 2026-09-08): the pushed detail is the inbox's only depth.
         .tabRoot(.captures, isAtRoot: inspectingCapture == nil, onPopToRoot: { inspectingCapture = nil })
+        // **Both hooks, and neither is redundant.** `.task` catches a door opened while this tab
+        // was already the selected one and merely re-mounting; `.onChange` catches one opened from
+        // another tab, where this screen is already on screen and nothing re-runs `.task`. A
+        // filed draft's Reopen can arrive either way — the composers are reachable from every tab.
+        .task { await drainReopenDoor() }
+        .onChange(of: pendingCaptureToInspect) { _ in Task { await drainReopenDoor() } }
         .sheet(isPresented: $isPresentingQuickCapture) {
             QuickCaptureView(client: captureClient) {
                 Task { await service.refresh() }

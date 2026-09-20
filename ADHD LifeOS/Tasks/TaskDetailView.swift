@@ -37,12 +37,12 @@ struct TaskDetailView: View {
     @State var focusNudgeCount = 2
     @State var atPlaceId: UUID?
 
-    // Staged-vs-immediate clarity state: discard-on-back gate (Part 4), the "Saved" affordance and
-    // its haptic trigger (Part 3), and the delete confirmation (F-V3-Tasks-rebuild — delete moved
-    // here from the list's swipe).
-    /// The one that stays private: the discard gate is raised and answered entirely by this
-    /// file's back control, so no section needs it.
-    @State private var showDiscardAlert = false
+    // Staged-vs-immediate clarity state: the "Saved" affordance and its haptic trigger (Part 3),
+    // and the delete confirmation (F-V3-Tasks-rebuild — delete moved here from the list's swipe).
+    //
+    // **The discard-on-back gate that used to live here is GONE** (`F-C2-DraftsToInbox`, E's round
+    // 2): *"Task detail's blocking 'Discard changes?' becomes autosave with swipe-back restored."*
+    // Leaving the screen commits instead of asking — see `autosaveOnLeaving()`.
     @State var showSavedConfirmation = false
     @State var saveHapticTrigger = false
     @State var showDeleteConfirmation = false
@@ -100,23 +100,16 @@ struct TaskDetailView: View {
         .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: showSavedConfirmation)
         .haptic(.solid, trigger: saveHapticTrigger)
         .navigationTitle("Task")
-        // The system back button can't be intercepted, so it's hidden and replaced with a custom
-        // control running the unsaved-changes check (Part 4). Hiding it also disables interactive
-        // swipe-back — an accepted outcome here, flagged as a screen-wide change in the build report.
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                backButton
-            }
-        }
-        .alert("Discard changes?", isPresented: $showDiscardAlert) {
-            Button("Discard Changes", role: .destructive) { dismiss() }
-                .accessibilityIdentifier("taskDetailDiscardChangesButton")
-            Button("Keep Editing", role: .cancel) {}
-                .accessibilityIdentifier("taskDetailKeepEditingButton")
-        } message: {
-            Text("Your unsaved edits to this task will be lost.")
-        }
+        // **The system back button is back, and with it interactive swipe-back.** It used to be
+        // hidden so a custom control could intercept the tap and raise the discard gate; the view's
+        // own comment called losing the gesture "an accepted outcome". E's round 2 stopped
+        // accepting it, and there is nothing left to intercept — leaving commits.
+        //
+        // **`.onDisappear` rather than a hook on the back control, and that is the point.** The
+        // system button cannot be intercepted at all, and it is no longer the only way off this
+        // screen: the swipe gesture and a tab switch both leave without touching any control.
+        // One hook on the screen's own disappearance catches every one of them.
+        .onDisappear { autosaveOnLeaving() }
         .confirmationDialog(
             "Delete this task?",
             isPresented: $showDeleteConfirmation,
@@ -132,30 +125,6 @@ struct TaskDetailView: View {
         }
         .task {
             await service.load()
-        }
-    }
-
-    // MARK: - Custom back control (Part 4)
-
-    /// Mirrors the system back button (chevron + label) so the screen still reads as a normal pushed
-    /// detail, but routes through `attemptBack()` so unsaved staged edits prompt before leaving.
-    private var backButton: some View {
-        Button {
-            attemptBack()
-        } label: {
-            Label("Back", systemImage: "chevron.backward")
-                .labelStyle(.titleAndIcon)
-        }
-        .accessibilityIdentifier("taskDetailBackButton")
-        .accessibilityLabel("Back")
-    }
-
-    private func attemptBack() {
-        if case .loaded(let task) = service.state, dirtyState(for: task).hasUnsavedChanges {
-            Haptics.play(.warning)
-            showDiscardAlert = true
-        } else {
-            dismiss()
         }
     }
 

@@ -39,6 +39,15 @@ enum RecentActionKind: Equatable, Sendable {
     case captureSorted(areaLabel: String?)
     case captureSkipped
     case captureJournalled
+    /// **`F-C2-DraftsToInbox`: text a composer was closed on, filed rather than lost.** E, round
+    /// 2: *"A composer closed with text files it into the Capture Inbox as a note. A bar, 'Kept in
+    /// your inbox · Reopen', stays until the next action."*
+    ///
+    /// **The one kind whose control does not reverse anything** — see `actionLabel`. The draft
+    /// stays filed and the capsule takes the user TO it (E's Step 0 answer 1: *"Open it in the
+    /// inbox"*), which is why this case is what made the capsule's action a property of the kind
+    /// rather than a hard-coded word.
+    case draftKeptInInbox
 }
 
 extension RecentActionKind {
@@ -61,6 +70,8 @@ extension RecentActionKind {
             return "Skipped"
         case .captureJournalled:
             return "Journalled"
+        case .draftKeptInInbox:
+            return "Kept in your inbox"
         }
     }
 
@@ -76,6 +87,8 @@ extension RecentActionKind {
             return "arrow.triangle.2.circlepath"
         case .captureJournalled:
             return "book.closed.fill"
+        case .draftKeptInInbox:
+            return "tray.and.arrow.down.fill"
         }
     }
 
@@ -84,10 +97,41 @@ extension RecentActionKind {
         switch self {
         case .taskClosed, .nudgeDismissed:
             return .completion
-        case .captureSorted, .captureJournalled:
+        case .captureSorted, .captureJournalled, .draftKeptInInbox:
             return .accent
         case .captureSkipped:
             return .secondary
+        }
+    }
+
+    /// The word on the capsule's control.
+    ///
+    /// **Five kinds reverse something and say so; one does not.** A filed draft is KEPT — the
+    /// capsule takes the user to it rather than unfiling it — so labelling that control "Undo"
+    /// would promise to take back something the app then holds on to. `buttons.md › Content` asks
+    /// for a label that says what happens.
+    ///
+    /// **"Undo" is load-bearing for the five, beyond the copy.** `SignedInJourneyUITests`
+    /// addresses this control as `app.buttons["Undo"]`, and UI tests are skipped in the standard
+    /// run — so rewording any of them breaks that journey with a green suite and a green build,
+    /// which is exactly how `F-C1` shipped it broken once.
+    var actionLabel: String {
+        switch self {
+        case .taskClosed, .nudgeDismissed, .captureSorted, .captureSkipped, .captureJournalled:
+            return "Undo"
+        case .draftKeptInInbox:
+            return "Reopen"
+        }
+    }
+
+    /// The glyph beside that word. It follows the promise: a `uturn` arrow beside "Reopen" would
+    /// draw the undo the word declines to offer.
+    var actionSystemImage: String {
+        switch self {
+        case .taskClosed, .nudgeDismissed, .captureSorted, .captureSkipped, .captureJournalled:
+            return "arrow.uturn.backward"
+        case .draftKeptInInbox:
+            return "arrow.up.forward.square"
         }
     }
 }
@@ -112,7 +156,15 @@ struct RecentAction: Identifiable {
     /// What it happened TO — a task's title, a capture's text, a nudge's label. Named by the site,
     /// because only the site knows which of its models is the thing the user was looking at.
     let subject: String
-    /// The reversal, supplied by the site. `async` because every one of them is a network write.
+    /// The action the capsule offers, supplied by the site. `async` because every one of them
+    /// reaches the network — a write for the five reversals, a read for `draftKeptInInbox`'s
+    /// Reopen.
+    ///
+    /// **`F-C2-DraftsToInbox` broadened what this means without changing its contract.** It is no
+    /// longer always an UNDO: for a filed draft it navigates to the capture instead, and `true`
+    /// then means "the user was taken there" rather than "the write was reversed". The property
+    /// keeps its name because the `Bool` still answers the only question the capsule asks — did the
+    /// offered action land — and every caller that returns `false` still gets the offer back.
     ///
     /// **It answers whether anything was actually reversed, and that is load-bearing.** The Capture
     /// Inbox has always kept its offer standing when an undo could not land — *"nothing happened,
@@ -145,7 +197,7 @@ extension RecentAction {
     /// *"help people predict the results of undoing"* (`undo-and-redo.md › Best practices`) applied
     /// to a surface that has no shake gesture and no Edit menu.
     var accessibilityAnnouncement: String {
-        "\(kind.verb). \(subject). Undo available."
+        "\(kind.verb). \(subject). \(kind.actionLabel) available."
     }
 }
 

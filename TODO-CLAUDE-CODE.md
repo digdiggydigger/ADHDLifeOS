@@ -5684,7 +5684,7 @@ SwiftUI alone was calling.
 
 ---
 
-### FEATURE: F-C2-DraftsToInbox — unsent text goes to the inbox; Cancel becomes Close; task detail autosaves  [ ] NOT STARTED
+### FEATURE: F-C2-DraftsToInbox — unsent text goes to the inbox; Cancel becomes Close; task detail autosaves  [x] COMPLETED
 
 **What E chose.** Round 2: *"Unsent text → 'Inbox catches it'. A composer closed with text files it
 into the Capture Inbox as a note. A bar, 'Kept in your inbox · Reopen', stays until the next
@@ -5776,6 +5776,45 @@ trigger.
       writes ordinary `.note` captures through the existing seam).
 
 **Dependencies:** F-C1 (the capsule and its "kept in your inbox" bar shape).
+
+### Built 2026-09-20, and where it departs from the spec
+
+Suite **3,174 / 0**, SwiftLint **0 / 853**, build green, **`SignedInJourneyUITests` +
+`JournalJourneyUITests` run deliberately and PASSED 6/6** — the opener's own lesson, since UI tests
+are skipped in the standard run and this block relabels three controls.
+
+**Four departures, all deliberate.**
+
+1. **A spec CORRECTION, found by reading the tree.** `QuickCaptureView` is presented **twice**: as a
+   `.fullScreenCover` from the capture disc (`RootView.swift`) *and* as a `.sheet` from the Capture
+   Inbox (`CaptureInboxView.swift:124-129`). The spec's *"presented as a `.fullScreenCover` … so
+   swipe-down is already impossible"* is true of one route only. `.onDisappear` covers both, which
+   is part of why it was the right hook.
+2. **`.onDisappear`, and `.interactiveDismissDisabled` was NOT needed** (Step 0 answer 2 asked for
+   this preference and for the report to say which was used). A half-swipe that springs back never
+   calls it, so a cancelled dismissal files nothing *by construction* rather than by a guard.
+3. **Autosave fires on LEAVING, not on field change.** The spec offered "debounced or on-blur —
+   build session's call". Both were rejected for a measured reason: `service.save` sets
+   `state = .loaded(updated)`, which `TaskDetailView`'s own header comment records as tearing down
+   the Form and *"resetting its scroll to the top"*. Saving per blur would yank the user's scroll
+   position every time they moved between fields. The explicit Save button and its "Saved" toast
+   stay for anyone wanting the edit confirmed before walking away. **Accepted cost:** edits are
+   still lost if the app is killed with the screen open and nothing left.
+4. **The capsule's control is no longer always "Undo".** E asked for *"Kept in your inbox ·
+   Reopen"*, and Reopen is not a reversal, so `actionLabel`/`actionSystemImage` became properties
+   of `RecentActionKind`. `RecentAction.undo` keeps its name and `Bool`; what broadened is the
+   meaning — "the offered action landed". The five existing kinds still answer "Undo" verbatim,
+   which `SignedInJourneyUITests` depends on.
+
+**Accepted costs, named so nobody invents a richer draft type:** only the PRIMARY text field is
+caught (task metadata and journal chips are dropped, and a filed draft is an ordinary `.note`);
+voice and photo captures are untouched; and **filing a draft SPENDS whatever undo was pending**,
+since the capsule is one slot — the same cost E already accepted for the close/triage collision.
+
+**One acceptance criterion is NOT met: `screenshots/drafts-to-inbox/`.** The block was settled by
+assertion rather than by looking, but the spec asks for the folder and it is not there. Carried to
+the next session's opener with the F-C1 device look.
+
 
 **Step 0 — ANSWERED before the hand-off. Do not re-ask:**
 1. **"Reopen" → opens the filed capture in the Capture Inbox** (option B). E: *"Open it in the inbox

@@ -11,18 +11,33 @@
 import SwiftUI
 
 struct TaskCreateView: View {
-    @StateObject private var service: TaskCreateService
+    @StateObject var service: TaskCreateService
     let lifeAreas: [LifeArea]
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var dueChoice: TaskDueChoice = .notYet
 
+    /// `F-C2-DraftsToInbox`: the seam an abandoned title is filed through. **Optional with an
+    /// inert default, exactly as `CaptureInboxView`'s `celebrate:` is** — every preview builds
+    /// this screen unchanged, and the app's own wiring is asserted by
+    /// `ComposerDraftCallSiteTests` rather than left to a default that would hide a missed
+    /// call site (the `dead-shared-component-pattern` failure, seven times over in this repo).
+    let captureClient: CaptureClientAdapting?
+    /// A composer that SUBMITTED files no draft: the title is still in the service when the sheet
+    /// dismisses, and the just-created task's words would be filed again as an abandoned draft.
+    @State var didSubmit = false
+
+    @Environment(\.recordAction) var recordAction
+    @Environment(\.openCapture) var openCapture
+
     init(
         client: TaskCreateClientAdapting,
         lifeAreas: [LifeArea],
         preselectedLifeAreaId: UUID? = nil,
+        captureClient: CaptureClientAdapting? = nil,
         onCreated: @escaping () -> Void
     ) {
+        self.captureClient = captureClient
         _service = StateObject(wrappedValue: {
             let service = TaskCreateService(client: client)
             // The v3 area screen's "Add to <area>" opens the form already filed there.
@@ -70,13 +85,22 @@ struct TaskCreateView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    // **"Close", not "Cancel"** (E, round 2). `sheets.md › Best practices`:
+                    // Cancel means *without saving*, and this control no longer discards.
+                    Button("Close") { dismiss() }
+                        .accessibilityIdentifier("taskCreateCloseButton")
                 }
                 ToolbarItem(placement: .principal) {
                     Text("New task")
                         .font(.headline)
                 }
             }
+            // **`F-C2-DraftsToInbox`.** This composer is a real `.sheet`, so swipe-down is live
+            // and was undefended. `.onDisappear` catches the swipe and the Close button alike
+            // (Step 0 answer 2: file once the sheet has ACTUALLY gone, so a swipe keeps dismissing
+            // as it does today), and a half-swipe that springs back never calls it — so a
+            // cancelled dismissal files nothing by construction rather than by a guard.
+            .onDisappear { fileDraftIfNeeded() }
             .task {
                 dueChoice = TaskDueChoice.choice(for: service.dueDate, asOf: .now)
                 await service.loadTags()
@@ -256,6 +280,7 @@ struct TaskCreateView: View {
             Button(service.isSubmitting ? "Adding…" : "Add the task") {
                 Task {
                     if await service.createTask() {
+                        didSubmit = true
                         Haptics.play(.solid)
                         onCreated()
                         dismiss()
