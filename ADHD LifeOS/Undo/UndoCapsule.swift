@@ -185,7 +185,7 @@ struct UndoCapsule: View {
 
     private static func tint(_ tint: RecentActionGlyphTint) -> Color {
         switch tint {
-        case .go: return Color("StateGo")
+        case .completion: return Color("StateGo")
         case .accent: return .accentColor
         case .secondary: return Color("LabelSecondary")
         }

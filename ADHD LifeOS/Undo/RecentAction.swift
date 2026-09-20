@@ -83,7 +83,7 @@ extension RecentActionKind {
     var glyphTint: RecentActionGlyphTint {
         switch self {
         case .taskClosed, .nudgeDismissed:
-            return .go
+            return .completion
         case .captureSorted, .captureJournalled:
             return .accent
         case .captureSkipped:
@@ -95,7 +95,8 @@ extension RecentActionKind {
 /// The three tints the glyph can take, as a pure value so the rule above is testable without a
 /// rendered view. `UndoCapsule` maps each to its token; nothing here names a colour.
 enum RecentActionGlyphTint: Equatable, Sendable {
-    case go
+    /// The completion green — `StateGo`, the token the app's own tick already wears.
+    case completion
     case accent
     case secondary
 }

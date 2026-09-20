@@ -22,50 +22,50 @@ final class UndoCapsuleNudgeRestoreTests: XCTestCase {
     // MARK: - The service
 
     func testDismissingRecordsAnUndoNamedAfterTheNudge() async {
-        let (sut, _, centre) = await loadedService(nudge: Self.nudge())
+        let env = await loadedService(nudge: Self.nudge())
 
-        await sut.dismiss(Self.nudge())
+        await env.sut.dismiss(Self.nudge())
 
-        XCTAssertNotNil(centre.pendingAction, "A \"Done for now\" recorded no undo.")
-        XCTAssertEqual(centre.pendingAction?.kind, .nudgeDismissed)
-        XCTAssertEqual(centre.pendingAction?.subject, "Take the meds")
+        XCTAssertNotNil(env.centre.pendingAction, "A \"Done for now\" recorded no undo.")
+        XCTAssertEqual(env.centre.pendingAction?.kind, .nudgeDismissed)
+        XCTAssertEqual(env.centre.pendingAction?.subject, "Take the meds")
     }
 
     func testTheRecordedUndoRestoresTheStampsTheNudgeHadBefore() async {
         let fired = Date(timeIntervalSince1970: 1_700_000_000)
         let before = Self.nudge(lastFiredAt: fired, completionDates: [fired])
-        let (sut, client, centre) = await loadedService(nudge: before)
-        await sut.dismiss(before)
+        let env = await loadedService(nudge: before)
+        await env.sut.dismiss(before)
 
-        await centre.undo()
+        await env.centre.undo()
 
-        XCTAssertEqual(client.unmarkFiredCallCount, 1, "The undo never wrote.")
-        XCTAssertEqual(client.lastUnmarkFiredArguments?.previousLastFiredAt, fired)
-        XCTAssertEqual(client.lastUnmarkFiredArguments?.previousCompletionDates, [fired])
+        XCTAssertEqual(env.client.unmarkFiredCallCount, 1, "The undo never wrote.")
+        XCTAssertEqual(env.client.lastUnmarkFiredArguments?.previousLastFiredAt, fired)
+        XCTAssertEqual(env.client.lastUnmarkFiredArguments?.previousCompletionDates, [fired])
     }
 
     /// A nudge dismissed for the FIRST time has no previous firing, so the restore must clear the
     /// field rather than invent a moment. `nil` is what the payload turns into `FieldValue.delete()`.
     func testRestoringANudgeThatHadNeverFiredHandsOverNoPreviousMoment() async {
         let before = Self.nudge(lastFiredAt: nil, completionDates: nil)
-        let (sut, client, centre) = await loadedService(nudge: before)
-        await sut.dismiss(before)
+        let env = await loadedService(nudge: before)
+        await env.sut.dismiss(before)
 
-        await centre.undo()
+        await env.centre.undo()
 
-        XCTAssertNil(client.lastUnmarkFiredArguments?.previousLastFiredAt)
-        XCTAssertEqual(client.lastUnmarkFiredArguments?.previousCompletionDates, [])
+        XCTAssertNil(env.client.lastUnmarkFiredArguments?.previousLastFiredAt)
+        XCTAssertEqual(env.client.lastUnmarkFiredArguments?.previousCompletionDates, [])
     }
 
     func testAFailedRestoreSurfacesItsErrorAndLeavesTheListAlone() async {
         let before = Self.nudge()
-        let (sut, client, _) = await loadedService(nudge: before)
-        client.unmarkFiredResult = .failure(NudgesServiceError.notFound)
+        let env = await loadedService(nudge: before)
+        env.client.unmarkFiredResult = .failure(NudgesServiceError.notFound)
 
-        let restored = await sut.restore(before)
+        let restored = await env.sut.restore(before)
 
         XCTAssertFalse(restored)
-        XCTAssertEqual(sut.errorMessage, NudgesServiceError.notFound.errorDescription)
+        XCTAssertEqual(env.sut.errorMessage, NudgesServiceError.notFound.errorDescription)
     }
 
     // MARK: - The payload
@@ -124,17 +124,22 @@ final class UndoCapsuleNudgeRestoreTests: XCTestCase {
 
     private static let id = UUID()
 
-    private func loadedService(
-        nudge: Nudge
-    ) async -> (NudgesService, FakeNudgesClientAdapting, RecentActionCenter) {
+    private struct SUT {
+        let sut: NudgesService
+        let client: FakeNudgesClientAdapting
+        /// The app's one undo slot — the real one, since the spent-once rule lives there.
+        let centre: RecentActionCenter
+    }
+
+    private func loadedService(nudge: Nudge) async -> SUT {
         let client = FakeNudgesClientAdapting()
         client.fetchNudgesResult = .success([nudge])
         let centre = RecentActionCenter()
-        let sut = NudgesService(
+        let service = NudgesService(
             client: client, notificationSchedulingClient: FakeNudgeNotificationSchedulingAdapting()
         )
-        sut.recordAction = centre
-        await sut.load()
-        return (sut, client, centre)
+        service.recordAction = centre
+        await service.load()
+        return SUT(sut: service, client: client, centre: centre)
     }
 }

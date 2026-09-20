@@ -120,15 +120,15 @@ extension CaptureInboxService {
     /// verb, which is the rule the retired inbox bar already followed.
     private func record(_ action: CaptureTriageAction, kind: RecentActionKind, subject: Capture) {
         recordAction.record(
-            RecentAction(kind: kind, subject: CaptureDetailPresentation.headline(for: subject)) {
-                [weak self] in
+            RecentAction(
+                kind: kind, subject: CaptureDetailPresentation.headline(for: subject)
+            ) { [weak self] in
                 // A service that has gone reversed nothing, so the offer stands rather than
                 // silently reporting success.
                 await self?.undoLastTriageAction(action) ?? false
             }
         )
     }
-
 
     /// Discards a capture outright. The triage exit for something that is neither a task nor worth
     /// keeping: without it, a stray thought sat in the inbox forever, because promote-to-task was

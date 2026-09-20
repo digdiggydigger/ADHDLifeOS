@@ -41,7 +41,7 @@ final class UndoCapsulePresentationTests: XCTestCase {
     func testACloseAndANudgeCarryTheCompletionGlyphInTheGoTint() {
         for kind in [RecentActionKind.taskClosed, .nudgeDismissed] {
             XCTAssertEqual(kind.systemImage, "checkmark.circle.fill", "\(kind) lost the completion glyph.")
-            XCTAssertEqual(kind.glyphTint, .go, "\(kind) is a completion, so its glyph is the go tint.")
+            XCTAssertEqual(kind.glyphTint, .completion, "\(kind) is a completion, so its glyph is the go tint.")
         }
     }
 
