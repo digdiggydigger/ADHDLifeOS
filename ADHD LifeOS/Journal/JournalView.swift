@@ -146,7 +146,11 @@ struct JournalView: View {
                 inspectingCapture = nil
             }
             .sheet(isPresented: $isPresentingComposer) {
-                LogComposerView(journalService: journalService, lifeAreas: journalService.lifeAreas) {
+                LogComposerView(
+                    journalService: journalService,
+                    lifeAreas: journalService.lifeAreas,
+                    captureClient: captureClient
+                ) {
                     Task { await journalService.load() }
                 }
                 .keyboardDismissal()

@@ -15,7 +15,7 @@
 //  time one of them changed. The decision lives here, pure and tested; the three call it.
 //
 
-import Foundation
+import SwiftUI
 
 enum ComposerDraftFiling {
     /// How much of a draft the capsule names.
@@ -103,5 +103,29 @@ struct ComposerDraftFiler {
             )
         )
         return true
+    }
+}
+
+/// The door a filed draft's "Reopen" goes through — E's Step 0 answer 1: *"Open it in the inbox
+/// (Recommended)"*.
+///
+/// **An environment value rather than a closure threaded through four presenting screens**, and
+/// that is the house pattern: `\.recordAction` and `\.celebrate` exist for exactly this shape of
+/// problem — something any view anywhere might need to TELL, whose answer only `RootView` can
+/// give, because only `RootView` owns the selected tab.
+///
+/// The default does nothing, so every preview and snapshot of a composer builds unchanged and a
+/// composer with no app around it simply files without offering a way back. `RootView`'s own
+/// wiring is asserted by a call-site test rather than left to this default, which would hide the
+/// mistake.
+private struct OpenCaptureKey: EnvironmentKey {
+    static let defaultValue: (UUID) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    /// Switches to the Captures tab and opens one capture there.
+    var openCapture: (UUID) -> Void {
+        get { self[OpenCaptureKey.self] }
+        set { self[OpenCaptureKey.self] = newValue }
     }
 }

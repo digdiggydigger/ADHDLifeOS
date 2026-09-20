@@ -18,6 +18,7 @@ struct TaskListView: View {
     /// `F-C1-UndoCapsule`: the app's one undo slot. A site TELLS it what just happened and
     /// forgets; the default is inert, so a preview renders the list with no capsule and no setup.
     @Environment(\.recordAction) private var recordAction
+    let captureClient: CaptureClientAdapting?
     private let taskCreateClient: TaskCreateClientAdapting
     private let taskDetailClient: TaskDetailClientAdapting
     /// Starts an app-level focus sprint from a resolved plan. Owned by `RootView` (which holds
@@ -33,9 +34,14 @@ struct TaskListView: View {
         tasksClient: TasksClientAdapting,
         taskCreateClient: TaskCreateClientAdapting,
         taskDetailClient: TaskDetailClientAdapting,
+        // `F-C2-DraftsToInbox`: threaded through so a task composer abandoned mid-title files it
+        // rather than discarding it. Optional with an inert default, as every other client on
+        // this screen is — the app's own wiring is asserted by `ComposerDraftCallSiteTests`.
+        captureClient: CaptureClientAdapting? = nil,
         onStartFocus: @escaping (FocusSprintPlan) -> Void = { _ in }
     ) {
         _tasksService = StateObject(wrappedValue: TasksService(client: tasksClient))
+        self.captureClient = captureClient
         self.taskCreateClient = taskCreateClient
         self.taskDetailClient = taskDetailClient
         self.onStartFocus = onStartFocus
@@ -127,7 +133,8 @@ struct TaskListView: View {
             .sheet(isPresented: $isPresentingTaskCreate) {
                 TaskCreateView(
                     client: taskCreateClient,
-                    lifeAreas: tasksService.lifeAreas
+                    lifeAreas: tasksService.lifeAreas,
+                    captureClient: captureClient
                 ) {
                     Task { await tasksService.load() }
                 }

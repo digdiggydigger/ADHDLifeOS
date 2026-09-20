@@ -134,3 +134,28 @@ struct CaptureInboxUndoHeaderButton: View {
         }
     }
 }
+
+// MARK: - The Reopen door (F-C2-DraftsToInbox)
+
+extension CaptureInboxView {
+    /// Opens the capture a filed draft's "Reopen" parked, then clears the slot.
+    ///
+    /// **It REFRESHES before it opens, and that is not belt-and-braces.** The draft was written
+    /// seconds ago from a composer on another tab; this screen's list predates it, so without the
+    /// refresh the capture would open over a list that does not contain it and closing the sheet
+    /// would leave the user looking at an inbox missing the thing they were just told was kept.
+    ///
+    /// **Fetched by id rather than found in the list.** The list is filtered — the user may be on
+    /// Sorted or Promoted — so a search through what happens to be loaded would silently fail on
+    /// the two tabs out of three where the draft is not shown. A capture that has been deleted in
+    /// between simply does not open; the slot is cleared either way so a failure cannot wedge the
+    /// door shut.
+    func drainReopenDoor() async {
+        guard let captureId = pendingCaptureToInspect else { return }
+        pendingCaptureToInspect = nil
+
+        await service.refresh()
+        guard let capture = try? await captureClient.fetchCapture(id: captureId) else { return }
+        inspectingCapture = capture
+    }
+}

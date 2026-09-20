@@ -18,6 +18,9 @@ struct QuickCaptureView: View {
     @Environment(\.dismiss) private var dismiss
     let onCreated: () -> Void
 
+    /// `F-C2-DraftsToInbox`: kept so the draft filer can write through the same seam the service
+    /// already uses. The service takes the client but does not hand it back.
+    private let captureClient: CaptureClientAdapting
     private let homeClient: HomeClientAdapting?
     private let taskCreateClient: TaskCreateClientAdapting?
     private let taskDetailClient: TaskDetailClientAdapting?
@@ -31,6 +34,13 @@ struct QuickCaptureView: View {
     @State var taskEffortSeconds = 900
     @State private var isSubmittingTask = false
     @State var taskErrorMessage: String?
+    /// `F-C2-DraftsToInbox`: a composer that SUBMITTED files no draft on the way out. Without it
+    /// the text is still in the service when the sheet dismisses, and the just-saved words would
+    /// be filed a second time as an abandoned draft.
+    @State private var didSubmit = false
+
+    @Environment(\.recordAction) private var recordAction
+    @Environment(\.openCapture) private var openCapture
 
     @StateObject var recorder = VoiceCaptureRecorder()
     @State var recordedAudioURL: URL?
@@ -48,6 +58,7 @@ struct QuickCaptureView: View {
             service.kind = kind
             return service
         }())
+        self.captureClient = client
         self.homeClient = homeClient
         self.taskCreateClient = taskCreateClient
         self.taskDetailClient = taskDetailClient
@@ -124,9 +135,20 @@ struct QuickCaptureView: View {
             .background(Color.pageBackground.ignoresSafeArea())
             .safeAreaInset(edge: .bottom) { footerBar }
             .navigationBarTitleDisplayMode(.inline)
+            // **`F-C2-DraftsToInbox`, and `.onDisappear` is deliberate** (Step 0 answer 2: prefer
+            // filing once the sheet has ACTUALLY gone, so a swipe keeps dismissing as it does
+            // today). It is also the only hook that covers both of this composer's presentations:
+            // a `.fullScreenCover` from the capture disc, where there is no swipe, and a `.sheet`
+            // from the Capture Inbox, where there is. A half-swipe that springs back never calls
+            // it, so a cancelled dismissal files nothing by construction.
+            .onDisappear { fileDraftIfNeeded() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    // **"Close", not "Cancel"** (E, round 2). `sheets.md › Best practices`:
+                    // Cancel means *without saving*, and this control no longer discards — typed
+                    // text is filed into the inbox on the way out.
+                    Button("Close") { dismiss() }
+                        .accessibilityIdentifier("quickCaptureCloseButton")
                 }
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {
@@ -186,9 +208,26 @@ struct QuickCaptureView: View {
         selectedImageData = PhotoCaptureImageProcessing.downscaledJPEGData(from: data) ?? data
     }
 
+    /// Files whatever was typed and not sent — E, round 2: *"A composer closed with text files it
+    /// into the Capture Inbox as a note."*
+    ///
+    /// **Only the typed content**, which is the spec's accepted cost named out loud: a voice or
+    /// photo capture's media is not "typed text" and is unaffected, and the task kind's effort
+    /// chip, area and tags are dropped — a filed draft is an ordinary note, not a richer draft
+    /// object nobody else knows how to read.
+    private func fileDraftIfNeeded() {
+        guard !didSubmit else { return }
+        let text = service.content
+        let filer = ComposerDraftFiler(
+            client: captureClient, record: recordAction, openCapture: openCapture
+        )
+        Task { await filer.fileIfNeeded(text) }
+    }
+
     func submit() {
         Task {
             if await save() {
+                didSubmit = true
                 Haptics.play(.solid)
                 onCreated()
                 dismiss()

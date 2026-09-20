@@ -12,31 +12,30 @@ import SwiftUI
 struct LogComposerView: View {
     @ObservedObject var journalService: JournalService
     let lifeAreas: [LifeArea]
+    /// `F-C2-DraftsToInbox`: the seam an abandoned entry is filed through. Optional with an inert
+    /// default so every preview builds unchanged; the app's one call site is asserted by
+    /// `ComposerDraftCallSiteTests`.
+    ///
+    /// **`var`, not `let`, and that is load-bearing rather than sloppy.** This view has no
+    /// hand-written `init`, so it relies on the synthesised memberwise one — and Swift EXCLUDES a
+    /// `let` that already carries a default value from that initialiser, since it could never be
+    /// assigned. Declared `let` here, the argument simply would not exist and `JournalView` could
+    /// not pass it. It must also be declared BEFORE `onCreated`, because the memberwise
+    /// initialiser takes its parameters in declaration order and `onCreated` is the trailing
+    /// closure at the call site.
+    var captureClient: CaptureClientAdapting?
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draftTagName = ""
 
-    /// The ink every QUIET label on this screen resolves to — section eyebrows, the "optional"
-    /// suffix, the explainer, the footer line. `nil` on the ordinary page, so it keeps exactly the
-    /// `.secondary` it has always had.
-    ///
-    /// One property rather than per-label decisions, because the failure it exists to prevent was
-    /// precisely a page where SOME labels found the ink and others silently took half of it.
-    private var softInk: String? {
-        JournalComposerPalette.softInkAsset(for: journalService.composerType)
-    }
+    /// A composer that SUBMITTED files no draft. `JournalService.createLog` clears `composerBody`
+    /// itself on success, so this is belt as well as braces — but it states the intent where a
+    /// reader can see it, rather than resting on another type's side effect.
+    @State var didSubmit = false
 
-    /// The ink for text on the CHROME rather than on the page — the pinned footer's line. Not the
-    /// same as `softInk`: at night the page stays gold while the desk goes near-black.
-    private var chromeInk: String? {
-        JournalComposerPalette.chromeInkAsset(for: journalService.composerType)
-    }
-
-    /// The wardrobe for whichever kind is being written — see `ComposerChipPalette`.
-    private var chips: ComposerChipPalette {
-        JournalComposerPalette.chipPalette(for: journalService.composerType)
-    }
+    @Environment(\.recordAction) var recordAction
+    @Environment(\.openCapture) var openCapture
 
     var body: some View {
         NavigationStack {
@@ -111,10 +110,19 @@ struct LogComposerView: View {
             )
             .safeAreaInset(edge: .bottom) { footerBar }
             .task { await journalService.refreshComposerLocationPreview() }
+            // **`F-C2-DraftsToInbox`, and this composer's text was the one already half-safe.**
+            // It lives on `JournalService`, which outlives the view, so it survived Cancel WITHIN
+            // a session and was lost only when the app quit (JRNL-01). Filing it makes that
+            // durable — and clearing it afterwards is what stops the same words existing twice,
+            // once as a capture and once waiting in the service for the next time this opens.
+            .onDisappear { fileDraftIfNeeded() }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    // **"Close", not "Cancel"** (E, round 2). `sheets.md › Best practices`:
+                    // Cancel means *without saving*, and this control no longer discards.
+                    Button("Close") { dismiss() }
+                        .accessibilityIdentifier("logComposerCloseButton")
                 }
                 ToolbarItem(placement: .principal) {
                     Text("New entry")
@@ -299,6 +307,7 @@ struct LogComposerView: View {
             Button(journalService.isCreating ? "Saving…" : "Save entry") {
                 Task {
                     if await journalService.createLog() {
+                        didSubmit = true
                         Haptics.play(.solid)
                         onCreated()
                         dismiss()

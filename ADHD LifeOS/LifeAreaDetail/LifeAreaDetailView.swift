@@ -19,6 +19,9 @@ struct LifeAreaDetailView: View {
     /// Every active area, for the rail. Empty hides the rail (old call sites, previews).
     let allAreas: [LifeArea]
     private let taskDetailClient: TaskDetailClientAdapting
+    /// `F-C2-DraftsToInbox`: stored as well as passed to the service, so the task composer
+    /// presented from this screen can file an abandoned title.
+    let captureClient: CaptureClientAdapting?
     private let taskCreateClient: TaskCreateClientAdapting?
     /// Threaded through to the pushed `TaskDetailView` so its launch row can start an app-level
     /// sprint; `nil` hides that row (previews and hosts with no `FocusSessionService`).
@@ -53,6 +56,7 @@ struct LifeAreaDetailView: View {
         ))
         self.lifeArea = lifeArea
         self.allAreas = allAreas
+        self.captureClient = captureClient
         self.taskDetailClient = taskDetailClient
         self.taskCreateClient = taskCreateClient
         self.onStartFocus = onStartFocus
@@ -115,7 +119,8 @@ struct LifeAreaDetailView: View {
                 TaskCreateView(
                     client: taskCreateClient,
                     lifeAreas: allAreas.isEmpty ? [lifeArea] : allAreas,
-                    preselectedLifeAreaId: lifeArea.id
+                    preselectedLifeAreaId: lifeArea.id,
+                    captureClient: captureClient
                 ) {
                     isPresentingAdd = false
                 }
