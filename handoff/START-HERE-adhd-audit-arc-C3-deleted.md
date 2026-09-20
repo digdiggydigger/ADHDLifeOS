@@ -94,5 +94,6 @@ it already signs in against the emulator, drives real screens and attaches frame
 - **The simulator (`9181EBF9-…`) was ERASED at close-out** after the UI journeys.
 - **The Firebase emulator was left RUNNING** with the audit's imported state —
   `./scripts/emulators.sh --import scripts/audit/emulator-state` if it is down.
-- **E's phone has `main` @ `fea8c9e`** — `F-C1`'s shape round, but NOT `F-C2`. Reinstall before
-  asking for the looks in §0.1.
+- **E's phone already has `main` @ `4917955`** — BOTH blocks, installed wirelessly at close-out.
+  Confirm it is still there and **force-quit the app**, but do not rebuild before asking for the
+  looks in §0.1.
