@@ -84,7 +84,7 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED** | `<sha>` (PR #<n>) | **device look + the RM-on pass** (§7.3) |
+| `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED** | `ea9cbed` (PR #172) | **device look + the RM-on pass** (§7.3) |
 | `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | NOT STARTED | — | — |
 | `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | NOT STARTED | — | — |
 | `F-C4-TagsRecentlyDeleted` | tags in Recently Deleted; hidden links, restore-to-everywhere, merge | NOT STARTED | — | — |
@@ -164,7 +164,7 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 ### Session 1 — 2026-09-20, arc C, block `F-C1-UndoCapsule`
 
-- **Landed:** `F-C1-UndoCapsule` at `<sha>` (PR #<n>). Suite **3,130 / 0**, SwiftLint **0 / 842**.
+- **Landed:** `F-C1-UndoCapsule` at `ea9cbed` (PR #172). Suite **3,130 / 0**, SwiftLint **0 / 842**.
   The first app Swift the audit has produced.
 - **Where the build departed from the spec, and why:** five departures, written out in full in the
   block's own note in `TODO-CLAUDE-CODE.md`. The two the next block will feel:
