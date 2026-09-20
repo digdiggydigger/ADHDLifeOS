@@ -51,6 +51,11 @@ enum UndoCapsuleVariant: String, CaseIterable {
     /// long one grows to ~53pt, staying clear of the 60pt capture disc. E chose the variable height
     /// over a steady 59pt with the disc's own height named as the cost.
     case chosen
+    /// **The 44pt alternative, rendered because `chosen`'s 44pt case turned out to be unreachable.**
+    /// Everything E chose EXCEPT the second line: fully rounded, no chip, the Undo padding
+    /// reclaimed — and ONE line, which now holds noticeably more of the title than the shipped
+    /// shape because the reclaimed 32pt went to the subject rather than to a second line.
+    case oneLineRoomy
 
     /// **Read once, and only in DEBUG.** A release build can never be a variant, whatever the
     /// environment says — the render switch is the thing that must not ship, not the shapes.
@@ -77,7 +82,7 @@ enum UndoCapsuleVariant: String, CaseIterable {
             return 16
         case .base, .upToTwo, .roomy:
             return 20
-        case .radiusFull, .chosen:
+        case .radiusFull, .chosen, .oneLineRoomy:
             return nil
         }
     }
@@ -93,7 +98,7 @@ enum UndoCapsuleVariant: String, CaseIterable {
     var drawsUndoChip: Bool { self == .current }
 
     /// How many lines the subject may take.
-    var subjectLineLimit: Int { self == .current ? 1 : 2 }
+    var subjectLineLimit: Int { (self == .current || self == .oneLineRoomy) ? 1 : 2 }
 
     /// Whether the second line's space is HELD when the subject does not need it.
     ///
@@ -102,14 +107,14 @@ enum UndoCapsuleVariant: String, CaseIterable {
     /// name"*). Not reserved lets a short subject sit in a shorter card.
     var reservesSecondLine: Bool {
         switch self {
-        case .current, .upToTwo, .chosen: return false
+        case .current, .upToTwo, .chosen, .oneLineRoomy: return false
         case .base, .radius16, .radiusFull, .roomy: return true
         }
     }
 
     /// What the Undo control pads itself by. 16 is the shipped value and it lived inside the chip.
     var undoHorizontalPadding: CGFloat {
-        (self == .roomy || self == .chosen) ? 0 : UndoCapsuleMetrics.undoHorizontalPadding
+        [.roomy, .chosen, .oneLineRoomy].contains(self) ? 0 : UndoCapsuleMetrics.undoHorizontalPadding
     }
 
     /// Stamped onto the capsule's accessibility identifier so a render PROVES which shape it

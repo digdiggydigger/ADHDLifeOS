@@ -117,3 +117,59 @@ round lacked: it lost two rounds to switches the app never received (a launch ar
 with `-` is read as a UserDefaults key expecting a value and is swallowed; `xcodebuild`'s own
 environment does not reach the test runner), and both failures look exactly like a design that did
 not change.
+
+---
+
+## ROUND 2 — E chose, the chosen shape was rendered, and the measurement contradicted one reason for it
+
+**E's picks, 2026-09-20:** *"from the images you've made Option C, 'Fully rounded' looks the best"*,
+then the Undo padding reclaimed (16 → 0), then **"up to two lines"** over a steady 59pt — chosen
+with the 59-vs-60 tension named explicitly, because 59pt sits level with the 60pt capture disc and
+that is close to the *"same height as the FAB Icon"* E rejected at 74pt.
+
+**That exact combination had never been rendered, so it was, before anything was written for real.
+It does not do what the third choice was for.**
+
+| frame | subject | card |
+|---|---|---|
+| `06-tasks-chosen-*` | "Capture three things on your mind" | **59pt** |
+| `06-tasks-chosen-short-*` | "Take a 10-minute walk" | **59pt** |
+
+**Both wrap.** With the padding reclaimed the subject column holds roughly **12–14 characters per
+`.footnote` line**, so "Take a 10-minute walk" breaks to *"Take a 10- / minute walk"*. **"Up to two
+lines" therefore behaves like "always two lines" for any realistic task title**; the 44pt fallback
+is only reachable for something as short as a nudge label ("water"). E picked it to stay clear of
+the disc, and it does not.
+
+**Why `upToTwo` measured 52.7pt earlier and `chosen` measures 59.** `upToTwo` kept the 16pt padding,
+so its column was narrower and `.minimumScaleFactor(0.8)` shrank the text to fit — smaller line
+boxes, shorter card. Reclaim the padding and the text renders at full size. The two decisions
+interact, which is exactly why the combination had to be rendered rather than reasoned about.
+
+**59pt is close to the floor for this arrangement**, not a slack number: `.caption2` verb (~13) +
+4pt gap + two `.footnote` lines (~36) + 8pt padding ≈ 61. Stepping the subject down to `.caption`
+saves ~4pt. There is no comfortable ~50pt shape that keeps the verb and two lines.
+
+**So the real choice is binary, and `00-board-the-height-choice-D.jpg` is it:**
+
+| | card | shows |
+|---|---|---|
+| **CURRENT** | 44pt | "Capture three thi…" |
+| **44pt · one line** (`07-*`) | **44pt** | "Capture three things on…" — the reclaimed 32pt spent on the line rather than a second line. Same height as today, visibly more title, and everything else E asked for (fully rounded, no chip). |
+| **59pt · two lines** (`06-*`) | **59pt** | "Capture three things / on your mind" — complete, at the cost of sitting level with the 60pt disc. |
+
+## Round 2's files
+
+| file | what it proves |
+|---|---|
+| `00-board-the-height-choice-D.jpg` | **The binary choice**, dark, with measured heights and the disc's 60pt named. |
+| `06-tasks-chosen-L/D.jpg` | E's picks as chosen: fully rounded, no chip, padding 0, two lines. 59pt. |
+| `06-tasks-chosen-short-L/D.jpg` | The same with the SHORT seeded title — still 59pt, which is the finding. |
+| `07-tasks-oneLineRoomy-D.jpg` | The 44pt alternative: everything E chose except the second line. |
+| `06/07-inbox-*.jpg` | Both over the Capture Inbox's dense content. |
+
+**One light render of `07` failed, and the failure is the harness working.** The assertion
+*"No capsule with identifier 'undoCapsule-oneLineRoomy' — the variant did not reach the app"* fired
+because the close never landed, so the run failed instead of photographing the shipped shape and
+labelling it as the alternative. That is precisely the trap the height round fell into twice. The
+dark render of the same variant passed and is the frame above.

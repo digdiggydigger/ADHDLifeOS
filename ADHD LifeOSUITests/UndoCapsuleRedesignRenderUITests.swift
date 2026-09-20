@@ -42,6 +42,7 @@ final class UndoCapsuleRedesignRenderUITests: XCTestCase {
     @MainActor func testRenderVariantUpToTwoLines() throws { try render(.upToTwo) }
     @MainActor func testRenderVariantRoomyNoUndoPadding() throws { try render(.roomy) }
     @MainActor func testRenderVariantChosen() throws { try render(.chosen) }
+    @MainActor func testRenderVariantOneLineRoomy() throws { try render(.oneLineRoomy) }
     /// The other half of "up to two lines": a subject that does NOT need the second line, so the
     /// card falls back to the 44pt E approved in the height round. A frame of the long title alone
     /// would show only the grown state and say nothing about the one the user sees most.
@@ -146,7 +147,7 @@ final class UndoCapsuleRedesignRenderUITests: XCTestCase {
 /// The variant names, duplicated here because the UI-test target does not link the app target.
 /// Kept in lockstep with `UndoCapsuleVariant` by `testTheRenderHarnessKnowsEveryVariant` below.
 enum UndoCapsuleVariantName: String, CaseIterable {
-    case current, base, radius16, radiusFull, upToTwo, roomy, chosen
+    case current, base, radius16, radiusFull, upToTwo, roomy, chosen, oneLineRoomy
 
     var identifierSuffix: String { self == .current ? "" : "-\(rawValue)" }
 
@@ -160,6 +161,7 @@ enum UndoCapsuleVariantName: String, CaseIterable {
         case .upToTwo: return "04"
         case .roomy: return "05"
         case .chosen: return "06"
+        case .oneLineRoomy: return "07"
         }
     }
 }
