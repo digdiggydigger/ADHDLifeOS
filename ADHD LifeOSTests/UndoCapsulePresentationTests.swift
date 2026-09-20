@@ -167,6 +167,58 @@ final class UndoCapsulePresentationTests: XCTestCase {
         }
     }
 
+    /// **The bug E fixed, written as geometry: is the content's own corner ON the card?**
+    ///
+    /// This is the assertion the whole cap exists for, and it is the one a radius number cannot
+    /// make. The capsule's content sits `horizontalPadding` in from the leading edge with the
+    /// completion glyph near the top, so the card's fill has to reach that point at EVERY height
+    /// the layout can take — including the 194.3pt stacked card measured at Accessibility XL,
+    /// which is where a true capsule's 97.2pt caps left the glyph 59pt outside its own fill.
+    ///
+    /// Sampling the drawn path rather than the radius is deliberate: it is the only form of this
+    /// test that stays true if the shape is ever rebuilt a different way.
+    func testTheContentsOwnCornerSitsOnTheCardAtEveryHeightTheLayoutCanTake() {
+        let width: CGFloat = 361   // the capsule's width on an iPhone 17 Pro, measured
+        let contentCorner = CGPoint(x: UndoCapsuleMetrics.horizontalPadding, y: 8)
+
+        for height in [UndoCapsuleMetrics.minHeight, 100, 194.3, 260] as [CGFloat] {
+            let path = UndoCapsuleMetrics.cardShape.path(
+                in: CGRect(x: 0, y: 0, width: width, height: height)
+            )
+            XCTAssertTrue(
+                path.contains(contentCorner),
+                "At \(height)pt the card's fill does not reach \(contentCorner) — the corner the"
+                    + " completion glyph is drawn in. That is E's Accessibility XL break: the"
+                    + " radius grew with the card and the curve ate the content's corner."
+            )
+        }
+    }
+
+    /// **`strokeBorder` draws INSIDE the fill, and that needs a shape that insets itself.**
+    /// `AnyShape` is not `InsettableShape`, which is what bit the redesign round's render build;
+    /// the house answer is a concrete shape that implements `inset(by:)`. A shape that ignored the
+    /// amount would compile, satisfy `strokeBorder`, and quietly stroke ON the card's edge, so the
+    /// border would straddle the boundary and read as a half-pixel smudge in both appearances.
+    ///
+    /// The insets must also ACCUMULATE, because SwiftUI applies `strokeBorder`'s half-line-width
+    /// through the same call the view's own inset would come through.
+    func testTheBorderInsetsItselfInsideTheFillAndTheInsetsAccumulate() {
+        let rect = CGRect(x: 0, y: 0, width: 361, height: UndoCapsuleMetrics.minHeight)
+
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardShape.inset(by: 1).path(in: rect).boundingRect,
+            rect.insetBy(dx: 1, dy: 1),
+            "The shape ignores its inset, so the card's border straddles the fill's edge instead"
+                + " of sitting inside it."
+        )
+        XCTAssertEqual(
+            UndoCapsuleMetrics.cardShape.inset(by: 1).inset(by: 2).path(in: rect).boundingRect,
+            rect.insetBy(dx: 3, dy: 3),
+            "Insets replace one another rather than accumulating, so a second inset silently"
+                + " discards the first."
+        )
+    }
+
     /// **E's shape round reclaimed the Undo control's horizontal padding, 16 → 0.** With the chip
     /// gone its 16pt a side was padding the inside of nothing — 32pt of invisible dead space beside
     /// the subject, which is what had been truncating task titles. Spending it on the one line is
