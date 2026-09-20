@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// The disc row's leading band: the capsule while one is pending, and whatever the screen would
 /// otherwise put there the rest of the time.
@@ -70,6 +71,18 @@ struct UndoCapsulePresenter<Fallback: View>: View {
         // hard cut is wrong for. Keyed on the pending action alone, so the search row's own
         // scope-driven animation in `RootBottomOverlay` is untouched.
         .animation(UndoCapsuleMotion.appearance(reduceMotion: reduceMotion), value: center.pendingAction)
+        // `voiceover.md`: report a visible change. The capsule is the LAST element on the screen
+        // and on Tasks it replaces the search row, so both halves of what just happened are out of
+        // a VoiceOver user's way unless they are told.
+        //
+        // **`UIAccessibility.post` on every tier, and the 17 one was considered and left out**
+        // (§7.1's filter). `AccessibilityNotification.Announcement` is iOS 17+ and adds only a
+        // priority; an undo offer is not urgent enough to interrupt a higher-priority utterance,
+        // so the tier would show the user nothing the floor cannot. This API is not deprecated.
+        .onChange(of: center.pendingAction) { action in
+            guard let action else { return }
+            UIAccessibility.post(notification: .announcement, argument: action.accessibilityAnnouncement)
+        }
     }
 }
 

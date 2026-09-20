@@ -130,6 +130,25 @@ struct RecentAction: Identifiable {
     }
 }
 
+extension RecentAction {
+    /// What VoiceOver is told when the capsule arrives.
+    ///
+    /// **Why an announcement at all** — `voiceover.md › Best practices`: *"Inform VoiceOver when
+    /// visible content or layout changes occur… It's crucial to report visible changes so VoiceOver
+    /// and other assistive technologies can help people update their understanding of the
+    /// content."* The capsule appears at the very END of the screen's element order, below the tab
+    /// bar's row, and on Tasks it takes the search row's place. A sighted user sees both changes at
+    /// the moment they close a task; without this, a VoiceOver user is given no sign that an undo
+    /// exists at all, and the one affordance this whole block adds is invisible to them.
+    ///
+    /// It names the same two things the capsule draws, then says what is on offer — Apple's
+    /// *"help people predict the results of undoing"* (`undo-and-redo.md › Best practices`) applied
+    /// to a surface that has no shake gesture and no Edit menu.
+    var accessibilityAnnouncement: String {
+        "\(kind.verb). \(subject). Undo available."
+    }
+}
+
 /// Identity, not content: a closure cannot be compared, and two recordings are the same event only
 /// if they are literally the same recording.
 extension RecentAction: Equatable {

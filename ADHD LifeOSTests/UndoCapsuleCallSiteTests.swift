@@ -63,6 +63,24 @@ final class UndoCapsuleCallSiteTests: XCTestCase {
         )
     }
 
+    /// `voiceover.md › Best practices`: *"Inform VoiceOver when visible content or layout changes
+    /// occur."* Two things change when a close lands — the capsule arrives and, on Tasks, the
+    /// search row leaves — and both are out of a VoiceOver user's way unless announced. A silent
+    /// capsule passes every other test in this file, which is why this one exists.
+    func testTheCapsulesArrivalIsAnnouncedToVoiceOver() throws {
+        let capsule = try Self.appCode("Undo/UndoCapsule.swift")
+        XCTAssertTrue(
+            capsule.contains("UIAccessibility.post(notification: .announcement"),
+            "The capsule arrives silently, so the one affordance this block adds is invisible to"
+                + " VoiceOver."
+        )
+        XCTAssertTrue(
+            capsule.contains("action.accessibilityAnnouncement"),
+            "The announcement does not use the recorded action's own words, so it can drift from"
+                + " what the capsule draws."
+        )
+    }
+
     // MARK: - The five close surfaces (E, round 1 + Step 0 answers 1 and 3)
 
     /// One row per surface: the file, and the recording it must contain. A table rather than five

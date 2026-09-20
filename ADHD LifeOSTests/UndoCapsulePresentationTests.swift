@@ -92,6 +92,35 @@ final class UndoCapsulePresentationTests: XCTestCase {
         }
     }
 
+    // MARK: - What VoiceOver is told (`voiceover.md` — report a visible change)
+
+    /// The capsule is the LAST element on the screen and on Tasks it takes the search row's place,
+    /// so a VoiceOver user gets no sign the undo exists unless the arrival is announced. The words
+    /// are the two the capsule draws, then the offer.
+    func testTheAnnouncementNamesWhatHappenedWhatItHappenedToAndTheOffer() {
+        let action = RecentAction(
+            kind: .taskClosed, subject: "Pay the council tax instalment", undo: { true }
+        )
+
+        XCTAssertEqual(
+            action.accessibilityAnnouncement,
+            "Closed. Pay the council tax instalment. Undo available."
+        )
+    }
+
+    /// The area travels into the announcement with the verb, so a sorted capture is as specific
+    /// spoken as it is drawn.
+    func testTheAnnouncementCarriesTheAreaASortFiledInto() {
+        let action = RecentAction(
+            kind: .captureSorted(areaLabel: "💼 Work"), subject: "Bike repair receipt", undo: { true }
+        )
+
+        XCTAssertEqual(
+            action.accessibilityAnnouncement,
+            "Sorted to 💼 Work. Bike repair receipt. Undo available."
+        )
+    }
+
     // MARK: - The stacked layout at accessibility sizes (E, round 2b)
 
     func testTheCapsuleStacksAtAccessibilitySizesAndOnlyThere() {
