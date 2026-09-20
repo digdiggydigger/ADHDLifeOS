@@ -61,12 +61,17 @@ final class UndoCapsulePresentationTests: XCTestCase {
 
     // MARK: - The geometry
 
-    /// Round 7: "48pt for anything that starts, closes, adds, undoes, ends or saves". Deliberately
-    /// NOT `AppSearchRowMetrics.fieldHeight` (44) — a taller metric for this one control, which is
-    /// why it is spelled separately rather than borrowed.
-    func testTheCapsuleIsFortyEightPointsTallAndNotTheSearchFieldsFortyFour() {
-        XCTAssertEqual(UndoCapsuleMetrics.minHeight, 48)
-        XCTAssertNotEqual(UndoCapsuleMetrics.minHeight, AppSearchRowMetrics.fieldHeight)
+    /// **Reversed by E's height round, 2026-09-20, not deleted.** It pinned 48 and *"deliberately
+    /// NOT the search field's 44"*. E measured the shipped capsule against the 60pt capture disc
+    /// and marked a 45.3pt band: *"it looks ugly with the UndoCapsule at the same height as the
+    /// FAB Icon."* So the capsule IS the search field's height now, and that is the point rather
+    /// than a coincidence — it stands in that row's slot, and 44 is also §3's touch floor.
+    func testTheCapsuleIsOneTouchTargetTallAfterEsHeightRound() {
+        XCTAssertEqual(UndoCapsuleMetrics.minHeight, 44)
+        XCTAssertEqual(
+            UndoCapsuleMetrics.minHeight, AppSearchRowMetrics.fieldHeight,
+            "The capsule stands in the search row's slot; matching its height is deliberate."
+        )
     }
 
     /// It stands in for the search row, so it wears the row's corner rather than inventing one —
@@ -76,10 +81,30 @@ final class UndoCapsulePresentationTests: XCTestCase {
         XCTAssertEqual(UndoCapsuleMetrics.cornerRadius, AppSearchRowMetrics.fieldCornerRadius)
     }
 
-    /// The Undo control itself is a 48pt target too — it is the reason the capsule exists, and
-    /// §3's floor is 44 with round 7 raising an action to 48.
-    func testTheUndoControlIsItselfAFortyEightPointTarget() {
-        XCTAssertEqual(UndoCapsuleMetrics.undoMinHeight, 48)
+    /// **Reversed with the height above, and the GUARANTEE is what survived.** Round 7's 48pt
+    /// cannot be drawn inside a 44pt band, and E chose the trade by name: *"Yes — draw 32, tap
+    /// 44"*. So the pill is drawn at 32 and its hit area is grown back to §3's 44 with the tab
+    /// bar's own negative-padding trick. A test that only checked the drawn height would pass on a
+    /// build where the target had quietly shrunk with it, which is the whole risk here.
+    func testTheUndoControlIsDrawnSmallerThanItsTapTargetAndTheTargetIsStillFortyFour() {
+        XCTAssertEqual(UndoCapsuleMetrics.undoDrawnHeight, 32)
+        XCTAssertEqual(
+            UndoCapsuleMetrics.undoDrawnHeight + 2 * UndoCapsuleMetrics.undoHitOverflow, 44,
+            "The drawn pill plus its overflow no longer reaches §3's 44pt touch floor."
+        )
+        XCTAssertEqual(UndoCapsuleMetrics.undoHitOverflow, 6)
+    }
+
+    /// The capsule is exactly one touch target tall, so the control inside it cannot be taller
+    /// than the card that holds it — which is what E was looking at when they said it read as the
+    /// same size as the disc.
+    func testTheDrawnControlFitsInsideTheCardWithItsPaddingToSpare() {
+        let spent = UndoCapsuleMetrics.undoDrawnHeight + 2 * UndoCapsuleMetrics.verticalPadding
+        XCTAssertLessThanOrEqual(
+            spent, UndoCapsuleMetrics.minHeight,
+            "The pill and the card's padding come to \(spent)pt, which would push the card past"
+                + " \(UndoCapsuleMetrics.minHeight)pt and undo E's height round."
+        )
     }
 
     /// Every padding the capsule spends is on §2's 4/8/16/24 grid. The two sanctioned off-grid

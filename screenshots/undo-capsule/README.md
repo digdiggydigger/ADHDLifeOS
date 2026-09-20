@@ -1,5 +1,25 @@
 # `F-C1-UndoCapsule` — the undo capsule, on every surface it appears on
 
+> **Re-rendered 2026-09-20 after E's HEIGHT ROUND.** The first set drew the capsule at **74pt**
+> against a 60pt capture disc. E marked a **45.3pt** band on
+> `02-tasks-capsule-stands-in-for-search-L-EDITED.jpg` — *"the UndoCapsule must be made smaller in
+> height, it looks ugly with the UndoCapsule at the same height as the FAB Icon"* — and, shown four
+> shapes rendered on the real screen (`../undo-capsule-height/`), chose **two lines, a size
+> smaller**: board `54`'s arrangement kept, verb `.footnote` → `.caption2`, subject `.callout` →
+> `.footnote`, subject to ONE line. The card is **44pt** now, which is also §3's touch floor and
+> the search row's own height — it stands in that slot, so matching it is deliberate.
+>
+> E also chose the Undo control's trade by name: *"Yes — draw 32, tap 44"*. The pill is drawn at
+> 32pt and its hit area is grown back to §3's 44pt with the tab bar's own negative-padding trick
+> (`AppTabBarMetrics.slotHitOverflow`). Round 7's *"48pt for anything that … undoes"* cannot be
+> drawn inside a 44pt band; that number was written for a control that owns its space.
+>
+> **Every `-L`, `-D` and `-AX3` frame below is the NEW height.** The two landscape frames are
+> suffixed `-PRE-HEIGHT-ROUND` and still show the 74pt capsule: what they prove is the
+> *arrangement* (`RootBottomOverlayLayout` puts the sprint card beside the disc row), which the
+> height does not change, and a shorter capsule only helps it. Re-rendering them is in the next
+> session's opener.
+
 **Environment:** iPhone 17 Pro simulator, iOS 26.5, Firebase **Emulator Suite** (the audit's
 exported state, `scripts/audit/emulator-state`), a throwaway account created by the harness,
 2026-09-20. Portrait frames are `app.screenshot()` attachments from

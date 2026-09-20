@@ -127,7 +127,7 @@ struct UndoCapsule: View {
             VStack(alignment: .leading, spacing: UndoCapsuleMetrics.stackedSpacing) {
                 Label {
                     Text(action.kind.verb)
-                        .font(.footnote.weight(.semibold))
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(Color("LabelSecondary"))
                 } icon: {
                     glyph
@@ -138,24 +138,31 @@ struct UndoCapsule: View {
         } else {
             HStack(spacing: UndoCapsuleMetrics.glyphSpacing) {
                 glyph
-                VStack(alignment: .leading, spacing: UndoCapsuleMetrics.verbToSubjectSpacing) {
-                    Text(action.kind.verb)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Color("LabelSecondary"))
-                        .lineLimit(1)
-                    subject
-                }
+                words
                 Spacer(minLength: UndoCapsuleMetrics.undoSpacing)
                 // **`layoutPriority`, and it is not belt-and-braces — the first render on the
                 // simulator showed "Un…".** In a tight `HStack` SwiftUI compresses whichever child
                 // will give, and with a two-line subject beside it the control that gave was the
                 // Undo button: the one thing in the capsule that must never be ambiguous. §1's
-                // Layout Safety rule names `.layoutPriority(1)` for exactly this. The subject
-                // takes the squeeze instead, which it is already dressed for — two lines and a
-                // 0.8 minimum scale.
+                // Layout Safety rule names `.layoutPriority(1)` for exactly this. The words take
+                // the squeeze instead, which they are already dressed for.
                 undoButton
                     .layoutPriority(1)
             }
+        }
+    }
+
+    /// E's chosen shape (height round, 2026-09-20): board `54`'s two lines, each a size smaller.
+    /// The verb was `.footnote` and the subject `.callout`; stepping both down is what lets the
+    /// card sit in the 44pt band without dropping either fact or wrapping the title.
+    private var words: some View {
+        VStack(alignment: .leading, spacing: UndoCapsuleMetrics.verbToSubjectSpacing) {
+            Text(action.kind.verb)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Color("LabelSecondary"))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+            subject
         }
     }
 
@@ -170,9 +177,11 @@ struct UndoCapsule: View {
 
     private var subject: some View {
         Text(action.subject)
-            .font(.callout)
+            .font(.footnote)
             .foregroundStyle(Color("LabelPrimary"))
-            .lineLimit(2)
+            // ONE line since the height round: a title that wrapped made the card 74pt and one
+            // that did not made it ~52, so the capsule's height depended on the task's name.
+            .lineLimit(isStacked ? 2 : 1)
             .minimumScaleFactor(0.8)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -195,9 +204,16 @@ struct UndoCapsule: View {
                 // horizontal squeeze, not to the type.
                 .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, UndoCapsuleMetrics.undoHorizontalPadding)
-                .frame(minHeight: UndoCapsuleMetrics.undoMinHeight)
+                .frame(minHeight: UndoCapsuleMetrics.undoDrawnHeight)
                 .background(chipTint, in: Capsule(style: .continuous))
+                // **The tab bar's own trick, and it is what keeps §3 intact at 44pt.** The pill is
+                // DRAWN at 32 so the capsule can be the height E marked; the hit area is grown back
+                // to 44 with negative vertical padding around the `contentShape`, exactly as
+                // `AppTabBarMetrics.slotHitOverflow` does for a 44pt slot in a shorter card. The
+                // layout stays the pill's height; a tap a little above or below it still lands.
+                .padding(.vertical, UndoCapsuleMetrics.undoHitOverflow)
                 .contentShape(Capsule(style: .continuous))
+                .padding(.vertical, -UndoCapsuleMetrics.undoHitOverflow)
         }
         .buttonStyle(UndoCapsuleButtonStyle())
         // **The plain word, and it is deliberate.** The capsule is `.contain`, so VoiceOver reads

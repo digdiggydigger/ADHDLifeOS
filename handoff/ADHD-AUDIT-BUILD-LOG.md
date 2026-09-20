@@ -192,7 +192,15 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   `CaptureInboxService.clearLastTriageAction()` was left dead with a doc comment claiming a guard
   it did not have. **Every later arc-C block should grep `ADHD LifeOSUITests` for the identifiers
   and labels it changes, and RUN any journey it touches** — the suite will not.
-- **Next session starts at:** `F-C2-DraftsToInbox`, from `handoff/START-HERE-adhd-audit-arc-C2.md`.
+- **E's HEIGHT ROUND, after the block landed (same day).** E measured the shipped capsule against
+  the capture disc — *"it looks ugly with the UndoCapsule at the same height as the FAB Icon"* —
+  and marked a 45.3pt band against 74pt drawn. Four shapes were rendered on the real screen and E
+  chose **two lines, a size smaller** (44pt card) plus the Undo control's **draw 32 / tap 44**
+  trade, which overrides round 7's 48pt for that one control. Suite **3,132 / 0**.
+- **Owed to E, and it is the next session's FIRST job:** the device look and the RM-on pass, now on
+  the 44pt capsule. E's phone was disconnected during the height round and must be reconnected.
+- **Next session starts at:** the device look, then `F-C2-DraftsToInbox`, from
+  `handoff/START-HERE-adhd-audit-arc-C2.md`.
 
 ### Session 0 — 2026-09-19 · the audit (3 sessions), no build
 
