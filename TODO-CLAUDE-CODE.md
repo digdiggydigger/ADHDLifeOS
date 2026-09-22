@@ -5766,8 +5766,9 @@ trigger.
       field, back out with no Save tap, reload → the edit persisted; swipe-back pops the screen.
 - [ ] Red-check, restoring pre-block code; count failures; restore with `git checkout --`.
 - [ ] SwiftLint 0, suite green, build green, pasted.
-- [ ] `screenshots/drafts-to-inbox/` + README: each composer typed-then-closed, the inbox
-      afterward, and task detail's swipe-back working.
+- [x] COMPLETED `screenshots/drafts-to-inbox/` + README: each composer typed-then-closed, the
+      inbox afterward, and task detail's swipe-back working. **Produced 2026-09-22**, one session
+      late — 33 frames (light / dark / AX3) from `DraftsToInboxRenderUITests`.
 - [ ] `apple-design` review owed (§7.6) — new bar state, new copy, restored system chrome.
 - [ ] RM-on device pass owed only if this block adds/changes a NEW reduced site beyond reusing
       F-C1's capsule as-is; if the capsule component itself is untouched, say none is owed here
@@ -5811,9 +5812,25 @@ caught (task metadata and journal chips are dropped, and a filed draft is an ord
 voice and photo captures are untouched; and **filing a draft SPENDS whatever undo was pending**,
 since the capsule is one slot — the same cost E already accepted for the close/triage collision.
 
-**One acceptance criterion is NOT met: `screenshots/drafts-to-inbox/`.** The block was settled by
-assertion rather than by looking, but the spec asks for the folder and it is not there. Carried to
-the next session's opener with the F-C1 device look.
+**The one acceptance criterion this block missed was MET on 2026-09-22**, a session late:
+`screenshots/drafts-to-inbox/` now holds 33 frames (light / dark / AX3) and a README, produced by
+`ADHD LifeOSUITests/DraftsToInboxRenderUITests` against the shipped build (no app code changed —
+`git diff 4917955 bc2827e` touches `handoff/` only). **Four things it caught that the block's own
+green suite could not:**
+
+1. **The Journal has no compose control at all while a capsule is pending** — the capsule stands in
+   for the pencil disc, so the first run failed with *"The journal composer never opened"*. The
+   documented intent of one-bar-everywhere, but THIS block made it common: before, only a close or
+   a triage made a capsule; now any composer closed on text does. Recorded for E, not re-tuned.
+2. **Reopen lands on a PUSHED screen, not a sheet** (`CaptureInboxView`'s `navigationDestination`)
+   — 45s of a harness waiting for a sheet that never existed, and had it not, the still-pushed
+   detail would have been on the stack when the inbox frame was taken.
+3. **`F-C1`'s radius cap holds for the wider "↗ Reopen" control at AX3** — glyph, verb, subject and
+   the control all inside the card's fill. This was the open question `F-C1`'s Critical implied and
+   only a render at that text size could answer.
+4. **The selected Captures tab truncates to "Captu…" when badged**, already at 80% scale, because
+   the badge overlay takes width from the same pill. Filed drafts are what make the state common.
+   A register candidate — §7.5: a review may name the tension, never re-tune the bar.
 
 
 **Step 0 — ANSWERED before the hand-off. Do not re-ask:**
