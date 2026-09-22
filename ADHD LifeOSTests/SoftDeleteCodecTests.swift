@@ -83,4 +83,52 @@ final class SoftDeleteCodecTests: XCTestCase {
         let fields = try FirestoreDocumentCoder.encode(capture)
         XCTAssertNil(fields["deletedAt"])
     }
+
+    // MARK: - Tags — snake_case (F-C4-TagsRecentlyDeleted)
+
+    /// **`Tag` had NO `CodingKeys` at all before this block**, so its two fields rode Swift's
+    /// default synthesis and the question of a convention never came up. `deletedAt` is the first
+    /// multi-word field it has ever had, so the default would have shipped `deletedAt` on a
+    /// collection whose sibling `tasks` spells it `deleted_at` — and the spec's own line is
+    /// *"Tags are snake_cased like tasks"*. Nothing raises if that is got wrong: the delete writes
+    /// a field nothing reads, so the tag keeps rendering on every chip and the soft delete does
+    /// nothing at all while reporting success.
+    func testTag_encodesTheStampAsDeletedAtSnakeCase() throws {
+        var tag = Tag(id: UUID(), name: "errand")
+        tag.deletedAt = Self.stamp
+        let fields = try FirestoreDocumentCoder.encode(tag)
+        XCTAssertNotNil(fields["deleted_at"], "a tag's stamp is snake_case, like a task's")
+        XCTAssertNil(fields["deletedAt"], "the camelCase spelling belongs to captures, not tags")
+
+        let decoded = try FirestoreDocumentCoder.decode(Tag.self, from: fields)
+        XCTAssertEqual(decoded.deletedAt, Self.stamp)
+    }
+
+    func testTag_omitsTheKeyEntirelyWhenLive() throws {
+        let tag = Tag(id: UUID(), name: "errand")
+        let fields = try FirestoreDocumentCoder.encode(tag)
+        XCTAssertNil(fields["deleted_at"])
+    }
+
+    /// Every tag in E's account today has no such key, and must read as LIVE — the same
+    /// absence-is-ordinary rule the other two collections needed.
+    func testTag_decodesADocumentWrittenBeforeTheFieldExistedAsLive() throws {
+        let tag = Tag(id: UUID(), name: "errand")
+        var fields = try FirestoreDocumentCoder.encode(tag)
+        fields.removeValue(forKey: "deleted_at")
+
+        let decoded = try FirestoreDocumentCoder.decode(Tag.self, from: fields)
+        XCTAssertNil(decoded.deletedAt)
+        XCTAssertTrue(SoftDelete.isLive(deletedAt: decoded.deletedAt))
+    }
+
+    /// The conformance is what lets `live(_:)`/`deleted(_:)` accept a tag at all. Asserted rather
+    /// than assumed because the generic filter would otherwise fail to compile only at the call
+    /// site, far from the model that owes the property.
+    func testTag_isSoftDeletable() {
+        var tag = Tag(id: UUID(), name: "errand")
+        tag.deletedAt = Self.stamp
+        let deletable: SoftDeletable = tag
+        XCTAssertEqual(deletable.deletedAt, Self.stamp)
+    }
 }
