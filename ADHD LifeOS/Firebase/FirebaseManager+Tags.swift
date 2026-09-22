@@ -81,8 +81,13 @@ extension FirebaseManager {
     }
 
     /// Rewrites every reference to `tagId` across tasks and captures — to `replacement` for a
-    /// merge, or to nothing for a delete — then removes the tag document itself, mirroring the
-    /// old backend's cascade semantics.
+    /// merge, or to nothing for a purge — then removes the tag document itself.
+    ///
+    /// **Since `F-C4-TagsRecentlyDeleted` this is no longer what a delete does.** The
+    /// `replacingWith: nil` form is the 30-DAY PURGE and "Delete forever": stripping the links is
+    /// the irreversible half, and the thirty days exist to buy it back. A screen that wants a tag
+    /// gone calls `softDeleteTag(id:)` and this runs later, unchanged, on a tag that has aged out.
+    /// The `replacingWith: someId` form is the Tag Editor's merge and is exactly as it was.
     func removeTagEverywhere(_ tagId: UUID, replacingWith replacement: UUID?) async throws {
         let batch = firestoreBatch()
         for parent in [FirebaseTagParent.task, .capture] {
@@ -114,8 +119,43 @@ extension FirebaseManager {
 
 /// Moved here from `FirebaseManager.swift` so all tag storage lives in one file.
 extension FirebaseManager {
+    /// **The one read every tag surface in the app goes through, which is why one `live(_:)` wrap
+    /// hides a deleted tag everywhere** (`F-C4-TagsRecentlyDeleted`). `fetchTags(for:parentId:)`
+    /// resolves a parent's ids against this list and `fetchTag(named:)` searches it, so the Tag
+    /// Editor, task detail's chip row, the task composer, capture triage, the inbox cards, the
+    /// journal timeline, the log composer and Quick Capture all inherit the filter for free.
+    ///
+    /// **Not `whereField`**, for the reason `FirebaseManager+SoftDelete.swift` records at length:
+    /// `isEqualTo: NSNull()` matches only documents where the key is PRESENT and null, and every
+    /// tag in the account today has no such key at all.
     func fetchTags() async throws -> [Tag] {
-        try await fetchAll(Tag.self, from: .tags, orderedBy: "name")
+        live(try await fetchAll(Tag.self, from: .tags, orderedBy: "name"))
+    }
+
+    /// Recently Deleted's tag list — exactly what `fetchTags()` drops.
+    func fetchDeletedTags() async throws -> [Tag] {
+        deleted(try await fetchAll(Tag.self, from: .tags, orderedBy: "name"))
+    }
+
+    /// Soft delete (`F-C4-TagsRecentlyDeleted`). **The gentlest write in the block: it stamps the
+    /// tag document and touches nothing else.**
+    ///
+    /// Today's delete unlinked and destroyed in one atomic batch (`removeTagEverywhere` below).
+    /// This splits that batch in two and defers the second half by thirty days — so what used to
+    /// happen at the tap now happens at the purge, and in between the links are all still there.
+    /// That is what makes `restoreTag(id:)` able to put the tag back on every item without writing
+    /// to a single one of them.
+    ///
+    /// Going through `update(id:fields:in:)` is load-bearing beyond tidiness: it is the write
+    /// plumbing that posts `DataChangeSignal`, which is how a restored tag reappears on every open
+    /// chip row at once rather than on the next screen visit.
+    func softDeleteTag(id: UUID, now: Date = .now) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.tagSoftDelete(now: now), in: .tags)
+    }
+
+    /// The way back. Erasing the stamp is the ENTIRE restore — see `tagRestore()`.
+    func restoreTag(id: UUID) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.tagRestore(), in: .tags)
     }
 
     func saveTag(_ tag: Tag) async throws {
