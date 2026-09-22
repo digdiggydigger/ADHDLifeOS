@@ -221,7 +221,7 @@ extension TaskDetailView {
     /// Only on a landed delete: refresh the list and pop. A failed delete leaves
     /// `taskDetailErrorMessage` on screen and stays put.
     func performDelete() async {
-        guard await service.delete() else { return }
+        guard await service.softDelete() else { return }
         onUpdated()
         dismiss()
     }

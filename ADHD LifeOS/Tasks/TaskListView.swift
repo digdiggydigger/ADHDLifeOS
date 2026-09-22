@@ -341,7 +341,8 @@ private struct PreviewTaskDetailClientAdapting: TaskDetailClientAdapting {
         fatalError("unused in preview")
     }
     func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail { fatalError("unused in preview") }
-    func deleteTask(id: UUID) async throws {}
+    func softDeleteTask(id: UUID) async throws {}
+    func restoreTask(id: UUID) async throws {}
     func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
     func addTagToTask(taskId: UUID, tagId: UUID) async throws {}
     func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {}

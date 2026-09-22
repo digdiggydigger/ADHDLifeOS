@@ -231,6 +231,45 @@ final class SoftDeleteCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The hard delete has ONE home (F-C3-RecentlyDeleted, cycle 5)
+
+    /// **A dormant hard delete on a UI-facing seam is a loaded gun.** Once every screen soft
+    /// deletes, a `deleteTask`/`deleteCapture` still sitting on `TaskDetailClientAdapting` or
+    /// `CaptureClientAdapting` is an irreversible operation one autocomplete away from a caller
+    /// who meant the gentle one — and nothing would fail. The only routes to a real document
+    /// delete are the launch purge and "Delete forever", both of which live in `RecentlyDeleted/`
+    /// and speak to `Firebase/` directly.
+    ///
+    /// **Whole-tree rather than a list of files**, because the failure this guards against is a
+    /// file nobody thought to add to a list. `softDeleteTask(` does not match: the character
+    /// before `eleteTask(` is a capital `D`.
+    func testTheHardDeleteExistsNowhereOutsideFirebaseAndRecentlyDeleted() throws {
+        let root = Self.appRoot()
+        let allowed = ["Firebase", "RecentlyDeleted"]
+        var offenders: [String] = []
+
+        let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?
+            .compactMap { $0 as? URL }
+            .filter { $0.pathExtension == "swift" } ?? []
+        XCTAssertGreaterThan(files.count, 200, "The tree walk found almost nothing — it is not reading the app.")
+
+        for file in files {
+            let folder = file.deletingLastPathComponent().lastPathComponent
+            guard !allowed.contains(folder) else { continue }
+            let source = try Self.appCode(String(file.path.dropFirst(root.path.count + 1)))
+            if source.contains("deleteTask(") || source.contains("deleteCapture(") {
+                offenders.append(file.lastPathComponent)
+            }
+        }
+
+        XCTAssertEqual(
+            offenders.sorted(), [],
+            "These files still name the HARD delete. Every screen soft deletes now, so a"
+                + " `deleteTask`/`deleteCapture` left on a UI-facing seam is an irreversible"
+                + " operation one autocomplete away from a caller who meant `softDelete…`."
+        )
+    }
+
     // MARK: - Reading the tree
 
     private static func count(of needle: String, in source: String) -> Int {

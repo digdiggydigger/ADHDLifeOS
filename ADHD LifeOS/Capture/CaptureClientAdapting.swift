@@ -81,9 +81,13 @@ protocol CaptureClientAdapting: Sendable {
     /// "Journal it" can finally be taken back. Its absence is why round 1 shipped undo for Sorted
     /// and Skip only.
     func markUnprocessed(captureId: UUID) async throws
-    /// Discards a capture outright — the triage exit for something that is neither a task nor worth
-    /// keeping. `captures` already grants owner delete in `firestore.rules`, so no rules change.
-    func deleteCapture(id: UUID) async throws
+    /// Discards a capture — the triage exit for something that is neither a task nor worth
+    /// keeping. **Soft since `F-C3-RecentlyDeleted`**: the document survives with a `deletedAt`
+    /// stamp and every list drops it, so the capsule's Undo has something to put back. The hard
+    /// twin is gone from this seam entirely, so nothing a screen can reach is irreversible.
+    func softDeleteCapture(id: UUID) async throws
+    /// The capsule's Undo, and Recently Deleted's Restore.
+    func restoreCapture(id: UUID) async throws
 
     /// Partial update (status/lifeAreaId/title) — the triage screen's Life Area picker path.
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture

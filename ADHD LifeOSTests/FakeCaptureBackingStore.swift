@@ -35,6 +35,10 @@ final class FakeCaptureBackingStore: CaptureBackingStore {
     private(set) var downloadURLKeys: [String] = []
     private(set) var savedCaptures: [Capture] = []
     private(set) var fetchedCaptureIds: [UUID] = []
+    private(set) var softDeletedCaptureIds: [UUID] = []
+    private(set) var softDeleteCaptureStamps: [Date] = []
+    private(set) var restoredCaptureIds: [UUID] = []
+    /// Always empty since `F-C3-RecentlyDeleted`.
     private(set) var deletedCaptureIds: [UUID] = []
     private(set) var createdTasks: [TaskDetail] = []
     private(set) var markedProcessedIds: [UUID] = []
@@ -96,8 +100,13 @@ final class FakeCaptureBackingStore: CaptureBackingStore {
         return capture
     }
 
-    func deleteCapture(id: UUID) async throws {
-        deletedCaptureIds.append(id)
+    func softDeleteCapture(id: UUID, now: Date) async throws {
+        softDeletedCaptureIds.append(id)
+        softDeleteCaptureStamps.append(now)
+    }
+
+    func restoreCapture(id: UUID) async throws {
+        restoredCaptureIds.append(id)
     }
 
     func createTask(_ task: TaskDetail) async throws {

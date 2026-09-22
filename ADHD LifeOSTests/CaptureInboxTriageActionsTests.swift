@@ -57,6 +57,10 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
 
     // MARK: - Discard
 
+    /// **Reversed by `F-C3-RecentlyDeleted`.** The row still leaves the list and the capture is
+    /// still gone as far as every other screen is concerned — but the document survives with a
+    /// stamp, so the capsule's Undo has something to restore. The assertion that changed is the
+    /// last line; the two that carry the behaviour did not.
     func testDiscard_removesTheCaptureFromTheList() async {
         let doomed = capture("Idle thought")
         let env = await makeSUT(loaded: [doomed, capture("Keep me")])
@@ -65,13 +69,17 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
 
         XCTAssertTrue(succeeded)
         XCTAssertEqual(env.service.captures.map(\.content), ["Keep me"])
-        XCTAssertEqual(env.client.lastDeleteCaptureId, doomed.id)
+        XCTAssertEqual(env.client.lastSoftDeleteCaptureId, doomed.id)
+        XCTAssertNil(
+            env.client.lastDeleteCaptureId,
+            "triage reached the HARD delete — the one operation Recently Deleted cannot undo"
+        )
     }
 
     func testDiscard_failure_keepsTheCaptureAndSurfacesTheError() async {
         let doomed = capture("Idle thought")
         let env = await makeSUT(loaded: [doomed])
-        env.client.deleteCaptureResult = .failure(CaptureServiceError.fetchFailed("offline"))
+        env.client.softDeleteCaptureResult = .failure(CaptureServiceError.fetchFailed("offline"))
 
         let succeeded = await env.service.discard(capture: doomed)
 

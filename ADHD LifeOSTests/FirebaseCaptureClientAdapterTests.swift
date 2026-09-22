@@ -190,14 +190,6 @@ final class FirebaseCaptureClientAdapterTests: XCTestCase {
         XCTAssertEqual(store.markedProcessedIds, [id])
     }
 
-    func testDeleteCapture_forwardsTheId() async throws {
-        let id = UUID()
-
-        try await adapter.deleteCapture(id: id)
-
-        XCTAssertEqual(store.deletedCaptureIds, [id])
-    }
-
     // MARK: - Promotion to a task
 
     /// Promotion writes a `TaskDetail` but hands back the `TaskItem` list projection. The two must

@@ -14,7 +14,8 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
     var fetchProcessedCapturesResult: Result<[Capture], Error> = .success([])
     var fetchSeenCapturesResult: Result<[Capture], Error> = .success([])
     var fetchCapturesResult: Result<[Capture], Error> = .success([])
-    var deleteCaptureResult: Result<Void, Error> = .success(())
+    var softDeleteCaptureResult: Result<Void, Error> = .success(())
+    var restoreCaptureResult: Result<Void, Error> = .success(())
     var fetchCaptureResult: Result<Capture, Error> = .success(
         Capture(id: UUID(), content: "note", kind: .note, processed: false, createdAt: Date())
     )
@@ -43,7 +44,12 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
     private(set) var fetchProcessedCapturesCallCount = 0
     private(set) var fetchSeenCapturesCallCount = 0
     private(set) var fetchCapturesCallCount = 0
-    private(set) var deleteCaptureCallCount = 0
+    private(set) var softDeleteCaptureCallCount = 0
+    private(set) var lastSoftDeleteCaptureId: UUID?
+    private(set) var restoreCaptureCallCount = 0
+    private(set) var lastRestoreCaptureId: UUID?
+    /// Always `nil` since `F-C3-RecentlyDeleted`: the hard delete is off this seam, and a test
+    /// asserting it stayed `nil` is asserting it stayed off.
     private(set) var lastDeleteCaptureId: UUID?
     private(set) var fetchCaptureCallCount = 0
     private(set) var createTaskCallCount = 0
@@ -110,10 +116,16 @@ final class FakeCaptureClientAdapting: CaptureClientAdapting, @unchecked Sendabl
         return try fetchSeenCapturesResult.get()
     }
 
-    func deleteCapture(id: UUID) async throws {
-        deleteCaptureCallCount += 1
-        lastDeleteCaptureId = id
-        try deleteCaptureResult.get()
+    func softDeleteCapture(id: UUID) async throws {
+        softDeleteCaptureCallCount += 1
+        lastSoftDeleteCaptureId = id
+        try softDeleteCaptureResult.get()
+    }
+
+    func restoreCapture(id: UUID) async throws {
+        restoreCaptureCallCount += 1
+        lastRestoreCaptureId = id
+        try restoreCaptureResult.get()
     }
 
     func fetchCapture(id: UUID) async throws -> Capture {

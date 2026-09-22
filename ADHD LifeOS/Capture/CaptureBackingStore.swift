@@ -27,7 +27,9 @@ protocol CaptureBackingStore {
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws
     func markCaptureProcessed(id: UUID) async throws
     func markCaptureUnprocessed(id: UUID) async throws
-    func deleteCapture(id: UUID) async throws
+    /// `now` explicit, matching `TaskDetailBackingStore.softDeleteTask(id:now:)`.
+    func softDeleteCapture(id: UUID, now: Date) async throws
+    func restoreCapture(id: UUID) async throws
 
     // Promotion
     func createTask(_ task: TaskDetail) async throws

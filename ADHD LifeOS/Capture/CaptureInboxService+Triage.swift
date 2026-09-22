@@ -132,7 +132,7 @@ extension CaptureInboxService {
     func discard(capture: Capture) async -> Bool {
         triageErrorMessage = nil
         do {
-            try await client.deleteCapture(id: capture.id)
+            try await client.softDeleteCapture(id: capture.id)
             removeCapture(id: capture.id)
             await refreshCountsAfterExit()
             return true

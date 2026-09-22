@@ -18,10 +18,16 @@ final class FakeTaskDetailBackingStore: TaskDetailBackingStore {
 
     var fetchError: Error?
     var updateError: Error?
-    var deleteError: Error?
+    var softDeleteError: Error?
+    var restoreError: Error?
 
     private(set) var fetchedIds: [UUID] = []
     private(set) var updates: [TaskUpdateWrite] = []
+    private(set) var softDeletedIds: [UUID] = []
+    private(set) var softDeleteStamps: [Date] = []
+    private(set) var restoredIds: [UUID] = []
+    /// Always empty since `F-C3-RecentlyDeleted` — the witness that this store's owner never
+    /// reaches a hard delete. See `FakeTaskDetailClientAdapting.deleteTaskCalls`.
     private(set) var deletedIds: [UUID] = []
     private(set) var statusWrites: [StatusWrite] = []
     private(set) var createdTagNames: [String] = []
@@ -72,9 +78,15 @@ final class FakeTaskDetailBackingStore: TaskDetailBackingStore {
         if let updateError { throw updateError }
     }
 
-    func deleteTask(id: UUID) async throws {
-        deletedIds.append(id)
-        if let deleteError { throw deleteError }
+    func softDeleteTask(id: UUID, now: Date) async throws {
+        softDeletedIds.append(id)
+        softDeleteStamps.append(now)
+        if let softDeleteError { throw softDeleteError }
+    }
+
+    func restoreTask(id: UUID) async throws {
+        restoredIds.append(id)
+        if let restoreError { throw restoreError }
     }
 
     func fetchTags() async throws -> [Tag] {

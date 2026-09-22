@@ -43,7 +43,8 @@ private struct DetailPreviewCaptureClient: CaptureClientAdapting {
     }
     func markProcessed(captureId: UUID) async throws {}
     func markUnprocessed(captureId: UUID) async throws {}
-    func deleteCapture(id: UUID) async throws {}
+    func softDeleteCapture(id: UUID) async throws {}
+    func restoreCapture(id: UUID) async throws {}
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture { Self.sample }
     func fetchAllTags() async throws -> [Tag] { [] }
     func createTag(name: String) async throws -> Tag { Tag(id: UUID(), name: name) }
