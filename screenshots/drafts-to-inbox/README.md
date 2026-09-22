@@ -37,6 +37,14 @@ Three things, and none of them is assertable.
 3. **The left-edge swipe really does pop task detail, with no dialog** — `10-` is a frame of
    something NOT being there, which is the only way to photograph a deleted modal. `11-` is the
    payoff: the edit made in `09-` and never explicitly saved is on the reopened screen.
+4. **`F-C1`'s radius cap holds for a WIDER control, and that had to be rendered to know.** The
+   AX3 set is here for one reason: `F-C1`'s render caught a Critical because a `Capsule`'s radius
+   is derived from its height, so at accessibility sizes the card is a different shape — 6,329
+   pixels of glyph and 2,604 of the ↶ Undo control were drawn outside it, and E capped the radius
+   at `minHeight / 2`. **`F-C2` then put a wider control into that same derived-geometry card**:
+   "↗ Reopen" against "↶ Undo". `04-…-AX3` is the answer — glyph, verb, subject and the Reopen
+   control all sit inside the card's fill, nothing clipped and nothing outside. The cap covers the
+   new label; no re-render of `F-C1`'s decision is owed.
 
 ## One thing to look at that is not a defect and not settled
 
@@ -50,7 +58,14 @@ It is recorded here rather than re-tuned, for two reasons. Every constant in the
 `AppTabBar` is E-approved and CLAUDE.md §7.5 is explicit that a review may name the tension and
 never re-tune it. And `F-C2` is the reason it is worth raising now: filed drafts raise the badge
 count, so the state is reachable far more often than it was. **A candidate for the register, not
-a fix in this folder.**
+a fix in this folder.** At AX3 every tab label shortens the same way ("Jo…" for Journal), which is
+the same mechanism with the type scale rather than the badge doing the squeezing.
+
+**Also visible in the AX3 set and NOT this block's:** the Journal timeline's own rows truncate
+hard at accessibility sizes — `04-…-AX3` shows "captured" hyphenated across two lines as
+"cap-/tured" beside a title cut to "Draft from the note c…". That is the Journal row's layout, not
+the capsule's, and it belongs to the audit's **accessibility arc (B)** rather than here. Named so
+a later session does not read these frames as evidence that `F-C2` caused it.
 
 ## Throwaway data
 
@@ -69,6 +84,21 @@ Suffix is the appearance: `-L` light, `-D` dark, `-AX3` accessibility extra-larg
 **The journey order is journal → note → task, and it is not arbitrary**: see reason 1 above. The
 capsule is one slot, so each composer's capsule is photographed before the next is opened.
 
+**The AX3 set took TWO runs, and the reason is a harness trap worth inheriting.** The composer
+journey and the swipe-back journey are separate tests, and the second signs out of the account the
+first left behind — at accessibility text sizes the taller Settings rows push `signOutButton` past
+the harness's eight swipe attempts, and it fails with *"Settings opened but presented no sign-out
+control"*, which reads exactly like a bug in the thing being photographed. A freshly erased
+simulator fixes the FIRST test in a run, not the second. So `09-` to `11-AX3` come from a run of
+that test alone on its own erase (`pass-swipeback-ax3.sh`'s own header records this).
+
+**A second AX3-only discovery, and it was nearly recorded as a product defect.** `focusAndType`
+taps a field to focus it, and at accessibility sizes that tap lands BETWEEN words rather than past
+the end of a longer-drawn string: the AX3 run saved *"Renew the — and the visa passport"*, and an
+equality assertion duly reported *"the edit did not autosave"* — which was false. **The autosave
+worked; the caret did not go where the harness assumed.** The assertion now proves the two things
+that are actually claimed (the edit survived, and it is still the seeded task) with CONTAINS.
+
 | file | what it proves |
 |---|---|
 | `01-journal-composer-typed-*` | The journal composer with text in its body field, before anything closes it. The "before" half of the claim, and the only composer that has to be driven first. |
@@ -81,4 +111,4 @@ capsule is one slot, so each composer's capsule is photographed before the next 
 | `08-inbox-holds-all-three-drafts-*` | The inbox afterwards: **"To triage (3)"**, "3 left", "3 NOTES", "3 captured" — all three composers filed, as ordinary notes through the existing seam (which is why no `firestore.rules` change was owed). The first draft sits on the triage card; the other rows are below the fold. |
 | `09-task-detail-edited-and-save-never-tapped-*` | Task detail with the seeded title edited to "Renew the passport — and the visa" and **Save never tapped**. |
 | `10-swipe-back-popped-with-no-discard-dialog-*` | After a left-edge swipe: back on the list, **no "Discard changes?" alert**. The frame of the modal `F-C2` deleted, and of the gesture it had disabled working again. |
-| `11-reopened-the-edit-saved-itself-*` | The same task reopened: the title reads "Renew the passport — and the visa". The edit committed on the way out (`TaskDetailAutosave.shouldSave`), with no Save tap and no dialog anywhere in the sequence. |
+| `11-reopened-the-edit-saved-itself-*` | The same task reopened, with the typed words on it: the edit committed on the way out (`TaskDetailAutosave.shouldSave`), with no Save tap and no dialog anywhere in the sequence. `-L`/`-D` read "Renew the passport — and the visa"; **`-AX3` reads "Renew the — and the visa passport"**, because the focusing tap landed mid-string at that text size. Same proof, different caret. |

@@ -44,9 +44,13 @@ final class DraftsToInboxRenderUITests: XCTestCase {
         static let note = "Draft from the note composer"
         static let task = "Draft from the task composer"
         static let journal = "Draft from the journal composer"
-        /// Appended to the seeded title, so the saved value is predictable enough to assert.
+        /// Typed into the seeded task's title. Asserted by CONTAINS rather than by composing an
+        /// expected string — see the wait in the swipe-back journey for why the caret's landing
+        /// place is not something a render harness gets to depend on.
         static let titleEdit = " — and the visa"
-        static let savedTitle = "Renew the passport — and the visa"
+        /// The seeded title's opening words, so "the edit survived" and "this is still the task
+        /// that was seeded" are two separate assertions rather than one hopeful one.
+        static let titleStem = "Renew the"
     }
 
     override func setUpWithError() throws {
@@ -254,8 +258,19 @@ final class DraftsToInboxRenderUITests: XCTestCase {
         // screen re-fetches the document, so on a fast tap-back the read can beat the write. A
         // bare equality here would flake with a message reading like a broken autosave — and the
         // wait also means the FRAME below shows the saved title rather than a half-loaded field.
+        //
+        // **CONTAINS, not equality, and the AX3 pass is why.** `focusAndType` taps the field to
+        // focus it, and at accessibility text sizes that tap lands BETWEEN words rather than past
+        // the end of a longer-drawn string — the AX3 run saved "Renew the — and the visa
+        // passport" and the equality assertion reported "the edit did not autosave", which was
+        // false in the one way a harness must never be wrong. Where the caret went is the
+        // harness's business; that the edit SURVIVED is the claim. Both halves are asserted, so a
+        // field that had been cleared and replaced could not pass as an edit.
         let saved = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "value == %@", Draft.savedTitle), object: titleField
+            predicate: NSPredicate(
+                format: "value CONTAINS %@ AND value CONTAINS %@", Draft.titleEdit, Draft.titleStem
+            ),
+            object: titleField
         )
         let landed = XCTWaiter().wait(for: [saved], timeout: UITestSession.timeout) == .completed
         attach(app, named: "11-reopened-the-edit-saved-itself")
