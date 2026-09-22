@@ -273,7 +273,8 @@ FirebaseJournalClientAdapter        71.57% (73/102)  → 100.00% (102/102)
 FirebaseHomeClientAdapter           80.00% (12/15)   → 100.00% (15/15)
 ```
 
-There are **fourteen** `Firebase*ClientAdapter` files (not thirteen), plus
+There are **fifteen** `Firebase*ClientAdapter` files (fourteen when this paragraph was written,
+plus `FirebaseRecentlyDeletedClientAdapter` from `F-C3`), plus
 `FirebaseAccountDeletionAdapter` and `FirebaseFocusSessionAdapter` as their own files, and
 `FirebaseDailySummaryDataAdapter` declared *inside* `DailySummaryDataBackingStore.swift` — so it
 has no file row of its own in the report at all. `grep "private let manager: FirebaseManager"`
@@ -292,7 +293,7 @@ and what had lapsed was test REACH, not design.
   reports "unrecognized file format" — and read the `(col, x, 0)` region rows, not just the
   zero-hit lines.
 
-The four extensions the emulator harness covers (of the **sixteen** that exist) are UNCHANGED at
+The four extensions the emulator harness covers (of the **seventeen** that exist) are UNCHANGED at
 2026-09-07: `+Tags` **97.67%**, `+Seed` **98.31%**, `+Storage` 95.83%, `+AccountDeletion` 90.20%
 — identical to the 2026-08-30 figures, which is the emulator harness holding its ground.
 
@@ -473,12 +474,14 @@ before its push landed.
   truth. Everything goes through per-feature `Firebase*ClientAdapter` structs over the shared
   `FirebaseManager`. **Those adapters live beside the feature they serve — `Auth/`, `Capture/`,
   `Home/`, `Journal/`, `Nudges/`, `Tasks/` and so on — NOT in `ADHD LifeOS/Firebase/`**, and there
-  are **fourteen** of them (re-counted 2026-09-07 with the coverage sweep; was thirteen on
-  2026-08-30, and an earlier "twelve, in `ADHD LifeOS/Firebase/`" was wrong on both count and
-  location).
-  `ADHD LifeOS/Firebase/` holds the manager, its **sixteen** `FirebaseManager+<Domain>` files
-  (re-counted 2026-09-07 — `+AppDirectory` and `+RoutineRuns` joined after the "fourteen" here was
-  written), and the codec/mapping types. `FirebaseManager.swift` itself holds only the class, auth,
+  are **fifteen** of them (re-counted 2026-09-22 during `F-C4-TagsRecentlyDeleted`, which added
+  none: `FirebaseRecentlyDeletedClientAdapter` arrived with `F-C3` the day before and this file
+  still said fourteen — the register's edition 75 flagged it and this is the correction. Was
+  thirteen on 2026-08-30, and an earlier "twelve, in `ADHD LifeOS/Firebase/`" was wrong on both
+  count and location).
+  `ADHD LifeOS/Firebase/` holds the manager, its **seventeen** `FirebaseManager+<Domain>` files
+  (re-counted 2026-09-22 — `+SoftDelete` joined with `F-C3`; `+AppDirectory` and `+RoutineRuns`
+  had joined after the "fourteen" here was written), and the codec/mapping types. `FirebaseManager.swift` itself holds only the class, auth,
   and the Firestore plumbing every extension builds on; per-collection storage lives in
   `FirebaseManager+<Domain>.swift` alongside `+Seed`/`+Storage`/`+AccountDeletion`/`+Emulator`.
   Add a new collection's methods to its own such file, not to the core one.

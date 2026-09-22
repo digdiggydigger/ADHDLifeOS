@@ -52,7 +52,16 @@ final class TagsRecentlyDeletedRenderUITests: XCTestCase {
             id: taskID, title: Fixture.taskTitle, uid: account.uid, tagIds: [tagID]
         )
         let app = try UITestSession.launchSignedIn(as: account)
-        settle(app.buttons["quickCaptureButton"], "The signed-in tabs")
+        // **`waitForExistence`, NOT `settle`.** The capture disc EXISTS from the first frame and
+        // is never reported hittable by XCUITest — it is a floating overlay outside the tab
+        // content — so waiting on `isHittable` here times out against an app that is running
+        // perfectly. `RecentlyDeletedRenderUITests` waits on existence alone for the same anchor;
+        // this harness used `settle` on its first run and both journeys died at 144s and 166s
+        // having photographed nothing.
+        XCTAssertTrue(
+            app.buttons["quickCaptureButton"].waitForExistence(timeout: UITestSession.timeout),
+            "The signed-in tabs never appeared"
+        )
 
         renderTheChip(app, taskID: taskID, tagID: tagID, present: true, named: "00-the-task-wears-the-tag")
         deleteTheTag(app, tagID: tagID)
@@ -76,7 +85,16 @@ final class TagsRecentlyDeletedRenderUITests: XCTestCase {
         )
         try UITestSession.seedTag(id: UUID(), name: Fixture.rivalName, uid: account.uid)
         let app = try UITestSession.launchSignedIn(as: account)
-        settle(app.buttons["quickCaptureButton"], "The signed-in tabs")
+        // **`waitForExistence`, NOT `settle`.** The capture disc EXISTS from the first frame and
+        // is never reported hittable by XCUITest — it is a floating overlay outside the tab
+        // content — so waiting on `isHittable` here times out against an app that is running
+        // perfectly. `RecentlyDeletedRenderUITests` waits on existence alone for the same anchor;
+        // this harness used `settle` on its first run and both journeys died at 144s and 166s
+        // having photographed nothing.
+        XCTAssertTrue(
+            app.buttons["quickCaptureButton"].waitForExistence(timeout: UITestSession.timeout),
+            "The signed-in tabs never appeared"
+        )
 
         openTheScreen(app)
         let restore = app.buttons["recentlyDeletedRestore-tag-\(deletedID.uuidString)"]
@@ -128,6 +146,19 @@ final class TagsRecentlyDeletedRenderUITests: XCTestCase {
             return XCTFail("Task detail never opened, so there is no chip row to photograph")
         }
 
+        // **Scroll to the tags SECTION first, and anchor on the add-tag chip rather than on the
+        // tag's own.** A `Form` builds its rows lazily, so a chip below the fold is genuinely
+        // absent from the accessibility hierarchy — the first run of this harness read that as
+        // "the tag was never attached" and failed on a build where everything was correct.
+        // Anchoring on `taskDetailAddTagChip` also gives the absent case its PRESENCE to be
+        // asserted against, which is `RecentlyDeletedRenderUITests`' rule.
+        let addChip = app.buttons["taskDetailAddTagChip"].firstMatch
+        _ = UITestSession.scrollUntilHittable(addChip, in: app)
+        XCTAssertTrue(
+            addChip.waitForExistence(timeout: UITestSession.timeout),
+            "The task's tag row is not drawn at all, so nothing about a chip proves anything"
+        )
+
         let chip = app.buttons["taskDetailTagChip-\(tagID.uuidString)"].firstMatch
         if present {
             XCTAssertTrue(
@@ -135,14 +166,6 @@ final class TagsRecentlyDeletedRenderUITests: XCTestCase {
                 "The task's tag chip is missing when it should be drawn"
             )
         } else {
-            // **Asserted next to a PRESENCE**, the harness rule one file over: the add-tag chip
-            // proves the tag row itself is rendered, so the absence of this one means something.
-            XCTAssertTrue(
-                app.buttons["taskDetailAddTagChip"].firstMatch.waitForExistence(
-                    timeout: UITestSession.timeout
-                ),
-                "The tag row is not drawn at all, so a missing chip proves nothing"
-            )
             XCTAssertFalse(chip.exists, "A deleted tag is still drawn as a chip on its task")
         }
         attach(app, named: name)
