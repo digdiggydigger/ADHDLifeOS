@@ -15,6 +15,13 @@ final class FakeRecentlyDeletedClientAdapting: RecentlyDeletedClientAdapting, @u
     private(set) var restored: [RecentlyDeletedItem] = []
     private(set) var deletedForever: [RecentlyDeletedItem] = []
 
+    private(set) var resolvedRestores: [ResolvedRestore] = []
+
+    struct ResolvedRestore: Equatable {
+        let item: RecentlyDeletedItem
+        let keptRestored: Bool
+    }
+
     func fetchDeleted() async throws -> [RecentlyDeletedItem] {
         fetchCallCount += 1
         return try fetchResult.get()
@@ -22,6 +29,13 @@ final class FakeRecentlyDeletedClientAdapting: RecentlyDeletedClientAdapting, @u
 
     func restore(_ item: RecentlyDeletedItem) async throws {
         restored.append(item)
+        try restoreResult.get()
+    }
+
+    /// Recorded apart from `restored`, because the whole point of the survivor choice is that a
+    /// resolving restore is a DIFFERENT write — and in one direction it does not restore at all.
+    func restore(_ item: RecentlyDeletedItem, keepingRestored: Bool) async throws {
+        resolvedRestores.append(ResolvedRestore(item: item, keptRestored: keepingRestored))
         try restoreResult.get()
     }
 

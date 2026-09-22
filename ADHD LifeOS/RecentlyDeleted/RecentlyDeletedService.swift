@@ -36,6 +36,9 @@ final class RecentlyDeletedService: ObservableObject {
     /// a second tap. Non-optimistic like every exit in this app — see `discard(capture:)`.
     @Published private(set) var busyItemID: String?
     @Published var errorMessage: String?
+    /// Non-`nil` drives the survivor alert — set only when a `.tag` row whose name has been taken
+    /// again is asked to restore. `TagEditorService.pendingMergeConflict` is the shape.
+    @Published var pendingSurvivorChoice: RecentlyDeletedItem?
 
     private let client: RecentlyDeletedClientAdapting
     /// Injected so a test can stand at any point in the window, and so the purge is testable
@@ -71,7 +74,32 @@ final class RecentlyDeletedService: ObservableObject {
     /// standing on a failure.
     @discardableResult
     func restore(_ item: RecentlyDeletedItem) async -> Bool {
-        await mutate(item) { try await self.client.restore(item) }
+        // **A colliding restore WRITES NOTHING and asks first** (E's Step 0: *"Ask which one
+        // survives… One extra tap, no silent merge."*). Returning `false` is not a failure here —
+        // it is the caller's signal that its affordance should stay standing, which is exactly
+        // what a row whose alert is now open needs.
+        if item.collision != nil {
+            pendingSurvivorChoice = item
+            return false
+        }
+        return await mutate(item) { try await self.client.restore(item) }
+    }
+
+    /// The user picked. **One write, whichever way they picked** — and in one direction there is
+    /// no restore at all: keeping the LIVE tag absorbs this row's document and destroys it, which
+    /// is still the right outcome for this list, because either way the row is resolved and gone.
+    @discardableResult
+    func resolveSurvivor(_ item: RecentlyDeletedItem, keepingRestored: Bool) async -> Bool {
+        pendingSurvivorChoice = nil
+        return await mutate(item) {
+            try await self.client.restore(item, keepingRestored: keepingRestored)
+        }
+    }
+
+    /// Writes nothing and leaves the row where it was: the tag is still deleted, still waiting,
+    /// and still restorable once the name is free again.
+    func cancelSurvivorChoice() {
+        pendingSurvivorChoice = nil
     }
 
     /// The irreversible one, behind Q10's confirm.

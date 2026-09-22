@@ -66,7 +66,56 @@ struct RecentlyDeletedView: View {
             // task detail's Delete button, where soft delete made it a lie.
             Text(RecentlyDeletedPresentation.DeleteForever.message)
         }
+        // **An `.alert`, not a `confirmationDialog`, and the difference is the message.** The one
+        // above asks to confirm an action the user already chose; this one reports a SITUATION
+        // they could not have known about — the name was taken while the tag waited — and then
+        // offers a choice. `alerts.md`: *"an alert can tell people about a problem"*, and only an
+        // alert carries the informative text that has to explain it.
+        .alert(
+            survivorCopy?.title ?? "",
+            isPresented: Binding(
+                get: { service.pendingSurvivorChoice != nil },
+                set: { if !$0 { service.cancelSurvivorChoice() } }
+            ),
+            presenting: service.pendingSurvivorChoice
+        ) { item in
+            let copy = Self.survivorCopy(for: item)
+            Button(copy.keepRestoredTitle) {
+                Haptics.play(.solid)
+                Task { await service.resolveSurvivor(item, keepingRestored: true) }
+            }
+            .accessibilityIdentifier("recentlyDeletedKeepRestored")
+            if let keepLiveTitle = copy.keepLiveTitle {
+                Button(keepLiveTitle) {
+                    Haptics.play(.solid)
+                    Task { await service.resolveSurvivor(item, keepingRestored: false) }
+                }
+                .accessibilityIdentifier("recentlyDeletedKeepLive")
+            }
+            // **No `role: .destructive` on either survivor button.** `alerts.md › Buttons`: the
+            // style is for "a destructive action people didn't deliberately choose", and both of
+            // these carry out the restore the user just asked for.
+            Button(copy.cancelTitle, role: .cancel) { service.cancelSurvivorChoice() }
+        } message: { item in
+            Text(Self.survivorCopy(for: item).message)
+        }
         .accessibilityIdentifier("recentlyDeletedView")
+    }
+
+    /// The alert's words for whatever row is asking, or `nil` when none is.
+    private var survivorCopy: RecentlyDeletedPresentation.SurvivorChoice? {
+        service.pendingSurvivorChoice.map(Self.survivorCopy(for:))
+    }
+
+    /// **A tag row always has a collision when this is reached** — `restore` only opens the alert
+    /// for one. The fallback spells the row's own name rather than an empty string, so a bug that
+    /// somehow got here shows a merge of a tag with itself instead of unattributed quotes.
+    private static func survivorCopy(
+        for item: RecentlyDeletedItem
+    ) -> RecentlyDeletedPresentation.SurvivorChoice {
+        RecentlyDeletedPresentation.SurvivorChoice.alert(
+            restoredName: item.title, liveName: item.collision?.liveName ?? item.title
+        )
     }
 
     private var caption: some View {
@@ -239,5 +288,6 @@ private struct PreviewRecentlyDeletedClient: RecentlyDeletedClientAdapting {
 
     func fetchDeleted() async throws -> [RecentlyDeletedItem] { items }
     func restore(_ item: RecentlyDeletedItem) async throws {}
+    func restore(_ item: RecentlyDeletedItem, keepingRestored: Bool) async throws {}
     func deleteForever(_ item: RecentlyDeletedItem) async throws {}
 }

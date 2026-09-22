@@ -152,6 +152,13 @@ extension FirebaseManager {
         try await removeTagEverywhere(id, replacingWith: nil)
     }
 
+    /// The Tag Editor's merge, and the "keep the live one" half of a merge on restore, under a
+    /// name that cannot be confused with `purgeTag`. Same call, one argument apart — which is why
+    /// neither seam takes `removeTagEverywhere` directly.
+    func mergeTagInto(_ tagId: UUID, replacement: UUID) async throws {
+        try await removeTagEverywhere(tagId, replacingWith: replacement)
+    }
+
     func renameTag(id: UUID, to name: String) async throws {
         try await update(id: id, fields: ["name": name], in: .tags)
     }

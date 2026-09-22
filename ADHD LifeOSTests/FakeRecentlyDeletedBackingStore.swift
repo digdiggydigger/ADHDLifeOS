@@ -14,9 +14,11 @@ final class FakeRecentlyDeletedBackingStore: RecentlyDeletedBackingStore, @unche
     var deletedTasks: [TaskItem] = []
     var deletedCaptures: [Capture] = []
     var deletedTags: [Tag] = []
+    var liveTags: [Tag] = []
     var fetchTasksError: Error?
     var fetchCapturesError: Error?
     var fetchTagsError: Error?
+    var mergeError: Error?
     var restoreError: Error?
     var deleteError: Error?
 
@@ -26,6 +28,20 @@ final class FakeRecentlyDeletedBackingStore: RecentlyDeletedBackingStore, @unche
     private(set) var hardDeletedCaptureIds: [UUID] = []
     private(set) var restoredTagIds: [UUID] = []
     private(set) var purgedTagIds: [UUID] = []
+    private(set) var mergesRestoring: [MergeRestoring] = []
+    private(set) var mergesInto: [MergeInto] = []
+
+    /// Named records rather than tuples — SwiftLint caps tuples at two members, and these read
+    /// better named anyway: which way round a merge went is the whole assertion.
+    struct MergeRestoring: Equatable {
+        let survivor: UUID
+        let absorbed: UUID
+    }
+
+    struct MergeInto: Equatable {
+        let tagId: UUID
+        let replacement: UUID
+    }
 
     func fetchDeletedTasks() async throws -> [TaskItem] {
         if let fetchTasksError { throw fetchTasksError }
@@ -72,5 +88,20 @@ final class FakeRecentlyDeletedBackingStore: RecentlyDeletedBackingStore, @unche
     func purgeTag(id: UUID) async throws {
         purgedTagIds.append(id)
         if let deleteError { throw deleteError }
+    }
+
+    func fetchTags() async throws -> [Tag] {
+        if let fetchTagsError { throw fetchTagsError }
+        return liveTags
+    }
+
+    func mergeTagsRestoring(survivor: UUID, absorbed: UUID) async throws {
+        mergesRestoring.append(MergeRestoring(survivor: survivor, absorbed: absorbed))
+        if let mergeError { throw mergeError }
+    }
+
+    func mergeTagInto(_ tagId: UUID, replacement: UUID) async throws {
+        mergesInto.append(MergeInto(tagId: tagId, replacement: replacement))
+        if let mergeError { throw mergeError }
     }
 }

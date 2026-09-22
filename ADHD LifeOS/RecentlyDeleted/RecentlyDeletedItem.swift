@@ -33,6 +33,30 @@ struct RecentlyDeletedItem: Identifiable, Equatable, Sendable {
     let kind: Kind
     let title: String
     let deletedAt: Date
+    /// A LIVE tag already wearing this one's name. **Only ever non-nil on a `.tag` row** — only
+    /// tags have a name that has to be unique.
+    ///
+    /// **Carried on the row rather than discovered at the write**, because the alert is what the
+    /// Restore TAP opens: the screen has to know before the user commits. A write that failed with
+    /// a typed error would hand the same alert to every caller of `restore`, including the undo
+    /// capsule in the Tag Editor, which cannot reach this collision at all.
+    let collision: NameCollision?
+
+    /// The live tag a restore would have to be reconciled with.
+    struct NameCollision: Equatable, Sendable {
+        let liveId: UUID
+        /// Its spelling, which is one of the two the user picks between — the collision folds
+        /// case, so this can differ from the restored tag's name by case and nothing else.
+        let liveName: String
+    }
+
+    init(itemId: UUID, kind: Kind, title: String, deletedAt: Date, collision: NameCollision? = nil) {
+        self.itemId = itemId
+        self.kind = kind
+        self.title = title
+        self.deletedAt = deletedAt
+        self.collision = collision
+    }
 
     /// **Composite, and it is not paranoia.** Firestore ids are unique per collection, not across
     /// them, so nothing prevents a task and a capture sharing one — and a `ForEach` over a

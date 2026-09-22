@@ -244,6 +244,34 @@ final class SoftDeleteTagCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The survivor alert is actually mounted
+
+    /// **Copy with no mount draws nothing, and every other test here would still pass.** This is
+    /// the dead-shared-component pattern the repo has shipped seven times:
+    /// `RecentlyDeletedSurvivorChoiceTests` proves the words are right, and proves nothing at all
+    /// about whether a user ever sees them.
+    func testTheSurvivorAlertIsMountedAndRoutesBothWays() throws {
+        let view = try Self.appCode("RecentlyDeleted/RecentlyDeletedView.swift")
+
+        XCTAssertTrue(
+            view.contains("presenting: service.pendingSurvivorChoice"),
+            "the survivor alert is not mounted, so a colliding restore opens nothing and the row"
+                + " simply refuses to restore with no explanation"
+        )
+        XCTAssertTrue(
+            view.contains("service.resolveSurvivor(item, keepingRestored: true)"),
+            "the alert cannot keep the restored tag"
+        )
+        XCTAssertTrue(
+            view.contains("service.resolveSurvivor(item, keepingRestored: false)"),
+            "the alert cannot keep the live tag — one of the two directions E's choice offers"
+        )
+        XCTAssertTrue(
+            view.contains("service.cancelSurvivorChoice()"),
+            "there is no way out of the alert that writes nothing"
+        )
+    }
+
     // MARK: - Reading the tree
 
     private static func count(of needle: String, in source: String) -> Int {
