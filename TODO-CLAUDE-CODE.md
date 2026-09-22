@@ -5844,7 +5844,7 @@ green suite could not:**
 
 ---
 
-### FEATURE: F-C3-RecentlyDeleted — soft delete for tasks and captures; one row in Tools  [ ] IN PROGRESS
+### FEATURE: F-C3-RecentlyDeleted — soft delete for tasks and captures; one row in Tools  [x] COMPLETED
 
 **What E chose.** Round 2: *"Where Recently Deleted lives → 'One row in Tools'"* (not context, not
 Settings), *"Kept 30 days"* (stated as the default; E did not object). *"Tasks + Captures + Tags"*
@@ -5933,12 +5933,31 @@ shape.
       so a later collection/query addition cannot silently leak deleted items back in.
 
 
-### Started 2026-09-22 — three cycles landed, and where they depart from the spec
+### COMPLETED 2026-09-22 — eight cycles over two sessions
 
-**The block is NOT complete.** What is landed is deliberately INERT: nothing writes `deleted_at`
-yet, so the filter returns everything and the single-document guard never throws. Behaviour is
-unchanged, which is why this state could be merged on its own. The successor opener is
-`handoff/START-HERE-adhd-audit-arc-C3-continued.md` and it carries every remaining decision.
+**Every acceptance criterion is met.** The three cycles below landed first and were deliberately
+INERT; the writes, the screen, the purge, the capsule kinds and the copy fix followed in the
+second session. Suite **3,253 / 0**, SwiftLint **0 / 878**, build SUCCEEDED, coverage **29.87%
+(14,953/50,068)**, `screenshots/recently-deleted/` filed with 20 frames and a README, and the
+`apple-design` review is in the block report.
+
+**Two findings the review surfaced went to E and came back as decisions** (2026-09-22):
+1. **Both delete confirmations are GONE.** `alerts.md › Best practices`: *"Avoid displaying alerts
+   for common, undoable actions, even when they're destructive."* Both existed BECAUSE delete was
+   irreversible and this block ended that. "Delete forever" keeps its confirm — the same rule read
+   the other way.
+2. **"Discard" became "Delete" on captures.** One action had three names (menu, capsule,
+   destination); "Recently Deleted" is the anchor because Photos, Notes and Files all use it.
+
+**Two strings written in this block went dead the moment the confirms did** —
+`softDeleteReassurance` and `captureDiscardMessage`, caught by grep, removed with a note in their
+place. The 30-day rule is still taught by the Tools caption and the empty state, but no longer at
+the moment of the delete: E's accepted cost.
+
+**One measured Critical, fixed without touching the held palette.** Delete Forever's `StateRisk`
+label was **4.21:1** on `CardSurface` in light, under the 4.5:1 required below 18pt. The row's
+button is now `.secondary`; `action-sheets.md` puts destructive prominence on the SHEET, which
+the confirm provides.
 
 **Landed, each RED→GREEN→commit with the RED observed first:**
 1. `RecentlyDeleted/SoftDelete.swift` — `isLive`, `isPurgeable`, `retention`, `SoftDeleteError`.
