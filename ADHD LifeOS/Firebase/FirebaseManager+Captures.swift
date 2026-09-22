@@ -60,4 +60,24 @@ extension FirebaseManager {
     func deleteCapture(id: UUID) async throws {
         try await delete(id: id, from: .captures)
     }
+
+    /// Soft delete (`F-C3-RecentlyDeleted`). The capture half of `softDeleteTask(id:now:)`, and
+    /// the same three rules apply: an update rather than a delete, `deleteCapture(id:)` keeps its
+    /// name as the irreversible one, and going through `update(id:fields:in:)` is what posts the
+    /// `DataChangeSignal` that brings a restored capture back to the inbox at once.
+    ///
+    /// The key is `deletedAt`, camelCase — captures' own convention, not tasks'.
+    func softDeleteCapture(id: UUID, now: Date = .now) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.captureSoftDelete(now: now), in: .captures)
+    }
+
+    func restoreCapture(id: UUID) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.captureRestore(), in: .captures)
+    }
+
+    /// Recently Deleted's capture list. `fetchCaptures()`'s shape with the filter turned round —
+    /// every state, because a capture is deleted regardless of whether it was processed or seen.
+    func fetchDeletedCaptures() async throws -> [Capture] {
+        deleted(try await fetchAll(Capture.self, from: .captures, orderedBy: "created_at", descending: true))
+    }
 }

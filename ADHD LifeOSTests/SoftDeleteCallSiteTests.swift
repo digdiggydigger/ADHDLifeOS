@@ -31,7 +31,7 @@ final class SoftDeleteCallSiteTests: XCTestCase {
         let source = try Self.appCode("Firebase/FirebaseManager+Tasks.swift")
 
         XCTAssertEqual(
-            Self.count(of: "func fetch", in: source), 4,
+            Self.count(of: "func fetch", in: source), 5,
             "The number of task read paths changed. Every one of them must apply"
                 + " `SoftDelete.isLive` or refuse a deleted document — update this count"
                 + " DELIBERATELY, having filtered the new one."
@@ -67,7 +67,7 @@ final class SoftDeleteCallSiteTests: XCTestCase {
         let source = try Self.appCode("Firebase/FirebaseManager+Captures.swift")
 
         XCTAssertEqual(
-            Self.count(of: "func fetch", in: source), 5,
+            Self.count(of: "func fetch", in: source), 6,
             "The number of capture read paths changed. Update this count DELIBERATELY, having"
                 + " filtered the new one."
         )
@@ -141,6 +141,93 @@ final class SoftDeleteCallSiteTests: XCTestCase {
             captures.contains("case deletedAt = \"deleted_at\""),
             "A capture's stamp is snake_cased, but captures are camelCase apart from their own"
                 + " named exceptions (`created_at`, `tag_ids`)."
+        )
+    }
+
+    // MARK: - The writes (F-C3-RecentlyDeleted, cycle 4)
+
+    /// **The delete and the restore are UPDATES, and that is what makes the app notice them.**
+    /// `FirebaseManager.update(id:fields:in:)` posts `DataChangeSignal` from the write plumbing
+    /// every adapter shares, so a restore reaches `TaskListView` and `CaptureInboxView` — both of
+    /// which observe `DataChangeSignal.changes` — without any site posting by hand. Route either
+    /// one around `update` and the item comes back on the next tab visit instead of at once, with
+    /// nothing failing to say so.
+    func testTheSoftDeleteAndRestoreWritesGoThroughTheSharedUpdatePlumbing() throws {
+        // Pinned as whole expressions rather than as a count of `update(`, because captures
+        // already had three of those and a count could not have told a soft delete that went
+        // through the plumbing from one that did not.
+        for (file, writes) in [
+            ("Firebase/FirebaseManager+Tasks.swift", [
+                "func softDeleteTask(id: UUID, now: Date = .now) async throws {",
+                "update(id: id, fields: FirestoreFieldPayloads.taskSoftDelete(now: now), in: .tasks)",
+                "func restoreTask(id: UUID) async throws {",
+                "update(id: id, fields: FirestoreFieldPayloads.taskRestore(), in: .tasks)"
+            ]),
+            ("Firebase/FirebaseManager+Captures.swift", [
+                "func softDeleteCapture(id: UUID, now: Date = .now) async throws {",
+                "update(id: id, fields: FirestoreFieldPayloads.captureSoftDelete(now: now), in: .captures)",
+                "func restoreCapture(id: UUID) async throws {",
+                "update(id: id, fields: FirestoreFieldPayloads.captureRestore(), in: .captures)"
+            ])
+        ] {
+            let source = try Self.appCode(file)
+            for write in writes {
+                XCTAssertTrue(
+                    source.contains(write),
+                    "`\(file)` no longer contains `\(write)`. Either the soft delete is missing,"
+                        + " or it stopped going through `update(id:fields:in:)` — the write"
+                        + " plumbing that posts `DataChangeSignal`, and therefore the reason a"
+                        + " restored item comes back at once rather than on the next tab visit."
+                )
+            }
+        }
+    }
+
+    /// The writes name the payload rather than building a dictionary inline — CLAUDE.md's
+    /// "hand-written Firestore field dictionaries live in `FirestoreFieldPayloads`, never inline",
+    /// which is also what keeps the two spellings assertable (`FirestoreFieldPayloadsSoftDeleteTests`).
+    func testTheWritesUseThePayloadTypeRatherThanAnInlineDictionary() throws {
+        let tasks = try Self.appCode("Firebase/FirebaseManager+Tasks.swift")
+        XCTAssertTrue(tasks.contains("FirestoreFieldPayloads.taskSoftDelete(now:"))
+        XCTAssertTrue(tasks.contains("FirestoreFieldPayloads.taskRestore()"))
+        XCTAssertFalse(
+            tasks.contains("\"deleted_at\":"),
+            "A task's stamp is spelled inline here as well as in the payload — two spellings of"
+                + " one key, free to drift, and a wrong one writes a field nothing reads."
+        )
+
+        let captures = try Self.appCode("Firebase/FirebaseManager+Captures.swift")
+        XCTAssertTrue(captures.contains("FirestoreFieldPayloads.captureSoftDelete(now:"))
+        XCTAssertTrue(captures.contains("FirestoreFieldPayloads.captureRestore()"))
+        XCTAssertFalse(captures.contains("\"deletedAt\":"))
+    }
+
+    /// **`deleted(`, and never `live(`.** The Recently Deleted screen's two fetches want exactly
+    /// the rows every other fetch drops, so they are the one pair that must NOT be wrapped — and
+    /// wrapping one by reflex would leave that screen permanently empty, with every other test
+    /// still green. The inverse is its own helper for the same reason the filter is:
+    /// `.filter { $0.deletedAt != nil }` hand-written here would be a second reading of a rule
+    /// that already has a subtlety (a FUTURE stamp is still a delete).
+    func testTheRecentlyDeletedFetchesTakeTheInverseAndAreNotFilteredLive() throws {
+        for file in [
+            "Firebase/FirebaseManager+Tasks.swift", "Firebase/FirebaseManager+Captures.swift"
+        ] {
+            let source = try Self.appCode(file)
+            XCTAssertEqual(
+                Self.count(of: "deleted(try await", in: source), 1,
+                "\(file)'s Recently Deleted fetch does not go through the shared `deleted(_:)`"
+                    + " inverse, so this screen reads the stamp by a second rule."
+            )
+        }
+        let helper = try Self.appCode("Firebase/FirebaseManager+SoftDelete.swift")
+        XCTAssertTrue(
+            helper.contains("func deleted<T: SoftDeletable>"),
+            "There is no shared inverse, so each Recently Deleted fetch filters by hand."
+        )
+        XCTAssertTrue(
+            helper.contains("!SoftDelete.isLive(deletedAt:"),
+            "The inverse does not negate `SoftDelete.isLive`, so it is a second reading of the"
+                + " rule rather than the same one turned round."
         )
     }
 

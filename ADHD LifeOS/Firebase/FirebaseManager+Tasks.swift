@@ -52,4 +52,31 @@ extension FirebaseManager {
     func fetchTasks(lifeAreaId: UUID) async throws -> [TaskItem] {
         live(try await fetchWhere(TaskItem.self, from: .tasks, field: "life_area_id", equals: lifeAreaId.uuidString))
     }
+
+    /// Soft delete (`F-C3-RecentlyDeleted`). An UPDATE, never a `delete` — the document stays and
+    /// the stamp is the only thing hiding it, which is what makes `restoreTask(id:)` possible.
+    ///
+    /// **`deleteTask(id:)` above KEEPS its name as the irreversible one**, used by the launch
+    /// purge and by "Delete forever" alone. Re-pointing an existing method at gentler behaviour is
+    /// the silent-semantics trap: a caller that wants the document gone should have to type it.
+    ///
+    /// Going through `update(id:fields:in:)` is load-bearing beyond tidiness — that is the write
+    /// plumbing every adapter shares, and it posts `DataChangeSignal`, which is how a restored
+    /// task reappears in `TaskListView` at once rather than on the next tab visit.
+    func softDeleteTask(id: UUID, now: Date = .now) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.taskSoftDelete(now: now), in: .tasks)
+    }
+
+    /// The way back. The stamp is ERASED, not nulled — see `FirestoreFieldPayloads.taskRestore()`.
+    func restoreTask(id: UUID) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.taskRestore(), in: .tasks)
+    }
+
+    /// Recently Deleted's own list: the one fetch here that keeps exactly what the others drop.
+    /// **Not `whereField`** — a soft-delete query cannot be expressed server-side, because
+    /// `isEqualTo: NSNull()` matches only documents where the key is present and null and every
+    /// task written before this block has no key at all. Same reason `live(_:)` is client-side.
+    func fetchDeletedTasks() async throws -> [TaskItem] {
+        deleted(try await fetchAll(TaskItem.self, from: .tasks, orderedBy: "created_at", descending: true))
+    }
 }

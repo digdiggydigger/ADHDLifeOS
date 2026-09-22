@@ -31,6 +31,16 @@ extension FirebaseManager {
         items.filter { SoftDelete.isLive(deletedAt: $0.deletedAt) }
     }
 
+    /// The rows the Recently Deleted screen shows — exactly what `live(_:)` drops.
+    ///
+    /// **Its own helper rather than `.filter { $0.deletedAt != nil }` at the two call sites**, for
+    /// the same reason `live(_:)` is: the rule already has a subtlety a hand-rolled copy would get
+    /// wrong (a FUTURE stamp is still a delete), and written twice the two readings are free to
+    /// drift. Negating the one function keeps them one rule turned round.
+    func deleted<T: SoftDeletable>(_ items: [T]) -> [T] {
+        items.filter { !SoftDelete.isLive(deletedAt: $0.deletedAt) }
+    }
+
     /// The single-document read's guard.
     ///
     /// **It throws rather than returning `nil`.** These reads are reachable from routes that
