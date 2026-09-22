@@ -194,14 +194,24 @@ extension TaskDetailView {
         )
     }
 
-    /// Delete lives here since F-V3-Tasks-rebuild (the list's swipe-left is gone). Destructive
-    /// styling plus a confirmation dialog — deletion is the one action on this screen with no
-    /// undo, so it never fires on a single tap.
+    /// Delete lives here since F-V3-Tasks-rebuild (the list's swipe-left is gone).
+    ///
+    /// **It fires on a single tap now** (E's call, 2026-09-22, after the `apple-design` review).
+    /// The comment that stood here said *"deletion is the one action on this screen with no undo,
+    /// so it never fires on a single tap"* — and `F-C3-RecentlyDeleted` made the premise false.
+    /// `alerts.md › Best practices`: *"Avoid displaying alerts for common, undoable actions, even
+    /// when they're destructive… when people take an uncommon destructive action that they can't
+    /// undo, it's important to display an alert."* Delete is now 30 days plus a capsule, so the
+    /// dialog was the thing to avoid. "Delete forever" keeps its confirm, which is the same rule
+    /// read the other way.
+    ///
+    /// The destructive styling stays — the action IS destructive, it is simply recoverable — and
+    /// so does the warning haptic, which is now the whole of the "are you sure" beat.
     var deleteSection: some View {
         Section {
             Button("Delete Task", role: .destructive) {
                 Haptics.play(.warning)
-                showDeleteConfirmation = true
+                Task { await performDelete() }
             }
             .accessibilityIdentifier("taskDetailDeleteButton")
         }
@@ -220,8 +230,32 @@ extension TaskDetailView {
 
     /// Only on a landed delete: refresh the list and pop. A failed delete leaves
     /// `taskDetailErrorMessage` on screen and stays put.
+    /// **The subject is read BEFORE the write**, because the write is what makes it unreadable:
+    /// this method dismisses the screen, and a capsule reading "Deleted" over an empty line is
+    /// what reading it afterwards produces.
     func performDelete() async {
-        guard await service.delete() else { return }
+        // `service.task` is private and stays that way — the published `state` is the seam the
+        // rest of this file already reads, and widening a service's surface for one string is
+        // how a private stops meaning anything.
+        let subject: String
+        if case .loaded(let loaded) = service.state { subject = loaded.title } else { subject = "" }
+        guard await service.softDelete() else { return }
+        // **The adapter and the id, never the service** — by the time the user taps Undo this
+        // screen is gone. Capturing `service` would work by accident (a strong capture keeps it
+        // alive) while holding a whole loaded screen resident and routing a failed restore into
+        // an `errorMessage` nothing is drawing any more. `ComposerDraftFiler` is the shape.
+        recordAction.record(
+            RecentAction(kind: .taskDeleted, subject: subject) { [client, taskId] in
+                do {
+                    try await client.restoreTask(id: taskId)
+                    return true
+                } catch {
+                    // `false` puts the offer back — the user must be able to try again, and the
+                    // 30-day list is the only other way back.
+                    return false
+                }
+            }
+        )
         onUpdated()
         dismiss()
     }

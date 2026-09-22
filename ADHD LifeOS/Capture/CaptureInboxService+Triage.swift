@@ -82,6 +82,21 @@ extension CaptureInboxService {
             return true
         case .journaled(let captureId, let logId):
             return await undoJournalEntry(captureId: captureId, logId: logId)
+        case .deleted(let captureId):
+            triageErrorMessage = nil
+            do {
+                try await client.restoreCapture(id: captureId)
+                recordTriageUndo()
+                // Both, for the same reason `.sorted` needs both: the capture comes back ON the
+                // inbox slice this screen may not be standing on, so the counts every other tab
+                // reads are stale in exactly the way an exit leaves them.
+                await refresh()
+                await refreshCountsAfterExit()
+                return true
+            } catch {
+                triageErrorMessage = Self.message(for: error)
+                return false
+            }
         case .sorted(let captureId, let previousLifeAreaId):
             triageErrorMessage = nil
             do {
@@ -132,9 +147,12 @@ extension CaptureInboxService {
     func discard(capture: Capture) async -> Bool {
         triageErrorMessage = nil
         do {
-            try await client.deleteCapture(id: capture.id)
+            try await client.softDeleteCapture(id: capture.id)
             removeCapture(id: capture.id)
             await refreshCountsAfterExit()
+            // After the write and after the row leaves, the `sort` ordering — a capsule offering
+            // to undo something that has not landed is the one thing worse than no capsule.
+            record(.deleted(captureId: capture.id), kind: .captureDeleted, subject: capture)
             return true
         } catch {
             triageErrorMessage = Self.message(for: error)

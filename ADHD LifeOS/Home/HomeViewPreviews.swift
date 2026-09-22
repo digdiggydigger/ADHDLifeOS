@@ -64,7 +64,8 @@ private struct PreviewCaptureClientAdapting: CaptureClientAdapting {
 
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
     func fetchSeenCaptures() async throws -> [Capture] { [] }
-    func deleteCapture(id: UUID) async throws {}
+    func softDeleteCapture(id: UUID) async throws {}
+    func restoreCapture(id: UUID) async throws {}
     func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
         fatalError("unused in preview")
@@ -114,7 +115,8 @@ private struct PreviewTaskDetailClientAdapting: TaskDetailClientAdapting {
         fatalError("unused in preview")
     }
     func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail { fatalError("unused in preview") }
-        func deleteTask(id: UUID) async throws {}
+        func softDeleteTask(id: UUID) async throws {}
+        func restoreTask(id: UUID) async throws {}
     func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
     func addTagToTask(taskId: UUID, tagId: UUID) async throws {}
     func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {}

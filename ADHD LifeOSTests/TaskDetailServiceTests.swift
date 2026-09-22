@@ -136,28 +136,38 @@ final class TaskDetailServiceTests: XCTestCase {
 
     // MARK: - Delete (moved here from the list's swipe in F-V3-Tasks-rebuild)
 
-    func testDelete_success_callsTheClientAndReturnsTrue() async {
+    /// **Reversed by `F-C3-RecentlyDeleted`, not deleted.** It asserted the screen performed a
+    /// real document delete; the screen now stamps `deleted_at` and the document survives for
+    /// thirty days. What it protects is unchanged — the write is attempted, it is attempted
+    /// against THIS task, and the caller learns whether it landed — so the name and the subject
+    /// move and the shape does not. The hard delete it used to name is now reachable only from
+    /// Recently Deleted.
+    func testSoftDelete_success_callsTheClientAndReturnsTrue() async {
         let fake = FakeTaskDetailClientAdapting()
         let task = makeTask()
         fake.fetchTaskResult = .success(task)
         let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
-        let result = await sut.delete()
+        let result = await sut.softDelete()
 
         XCTAssertTrue(result)
-        XCTAssertEqual(fake.deleteTaskCalls, [task.id])
+        XCTAssertEqual(fake.softDeleteTaskCalls, [task.id])
+        XCTAssertEqual(
+            fake.deleteTaskCalls, [],
+            "the detail screen reached a HARD delete, which no longer exists on this seam"
+        )
     }
 
-    func testDelete_failure_surfacesTheErrorAndReturnsFalse() async {
+    func testSoftDelete_failure_surfacesTheErrorAndReturnsFalse() async {
         let fake = FakeTaskDetailClientAdapting()
         let task = makeTask()
         fake.fetchTaskResult = .success(task)
-        fake.deleteTaskError = TasksServiceError.fetchFailed("delete refused")
+        fake.softDeleteTaskError = TasksServiceError.fetchFailed("delete refused")
         let sut = TaskDetailService(taskId: task.id, client: fake)
         await sut.load()
 
-        let result = await sut.delete()
+        let result = await sut.softDelete()
 
         XCTAssertFalse(result)
         XCTAssertEqual(sut.errorMessage, "delete refused")

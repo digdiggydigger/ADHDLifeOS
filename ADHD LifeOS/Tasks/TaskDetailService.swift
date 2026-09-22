@@ -129,11 +129,20 @@ final class TaskDetailService: ObservableObject {
         }
     }
 
-    /// Hard delete — the detail screen owns deletion since F-V3-Tasks-rebuild. Returns whether it
-    /// landed, so the view only dismisses a screen whose task is actually gone.
-    func delete() async -> Bool {
+    /// Soft delete (`F-C3-RecentlyDeleted`) — the detail screen owns deletion since
+    /// F-V3-Tasks-rebuild, and since this block that deletion is reversible. Returns whether the
+    /// write landed, so the view only dismisses a screen whose task has actually gone from the
+    /// lists.
+    ///
+    /// **Renamed rather than re-pointed.** `delete()` meant "the document is gone"; this one does
+    /// not, and a method that keeps its name while changing what it promises is the same
+    /// silent-semantics trap that kept `deleteTask` as the hard operation's name one layer down.
+    ///
+    /// It does NOT offer the undo — the capsule's closure has to outlive this service, because
+    /// `performDelete()` pops the screen the moment this returns.
+    func softDelete() async -> Bool {
         do {
-            try await client.deleteTask(id: taskId)
+            try await client.softDeleteTask(id: taskId)
             return true
         } catch {
             errorMessage = Self.message(for: error)

@@ -48,8 +48,15 @@ struct FirebaseTaskDetailClientAdapter: TaskDetailClientAdapting {
         return try await store.fetchTaskDetail(id: id)
     }
 
-    func deleteTask(id: UUID) async throws {
-        try await store.deleteTask(id: id)
+    /// The clock is resolved HERE rather than by the caller — the `updateStatus` precedent just
+    /// above, which passes `now: .now` into the store for the same reason: a UI seam should not
+    /// have to hold a clock to delete something.
+    func softDeleteTask(id: UUID) async throws {
+        try await store.softDeleteTask(id: id, now: .now)
+    }
+
+    func restoreTask(id: UUID) async throws {
+        try await store.restoreTask(id: id)
     }
 
     func createTag(name: String) async throws -> Tag {

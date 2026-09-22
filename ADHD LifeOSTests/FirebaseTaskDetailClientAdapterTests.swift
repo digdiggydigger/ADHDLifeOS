@@ -77,22 +77,43 @@ final class FirebaseTaskDetailClientAdapterTests: XCTestCase {
         XCTAssertTrue(store.fetchedIds.isEmpty, "a failed write must not report a document back")
     }
 
-    // MARK: - Delete (moved here from the list adapter in F-V3-Tasks-rebuild)
+    // MARK: - Delete (moved here from the list adapter in F-V3-Tasks-rebuild; SOFT since F-C3)
 
-    func testDeleteTask_forwardsTheId() async throws {
+    /// **Reversed by `F-C3-RecentlyDeleted`.** The adapter forwards a soft delete now, and the
+    /// clock is resolved HERE rather than by the caller — the `updateStatus` precedent one method
+    /// up, which passes `now: .now` into the store for exactly the same reason: the UI seam should
+    /// not have to hold a clock to delete something.
+    func testSoftDeleteTask_forwardsTheIdAndStampsIt() async throws {
         let id = UUID()
+        let before = Date()
 
-        try await adapter.deleteTask(id: id)
+        try await adapter.softDeleteTask(id: id)
 
-        XCTAssertEqual(store.deletedIds, [id])
+        XCTAssertEqual(store.softDeletedIds, [id])
+        XCTAssertEqual(
+            store.deletedIds, [],
+            "the adapter reached the HARD delete, which only the purge and Delete forever may"
+        )
+        let stamp = try XCTUnwrap(store.softDeleteStamps.first)
+        XCTAssertGreaterThanOrEqual(stamp, before)
+        XCTAssertLessThanOrEqual(stamp, Date())
     }
 
-    func testDeleteTask_propagatesFailure() async {
-        store.deleteError = FirebaseManagerError.notSignedIn
+    func testSoftDeleteTask_propagatesFailure() async {
+        store.softDeleteError = FirebaseManagerError.notSignedIn
 
-        await XCTAssertThrowsErrorAsync(try await adapter.deleteTask(id: UUID())) { error in
+        await XCTAssertThrowsErrorAsync(try await adapter.softDeleteTask(id: UUID())) { error in
             XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
         }
+    }
+
+    /// The way back, and the reason the delete is worth calling soft at all.
+    func testRestoreTask_forwardsTheId() async throws {
+        let id = UUID()
+
+        try await adapter.restoreTask(id: id)
+
+        XCTAssertEqual(store.restoredIds, [id])
     }
 
     // MARK: - Status

@@ -221,13 +221,22 @@ final class UndoCapsuleCallSiteTests: XCTestCase {
                 + " something else happens to redraw the screen."
         )
         XCTAssertTrue(
-            sections.contains("case .captureSorted, .captureSkipped, .captureJournalled: return true"),
-            "The header arrow does not restrict itself to capture actions."
+            sections.contains(
+                "case .captureSorted, .captureSkipped, .captureJournalled, .captureDeleted:"
+            ),
+            "The header arrow does not restrict itself to capture actions. `captureDeleted`"
+                + " belongs on THIS side (`F-C3-RecentlyDeleted`): a discard is a reversible"
+                + " triage exit — `discard(capture:)` lives in `CaptureInboxService+Triage` — so"
+                + " ↶ in the inbox's header undoes exactly what it looks like it undoes."
         )
         XCTAssertTrue(
-            sections.contains("case .taskClosed, .nudgeDismissed, .draftKeptInInbox, nil: return false"),
-            "The header arrow's kind check is not exhaustive, so a sixth kind would silently"
-                + " inherit whichever branch it fell into."
+            sections.contains(
+                "case .taskClosed, .nudgeDismissed, .draftKeptInInbox, .taskDeleted, nil:"
+            ),
+            "The header arrow's kind check is not exhaustive, so a new kind would silently"
+                + " inherit whichever branch it fell into. `taskDeleted` belongs on THIS side:"
+                + " an arrow in the Capture Inbox that restored a TASK is the wrong promise in"
+                + " the wrong place, which is the rule that put `taskClosed` here."
         )
     }
 

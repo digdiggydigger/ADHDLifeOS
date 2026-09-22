@@ -53,7 +53,8 @@ private struct QuickCapturePreviewClient: CaptureClientAdapting {
     }
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
     func fetchSeenCaptures() async throws -> [Capture] { [] }
-    func deleteCapture(id: UUID) async throws {}
+    func softDeleteCapture(id: UUID) async throws {}
+    func restoreCapture(id: UUID) async throws {}
     func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
         fatalError("unused in preview")

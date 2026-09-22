@@ -20,7 +20,8 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
     var createTagResult: Result<Tag, Error> = .success(Tag(id: UUID(), name: "new-tag"))
     var addTagToTaskResult: Result<Void, Error> = .success(())
     var removeTagFromTaskResult: Result<Void, Error> = .success(())
-    var deleteTaskError: Error?
+    var softDeleteTaskError: Error?
+    var restoreTaskError: Error?
 
     private(set) var fetchTaskCallCount = 0
     private(set) var updateTaskCallCount = 0
@@ -31,6 +32,11 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
     private(set) var lastUpdateTaskPayload: TaskUpdatePayload?
     private(set) var lastAddTagArguments: (taskId: UUID, tagId: UUID)?
     private(set) var lastRemoveTagArguments: (taskId: UUID, tagId: UUID)?
+    private(set) var softDeleteTaskCalls: [UUID] = []
+    private(set) var restoreTaskCalls: [UUID] = []
+    /// Kept as a always-empty witness (`F-C3-RecentlyDeleted`). The hard delete is gone from this
+    /// seam, and a test that asserts this stayed `[]` is asserting that it stayed gone — cheaper
+    /// and more direct than re-reading the protocol.
     private(set) var deleteTaskCalls: [UUID] = []
 
     func fetchTask(id: UUID) async throws -> TaskDetail {
@@ -93,8 +99,13 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
         _ = try removeTagFromTaskResult.get()
     }
 
-    func deleteTask(id: UUID) async throws {
-        deleteTaskCalls.append(id)
-        if let deleteTaskError { throw deleteTaskError }
+    func softDeleteTask(id: UUID) async throws {
+        softDeleteTaskCalls.append(id)
+        if let softDeleteTaskError { throw softDeleteTaskError }
+    }
+
+    func restoreTask(id: UUID) async throws {
+        restoreTaskCalls.append(id)
+        if let restoreTaskError { throw restoreTaskError }
     }
 }

@@ -343,6 +343,55 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Next session starts at:** `F-C3-RecentlyDeleted`, from
   `handoff/START-HERE-adhd-audit-arc-C3-deleted.md`.
 
+### Session 6 — 2026-09-22, arc C, `F-C3-RecentlyDeleted` FINISHED
+
+- **Landed:** eight commits on `feature/adhd-c3-deleted`, merged as PR #185. The write payloads,
+  the manager methods, the hard delete leaving every UI-facing seam, two capsule kinds, the screen
+  + the fifteenth adapter + the Tools row + the launch purge, the copy fix, E's two decisions, and
+  `screenshots/recently-deleted/`.
+- **Where the build departed from the spec, and why:**
+  - **`ToolsView.Push` is a LOCAL superset of `ToolsCatalog.Destination`**, not a third case on it.
+    `ToolsCatalogTests.testEveryDestinationHasAnEntry` holds the catalog's case list and its entry
+    list equal, so a third destination there would be a third CARD — and E said row. The case names
+    match, so `ToolsPageCallSiteTests`' verbatim `pushedDestination = .places` pin is untouched, and
+    `Push(_:)` switches exhaustively so a new catalog door fails the build here.
+  - **The service publishes ONE `Screen` enum**, not a state beside a computed content. A test
+    drove that out: on a failed load the items array is empty, so `content` answered `.empty`.
+  - **Two pins moved deliberately:** the disc-clearance count 3 → 4, and both of
+    `UndoCapsuleCallSiteTests`' verbatim header-arrow lines.
+- **What E decided, and both removed something:** *"Drop both confirms"* and *"Unify on Delete"*.
+  The delete confirmations existed BECAUSE delete was irreversible, and `alerts.md › Best
+  practices` says not to confirm common, undoable actions; "Recently Deleted" is the anchor Photos,
+  Notes and Files all use, so "Discard" moved to "Delete". **"Delete forever" keeps its confirm.**
+- **Owed to E: nothing.** No `#available` site and no reduced site, so no RM-on pass (§7.3), and
+  the new screen has no animation of its own — deliberately, since adding one would have put that
+  pass back on the bar for a list whose job is to be unhurried.
+- **Six things learned, and four of them cost a run each:**
+  1. **`tap(_:untilGone:)` returns `true` without tapping** when the doomed element is already
+     absent — and scrolling a `Form` to its last row takes the title field out of the hierarchy.
+     Two assertions passed on a build that had deleted nothing. **The emulator settled it**: a
+     `runQuery` with `Authorization: Bearer owner` found `deleted_at` on no document in the
+     project. A screenshot could not have shown that.
+  2. **`tap(_:untilExists:)` fails identically from the other side.** The replacement signal (the
+     capsule) was already satisfied by a capsule left pending from the previous delete.
+  3. **A push that has not settled reports frames on the wrong page** — x ≈ 10016, a screen width
+     times the tab index. A plain tap fails "not hittable"; a COORDINATE tap, tried as the fix, is
+     worse: it bypasses hittability and lands on whatever is really at those coordinates (one run
+     ended on the Areas tab). Wait for the pushed screen's own nav bar.
+  4. **An accessibility identifier is inherited by a container's children**, so
+     `descendants(matching: .any)["toolsCard.places"]` is ambiguous and an ambiguous query reports
+     that it does not exist — *"The Tools page never appeared"* about a page plainly on screen.
+  5. **A `confirmationDialog`'s button matches twice** (sheet + presenting hierarchy); `.firstMatch`
+     or the tap fails on "Multiple matching elements found".
+  6. **Copy written earlier in the same block can go dead later in it.** `softDeleteReassurance`
+     was written to fix a false sentence and orphaned four cycles later when E dropped the dialog
+     that held it. Grep caught it; no test would have.
+- **Suite 3,253 / 0**, SwiftLint **0 / 877**, build SUCCEEDED, coverage **29.87%
+  (14,953/50,068)** — comparable to session 5's 29.89%, the 0.02 dip being 523 lines of new view
+  body that are 0% by design.
+- **Next session starts at:** `F-C4-TagsRecentlyDeleted`, from
+  `handoff/START-HERE-adhd-audit-arc-C4-tags.md`.
+
 ### Session 5 — 2026-09-22, arc C, `F-C2`'s debt + BOTH device looks + `F-C3` started
 
 - **Landed:** `screenshots/drafts-to-inbox/` at **PR #183** (`51910cd`) — `F-C2`'s one unmet

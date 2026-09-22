@@ -1,0 +1,147 @@
+//
+//  RecentlyDeletedAdapterTests.swift
+//  ADHD LifeOSTests
+//
+//  `F-C3-RecentlyDeleted`: the fifteenth `Firebase*ClientAdapter`, covered on the day it ships.
+//
+//  **F-AdapterDrift (2026-09-07) is why this file exists at commit time rather than later.** Four
+//  adapters were found below the bar that day — `FirebaseAppDirectoryClientAdapter` at 0% — and
+//  every one of them had arrived with an arc that shipped without its adapter test. All four were
+//  reachable in production the whole time.
+//
+
+import XCTest
+@testable import ADHD_LifeOS
+
+final class RecentlyDeletedAdapterTests: XCTestCase {
+    private var store: FakeRecentlyDeletedBackingStore!
+    private var adapter: FirebaseRecentlyDeletedClientAdapter!
+    private let stamp = Date(timeIntervalSince1970: 1_799_000_000)
+
+    override func setUp() {
+        super.setUp()
+        store = FakeRecentlyDeletedBackingStore()
+        adapter = FirebaseRecentlyDeletedClientAdapter(store: store)
+    }
+
+    override func tearDown() {
+        adapter = nil
+        store = nil
+        super.tearDown()
+    }
+
+    private func task(_ title: String, deletedAt: Date?) -> TaskItem {
+        TaskItem(
+            id: UUID(), lifeAreaId: nil, title: title, status: .open, priority: .p4,
+            dueDate: nil, deletedAt: deletedAt
+        )
+    }
+
+    private func capture(_ content: String, deletedAt: Date?) -> Capture {
+        Capture(
+            id: UUID(), content: content, kind: .note, processed: false, createdAt: Date(),
+            deletedAt: deletedAt
+        )
+    }
+
+    // MARK: - Reading
+
+    func testFetchDeletedReturnsBothCollectionsAsOneList() async throws {
+        store.deletedTasks = [task("Ring the dentist", deletedAt: stamp)]
+        store.deletedCaptures = [capture("Idle thought", deletedAt: stamp)]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertEqual(Set(items.map(\.title)), ["Ring the dentist", "Idle thought"])
+        XCTAssertEqual(Set(items.map(\.kind)), [.task, .capture])
+        XCTAssertEqual(items.map(\.deletedAt), [stamp, stamp])
+    }
+
+    /// **A failure in EITHER collection fails the whole read**, rather than quietly returning the
+    /// half that worked. A screen showing only the tasks because the capture fetch threw tells the
+    /// user their capture is already gone, which is the one claim this screen exists to disprove.
+    func testAFailureInEitherCollectionFailsTheWholeRead() async {
+        store.fetchCapturesError = FirebaseManagerError.notSignedIn
+        store.deletedTasks = [task("Still here", deletedAt: stamp)]
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchDeleted()) { error in
+            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
+        }
+    }
+
+    func testAFailureFetchingTasksAlsoFailsTheRead() async {
+        store.fetchTasksError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchDeleted()) { error in
+            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
+        }
+    }
+
+    /// Unreachable by construction — the fetches already filter to stamped documents — and
+    /// dropped rather than defaulted anyway, because `.now` would put a stampless row at the TOP
+    /// of the list with a full window it does not have.
+    func testADocumentWithNoStampIsDroppedRatherThanDatedToNow() async throws {
+        store.deletedTasks = [task("No stamp", deletedAt: nil), task("Stamped", deletedAt: stamp)]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertEqual(items.map(\.title), ["Stamped"])
+    }
+
+    /// One capture reads the same wherever it appears — the inbox, the capsule and this list all
+    /// ask `CaptureDetailPresentation`.
+    func testACapturesTitleComesFromTheSharedHeadlineRule() async throws {
+        store.deletedCaptures = [capture("  Ring   the dentist  ", deletedAt: stamp)]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertEqual(
+            items.first?.title,
+            CaptureDetailPresentation.headline(for: capture("  Ring   the dentist  ", deletedAt: stamp))
+        )
+    }
+
+    // MARK: - Writing
+
+    func testRestoreRoutesByKind() async throws {
+        let taskItem = RecentlyDeletedItem(itemId: UUID(), kind: .task, title: "T", deletedAt: stamp)
+        let captureItem = RecentlyDeletedItem(itemId: UUID(), kind: .capture, title: "C", deletedAt: stamp)
+
+        try await adapter.restore(taskItem)
+        try await adapter.restore(captureItem)
+
+        XCTAssertEqual(store.restoredTaskIds, [taskItem.itemId])
+        XCTAssertEqual(store.restoredCaptureIds, [captureItem.itemId])
+        XCTAssertEqual(store.hardDeletedTaskIds, [], "a restore reached the hard delete")
+        XCTAssertEqual(store.hardDeletedCaptureIds, [])
+    }
+
+    func testDeleteForeverRoutesByKind() async throws {
+        let taskItem = RecentlyDeletedItem(itemId: UUID(), kind: .task, title: "T", deletedAt: stamp)
+        let captureItem = RecentlyDeletedItem(itemId: UUID(), kind: .capture, title: "C", deletedAt: stamp)
+
+        try await adapter.deleteForever(taskItem)
+        try await adapter.deleteForever(captureItem)
+
+        XCTAssertEqual(store.hardDeletedTaskIds, [taskItem.itemId])
+        XCTAssertEqual(store.hardDeletedCaptureIds, [captureItem.itemId])
+    }
+
+    func testRestorePropagatesFailure() async {
+        store.restoreError = FirebaseManagerError.notSignedIn
+        let item = RecentlyDeletedItem(itemId: UUID(), kind: .task, title: "T", deletedAt: stamp)
+
+        await XCTAssertThrowsErrorAsync(try await adapter.restore(item)) { error in
+            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
+        }
+    }
+
+    func testDeleteForeverPropagatesFailure() async {
+        store.deleteError = FirebaseManagerError.notSignedIn
+        let item = RecentlyDeletedItem(itemId: UUID(), kind: .capture, title: "C", deletedAt: stamp)
+
+        await XCTAssertThrowsErrorAsync(try await adapter.deleteForever(item)) { error in
+            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
+        }
+    }
+}

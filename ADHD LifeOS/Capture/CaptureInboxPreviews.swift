@@ -34,7 +34,8 @@ private struct PreviewCaptureClientAdapting: CaptureClientAdapting {
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
     func fetchSeenCaptures() async throws -> [Capture] { [] }
     func fetchCaptures() async throws -> [Capture] { [] }
-    func deleteCapture(id: UUID) async throws {}
+    func softDeleteCapture(id: UUID) async throws {}
+    func restoreCapture(id: UUID) async throws {}
     func uploadMedia(to uploadURL: URL, data: Data, contentType: String) async throws {}
 
     func updateCapture(id: UUID, changes: CaptureUpdate) async throws -> Capture {
@@ -86,7 +87,8 @@ private struct EmptyInboxPreviewClient: CaptureClientAdapting {
     func fetchProcessedCaptures() async throws -> [Capture] { [] }
     func fetchSeenCaptures() async throws -> [Capture] { [] }
     func fetchCaptures() async throws -> [Capture] { [] }
-    func deleteCapture(id: UUID) async throws {}
+    func softDeleteCapture(id: UUID) async throws {}
+    func restoreCapture(id: UUID) async throws {}
     func fetchCapture(id: UUID) async throws -> Capture { try await backing.fetchCapture(id: id) }
     func createTask(_ input: NormalizedPromoteToTaskInput) async throws -> TaskItem {
         try await backing.createTask(input)

@@ -14,7 +14,11 @@ protocol TaskDetailBackingStore {
     func fetchTaskDetail(id: UUID) async throws -> TaskDetail
     func updateTask(id: UUID, payload: TaskUpdatePayload) async throws
     func setTaskStatus(id: UUID, status: TaskStatus, locationStamp: LocationStamp?, now: Date) async throws
-    func deleteTask(id: UUID) async throws
+    /// `now` is explicit for the same reason `setTaskStatus`'s is: a protocol requirement has to
+    /// match arity, and the stamp is deliberately the client's clock (the countdown the Recently
+    /// Deleted screen draws is the user's own).
+    func softDeleteTask(id: UUID, now: Date) async throws
+    func restoreTask(id: UUID) async throws
     func fetchTags() async throws -> [Tag]
     func createTagDeduplicating(name: String) async throws -> Tag
     func fetchTags(for parent: FirebaseTagParent, parentId: UUID) async throws -> [Tag]
