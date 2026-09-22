@@ -102,7 +102,7 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 |---|---|---|---|---|
 | `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED**, + the height round, + E's SHAPE ROUND, + **E's DEVICE LOOK: PASSES** | `ea9cbed` (PR #172), shape round PR #178, device evidence `2db6443` | **nothing.** (The radius CAP has no device evidence — E's larger-text look was the top of the STANDARD range — but no block owes it; the AX3 render covers it.) |
 | `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | **MERGED**, + **E's DEVICE LOOK: PASSES** | PR #180, screenshots PR #183, device evidence `015c41b` | **nothing.** |
-| `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | **IN PROGRESS** (session 5) | — | — |
+| `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | **IN PROGRESS** — read side landed and INERT | PR #184 | — |
 | `F-C4-TagsRecentlyDeleted` | tags in Recently Deleted; hidden links, restore-to-everywhere, merge | NOT STARTED | — | — |
 
 ### Arc D · The composer
@@ -381,8 +381,27 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
      whose own comment predicts the spot. **And E's phone renders "Captures" in full.** It stands
      as a simulator-only observation. The lesson: a plausible mechanism is not a measured one, and
      the device is the arbiter.
-- **Next session starts at:** `F-C3-RecentlyDeleted` (in progress this session), from
-  `handoff/START-HERE-adhd-audit-arc-C3-deleted.md`.
+- **`F-C3` was STARTED and its read side landed — three RED→GREEN→commit cycles, each with the
+  RED observed before any implementation.** `SoftDelete` (8 tests); the stamp on four models
+  (5 codec tests, asserting the WRONG spelling is ABSENT); and `live(_:)`/`requireLive(_:)` over
+  all NINE read paths (5 call-site tests, RED at **11 failures**). **Deliberately INERT**: nothing
+  writes `deleted_at` yet, so the filter returns everything and the guard never throws — behaviour
+  is unchanged, which is the only boundary in this block where that is true, and the reason it
+  could be merged on its own.
+  - Suite **3,192 / 0**, SwiftLint **0 / 859**, build green, coverage **29.89% (14,713/49,217)**
+    — comparable to the 29.83% (14,612/48,985) of 2026-09-20, because the denominator moved only
+    by the tree GROWING and both runs measured 100% of the app target.
+  - **Three departures, all recorded in the TODO block**: `isLive` takes no `asOf`; the hard delete
+    KEEPS its name (`softDeleteTask` is the new one); and the spec's optional rules hardening is
+    **declined** — it would check the CLIENT's clock, so a phone running a minute fast could not
+    delete anything, and what it prevents is a user pre-dating their own purge window.
+  - **A test of mine failed in the full run and it was the good kind.** It asserted
+    `SoftDeleteError.itemIsDeleted` appeared in the FETCH files — that is, it asserted the throw
+    had NOT been centralised, while the design centralises it. Corrected to assert the read goes
+    THROUGH `requireLive`, with the helper's own test pinning the throw.
+- **Next session starts at:** `F-C3-RecentlyDeleted`, CONTINUED, from
+  `handoff/START-HERE-adhd-audit-arc-C3-continued.md` — which carries all seven remaining steps
+  with every decision already taken.
 
 ### Session 0 — 2026-09-19 · the audit (3 sessions), no build
 
