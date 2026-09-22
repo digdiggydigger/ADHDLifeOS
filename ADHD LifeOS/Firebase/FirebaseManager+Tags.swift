@@ -110,6 +110,13 @@ extension FirebaseManager {
         DataChangeSignal.post()
     }
 
+    /// The 30-day purge, and "Delete forever" — `removeTagEverywhere`'s no-replacement form under
+    /// a name that says when it is allowed to run. Named rather than exposed raw on
+    /// `RecentlyDeletedBackingStore`, so that seam cannot reach the MERGE direction.
+    func purgeTag(id: UUID) async throws {
+        try await removeTagEverywhere(id, replacingWith: nil)
+    }
+
     func renameTag(id: UUID, to name: String) async throws {
         try await update(id: id, fields: ["name": name], in: .tags)
     }

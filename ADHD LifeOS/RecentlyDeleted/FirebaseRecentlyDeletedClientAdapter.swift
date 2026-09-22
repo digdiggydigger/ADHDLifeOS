@@ -22,13 +22,16 @@ struct FirebaseRecentlyDeletedClientAdapter: RecentlyDeletedClientAdapting {
     func fetchDeleted() async throws -> [RecentlyDeletedItem] {
         async let tasks = store.fetchDeletedTasks()
         async let captures = store.fetchDeletedCaptures()
+        async let tags = store.fetchDeletedTags()
         return try await Self.items(from: tasks) + Self.items(from: captures)
+            + Self.items(from: tags)
     }
 
     func restore(_ item: RecentlyDeletedItem) async throws {
         switch item.kind {
         case .task: try await store.restoreTask(id: item.itemId)
         case .capture: try await store.restoreCapture(id: item.itemId)
+        case .tag: try await store.restoreTag(id: item.itemId)
         }
     }
 
@@ -36,6 +39,9 @@ struct FirebaseRecentlyDeletedClientAdapter: RecentlyDeletedClientAdapting {
         switch item.kind {
         case .task: try await store.deleteTask(id: item.itemId)
         case .capture: try await store.deleteCapture(id: item.itemId)
+        // **Not a document delete.** A tag's purge strips its id from every task and capture that
+        // still carries it, THEN destroys it — the batch a tag delete used to run at the tap.
+        case .tag: try await store.purgeTag(id: item.itemId)
         }
     }
 
@@ -47,6 +53,15 @@ struct FirebaseRecentlyDeletedClientAdapter: RecentlyDeletedClientAdapting {
         tasks.compactMap { task in
             task.deletedAt.map {
                 RecentlyDeletedItem(itemId: task.id, kind: .task, title: task.title, deletedAt: $0)
+            }
+        }
+    }
+
+    /// A tag's title is its name, which is the whole of a tag.
+    private static func items(from tags: [Tag]) -> [RecentlyDeletedItem] {
+        tags.compactMap { tag in
+            tag.deletedAt.map {
+                RecentlyDeletedItem(itemId: tag.id, kind: .tag, title: tag.name, deletedAt: $0)
             }
         }
     }

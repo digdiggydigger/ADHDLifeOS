@@ -87,6 +87,32 @@ final class FirebaseManagerTagsSoftDeleteTests: XCTestCase {
         )
     }
 
+    /// **The SECOND route into the merge case, and it is not the obvious one.** `renameTag`'s
+    /// clash check goes through `fetchTag(named:)`, which is now live-only — so renaming a live
+    /// tag ONTO a hidden tag's name reports no conflict and simply succeeds. That is the right
+    /// behaviour (a tag the user cannot see must not block a name they want), and its consequence
+    /// is that a collision can arrive without anyone creating anything.
+    ///
+    /// Pinned here because the restore-time merge has to handle both feeders, and a test that
+    /// only covered `createTagDeduplicating` would have left this one to be discovered by a user.
+    func testRenamingOntoAHiddenTagsNameSucceedsAndSetsUpTheSameCollision() async throws {
+        let hidden = try await makeTag("errand")
+        let other = try await makeTag("chores")
+        try await manager.softDeleteTag(id: hidden.id)
+
+        try await manager.renameTag(id: other.id, to: "errand")
+
+        let live = try await manager.fetchTags()
+        let waiting = try await manager.fetchDeletedTags()
+        XCTAssertEqual(live.map(\.id), [other.id], "the rename was blocked by a tag nobody can see")
+        XCTAssertEqual(waiting.map(\.name), ["errand"])
+        XCTAssertEqual(
+            live.first?.name, "errand",
+            "two documents now carry one name — one live, one waiting. Restoring the hidden one is"
+                + " what the merge-on-restore case has to resolve."
+        )
+    }
+
     // MARK: - The links, which must NOT move
 
     /// **The acceptance criterion's own wording: assert the ARRAY is unchanged, not just that the

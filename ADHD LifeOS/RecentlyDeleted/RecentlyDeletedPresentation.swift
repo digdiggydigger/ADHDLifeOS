@@ -51,7 +51,8 @@ enum RecentlyDeletedPresentation {
     static let deleteForeverTitle = "Delete Forever"
 
     static var sectionCaption: String {
-        "Tasks and captures you delete wait \(retentionDays) days before they're gone for good."
+        "Tasks, captures and tags you delete wait \(retentionDays) days before they're gone"
+            + " for good."
     }
 
     static let emptyHeadline = "Nothing deleted"
@@ -81,6 +82,7 @@ enum RecentlyDeletedPresentation {
             switch kind {
             case .task: return "Delete this task forever?"
             case .capture: return "Delete this capture forever?"
+            case .tag: return "Delete this tag forever?"
             }
         }
 
@@ -135,6 +137,9 @@ enum RecentlyDeletedPresentation {
         switch kind {
         case .task: return "checklist"
         case .capture: return "tray.full"
+        // Tags have no tab of their own, so the rule above cannot apply. This is the glyph the
+        // Tag Editor's own row in Settings wears, and the one every tag chip in the app carries.
+        case .tag: return "tag"
         }
     }
 
@@ -143,6 +148,7 @@ enum RecentlyDeletedPresentation {
         switch kind {
         case .task: return "Task"
         case .capture: return "Capture"
+        case .tag: return "Tag"
         }
     }
 

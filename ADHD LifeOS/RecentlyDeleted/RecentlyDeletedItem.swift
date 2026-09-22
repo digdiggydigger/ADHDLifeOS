@@ -19,6 +19,12 @@ struct RecentlyDeletedItem: Identifiable, Equatable, Sendable {
     enum Kind: String, Equatable, Sendable, CaseIterable {
         case task
         case capture
+        /// **`F-C4-TagsRecentlyDeleted`, and the one kind whose row is not a document waiting to
+        /// come back.** A deleted task is hidden and nothing else changed; a deleted TAG is hidden
+        /// while every `tag_ids` array that names it stays exactly as it was. So this row stands
+        /// for a link set held open, and its "Delete Forever" is the only one in the screen that
+        /// rewrites other documents.
+        case tag
     }
 
     /// The DOCUMENT's id, not the row's. Named apart from `id` because the row's identity has to

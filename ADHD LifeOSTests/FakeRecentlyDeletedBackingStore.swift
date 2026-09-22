@@ -13,8 +13,10 @@ import Foundation
 final class FakeRecentlyDeletedBackingStore: RecentlyDeletedBackingStore, @unchecked Sendable {
     var deletedTasks: [TaskItem] = []
     var deletedCaptures: [Capture] = []
+    var deletedTags: [Tag] = []
     var fetchTasksError: Error?
     var fetchCapturesError: Error?
+    var fetchTagsError: Error?
     var restoreError: Error?
     var deleteError: Error?
 
@@ -22,6 +24,8 @@ final class FakeRecentlyDeletedBackingStore: RecentlyDeletedBackingStore, @unche
     private(set) var restoredCaptureIds: [UUID] = []
     private(set) var hardDeletedTaskIds: [UUID] = []
     private(set) var hardDeletedCaptureIds: [UUID] = []
+    private(set) var restoredTagIds: [UUID] = []
+    private(set) var purgedTagIds: [UUID] = []
 
     func fetchDeletedTasks() async throws -> [TaskItem] {
         if let fetchTasksError { throw fetchTasksError }
@@ -50,6 +54,23 @@ final class FakeRecentlyDeletedBackingStore: RecentlyDeletedBackingStore, @unche
 
     func deleteCapture(id: UUID) async throws {
         hardDeletedCaptureIds.append(id)
+        if let deleteError { throw deleteError }
+    }
+
+    func fetchDeletedTags() async throws -> [Tag] {
+        if let fetchTagsError { throw fetchTagsError }
+        return deletedTags
+    }
+
+    func restoreTag(id: UUID) async throws {
+        restoredTagIds.append(id)
+        if let restoreError { throw restoreError }
+    }
+
+    /// Recorded apart from `hardDeletedTaskIds`/`hardDeletedCaptureIds`, because a tag's purge is
+    /// not a document delete — it rewrites every referencing task and capture first.
+    func purgeTag(id: UUID) async throws {
+        purgedTagIds.append(id)
         if let deleteError { throw deleteError }
     }
 }

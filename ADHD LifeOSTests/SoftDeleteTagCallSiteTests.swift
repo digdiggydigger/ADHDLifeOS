@@ -191,6 +191,59 @@ final class SoftDeleteTagCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The two irreversible tag paths have ONE home
+
+    /// **`F-C3`'s tree walk, applied to the third collection — and a tag needs TWO names banned,
+    /// not one.** `deleteTag(` is the raw document delete, and `removeTagEverywhere(_:
+    /// replacingWith: nil)` is the purge: the batch that strips this tag's id from every task and
+    /// capture that carries it. The second is the dangerous one. Destroying a tag document leaves
+    /// dangling ids the app already drops silently; stripping the LINKS is what cannot be undone,
+    /// and it is the exact call the Tag Editor made at the tap until this block.
+    ///
+    /// Whole-tree rather than a list of files, for `F-C3`'s reason: the failure this guards is a
+    /// file nobody thought to add to a list. `softDeleteTag(` does not match — the character
+    /// before `eleteTag(` is a capital `D`.
+    func testTheIrreversibleTagWritesExistNowhereOutsideFirebaseAndRecentlyDeleted() throws {
+        let root = Self.appRoot()
+        let allowed = ["Firebase", "RecentlyDeleted"]
+        var offenders: [String] = []
+
+        let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?
+            .compactMap { $0 as? URL }
+            .filter { $0.pathExtension == "swift" } ?? []
+        XCTAssertGreaterThan(files.count, 200, "The tree walk found almost nothing — it is not reading the app.")
+
+        for file in files {
+            let folder = file.deletingLastPathComponent().lastPathComponent
+            guard !allowed.contains(folder) else { continue }
+            let source = try Self.appCode(String(file.path.dropFirst(root.path.count + 1)))
+            if source.contains("deleteTag(") || source.contains("replacingWith: nil") {
+                offenders.append(file.lastPathComponent)
+            }
+        }
+
+        XCTAssertEqual(
+            offenders.sorted(), [],
+            "These files still name a tag's irreversible write. The Tag Editor soft deletes now, so"
+                + " a `deleteTag` or a `replacingWith: nil` on a UI-facing seam strips links off"
+                + " every referencing task and capture — the one thing the 30 days exist to buy"
+                + " back — one autocomplete away from a caller who meant `softDeleteTag`."
+        )
+    }
+
+    /// The purge reaches that batch through a NAMED wrapper, so the seam that may destroy a tag
+    /// cannot also silently MERGE one into another — CLAUDE.md's named-wrapper rule, which exists
+    /// because `removeTagEverywhere`'s two behaviours differ by one argument.
+    func testTheRecentlyDeletedSeamTakesAPurgeRatherThanTheTwoArgumentCascade() throws {
+        let store = try Self.appCode("RecentlyDeleted/RecentlyDeletedBackingStore.swift")
+        XCTAssertTrue(store.contains("func purgeTag(id: UUID) async throws"))
+        XCTAssertFalse(
+            store.contains("removeTagEverywhere"),
+            "The Recently Deleted seam can reach the cascade directly, so it can merge as well as"
+                + " purge — two very different writes, one argument apart."
+        )
+    }
+
     // MARK: - Reading the tree
 
     private static func count(of needle: String, in source: String) -> Int {

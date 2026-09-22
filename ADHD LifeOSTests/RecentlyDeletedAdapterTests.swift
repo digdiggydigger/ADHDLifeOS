@@ -44,6 +44,10 @@ final class RecentlyDeletedAdapterTests: XCTestCase {
         )
     }
 
+    private func tag(_ name: String, deletedAt: Date?) -> Tag {
+        Tag(id: UUID(), name: name, deletedAt: deletedAt)
+    }
+
     // MARK: - Reading
 
     func testFetchDeletedReturnsBothCollectionsAsOneList() async throws {
@@ -143,5 +147,55 @@ final class RecentlyDeletedAdapterTests: XCTestCase {
         await XCTAssertThrowsErrorAsync(try await adapter.deleteForever(item)) { error in
             XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
         }
+    }
+
+    // MARK: - Tags, the third collection (F-C4-TagsRecentlyDeleted)
+
+    func testFetchDeletedReturnsAllTHREECollectionsAsOneList() async throws {
+        store.deletedTasks = [task("Ring the dentist", deletedAt: stamp)]
+        store.deletedCaptures = [capture("Idle thought", deletedAt: stamp)]
+        store.deletedTags = [tag("someday", deletedAt: stamp)]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertEqual(Set(items.map(\.title)), ["Ring the dentist", "Idle thought", "someday"])
+        XCTAssertEqual(Set(items.map(\.kind)), [.task, .capture, .tag])
+    }
+
+    /// The third fetch joins the existing all-or-nothing rule: a screen that quietly showed only
+    /// tasks and captures would tell someone their tag is already gone, which is the one thing
+    /// this screen exists to disprove.
+    func testAFailedTagFetchFailsTheWholeRead() async {
+        store.deletedTasks = [task("Ring the dentist", deletedAt: stamp)]
+        store.fetchTagsError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchDeleted()) { error in
+            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
+        }
+    }
+
+    func testRestoringATagErasesItsStampAndWritesNothingElse() async throws {
+        let item = RecentlyDeletedItem(itemId: UUID(), kind: .tag, title: "someday", deletedAt: stamp)
+
+        try await adapter.restore(item)
+
+        XCTAssertEqual(store.restoredTagIds, [item.itemId])
+        XCTAssertTrue(store.purgedTagIds.isEmpty)
+    }
+
+    /// **The one row on this screen whose "Delete Forever" is not a document delete.** A tag's
+    /// purge strips its id from every task and capture that still carries it, THEN destroys the
+    /// document — the batch a tag delete used to run at the tap. Routing it to a plain delete
+    /// would leave every referencing item pointing at nothing.
+    func testDeletingATagForeverPurgesItRatherThanDeletingTheDocument() async throws {
+        let item = RecentlyDeletedItem(itemId: UUID(), kind: .tag, title: "someday", deletedAt: stamp)
+
+        try await adapter.deleteForever(item)
+
+        XCTAssertEqual(store.purgedTagIds, [item.itemId])
+        XCTAssertTrue(
+            store.hardDeletedTaskIds.isEmpty && store.hardDeletedCaptureIds.isEmpty,
+            "a tag's purge reached one of the document deletes"
+        )
     }
 }
