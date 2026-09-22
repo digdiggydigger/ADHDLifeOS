@@ -130,7 +130,12 @@ struct TaskDetailView: View {
             }
             .accessibilityIdentifier("taskDetailConfirmDeleteButton")
         } message: {
-            Text("This can't be undone.")
+            // **This said "This can't be undone." until `F-C3-RecentlyDeleted`, and soft delete
+            // made that FALSE.** It is the one line a person reads to decide, so leaving it would
+            // have been worse than never having written it: it would talk someone out of deleting
+            // a task the app would have kept for them for a month. The true sentence moved to
+            // "Delete forever", where it is Q10's sanctioned friction.
+            Text(RecentlyDeletedPresentation.softDeleteReassurance)
         }
         .task {
             await service.load()

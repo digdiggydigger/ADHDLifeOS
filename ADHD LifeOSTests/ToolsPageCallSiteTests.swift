@@ -65,17 +65,22 @@ final class ToolsPageCallSiteTests: XCTestCase {
         )
     }
 
-    /// Both pushes land under the capture disc, so both ask for the room where they are pushed —
-    /// the presentation owns the clearance, exactly as `AreasView` does for its own copy of the
-    /// Life Areas editor. See `CaptureDiscClearanceCallSiteTests` for why neither screen is on
-    /// that file's list.
-    func testBothPushedScreensAskForCaptureDiscClearance() throws {
+    /// Every push lands under the capture disc, so every one asks for the room where it is
+    /// pushed — the presentation owns the clearance, exactly as `AreasView` does for its own copy
+    /// of the Life Areas editor. See `CaptureDiscClearanceCallSiteTests` for why these screens are
+    /// not on that file's list.
+    ///
+    /// **Was "both" and a count of 3; `F-C3-RecentlyDeleted` made it three pushes and 4.** Updated
+    /// deliberately, which is this test working: a third destination added WITHOUT its clearance
+    /// would have left the count at 3 and passed.
+    func testEveryPushedScreenAsksForCaptureDiscClearance() throws {
         let source = try Self.appSource("Tools/ToolsView.swift")
         XCTAssertEqual(
-            source.components(separatedBy: ".captureDiscClearance()").count - 1, 3,
-            "The Tools page should call `.captureDiscClearance()` three times: once on its own"
-                + " scroll, and once at each push. A missing one puts that screen's last row"
-                + " under an opaque 60pt circle with nothing below it to scroll to."
+            source.components(separatedBy: ".captureDiscClearance()").count - 1, 4,
+            "The Tools page should call `.captureDiscClearance()` four times: once on its own"
+                + " scroll, and once at each of the three pushes. A missing one puts that"
+                + " screen's last row under an opaque 60pt circle with nothing below it to"
+                + " scroll to."
         )
     }
 

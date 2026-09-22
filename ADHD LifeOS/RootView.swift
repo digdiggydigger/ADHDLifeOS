@@ -271,6 +271,11 @@ struct RootView: View {
                 .environmentObject(searchModel)
                 .environmentObject(tabNavigation)
                 .task { await refreshCaptureInboxCount() }
+                // E's Step 0 answer 1 (`F-C3-RecentlyDeleted`): *"The app, when you open it"*.
+                // On the SIGNED-IN branch because it needs a uid, and with NO once-flag because
+                // re-running is correct rather than merely harmless — signing in as another
+                // account should purge that one, and the operation is idempotent and silent.
+                .task { await RecentlyDeletedPurge.run() }
                 // Any capture written, sorted, promoted or binned anywhere in the app moves this
                 // number — the same signal every other screen reloads on.
                 .onReceive(DataChangeSignal.changes) { _ in

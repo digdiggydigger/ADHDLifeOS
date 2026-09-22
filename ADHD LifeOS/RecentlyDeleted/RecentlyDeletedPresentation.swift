@@ -145,6 +145,11 @@ enum RecentlyDeletedPresentation {
     /// E's round 2: *"Where Recently Deleted lives → 'One row in Tools'"*. One line, so it carries
     /// the one number that changes what the user would do — how long the SOONEST departure has,
     /// not the newest, because the newest is the one that needs no attention.
+    /// What the row says before the count is known, and after a failed read. **Never "Nothing
+    /// waiting"** — claiming the list is empty because the fetch failed is the same lie the screen
+    /// itself refuses to tell, told one level up with less room to explain it.
+    static let toolsRowLoadingSubtitle = "Restore something you deleted by mistake"
+
     static func toolsRowSubtitle(for items: [RecentlyDeletedItem], now: Date = .now) -> String {
         guard let soonest = items.map({ daysRemaining(deletedAt: $0.deletedAt, now: now) }).min() else {
             return "Nothing waiting"

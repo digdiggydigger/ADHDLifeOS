@@ -31,22 +31,47 @@ import SwiftUI
 struct ToolsView: View {
     private let placesClient: PlacesClientAdapting
     private let lifeAreaEditorClient: LifeAreaEditorClientAdapting
+    private let recentlyDeletedClient: RecentlyDeletedClientAdapting
 
     init(
         placesClient: PlacesClientAdapting? = nil,
-        lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil
+        lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
+        recentlyDeletedClient: RecentlyDeletedClientAdapting? = nil
     ) {
         self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
         self.lifeAreaEditorClient = lifeAreaEditorClient ?? FirebaseLifeAreaEditorClientAdapter()
+        self.recentlyDeletedClient = recentlyDeletedClient ?? FirebaseRecentlyDeletedClientAdapter()
     }
 
-    /// Which catalog destination is pushed, if any. A flag push rather than the closure-based
+    /// Everything this page can push: the catalog's two CARDS plus the Recently Deleted
+    /// SECTION's one row.
+    ///
+    /// **A local superset rather than a third `ToolsCatalog.Destination`**, because
+    /// `ToolsCatalogTests.testEveryDestinationHasAnEntry` holds the catalog's case list and its
+    /// entry list equal — a destination there without an entry is a card, and E chose a row. The
+    /// case NAMES match the catalog's so `pushedDestination = .places` still reads the same at
+    /// every site, and `init(_:)` below switches exhaustively, so a new catalog destination fails
+    /// the build here rather than silently having nowhere to go.
+    enum Push: Hashable {
+        case places
+        case lifeAreas
+        case recentlyDeleted
+
+        init(_ destination: ToolsCatalog.Destination) {
+            switch destination {
+            case .places: self = .places
+            case .lifeAreas: self = .lifeAreas
+            }
+        }
+    }
+
+    /// Which destination is pushed, if any. A flag push rather than the closure-based
     /// `NavigationLink` this screen used until 2026-09-08: a simulator probe showed a closure
     /// push is invisible to the stack's path and survives a reset, so a tab re-tap could never
     /// pop it. Clearing this pops it, and the closure links deeper in the stack (the Life Areas
     /// editor's rows) collapse with it — the same probe. The closure links there stay: the probe
     /// also showed a flag push and closure links coexist in one stack, which value links do not.
-    @State private var pushedDestination: ToolsCatalog.Destination?
+    @State private var pushedDestination: Push?
 
     /// **The iOS 16 floor, answered once.** `PlacesListView` and everything under it are
     /// `@available(iOS 17.0, *)` while this app's deployment target is 16.0, so on a 16.x phone
@@ -76,6 +101,13 @@ struct ToolsView: View {
                     // `Bool`, which cannot narrow a type's availability.
                     if #available(iOS 17.0, *) {
                         ToolsRoutinesSection(client: placesClient) { pushedDestination = .places }
+                    }
+                    // A SECTION with one row, E's own word (round 2: "One row in Tools"), so the
+                    // catalog still pins two cards. **Not `#available`-gated**, unlike Routines:
+                    // that gate exists because the Places editor is 17+, and this screen has no
+                    // such dependency and must stay reachable on the 16.0 floor (§7.1).
+                    ToolsRecentlyDeletedSection(client: recentlyDeletedClient) {
+                        pushedDestination = .recentlyDeleted
                     }
                 }
                 .padding(16)
@@ -126,7 +158,7 @@ struct ToolsView: View {
     /// `LifeAreaEditorListView`), and the editor pushed from here still uses closure links.
     private func card(_ entry: ToolsCatalog.Entry) -> some View {
         Button {
-            pushedDestination = entry.destination
+            pushedDestination = Push(entry.destination)
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: entry.systemImage)
@@ -164,7 +196,7 @@ struct ToolsView: View {
     /// room — the same call-site clearance `AreasView` applies to its own copy of the Life Areas
     /// editor. (Settings' copy needs none: a sheet covers the disc entirely.)
     @ViewBuilder
-    private func destination(for destination: ToolsCatalog.Destination) -> some View {
+    private func destination(for destination: Push) -> some View {
         switch destination {
         case .places:
             // Gated for the same reason `placesSupported` is: this whole screen is iOS 17+.
@@ -175,6 +207,9 @@ struct ToolsView: View {
             }
         case .lifeAreas:
             LifeAreaEditorListView(client: lifeAreaEditorClient)
+                .captureDiscClearance()
+        case .recentlyDeleted:
+            RecentlyDeletedView(client: recentlyDeletedClient)
                 .captureDiscClearance()
         }
     }
