@@ -100,15 +100,41 @@ final class TagEditorService: ObservableObject {
         pendingMergeConflict = nil
     }
 
-    /// Delete `tag` (cascade handled server-side), then reload. Returns `true` to pop to the list.
+    /// Soft-delete `tag`, then reload. Returns `true` to pop to the list.
+    ///
+    /// **`F-C4-TagsRecentlyDeleted`: this no longer cascades.** The tag is stamped and hidden; its
+    /// links survive on every task and capture, and the 30-day purge is what finally strips them.
+    /// The reload is still needed — hiding a tag changes what the list shows — but it no longer
+    /// changes any OTHER tag's usage count, which is what the type comment above says it does.
     @discardableResult
-    func delete(tag: EditableTag) async -> Bool {
+    func softDelete(tag: EditableTag) async -> Bool {
         guard !isMutating else { return false }
         isMutating = true
         defer { isMutating = false }
         errorMessage = nil
         do {
-            try await client.deleteTag(id: tag.id)
+            try await client.softDeleteTag(id: tag.id)
+            await reload()
+            return true
+        } catch {
+            errorMessage = Self.message(for: error)
+            return false
+        }
+    }
+
+    /// The capsule's Undo. **Routed through the service rather than the client**, because the
+    /// restored tag has to come BACK to the list the user is looking at — a bare client call would
+    /// write the field and leave the row missing until something else reloaded.
+    ///
+    /// **Not guarded by `isMutating`**, unlike every other mutation here. The undo is offered on a
+    /// capsule the user can tap at any moment, including while a rename they started elsewhere is
+    /// still in flight; refusing it would drop the only affordance the delete left them, silently.
+    /// Its failure path is the capsule's own: `false` puts the offer back.
+    @discardableResult
+    func restore(tagId: UUID) async -> Bool {
+        errorMessage = nil
+        do {
+            try await client.restoreTag(id: tagId)
             await reload()
             return true
         } catch {

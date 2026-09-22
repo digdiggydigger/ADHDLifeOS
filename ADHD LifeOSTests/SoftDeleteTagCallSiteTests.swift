@@ -129,6 +129,68 @@ final class SoftDeleteTagCallSiteTests: XCTestCase {
         return String(rest[..<end.lowerBound])
     }
 
+    // MARK: - E's call, 2026-09-22: no confirm, a capsule instead
+
+    /// **E's decision, taken on this block: drop the alert, add an Undo capsule.** It is the third
+    /// time the same reasoning has run — `F-C3` removed the task and capture confirms the same day
+    /// — and it turns on one sentence. `alerts.md › Best practices`: *"Avoid displaying alerts for
+    /// common, undoable actions, even when they're destructive… when people take an uncommon
+    /// destructive action that they can't undo, it's important to display an alert."* The alert
+    /// existed BECAUSE a tag delete was irreversible, and this block ended that.
+    ///
+    /// The copy went with it: `deleteConfirmMessage` ended *"and this can't be undone"*, which is
+    /// now false, and a string with no call site is the dead-shared-component pattern this repo
+    /// has shipped seven times.
+    func testTheTagDeleteNoLongerConfirms() throws {
+        let view = try Self.appCode("TagEditor/TagEditorDetailView.swift")
+        XCTAssertFalse(
+            view.contains("showDeleteAlert"),
+            "The tag delete confirms again. E dropped it on 2026-09-22 because the delete became"
+                + " undoable — re-adding one silently reverses that decision."
+        )
+        XCTAssertFalse(view.contains(".alert(\"Delete Tag\""))
+
+        let presentation = try Self.appCode("TagEditor/TagEditorPresentation.swift")
+        XCTAssertFalse(
+            presentation.contains("deleteConfirmMessage"),
+            "The confirm's copy outlived the confirm. It ends \"this can't be undone\", which the"
+                + " soft delete made false, and nothing reads it."
+        )
+    }
+
+    /// **The capsule is what replaces the alert, and it carries more than reassurance.**
+    /// `undo-and-redo.md › Best practices`: *"it's crucial to highlight the result of each undo and
+    /// redo to keep people from thinking that the action had no effect."* A tag delete's effect is
+    /// almost entirely OFFSCREEN — chips vanishing from tasks and captures the user is not looking
+    /// at — so without the capsule the only visible consequence is a row leaving a list in
+    /// Settings.
+    func testTheTagDeleteRecordsAnUndoCapsuleThatRestores() throws {
+        let view = try Self.appCode("TagEditor/TagEditorDetailView.swift")
+        XCTAssertTrue(
+            view.contains("RecentAction(kind: .tagDeleted, subject:"),
+            "Deleting a tag records no capsule, so the one visible consequence of the delete is a"
+                + " row disappearing from a list in Settings."
+        )
+        XCTAssertTrue(
+            view.contains("await service.restore(tagId:"),
+            "The capsule's Undo does not restore the tag."
+        )
+    }
+
+    /// **The closure captures the SERVICE here, and that is a deliberate departure from `F-C3`.**
+    /// Task detail captured `[client, taskId]` because `performDelete()` dismisses the screen that
+    /// owns the service. This service is owned by `TagEditorListView`, which is the screen being
+    /// returned TO — so it outlives the detail view by construction, and holding it is what lets
+    /// the restore reload the list the user is now looking at.
+    func testTheTagDeletesUndoCapturesTheSurvivingListService() throws {
+        let view = try Self.appCode("TagEditor/TagEditorDetailView.swift")
+        XCTAssertTrue(
+            view.contains("{ [service, tagId] in"),
+            "The undo closure does not capture the list's service and the id explicitly. An"
+                + " implicit capture of `self` here is a whole View value held past its dismissal."
+        )
+    }
+
     // MARK: - Reading the tree
 
     private static func count(of needle: String, in source: String) -> Int {

@@ -56,9 +56,22 @@ struct FirebaseTagEditorClientAdapter: TagEditorClientAdapting {
         }
     }
 
-    func deleteTag(id: UUID) async throws {
+    /// **One line shorter than the delete it replaces, and the missing line is the feature.**
+    /// This used to call `removeTagEverywhere(id, replacingWith: nil)` — stripping the tag from
+    /// every referencing task and capture AND destroying the document, in one atomic batch. That
+    /// batch is now the 30-day purge. Nothing touches the links until then, which is what makes
+    /// `restoreTag` able to put the tag back on every item without writing to any of them.
+    func softDeleteTag(id: UUID) async throws {
         do {
-            try await store.removeTagEverywhere(id, replacingWith: nil)
+            try await store.softDeleteTag(id: id, now: .now)
+        } catch {
+            throw TagEditorServiceError.failed(Self.message(for: error))
+        }
+    }
+
+    func restoreTag(id: UUID) async throws {
+        do {
+            try await store.restoreTag(id: id)
         } catch {
             throw TagEditorServiceError.failed(Self.message(for: error))
         }

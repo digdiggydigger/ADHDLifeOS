@@ -231,12 +231,17 @@ final class UndoCapsuleCallSiteTests: XCTestCase {
         )
         XCTAssertTrue(
             sections.contains(
-                "case .taskClosed, .nudgeDismissed, .draftKeptInInbox, .taskDeleted, nil:"
+                "case .taskClosed, .nudgeDismissed, .draftKeptInInbox, .taskDeleted, .tagDeleted, nil:"
             ),
             "The header arrow's kind check is not exhaustive, so a new kind would silently"
                 + " inherit whichever branch it fell into. `taskDeleted` belongs on THIS side:"
                 + " an arrow in the Capture Inbox that restored a TASK is the wrong promise in"
                 + " the wrong place, which is the rule that put `taskClosed` here."
+                + " **`tagDeleted` joined it (`F-C4-TagsRecentlyDeleted`) and this test is how**:"
+                + " the exhaustive switch failed to compile the moment the case existed, which is"
+                + " the design working. A tag delete happens in SETTINGS, two navigation levels"
+                + " from the inbox, and restoring a tag puts chips back on captures the arrow is"
+                + " not pointing at — so it is the clearest instance yet of the rule."
         )
     }
 

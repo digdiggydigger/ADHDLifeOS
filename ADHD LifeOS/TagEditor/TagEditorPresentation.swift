@@ -25,16 +25,16 @@ enum TagEditorPresentation {
         "tagRow_\(id.lowercaseUUIDString)"
     }
 
-    /// The delete confirmation body, naming the usage count explicitly (§8's locked rule).
-    static func deleteConfirmMessage(name: String, usageCount: Int) -> String {
-        let clause: String
-        switch usageCount {
-        case ...0: clause = "It isn't used by anything"
-        case 1: clause = "It's used on 1 item"
-        default: clause = "It's used on \(usageCount) items"
-        }
-        return "Delete “\(name)”? \(clause), and this can't be undone."
-    }
+    // **`deleteConfirmMessage` lived here and is GONE (`F-C4-TagsRecentlyDeleted`, E's call
+    // 2026-09-22).** It read *"Delete “x”? It's used on 12 items, and this can't be undone."* —
+    // and the last clause stopped being true when a tag delete became a 30-day stamp. E was
+    // offered a rewritten alert and chose to drop the confirm outright, the same answer they gave
+    // for tasks and captures the same day: `alerts.md › Best practices` only asks for an alert on
+    // an uncommon destructive action *"that they can't undo"*.
+    //
+    // What the string carried and the capsule cannot is the USAGE COUNT — how many items the
+    // delete touches — visible only before the tap. That is the named cost of E's choice; the
+    // count is still on the row and on this screen, one glance above the button.
 
     /// The rename-clash alert title — names the conflicting tag.
     static func mergeAlertTitle(conflictingName: String) -> String {

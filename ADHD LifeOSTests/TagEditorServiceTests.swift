@@ -117,7 +117,7 @@ final class TagEditorServiceTests: XCTestCase {
 
     // MARK: delete
 
-    func test_delete_deletes_reloads_andListShrinks() async {
+    func test_softDelete_stamps_reloads_andListShrinks() async {
         let fake = FakeTagEditorClientAdapting()
         let victim = tag("work")
         fake.fetchResults = [.success([victim, tag("errands")]), .success([tag("errands")])]
@@ -125,7 +125,7 @@ final class TagEditorServiceTests: XCTestCase {
         await service.load()
         XCTAssertEqual(service.tags.count, 2)
 
-        let shouldPop = await service.delete(tag: victim)
+        let shouldPop = await service.softDelete(tag: victim)
 
         XCTAssertTrue(shouldPop)
         XCTAssertEqual(fake.deleteCallCount, 1)
@@ -189,13 +189,13 @@ final class TagEditorServiceTests: XCTestCase {
         let gate = TestGate()
         fake.beforeDelete = { await gate.wait() }
 
-        let first = Task { await service.delete(tag: victim) }
+        let first = Task { await service.softDelete(tag: victim) }
         // Let `first` reach its in-flight suspension so isMutating is set.
         await Task.yield()
         XCTAssertTrue(service.isMutating)
 
         // A second delete while the first is in flight must be rejected without calling the client.
-        let secondResult = await service.delete(tag: victim)
+        let secondResult = await service.softDelete(tag: victim)
         XCTAssertFalse(secondResult)
         XCTAssertEqual(fake.deleteCallCount, 1, "the second mutation must not reach the client")
 
