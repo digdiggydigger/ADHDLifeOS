@@ -139,3 +139,7 @@ struct LifeAreaTaskGroup: Identifiable, Equatable, Sendable {
 
     var id: String { customId ?? lifeAreaId?.uuidString ?? "unassigned" }
 }
+
+/// `F-C3-RecentlyDeleted`: this model's documents carry the soft-delete stamp, so
+/// `FirebaseManager.live(_:)` can drop the deleted ones from every list that fetches it.
+extension TaskItem: SoftDeletable {}

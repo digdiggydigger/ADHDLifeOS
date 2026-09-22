@@ -10,11 +10,11 @@ import Foundation
 /// `FirestoreFieldPayloads` for why that convention differs from captures'.
 extension FirebaseManager {
     func fetchTasks() async throws -> [TaskItem] {
-        try await fetchAll(TaskItem.self, from: .tasks, orderedBy: "created_at", descending: true)
+        live(try await fetchAll(TaskItem.self, from: .tasks, orderedBy: "created_at", descending: true))
     }
 
     func fetchTaskDetail(id: UUID) async throws -> TaskDetail {
-        try await collection(.tasks).document(id.uuidString).getDocument(as: TaskDetail.self)
+        try requireLive(try await collection(.tasks).document(id.uuidString).getDocument(as: TaskDetail.self))
     }
 
     func createTask(_ task: TaskDetail) async throws {
@@ -44,12 +44,12 @@ extension FirebaseManager {
 
     /// Home's badge-count query: only the open tasks, projected down to `TaskSummary`.
     func fetchOpenTaskSummaries() async throws -> [TaskSummary] {
-        try await fetchWhere(TaskSummary.self, from: .tasks, field: "status", equals: TaskStatus.open.rawValue)
+        live(try await fetchWhere(TaskSummary.self, from: .tasks, field: "status", equals: TaskStatus.open.rawValue))
     }
 
     /// Server-side scoped to one life area, per `LifeAreaDetailClientAdapting`'s contract.
     /// Unsorted (see `fetchWhere`) — `LifeAreaDetailService` orders for display.
     func fetchTasks(lifeAreaId: UUID) async throws -> [TaskItem] {
-        try await fetchWhere(TaskItem.self, from: .tasks, field: "life_area_id", equals: lifeAreaId.uuidString)
+        live(try await fetchWhere(TaskItem.self, from: .tasks, field: "life_area_id", equals: lifeAreaId.uuidString))
     }
 }
