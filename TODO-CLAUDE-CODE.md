@@ -5844,7 +5844,7 @@ green suite could not:**
 
 ---
 
-### FEATURE: F-C3-RecentlyDeleted — soft delete for tasks and captures; one row in Tools  [ ] NOT STARTED
+### FEATURE: F-C3-RecentlyDeleted — soft delete for tasks and captures; one row in Tools  [ ] IN PROGRESS
 
 **What E chose.** Round 2: *"Where Recently Deleted lives → 'One row in Tools'"* (not context, not
 Settings), *"Kept 30 days"* (stated as the default; E did not object). *"Tasks + Captures + Tags"*
@@ -5931,6 +5931,46 @@ shape.
       added, E republishes.** Say which happened.
 - [ ] A call-site test enumerating every read path the soft-delete filter must reach (see above),
       so a later collection/query addition cannot silently leak deleted items back in.
+
+
+### Started 2026-09-22 — three cycles landed, and where they depart from the spec
+
+**The block is NOT complete.** What is landed is deliberately INERT: nothing writes `deleted_at`
+yet, so the filter returns everything and the single-document guard never throws. Behaviour is
+unchanged, which is why this state could be merged on its own. The successor opener is
+`handoff/START-HERE-adhd-audit-arc-C3-continued.md` and it carries every remaining decision.
+
+**Landed, each RED→GREEN→commit with the RED observed first:**
+1. `RecentlyDeleted/SoftDelete.swift` — `isLive`, `isPurgeable`, `retention`, `SoftDeleteError`.
+2. The stamp on `TaskItem`, `TaskDetail`, `TaskSummary` (snake_case) and `Capture` (camelCase).
+3. `Firebase/FirebaseManager+SoftDelete.swift` — `SoftDeletable`, `live(_:)`, `requireLive(_:)`,
+   applied to all NINE read paths, with `SoftDeleteCallSiteTests` pinning their COUNTS.
+
+**Three departures from the spec, all deliberate:**
+
+1. **`SoftDelete.isLive` takes no `asOf`.** The spec proposed `isLive(deletedAt:asOf:)`; the clock
+   cannot change that answer — an item with a stamp is not live whether or not its 30 days have
+   run — and a parameter no test can make matter hides which question is being asked. The clock
+   belongs to `isPurgeable` alone.
+2. **The hard delete KEEPS its name.** `deleteTask`/`deleteCapture` stay as the irreversible
+   operation (for the purge and "Delete forever"); the new `softDeleteTask`/`softDeleteCapture` are
+   what the screens will call. Re-pointing an existing method name at different behaviour is the
+   silent-semantics trap.
+3. **The `firestore.rules` hardening the spec offered is DECLINED**, and the reason is worth
+   keeping: `request.resource.data.deleted_at <= request.time` would be checked against the
+   CLIENT's clock (the `completedAt` precedent), so a phone running a minute fast could not delete
+   anything at all. What the rule prevents is a user pre-dating their own purge window — their own
+   documents, their own loss. **Rules verified unchanged against `firestore.rules:55-59`**: the
+   owner already has full write on `tasks` and `captures`, so a `deleted_at` field needs no new
+   allow rule. E republishes to confirm nothing changed, per house policy.
+
+**Two facts established by reading, for whoever finishes this:**
+- **`deleteCapture` does NOT clean up Storage media** (`FirebaseManager+Captures.swift:60` is a
+  plain document delete), so photo and voice captures ALREADY orphan their media on delete today.
+  Soft delete does not change that and the purge will orphan it exactly as today does.
+  Pre-existing, out of scope, named so it is not mistaken for something this block introduced.
+- **`ToolsCatalog` and `ToolsCatalogTests` are UNTOUCHED** by the section route, verified by
+  reading `ToolsCatalog.swift` — it pins the CARD count only, and Recently Deleted is a section.
 
 **Dependencies:** F-C1. Confirm with the build session whether the capsule ITSELF appears on
 delete ("Task deleted · Undo," ahead of the persistent 30-day list) — see Step 0 below.
