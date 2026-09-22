@@ -38,6 +38,12 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
     var placeId: UUID?
     var latitude: Double?
     var longitude: Double?
+    /// When this item was soft-deleted (`F-C3-RecentlyDeleted`). **`nil` means LIVE**, and that is
+    /// load-bearing: every document written before this block has no such key at all, so absence
+    /// has to be the ordinary state rather than a special case. Cleared on restore with
+    /// `FieldValue.delete()` — an explicit null would leave the collection in two shapes.
+    /// Read through `SoftDelete.isLive(deletedAt:)`, never compared inline.
+    var deletedAt: Date?
 
     init(
         id: UUID,
@@ -52,7 +58,8 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         atPlaceId: UUID? = nil,
         placeId: UUID? = nil,
         latitude: Double? = nil,
-        longitude: Double? = nil
+        longitude: Double? = nil,
+        deletedAt: Date? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -67,11 +74,13 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         self.placeId = placeId
         self.latitude = latitude
         self.longitude = longitude
+        self.deletedAt = deletedAt
     }
 
     enum CodingKeys: String, CodingKey {
         case id, title, status, priority, latitude, longitude
         case lifeAreaId = "life_area_id"
+        case deletedAt = "deleted_at"
         case dueDate = "due_date"
         case focusDurationSeconds = "focus_duration_seconds"
         case nudgesCount = "nudges_count"
