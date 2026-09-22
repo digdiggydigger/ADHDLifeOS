@@ -202,6 +202,77 @@ final class FirebaseManagerTagsSoftDeleteTests: XCTestCase {
         XCTAssertEqual(stillWaiting, [], "the purged tag is still in Recently Deleted")
     }
 
+    // MARK: - Merge on restore (E's Step 0: "Ask which one survives")
+
+    /// **Keeping the RESTORED tag: one batch, and it must be one batch.** Rewriting every
+    /// reference and erasing the stamp are two halves of one user action; split across two commits,
+    /// a failure between them leaves the account with the absorbed tag's items pointing at a tag
+    /// that is still hidden — worse than either outcome on its own.
+    func testRestoringAndKeepingTheDeletedTagAbsorbsTheLiveOneInOneWrite() async throws {
+        let original = try await makeTag("errand")
+        let taskA = try await makeTask(title: "A")
+        try await manager.addTagId(original.id, to: .task, parentId: taskA.id)
+        try await manager.softDeleteTag(id: original.id)
+        let replacement = try await makeTag("Errand")
+        let captureC = try await makeCapture()
+        try await manager.addTagId(replacement.id, to: .capture, parentId: captureC.id)
+
+        try await manager.mergeTagsRestoring(survivor: original.id, absorbed: replacement.id)
+
+        let live = try await manager.fetchTags()
+        let onTask = try await manager.fetchTags(for: .task, parentId: taskA.id)
+        let onCapture = try await manager.fetchTags(for: .capture, parentId: captureC.id)
+        let waiting = try await manager.fetchDeletedTags()
+        XCTAssertEqual(live.map(\.id), [original.id], "the survivor is not the only live tag")
+        XCTAssertEqual(live.first?.name, "errand", "the survivor did not keep its own spelling")
+        XCTAssertEqual(onTask.map(\.id), [original.id])
+        XCTAssertEqual(
+            onCapture.map(\.id), [original.id],
+            "the absorbed tag's item was not moved onto the survivor, so restoring LOST a link"
+        )
+        XCTAssertEqual(waiting, [], "the survivor is still stamped, so the restore did not happen")
+    }
+
+    /// **Keeping the LIVE tag reuses today's merge exactly** — `removeTagEverywhere(original,
+    /// replacingWith: live)`, the call the Tag Editor's rename-clash has always made. There is no
+    /// restore: the deleted document is absorbed and destroyed, which is what "it did not survive"
+    /// means.
+    func testRestoringAndKeepingTheLiveTagAbsorbsTheDeletedOneAndDestroysIt() async throws {
+        let original = try await makeTag("errand")
+        let taskA = try await makeTask(title: "A")
+        try await manager.addTagId(original.id, to: .task, parentId: taskA.id)
+        try await manager.softDeleteTag(id: original.id)
+        let replacement = try await makeTag("Errand")
+
+        try await manager.removeTagEverywhere(original.id, replacingWith: replacement.id)
+
+        let live = try await manager.fetchTags()
+        let onTask = try await manager.fetchTags(for: .task, parentId: taskA.id)
+        let waiting = try await manager.fetchDeletedTags()
+        XCTAssertEqual(live.map(\.id), [replacement.id])
+        XCTAssertEqual(live.first?.name, "Errand", "the survivor did not keep ITS spelling")
+        XCTAssertEqual(
+            onTask.map(\.id), [replacement.id],
+            "the deleted tag's item kept a dangling id instead of moving to the survivor"
+        )
+        XCTAssertEqual(waiting, [], "the absorbed tag is still waiting in Recently Deleted")
+    }
+
+    /// **The case difference is the whole reason the choice is not cosmetic.** Both routes end
+    /// with one tag on every item; what differs is the SPELLING the user is left reading, because
+    /// `fetchTag(named:)` collides case-insensitively while the app renders the stored case.
+    func testTheTwoSurvivorChoicesDifferOnlyInTheSpellingTheUserIsLeftWith() async throws {
+        let original = try await makeTag("errand")
+        try await manager.softDeleteTag(id: original.id)
+        let replacement = try await makeTag("ERRAND")
+
+        try await manager.mergeTagsRestoring(survivor: original.id, absorbed: replacement.id)
+
+        let live = try await manager.fetchTags()
+        XCTAssertEqual(live.count, 1, "a merge left two live tags wearing one name")
+        XCTAssertEqual(live.first?.name, "errand")
+    }
+
     // MARK: - Fixtures
 
     private func makeTag(_ name: String) async throws -> Tag {

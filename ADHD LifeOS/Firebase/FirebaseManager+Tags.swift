@@ -90,6 +90,44 @@ extension FirebaseManager {
     /// The `replacingWith: someId` form is the Tag Editor's merge and is exactly as it was.
     func removeTagEverywhere(_ tagId: UUID, replacingWith replacement: UUID?) async throws {
         let batch = firestoreBatch()
+        try await rewriteReferences(to: tagId, as: replacement, in: batch)
+        try batch.deleteDocument(collection(.tags).document(tagId.uuidString))
+        try await batch.commit()
+        DataChangeSignal.post()
+    }
+
+    /// **Merge on restore, keeping the tag that was DELETED** (`F-C4-TagsRecentlyDeleted`; E's
+    /// Step 0: *"Ask which one survives"*). The live tag's items move onto the survivor, the live
+    /// document is destroyed, and the survivor's stamp is erased.
+    ///
+    /// **One batch, and it has to be one.** Those are two halves of a single user action; split
+    /// across two commits, a failure in between leaves the absorbed tag's items pointing at a tag
+    /// that is still hidden — worse than either outcome alone. The other direction ("keep the live
+    /// one") needs no method of its own: it IS `removeTagEverywhere(deletedId, replacingWith:
+    /// liveId)`, the exact call the Tag Editor's rename-clash has always made, which is what the
+    /// spec meant by reusing the existing merge.
+    ///
+    /// **Why this choice is not cosmetic, given both tags wear the same name.** `fetchTag(named:)`
+    /// collides case-INSENSITIVELY and the app renders the stored case, so "errand" and "Errand"
+    /// are one collision with two spellings. Which document survives decides which spelling the
+    /// user is left reading.
+    func mergeTagsRestoring(survivor: UUID, absorbed: UUID) async throws {
+        let batch = firestoreBatch()
+        try await rewriteReferences(to: absorbed, as: survivor, in: batch)
+        try batch.deleteDocument(collection(.tags).document(absorbed.uuidString))
+        let survivorDocument = try collection(.tags).document(survivor.uuidString)
+        batch.updateData(FirestoreFieldPayloads.tagRestore(), forDocument: survivorDocument)
+        try await batch.commit()
+        DataChangeSignal.post()
+    }
+
+    /// Every task and capture carrying `tagId` rewritten to `replacement`, or to nothing.
+    ///
+    /// Extracted so the cascade and the merge-on-restore share ONE reading of the rule rather than
+    /// two — the same argument `live(_:)`/`deleted(_:)` make one file over.
+    private func rewriteReferences(
+        to tagId: UUID, as replacement: UUID?, in batch: WriteBatch
+    ) async throws {
         for parent in [FirebaseTagParent.task, .capture] {
             let referencing = try await collection(parent.collection)
                 .whereField(Self.tagIdsField, arrayContains: tagId.uuidString)
@@ -105,9 +143,6 @@ extension FirebaseManager {
                 batch.updateData([Self.tagIdsField: updated], forDocument: document.reference)
             }
         }
-        try batch.deleteDocument(collection(.tags).document(tagId.uuidString))
-        try await batch.commit()
-        DataChangeSignal.post()
     }
 
     /// The 30-day purge, and "Delete forever" — `removeTagEverywhere`'s no-replacement form under
