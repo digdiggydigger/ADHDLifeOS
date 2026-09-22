@@ -220,8 +220,32 @@ extension TaskDetailView {
 
     /// Only on a landed delete: refresh the list and pop. A failed delete leaves
     /// `taskDetailErrorMessage` on screen and stays put.
+    /// **The subject is read BEFORE the write**, because the write is what makes it unreadable:
+    /// this method dismisses the screen, and a capsule reading "Deleted" over an empty line is
+    /// what reading it afterwards produces.
     func performDelete() async {
+        // `service.task` is private and stays that way — the published `state` is the seam the
+        // rest of this file already reads, and widening a service's surface for one string is
+        // how a private stops meaning anything.
+        let subject: String
+        if case .loaded(let loaded) = service.state { subject = loaded.title } else { subject = "" }
         guard await service.softDelete() else { return }
+        // **The adapter and the id, never the service** — by the time the user taps Undo this
+        // screen is gone. Capturing `service` would work by accident (a strong capture keeps it
+        // alive) while holding a whole loaded screen resident and routing a failed restore into
+        // an `errorMessage` nothing is drawing any more. `ComposerDraftFiler` is the shape.
+        recordAction.record(
+            RecentAction(kind: .taskDeleted, subject: subject) { [client, taskId] in
+                do {
+                    try await client.restoreTask(id: taskId)
+                    return true
+                } catch {
+                    // `false` puts the offer back — the user must be able to try again, and the
+                    // 30-day list is the only other way back.
+                    return false
+                }
+            }
+        )
         onUpdated()
         dismiss()
     }

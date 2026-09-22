@@ -88,6 +88,60 @@ final class CaptureInboxTriageActionsTests: XCTestCase {
         XCTAssertEqual(env.service.triageErrorMessage, "offline")
     }
 
+    /// **`F-C3-RecentlyDeleted`: the discard gets the capsule, and its Undo is a restore.**
+    /// E's Step 0 answer 2: *"Yes, show the capsule too"*. The reversal goes through the same
+    /// `undoLastTriageAction` path every other triage verb uses, so the counts and the list
+    /// refresh the way they already do — a bespoke closure here would have had to re-derive both.
+    func testDiscard_offersTheCapsuleAndItsUndoRestoresTheCapture() async {
+        let doomed = capture("Idle thought")
+        let env = await makeSUT(loaded: [doomed])
+
+        _ = await env.service.discard(capture: doomed)
+
+        let pending = await env.pending
+        XCTAssertEqual(pending?.kind, .captureDeleted)
+        XCTAssertEqual(pending?.subject, "Idle thought")
+
+        env.client.fetchUnprocessedCapturesResult = .success([doomed])
+        await env.undo()
+
+        XCTAssertEqual(env.client.lastRestoreCaptureId, doomed.id)
+        XCTAssertEqual(
+            env.service.captures.map(\.content), ["Idle thought"],
+            "the restore landed but the list was never refreshed, so the capture is back in"
+                + " Firestore and missing from the inbox until the next tab visit"
+        )
+    }
+
+    /// A failed discard records NOTHING — the same rule every other exit follows. A capsule
+    /// reading "Deleted · Undo" over a capture that was never deleted offers to reverse something
+    /// that did not happen, and the Undo would then stamp `deletedAt` off a restore.
+    func testDiscard_failure_offersNoCapsule() async {
+        let doomed = capture("Idle thought")
+        let env = await makeSUT(loaded: [doomed])
+        env.client.softDeleteCaptureResult = .failure(CaptureServiceError.fetchFailed("offline"))
+
+        _ = await env.service.discard(capture: doomed)
+
+        let pending = await env.pending
+        XCTAssertNil(pending, "a failed discard offered an undo for something that never happened")
+    }
+
+    /// A failed RESTORE puts the offer back rather than swallowing it — `RecentAction.undo`'s
+    /// `false` contract, and the reason it exists: the user must be able to try again.
+    func testDiscard_undoFailure_keepsTheOfferStanding() async {
+        let doomed = capture("Idle thought")
+        let env = await makeSUT(loaded: [doomed])
+        _ = await env.service.discard(capture: doomed)
+        env.client.restoreCaptureResult = .failure(CaptureServiceError.fetchFailed("offline"))
+
+        await env.undo()
+
+        let pending = await env.pending
+        XCTAssertEqual(pending?.kind, .captureDeleted, "a failed restore lost the only way back")
+        XCTAssertEqual(env.service.triageErrorMessage, "offline")
+    }
+
     // MARK: - Log to journal
 
     func testLogToJournal_writesAJournalEntryFromTheCapture() async {

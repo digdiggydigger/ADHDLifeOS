@@ -48,6 +48,21 @@ enum RecentActionKind: Equatable, Sendable {
     /// inbox"*), which is why this case is what made the capsule's action a property of the kind
     /// rather than a hard-coded word.
     case draftKeptInInbox
+    /// **`F-C3-RecentlyDeleted`: a task deleted from its detail screen.** E's Step 0 answer 2:
+    /// *"Yes, show the capsule too"* — the capsule at the moment of the delete, on top of the
+    /// persistent 30-day list.
+    ///
+    /// **Its Undo is a RESTORE, not a re-creation**, which is what the soft delete buys: the
+    /// document never left, so undoing puts back the same task with its tags, its notes and its
+    /// history rather than a new one wearing the same title.
+    case taskDeleted
+    /// The same for a capture discarded from triage or from capture detail.
+    ///
+    /// **Two cases rather than one `itemDeleted`, and the header arrow is why.** The two differ
+    /// in nothing the capsule draws — same verb, same glyph, same word on the control — but the
+    /// Capture Inbox's header ↶ offers a second route to the SAME undo, and it must offer it for
+    /// a capture and never for a task. One case could not tell them apart.
+    case captureDeleted
 }
 
 extension RecentActionKind {
@@ -72,6 +87,13 @@ extension RecentActionKind {
             return "Journalled"
         case .draftKeptInInbox:
             return "Kept in your inbox"
+        case .taskDeleted, .captureDeleted:
+            // **"Deleted", not "Task deleted"** — E's Step 0 answer 2 named the capsule as
+            // *"Task deleted · Undo"*, but the capsule draws the SUBJECT underneath the verb, so
+            // the noun is already on screen one line down. `taskClosed` reads "Closed" for the
+            // same reason; putting the type in the verb here would be the only kind that
+            // repeated what the line below it says.
+            return "Deleted"
         }
     }
 
@@ -89,6 +111,10 @@ extension RecentActionKind {
             return "book.closed.fill"
         case .draftKeptInInbox:
             return "tray.and.arrow.down.fill"
+        case .taskDeleted, .captureDeleted:
+            // The glyph of WHERE it went, the rule the three triage verbs follow — and where it
+            // went is Recently Deleted, whose own door on Tools wears this glyph.
+            return "trash.fill"
         }
     }
 
@@ -99,7 +125,12 @@ extension RecentActionKind {
             return .completion
         case .captureSorted, .captureJournalled, .draftKeptInInbox:
             return .accent
-        case .captureSkipped:
+        case .captureSkipped, .taskDeleted, .captureDeleted:
+            // **A delete is neither a completion nor a destination.** The two `.completion` kinds
+            // are things the user FINISHED and the three `.accent` ones are places a capture
+            // WENT; a soft delete is an item put out of sight. Dressing that as an achievement
+            // would be round 8's "progress, never debt" principle inverted — so it takes the
+            // quiet tint a skip already wears.
             return .secondary
         }
     }
@@ -117,7 +148,8 @@ extension RecentActionKind {
     /// which is exactly how `F-C1` shipped it broken once.
     var actionLabel: String {
         switch self {
-        case .taskClosed, .nudgeDismissed, .captureSorted, .captureSkipped, .captureJournalled:
+        case .taskClosed, .nudgeDismissed, .captureSorted, .captureSkipped, .captureJournalled,
+             .taskDeleted, .captureDeleted:
             return "Undo"
         case .draftKeptInInbox:
             return "Reopen"
@@ -128,7 +160,8 @@ extension RecentActionKind {
     /// draw the undo the word declines to offer.
     var actionSystemImage: String {
         switch self {
-        case .taskClosed, .nudgeDismissed, .captureSorted, .captureSkipped, .captureJournalled:
+        case .taskClosed, .nudgeDismissed, .captureSorted, .captureSkipped, .captureJournalled,
+             .taskDeleted, .captureDeleted:
             return "arrow.uturn.backward"
         case .draftKeptInInbox:
             return "arrow.up.forward.square"

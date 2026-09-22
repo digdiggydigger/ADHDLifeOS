@@ -11,6 +11,13 @@ struct TaskDetailView: View {
     /// it holds live in `TaskDetailFormSections.swift`, and `private` does not cross a file. The
     /// pair is the unit — nothing else should reach in here.
     @StateObject var service: TaskDetailService
+    /// Held BESIDE the service, not read off it (`F-C3-RecentlyDeleted`). The delete's undo
+    /// closure outlives this screen — `performDelete()` dismisses — so it captures the adapter
+    /// and the id the way `ComposerDraftFiler` does, rather than a `@StateObject` the dismissal
+    /// is tearing down. The service keeps its own `client` private; this is the same value the
+    /// init already receives.
+    let client: TaskDetailClientAdapting
+    let taskId: UUID
     let lifeAreas: [LifeArea]
     /// Starts an app-level focus sprint (owned by `RootView`'s `FocusSessionService`). `nil` in
     /// hosts with no focus wiring, which hides the launch row but keeps the config editable.
@@ -58,6 +65,8 @@ struct TaskDetailView: View {
         _service = StateObject(
             wrappedValue: TaskDetailService(taskId: taskId, client: client)
         )
+        self.client = client
+        self.taskId = taskId
         self.lifeAreas = lifeAreas
         self.onStartFocus = onStartFocus
         self.momentumContext = momentumContext

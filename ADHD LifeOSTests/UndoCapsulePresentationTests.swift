@@ -23,6 +23,8 @@ final class UndoCapsulePresentationTests: XCTestCase {
         XCTAssertEqual(RecentActionKind.nudgeDismissed.verb, "Done for now")
         XCTAssertEqual(RecentActionKind.captureSkipped.verb, "Skipped")
         XCTAssertEqual(RecentActionKind.captureJournalled.verb, "Journalled")
+        XCTAssertEqual(RecentActionKind.taskDeleted.verb, "Deleted")
+        XCTAssertEqual(RecentActionKind.captureDeleted.verb, "Deleted")
     }
 
     /// The area travels in the verb, exactly as the retired inbox bar said it — "Sorted to 💼 Work".
@@ -57,7 +59,7 @@ final class UndoCapsulePresentationTests: XCTestCase {
     func testOnlyTheFiledDraftOffersReopenAndEveryReversalStillSaysUndo() {
         let reversals: [RecentActionKind] = [
             .taskClosed, .nudgeDismissed, .captureSorted(areaLabel: "💼 Work"), .captureSkipped,
-            .captureJournalled
+            .captureJournalled, .taskDeleted, .captureDeleted
         ]
         for kind in reversals {
             XCTAssertEqual(
@@ -104,6 +106,10 @@ final class UndoCapsulePresentationTests: XCTestCase {
         XCTAssertEqual(RecentActionKind.captureSorted(areaLabel: nil).systemImage, "tray.full.fill")
         XCTAssertEqual(RecentActionKind.captureJournalled.systemImage, "book.closed.fill")
         XCTAssertEqual(RecentActionKind.captureSkipped.systemImage, "arrow.triangle.2.circlepath")
+        // The glyph of WHERE it went, the same rule the three triage verbs follow — and where it
+        // went is Recently Deleted, whose own door wears this glyph.
+        XCTAssertEqual(RecentActionKind.taskDeleted.systemImage, "trash.fill")
+        XCTAssertEqual(RecentActionKind.captureDeleted.systemImage, "trash.fill")
     }
 
     /// A filed draft went INTO the tray, so it wears the tray being filled rather than the full
@@ -117,6 +123,13 @@ final class UndoCapsulePresentationTests: XCTestCase {
     /// quiet. Both others are accented, matching the tab their subject lives on.
     func testASkipIsTheOneQuietGlyph() {
         XCTAssertEqual(RecentActionKind.captureSkipped.glyphTint, .secondary)
+        // **`F-C3-RecentlyDeleted`: a delete is not a completion and not a destination.** The
+        // two kinds that wear `.completion` are things the user FINISHED; the three that wear
+        // `.accent` are places a capture WENT. A soft delete is neither — the item is out of
+        // sight, and dressing that as an achievement is the "debt framed as progress" inversion
+        // of round 8's principle. It takes the same quiet tint as a skip.
+        XCTAssertEqual(RecentActionKind.taskDeleted.glyphTint, .secondary)
+        XCTAssertEqual(RecentActionKind.captureDeleted.glyphTint, .secondary)
         XCTAssertEqual(RecentActionKind.captureSorted(areaLabel: nil).glyphTint, .accent)
         XCTAssertEqual(RecentActionKind.captureJournalled.glyphTint, .accent)
     }

@@ -270,6 +270,54 @@ final class SoftDeleteCallSiteTests: XCTestCase {
         )
     }
 
+    // MARK: - The task delete's capsule (F-C3-RecentlyDeleted)
+
+    /// **The Undo closure OUTLIVES the screen that recorded it, and that is the whole difficulty.**
+    /// `performDelete()` dismisses task detail the moment the write lands, so by the time the user
+    /// taps Undo the view is gone and its `@StateObject` service is on its way out. The closure
+    /// therefore captures the ADAPTER and the ID — the `ComposerDraftFiler` shape — and never the
+    /// service. Capturing `service` would work by accident (a strong capture keeps it alive) while
+    /// keeping a whole loaded screen's state resident and routing failures into an `errorMessage`
+    /// nothing is drawing any more.
+    func testTheTaskDeletesUndoCapturesTheAdapterRatherThanTheDepartingService() throws {
+        let sections = try Self.appCode("Tasks/TaskDetailFormSections.swift")
+
+        XCTAssertTrue(
+            sections.contains("RecentAction(kind: .taskDeleted, subject:"),
+            "Deleting a task records no capsule, so E's \"show the capsule too\" is unmet and the"
+                + " only route back is the Tools screen."
+        )
+        XCTAssertTrue(
+            sections.contains("{ [client, taskId] in"),
+            "The delete's undo closure does not capture the adapter and the id. Anything it"
+                + " captures from the view is gone by the time the user taps Undo —"
+                + " `performDelete()` dismisses the screen."
+        )
+        XCTAssertTrue(
+            sections.contains("try await client.restoreTask(id: taskId)"),
+            "The undo does not restore through the adapter."
+        )
+        XCTAssertFalse(
+            sections.contains("RecentAction(kind: .taskDeleted, subject: task.title) { [service]"),
+            "The delete's undo captured the SERVICE, which the dismissal is tearing down."
+        )
+    }
+
+    /// The subject is read BEFORE the write, because the write is what makes it unreadable: the
+    /// screen dismisses and `service.task` goes with it. A capsule that said "Deleted" over an
+    /// empty line is the failure this orders around.
+    func testTheDeletesSubjectIsReadBeforeTheWriteNotAfter() throws {
+        let sections = try Self.appCode("Tasks/TaskDetailFormSections.swift")
+        let subjectLine = sections.range(of: "if case .loaded(let loaded) = service.state { subject = loaded.title }")
+        let writeLine = sections.range(of: "await service.softDelete()")
+        let subjectAt = try XCTUnwrap(subjectLine, "the delete does not read its subject at all")
+        let writeAt = try XCTUnwrap(writeLine)
+        XCTAssertTrue(
+            subjectAt.lowerBound < writeAt.lowerBound,
+            "The subject is read after the delete, by which point the screen is dismissing."
+        )
+    }
+
     // MARK: - Reading the tree
 
     private static func count(of needle: String, in source: String) -> Int {

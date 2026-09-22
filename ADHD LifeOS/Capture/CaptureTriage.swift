@@ -20,6 +20,12 @@ enum CaptureTriageAction: Equatable, Sendable {
     /// the `Log` points back at the capture it came from — so undo has to be told outright, and
     /// it can only ever delete the entry THIS action created.
     case journaled(captureId: UUID, logId: UUID)
+    /// **`F-C3-RecentlyDeleted`: the discard.** It joins this enum rather than getting a bespoke
+    /// closure so that undoing it goes down the same path the other three do — `refresh()` plus
+    /// `refreshCountsAfterExit()`, both of which a hand-rolled reversal would have had to
+    /// re-derive and one of which it would certainly have forgotten. No "previous" value travels
+    /// with it: the restore is an ERASE of `deletedAt`, so there is nothing to put back.
+    case deleted(captureId: UUID)
 }
 
 /// The rules behind **Sorted** — the triage verb E asked for on 2026-08-28 ("capturing is fine,
