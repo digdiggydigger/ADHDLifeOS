@@ -20,7 +20,7 @@ final class ToolsRecentlyDeletedCallSiteTests: XCTestCase {
     /// exactly two `Entry` values, so a third CARD stays a decision rather than a drift — this
     /// test is the other half of that, asserting the row exists at all.
     func testTheRecentlyDeletedRowIsASectionAndOpensTheRealScreen() throws {
-        let tools = Self.collapsed(try Self.appSource("Tools/ToolsView.swift"))
+        let tools = Self.collapsed(try Self.code("Tools/ToolsView.swift"))
         XCTAssertTrue(
             tools.contains("ToolsRecentlyDeletedSection(client: recentlyDeletedClient)"),
             "The Tools page draws no Recently Deleted row, so the 30-day list is unreachable —"
@@ -32,7 +32,7 @@ final class ToolsRecentlyDeletedCallSiteTests: XCTestCase {
             "The row's push does not open `RecentlyDeletedView` with the disc clearance."
         )
         XCTAssertFalse(
-            try Self.appSource("Tools/ToolsCatalog.swift").contains("recentlyDeleted"),
+            try Self.code("Tools/ToolsCatalog.swift").contains("recentlyDeleted"),
             "Recently Deleted became a third CARD. E said row, and `ToolsCatalog` pins the card"
                 + " count so that a third door has to be a decision."
         )
@@ -43,14 +43,18 @@ final class ToolsRecentlyDeletedCallSiteTests: XCTestCase {
     /// dependency, and gating it would make a 16.0 user's only route back from a mistaken delete
     /// disappear (§7.1 — a feature whose absence is not announced is the shape that rule forbids).
     func testTheRecentlyDeletedSectionIsNotGatedToTheModernOS() throws {
-        let section = try Self.appSource("RecentlyDeleted/ToolsRecentlyDeletedSection.swift")
+        // **`code`, not `appSource`** — this failed on its first full run because the file it
+        // reads explains in a comment WHY it carries no `@available(iOS 17.0, *)`, and the raw
+        // text matched. The house readers strip comments for exactly this: a call-site test that
+        // documents the name it looks for will find its own documentation.
+        let section = try Self.code("RecentlyDeleted/ToolsRecentlyDeletedSection.swift")
         XCTAssertFalse(
             section.contains("@available(iOS"),
             "The Recently Deleted section copied Routines' availability gate along with its"
                 + " shape. Routines is gated because the editor it opens is 17+; this screen has"
                 + " no such dependency and is a 16.0 user's only route back from a delete."
         )
-        let tools = Self.collapsed(try Self.appSource("Tools/ToolsView.swift"))
+        let tools = Self.collapsed(try Self.code("Tools/ToolsView.swift"))
         XCTAssertFalse(
             tools.contains("if #available(iOS 17.0, *) { ToolsRecentlyDeletedSection"),
             "`ToolsView` wrapped the Recently Deleted section in an availability gate."
@@ -60,7 +64,7 @@ final class ToolsRecentlyDeletedCallSiteTests: XCTestCase {
     /// The launch purge, E's Step 0 answer 1 (*"The app, when you open it"*), on the SIGNED-IN
     /// branch — it needs a uid, so it cannot sit on the app struct.
     func testTheLaunchPurgeRunsOnTheSignedInBranch() throws {
-        let root = Self.collapsed(try Self.appSource("RootView.swift"))
+        let root = Self.collapsed(try Self.code("RootView.swift"))
         XCTAssertTrue(
             root.contains(".task { await RecentlyDeletedPurge.run() }"),
             "Nothing purges the 30-day window, so a deleted item waits forever and E's"
@@ -75,6 +79,14 @@ final class ToolsRecentlyDeletedCallSiteTests: XCTestCase {
     }
 
     // MARK: - Reading the tree
+
+    /// Comments stripped, because these files document the very names the assertions look for.
+    private static func code(_ relativePath: String) throws -> String {
+        try appSource(relativePath)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined(separator: "\n")
+    }
 
     private static func collapsed(_ source: String) -> String {
         source.split(whereSeparator: \.isWhitespace).joined(separator: " ")

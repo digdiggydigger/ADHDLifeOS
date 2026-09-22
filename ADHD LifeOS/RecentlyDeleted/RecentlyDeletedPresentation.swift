@@ -68,6 +68,13 @@ enum RecentlyDeletedPresentation {
         "You can restore it from Recently Deleted for \(retentionDays) days."
     }
 
+    /// Capture detail's discard confirmation. The first sentence says what discarding MEANS for
+    /// a capture — the decision being taken, unaffected by this block — and the second used to be
+    /// *"This can't be undone."*, which soft delete made false.
+    static var captureDiscardMessage: String {
+        "It won't become a task or a journal entry. \(softDeleteReassurance)"
+    }
+
     /// Q10's sanctioned friction: *"friction is allowed executing permanent deletions"*. This is
     /// the one place in the app where "This can't be undone" is TRUE.
     enum DeleteForever {

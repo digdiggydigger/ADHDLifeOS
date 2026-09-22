@@ -171,11 +171,20 @@ struct RecentlyDeletedView: View {
                 .disabled(service.busyItemID != nil)
                 .accessibilityIdentifier("recentlyDeletedRestore-\(row.item.id)")
 
-                Button(RecentlyDeletedPresentation.deleteForeverTitle, role: .destructive) {
+                // **NOT tinted `StateRisk`, and the reason is measured rather than felt.** Red
+                // on `CardSurface` is **4.21:1 in LIGHT** (`#F5102B` on `#FFFFFF`), under the
+                // 4.5:1 that `accessibility.md` requires below 18pt — and the palette is E's HELD
+                // colour arc, so the fix cannot be the colour. It does not need to be: this
+                // button is the DOOR to the destructive moment, not the moment itself.
+                // `action-sheets.md › Best practices` puts the prominence on the sheet ("Make
+                // destructive choices visually prominent… place these buttons at the top of the
+                // action sheet"), which the confirm below does. Quiet here also stops it
+                // competing with Restore, which is the action this screen wants people to take.
+                Button(RecentlyDeletedPresentation.deleteForeverTitle) {
                     confirmingDeleteForever = row.item
                 }
                 .font(.callout.weight(.medium))
-                .foregroundStyle(Color("StateRisk"))
+                .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .contentShape(Rectangle())
                 .disabled(service.busyItemID != nil)

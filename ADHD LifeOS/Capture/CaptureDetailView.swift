@@ -117,12 +117,8 @@ struct CaptureDetailView: View {
             Button("Keep it", role: .cancel) {}
         } message: {
             // Same correction as task detail's: the second sentence was *"This can't be undone."*
-            // and soft delete made it false. The first half stays — it says what discarding MEANS
-            // for a capture, which is the decision being taken, and is unaffected.
-            Text(
-                "It won't become a task or a journal entry. "
-                    + RecentlyDeletedPresentation.softDeleteReassurance
-            )
+            // and soft delete made it false.
+            Text(RecentlyDeletedPresentation.captureDiscardMessage)
         }
         .accessibilityIdentifier("captureDetailView")
     }

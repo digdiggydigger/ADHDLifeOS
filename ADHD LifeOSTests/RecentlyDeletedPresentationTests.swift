@@ -198,6 +198,15 @@ final class RecentlyDeletedPresentationTests: XCTestCase {
         )
     }
 
+    /// Capture detail's confirm keeps the sentence that says what discarding MEANS and replaces
+    /// the one soft delete made false.
+    func testTheCaptureDiscardMessageKeepsItsMeaningAndDropsItsFalseHalf() {
+        let message = RecentlyDeletedPresentation.captureDiscardMessage
+        XCTAssertTrue(message.hasPrefix("It won't become a task or a journal entry."))
+        XCTAssertTrue(message.contains(RecentlyDeletedPresentation.softDeleteReassurance))
+        XCTAssertFalse(message.contains("can't be undone"))
+    }
+
     func testTheDeleteForeverConfirmNamesWhichKindOfThingItIsAbout() {
         XCTAssertEqual(
             RecentlyDeletedPresentation.DeleteForever.title(for: .task), "Delete this task forever?"
