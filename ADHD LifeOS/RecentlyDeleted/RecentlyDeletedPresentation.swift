@@ -51,7 +51,8 @@ enum RecentlyDeletedPresentation {
     static let deleteForeverTitle = "Delete Forever"
 
     static var sectionCaption: String {
-        "Tasks and captures you delete wait \(retentionDays) days before they're gone for good."
+        "Tasks, captures and tags you delete wait \(retentionDays) days before they're gone"
+            + " for good."
     }
 
     static let emptyHeadline = "Nothing deleted"
@@ -81,12 +82,64 @@ enum RecentlyDeletedPresentation {
             switch kind {
             case .task: return "Delete this task forever?"
             case .capture: return "Delete this capture forever?"
+            case .tag: return "Delete this tag forever?"
             }
         }
 
         static let message = "This can't be undone."
         static let confirmTitle = RecentlyDeletedPresentation.deleteForeverTitle
         static let cancelTitle = "Keep it"
+    }
+
+    // MARK: - Restoring a tag whose name is taken again
+
+    /// E's Step 0, verbatim: *"Ask which one survives (Recommended)… One extra tap, no silent
+    /// merge."* A tag can sit in this list for thirty days, and in that time its name can be taken
+    /// again — by a new tag (`createTagDeduplicating` skips the hidden one) or by a RENAME
+    /// (`renameTag`'s clash check is live-only too). Restoring must not leave two live tags
+    /// wearing one name.
+    ///
+    /// **The alert has two shapes, and which one it takes is not cosmetic.** The collision is
+    /// case-INSENSITIVE while the app renders the stored case, so "errand" and "Errand" are one
+    /// collision with two spellings and the survivor decides which the user is left reading —
+    /// a real choice, offered by name. When the two spellings are IDENTICAL there is nothing to
+    /// choose: both routes end with one tag of that name on every item, and the survivor is a
+    /// document id nobody can see. Offering two buttons there would be a lie told twice —
+    /// `alerts.md › Buttons` asks for titles that "describe the result of selecting the button",
+    /// and two identical titles describe nothing. So it collapses to what the ask is worth in that
+    /// case: telling the user a merge is about to happen, and letting them decline.
+    struct SurvivorChoice: Equatable {
+        let title: String
+        let message: String
+        /// Keeps the tag being restored. Reads "Merge" when there is no second spelling.
+        let keepRestoredTitle: String
+        /// `nil` when the two names are identical, character for character.
+        let keepLiveTitle: String?
+        let cancelTitle: String
+
+        static func alert(restoredName: String, liveName: String) -> SurvivorChoice {
+            // **Exact, never case-insensitive.** Case is the only thing that CAN differ here —
+            // the collision that produced this alert already folded it — so a folding comparison
+            // would answer "the same" every time and the choice would never be offered.
+            guard restoredName != liveName else {
+                return SurvivorChoice(
+                    title: "“\(restoredName)” already exists",
+                    message: "A tag named “\(restoredName)” was made while this one was deleted."
+                        + " Restoring makes them one tag, on every item either of them is on.",
+                    keepRestoredTitle: "Merge",
+                    keepLiveTitle: nil,
+                    cancelTitle: "Cancel"
+                )
+            }
+            return SurvivorChoice(
+                title: "“\(liveName)” already exists",
+                message: "A tag named “\(liveName)” was made while “\(restoredName)” was deleted."
+                    + " Restoring makes them one tag — which spelling should it keep?",
+                keepRestoredTitle: "Keep “\(restoredName)”",
+                keepLiveTitle: "Keep “\(liveName)”",
+                cancelTitle: "Cancel"
+            )
+        }
     }
 
     // MARK: - One row per deleted thing
@@ -135,6 +188,9 @@ enum RecentlyDeletedPresentation {
         switch kind {
         case .task: return "checklist"
         case .capture: return "tray.full"
+        // Tags have no tab of their own, so the rule above cannot apply. This is the glyph the
+        // Tag Editor's own row in Settings wears, and the one every tag chip in the app carries.
+        case .tag: return "tag"
         }
     }
 
@@ -143,6 +199,7 @@ enum RecentlyDeletedPresentation {
         switch kind {
         case .task: return "Task"
         case .capture: return "Capture"
+        case .tag: return "Tag"
         }
     }
 

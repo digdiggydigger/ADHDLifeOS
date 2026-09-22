@@ -22,13 +22,36 @@ struct FirebaseRecentlyDeletedClientAdapter: RecentlyDeletedClientAdapting {
     func fetchDeleted() async throws -> [RecentlyDeletedItem] {
         async let tasks = store.fetchDeletedTasks()
         async let captures = store.fetchDeletedCaptures()
+        async let tags = store.fetchDeletedTags()
+        // The live list is read for ONE reason: a deleted tag's name can be taken again in the
+        // thirty days it waits, and the row has to say so before the user taps Restore.
+        async let liveTags = store.fetchTags()
         return try await Self.items(from: tasks) + Self.items(from: captures)
+            + Self.items(from: tags, collidingWith: liveTags)
     }
 
     func restore(_ item: RecentlyDeletedItem) async throws {
         switch item.kind {
         case .task: try await store.restoreTask(id: item.itemId)
         case .capture: try await store.restoreCapture(id: item.itemId)
+        case .tag: try await store.restoreTag(id: item.itemId)
+        }
+    }
+
+    /// **Both directions end with ONE live tag, and neither leaves a dangling id.** Keeping the
+    /// restored tag is the atomic merge-and-restore; keeping the live one is the Tag Editor's
+    /// existing merge, after which there is nothing left to restore.
+    func restore(_ item: RecentlyDeletedItem, keepingRestored: Bool) async throws {
+        guard let collision = item.collision else {
+            // No collision: the choice was never offered, so this is an ordinary restore. Reached
+            // only if a caller asks for the resolving form on a row that does not need it.
+            try await restore(item)
+            return
+        }
+        if keepingRestored {
+            try await store.mergeTagsRestoring(survivor: item.itemId, absorbed: collision.liveId)
+        } else {
+            try await store.mergeTagInto(item.itemId, replacement: collision.liveId)
         }
     }
 
@@ -36,6 +59,9 @@ struct FirebaseRecentlyDeletedClientAdapter: RecentlyDeletedClientAdapting {
         switch item.kind {
         case .task: try await store.deleteTask(id: item.itemId)
         case .capture: try await store.deleteCapture(id: item.itemId)
+        // **Not a document delete.** A tag's purge strips its id from every task and capture that
+        // still carries it, THEN destroys it — the batch a tag delete used to run at the tap.
+        case .tag: try await store.purgeTag(id: item.itemId)
         }
     }
 
@@ -47,6 +73,25 @@ struct FirebaseRecentlyDeletedClientAdapter: RecentlyDeletedClientAdapting {
         tasks.compactMap { task in
             task.deletedAt.map {
                 RecentlyDeletedItem(itemId: task.id, kind: .task, title: task.title, deletedAt: $0)
+            }
+        }
+    }
+
+    /// A tag's title is its name, which is the whole of a tag.
+    ///
+    /// **The name match folds case, because `fetchTag(named:)` does.** Two tags differing only in
+    /// case cannot both be live — dedup would never have made the second — so a restore that
+    /// compared exactly would create precisely the state the app treats as impossible.
+    private static func items(from tags: [Tag], collidingWith liveTags: [Tag]) -> [RecentlyDeletedItem] {
+        tags.compactMap { tag in
+            tag.deletedAt.map { stamp in
+                let live = liveTags.first {
+                    $0.name.compare(tag.name, options: [.caseInsensitive]) == .orderedSame
+                }
+                return RecentlyDeletedItem(
+                    itemId: tag.id, kind: .tag, title: tag.name, deletedAt: stamp,
+                    collision: live.map { .init(liveId: $0.id, liveName: $0.name) }
+                )
             }
         }
     }

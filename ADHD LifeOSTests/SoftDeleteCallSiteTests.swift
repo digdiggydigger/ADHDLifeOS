@@ -111,7 +111,8 @@ final class SoftDeleteCallSiteTests: XCTestCase {
             ("Tasks/TaskModels.swift", "TaskItem"),
             ("Tasks/TaskDetailModels.swift", "TaskDetail"),
             ("Home/HomeModels.swift", "TaskSummary"),
-            ("Capture/CaptureModels.swift", "Capture")
+            ("Capture/CaptureModels.swift", "Capture"),
+            ("Tasks/TagModels.swift", "Tag")
         ] {
             let source = try Self.appCode(file)
             XCTAssertTrue(

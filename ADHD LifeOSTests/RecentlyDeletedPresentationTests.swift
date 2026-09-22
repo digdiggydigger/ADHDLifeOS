@@ -241,4 +241,43 @@ final class RecentlyDeletedPresentationTests: XCTestCase {
             RecentlyDeletedPresentation.toolsRowSubtitle(for: [], now: now), "Nothing waiting"
         )
     }
+
+    // MARK: - The third kind (F-C4-TagsRecentlyDeleted)
+
+    /// **Tags have no tab of their own, so `glyph(for:)`'s stated rule cannot apply to them.**
+    /// The other two wear the glyph of the tab they came from; a tag wears the glyph every tag
+    /// chip in the app already carries, which is the same idea reached by the only route open.
+    func testATagsRowWearsTheTagGlyphAndIsNamedTag() {
+        XCTAssertEqual(RecentlyDeletedPresentation.glyph(for: .tag), "tag")
+        XCTAssertEqual(RecentlyDeletedPresentation.word(for: .tag), "Tag")
+    }
+
+    func testTheDeleteForeverTitleNamesTheTag() {
+        XCTAssertEqual(
+            RecentlyDeletedPresentation.DeleteForever.title(for: .tag),
+            "Delete this tag forever?"
+        )
+    }
+
+    /// **Every kind must answer, and a `CaseIterable` sweep is what makes that true tomorrow.**
+    /// A fourth kind added without a glyph would take whatever branch a `default` gave it; there
+    /// is no `default` here, and this is the test that says there must never be one.
+    func testEveryKindAnswersAllThreeSwitchesDistinctly() {
+        let glyphs = RecentlyDeletedItem.Kind.allCases.map { RecentlyDeletedPresentation.glyph(for: $0) }
+        let words = RecentlyDeletedItem.Kind.allCases.map { RecentlyDeletedPresentation.word(for: $0) }
+        XCTAssertEqual(Set(glyphs).count, RecentlyDeletedItem.Kind.allCases.count)
+        XCTAssertEqual(Set(words).count, RecentlyDeletedItem.Kind.allCases.count)
+        XCTAssertFalse(glyphs.contains(""), "a kind answers the glyph switch with nothing")
+    }
+
+    /// The Tools row's caption taught a two-collection rule and the rule now has three members.
+    /// `ToolsRoutinesCatalog`'s interpolation rule applies to the NUMBER; the nouns are literal
+    /// and a test is the only thing that notices when one goes missing.
+    func testTheToolsCaptionNamesAllThreeKinds() {
+        let caption = RecentlyDeletedPresentation.sectionCaption
+        for noun in ["Tasks", "captures", "tags"] {
+            XCTAssertTrue(caption.contains(noun), "the Tools caption no longer names \(noun)")
+        }
+        XCTAssertTrue(caption.contains("30"), "the caption stopped interpolating the window")
+    }
 }

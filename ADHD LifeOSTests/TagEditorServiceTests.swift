@@ -117,7 +117,7 @@ final class TagEditorServiceTests: XCTestCase {
 
     // MARK: delete
 
-    func test_delete_deletes_reloads_andListShrinks() async {
+    func test_softDelete_stamps_reloads_andListShrinks() async {
         let fake = FakeTagEditorClientAdapting()
         let victim = tag("work")
         fake.fetchResults = [.success([victim, tag("errands")]), .success([tag("errands")])]
@@ -125,12 +125,79 @@ final class TagEditorServiceTests: XCTestCase {
         await service.load()
         XCTAssertEqual(service.tags.count, 2)
 
-        let shouldPop = await service.delete(tag: victim)
+        let shouldPop = await service.softDelete(tag: victim)
 
         XCTAssertTrue(shouldPop)
         XCTAssertEqual(fake.deleteCallCount, 1)
         XCTAssertEqual(fake.lastDeleteId, victim.id)
         XCTAssertEqual(service.tags.map(\.name), ["errands"], "delete must reload the shrunk list")
+    }
+
+    // MARK: restore — the capsule's Undo (F-C4-TagsRecentlyDeleted)
+
+    /// **This path was at 0% when the coverage sweep ran, and it is reachable in production** —
+    /// it is what the Undo capsule's only control calls. F-AdapterDrift's four adapters were
+    /// exactly this: live, shipped, unexercised. The test is the fix.
+    func test_restore_putsTheTagBackAndReloadsTheList() async {
+        let fake = FakeTagEditorClientAdapting()
+        let restored = tag("work")
+        fake.fetchResults = [.success([tag("errands")]), .success([restored, tag("errands")])]
+        let service = TagEditorService(client: fake)
+        await service.load()
+        XCTAssertEqual(service.tags.count, 1)
+
+        let landed = await service.restore(tagId: restored.id)
+
+        XCTAssertTrue(landed)
+        XCTAssertEqual(fake.restoreCallCount, 1)
+        XCTAssertEqual(fake.lastRestoreId, restored.id)
+        XCTAssertEqual(
+            service.tags.map(\.name), ["errands", "work"],
+            "the restore did not reload, so the row is back in the database and missing on screen."
+                + " (Alphabetical, because `load()` sorts — the restored tag rejoins the list in"
+                + " its place rather than at the end.)"
+        )
+    }
+
+    /// `false` is what puts the capsule's offer back, so a failed undo must not report success —
+    /// the 30-day list would then be the user's only remaining route back, unannounced.
+    func test_restore_failureSurfacesTheMessageAndReportsFalse() async {
+        let fake = FakeTagEditorClientAdapting()
+        fake.fetchResults = [.success([tag("errands")])]
+        fake.restoreResult = .failure(TagEditorServiceError.failed("Couldn't reach the server."))
+        let service = TagEditorService(client: fake)
+        await service.load()
+
+        let landed = await service.restore(tagId: UUID())
+
+        XCTAssertFalse(landed)
+        XCTAssertEqual(service.errorMessage, "Couldn't reach the server.")
+    }
+
+    /// **Not guarded by `isMutating`, unlike every other mutation here, and deliberately.** The
+    /// capsule can be tapped at any moment — including while a rename the user started elsewhere
+    /// is still in flight — and refusing it would silently drop the only affordance the delete
+    /// left them.
+    func test_restore_isAllowedWhileAnotherMutationIsInFlight() async {
+        let fake = FakeTagEditorClientAdapting()
+        let victim = tag("work")
+        fake.fetchResults = [.success([victim])]
+        let service = TagEditorService(client: fake)
+        await service.load()
+        let held = expectation(description: "delete held in flight")
+        let release = expectation(description: "released")
+        fake.beforeDelete = { @Sendable in
+            held.fulfill()
+            await self.fulfillment(of: [release], timeout: 2)
+        }
+        let deleting = Task { await service.softDelete(tag: victim) }
+        await fulfillment(of: [held], timeout: 2)
+
+        let landed = await service.restore(tagId: victim.id)
+
+        XCTAssertTrue(landed, "the undo was refused because an unrelated mutation was in flight")
+        release.fulfill()
+        _ = await deleting.value
     }
 
     // MARK: create
@@ -189,13 +256,13 @@ final class TagEditorServiceTests: XCTestCase {
         let gate = TestGate()
         fake.beforeDelete = { await gate.wait() }
 
-        let first = Task { await service.delete(tag: victim) }
+        let first = Task { await service.softDelete(tag: victim) }
         // Let `first` reach its in-flight suspension so isMutating is set.
         await Task.yield()
         XCTAssertTrue(service.isMutating)
 
         // A second delete while the first is in flight must be rejected without calling the client.
-        let secondResult = await service.delete(tag: victim)
+        let secondResult = await service.softDelete(tag: victim)
         XCTAssertFalse(secondResult)
         XCTAssertEqual(fake.deleteCallCount, 1, "the second mutation must not reach the client")
 

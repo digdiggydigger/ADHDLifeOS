@@ -466,3 +466,29 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Owed to the code:** nothing. Contrast is deliberately excluded from all 31 blocks and belongs to
   the held colour arc.
 - **Next session starts at:** `F-C1-UndoCapsule`, from `handoff/START-HERE-adhd-audit-arc-C.md`.
+
+### Session 7 — 2026-09-22, arc C, block `F-C4-TagsRecentlyDeleted` — **arc C CLOSES**
+- **Landed:** `F-C4-TagsRecentlyDeleted` (PR pending at write time). Suite **3,306 / 0**, SwiftLint
+  **0**, build SUCCEEDED, coverage **30.03% (15,103/50,300)** — UP from 29.87%, and comparable:
+  the denominator moved because the tree grew, not because the measurement extent changed.
+  **All four arc C blocks are now merged.**
+- **The session opened on a SPENT brief.** It asked for two device looks, `screenshots/
+  drafts-to-inbox/` and `F-C3` — every one already landed (editions 73–75). Checked against
+  `git log` and the register before acting. The successor opener now makes that check step 0.
+- **Where the build departed from the spec, and why.** The spec's step 4 said the NEW tag wins a
+  merge on restore; Step 0 (E, 2026-09-19, marked do-not-re-ask) said ASK which survives. Step 0
+  wins and the ask is built. Not raised to E — it was already answered.
+- **What E saw, and said:** E was asked one question — whether the Tag Editor's delete confirm
+  should go the way the task and capture ones did — and answered **"drop the alert, add an Undo
+  capsule"**. No device look was owed or asked for.
+- **Owed to E:** **ONE decision, register §A-CAPSULE.** The capsule E chose is MOUNTED but
+  INVISIBLE in the Tag Editor: Settings is a `.sheet` and `RootBottomOverlay` sits beneath it. Every
+  gate was green while this was true — `untilExists: capsule` passes because XCUITest finds
+  OCCLUDED elements, and the environment that records is inherited by sheets while the drawing is
+  not. **A frame caught it, which is precisely what `screenshots/` exists for.**
+- **Owed to the code:** nothing for this block. One coverage hole was found and closed inside it
+  (`TagEditorService.restore(tagId:)` at 0.00% — F-AdapterDrift's shape). CLAUDE.md's adapter
+  counts were stale and are corrected (fifteen / seventeen).
+- **Next session starts at:** `F-D1-ComposerBothDoors`, from
+  `handoff/START-HERE-adhd-audit-arc-D1-composer.md`.
+

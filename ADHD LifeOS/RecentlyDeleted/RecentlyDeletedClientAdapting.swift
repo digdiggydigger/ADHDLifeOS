@@ -18,6 +18,11 @@ protocol RecentlyDeletedClientAdapting: Sendable {
     /// Erases the stamp. The item reappears everywhere it used to be, with its tags, notes and
     /// history intact, because it never left.
     func restore(_ item: RecentlyDeletedItem) async throws
+    /// Restore a tag whose name has been taken again, merging the two into whichever the user
+    /// kept (E's Step 0: *"Ask which one survives"*). `keepingRestored` false means the LIVE tag
+    /// wins and the one in this list is absorbed and destroyed — so this is the only method here
+    /// that can end with the row's own document gone on a RESTORE.
+    func restore(_ item: RecentlyDeletedItem, keepingRestored: Bool) async throws
     /// The real document delete — "Delete forever", and the launch purge. The item's `kind` is
     /// what says which collection, which is why these take the whole value rather than an id.
     func deleteForever(_ item: RecentlyDeletedItem) async throws

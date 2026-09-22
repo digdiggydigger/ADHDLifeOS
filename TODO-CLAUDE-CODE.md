@@ -6004,7 +6004,7 @@ delete ("Task deleted · Undo," ahead of the persistent 30-day list) — see Ste
 
 ---
 
-### FEATURE: F-C4-TagsRecentlyDeleted — tags in Recently Deleted; hidden links, restore-to-everywhere, merge  [ ] NOT STARTED
+### FEATURE: F-C4-TagsRecentlyDeleted — tags in Recently Deleted; hidden links, restore-to-everywhere, merge  [x] COMPLETED
 
 **What E chose, verbatim (round 2):** *"Tasks + Captures + Tags (If A recently deleted tag is
 restored, What happens to Items that previously had this tag? … Can the tag be restored to the
@@ -6051,24 +6051,29 @@ plain delete and `:51` calls it with a replacement id for MERGE — this merge p
   (`replacingWith: someId`) is UNCHANGED behaviour and any test on IT should still pass as-is.
 - **None found by grep** for "Recently Deleted" + "tag" together — new surface, RED-first.
 
-**Acceptance criteria:**
-- [ ] RED first: deleting a tag hides it (no chip, no filter entry) but leaves every item's
+**Acceptance criteria:** — all met 2026-09-22; see the block report and
+`screenshots/recently-deleted-tags/README.md`. **One finding is RECORDED RATHER THAN FIXED and is
+E's call: the Undo capsule is MOUNTED but INVISIBLE in the Tag Editor**, because Settings is a
+`.sheet` presented from Today and the capsule lives in `RootBottomOverlay` beneath it. So the
+delete E chose a capsule FOR currently shows nothing at the moment it happens — which is the
+option E did not choose. Frame `01-deleted-and-the-capsule-offers-undo`; register §A.
+- [x] RED first: deleting a tag hides it (no chip, no filter entry) but leaves every item's
       `tag_ids` untouched (assert the array is unchanged, not just that the tag "looks" gone);
       restoring shows the tag again on every item that had it with zero additional writes; a
       same-name tag created during the deletion window causes restore to merge (reusing
       `removeTagEverywhere(_:replacingWith:)`) rather than producing two live tags; the 30-day
       purge strips `tag_ids` and hard-deletes, matching today's immediate-delete behaviour exactly
       but deferred.
-- [ ] Red-check, restore, count failures, restore code.
-- [ ] SwiftLint 0, suite green, build green, pasted.
-- [ ] `screenshots/recently-deleted-tags/` + README: a tag deleted (chip gone from a task that had
+- [x] Red-check, restore, count failures, restore code.
+- [x] SwiftLint 0, suite green, build green, pasted.
+- [x] `screenshots/recently-deleted-tags/` + README: a tag deleted (chip gone from a task that had
       it), the Recently Deleted row showing the tag, restore bringing the chip back, and the merge
       case if it can be driven on the seeded emulator account.
-- [ ] `apple-design` review owed (§7.6) only if this block changes any VISIBLE surface beyond what
+- [x] `apple-design` review owed (§7.6) only if this block changes any VISIBLE surface beyond what
       C3 already built (the same Recently Deleted list, one more row kind) — if it is a pure data-
       layer change riding C3's UI, say so and name C3's review as covering it.
-- [ ] RM-on device pass: not owed unless a new reduced site is added — expected to be none; say so.
-- [ ] **`firestore.rules` — verified unchanged** (tags are in the same generic owner-CRUD allow,
+- [x] RM-on device pass: not owed unless a new reduced site is added — expected to be none; say so.
+- [x] **`firestore.rules` — verified unchanged** (tags are in the same generic owner-CRUD allow,
       `firestore.rules:57`); no new field-level restriction is implied by this block beyond C3's.
 
 **Dependencies:** F-C3 (the Recently Deleted screen, the `SoftDelete` read-filter helper, and the

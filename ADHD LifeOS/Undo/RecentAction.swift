@@ -63,6 +63,20 @@ enum RecentActionKind: Equatable, Sendable {
     /// Capture Inbox's header ↶ offers a second route to the SAME undo, and it must offer it for
     /// a capture and never for a task. One case could not tell them apart.
     case captureDeleted
+    /// **`F-C4-TagsRecentlyDeleted`: a tag deleted from the Tag Editor.** E's call, 2026-09-22,
+    /// asked as the third instance of the same question: drop the confirm, add the capsule.
+    ///
+    /// **It draws identically to the other two deletes, and it is still its own case** — for the
+    /// reason `captureDeleted` gives one comment up. A kind names WHAT happened, and the exhaustive
+    /// switch in `CaptureInboxUndoSections` is where that matters: a tag delete must never light
+    /// the Capture Inbox header's second ↶, and one shared case could not say so.
+    ///
+    /// **Its Undo carries more weight than a task's.** A tag delete's effect is almost entirely
+    /// offscreen — chips vanishing from tasks and captures the user is not looking at — which is
+    /// `undo-and-redo.md`'s *"it's crucial to highlight the result… to keep people from thinking
+    /// that the action had no effect."* Without this, the whole visible consequence is a row
+    /// leaving a list in Settings.
+    case tagDeleted
 }
 
 extension RecentActionKind {
@@ -87,7 +101,7 @@ extension RecentActionKind {
             return "Journalled"
         case .draftKeptInInbox:
             return "Kept in your inbox"
-        case .taskDeleted, .captureDeleted:
+        case .taskDeleted, .captureDeleted, .tagDeleted:
             // **"Deleted", not "Task deleted"** — E's Step 0 answer 2 named the capsule as
             // *"Task deleted · Undo"*, but the capsule draws the SUBJECT underneath the verb, so
             // the noun is already on screen one line down. `taskClosed` reads "Closed" for the
@@ -111,7 +125,7 @@ extension RecentActionKind {
             return "book.closed.fill"
         case .draftKeptInInbox:
             return "tray.and.arrow.down.fill"
-        case .taskDeleted, .captureDeleted:
+        case .taskDeleted, .captureDeleted, .tagDeleted:
             // The glyph of WHERE it went, the rule the three triage verbs follow — and where it
             // went is Recently Deleted, whose own door on Tools wears this glyph.
             return "trash.fill"
@@ -125,7 +139,7 @@ extension RecentActionKind {
             return .completion
         case .captureSorted, .captureJournalled, .draftKeptInInbox:
             return .accent
-        case .captureSkipped, .taskDeleted, .captureDeleted:
+        case .captureSkipped, .taskDeleted, .captureDeleted, .tagDeleted:
             // **A delete is neither a completion nor a destination.** The two `.completion` kinds
             // are things the user FINISHED and the three `.accent` ones are places a capture
             // WENT; a soft delete is an item put out of sight. Dressing that as an achievement
@@ -149,7 +163,7 @@ extension RecentActionKind {
     var actionLabel: String {
         switch self {
         case .taskClosed, .nudgeDismissed, .captureSorted, .captureSkipped, .captureJournalled,
-             .taskDeleted, .captureDeleted:
+             .taskDeleted, .captureDeleted, .tagDeleted:
             return "Undo"
         case .draftKeptInInbox:
             return "Reopen"
@@ -161,7 +175,7 @@ extension RecentActionKind {
     var actionSystemImage: String {
         switch self {
         case .taskClosed, .nudgeDismissed, .captureSorted, .captureSkipped, .captureJournalled,
-             .taskDeleted, .captureDeleted:
+             .taskDeleted, .captureDeleted, .tagDeleted:
             return "arrow.uturn.backward"
         case .draftKeptInInbox:
             return "arrow.up.forward.square"

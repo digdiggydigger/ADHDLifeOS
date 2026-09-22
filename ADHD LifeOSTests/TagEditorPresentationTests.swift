@@ -33,23 +33,6 @@ final class TagEditorPresentationTests: XCTestCase {
         )
     }
 
-    // MARK: deleteConfirmMessage — names the count (§8 locked rule)
-
-    func test_deleteConfirmMessage_zeroOneMany() {
-        XCTAssertEqual(
-            TagEditorPresentation.deleteConfirmMessage(name: "errands", usageCount: 0),
-            "Delete “errands”? It isn't used by anything, and this can't be undone."
-        )
-        XCTAssertEqual(
-            TagEditorPresentation.deleteConfirmMessage(name: "errands", usageCount: 1),
-            "Delete “errands”? It's used on 1 item, and this can't be undone."
-        )
-        XCTAssertEqual(
-            TagEditorPresentation.deleteConfirmMessage(name: "errands", usageCount: 12),
-            "Delete “errands”? It's used on 12 items, and this can't be undone."
-        )
-    }
-
     // MARK: merge alert
 
     func test_mergeAlertTitle_namesConflictingTag() {

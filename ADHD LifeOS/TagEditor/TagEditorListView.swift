@@ -202,7 +202,8 @@ final class PreviewTagEditorClient: TagEditorClientAdapting, @unchecked Sendable
     func fetchTags() async throws -> [EditableTag] { tags }
     func renameTag(id: UUID, to name: String) async throws -> TagRenameOutcome { renameOutcome }
     func mergeTag(id: UUID, into name: String) async throws {}
-    func deleteTag(id: UUID) async throws {}
+    func softDeleteTag(id: UUID) async throws {}
+    func restoreTag(id: UUID) async throws {}
     func createTag(name: String) async throws -> TagCreateOutcome {
         .created(EditableTag(id: UUID(), name: name, usageCount: 0))
     }

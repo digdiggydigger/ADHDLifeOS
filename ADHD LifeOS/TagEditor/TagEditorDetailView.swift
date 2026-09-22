@@ -6,17 +6,24 @@
 import SwiftUI
 
 /// Tag detail — pushed on row tap. A name field (rename), the usage count as read-only text, and a
-/// destructive Delete. Both irreversible actions go through a centre-screen `.alert` (E's locked
-/// decisions): a rename that clashes offers Merge / Cancel; Delete confirms while naming the usage
-/// count (§8). Save is disabled while the name is unchanged/empty or a mutation is in flight.
+/// destructive Delete. Save is disabled while the name is unchanged/empty or a mutation is in
+/// flight.
+///
+/// **ONE alert remains, and it is the irreversible one.** A rename that clashes still offers
+/// Merge / Cancel, because a merge genuinely cannot be undone. The DELETE's confirm is gone
+/// (`F-C4-TagsRecentlyDeleted`, E's call 2026-09-22): the delete became a 30-day stamp, and
+/// `alerts.md › Best practices` asks for an alert on an uncommon destructive action *"that they
+/// can't undo"*. In its place the delete records an Undo capsule — which is also the only thing
+/// that shows a result, since a tag delete's real effect is chips vanishing from tasks and
+/// captures on screens the user is not looking at.
 struct TagEditorDetailView: View {
     let tag: EditableTag
     @ObservedObject var service: TagEditorService
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.recordAction) private var recordAction
 
     @State private var name: String
     @State private var showMergeAlert = false
-    @State private var showDeleteAlert = false
 
     init(tag: EditableTag, service: TagEditorService) {
         self.tag = tag
@@ -64,7 +71,7 @@ struct TagEditorDetailView: View {
             Section {
                 Button(role: .destructive) {
                     Haptics.play(.warning)
-                    showDeleteAlert = true
+                    Task { await performDelete() }
                 } label: {
                     Label("Delete Tag", systemImage: "trash")
                 }
@@ -114,16 +121,29 @@ struct TagEditorDetailView: View {
                 )
             )
         }
-        .alert("Delete Tag", isPresented: $showDeleteAlert) {
-            Button("Delete", role: .destructive) {
-                Task {
-                    if await service.delete(tag: tag) { dismiss() }
-                }
+    }
+
+    /// Only on a landed delete: record the capsule and pop. A failed delete leaves the error on
+    /// screen and stays put — `TaskDetailFormSections.performDelete()` is the shape.
+    ///
+    /// **The subject is read from `tag`, which is a `let` on this view**, so unlike task detail
+    /// there is no race with the write making it unreadable.
+    private func performDelete() async {
+        let tagId = tag.id
+        let subject = tag.name
+        guard await service.softDelete(tag: tag) else { return }
+        // **`[service, tagId]`, and the SERVICE is right here where `F-C3` said it was wrong.**
+        // Task detail captured the adapter because `performDelete()` dismissed the screen that
+        // owned its service. This service is owned by `TagEditorListView` — the screen being
+        // returned TO — so it outlives this view by construction, and holding it is what lets the
+        // restore reload the list the user is now looking at rather than writing a field and
+        // leaving the row missing.
+        recordAction.record(
+            RecentAction(kind: .tagDeleted, subject: subject) { [service, tagId] in
+                await service.restore(tagId: tagId)
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(TagEditorPresentation.deleteConfirmMessage(name: tag.name, usageCount: tag.usageCount))
-        }
+        )
+        dismiss()
     }
 }
 

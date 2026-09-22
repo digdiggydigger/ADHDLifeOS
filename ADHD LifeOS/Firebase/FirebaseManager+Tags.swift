@@ -81,10 +81,53 @@ extension FirebaseManager {
     }
 
     /// Rewrites every reference to `tagId` across tasks and captures — to `replacement` for a
-    /// merge, or to nothing for a delete — then removes the tag document itself, mirroring the
-    /// old backend's cascade semantics.
+    /// merge, or to nothing for a purge — then removes the tag document itself.
+    ///
+    /// **Since `F-C4-TagsRecentlyDeleted` this is no longer what a delete does.** The
+    /// `replacingWith: nil` form is the 30-DAY PURGE and "Delete forever": stripping the links is
+    /// the irreversible half, and the thirty days exist to buy it back. A screen that wants a tag
+    /// gone calls `softDeleteTag(id:)` and this runs later, unchanged, on a tag that has aged out.
+    /// The `replacingWith: someId` form is the Tag Editor's merge and is exactly as it was.
     func removeTagEverywhere(_ tagId: UUID, replacingWith replacement: UUID?) async throws {
         let batch = firestoreBatch()
+        try await rewriteReferences(to: tagId, as: replacement, in: batch)
+        try batch.deleteDocument(collection(.tags).document(tagId.uuidString))
+        try await batch.commit()
+        DataChangeSignal.post()
+    }
+
+    /// **Merge on restore, keeping the tag that was DELETED** (`F-C4-TagsRecentlyDeleted`; E's
+    /// Step 0: *"Ask which one survives"*). The live tag's items move onto the survivor, the live
+    /// document is destroyed, and the survivor's stamp is erased.
+    ///
+    /// **One batch, and it has to be one.** Those are two halves of a single user action; split
+    /// across two commits, a failure in between leaves the absorbed tag's items pointing at a tag
+    /// that is still hidden — worse than either outcome alone. The other direction ("keep the live
+    /// one") needs no method of its own: it IS `removeTagEverywhere(deletedId, replacingWith:
+    /// liveId)`, the exact call the Tag Editor's rename-clash has always made, which is what the
+    /// spec meant by reusing the existing merge.
+    ///
+    /// **Why this choice is not cosmetic, given both tags wear the same name.** `fetchTag(named:)`
+    /// collides case-INSENSITIVELY and the app renders the stored case, so "errand" and "Errand"
+    /// are one collision with two spellings. Which document survives decides which spelling the
+    /// user is left reading.
+    func mergeTagsRestoring(survivor: UUID, absorbed: UUID) async throws {
+        let batch = firestoreBatch()
+        try await rewriteReferences(to: absorbed, as: survivor, in: batch)
+        try batch.deleteDocument(collection(.tags).document(absorbed.uuidString))
+        let survivorDocument = try collection(.tags).document(survivor.uuidString)
+        batch.updateData(FirestoreFieldPayloads.tagRestore(), forDocument: survivorDocument)
+        try await batch.commit()
+        DataChangeSignal.post()
+    }
+
+    /// Every task and capture carrying `tagId` rewritten to `replacement`, or to nothing.
+    ///
+    /// Extracted so the cascade and the merge-on-restore share ONE reading of the rule rather than
+    /// two — the same argument `live(_:)`/`deleted(_:)` make one file over.
+    private func rewriteReferences(
+        to tagId: UUID, as replacement: UUID?, in batch: WriteBatch
+    ) async throws {
         for parent in [FirebaseTagParent.task, .capture] {
             let referencing = try await collection(parent.collection)
                 .whereField(Self.tagIdsField, arrayContains: tagId.uuidString)
@@ -100,9 +143,20 @@ extension FirebaseManager {
                 batch.updateData([Self.tagIdsField: updated], forDocument: document.reference)
             }
         }
-        try batch.deleteDocument(collection(.tags).document(tagId.uuidString))
-        try await batch.commit()
-        DataChangeSignal.post()
+    }
+
+    /// The 30-day purge, and "Delete forever" — `removeTagEverywhere`'s no-replacement form under
+    /// a name that says when it is allowed to run. Named rather than exposed raw on
+    /// `RecentlyDeletedBackingStore`, so that seam cannot reach the MERGE direction.
+    func purgeTag(id: UUID) async throws {
+        try await removeTagEverywhere(id, replacingWith: nil)
+    }
+
+    /// The Tag Editor's merge, and the "keep the live one" half of a merge on restore, under a
+    /// name that cannot be confused with `purgeTag`. Same call, one argument apart — which is why
+    /// neither seam takes `removeTagEverywhere` directly.
+    func mergeTagInto(_ tagId: UUID, replacement: UUID) async throws {
+        try await removeTagEverywhere(tagId, replacingWith: replacement)
     }
 
     func renameTag(id: UUID, to name: String) async throws {
@@ -114,8 +168,43 @@ extension FirebaseManager {
 
 /// Moved here from `FirebaseManager.swift` so all tag storage lives in one file.
 extension FirebaseManager {
+    /// **The one read every tag surface in the app goes through, which is why one `live(_:)` wrap
+    /// hides a deleted tag everywhere** (`F-C4-TagsRecentlyDeleted`). `fetchTags(for:parentId:)`
+    /// resolves a parent's ids against this list and `fetchTag(named:)` searches it, so the Tag
+    /// Editor, task detail's chip row, the task composer, capture triage, the inbox cards, the
+    /// journal timeline, the log composer and Quick Capture all inherit the filter for free.
+    ///
+    /// **Not `whereField`**, for the reason `FirebaseManager+SoftDelete.swift` records at length:
+    /// `isEqualTo: NSNull()` matches only documents where the key is PRESENT and null, and every
+    /// tag in the account today has no such key at all.
     func fetchTags() async throws -> [Tag] {
-        try await fetchAll(Tag.self, from: .tags, orderedBy: "name")
+        live(try await fetchAll(Tag.self, from: .tags, orderedBy: "name"))
+    }
+
+    /// Recently Deleted's tag list — exactly what `fetchTags()` drops.
+    func fetchDeletedTags() async throws -> [Tag] {
+        deleted(try await fetchAll(Tag.self, from: .tags, orderedBy: "name"))
+    }
+
+    /// Soft delete (`F-C4-TagsRecentlyDeleted`). **The gentlest write in the block: it stamps the
+    /// tag document and touches nothing else.**
+    ///
+    /// Today's delete unlinked and destroyed in one atomic batch (`removeTagEverywhere` below).
+    /// This splits that batch in two and defers the second half by thirty days — so what used to
+    /// happen at the tap now happens at the purge, and in between the links are all still there.
+    /// That is what makes `restoreTag(id:)` able to put the tag back on every item without writing
+    /// to a single one of them.
+    ///
+    /// Going through `update(id:fields:in:)` is load-bearing beyond tidiness: it is the write
+    /// plumbing that posts `DataChangeSignal`, which is how a restored tag reappears on every open
+    /// chip row at once rather than on the next screen visit.
+    func softDeleteTag(id: UUID, now: Date = .now) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.tagSoftDelete(now: now), in: .tags)
+    }
+
+    /// The way back. Erasing the stamp is the ENTIRE restore — see `tagRestore()`.
+    func restoreTag(id: UUID) async throws {
+        try await update(id: id, fields: FirestoreFieldPayloads.tagRestore(), in: .tags)
     }
 
     func saveTag(_ tag: Tag) async throws {

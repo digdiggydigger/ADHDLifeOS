@@ -63,8 +63,13 @@ protocol TagEditorClientAdapting: Sendable {
     func renameTag(id: UUID, to name: String) async throws -> TagRenameOutcome
     /// `PATCH /tags/{id}` `{"name": ..., "onConflict": "merge"}` — throws on failure, else succeeds.
     func mergeTag(id: UUID, into name: String) async throws
-    /// `DELETE /tags/{id}` — `204`, cascade handled server-side.
-    func deleteTag(id: UUID) async throws
+    /// **Soft delete (`F-C4-TagsRecentlyDeleted`), and it is deliberately NOT called `deleteTag`.**
+    /// Re-pointing an existing name at gentler behaviour is the silent-semantics trap CLAUDE.md
+    /// names; a caller that wants a tag actually gone should have to type something else. This
+    /// stamps the tag and leaves every `tag_ids` array alone.
+    func softDeleteTag(id: UUID) async throws
+    /// The way back — the capsule's Undo, and Recently Deleted's Restore.
+    func restoreTag(id: UUID) async throws
     /// `POST /tags` `{"name": ...}` — `.created` on `201`, `.alreadyExisted` on `200` (dedup).
     func createTag(name: String) async throws -> TagCreateOutcome
 }

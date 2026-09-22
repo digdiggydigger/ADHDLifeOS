@@ -44,6 +44,10 @@ final class RecentlyDeletedAdapterTests: XCTestCase {
         )
     }
 
+    private func tag(_ name: String, deletedAt: Date?) -> Tag {
+        Tag(id: UUID(), name: name, deletedAt: deletedAt)
+    }
+
     // MARK: - Reading
 
     func testFetchDeletedReturnsBothCollectionsAsOneList() async throws {
@@ -143,5 +147,142 @@ final class RecentlyDeletedAdapterTests: XCTestCase {
         await XCTAssertThrowsErrorAsync(try await adapter.deleteForever(item)) { error in
             XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
         }
+    }
+
+    // MARK: - Tags, the third collection (F-C4-TagsRecentlyDeleted)
+
+    func testFetchDeletedReturnsAllTHREECollectionsAsOneList() async throws {
+        store.deletedTasks = [task("Ring the dentist", deletedAt: stamp)]
+        store.deletedCaptures = [capture("Idle thought", deletedAt: stamp)]
+        store.deletedTags = [tag("someday", deletedAt: stamp)]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertEqual(Set(items.map(\.title)), ["Ring the dentist", "Idle thought", "someday"])
+        XCTAssertEqual(Set(items.map(\.kind)), [.task, .capture, .tag])
+    }
+
+    /// The third fetch joins the existing all-or-nothing rule: a screen that quietly showed only
+    /// tasks and captures would tell someone their tag is already gone, which is the one thing
+    /// this screen exists to disprove.
+    func testAFailedTagFetchFailsTheWholeRead() async {
+        store.deletedTasks = [task("Ring the dentist", deletedAt: stamp)]
+        store.fetchTagsError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.fetchDeleted()) { error in
+            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
+        }
+    }
+
+    func testRestoringATagErasesItsStampAndWritesNothingElse() async throws {
+        let item = RecentlyDeletedItem(itemId: UUID(), kind: .tag, title: "someday", deletedAt: stamp)
+
+        try await adapter.restore(item)
+
+        XCTAssertEqual(store.restoredTagIds, [item.itemId])
+        XCTAssertTrue(store.purgedTagIds.isEmpty)
+    }
+
+    /// **The one row on this screen whose "Delete Forever" is not a document delete.** A tag's
+    /// purge strips its id from every task and capture that still carries it, THEN destroys the
+    /// document — the batch a tag delete used to run at the tap. Routing it to a plain delete
+    /// would leave every referencing item pointing at nothing.
+    func testDeletingATagForeverPurgesItRatherThanDeletingTheDocument() async throws {
+        let item = RecentlyDeletedItem(itemId: UUID(), kind: .tag, title: "someday", deletedAt: stamp)
+
+        try await adapter.deleteForever(item)
+
+        XCTAssertEqual(store.purgedTagIds, [item.itemId])
+        XCTAssertTrue(
+            store.hardDeletedTaskIds.isEmpty && store.hardDeletedCaptureIds.isEmpty,
+            "a tag's purge reached one of the document deletes"
+        )
+    }
+
+    // MARK: - The name a restore would collide with (F-C4-TagsRecentlyDeleted)
+
+    /// **Detected on the READ, not attempted on the write.** The row has to know before the user
+    /// taps Restore, because the alert is what the tap opens — and a write that failed with a
+    /// typed error would put the same alert on every caller of `restore`, including the capsule.
+    func testADeletedTagWhoseNameWasTakenAgainCarriesTheCollision() async throws {
+        let deleted = tag("errand", deletedAt: stamp)
+        let live = Tag(id: UUID(), name: "Errand")
+        store.deletedTags = [deleted]
+        store.liveTags = [live]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertEqual(items.first?.collision?.liveId, live.id)
+        XCTAssertEqual(
+            items.first?.collision?.liveName, "Errand",
+            "the collision must carry the LIVE spelling — it is one of the two the user picks from"
+        )
+    }
+
+    /// The match folds case, because `fetchTag(named:)` does: two tags that differ only in case
+    /// cannot both be live, so a restore that ignored case would create exactly that.
+    func testTheCollisionMatchFoldsCaseJustAsTheDedupDoes() async throws {
+        store.deletedTags = [tag("ERRAND", deletedAt: stamp)]
+        store.liveTags = [Tag(id: UUID(), name: "errand")]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertNotNil(
+            items.first?.collision,
+            "the collision was missed, so a restore would leave two live tags with one name"
+        )
+    }
+
+    func testATagWhoseNameIsStillFreeCarriesNoCollision() async throws {
+        store.deletedTags = [tag("someday", deletedAt: stamp)]
+        store.liveTags = [Tag(id: UUID(), name: "errand")]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertNil(items.first?.collision)
+    }
+
+    /// A task and a capture can never collide — only tags have a name that must be unique.
+    func testOnlyTagRowsEverCarryACollision() async throws {
+        store.deletedTasks = [task("errand", deletedAt: stamp)]
+        store.deletedCaptures = [capture("errand", deletedAt: stamp)]
+        store.liveTags = [Tag(id: UUID(), name: "errand")]
+
+        let items = try await adapter.fetchDeleted()
+
+        XCTAssertTrue(items.allSatisfy { $0.collision == nil })
+    }
+
+    // MARK: - Resolving it
+
+    func testKeepingTheRestoredTagMergesTheLiveOneIntoItInOneCall() async throws {
+        let live = Tag(id: UUID(), name: "Errand")
+        let item = RecentlyDeletedItem(
+            itemId: UUID(), kind: .tag, title: "errand", deletedAt: stamp,
+            collision: .init(liveId: live.id, liveName: live.name)
+        )
+
+        try await adapter.restore(item, keepingRestored: true)
+
+        XCTAssertEqual(store.mergesRestoring.map(\.survivor), [item.itemId])
+        XCTAssertEqual(store.mergesRestoring.map(\.absorbed), [live.id])
+        XCTAssertTrue(store.restoredTagIds.isEmpty, "a plain restore ran as well as the merge")
+    }
+
+    /// Keeping the LIVE tag is today's merge, and there is no restore at all: the deleted document
+    /// is absorbed and destroyed, which is what "it did not survive" means.
+    func testKeepingTheLiveTagMergesTheDeletedOneIntoItAndNeverRestores() async throws {
+        let live = Tag(id: UUID(), name: "Errand")
+        let item = RecentlyDeletedItem(
+            itemId: UUID(), kind: .tag, title: "errand", deletedAt: stamp,
+            collision: .init(liveId: live.id, liveName: live.name)
+        )
+
+        try await adapter.restore(item, keepingRestored: false)
+
+        XCTAssertEqual(store.mergesInto.map(\.tagId), [item.itemId])
+        XCTAssertEqual(store.mergesInto.map(\.replacement), [live.id])
+        XCTAssertTrue(store.restoredTagIds.isEmpty)
+        XCTAssertTrue(store.mergesRestoring.isEmpty)
     }
 }

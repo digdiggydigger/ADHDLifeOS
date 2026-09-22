@@ -76,4 +76,50 @@ final class FirestoreFieldPayloadsSoftDeleteTests: XCTestCase {
 
         XCTAssertTrue(Set(task.keys).isDisjoint(with: Set(capture.keys)))
     }
+
+    // MARK: - Tags (F-C4-TagsRecentlyDeleted)
+
+    /// A tag's stamp is snake_cased, siding with `tasks` rather than `captures`. The collection had
+    /// no multi-word field before this block, so there was no convention to inherit and the choice
+    /// is made here and in `Tag.CodingKeys` — two independent spellings of one key, which is
+    /// exactly why both are asserted.
+    func testTagSoftDelete_stampsDeletedAtSnakeCasedAndTouchesNothingElse() {
+        let fields = FirestoreFieldPayloads.tagSoftDelete(now: referenceDate)
+
+        XCTAssertEqual(
+            fields.keys.sorted(), ["deleted_at"],
+            "a tag's soft delete writes the stamp and ONLY the stamp — and for tags that is the"
+                + " whole feature: every `tag_ids` array keeps this id, which is what makes E's"
+                + " \"back on every item\" true without a restore-time re-attachment"
+        )
+        XCTAssertEqual(FirestoreDocumentCoder.date(from: fields["deleted_at"]), referenceDate)
+        XCTAssertNil(fields["deletedAt"], "that spelling belongs to captures, not tags")
+    }
+
+    func testTagRestore_erasesTheStampRatherThanWritingNull() {
+        let fields = FirestoreFieldPayloads.tagRestore()
+
+        XCTAssertEqual(fields.keys.sorted(), ["deleted_at"])
+        XCTAssertTrue(
+            FirestoreDocumentCoder.isFieldDelete(fields["deleted_at"]),
+            "a restored tag must carry no stamp at all, the shape every tag in the account already"
+                + " has"
+        )
+        XCTAssertNil(fields["deletedAt"])
+    }
+
+    /// **The tag payloads must not touch `tag_ids`, and a key sweep is the only thing that says
+    /// so.** The whole block turns on the links surviving the delete; a payload that "helpfully"
+    /// cleared them would pass every behaviour test that only checks the tag is hidden, and would
+    /// silently destroy the restore.
+    func testNeitherTagPayloadEverNamesTagIds() {
+        for fields in [FirestoreFieldPayloads.tagSoftDelete(now: referenceDate),
+                       FirestoreFieldPayloads.tagRestore()] {
+            XCTAssertNil(
+                fields["tag_ids"],
+                "a tag's soft delete or restore names `tag_ids` — the links are stripped only by"
+                    + " the 30-day purge, never by hiding or by unhiding"
+            )
+        }
+    }
 }

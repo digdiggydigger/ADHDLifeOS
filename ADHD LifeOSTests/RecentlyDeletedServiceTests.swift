@@ -176,4 +176,85 @@ final class RecentlyDeletedServiceTests: XCTestCase {
         XCTAssertEqual(client.deletedForever.count, 2)
         XCTAssertEqual(client.fetchCallCount, 2)
     }
+
+    // MARK: - The survivor choice (F-C4-TagsRecentlyDeleted)
+
+    /// **A colliding Restore WRITES NOTHING and opens the alert instead.** E's Step 0 chose the
+    /// ask over a silent merge; the test that matters is the negative one, because a service that
+    /// restored *and* raised the alert would look right on screen and have already merged.
+    @MainActor
+    func testRestoringACollidingTagOpensTheChoiceRatherThanWriting() async {
+        let item = Self.collidingTag()
+        let client = FakeRecentlyDeletedClientAdapting()
+        client.fetchResult = .success([item])
+        let service = RecentlyDeletedService(client: client)
+        await service.load()
+
+        let landed = await service.restore(item)
+
+        XCTAssertFalse(landed, "a colliding restore reported success without having written")
+        XCTAssertEqual(service.pendingSurvivorChoice, item)
+        XCTAssertTrue(
+            client.restored.isEmpty,
+            "the restore ran anyway, so the alert asks about a merge that already happened"
+        )
+        XCTAssertTrue(client.resolvedRestores.isEmpty)
+    }
+
+    @MainActor
+    func testRestoringATagWithNoCollisionStillWritesStraightAway() async {
+        let item = RecentlyDeletedItem(itemId: UUID(), kind: .tag, title: "someday", deletedAt: Date())
+        let client = FakeRecentlyDeletedClientAdapting()
+        client.fetchResult = .success([item])
+        let service = RecentlyDeletedService(client: client)
+        await service.load()
+
+        let landed = await service.restore(item)
+
+        XCTAssertTrue(landed)
+        XCTAssertNil(service.pendingSurvivorChoice, "an alert was raised for a name that is free")
+        XCTAssertEqual(client.restored, [item])
+    }
+
+    @MainActor
+    func testChoosingASurvivorWritesOnceAndClosesTheAlert() async {
+        let item = Self.collidingTag()
+        let client = FakeRecentlyDeletedClientAdapting()
+        client.fetchResult = .success([item])
+        let service = RecentlyDeletedService(client: client)
+        await service.load()
+        _ = await service.restore(item)
+
+        let landed = await service.resolveSurvivor(item, keepingRestored: false)
+
+        XCTAssertTrue(landed)
+        XCTAssertNil(service.pendingSurvivorChoice)
+        XCTAssertEqual(client.resolvedRestores, [.init(item: item, keptRestored: false)])
+        XCTAssertEqual(service.items, [], "the row stayed after a landed merge")
+    }
+
+    /// Cancel writes nothing and leaves the row exactly where it was — the tag is still deleted,
+    /// still waiting, still restorable once the name is free again.
+    @MainActor
+    func testCancellingTheChoiceWritesNothingAndKeepsTheRow() async {
+        let item = Self.collidingTag()
+        let client = FakeRecentlyDeletedClientAdapting()
+        client.fetchResult = .success([item])
+        let service = RecentlyDeletedService(client: client)
+        await service.load()
+        _ = await service.restore(item)
+
+        service.cancelSurvivorChoice()
+
+        XCTAssertNil(service.pendingSurvivorChoice)
+        XCTAssertTrue(client.resolvedRestores.isEmpty)
+        XCTAssertEqual(service.items, [item])
+    }
+
+    private static func collidingTag() -> RecentlyDeletedItem {
+        RecentlyDeletedItem(
+            itemId: UUID(), kind: .tag, title: "errand", deletedAt: Date(),
+            collision: .init(liveId: UUID(), liveName: "Errand")
+        )
+    }
 }

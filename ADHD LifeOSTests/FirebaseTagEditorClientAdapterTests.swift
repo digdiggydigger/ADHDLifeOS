@@ -150,21 +150,47 @@ final class FirebaseTagEditorClientAdapterTests: XCTestCase {
 
     // MARK: - Delete
 
-    /// Delete is the same cascade with no replacement: references are removed rather than rewritten.
-    func testDeleteTag_cascadesWithNoReplacement() async throws {
+    /// **REVERSED by `F-C4-TagsRecentlyDeleted`, and the reversal is the block.** This test used
+    /// to assert that a delete cascaded with no replacement — stripping the tag from every
+    /// referencing task and capture and destroying the document, in one atomic batch, at the tap.
+    /// That is now the 30-DAY PURGE. A delete stamps the tag and touches nothing else, so the
+    /// assertion that matters most is the negative one: no cascade ran.
+    func testSoftDeleteTag_stampsTheTagAndCascadesNothing() async throws {
         let id = UUID()
 
-        try await adapter.deleteTag(id: id)
+        try await adapter.softDeleteTag(id: id)
 
-        XCTAssertEqual(store.cascades.count, 1)
-        XCTAssertEqual(store.cascades.first?.tagId, id)
-        XCTAssertNil(store.cascades.first?.replacement)
+        XCTAssertEqual(store.softDeleted, [id])
+        XCTAssertTrue(
+            store.cascades.isEmpty,
+            "the delete still stripped `tag_ids` from every referencing item. Those links are what"
+                + " make \"back on every item\" true at restore, and stripping them cannot be undone"
+                + " by putting the tag document back."
+        )
     }
 
-    func testDeleteTag_wrapsFailure() async {
-        store.cascadeError = FirebaseManagerError.notSignedIn
+    func testSoftDeleteTag_wrapsFailure() async {
+        store.softDeleteError = FirebaseManagerError.notSignedIn
 
-        await XCTAssertThrowsErrorAsync(try await adapter.deleteTag(id: UUID())) { error in
+        await XCTAssertThrowsErrorAsync(try await adapter.softDeleteTag(id: UUID())) { error in
+            XCTAssertEqual(error as? TagEditorServiceError, .failed(Self.notSignedInMessage))
+        }
+    }
+
+    /// The way back, reachable from the capsule's Undo and from the Recently Deleted screen.
+    func testRestoreTag_erasesTheStampAndCascadesNothing() async throws {
+        let id = UUID()
+
+        try await adapter.restoreTag(id: id)
+
+        XCTAssertEqual(store.restored, [id])
+        XCTAssertTrue(store.cascades.isEmpty, "a restore rewrote items; it must write one field")
+    }
+
+    func testRestoreTag_wrapsFailure() async {
+        store.restoreError = FirebaseManagerError.notSignedIn
+
+        await XCTAssertThrowsErrorAsync(try await adapter.restoreTag(id: UUID())) { error in
             XCTAssertEqual(error as? TagEditorServiceError, .failed(Self.notSignedInMessage))
         }
     }

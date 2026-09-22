@@ -167,6 +167,27 @@ enum FirestoreFieldPayloads {
         ["deletedAt": FieldValue.delete()]
     }
 
+    /// A tag's soft delete (`F-C4-TagsRecentlyDeleted`). **Snake_cased, siding with `tasks`** —
+    /// the collection had no multi-word field before this block, so there was no convention to
+    /// inherit and the choice is made here and in `Tag.CodingKeys`. Two independent spellings of
+    /// one key, which is why `FirestoreFieldPayloadsSoftDeleteTests` asserts both.
+    ///
+    /// **The stamp, and ONLY the stamp — and for a tag that restraint IS the feature.** Deleting a
+    /// tag must do LESS than it used to, not more: every `tag_ids` array on every task and capture
+    /// keeps this id while the stamp is set, because E's *"Back on every item"* is a property of
+    /// never having unlinked rather than of re-attaching at restore. A payload that also tidied
+    /// the links would pass every test that checks the tag is hidden, and would quietly make the
+    /// restore a lie. The links are stripped only by the 30-day purge.
+    static func tagSoftDelete(now: Date) -> [String: Any] {
+        ["deleted_at": Timestamp(date: now)]
+    }
+
+    /// The way back, and it is the whole restore: erasing this one field puts the tag back on
+    /// every item that still carries its id, with no write to any of those items.
+    static func tagRestore() -> [String: Any] {
+        ["deleted_at": FieldValue.delete()]
+    }
+
     /// A nudge's partial update. Any real change stamps `updated_at` — from the **server** clock,
     /// unlike `nudgeFired` below. An empty payload writes nothing at all, so a no-op edit does not
     /// bump the timestamp.

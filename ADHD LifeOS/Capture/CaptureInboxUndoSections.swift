@@ -114,7 +114,7 @@ struct CaptureInboxUndoHeaderButton: View {
         switch center.pendingAction?.kind {
         case .captureSorted, .captureSkipped, .captureJournalled, .captureDeleted:
             return true
-        case .taskClosed, .nudgeDismissed, .draftKeptInInbox, .taskDeleted, nil:
+        case .taskClosed, .nudgeDismissed, .draftKeptInInbox, .taskDeleted, .tagDeleted, nil:
             return false
         }
     }

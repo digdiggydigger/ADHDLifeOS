@@ -21,6 +21,24 @@ protocol RecentlyDeletedBackingStore {
     func restoreCapture(id: UUID) async throws
     func deleteTask(id: UUID) async throws
     func deleteCapture(id: UUID) async throws
+    func fetchDeletedTags() async throws -> [Tag]
+    func restoreTag(id: UUID) async throws
+    /// **A tag's "delete forever" is the only one here that is not a document delete.** It is the
+    /// batch today's tag delete used to run at the tap: strip this id from every referencing task
+    /// and capture, then destroy the tag. A NAMED wrapper rather than exposing
+    /// `removeTagEverywhere(_:replacingWith:)` on this seam — CLAUDE.md's rule — so a store that
+    /// can purge cannot also silently MERGE one tag into another.
+    func purgeTag(id: UUID) async throws
+    /// The live tags, read only so a deleted tag's row can know whether its name has been taken
+    /// again in the thirty days it has been waiting.
+    func fetchTags() async throws -> [Tag]
+    /// Merge on restore, keeping the tag being RESTORED: one batch that moves the live tag's items
+    /// across, destroys it, and erases the survivor's stamp.
+    func mergeTagsRestoring(survivor: UUID, absorbed: UUID) async throws
+    /// The other direction — the deleted tag is absorbed into the live one and destroyed. A NAMED
+    /// wrapper for `removeTagEverywhere(_:replacingWith:)`'s replacement form, so this seam still
+    /// cannot reach the `nil` form, which is the purge.
+    func mergeTagInto(_ tagId: UUID, replacement: UUID) async throws
 }
 
 extension FirebaseManager: RecentlyDeletedBackingStore {}

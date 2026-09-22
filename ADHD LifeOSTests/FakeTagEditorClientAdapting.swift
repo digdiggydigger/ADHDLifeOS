@@ -16,6 +16,7 @@ final class FakeTagEditorClientAdapting: TagEditorClientAdapting, @unchecked Sen
     var renameResult: Result<TagRenameOutcome, Error> = .success(.renamed)
     var mergeResult: Result<Void, Error> = .success(())
     var deleteResult: Result<Void, Error> = .success(())
+    var restoreResult: Result<Void, Error> = .success(())
     var createResult: Result<TagCreateOutcome, Error> = .success(
         .created(EditableTag(id: UUID(), name: "new", usageCount: 0))
     )
@@ -29,9 +30,11 @@ final class FakeTagEditorClientAdapting: TagEditorClientAdapting, @unchecked Sen
     private(set) var lastRenameId: UUID?
     private(set) var lastMergeName: String?
     private(set) var lastDeleteId: UUID?
+    private(set) var restoreCallCount = 0
+    private(set) var lastRestoreId: UUID?
     private(set) var lastCreateName: String?
 
-    /// Optional suspension point run at the start of `deleteTag`, so a test can hold a mutation
+    /// Optional suspension point run at the start of `softDeleteTag`, so a test can hold a mutation
     /// in flight and prove a second one is rejected (serialisation).
     var beforeDelete: (@Sendable () async -> Void)?
 
@@ -54,13 +57,20 @@ final class FakeTagEditorClientAdapting: TagEditorClientAdapting, @unchecked Sen
         try mergeResult.get()
     }
 
-    func deleteTag(id: UUID) async throws {
+    func softDeleteTag(id: UUID) async throws {
         deleteCallCount += 1
         lastDeleteId = id
         if let beforeDelete {
             await beforeDelete()
         }
         try deleteResult.get()
+    }
+
+    /// The capsule's Undo, and `F-C4-TagsRecentlyDeleted`'s restore from the 30-day list.
+    func restoreTag(id: UUID) async throws {
+        restoreCallCount += 1
+        lastRestoreId = id
+        try restoreResult.get()
     }
 
     func createTag(name: String) async throws -> TagCreateOutcome {

@@ -149,5 +149,6 @@ private struct PreviewToolsRecentlyDeletedClient: RecentlyDeletedClientAdapting 
 
     func fetchDeleted() async throws -> [RecentlyDeletedItem] { items }
     func restore(_ item: RecentlyDeletedItem) async throws {}
+    func restore(_ item: RecentlyDeletedItem, keepingRestored: Bool) async throws {}
     func deleteForever(_ item: RecentlyDeletedItem) async throws {}
 }

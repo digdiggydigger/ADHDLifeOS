@@ -28,4 +28,36 @@ extension UITestSession {
             ]
         )
     }
+
+    /// A task that already carries tags. Same spelling as `seedTask` plus `tag_ids`, which is
+    /// snake_cased on BOTH collections — one of the few field names tasks and captures agree on.
+    static func seedTask(id: UUID, title: String, uid: String, tagIds: [UUID]) throws {
+        try UITestEmulator.writeDocument(
+            path: "users/\(uid)/tasks/\(id.uuidString)",
+            fields: [
+                "id": UITestEmulator.string(id.uuidString),
+                "title": UITestEmulator.string(title),
+                "status": UITestEmulator.string("open"),
+                "priority": UITestEmulator.string("p3"),
+                "due_date": UITestEmulator.timestamp(Date()),
+                "created_at": UITestEmulator.timestamp(Date()),
+                "tag_ids": [
+                    "arrayValue": ["values": tagIds.map { UITestEmulator.string($0.uuidString) }]
+                ]
+            ]
+        )
+    }
+
+    /// A tag document. **`deleted_at` is snake_cased**, siding with tasks — `Tag.CodingKeys`, added
+    /// by `F-C4-TagsRecentlyDeleted`, is the only place that convention is written down.
+    static func seedTag(id: UUID, name: String, uid: String, deletedAt: Date? = nil) throws {
+        var fields: [String: Any] = [
+            "id": UITestEmulator.string(id.uuidString),
+            "name": UITestEmulator.string(name)
+        ]
+        if let deletedAt {
+            fields["deleted_at"] = UITestEmulator.timestamp(deletedAt)
+        }
+        try UITestEmulator.writeDocument(path: "users/\(uid)/tags/\(id.uuidString)", fields: fields)
+    }
 }
