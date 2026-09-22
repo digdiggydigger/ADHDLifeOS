@@ -130,6 +130,43 @@ enum FirestoreFieldPayloads {
         }
     }
 
+    // MARK: - Soft delete (F-C3-RecentlyDeleted)
+
+    /// A task's soft delete: the stamp, and nothing else.
+    ///
+    /// **This is a SECOND spelling of `TaskItem.deletedAt`'s key, and it can drift from the
+    /// first.** `SoftDeleteCodecTests` asserts the model's `CodingKeys`; nothing there reaches a
+    /// hand-written partial update. A `deletedAt` typed here against a `deleted_at` model would
+    /// write a field nothing reads — the delete would report success and the task would stay in
+    /// every list — so `FirestoreFieldPayloadsTests` asserts the wrong spelling is ABSENT as well
+    /// as the right one being present.
+    ///
+    /// The stamp is the **client's** clock, the `taskStatus` precedent: the user's own "I deleted
+    /// this 29 days ago" is the number the Recently Deleted screen counts down, and a server UTC
+    /// instant would disagree with the countdown the app had already drawn.
+    static func taskSoftDelete(now: Date) -> [String: Any] {
+        ["deleted_at": Timestamp(date: now)]
+    }
+
+    /// The way back. **Erases the field rather than writing null**, the `captureUnprocessed()`
+    /// rule: every task written before this block has no key at all, so absence is what "live"
+    /// already looks like, and an explicit null would leave the collection in two shapes for
+    /// `SoftDelete.isLive` to read.
+    static func taskRestore() -> [String: Any] {
+        ["deleted_at": FieldValue.delete()]
+    }
+
+    /// The capture half. **`deletedAt`, camelCase** — captures keep mixed-case keys apart from
+    /// `created_at`, so the same concept is spelled differently on the two collections and
+    /// copying either spelling onto the other is undetectable at runtime.
+    static func captureSoftDelete(now: Date) -> [String: Any] {
+        ["deletedAt": Timestamp(date: now)]
+    }
+
+    static func captureRestore() -> [String: Any] {
+        ["deletedAt": FieldValue.delete()]
+    }
+
     /// A nudge's partial update. Any real change stamps `updated_at` — from the **server** clock,
     /// unlike `nudgeFired` below. An empty payload writes nothing at all, so a no-op edit does not
     /// bump the timestamp.
