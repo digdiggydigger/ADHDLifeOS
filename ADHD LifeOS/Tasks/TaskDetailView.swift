@@ -52,7 +52,6 @@ struct TaskDetailView: View {
     // Leaving the screen commits instead of asking — see `autosaveOnLeaving()`.
     @State var showSavedConfirmation = false
     @State var saveHapticTrigger = false
-    @State var showDeleteConfirmation = false
 
     init(
         taskId: UUID,
@@ -119,24 +118,6 @@ struct TaskDetailView: View {
         // screen: the swipe gesture and a tab switch both leave without touching any control.
         // One hook on the screen's own disappearance catches every one of them.
         .onDisappear { autosaveOnLeaving() }
-        .confirmationDialog(
-            "Delete this task?",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete Task", role: .destructive) {
-                Haptics.play(.solid)
-                Task { await performDelete() }
-            }
-            .accessibilityIdentifier("taskDetailConfirmDeleteButton")
-        } message: {
-            // **This said "This can't be undone." until `F-C3-RecentlyDeleted`, and soft delete
-            // made that FALSE.** It is the one line a person reads to decide, so leaving it would
-            // have been worse than never having written it: it would talk someone out of deleting
-            // a task the app would have kept for them for a month. The true sentence moved to
-            // "Delete forever", where it is Q10's sanctioned friction.
-            Text(RecentlyDeletedPresentation.softDeleteReassurance)
-        }
         .task {
             await service.load()
         }

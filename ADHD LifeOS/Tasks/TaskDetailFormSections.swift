@@ -194,14 +194,24 @@ extension TaskDetailView {
         )
     }
 
-    /// Delete lives here since F-V3-Tasks-rebuild (the list's swipe-left is gone). Destructive
-    /// styling plus a confirmation dialog — deletion is the one action on this screen with no
-    /// undo, so it never fires on a single tap.
+    /// Delete lives here since F-V3-Tasks-rebuild (the list's swipe-left is gone).
+    ///
+    /// **It fires on a single tap now** (E's call, 2026-09-22, after the `apple-design` review).
+    /// The comment that stood here said *"deletion is the one action on this screen with no undo,
+    /// so it never fires on a single tap"* — and `F-C3-RecentlyDeleted` made the premise false.
+    /// `alerts.md › Best practices`: *"Avoid displaying alerts for common, undoable actions, even
+    /// when they're destructive… when people take an uncommon destructive action that they can't
+    /// undo, it's important to display an alert."* Delete is now 30 days plus a capsule, so the
+    /// dialog was the thing to avoid. "Delete forever" keeps its confirm, which is the same rule
+    /// read the other way.
+    ///
+    /// The destructive styling stays — the action IS destructive, it is simply recoverable — and
+    /// so does the warning haptic, which is now the whole of the "are you sure" beat.
     var deleteSection: some View {
         Section {
             Button("Delete Task", role: .destructive) {
                 Haptics.play(.warning)
-                showDeleteConfirmation = true
+                Task { await performDelete() }
             }
             .accessibilityIdentifier("taskDetailDeleteButton")
         }

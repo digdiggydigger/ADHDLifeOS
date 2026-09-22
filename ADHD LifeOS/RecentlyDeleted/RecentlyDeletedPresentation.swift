@@ -61,19 +61,18 @@ enum RecentlyDeletedPresentation {
             + " it. Nothing is waiting right now."
     }
 
-    /// **The sentence that task detail's confirm used to get wrong.** It read *"This can't be
-    /// undone."* under a Delete button that, since this block, can be. It lives here so it moves
-    /// with the constant, and so the one test that checks every window-naming sentence sees it.
-    static var softDeleteReassurance: String {
-        "You can restore it from Recently Deleted for \(retentionDays) days."
-    }
-
-    /// Capture detail's discard confirmation. The first sentence says what discarding MEANS for
-    /// a capture — the decision being taken, unaffected by this block — and the second used to be
-    /// *"This can't be undone."*, which soft delete made false.
-    static var captureDiscardMessage: String {
-        "It won't become a task or a journal entry. \(softDeleteReassurance)"
-    }
+    // **Two strings lived here and are GONE, which is worth a note rather than a silence.**
+    // `softDeleteReassurance` ("You can restore it from Recently Deleted for 30 days.") and
+    // `captureDiscardMessage` were written to replace the false *"This can't be undone."* in the
+    // two delete confirmations. E then dropped both confirmations outright (2026-09-22, after the
+    // `apple-design` review), which left the replacements with no call site — the dead-shared-
+    // component pattern this repo has shipped seven times, caught here by a grep rather than by a
+    // test, because a string nothing reads breaks nothing.
+    //
+    // **The 30-day rule is still taught**, by `sectionCaption` on the Tools row and by
+    // `emptyBody` on the screen. What is lost is teaching it at the MOMENT of the delete, and
+    // that is the cost E accepted: the capsule's "Deleted · Undo" is the feedback now, and the
+    // Tools row is where the window is explained.
 
     /// Q10's sanctioned friction: *"friction is allowed executing permanent deletions"*. This is
     /// the one place in the app where "This can't be undone" is TRUE.

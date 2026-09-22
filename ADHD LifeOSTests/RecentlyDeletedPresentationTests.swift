@@ -173,14 +173,15 @@ final class RecentlyDeletedPresentationTests: XCTestCase {
 
     // MARK: - The words
 
-    /// Every sentence that names the window interpolates it. Three of them do, and a fourth lives
-    /// on the task detail confirm — all four go wrong together or not at all.
+    /// Every sentence that names the window interpolates it, so they go wrong together or not at
+    /// all. There were three until E dropped the two delete confirmations; the sentence that used
+    /// to teach the window at the moment of the delete went with them, and these two are now the
+    /// only places it is said.
     func testEverySentenceThatNamesTheWindowInterpolatesIt() {
         let window = "\(RecentlyDeletedPresentation.retentionDays)"
         for copy in [
             RecentlyDeletedPresentation.sectionCaption,
-            RecentlyDeletedPresentation.emptyBody,
-            RecentlyDeletedPresentation.softDeleteReassurance
+            RecentlyDeletedPresentation.emptyBody
         ] {
             XCTAssertTrue(copy.contains(window), "\"\(copy)\" does not name the real window.")
         }
@@ -188,23 +189,21 @@ final class RecentlyDeletedPresentationTests: XCTestCase {
 
     /// **The sentence that MOVES (§2.7).** "This can't be undone" was under task detail's Delete
     /// button, where soft delete made it false. It belongs here, where it is true — and Q10's
-    /// sanctioned friction is exactly this.
+    /// sanctioned friction is exactly this. The other half of the fix is
+    /// `testNeitherUndoableDeleteAsksForConfirmationAnyMore`: the false sentence's own dialog is
+    /// gone, so no soft delete claims to be permanent anywhere.
     func testThisCantBeUndoneNowBelongsToDeleteForeverWhereItIsTrue() {
         XCTAssertEqual(RecentlyDeletedPresentation.DeleteForever.message, "This can't be undone.")
-        XCTAssertFalse(
-            RecentlyDeletedPresentation.softDeleteReassurance.contains("can't be undone"),
-            "The soft delete still claims to be permanent, which is the false line this block"
-                + " exists partly to fix."
-        )
-    }
-
-    /// Capture detail's confirm keeps the sentence that says what discarding MEANS and replaces
-    /// the one soft delete made false.
-    func testTheCaptureDiscardMessageKeepsItsMeaningAndDropsItsFalseHalf() {
-        let message = RecentlyDeletedPresentation.captureDiscardMessage
-        XCTAssertTrue(message.hasPrefix("It won't become a task or a journal entry."))
-        XCTAssertTrue(message.contains(RecentlyDeletedPresentation.softDeleteReassurance))
-        XCTAssertFalse(message.contains("can't be undone"))
+        for copy in [
+            RecentlyDeletedPresentation.sectionCaption,
+            RecentlyDeletedPresentation.emptyBody,
+            RecentlyDeletedPresentation.toolsRowLoadingSubtitle
+        ] {
+            XCTAssertFalse(
+                copy.contains("can't be undone"),
+                "\"\(copy)\" claims a soft delete is permanent."
+            )
+        }
     }
 
     func testTheDeleteForeverConfirmNamesWhichKindOfThingItIsAbout() {

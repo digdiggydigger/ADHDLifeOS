@@ -27,7 +27,6 @@ struct CaptureDetailView: View {
     /// The Filed-in card's picker value, owned here because the promote sheet inherits it.
     @State private var selectedLifeAreaId: UUID?
     @State private var isPresentingPromoteSheet = false
-    @State private var isConfirmingDiscard = false
     @State private var isPresentingPhoto = false
     @State private var isSorting = false
     @Environment(\.dismiss) private var dismiss
@@ -103,22 +102,6 @@ struct CaptureDetailView: View {
                 url: capture.photoDisplayURL,
                 title: CaptureRowPresentation.primaryText(for: capture)
             )
-        }
-        .confirmationDialog(
-            "Discard this capture?",
-            isPresented: $isConfirmingDiscard,
-            titleVisibility: .visible
-        ) {
-            Button("Discard", role: .destructive) {
-                Task {
-                    if await service.discard(capture: capture) { dismiss() }
-                }
-            }
-            Button("Keep it", role: .cancel) {}
-        } message: {
-            // Same correction as task detail's: the second sentence was *"This can't be undone."*
-            // and soft delete made it false.
-            Text(RecentlyDeletedPresentation.captureDiscardMessage)
         }
         .accessibilityIdentifier("captureDetailView")
     }
@@ -245,10 +228,22 @@ struct CaptureDetailView: View {
                 }
             }
             Divider()
+            // **"Delete", not "Discard" (E's call, 2026-09-22), and it fires straight away.**
+            // One action had three names — this menu said "Discard", the capsule reports
+            // "Deleted", and the destination is "Recently Deleted" — so a person had to translate
+            // to go looking for what they had just done. `writing.md › Best practices`: *"Build
+            // language patterns. Consistency builds familiarity."* "Recently Deleted" is the
+            // anchor, because Photos, Notes and Files all use that exact name.
+            //
+            // The confirmation this used to raise is gone for the reason task detail's is: the
+            // delete is undoable, and `alerts.md` says not to confirm those.
             Button(role: .destructive) {
-                isConfirmingDiscard = true
+                Haptics.play(.warning)
+                Task {
+                    if await service.discard(capture: capture) { dismiss() }
+                }
             } label: {
-                Label("Discard", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
         } label: {
             Image(systemName: "ellipsis.circle")
