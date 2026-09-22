@@ -100,9 +100,9 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED**, + the height round, + E's SHAPE ROUND | `ea9cbed` (PR #172), shape round PR #178 | **the RM-off device look on the new shape** — nothing else |
-| `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | **MERGED** | PR #180 | **a device look** (RM-off) + `screenshots/drafts-to-inbox/` |
-| `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | NOT STARTED | — | — |
+| `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED**, + the height round, + E's SHAPE ROUND, + **E's DEVICE LOOK: PASSES** | `ea9cbed` (PR #172), shape round PR #178, device evidence `2db6443` | **nothing.** (The radius CAP has no device evidence — E's larger-text look was the top of the STANDARD range — but no block owes it; the AX3 render covers it.) |
+| `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | **MERGED**, + **E's DEVICE LOOK: PASSES** | PR #180, screenshots PR #183, device evidence `015c41b` | **nothing.** |
+| `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | **IN PROGRESS** — read side landed and INERT | PR #184 | — |
 | `F-C4-TagsRecentlyDeleted` | tags in Recently Deleted; hidden links, restore-to-everywhere, merge | NOT STARTED | — | — |
 
 ### Arc D · The composer
@@ -342,6 +342,66 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
      test's failure message had predicted a year of sessions earlier.
 - **Next session starts at:** `F-C3-RecentlyDeleted`, from
   `handoff/START-HERE-adhd-audit-arc-C3-deleted.md`.
+
+### Session 5 — 2026-09-22, arc C, `F-C2`'s debt + BOTH device looks + `F-C3` started
+
+- **Landed:** `screenshots/drafts-to-inbox/` at **PR #183** (`51910cd`) — `F-C2`'s one unmet
+  acceptance criterion, 33 frames (light / dark / AX3) and a README, plus the harness
+  `DraftsToInboxRenderUITests`. SwiftLint **0 / 854**. Then E's device evidence for both blocks
+  (`2db6443`, `015c41b`) on `feature/adhd-c3-deleted`.
+- **Where the build departed from the spec, and why:** nowhere — this was evidence, not app code.
+  **No app Swift changed**, so the frames are of the shipped build (`git diff 4917955 bc2827e`
+  touches `handoff/` only).
+- **What E saw, and said:** **BOTH looks PASS.** `F-C1`'s shape on E's phone: fully rounded, no
+  chip, one line, the subject reading in full. `F-C2`: the capsule reads "Kept in your inbox · ↗
+  Reopen", the badge ticks 24 → 25, the draft appears in the Journal feed as `captured`, and
+  Reopen lands on that capture. On the swipe-back, E: *"Also passes"*. Eleven frames filed in
+  `screenshots/undo-capsule-device/` and `screenshots/drafts-to-inbox-device/`.
+- **Owed to E: nothing.** One thing is unverified ON DEVICE and no block owes it: the radius CAP.
+  E's larger-text look was the top of the STANDARD range with "Larger Accessibility Sizes" OFF
+  (E supplied the settings page as `02-` so nobody could over-claim it), and the cap only differs
+  from a plain capsule once the layout STACKS, which needs an accessibility size. The AX3 render
+  covers it.
+- **Owed to the code:** nothing outstanding. One register candidate added, and **one finding of
+  mine RETRACTED by E's frames** — see below.
+- **Five things learned, four of them by rendering:**
+  1. **The Journal has no compose control while a capsule is pending** — it stands in for the
+     pencil. `F-C2` made this common (any composer closed on text now makes a capsule) where
+     before only a close or a triage did. The harness drives the journal FIRST.
+  2. **Reopen lands on a PUSHED screen, not a sheet** — 45s of a harness waiting for a sheet that
+     never existed, and it would have corrupted the inbox frame.
+  3. **The AX3 set needs TWO runs**: the swipe-back test signs out of the account the composer
+     test leaves, and at accessibility sizes the taller Settings rows push `signOutButton` past
+     the harness's eight swipes. A fresh erase fixes the FIRST test in a run, not the second.
+  4. **`focusAndType`'s focusing tap lands BETWEEN words at accessibility sizes**, so an equality
+     assertion reported a WORKING autosave as broken. Assertions on typed text must be CONTAINS.
+  5. **A finding I recorded was wrong, and E's own frames retracted it.** I reported the selected
+     Captures tab truncating to "Captu…" *because the badge takes width from the pill*. The badge
+     is an `.overlay` and consumes no width at all; the clamp is `maximumRestingPillWidth = 120`,
+     whose own comment predicts the spot. **And E's phone renders "Captures" in full.** It stands
+     as a simulator-only observation. The lesson: a plausible mechanism is not a measured one, and
+     the device is the arbiter.
+- **`F-C3` was STARTED and its read side landed — three RED→GREEN→commit cycles, each with the
+  RED observed before any implementation.** `SoftDelete` (8 tests); the stamp on four models
+  (5 codec tests, asserting the WRONG spelling is ABSENT); and `live(_:)`/`requireLive(_:)` over
+  all NINE read paths (5 call-site tests, RED at **11 failures**). **Deliberately INERT**: nothing
+  writes `deleted_at` yet, so the filter returns everything and the guard never throws — behaviour
+  is unchanged, which is the only boundary in this block where that is true, and the reason it
+  could be merged on its own.
+  - Suite **3,192 / 0**, SwiftLint **0 / 859**, build green, coverage **29.89% (14,713/49,217)**
+    — comparable to the 29.83% (14,612/48,985) of 2026-09-20, because the denominator moved only
+    by the tree GROWING and both runs measured 100% of the app target.
+  - **Three departures, all recorded in the TODO block**: `isLive` takes no `asOf`; the hard delete
+    KEEPS its name (`softDeleteTask` is the new one); and the spec's optional rules hardening is
+    **declined** — it would check the CLIENT's clock, so a phone running a minute fast could not
+    delete anything, and what it prevents is a user pre-dating their own purge window.
+  - **A test of mine failed in the full run and it was the good kind.** It asserted
+    `SoftDeleteError.itemIsDeleted` appeared in the FETCH files — that is, it asserted the throw
+    had NOT been centralised, while the design centralises it. Corrected to assert the read goes
+    THROUGH `requireLive`, with the helper's own test pinning the throw.
+- **Next session starts at:** `F-C3-RecentlyDeleted`, CONTINUED, from
+  `handoff/START-HERE-adhd-audit-arc-C3-continued.md` — which carries all seven remaining steps
+  with every decision already taken.
 
 ### Session 0 — 2026-09-19 · the audit (3 sessions), no build
 

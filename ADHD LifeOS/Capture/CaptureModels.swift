@@ -59,9 +59,19 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
     var placeId: UUID?
     var latitude: Double?
     var longitude: Double?
+    /// When this item was soft-deleted (`F-C3-RecentlyDeleted`). **`nil` means LIVE**, and that is
+    /// load-bearing: every document written before this block has no such key at all, so absence
+    /// has to be the ordinary state rather than a special case. Cleared on restore with
+    /// `FieldValue.delete()` — an explicit null would leave the collection in two shapes.
+    /// Read through `SoftDelete.isLive(deletedAt:)`, never compared inline.
+    /// **Declared LAST on purpose.** This struct has no hand-written init, so the synthesised
+    /// memberwise one takes its parameters in declaration order — inserting a property mid-list
+    /// would break every call site that passes a later argument (`F-C2`'s lesson, three compile
+    /// rounds).
+    var deletedAt: Date?
 
     enum CodingKeys: String, CodingKey {
-        case id, content, kind, processed, title, lifeAreaId
+        case id, content, kind, processed, title, lifeAreaId, deletedAt
         case mediaURL, mediaContentType, thumbnailURL, linkPreview, aiAssessment, seen, notes, clearedAt
         case placeId, latitude, longitude
         case createdAt = "created_at"
@@ -75,3 +85,7 @@ struct Capture: Codable, Identifiable, Equatable, Sendable {
         thumbnailURL ?? mediaURL
     }
 }
+
+/// `F-C3-RecentlyDeleted`: this model's documents carry the soft-delete stamp, so
+/// `FirebaseManager.live(_:)` can drop the deleted ones from every list that fetches it.
+extension Capture: SoftDeletable {}

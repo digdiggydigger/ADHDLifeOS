@@ -71,6 +71,10 @@ struct TaskSummary: Codable, Equatable, Sendable {
     let dueDate: Date?
     let focusDurationSeconds: Int?
     let nudgesCount: Int?
+    /// When this item was soft-deleted (`F-C3-RecentlyDeleted`). **`nil` means LIVE** — every
+    /// document written before this block has no such key, so absence is the ordinary state.
+    /// Read through `SoftDelete.isLive(deletedAt:)`, never compared inline.
+    var deletedAt: Date?
 
     init(
         id: UUID = UUID(),
@@ -81,7 +85,8 @@ struct TaskSummary: Codable, Equatable, Sendable {
         notes: String? = nil,
         dueDate: Date? = nil,
         focusDurationSeconds: Int? = nil,
-        nudgesCount: Int? = nil
+        nudgesCount: Int? = nil,
+        deletedAt: Date? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -92,11 +97,13 @@ struct TaskSummary: Codable, Equatable, Sendable {
         self.dueDate = dueDate
         self.focusDurationSeconds = focusDurationSeconds
         self.nudgesCount = nudgesCount
+        self.deletedAt = deletedAt
     }
 
     enum CodingKeys: String, CodingKey {
         case id, status, title, priority, notes
         case lifeAreaId = "life_area_id"
+        case deletedAt = "deleted_at"
         case dueDate = "due_date"
         case focusDurationSeconds = "focus_duration_seconds"
         case nudgesCount = "nudges_count"
@@ -109,3 +116,7 @@ struct LifeAreaTaskCount: Identifiable, Equatable, Sendable {
 
     var id: UUID { lifeArea.id }
 }
+
+/// `F-C3-RecentlyDeleted`: this model's documents carry the soft-delete stamp, so
+/// `FirebaseManager.live(_:)` can drop the deleted ones from every list that fetches it.
+extension TaskSummary: SoftDeletable {}

@@ -10,20 +10,20 @@ import Foundation
 /// `created_at` — which is deliberate and load-bearing; see `FirestoreFieldPayloads`.
 extension FirebaseManager {
     func fetchCaptures() async throws -> [Capture] {
-        try await fetchAll(Capture.self, from: .captures, orderedBy: "created_at", descending: true)
+        live(try await fetchAll(Capture.self, from: .captures, orderedBy: "created_at", descending: true))
     }
 
     func fetchCapture(id: UUID) async throws -> Capture {
-        try await collection(.captures).document(id.uuidString).getDocument(as: Capture.self)
+        try requireLive(try await collection(.captures).document(id.uuidString).getDocument(as: Capture.self))
     }
 
     /// The inbox query. Unsorted (see `fetchWhere`) — the adapter orders newest-first client-side.
     func fetchUnprocessedCaptures() async throws -> [Capture] {
-        try await fetchWhere(Capture.self, from: .captures, field: "processed", equals: false)
+        live(try await fetchWhere(Capture.self, from: .captures, field: "processed", equals: false))
     }
 
     func fetchProcessedCaptures() async throws -> [Capture] {
-        try await fetchWhere(Capture.self, from: .captures, field: "processed", equals: true)
+        live(try await fetchWhere(Capture.self, from: .captures, field: "processed", equals: true))
     }
 
     /// The Captures tab's archive query. Equality on `seen == true` also excludes every document
@@ -31,7 +31,7 @@ extension FirebaseManager {
     /// unrefined for the same single-field reason as the queries above; the adapter drops
     /// already-promoted captures and orders newest-first client-side.
     func fetchSeenCaptures() async throws -> [Capture] {
-        try await fetchWhere(Capture.self, from: .captures, field: "seen", equals: true)
+        live(try await fetchWhere(Capture.self, from: .captures, field: "seen", equals: true))
     }
 
     /// Triage's partial update — never a whole-document overwrite, so the `tag_ids` membership

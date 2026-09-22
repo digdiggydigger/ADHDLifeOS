@@ -48,18 +48,28 @@ Three things, and none of them is assertable.
 
 ## One thing to look at that is not a defect and not settled
 
-**The selected Captures tab truncates its own label to "Captu…" when it carries a badge**
-(`07-`, `08-`). The label already has `.lineLimit(1)` and `.minimumScaleFactor(0.8)`
-(`Theme/AppTabBar.swift:217-218`), so it is shrinking to 80% *and still* running out of room —
-the badge is an overlay that takes width from the same pill. The condition is narrow: selected
-**and** badged, which only "Captures" is long enough to hit.
+**The selected Captures tab reads "Captu…" in `07-` and `08-`** — the resting pill's label
+truncating rather than scaling.
 
-It is recorded here rather than re-tuned, for two reasons. Every constant in the custom
-`AppTabBar` is E-approved and CLAUDE.md §7.5 is explicit that a review may name the tension and
-never re-tune it. And `F-C2` is the reason it is worth raising now: filed drafts raise the badge
-count, so the state is reachable far more often than it was. **A candidate for the register, not
-a fix in this folder.** At AX3 every tab label shortens the same way ("Jo…" for Journal), which is
-the same mechanism with the type scale rather than the badge doing the squeezing.
+**The first version of this note blamed the badge, and that was wrong. Corrected 2026-09-22 from
+E's own device frames.** The badge is an `.overlay` and consumes no layout width at all; what
+clamps the pill is `AppTabBarMetrics.maximumRestingPillWidth = 120`, whose own comment predicts
+this exact spot: *"'Captures' — the longest label — needs ~115pt at the default size … so the cap
+bites only towards the top of the range, where the label's `minimumScaleFactor` (0.8, so down to
+~110) absorbs it (§1: never clip, never truncate)."*
+
+**And E's phone does not reproduce it.** On E's iPhone 15 Pro the resting pill renders "Captures"
+in full with a two-digit badge (`IMG_8703`), and the label is absent entirely while the bar is
+floating — which is Design C working as specified: `AppTabBarPresentation.showsLabel` is
+`isSelected && !isFloating`. So the observation is **simulator-only in the evidence available**,
+at default text size on an iPhone 17 Pro, and it is a deviation from the cap's documented "never
+truncate" intent rather than a behaviour anyone has seen on a real phone.
+
+Recorded, not re-tuned: every constant in the custom `AppTabBar` is E-approved and CLAUDE.md §7.5
+is explicit that a review may name the tension and never re-tune it. **A register candidate worth
+one measurement** — what "Captures" actually measures at default size against the 120pt cap — not
+a fix in this folder. At AX3 every tab label shortens the same way ("Jo…" for Journal), which is
+the cap biting at the top of the range exactly as the comment says it should.
 
 **Also visible in the AX3 set and NOT this block's:** the Journal timeline's own rows truncate
 hard at accessibility sizes — `04-…-AX3` shows "captured" hyphenated across two lines as
