@@ -405,8 +405,9 @@ update rather than improvising a list in chat.
   files (was "fourteen", flagged by edition 75 and not acted on), **seventeen**
   `FirebaseManager+<Domain>` files (was "sixteen" — `+SoftDelete` joined with `F-C3`).
 
-**Owed to E: ONE thing, and it is a design decision rather than a look — see §A.** No device look
-and no RM-on pass are owed: the block adds no `#available` site and no reduced site.
+**Owed to E: NOTHING.** §A-CAPSULE was answered the same day (Option C, DEFERRED with a condition — it is now WORK, not a question). No device look and no RM-on pass were owed: the block adds no `#available` site and no reduced site.
+
+**DEVICE PASS, 2026-09-22 — E: *"All those checks work nicely"*.** The phone was brought from `4917955` (`F-C1` + `F-C2` only) to `main @ 82d669b`, so this is the **first time either `F-C3` or `F-C4` has been on the device at all**. Recently Deleted, the confirmation-free task/capture deletes with the capsule, the tag delete and the survivor alert all confirmed working. Install clean in one wireless pass; profile expires **2026-09-24**, so the next install after Wednesday evening re-issues it.
 
 **Owed to the code: nothing for this block.** All acceptance criteria are met, including
 `screenshots/recently-deleted-tags/` (16 frames + README) and the `apple-design` review.

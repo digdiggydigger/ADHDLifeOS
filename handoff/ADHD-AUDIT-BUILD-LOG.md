@@ -480,8 +480,13 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   wins and the ask is built. Not raised to E — it was already answered.
 - **What E saw, and said:** E was asked one question — whether the Tag Editor's delete confirm
   should go the way the task and capture ones did — and answered **"drop the alert, add an Undo
-  capsule"**. No device look was owed or asked for.
-- **Owed to E:** **ONE decision, register §A-CAPSULE.** The capsule E chose is MOUNTED but
+  capsule"**. **Then, after close-out, E asked for a device install and gave a verdict: *"All
+  those checks work nicely"*.** No device look was OWED (no `#available` site, no reduced
+  site); the phone had been on `4917955`, so this was the first time either `F-C3` or `F-C4`
+  had been on it.
+- **Owed to E:** nothing — §A-CAPSULE was ANSWERED the same day (**Option C, DEFERRED with a
+  condition: circle back and add a user IN-APP NOTIFICATION**), so it is WORK now rather than a
+  question. The finding itself: The capsule E chose is MOUNTED but
   INVISIBLE in the Tag Editor: Settings is a `.sheet` and `RootBottomOverlay` sits beneath it. Every
   gate was green while this was true — `untilExists: capsule` passes because XCUITest finds
   OCCLUDED elements, and the environment that records is inherited by sheets while the drawing is
