@@ -108,6 +108,22 @@ final class TaskCreateServiceTests: XCTestCase {
         XCTAssertNil(sut.createdTask)
     }
 
+    /// The `?? error.localizedDescription` half of the message mapping — an SDK error that is not a
+    /// `LocalizedError` still says something rather than nothing. A partial REGION the coverage
+    /// sweep found (CLAUDE.md: "the last unit in a file is often a partial region, not a line").
+    func testCreateTask_nonLocalizedFailure_fallsBackToTheErrorsOwnDescription() async {
+        let error = NSError(domain: "FIRFirestoreErrorDomain", code: 14, userInfo: [
+            NSLocalizedDescriptionKey: "The service is currently unavailable."
+        ])
+        client.createTaskResult = .failure(error)
+        let sut = makeService()
+        sut.title = "Task"
+
+        _ = await sut.createTask()
+
+        XCTAssertEqual(sut.errorMessage, "The service is currently unavailable.")
+    }
+
     func testIsTitleValid_reflectsCurrentTitle() {
         let sut = makeService()
 
