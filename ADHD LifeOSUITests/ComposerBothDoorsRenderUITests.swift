@@ -88,8 +88,9 @@ final class ComposerBothDoorsRenderUITests: XCTestCase {
         // difference exists — the picture looked right.
         for (control, name) in [(area, "Area"), (time, "Time")] {
             XCTAssertTrue(control.waitForExistence(timeout: UITestSession.timeout), "No \(name) control")
+            // Half a point of slack: the layout lands on 47.99999999999994, which IS 48 on screen.
             XCTAssertGreaterThanOrEqual(
-                control.frame.height, 48,
+                control.frame.height, 47.5,
                 "The \(name) menu's tap target is \(control.frame.height)pt tall"
                     + " — round 7 keeps the composer's own controls at 48"
             )
