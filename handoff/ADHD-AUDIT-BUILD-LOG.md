@@ -530,6 +530,9 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   for the colour arc (R9). The value text on the menu card in light is **3.22:1**. The rest is in
   the block report.
 - **Owed to E:** nothing. **Owed to the code:** nothing for this block.
-- **Next session starts at:** `F-D2-ComposerKeyboardLayout`, from
-  `handoff/START-HERE-adhd-audit-arc-D2-keyboard.md`.
+- **After close-out, E decided the floor (2026-09-23): *"iOS 18, before F-D2"*.** A new block,
+  `F-Floor18`, sits in front of `F-D2`. It is not an audit block, but it re-orders the audit:
+  `F-D2`'s Step 0 question 2 is void at an 18 floor.
+- **Next session starts at:** `F-Floor18`, THEN `F-D2-ComposerKeyboardLayout`, from
+  `handoff/START-HERE-floor18-then-D2.md`.
 

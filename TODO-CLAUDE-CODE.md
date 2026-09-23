@@ -6287,7 +6287,204 @@ it in the Anytime row).
 
 ---
 
+### FEATURE: F-Floor18 — raise the minimum iOS from 16 to 18, everywhere  [ ] NOT STARTED
+
+**What E chose (2026-09-23, in chat, after `F-D1` merged):** *"iOS 18, before F-D2 — write the spec
+block. I need you to also Analyse and look everywhere else that the minimum floor of iOS 16 is within
+this repo and correct it - To ENSURE that iOS 16 floor has been ACCURATELY BEEN CORRECTED TO A
+MINIMUM Apple iPhone Operating System VERSION OF iOS 18."*
+
+Chosen over iOS 17 because it excludes the SAME hardware (iPhone XS/XR and newer run both; iPhone
+8, 8 Plus and X stop at 16 and are lost at ANY floor ≥ 17) and unlocks more. The app is not public,
+so no current user is stranded; the cost is future reach alone. **Ordered BEFORE `F-D2`** so that
+block never builds the iOS 16.0–16.3 date-popover path its Step 0 question 2 exists to decide.
+
+**This is a global sweep, like arcs A and B: never run it beside another block.** Every inventory
+below was MEASURED on 2026-09-23 against `main @ d85b18a`, not estimated. Re-run the greps before
+starting and reconcile any difference; the tree may have moved.
+
+#### What the compiler proved (2026-09-23, a throwaway worktree built at BOTH floors)
+
+- **An 18.0 floor builds GREEN** (`** TEST BUILD SUCCEEDED **`, all four targets).
+- **It adds exactly 35 warnings, all one kind:** `'onChange(of:perform:)' was deprecated in iOS
+  17.0`, in 23 app-target files (none in the widget or the tests). Seven are in `Home/HomeView.swift`,
+  four in `RootView.swift` and three in `TabNavigation.swift`; the rest are one or two each.
+- **It removes 5 warnings:** the test targets' `ld: building for iOS-simulator-16.0, but linking
+  with dylib … XCTest … which was built for newer version 17.0`.
+- **The ~1,790 Swift-concurrency warnings are PRE-EXISTING** and identical at both floors. They are
+  NOT this block's and must not be "fixed" in it.
+- **THE TRAP: Swift does NOT warn about a redundant `#available` check against the deployment
+  target.** It only flags a check made redundant by an enclosing `@available`. So the compiler
+  cannot find a missed gate. The inventory below is the only list, and a tree-walking test (below)
+  is the only thing that keeps it complete afterwards.
+
+#### 1. The build settings — six values, all in `ADHD LifeOS.xcodeproj/project.pbxproj`
+
+| where | today | after |
+|---|---|---|
+| Project level, Debug + Release (the APP and the UI tests inherit it; neither sets its own) | 16.0 | **18.0** |
+| `ADHD LifeOSTests`, Debug + Release | 16.0 | **18.0** |
+| `FocusTimerWidgetExtension`, Debug + Release | 16.1 | **18.0** |
+
+**One number from now on.** "The deployment target is not one number" (CLAUDE.md, Architecture
+notes) stops being true, and saying so is part of this block. Keep
+`CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE`: it is what keeps the remaining iOS 26 gates
+load-bearing.
+
+#### 2. The Swift gates — every one below 18 goes, and only those
+
+Measured with `grep -rnE "(#available|#unavailable|@available)\(iOS(ApplicationExtension)? 1[4-7]"`
+over `ADHD LifeOS/` and `FocusTimerWidget/`: **~95 annotations in 43 non-test files.**
+
+- **Trivially-true gates (delete the check, keep the body):** `ADHD_LifeOSApp.swift:74` (iOS 14),
+  `Focus/NotificationCenterFocusNudgeAdapter.swift:45` (15), `Tasks/TaskSearchSurface.swift:226` (16.0).
+- **ActivityKit, 16.1 / 16.2** — `@available(iOS 16.1, *)` on the attributes, components, presenters
+  and Live Activity views (`FocusActivityAttributes`, `FocusActivityComponents`,
+  `RoutineActivityAttributes`, `RoutineLiveActivity`, `RoutineActivityState`,
+  `RoutineActivityKitPresenter`, `FocusActivityKitMirror`, `FocusSprintIntents`), and the
+  `#available(iOS 16.2, *)` content/staleDate splits in `FocusActivityKitMirror` (3),
+  `RoutineActivityKitPresenter` (3), `FocusSprintIntents` (1) and `FocusTimerWidgetLiveActivity:98`.
+  **Delete the pre-16.2 branches outright** (the old `ActivityContent`-less API), not only the check.
+  `FocusActivityKitMirror.swift:167`'s `guard #available(iOS 16.1, *) else {…}` and `RootView+Doors.swift:69`
+  lose their inert fallbacks; read the memory note "the inert one keeps the type total" and decide
+  whether the inert presenter type is still needed by TESTS (it may be — say which).
+- **App Intents, 16.4:** `Shortcuts/LifeOSAppIntents.swift:104` (`AppShortcutsProvider`).
+- **iOS 17, the "Degraded" sites** (a modern and a floor rendering of the same thing; keep the
+  modern branch, delete the `else`):
+  `Theme/Haptics.swift:96,119` (**keep `.haptic(_:trigger:)` as the house API** — §3 prescribes it
+  and ~every interactive view calls it — its body becomes `.sensoryFeedback` alone and the UIKit
+  performer goes), `Capture/VoiceCaptureRecorder.swift:74`, `Settings/SettingsPreferenceSections.swift:220`,
+  `Focus/FocusActivityKitMirror.swift:180`, `FocusTimerWidget/FocusStatsWidget.swift:282`,
+  `FocusTimerWidget/FocusTimerWidgetLiveActivity.swift:70,153,171` (the interactive sprint buttons,
+  `FocusSprintControls`, become unconditional) and `FocusSprintIntents.swift:41,57`.
+- **iOS 17, the "Absent" feature — Places and the routine screen — becomes universal.** Delete every
+  `@available(iOS 17.0, *)` in `Places/` (54 across 21 files), `Tools/ToolsRoutinesSection.swift`
+  (4), `Tools/ToolsCatalog.swift`, `Tools/ToolsView.swift` (gates at `:81,102,204`) and
+  `RootView+Doors.swift:131,163`. **Delete the flags that announced the absence:**
+  `ToolsView.placesSupported`, `ToolsCatalog.available(placesSupported:)`'s parameter (the catalog
+  just lists Places), and `PlaceTriggerEventHandler`'s injected `routineScreenAvailable` (`:63`).
+  Rewrite, don't just delete, the comments that explain the gate
+  (`ToolsView.swift:77`, `ToolsCatalog.swift:67`, `ToolsRoutinesSection.swift:18`,
+  `RecentlyDeleted/ToolsRecentlyDeletedSection.swift:12`).
+- **The iOS 26 gates STAY — 3 sites** (`Focus/FocusCompletionCelebration.swift` ×2,
+  `TabNavigation.swift`, plus the `@available(iOS 26.0, *)` types in `FocusCompletionCelebration`
+  and `TabRootLargeTitleReTap`). Their `else` branches now mean **iOS 18–25**, not 16–25. §7.1's
+  two-branch rule still governs them in full.
+- **The 35 deprecated `onChange` spellings** (the compiler's list): move each to the two-parameter
+  form (`{ _, newValue in … }`) or zero-parameter form. **Behaviour must not change**: the old form
+  passes the NEW value, so `{ foo($0) }` becomes `{ _, new in foo(new) }`, never `{ old, _ in }`.
+
+#### 3. The tests — reverse deliberately, never delete a guard to make it pass
+
+- **Call-site tests that PIN the floor branch** (§7.4: "a test that asserts only the modern branch
+  stays green on a build that dropped the floor"). The floor they pinned is the thing this block
+  removes, so each is REVERSED to pin its absence, with E's words quoted:
+  `ModernAPIPolicyCallSiteTests` (the `.haptic` 17-gate + `else` + UIKit performer),
+  `ToolsPageCallSiteTests`, `ToolsRecentlyDeletedCallSiteTests`, `ToolsCatalogTests` (its
+  `placesSupported: false` cases), `RoutineActivityCallSiteTests`, `RoutineHandlerHarness`,
+  `PlaceRoutineHandlerGuardTests` and `RoutineRecordSiteTests` (the `routineScreenAvailable: false`
+  injection), plus the `@available(iOS 16.1/17.0, *)` annotations on
+  `FocusActivityCheckpointMarkTests`, `FocusActivityContentStateTests`, `RoutineActivityTests`,
+  `FocusSprintIntentsTests` and `ToolsCatalogTests`.
+- **Call-site tests that pin an exact one-parameter `onChange` spelling** — they break the moment
+  the deprecation is fixed, and must be updated in the SAME commit:
+  `AppSearchCallSiteTests:79`, `CelebrationCaptureFanCallSiteTests:20`,
+  `ConfirmCelebrationCallSiteTests:64`, `CelebrationMilestoneCallSiteTests:125,129`,
+  `JournalHeaderControlsTests:99`.
+- **`FocusCelebrationModernPathCallSiteTests`** keeps every assertion (the 26 gate stays); only its
+  comments' "iOS 16–25" become "iOS 18–25".
+- **NEW, and the reason this block can claim "everywhere":**
+  1. `DeploymentFloorTests.testEveryTargetIsAtTheIOS18Floor` — read `project.pbxproj` and assert
+     every `IPHONEOS_DEPLOYMENT_TARGET` is `18.0` (and that there are exactly six), so a target
+     added later at the Xcode default cannot slip under.
+  2. `DeploymentFloorTests.testNoAvailabilityCheckBelowTheFloor` — walk `ADHD LifeOS/` and
+     `FocusTimerWidget/` (comment lines stripped, the `*CallSiteTests` way) and fail on ANY
+     `#available`/`#unavailable`/`@available` naming iOS 1–17. This is the guard the compiler does
+     not provide. **Red-check both** by planting one `#available(iOS 17.0, *)` and one 16.0 target.
+
+#### 4. The documents — correct what GOVERNS; leave what RECORDS
+
+**Governing (rewrite in this block, in the same PR as the code):**
+- **`CLAUDE.md`**: Architecture notes' first bullet (one number, 18.0); §7's title and preamble ("The
+  iOS 16 floor…"); §7.1 ("always ship a complete iOS 16 branch" → the branch below the gate is the
+  18 path; the Absent/`placesSupported` example goes, since no feature is absent any more); §7.3
+  (the one-runtime claim is already stale — this machine has 26.5 AND 27.0 — and the "16 path"
+  sample line becomes an 18 one); §7.4's "16 path" wording; §7.5's precedence line ("the **iOS 16.0
+  deployment target**") and both skill-conflict bullets that say "this project is iOS 16.0" /
+  "a complete 16 path"; the `OS=26.5` line's "floor-side runtime" comment. **Every other "16" in
+  that file is a SPACING token (16pt), not the floor — do not touch those.**
+- **`TODO-CLAUDE-CODE.md`, OPEN blocks only:** `F-D2` (delete Step 0 question 2 and every 16.0–16.3
+  / 16.4 path; its Liquid Glass gate's floor branch is now the 18 path), `F-F2` (the 17 gate and the
+  "16.1–16.x floor" line go — the Lock Screen button is universal), `F-F5` (EventKit becomes
+  `requestFullAccessToEvents` alone, the `requestAccess(to:)` branch and the legacy
+  `NSCalendarsUsageDescription` key are no longer needed), `F-A3` (its "inside the existing
+  `@available(iOS 17.0, *)` gates" — they will be gone), `F-A4` ("target the 16.0 floor"), `F-G1`,
+  `F-G3` ("Places is already/stays `@available(iOS 17.0, *)`"), `F-G2`, `F-G4`, `F-G5` ("16.0 floor
+  untouched"). **Completed blocks are records: do not edit them.**
+- **`handoff/OPEN-ITEMS-REGISTER.md`**, live sections only: §A's "install an older simulator
+  runtime" row becomes **"install the iOS 18 simulator runtime"** (the one runtime that would let
+  the floor path RUN, not only compile); §B's modern-API inventory ("free at 16.0" / "needs 17+")
+  re-sorted against 18; a §D launch-note row naming the excluded hardware.
+- **Memory** (`~/.claude/projects/…/memory/`): `firebase-backend-state` ("app 16.0, widget 16.1"),
+  `ios27-arc` ("The 16.0 deployment target does NOT move"), `tools-tab-and-custom-bar` ("Tools must
+  handle Places being absent on 16"), `place-actions-arc` (the 16.4 provider), `location-services-spec`
+  ("project target STAYS 16.0"), `modern-ios-pilot`, and a NEW `ios-18-floor` memory with E's words.
+- **The live opener** for `F-D2`.
+
+**Records (do NOT rewrite — they say what was true when written):** `TODO-ARCHIVE.md`,
+`handoff/archive/`, every `SESSION-OPENER-*` (permanent design records), every
+`screenshots/*/README.md` ("16 path: compile-only" was a true claim that day), completed TODO
+blocks, and dated register history. CLAUDE.md's "Keep everything, forever" is the rule. Where a
+record states a rule that is now false, the governing doc above says so; the record is not edited.
+
+**Nothing outside the app moves:** the capture Shortcut, `scripts/`, `functions/`, `firebase.json`
+and `.swiftlint.yml` hold no floor reference (checked).
+
+#### 5. What E sees, and what is owed
+
+- **On E's phone (iOS 27) nothing looks different** — every branch E has ever seen is the one that
+  stays. So: **no `apple-design` review owed** (no visible change), **no RM-on pass owed** (no
+  reduced site changes; the 26 gates' reduced paths are untouched), and say both in the report.
+- **A device smoke launch IS owed**, because the widget, the Live Activities and the App Intents all
+  change targets: install, open the app, start and end a sprint (Live Activity), add the widget.
+  Install BEFORE asking.
+- **"Verified paths" line, required** — every remaining gate is iOS 26, so it reads: *"26 path: run
+  on sim 27.0 + E's phone. 18–25 path: run on 26.5 by injection; OS-level behaviour on 18
+  COMPILE-ONLY unless the iOS 18 runtime is installed."* Never write "works on iOS 18" without it.
+- **App Store consequence, for the register's §D:** iPhone 8, 8 Plus and X can no longer install.
+
+**Acceptance criteria:**
+- [ ] RED first: `DeploymentFloorTests` (both tests) failing on today's tree, counted.
+- [ ] Six `IPHONEOS_DEPLOYMENT_TARGET = 18.0` and no other value; the built app's `Info.plist`
+      shows `MinimumOSVersion 18.0` for the app AND the widget (`plutil -p`, pasted).
+- [ ] Zero availability annotations below iOS 18 in `ADHD LifeOS/` and `FocusTimerWidget/` (the new
+      test, plus the grep pasted); the three iOS 26 gates intact with their `else` branches.
+- [ ] Zero `onChange` deprecation warnings: `grep -c "deprecated in iOS 17" <build log>` = 0, pasted.
+- [ ] `placesSupported`, `available(placesSupported:)` and `routineScreenAvailable` gone; Places and
+      routines reachable with no flag.
+- [ ] Every test in §3 reversed or updated in place with the reason quoted — none deleted to pass.
+- [ ] Red-check: plant a 17 gate and a 16.0 target → count the failures → restore with
+      `git checkout --`.
+- [ ] SwiftLint, the full suite, the build — and the widget and UI-test targets BUILD — all pasted.
+- [ ] Every governing document in §4 corrected; every record untouched (`git diff --stat` over
+      `handoff/archive/`, `screenshots/`, `TODO-ARCHIVE.md` and `SESSION-OPENER-*` is EMPTY — paste it).
+- [ ] A final repo-wide grep for `iOS 16|16\.0 floor|16 path|16\.1` over the GOVERNING set returns
+      only spacing tokens and dated history, each explained in the report.
+- [ ] Device smoke launch on E's phone (installed first); "Verified paths" line; no `firestore.rules`
+      change.
+
+**Dependencies:** none before it; **`F-D2` waits for it.** Build it in a fresh session from the
+live opener.
+
+---
+
 ### FEATURE: F-D2-ComposerKeyboardLayout — L3 rides the keyboard; AX3 falls back; the Date segment  [ ] NOT STARTED
+
+> **⚠ Blocked on `F-Floor18` (E, 2026-09-23: *"iOS 18, before F-D2"*).** That block raises the
+> minimum to iOS 18 and rewrites this spec's floor lines in place. Until it lands, read this spec
+> with one correction: **Step 0 question 2 (the 16.0–16.3 popover) is VOID.** At an 18 floor
+> `presentationCompactAdaptation` (16.4) is always available, so there is no floor path to decide.
+> Ask E question 1 only.
 
 **What E chose:**
 - **Layout → "L3 · Rides on the keyboard"** (Recommended, round 7b). *"The title owns the page.
