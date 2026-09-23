@@ -1,18 +1,31 @@
-# START HERE — `F-D1` is COMPLETE. `F-D2-ComposerKeyboardLayout` is next.
+# START HERE — `F-Floor18` (iOS 16 → 18), THEN `F-D2-ComposerKeyboardLayout`.
 
-*Written 2026-09-23 by the session that built `F-D1-ComposerBothDoors`. A disposable pointer:
-archive it when you write your successor. Its predecessor,
-`archive/START-HERE-adhd-audit-arc-D1-composer.md`, is spent.*
+*Written 2026-09-23 by the session that built `F-D1-ComposerBothDoors`, and re-pointed the same day
+when E decided the floor. A disposable pointer: archive it when you write your successor. Its
+predecessor, `archive/START-HERE-adhd-audit-arc-D1-composer.md`, is spent.*
 
 **E's standing instruction:** *"You must ensure to maintain seamless continuity in context and
 memory into the new session."*
+
+## THE ORDER CHANGED — E, 2026-09-23: *"iOS 18, before F-D2"*
+
+**Build `F-Floor18` FIRST** (`TODO-CLAUDE-CODE.md`, the block directly above `F-D2`). It is a global
+sweep: the deployment target goes 16.0/16.1 → **18.0** on all six build settings, every
+availability gate below 18 goes (~95 in 43 files), Places and routines stop being optional, the 35
+deprecated `onChange` spellings are fixed, and the GOVERNING docs (CLAUDE.md §7 above all) are
+rewritten while the RECORDS are left untouched. Its spec holds the measured inventory, the compiler's
+evidence, the tests to reverse and a new tree-walking guard — read it whole.
+
+**Then `F-D2`** — from §0.1 below, with ONE Step 0 question, not two: question 2 (the 16.0–16.3
+popover) is void at an 18 floor, and a banner on the D2 spec says so.
 
 ## 0. Before anything else
 
 1. **CHECK THE REGISTER AGAINST WHAT YOU WERE HANDED.** Two sessions running have been handed a
    brief with stale lines in it. `git log --oneline -8` and `OPEN-ITEMS-REGISTER.md`'s header take
    ten seconds, and they are the only defence.
-2. **Branch:** `git checkout main && git pull --ff-only && git checkout -b feature/adhd-d2-keyboard`.
+2. **Branch:** `git checkout main && git pull --ff-only && git checkout -b chore/floor-ios18` for the
+   floor; `feature/adhd-d2-keyboard` for D2 once the floor has merged.
 3. **Read:** `CLAUDE.md` (§1–§7, especially §7.1–§7.3 because this block adds an `#available` site,
    and §7.6), `claudecode.md`, the `### FEATURE: F-D2-ComposerKeyboardLayout` block in
    `TODO-CLAUDE-CODE.md`, register edition 78, and `handoff/ADHD-AUDIT-BUILD-LOG.md` session 8.
@@ -22,16 +35,14 @@ memory into the new session."*
 5. **ERASE the simulator before the first unit run** if a UI run came before it:
    `xcrun simctl erase 9181EBF9-0F54-4A4D-A19C-19945D1BF155`.
 
-### 0.1 TWO Step 0 questions are E's, and they come BEFORE any code
+### 0.1 D2's ONE Step 0 question is E's, and it comes BEFORE any D2 code
 
-They are written out in full in the spec, with options and a recommendation each. Put them to E
-with `AskUserQuestion` (memory: `ask-questions-directly`):
+Written out in full in the spec, with options and a recommendation. Put it to E with
+`AskUserQuestion` (memory: `ask-questions-directly`):
 1. **Does the Date popover offer a time, or only a day?** Recommended: date only.
-2. **How does the Date popover behave on iOS 16.0–16.3** (no `presentationCompactAdaptation`, so it
-   becomes a second sheet that Q4 forbids)? Recommended: accept it as a named exception.
 
-The spec says: if E does not answer, build option 1 of each and say so. **Ask anyway.** E is in
-the terminal.
+~~2. The 16.0–16.3 popover~~ — **void**: `F-Floor18` makes 16.4's `presentationCompactAdaptation`
+always available. Do not ask it.
 
 ## 1. What `F-D1` leaves behind that D2 builds on
 
