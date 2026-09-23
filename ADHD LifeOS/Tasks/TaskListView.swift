@@ -133,6 +133,7 @@ struct TaskListView: View {
             .sheet(isPresented: $isPresentingTaskCreate) {
                 TaskCreateView(
                     client: taskCreateClient,
+                    taskDetailClient: taskDetailClient,
                     lifeAreas: tasksService.lifeAreas,
                     captureClient: captureClient
                 ) {

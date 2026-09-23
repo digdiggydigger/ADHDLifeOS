@@ -73,7 +73,10 @@ final class ComposerDraftCallSiteTests: XCTestCase {
             ("Tasks/TaskListView.swift", "the Tasks list's + button"),
             ("LifeAreaDetail/LifeAreaDetailView.swift", "a life area's \"Add to area\""),
             ("Journal/JournalView.swift", "the Journal's pencil"),
-            ("RootView.swift", "the capture disc's full-screen composer")
+            // `RootView+Doors.swift` since `F-D1-ComposerBothDoors` moved the disc's composer into
+            // `composer(for:)` — and reading `RootView.swift` here was VACUOUS even before that:
+            // the tabs it builds carry `captureClient: captureClient` whatever the cover does.
+            ("RootView+Doors.swift", "the capture disc's full-screen composer")
         ]
         for site in sites {
             XCTAssertTrue(

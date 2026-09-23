@@ -16,10 +16,10 @@ extension TaskCreateView {
     /// Files an abandoned title — E, round 2: *"A composer closed with text files it into the
     /// Capture Inbox as a note."*
     ///
-    /// **Only the title.** The due choice, area, place, notes and tags are dropped, which is the
-    /// spec's accepted cost named out loud: a filed draft is an ordinary `.note`, matching what a
-    /// fan-opened Task capture already looks like in the inbox rather than a richer draft object
-    /// nothing else knows how to read.
+    /// **Only the title.** The due choice, area and time are dropped (place, notes and tags left
+    /// the composer in `F-D1-ComposerBothDoors`), which is the spec's accepted cost named out
+    /// loud: a filed draft is an ordinary `.note`, matching what a fan-opened Task capture already
+    /// looks like in the inbox rather than a richer draft object nothing else knows how to read.
     ///
     /// **Nothing happens without a `captureClient`**, and that is deliberate rather than
     /// defensive: the argument is optional so every preview builds unchanged, and the app's own

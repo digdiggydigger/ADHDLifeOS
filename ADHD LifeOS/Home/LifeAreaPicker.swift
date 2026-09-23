@@ -17,10 +17,19 @@ struct LifeAreaPicker: View {
     let title: String
     /// The leading option, tagged `nil`. Preserved verbatim per site: "None" (Task Create / Detail /
     /// Capture triage), "All" (Journal filter), "No life area" (Log composer).
+    ///
+    /// *Annotated by `F-D1-ComposerBothDoors`:* the "Task Create" entry above was STALE from
+    /// F-V3-TaskCreate until that block — the composer used `ComposerAreaChips` with "Decide
+    /// later" — and is true again now that the one composer both doors open uses this picker
+    /// (round 6's "area pop-up chip", round 10b's "None").
     let noSelectionLabel: String
     let lifeAreas: [LifeArea]
     @Binding var selection: UUID?
     let accessibilityID: String
+    /// The pop-up button's ⌃⌄ glyph after the value. `false` everywhere a `Form` row already reads
+    /// as tappable; the task composer, which is not a `Form`, turns it on so its Area card says
+    /// it opens something (`pop-up-buttons.md`).
+    var showsPopUpIndicator = false
 
     /// An archived row is disabled EXCEPT when it is the current selection. Without that exception a
     /// task or log that already holds an archived area would render blank — which is exactly the
@@ -65,8 +74,20 @@ struct LifeAreaPicker: View {
             // In a Form this renders as a tappable row with the value trailing — matching the
             // Picker it replaces. `LabeledContent` reflows at accessibility Dynamic Type sizes
             // instead of clipping into narrow columns (§7 house pattern).
-            LabeledContent(title, value: selectedLabel)
+            if showsPopUpIndicator {
+                LabeledContent(title) {
+                    HStack(spacing: 4) {
+                        Text(selectedLabel)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.footnote.weight(.semibold))
+                            .accessibilityHidden(true)
+                    }
+                }
                 .contentShape(Rectangle())
+            } else {
+                LabeledContent(title, value: selectedLabel)
+                    .contentShape(Rectangle())
+            }
         }
         .accessibilityIdentifier(accessibilityID)
     }

@@ -25,31 +25,37 @@ final class ComposerBothDoorsCallSiteTests: XCTestCase {
 
     /// **The disc's Task tile opens the task composer**, and hands it every seam it needs.
     ///
-    /// Scoped to the cover's own body, deliberately: `RootView.swift` already contains
-    /// `captureClient: captureClient` and `taskDetailClient: taskDetailClient` where it builds the
-    /// TABS, so a whole-file `contains` would pass on a branch that forgot either — which is the
-    /// hole `ComposerDraftCallSiteTests.testEveryScreenThatPresentsAComposerHandsItTheCaptureSeam`
-    /// has for this one site.
+    /// Read from `composer(for:)` itself rather than from the whole of `RootView`: `RootView.swift`
+    /// already contains `captureClient: captureClient` and `taskDetailClient: taskDetailClient`
+    /// where it builds the TABS, so a whole-file `contains` would pass on a branch that forgot
+    /// either — which is the hole `ComposerDraftCallSiteTests.
+    /// testEveryScreenThatPresentsAComposerHandsItTheCaptureSeam` has for this one site.
     func testTheDiscsTaskTileOpensTheTaskComposerWithEverySeam() throws {
-        let cover = try Self.slice(
-            of: "RootView.swift", from: ".fullScreenCover(item: $composerKind)", to: "restorePersistedSprint"
-        )
-        XCTAssertTrue(cover.contains("if kind == .task {"), "The composer cover does not branch on the Task kind")
-        XCTAssertTrue(cover.contains("TaskCreateView("), "The disc's Task tile still opens Quick Capture")
         XCTAssertTrue(
-            cover.contains("QuickCaptureView("),
-            "Note, voice, photo and link lost their composer — only .task was meant to move"
+            try Self.appCode("RootView.swift").contains(
+                ".fullScreenCover(item: $composerKind) { kind in composer(for: kind) }"
+            ),
+            "The disc's cover no longer presents `composer(for:)`"
         )
+        let taskBranch = try Self.slice(
+            of: "RootView+Doors.swift", from: "func composer(for kind: CaptureKind)", to: "} else {"
+        )
+        XCTAssertTrue(taskBranch.contains("if kind == .task {"), "The composer does not branch on the Task kind")
+        XCTAssertTrue(taskBranch.contains("TaskCreateView("), "The disc's Task tile still opens Quick Capture")
         for seam in [
             "captureClient: captureClient",     // an abandoned title files into the inbox (F-C2)
             "taskDetailClient: taskDetailClient", // the Time menu's write
             "homeClient: homeClient"            // the Area menu's list — RootView holds no array
         ] {
-            XCTAssertTrue(cover.contains(seam), "The disc's task composer is presented without `\(seam)`")
+            XCTAssertTrue(taskBranch.contains(seam), "The disc's task composer is presented without `\(seam)`")
         }
-        XCTAssertEqual(
-            cover.components(separatedBy: ".keyboardDismissal()").count - 1, 2,
-            "Each of the cover's two composers must keep the keyboard's dismissal gesture"
+        XCTAssertTrue(taskBranch.contains(".keyboardDismissal()"), "The task composer lost the keyboard's dismissal")
+        let otherKinds = try Self.slice(
+            of: "RootView+Doors.swift", from: "} else {\n            QuickCaptureView(", to: ".keyboardDismissal()"
+        )
+        XCTAssertTrue(
+            otherKinds.contains("kind: kind"),
+            "Note, voice, photo and link lost their composer — only .task was meant to move"
         )
     }
 
@@ -90,7 +96,9 @@ final class ComposerBothDoorsCallSiteTests: XCTestCase {
     func testTheTimeControlIsAMenu() throws {
         let view = try Self.appCode("Tasks/TaskCreateView.swift")
         XCTAssertTrue(view.contains("taskCreateTimeMenu"), "The composer has no Time control")
-        let time = try Self.slice(of: "Tasks/TaskCreateView.swift", from: "private var timeMenu", to: "taskCreateTimeMenu")
+        let time = try Self.slice(
+            of: "Tasks/TaskCreateView.swift", from: "private var timeMenu", to: "taskCreateTimeMenu"
+        )
         XCTAssertTrue(time.contains("Menu {"), "The Time control is not a Menu")
         XCTAssertTrue(time.contains("TaskEffortChoice.allCases"), "The Time menu does not offer the shared choices")
     }

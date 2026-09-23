@@ -246,16 +246,8 @@ struct RootView: View {
                         routineCover(run)
                     }
                 )
-                .fullScreenCover(item: $composerKind) { kind in
-                    QuickCaptureView(
-                        client: captureClient,
-                        kind: kind,
-                        homeClient: homeClient,
-                        taskCreateClient: taskCreateClient,
-                        taskDetailClient: taskDetailClient
-                    ) {}
-                    .keyboardDismissal()
-                }
+                // Both doors' composer — `composer(for:)`, in `RootView+Doors.swift`.
+                .fullScreenCover(item: $composerKind) { kind in composer(for: kind) }
                 // Reinstate a sprint the process died holding (F-SprintPersistence). Idempotent —
                 // a no-op with nothing stored or a sprint already live.
                 .task {

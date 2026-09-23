@@ -45,10 +45,7 @@ import SwiftUI
     }
 
     struct PreviewTaskCreateClient: TaskCreateClientAdapting {
-        func fetchTags() async throws -> [Tag] { [] }
-        func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
         func createTask(_ input: NormalizedCreateTaskInput) async throws -> TaskItem { fatalError("unused in preview") }
-        func attachTags(taskId: UUID, tagIds: [UUID]) async throws {}
     }
 
     struct PreviewTaskDetailClient: TaskDetailClientAdapting {

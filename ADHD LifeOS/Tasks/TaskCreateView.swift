@@ -2,17 +2,20 @@
 //  TaskCreateView.swift
 //  ADHD LifeOS
 //
-//  The v3 task composer (E's 2026-08-25 note): the stock Form became a dedicated S1-style
-//  screen — the title as one big honest box, due dates as chips (`TaskDueChoice`, pure, tested),
-//  every other question labelled optional out loud. The service machinery, the create seams and
-//  the journey identifiers (`taskCreateTitleField`, `taskCreateSubmitButton`) are unchanged.
+//  The task composer — and since `F-D1-ComposerBothDoors`, the ONLY one. E, round 6: *"One
+//  composer, both doors"*: the Tasks "+" and a life area's "Add to <area>" present it as a sheet,
+//  the capture disc's Task tile (and the widget's door, which routes the same way) as a full-screen
+//  cover — same view, two chromes, inherited from the doors rather than chosen here.
+//
+//  Its content is round 6's, verbatim in intent: a title, the four "when" chips, and an Area and a
+//  Time menu ("menus, not sheets"). Tags, place and notes live on the task. The LAYOUT is still the
+//  v3 vertical one; round 7b's "rides on the keyboard" layout is `F-D2`.
 //
 
 import SwiftUI
 
 struct TaskCreateView: View {
     @StateObject var service: TaskCreateService
-    let lifeAreas: [LifeArea]
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var dueChoice: TaskDueChoice = .notYet
@@ -30,21 +33,29 @@ struct TaskCreateView: View {
     @Environment(\.recordAction) var recordAction
     @Environment(\.openCapture) var openCapture
 
+    /// - Parameters:
+    ///   - taskDetailClient: the Time menu writes through it — required, so a door cannot forget it.
+    ///   - lifeAreas: the areas a door already holds; `homeClient` fetches them for a door that
+    ///     holds none (the capture disc, in `RootView`).
     init(
         client: TaskCreateClientAdapting,
-        lifeAreas: [LifeArea],
+        taskDetailClient: TaskDetailClientAdapting,
+        lifeAreas: [LifeArea] = [],
+        homeClient: HomeClientAdapting? = nil,
         preselectedLifeAreaId: UUID? = nil,
         captureClient: CaptureClientAdapting? = nil,
         onCreated: @escaping () -> Void
     ) {
         self.captureClient = captureClient
         _service = StateObject(wrappedValue: {
-            let service = TaskCreateService(client: client)
+            let service = TaskCreateService(
+                client: client, taskDetailClient: taskDetailClient,
+                lifeAreas: lifeAreas, homeClient: homeClient
+            )
             // The v3 area screen's "Add to <area>" opens the form already filed there.
             service.lifeAreaId = preselectedLifeAreaId
             return service
         }())
-        self.lifeAreas = lifeAreas
         self.onCreated = onCreated
     }
 
@@ -61,10 +72,7 @@ struct TaskCreateView: View {
                         accessibilityID: "taskCreateTitleField"
                     )
                     dueSection
-                    areaSection
-                    placeSection
-                    notesSection
-                    tagsSection
+                    areaAndTimeSection
                     if let warningMessage = service.warningMessage {
                         Text(warningMessage)
                             .font(.footnote)
@@ -95,16 +103,15 @@ struct TaskCreateView: View {
                         .font(.headline)
                 }
             }
-            // **`F-C2-DraftsToInbox`.** This composer is a real `.sheet`, so swipe-down is live
-            // and was undefended. `.onDisappear` catches the swipe and the Close button alike
-            // (Step 0 answer 2: file once the sheet has ACTUALLY gone, so a swipe keeps dismissing
-            // as it does today), and a half-swipe that springs back never calls it — so a
-            // cancelled dismissal files nothing by construction rather than by a guard.
+            // **`F-C2-DraftsToInbox`.** `.onDisappear` catches the swipe, the Close button and —
+            // since `F-D1` — the capture disc's full-screen cover alike (Step 0 answer 2: file
+            // once the composer has ACTUALLY gone, so a swipe keeps dismissing as it does today),
+            // and a half-swipe that springs back never calls it — so a cancelled dismissal files
+            // nothing by construction rather than by a guard.
             .onDisappear { fileDraftIfNeeded() }
             .task {
                 dueChoice = TaskDueChoice.choice(for: service.dueDate, asOf: .now)
-                await service.loadTags()
-                await service.loadPlaces()
+                await service.loadLifeAreas()
             }
         }
     }
@@ -153,120 +160,59 @@ struct TaskCreateView: View {
         .accessibilityIdentifier("taskCreateDue-\(choice.title)")
     }
 
-    // MARK: - Area, notes, tags
+    // MARK: - Area and time
 
-    @ViewBuilder
-    private var areaSection: some View {
-        if !lifeAreas.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                ComposerSectionHeader(title: "Life area", detail: "optional")
-                ComposerAreaChips(
-                    lifeAreas: lifeAreas.filter { !$0.archived },
-                    noSelectionLabel: "Decide later",
-                    selection: $service.lifeAreaId
-                )
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("taskCreateLifeAreaPicker")
-            }
-        }
-    }
-
-    /// The at-place field (block 4a's picker, on the composer since E's 2026-08-28 follow-up).
-    /// Hidden until the user actually has places — an empty picker is a row that asks a question
-    /// with no answers. Carded like the custom due-date picker, the composer's treatment for the
-    /// controls that aren't chips.
-    @ViewBuilder
-    private var placeSection: some View {
-        if !service.places.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                ComposerSectionHeader(title: "Where can it be done?", detail: "optional")
-                TaskAtPlacePicker(
-                    places: service.places,
-                    selection: $service.atPlaceId,
-                    accessibilityID: "taskCreateAtPlacePicker"
-                )
-                .padding(16)
-                .frame(minHeight: 44)
-                .background(
-                    Color("CardSurfaceSecondary"),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                )
-            }
-        }
-    }
-
-    private var notesSection: some View {
+    /// Round 6's "area and time pop-up chips (menus, not sheets)". Carded like the custom date
+    /// picker above — this composer's treatment for a control that is not a chip — and 48pt,
+    /// because round 7 kept the composer's own controls at 48 ("the composer's own chips stay 48").
+    /// Both always show: Time has no empty state, and Area hides only when there are no areas to
+    /// offer, which is a question with no answers.
+    private var areaAndTimeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ComposerSectionHeader(title: "Notes", detail: "optional")
-            ComposerTextBox(
-                placeholder: "Anything future-you needs to know",
-                text: $service.notes,
-                accessibilityID: "taskCreateNotesField"
-            )
+            ComposerSectionHeader(title: "Area and time", detail: "optional")
+            if !service.offeredLifeAreas.isEmpty {
+                LifeAreaPicker(
+                    title: "Area",
+                    noSelectionLabel: "None",
+                    lifeAreas: service.offeredLifeAreas,
+                    selection: $service.lifeAreaId,
+                    accessibilityID: "taskCreateLifeAreaPicker",
+                    showsPopUpIndicator: true
+                )
+                .menuCard()
+            }
+            timeMenu
+                .menuCard()
         }
     }
 
-    private var tagsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ComposerSectionHeader(title: "Tags", detail: "optional")
-            switch service.tagsState {
-            case .idle, .loading:
-                ProgressView()
-            case .failed(let message):
-                Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            case .loaded:
-                if !service.availableTags.isEmpty {
-                    FlowingChips(spacing: 8) {
-                        ForEach(service.availableTags) { tag in
-                            tagChip(tag)
-                        }
+    private var timeMenu: some View {
+        Menu {
+            ForEach(TaskEffortChoice.allCases, id: \.seconds) { choice in
+                Button {
+                    service.effort = choice
+                } label: {
+                    if service.effort == choice {
+                        Label(choice.title, systemImage: "checkmark")
+                    } else {
+                        Text(choice.title)
                     }
                 }
             }
-            HStack(spacing: 8) {
-                TextField("New tag", text: $service.newTagName)
-                    .textInputAutocapitalization(.never)
-                    .padding(.horizontal, 8)
-                    .frame(minHeight: 36)
-                    .background(
-                        Color("CardSurfaceSecondary"),
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    )
-                    .accessibilityIdentifier("taskCreateNewTagField")
-                Button("Add") {
-                    Task { await service.addNewTag() }
-                }
-                .font(.caption.weight(.semibold))
-                .disabled(service.newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityIdentifier("taskCreateAddTagButton")
-            }
-        }
-    }
-
-    private func tagChip(_ tag: Tag) -> some View {
-        let selected = service.selectedTagIds.contains(tag.id)
-        return Button {
-            Haptics.play(.light)
-            service.toggleTagSelection(tag)
         } label: {
-            Text(tag.name)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(selected ? AreaPalette.work.onColor : Color("LabelSecondary"))
-                .padding(.horizontal, 8)
-                .frame(minHeight: 36)
-                .background(
-                    selected
-                        ? AnyShapeStyle(Color.accentColor)
-                        : AnyShapeStyle(Color("CardSurfaceSecondary")),
-                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            // `LabeledContent` for the §7 house reason: it reflows at accessibility Dynamic Type
+            // sizes instead of clipping into narrow columns.
+            LabeledContent("Time") {
+                HStack(spacing: 4) {
+                    Text(service.effort.title)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.footnote.weight(.semibold))
+                        .accessibilityHidden(true)
+                }
+            }
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityIdentifier("taskCreateTagChip-\(tag.id)")
+        .accessibilityIdentifier("taskCreateTimeMenu")
     }
 
     // MARK: - Footer
@@ -300,19 +246,40 @@ struct TaskCreateView: View {
     }
 }
 
+private extension View {
+    /// The composer's card for a Menu row: full width, 48pt tall, the label tinted primary so the
+    /// row reads as a setting with its value rather than as a run of accent-blue link text.
+    func menuCard() -> some View {
+        self
+            .tint(.primary)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(Color("CardSurfaceSecondary"), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
 #if DEBUG
 private struct PreviewTaskCreateClientAdapting: TaskCreateClientAdapting {
-    func fetchTags() async throws -> [Tag] {
-        [Tag(id: UUID(), name: "urgent"), Tag(id: UUID(), name: "errand")]
-    }
-    func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
     func createTask(_ input: NormalizedCreateTaskInput) async throws -> TaskItem { fatalError("unused in preview") }
-    func attachTags(taskId: UUID, tagIds: [UUID]) async throws {}
+}
+
+private struct PreviewTaskCreateDetailClient: TaskDetailClientAdapting {
+    func fetchTask(id: UUID) async throws -> TaskDetail { fatalError("unused in preview") }
+    func fetchTagsForTask(taskId: UUID) async throws -> [Tag] { [] }
+    func fetchAllTags() async throws -> [Tag] { [] }
+    func updateTask(id: UUID, payload: TaskUpdatePayload) async throws -> TaskDetail { fatalError("unused in preview") }
+    func updateStatus(id: UUID, status: TaskStatus) async throws -> TaskDetail { fatalError("unused in preview") }
+    func softDeleteTask(id: UUID) async throws {}
+    func restoreTask(id: UUID) async throws {}
+    func createTag(name: String) async throws -> Tag { fatalError("unused in preview") }
+    func addTagToTask(taskId: UUID, tagId: UUID) async throws {}
+    func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {}
 }
 
 #Preview("Light") {
     TaskCreateView(
         client: PreviewTaskCreateClientAdapting(),
+        taskDetailClient: PreviewTaskCreateDetailClient(),
         lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
     ) {}
     .preferredColorScheme(.light)
@@ -321,6 +288,7 @@ private struct PreviewTaskCreateClientAdapting: TaskCreateClientAdapting {
 #Preview("Dark") {
     TaskCreateView(
         client: PreviewTaskCreateClientAdapting(),
+        taskDetailClient: PreviewTaskCreateDetailClient(),
         lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
     ) {}
     .preferredColorScheme(.dark)

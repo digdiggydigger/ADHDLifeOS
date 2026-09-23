@@ -7,11 +7,11 @@ import Foundation
 
 /// The Firestore surface `FirebaseTaskCreateClientAdapter` uses. See `LifeAreaEditorBackingStore`
 /// for why the seam exists and why it is one narrow protocol per adapter.
+///
+/// Narrowed to the create alone by `F-D1-ComposerBothDoors`, with the adapter's tag methods.
+/// `FirebaseManager` keeps `fetchTags`/`createTagDeduplicating`/`addTagId` — other seams use them.
 protocol TaskCreateBackingStore {
-    func fetchTags() async throws -> [Tag]
-    func createTagDeduplicating(name: String) async throws -> Tag
     func createTask(_ task: TaskDetail) async throws
-    func addTagId(_ tagId: UUID, to parent: FirebaseTagParent, parentId: UUID) async throws
 }
 
 extension FirebaseManager: TaskCreateBackingStore {}

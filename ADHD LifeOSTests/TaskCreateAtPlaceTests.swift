@@ -14,29 +14,13 @@ import XCTest
 /// The wire assertions matter more here than usual: task creation writes through `Codable` rather
 /// than a hand-written field dictionary, so the spelling is `TaskDetail`'s `CodingKeys` and nothing
 /// would raise if the adapter simply dropped the field on the floor.
+///
+/// **`F-D1-ComposerBothDoors` took the picker OFF the composer again** (round 6: *"The next step —
+/// tags, place and notes — live on the task"*), and with it this file's three `testService_*`
+/// tests, whose API no longer exists. What stays is the validation and the adapter, which that
+/// block left untouched and which task creation can still carry a place through.
 @MainActor
 final class TaskCreateAtPlaceTests: XCTestCase {
-
-    private final class FakePlacesClient: PlacesClientAdapting {
-        var places: [Place] = []
-        var fetchError: Error?
-
-        func fetchPlaces() async throws -> [Place] {
-            if let fetchError { throw fetchError }
-            return places
-        }
-
-        func savePlace(_ place: Place) async throws {}
-        func deletePlace(id: UUID) async throws {}
-    }
-
-    private static func place(name: String = "The Office", emoji: String? = "💼") -> Place {
-        Place(
-            id: UUID(), name: name,
-            coordinate: PlaceCoordinate(latitude: 51.5203, longitude: -0.0986),
-            radiusMetres: 200, emoji: emoji
-        )
-    }
 
     // MARK: - Validation carries the field
 
@@ -116,49 +100,5 @@ final class TaskCreateAtPlaceTests: XCTestCase {
         XCTAssertEqual(json["at_place_id"] as? String, placeId.uuidString)
         XCTAssertNil(json["atPlaceId"], "the camelCase spelling belongs to captures, not tasks")
         XCTAssertNil(json["place_id"], "creating a task never stamps where it was CLOSED")
-    }
-
-    // MARK: - The composer's own wiring
-
-    func testService_createTask_passesTheChosenPlaceThrough() async {
-        let client = FakeTaskCreateClientAdapting()
-        let places = FakePlacesClient()
-        let chosen = Self.place()
-        places.places = [chosen]
-        let sut = TaskCreateService(client: client, placesClient: places)
-        sut.title = "Return the parcel"
-        sut.atPlaceId = chosen.id
-
-        let created = await sut.createTask()
-
-        XCTAssertTrue(created)
-        XCTAssertEqual(client.lastCreateTaskInput?.atPlaceId, chosen.id)
-    }
-
-    func testService_loadPlaces_fillsThePicker() async {
-        let places = FakePlacesClient()
-        places.places = [Self.place(name: "Tesco", emoji: "🛒"), Self.place()]
-        let sut = TaskCreateService(client: FakeTaskCreateClientAdapting(), placesClient: places)
-
-        await sut.loadPlaces()
-
-        XCTAssertEqual(sut.places.count, 2)
-    }
-
-    /// The same non-blocking posture as task detail's places stream: garnish, never load-bearing.
-    /// A places outage must not stop someone adding a task.
-    func testService_loadPlaces_failureLeavesTheComposerUsable() async {
-        let places = FakePlacesClient()
-        places.fetchError = TasksServiceError.fetchFailed("Network error")
-        let client = FakeTaskCreateClientAdapting()
-        let sut = TaskCreateService(client: client, placesClient: places)
-        sut.title = "Return the parcel"
-
-        await sut.loadPlaces()
-        let created = await sut.createTask()
-
-        XCTAssertTrue(sut.places.isEmpty)
-        XCTAssertNil(sut.errorMessage, "a places failure is not the composer's error to report")
-        XCTAssertTrue(created)
     }
 }

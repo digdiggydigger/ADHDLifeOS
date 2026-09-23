@@ -31,8 +31,8 @@ struct FlowingChips<Content: View>: View {
         .preferredColorScheme(.light)
 }
 
-#Preview("Task Dark") {
-    QuickCaptureView(client: QuickCapturePreviewClient(), kind: .task) {}
+#Preview("Note Dark") {
+    QuickCaptureView(client: QuickCapturePreviewClient(), kind: .note) {}
         .preferredColorScheme(.dark)
 }
 
@@ -135,42 +135,6 @@ extension QuickCaptureView {
                 }
             }
         }
-    }
-
-    var effortSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("How long will it take?")
-                .sectionLabel()
-                .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
-                effortChip(seconds: 900, label: "15 min")
-                effortChip(seconds: 1800, label: "30 min")
-                effortChip(seconds: 3600, label: "1 hr")
-            }
-        }
-    }
-
-    private func effortChip(seconds: Int, label: String) -> some View {
-        let selected = taskEffortSeconds == seconds
-        return Button {
-            taskEffortSeconds = seconds
-        } label: {
-            Text(label)
-                .font(.subheadline.weight(.bold))
-                .monospacedDigit()
-                .foregroundStyle(selected ? Color(fanSlot.onAssetName) : Color("LabelSecondary"))
-                .frame(maxWidth: .infinity, minHeight: 46)
-                .background(
-                    selected
-                        ? AnyShapeStyle(Color(fanSlot.fillAssetName))
-                        : AnyShapeStyle(Color("CardSurfaceSecondary")),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityIdentifier("quickCaptureEffort-\(seconds)")
     }
 
     @ViewBuilder
@@ -371,7 +335,7 @@ extension QuickCaptureView {
             } label: {
                 Label(
                     CaptureComposerCopy.ctaLabel(for: kind),
-                    systemImage: kind == .task ? "checkmark.circle.fill" : "tray.and.arrow.down.fill"
+                    systemImage: "tray.and.arrow.down.fill"
                 )
             }
             .buttonStyle(MomentumSolidButtonStyle(
