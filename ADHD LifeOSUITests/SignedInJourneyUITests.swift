@@ -46,9 +46,28 @@ final class SignedInJourneyUITests: XCTestCase {
         XCTAssertTrue(submit.isEnabled, "Create stayed disabled with a title entered")
         submit.tap()
 
+        // **Wait for the composer to LEAVE before touching anything behind it.** The "Open" chip
+        // below exists the whole time, UNDER the sheet — XCUITest finds occluded elements — so
+        // waiting on it proves nothing, and the tap that follows races the dismissal. It lost on
+        // 2026-09-23 (`F-D1`), in a slow run: 3.3s before the adapter even ran, 9.8s before the
+        // second write (the Time menu's) landed, while the chip was tapped at 7.5s. The old
+        // create-only composer would have lost that run too. Add closing the sheet is also a real
+        // claim in its own right: a submit that never returns leaves the user staring at "Adding…".
+        let composerGone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: titleField
+        )
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [composerGone], timeout: UITestSession.timeout), .completed,
+            "The composer never dismissed after Add — the create (or its Time write) did not return"
+        )
+
         // The composer creates the task undated, and the default Momentum board deliberately
         // excludes undated tasks since F-V3-Tasks-rebuild — they live under the Open filter,
         // so that is where a freshly created task must appear.
+        // *Annotated by `F-D1-ComposerBothDoors` (2026-09-23):* still TRUE after that block —
+        // the one composer both doors now open still creates undated ("Not yet"), and round 6's
+        // "Anytime · N" row that makes an undated task visible on Momentum is `F-D3`'s. That
+        // block's report should revisit this comment.
         let openChip = app.buttons["Open"]
         XCTAssertTrue(openChip.waitForExistence(timeout: UITestSession.timeout), "The Open filter chip is missing")
         openChip.tap()

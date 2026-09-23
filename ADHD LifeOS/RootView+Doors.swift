@@ -20,6 +20,29 @@ extension RootView {
         focusService.start(plan: plan)
     }
 
+    /// What the capture disc's full-screen composer presents for a kind.
+    ///
+    /// `F-D1-ComposerBothDoors`, E's round 6: *"One composer, both doors"* — the Task tile opens
+    /// the SAME composer as the Tasks "+", here as a cover and there as a sheet, which the doors
+    /// inherited rather than chose. The widget's `.captureComposer` door routes through
+    /// `composerKind` too (`openWidgetDoor`, below), so it lands here with no change of its own.
+    /// `ComposerBothDoorsCallSiteTests` pins every seam each branch is handed.
+    @ViewBuilder
+    func composer(for kind: CaptureKind) -> some View {
+        if kind == .task {
+            TaskCreateView(
+                client: taskCreateClient,
+                taskDetailClient: taskDetailClient,
+                homeClient: homeClient,
+                captureClient: captureClient
+            ) {}
+            .keyboardDismissal()
+        } else {
+            QuickCaptureView(client: captureClient, kind: kind, homeClient: homeClient) {}
+                .keyboardDismissal()
+        }
+    }
+
     /// The widget doors' one entry point — called immediately when the tabs are on screen,
     /// and as the drain for a link that had to wait out a cold launch.
     func openWidgetDoor(_ link: AppDeepLink) {

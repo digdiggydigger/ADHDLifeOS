@@ -5,8 +5,12 @@
 //  The v3 composer (F-V3-Capture): opened by the capture fan with its kind already chosen, so it
 //  reads as a recorder, a camera, a link card or an effort picker — never an empty form. The
 //  copy, CTA and destination per kind live in `CaptureComposerCopy` (pure, tested). The optional
-//  life-area chips ride the existing create input; the Task kind skips the inbox and lands in
-//  Today through the existing task seams (create, then the focus target via the update payload).
+//  life-area chips ride the existing create input.
+//
+//  **No Task kind any more** (`F-D1-ComposerBothDoors`): the capture disc's Task tile opens
+//  `TaskCreateView`, the one task composer, so the fast-task path that lived here — its effort
+//  chips, `saveTask()` and the two task clients only it used — was deleted rather than left
+//  unreachable. `CaptureKind.task` itself stays: the fan tile and stored captures still carry it.
 //
 
 import PhotosUI
@@ -22,8 +26,6 @@ struct QuickCaptureView: View {
     /// already uses. The service takes the client but does not hand it back.
     private let captureClient: CaptureClientAdapting
     private let homeClient: HomeClientAdapting?
-    private let taskCreateClient: TaskCreateClientAdapting?
-    private let taskDetailClient: TaskDetailClientAdapting?
 
     @State var photoPickerItem: PhotosPickerItem?
     @State var selectedImageData: Data?
@@ -31,9 +33,6 @@ struct QuickCaptureView: View {
     @State var lifeAreas: [LifeArea] = []
     @State var availableTags: [Tag] = []
     @State var draftTagName = ""
-    @State var taskEffortSeconds = 900
-    @State private var isSubmittingTask = false
-    @State var taskErrorMessage: String?
     /// `F-C2-DraftsToInbox`: a composer that SUBMITTED files no draft on the way out. Without it
     /// the text is still in the service when the sheet dismisses, and the just-saved words would
     /// be filed a second time as an abandoned draft.
@@ -49,8 +48,6 @@ struct QuickCaptureView: View {
         client: CaptureClientAdapting,
         kind: CaptureKind = .note,
         homeClient: HomeClientAdapting? = nil,
-        taskCreateClient: TaskCreateClientAdapting? = nil,
-        taskDetailClient: TaskDetailClientAdapting? = nil,
         onCreated: @escaping () -> Void
     ) {
         _service = StateObject(wrappedValue: {
@@ -60,17 +57,14 @@ struct QuickCaptureView: View {
         }())
         self.captureClient = client
         self.homeClient = homeClient
-        self.taskCreateClient = taskCreateClient
-        self.taskDetailClient = taskDetailClient
         self.onCreated = onCreated
     }
 
     var kind: CaptureKind { service.kind }
     var fanSlot: CaptureFan.Slot { CaptureFan.slot(for: kind) }
-    var isTaskKind: Bool { kind == .task && taskCreateClient != nil }
 
     var isSaveDisabled: Bool {
-        guard !service.isSubmittingCapture, !isSubmittingTask else { return true }
+        guard !service.isSubmittingCapture else { return true }
         if kind == .photo { return selectedImageData == nil }
         if kind == .voice { return recordedAudioURL == nil }
         return !service.isContentValid
@@ -114,10 +108,7 @@ struct QuickCaptureView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     contentSection
-                    if isTaskKind {
-                        effortSection
-                    }
-                    if let errorMessage = service.createCaptureErrorMessage ?? taskErrorMessage {
+                    if let errorMessage = service.createCaptureErrorMessage {
                         Text(errorMessage)
                             .font(.footnote)
                             .foregroundStyle(Color("StateRisk"))
@@ -184,7 +175,6 @@ struct QuickCaptureView: View {
         switch kind {
         case .photo: return "Caption (optional)"
         case .link: return "Paste a link"
-        case .task: return "What needs doing?"
         default: return "What's on your mind?"
         }
     }
@@ -212,8 +202,8 @@ struct QuickCaptureView: View {
     /// into the Capture Inbox as a note."*
     ///
     /// **Only the typed content**, which is the spec's accepted cost named out loud: a voice or
-    /// photo capture's media is not "typed text" and is unaffected, and the task kind's effort
-    /// chip, area and tags are dropped — a filed draft is an ordinary note, not a richer draft
+    /// photo capture's media is not "typed text" and is unaffected, and the area and tags are
+    /// dropped — a filed draft is an ordinary note, not a richer draft
     /// object nobody else knows how to read.
     private func fileDraftIfNeeded() {
         guard !didSubmit else { return }
@@ -238,7 +228,6 @@ struct QuickCaptureView: View {
     }
 
     private func save() async -> Bool {
-        if isTaskKind { return await saveTask() }
         if kind == .photo, let selectedImageData {
             return await service.createPhotoCapture(imageData: selectedImageData)
         }
@@ -246,45 +235,5 @@ struct QuickCaptureView: View {
             return await service.createVoiceCapture(audioFileURL: recordedAudioURL)
         }
         return await service.createCapture()
-    }
-
-    /// The fast-task path: create through the existing seams, then the effort chip lands as
-    /// `focusDurationSeconds` via the update payload (the create input has no focus fields).
-    private func saveTask() async -> Bool {
-        guard let taskCreateClient else { return false }
-        taskErrorMessage = nil
-        let title = service.content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty else {
-            taskErrorMessage = "Give the task a name first."
-            return false
-        }
-        isSubmittingTask = true
-        defer { isSubmittingTask = false }
-        do {
-            let input = NormalizedCreateTaskInput(
-                title: title, notes: nil,
-                lifeAreaId: service.newCaptureLifeAreaId,
-                dueDate: Calendar.current.startOfDay(for: .now),
-                priority: .p3
-            )
-            let created = try await taskCreateClient.createTask(input)
-            if let taskDetailClient {
-                var payload = TaskUpdatePayload()
-                payload.focusDurationSeconds = taskEffortSeconds
-                _ = try await taskDetailClient.updateTask(id: created.id, payload: payload)
-                // The same tag selection, through the task tag seam (same registry).
-                for tagId in service.newCaptureTagIds {
-                    try? await taskDetailClient.addTagToTask(taskId: created.id, tagId: tagId)
-                }
-            }
-            service.content = ""
-            service.newCaptureLifeAreaId = nil
-            service.newCaptureTagIds = []
-            return true
-        } catch {
-            taskErrorMessage =
-                (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            return false
-        }
     }
 }

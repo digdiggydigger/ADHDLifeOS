@@ -65,48 +65,10 @@ final class FirebaseTaskCreateClientAdapterTests: XCTestCase {
         XCTAssertLessThanOrEqual(written.createdAt, Date())
     }
 
-    // MARK: - Tags
-
-    /// Creation is two steps with no cross-document transaction: write the task, then attach the
-    /// tags. Each tag is one membership write against the TASK document.
-    func testAttachTags_attachesEveryTagToTheTask() async throws {
-        let taskId = UUID()
-        let first = UUID()
-        let second = UUID()
-
-        try await adapter.attachTags(taskId: taskId, tagIds: [first, second])
-
-        XCTAssertEqual(store.tagAttachments.map(\.tagId), [first, second])
-        XCTAssertEqual(store.tagAttachments.map(\.parentId), [taskId, taskId])
-        for attachment in store.tagAttachments {
-            XCTAssertEqual(attachment.parent, .task, "never .capture — that would tag the wrong document")
-        }
-    }
-
-    func testAttachTags_withNoTags_writesNothing() async throws {
-        try await adapter.attachTags(taskId: UUID(), tagIds: [])
-
-        XCTAssertTrue(store.tagAttachments.isEmpty)
-    }
-
-    /// Dedup by name rather than creating a duplicate, matching the old backend.
-    func testCreateTag_returnsTheExistingTagOnANameMatch() async throws {
-        let existing = Tag(id: UUID(), name: "Errand")
-        store.tags = [existing]
-
-        let tag = try await adapter.createTag(name: "errand")
-
-        XCTAssertEqual(tag, existing)
-    }
-
-    func testFetchTags_returnsTheTagCollection() async throws {
-        let tag = Tag(id: UUID(), name: "errand")
-        store.tags = [tag]
-
-        let tags = try await adapter.fetchTags()
-
-        XCTAssertEqual(tags, [tag])
-    }
+    // `F-D1-ComposerBothDoors` deleted this file's four tag tests (`testAttachTags_*`,
+    // `testCreateTag_*`, `testFetchTags_*`) together with the adapter methods they covered: the
+    // seam was pruned once the composer stopped asking for tags. `ComposerBothDoorsCallSiteTests.
+    // testTheCreateSeamNoLongerCarriesTags` is their reversal — it pins that the methods stay gone.
 
     private static func input() -> NormalizedCreateTaskInput {
         NormalizedCreateTaskInput(title: "Draft the brief", notes: nil, lifeAreaId: nil, dueDate: nil, priority: .p2)

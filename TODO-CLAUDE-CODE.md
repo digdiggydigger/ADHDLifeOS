@@ -6109,7 +6109,7 @@ is content (D1), then layout (D2), then the Tasks-board fallout (D3).
 
 ---
 
-### FEATURE: F-D1-ComposerBothDoors — one composer, both doors, and the settled content  [ ] NOT STARTED
+### FEATURE: F-D1-ComposerBothDoors — one composer, both doors, and the settled content  [x] COMPLETED
 
 **What E chose:**
 - **Doors → "One composer, both doors"** (round 6). *"The Tasks '+' and the disc → Task open the
@@ -6252,24 +6252,33 @@ is content (D1), then layout (D2), then the Tasks-board fallout (D3).
   beyond the files above.
 
 **Acceptance criteria:**
-- [ ] RED first: a pure test that `TaskCreateService` has no `notes`/`atPlaceId`/tags surface (or
-      that the view no longer renders those identifiers), a test that `TaskCreateView`'s Area control
-      defaults to "None" and is a `Menu`, and a test/assertion that creating a task with a chosen
-      Time writes `focusDurationSeconds` via `updateTask`. Count the RED failures before writing the
-      implementation.
-- [ ] The reversed/annotated items above updated in place, with the round quoted.
-- [ ] Red-check: restore `TaskCreateView.swift`/`TaskCreateService.swift`/`QuickCaptureView.swift`
-      from the pre-block commit, count the failures, restore forward with `git checkout --`.
-- [ ] SwiftLint, the full suite and the build all pasted.
-- [ ] `screenshots/composer-both-doors/` + README: Tasks "+" and disc → Task opening the identical
-      composer, light/dark, before (two different composers) and after.
-- [ ] **`apple-design` review owed** (§7.6) — the Area/Time menus and the stripped content are a
-      visible change.
-- [ ] **RM-on device pass: none owed.** No `#available` site and no appear/disappear animation is
-      added or changed in this block — say so in the report.
-- [ ] No `#available` site touched → no "Verified paths" line owed.
-- [ ] No `firestore.rules` change (no schema field added to create; `focusDurationSeconds` already
-      exists on `TaskUpdatePayload`).
+- [x] RED first — **15 of 23 tests failed (66 assertion failures + 1 thrown)** against a compile-only scaffold, so the
+      count was real rather than a compile error. The 8 that passed are guards on behaviour that
+      already held; the one that passed vacuously (`writesNoTime`) was then proven by mutation.
+- [x] The reversed/annotated items updated in place, with the round quoted. **Prune-or-keep → PRUNED**:
+      `fetchTags`/`createTag`/`attachTags` left the protocol, adapter, backing store, both fakes and
+      both previews; `testTheCreateSeamNoLongerCarriesTags` is the reversal. `TaskCreateAtPlaceTests`
+      was SPLIT (its 5 validation/adapter tests stay; the 3 `testService_*` went). The journey's
+      undated-task comment at `SignedInJourneyUITests.swift:49-51` stays TRUE after D1 and was left
+      for D3, as specced. `LifeAreaPicker`'s "None (Task Create)" doc comment ANNOTATED.
+- [x] Red-check: restoring the three files from `9da589f` is a COMPILE failure (3 distinct errors,
+      all the pruned seam), reported as such. Three compiling mutation batches instead: disc branch
+      reverted + "None"→"Decide later" + Time write deleted → **6 tests / 9 assertions**; the two
+      Time-write traps (follow-up inside the create's `do`, a write on a failed create) → **2 / 5**.
+- [x] SwiftLint, the full suite and the build all pasted in the block report.
+- [x] `screenshots/composer-both-doors/` + README — 12 frames, before/after, light/dark. **Its first
+      after-run caught a Critical every other gate missed**: the Area menu's tap target was
+      338 × 20.3pt inside a card drawn 48pt tall. Fixed; the harness now asserts ≥ 48pt.
+- [x] `apple-design` review — in the block report and `handoff/ADHD-AUDIT-BUILD-LOG.md`.
+- [x] RM-on device pass: none owed — no `#available` site, no appear/disappear animation.
+- [x] No `#available` site touched → no "Verified paths" line owed.
+- [x] No `firestore.rules` change.
+
+**Build notes (2026-09-23):** Time defaults to **15 min, always written** — every board E approved
+reads "15 min" and the fan already wrote 900. The named consequence: tasks from the Tasks "+" door
+used to be `focusDurationSeconds = nil` and are now 900, which moves them in
+`MomentumScoreboard.bestNextMove`'s effort ranking (nil sorted last). The composer branch lives in
+`RootView+Doors.swift` (`composer(for:)`) because the branch tipped `RootView.swift` over 400 lines.
 
 **Dependencies:** Arc C lands first (undo capsule + Cancel→Close + draft-save — D1 reuses whatever
 header control Arc C ships rather than inventing its own). D2 depends on D1 (same file). D3 is

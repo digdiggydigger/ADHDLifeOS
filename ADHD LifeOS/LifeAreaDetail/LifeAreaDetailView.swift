@@ -118,6 +118,7 @@ struct LifeAreaDetailView: View {
             if let taskCreateClient {
                 TaskCreateView(
                     client: taskCreateClient,
+                    taskDetailClient: taskDetailClient,
                     lifeAreas: allAreas.isEmpty ? [lifeArea] : allAreas,
                     preselectedLifeAreaId: lifeArea.id,
                     captureClient: captureClient
