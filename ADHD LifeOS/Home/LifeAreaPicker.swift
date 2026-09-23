@@ -26,10 +26,15 @@ struct LifeAreaPicker: View {
     let lifeAreas: [LifeArea]
     @Binding var selection: UUID?
     let accessibilityID: String
-    /// The pop-up button's ⌃⌄ glyph after the value. `false` everywhere a `Form` row already reads
-    /// as tappable; the task composer, which is not a `Form`, turns it on so its Area card says
-    /// it opens something (`pop-up-buttons.md`).
-    var showsPopUpIndicator = false
+    /// Outside a `Form`, the height of the full-width row the label fills — and with it the pop-up
+    /// button's ⌃⌄ glyph after the value, so the row says it opens something
+    /// (`pop-up-buttons.md`). `nil` everywhere a `Form` row already reads as tappable.
+    ///
+    /// **The row is sized INSIDE the label, and that is the point.** `F-D1`'s first build padded a
+    /// card around the `Menu` from outside: it LOOKED 48pt tall and only its 20pt line of text took
+    /// a tap, because a `Menu`'s hit area is its label. The render harness caught it
+    /// (`ComposerBothDoorsRenderUITests`, which now asserts the frame).
+    var popUpRowHeight: CGFloat?
 
     /// An archived row is disabled EXCEPT when it is the current selection. Without that exception a
     /// task or log that already holds an archived area would render blank — which is exactly the
@@ -74,7 +79,7 @@ struct LifeAreaPicker: View {
             // In a Form this renders as a tappable row with the value trailing — matching the
             // Picker it replaces. `LabeledContent` reflows at accessibility Dynamic Type sizes
             // instead of clipping into narrow columns (§7 house pattern).
-            if showsPopUpIndicator {
+            if let popUpRowHeight {
                 LabeledContent(title) {
                     HStack(spacing: 4) {
                         Text(selectedLabel)
@@ -83,6 +88,8 @@ struct LifeAreaPicker: View {
                             .accessibilityHidden(true)
                     }
                 }
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, minHeight: popUpRowHeight)
                 .contentShape(Rectangle())
             } else {
                 LabeledContent(title, value: selectedLabel)

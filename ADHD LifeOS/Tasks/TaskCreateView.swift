@@ -177,7 +177,7 @@ struct TaskCreateView: View {
                     lifeAreas: service.offeredLifeAreas,
                     selection: $service.lifeAreaId,
                     accessibilityID: "taskCreateLifeAreaPicker",
-                    showsPopUpIndicator: true
+                    popUpRowHeight: Self.menuRowHeight
                 )
                 .menuCard()
             }
@@ -185,6 +185,10 @@ struct TaskCreateView: View {
                 .menuCard()
         }
     }
+
+    /// Round 7: "the composer's own chips stay 48". The whole row is the tap target — see
+    /// `LifeAreaPicker.popUpRowHeight` for the build this was learned on.
+    static let menuRowHeight: CGFloat = 48
 
     private var timeMenu: some View {
         Menu {
@@ -210,6 +214,8 @@ struct TaskCreateView: View {
                         .accessibilityHidden(true)
                 }
             }
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: Self.menuRowHeight)
             .contentShape(Rectangle())
         }
         .accessibilityIdentifier("taskCreateTimeMenu")
@@ -247,13 +253,12 @@ struct TaskCreateView: View {
 }
 
 private extension View {
-    /// The composer's card for a Menu row: full width, 48pt tall, the label tinted primary so the
-    /// row reads as a setting with its value rather than as a run of accent-blue link text.
+    /// The composer's card behind a Menu row, the label tinted primary so the row reads as a
+    /// setting with its value rather than as a run of accent-blue link text. **Paint only**: the
+    /// row's size lives inside each Menu's label, where it is also the tap target.
     func menuCard() -> some View {
         self
             .tint(.primary)
-            .padding(.horizontal, 16)
-            .frame(maxWidth: .infinity, minHeight: 48)
             .background(Color("CardSurfaceSecondary"), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

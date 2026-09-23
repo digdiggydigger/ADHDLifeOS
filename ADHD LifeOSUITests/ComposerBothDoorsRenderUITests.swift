@@ -81,6 +81,19 @@ final class ComposerBothDoorsRenderUITests: XCTestCase {
     @MainActor
     private func renderTheMenus(_ app: XCUIApplication) {
         let area = app.buttons["taskCreateLifeAreaPicker"]
+        let time = app.buttons["taskCreateTimeMenu"]
+        // **The one real assertion here, and the first after-run is why.** That build padded each
+        // card from OUTSIDE its Menu: the card drew 48pt tall, the Area button measured 338 x 20.3,
+        // and a tap anywhere but the line of text did nothing. A frame is the only place that
+        // difference exists — the picture looked right.
+        for (control, name) in [(area, "Area"), (time, "Time")] {
+            XCTAssertTrue(control.waitForExistence(timeout: UITestSession.timeout), "No \(name) control")
+            XCTAssertGreaterThanOrEqual(
+                control.frame.height, 48,
+                "The \(name) menu's tap target is \(control.frame.height)pt tall"
+                    + " — round 7 keeps the composer's own controls at 48"
+            )
+        }
         let none = app.buttons["None"]
         if UITestSession.tap(area, untilExists: none) {
             attach(app, named: "05-after-area-menu-open")
@@ -89,7 +102,6 @@ final class ComposerBothDoorsRenderUITests: XCTestCase {
             XCTFail("The Area control opened no menu with a \"None\" row")
         }
 
-        let time = app.buttons["taskCreateTimeMenu"]
         let hour = app.buttons["1 hr"]
         if UITestSession.tap(time, untilExists: hour) {
             attach(app, named: "06-after-time-menu-open")
