@@ -30,6 +30,7 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
     private(set) var addTagToTaskCallCount = 0
     private(set) var removeTagFromTaskCallCount = 0
     private(set) var lastUpdateTaskPayload: TaskUpdatePayload?
+    private(set) var lastUpdateTaskId: UUID?
     private(set) var lastAddTagArguments: (taskId: UUID, tagId: UUID)?
     private(set) var lastRemoveTagArguments: (taskId: UUID, tagId: UUID)?
     private(set) var softDeleteTaskCalls: [UUID] = []
@@ -54,6 +55,7 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
 
     func updateTask(id: UUID, payload: TaskUpdatePayload) async throws -> TaskDetail {
         updateTaskCallCount += 1
+        lastUpdateTaskId = id
         lastUpdateTaskPayload = payload
         guard let result = updateTaskResult else {
             var updated = try fetchTaskResult.get()

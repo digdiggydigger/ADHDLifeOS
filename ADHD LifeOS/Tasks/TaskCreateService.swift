@@ -35,7 +35,19 @@ final class TaskCreateService: ObservableObject {
     private let client: TaskCreateClientAdapting
     private let placesClient: PlacesClientAdapting
 
-    init(client: TaskCreateClientAdapting, placesClient: PlacesClientAdapting? = nil) {
+    // RED SCAFFOLD — compiles, does nothing. Replaced in the GREEN commit.
+    @Published var effort: TaskEffortChoice = .standard
+    var offeredLifeAreas: [LifeArea] { [] }
+    func loadLifeAreas() async {}
+    static func offeredAreas(_ areas: [LifeArea], selected: UUID?) -> [LifeArea] { [] }
+
+    init(
+        client: TaskCreateClientAdapting,
+        taskDetailClient: TaskDetailClientAdapting? = nil,
+        lifeAreas: [LifeArea] = [],
+        homeClient: HomeClientAdapting? = nil,
+        placesClient: PlacesClientAdapting? = nil
+    ) {
         self.client = client
         self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
     }
