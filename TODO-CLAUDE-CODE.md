@@ -6252,7 +6252,7 @@ is content (D1), then layout (D2), then the Tasks-board fallout (D3).
   beyond the files above.
 
 **Acceptance criteria:**
-- [x] RED first — **15 of 23 tests failed (67 assertions)** against a compile-only scaffold, so the
+- [x] RED first — **15 of 23 tests failed (66 assertion failures + 1 thrown)** against a compile-only scaffold, so the
       count was real rather than a compile error. The 8 that passed are guards on behaviour that
       already held; the one that passed vacuously (`writesNoTime`) was then proven by mutation.
 - [x] The reversed/annotated items updated in place, with the round quoted. **Prune-or-keep → PRUNED**:

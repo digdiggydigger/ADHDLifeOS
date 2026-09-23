@@ -49,6 +49,10 @@ final class SignedInJourneyUITests: XCTestCase {
         // The composer creates the task undated, and the default Momentum board deliberately
         // excludes undated tasks since F-V3-Tasks-rebuild — they live under the Open filter,
         // so that is where a freshly created task must appear.
+        // *Annotated by `F-D1-ComposerBothDoors` (2026-09-23):* still TRUE after that block —
+        // the one composer both doors now open still creates undated ("Not yet"), and round 6's
+        // "Anytime · N" row that makes an undated task visible on Momentum is `F-D3`'s. That
+        // block's report should revisit this comment.
         let openChip = app.buttons["Open"]
         XCTAssertTrue(openChip.waitForExistence(timeout: UITestSession.timeout), "The Open filter chip is missing")
         openChip.tap()

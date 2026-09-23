@@ -3,8 +3,8 @@
 
 > ## Edition 78 in six lines (2026-09-23, arc D — `F-D1` built, and a frame found a bug again)
 >
-> - **The block is done and every acceptance criterion is met.** RED was 15 of 23 tests (67
->   assertions) against a compile-only scaffold; GREEN 49/0 targeted, then 3,317/0 in full. The
+> - **The block is done and every acceptance criterion is met.** RED was 15 of 23 tests (66
+>   assertion failures + 1 thrown) against a compile-only scaffold; GREEN 49/0 targeted, then 3,317/0 in full. The
 >   red-checks: restoring the three pre-block files is a COMPILE failure (3 errors, the pruned
 >   seam); three compiling mutation batches failed **6 tests / 9 assertions** and **2 / 5**.
 > - **E's decisions are built as E made them.** "One composer, both doors" (round 6); the content
