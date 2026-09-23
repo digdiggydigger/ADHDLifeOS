@@ -522,6 +522,10 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   after-render failed with the Area menu measuring **338 × 20.3pt** inside a card drawn 48pt tall.
   A `Menu`'s hit area is its LABEL, and the card was padded from outside. It is fixed, and the
   harness now asserts ≥ 48pt.
+- **The create journey had a race, found by running the submit path for real.** It waited on
+  an element that already exists under the sheet (the occluded-element trap again), and it lost
+  a slow run. Fixed in the TEST, and it now passes. The app path takes 2.08s clean, and the
+  emulator's write times prove the old code would have lost that run too.
 - **`apple-design`:** rated Good. One High is recorded rather than fixed, because contrast is held
   for the colour arc (R9). The value text on the menu card in light is **3.22:1**. The rest is in
   the block report.

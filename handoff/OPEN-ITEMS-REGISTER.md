@@ -420,6 +420,15 @@ update rather than improvising a list in chat.
   `FirebaseTaskCreateClientAdapter` are all at **100%**. The service's last partial region, the
   `?? error.localizedDescription` fallback, was closed by one test, and that test was proven by
   mutation.
+- **The submitted create was run for real, and its journey had a RACE.**
+  `SignedInJourneyUITests.testCreateTask_fromTasksTab_appearsInList` failed once on this branch:
+  it waited on an "Open" chip that exists UNDER the sheet the whole time, then tapped before the
+  composer left. The emulator's timestamps settle it: in a slow run the create landed at +9.2s
+  and the Time write at +9.8s, while the chip was tapped at +7.5s, so the old single-write
+  composer would have lost that run too. Clean, the whole path takes **2.08s** (create, then the
+  Time write 54ms later, `focus_duration_seconds: 900`). The journey now waits for the composer to
+  LEAVE first, and re-run: **1 test, 0 failures**. (One run in between SKIPPED on a 3s emulator
+  probe timeout while the machine was loaded; that is not counted as a pass.)
 - **Rules:** no `firestore.rules` change (`focus_duration_seconds` already existed on the task).
   Nothing to republish.
 - **Simulator:** `9181EBF9-…` was ERASED after every UI run. **Emulator:** restarted at session
