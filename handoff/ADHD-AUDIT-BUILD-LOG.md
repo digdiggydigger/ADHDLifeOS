@@ -102,14 +102,14 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 |---|---|---|---|---|
 | `F-C1-UndoCapsule` | one undo capsule, in the disc row, for every task close | **MERGED**, + the height round, + E's SHAPE ROUND, + **E's DEVICE LOOK: PASSES** | `ea9cbed` (PR #172), shape round PR #178, device evidence `2db6443` | **nothing.** (The radius CAP has no device evidence — E's larger-text look was the top of the STANDARD range — but no block owes it; the AX3 render covers it.) |
 | `F-C2-DraftsToInbox` | unsent text goes to the inbox; Cancel becomes Close; task detail autosaves | **MERGED**, + **E's DEVICE LOOK: PASSES** | PR #180, screenshots PR #183, device evidence `015c41b` | **nothing.** |
-| `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | **IN PROGRESS** — read side landed and INERT | PR #184 | — |
-| `F-C4-TagsRecentlyDeleted` | tags in Recently Deleted; hidden links, restore-to-everywhere, merge | NOT STARTED | — | — |
+| `F-C3-RecentlyDeleted` | soft delete for tasks and captures; one row in Tools | **MERGED**, + **E's DEVICE LOOK: PASSES** (2026-09-22) | PRs #184, #185; verdict `236db22` | **nothing.** *(Row corrected in session 8 — two sessions had left it at IN PROGRESS.)* |
+| `F-C4-TagsRecentlyDeleted` | tags in Recently Deleted; hidden links, restore-to-everywhere, merge | **MERGED**, + **E's DEVICE LOOK: PASSES** (2026-09-22) | PR #187; verdict `236db22` | **nothing.** §A-CAPSULE is deferred WORK, not a question. *(Row corrected in session 8.)* |
 
 ### Arc D · The composer
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-D1-ComposerBothDoors` | one composer, both doors, and the settled content | NOT STARTED | — | — |
+| `F-D1-ComposerBothDoors` | one composer, both doors, and the settled content | **COMPLETE** (2026-09-23) | branch `feature/adhd-d1-composer` — see session 8 for the PR | **nothing owed.** The phone carries C3 + C4, not this block — install before any look |
 | `F-D2-ComposerKeyboardLayout` | L3 rides the keyboard; AX3 falls back; the Date segment | NOT STARTED | — | — |
 | `F-D3-TasksAnytimeRow` | the "Anytime · N" row on the Momentum board | NOT STARTED | — | — |
 
@@ -496,4 +496,36 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   counts were stale and are corrected (fifteen / seventeen).
 - **Next session starts at:** `F-D1-ComposerBothDoors`, from
   `handoff/START-HERE-adhd-audit-arc-D1-composer.md`.
+
+### Session 8 — 2026-09-23, arc D, block `F-D1-ComposerBothDoors`
+- **Landed:** `F-D1-ComposerBothDoors`. Suite **3,317 / 0**, SwiftLint **0**, build SUCCEEDED,
+  coverage in the register's edition 78. **The Tasks "+", "Add to <area>" and the capture disc's
+  Task tile (and the widget door, which routes the same way) now open ONE composer**: a title, the
+  four when-chips, and Area and Time pop-up menus. Tags, place and notes live on the task.
+- **The brief was checked first** and was ACCURATE on the block. It was stale on two side facts:
+  it listed §A-CAPSULE as owed (answered in `67ae03a`) and the phone as on `4917955` (E's verdict
+  on C3/C4 is `236db22`). E's paste said both, and E was right.
+- **Where the build departed from the spec, and why:**
+  - **Prune, not keep.** The tag methods left `TaskCreateClientAdapting` and everything under it.
+  - **The Time default is 15 min, always written.** That is the value on every board E approved.
+    The consequence is named: tasks from the Tasks "+" door go from `nil` to 900 seconds, which
+    moves them in `bestNextMove`'s ranking.
+  - **The disc branch lives in `RootView+Doors.swift`** (`composer(for:)`). The spec put it inline
+    in `RootView`, but that tipped the file over 400 lines.
+  - **`QuickCaptureView` lost more than the spec listed.** `taskCreateClient`/`taskDetailClient`,
+    the `.task` placeholder arm and the `.task` submit glyph all went too. They were dead once the
+    path went.
+  - **`ComposerDraftCallSiteTests` was VACUOUS for the disc door** — the tabs in `RootView.swift`
+    already carry `captureClient: captureClient`. Re-pointed at `RootView+Doors.swift`; the
+    red-check now catches it.
+- **The finding, and it is the second block running where a FRAME beat every green gate.** The first
+  after-render failed with the Area menu measuring **338 × 20.3pt** inside a card drawn 48pt tall.
+  A `Menu`'s hit area is its LABEL, and the card was padded from outside. It is fixed, and the
+  harness now asserts ≥ 48pt.
+- **`apple-design`:** rated Good. One High is recorded rather than fixed, because contrast is held
+  for the colour arc (R9). The value text on the menu card in light is **3.22:1**. The rest is in
+  the block report.
+- **Owed to E:** nothing. **Owed to the code:** nothing for this block.
+- **Next session starts at:** `F-D2-ComposerKeyboardLayout`, from
+  `handoff/START-HERE-adhd-audit-arc-D2-keyboard.md`.
 
