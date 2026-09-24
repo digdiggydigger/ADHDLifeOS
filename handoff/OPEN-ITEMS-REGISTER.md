@@ -18,8 +18,10 @@
 > - **Nothing looks different on E's phone (27.0)**, so no `apple-design` review and no RM-on pass
 >   were owed; the device SMOKE launch (widget, Live Activities, App Intents all changed targets)
 >   is recorded in State.
-> - **E's ask this session — install the iOS 18 sim runtime for E — is NOT possible from the CLI**
->   (`xcodebuild -downloadPlatform` serves no 18.x); the DMG route under E's Apple ID is in §A.
+> - **E's ask this session — install the iOS 18 sim runtime — DONE by the end of the day:** E downloaded
+>   the DMG, the install needed the inner image extracted and cloned (five attempts; §A, memory
+>   `simulator-runtime-install`), and **the suite passes on iOS 18.0: 3,320 / 0.** The floor path is no
+>   longer compile-only.
 > - **LATER THE SAME DAY: E answered EVERY open Step 0 question in one message** — *"Take all the
 >   recommendations as written"* — 17 questions across 10 blocks (D2, E3, E4, E5, F1, F5, A1, A2, A4,
 >   B2, G5), each written into its block in `TODO-CLAUDE-CODE.md` as **"E DECIDED 2026-09-24"**. Plus
@@ -474,8 +476,8 @@ update rather than improvising a list in chat.
   does on the phone, in one pass:** open the app, start and end a sprint (the Live Activity and
   its Pause/Stop buttons), and add the Focus widget. Nothing should look different from `d85b18a`;
   if anything does, that is the finding. **"Verified paths":** 26 path — run on sim 27.0 + E's
-  phone; **18–25 path — code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY, no iOS 18
-  runtime installed** (and none downloadable from the CLI — §A).
+  phone; **18–25 path — RUN on sim 18.0 later the same day (suite 3,320 / 0, app boots; §A,
+  `screenshots/floor-ios18-first-run/`); 19–25 never run.**
 - **Simulator:** no UI-target run this session, so no erase was needed. **Emulator:** started at
   session start with the audit's imported state; UP for the coverage run.
 - **Where the build departed from the spec, and why:** `ToolsCatalog.available(placesSupported:)`
@@ -1537,14 +1539,15 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
       in code. The finding does NOT extend to the pops or the milestones (both re-confirmed).
       The options remain: measure the luminance properly, thin the two clusters, or accept it with
       eyes open. (DEFERRED BY E, carried to §D)
-- [ ] **Install the iOS 18 simulator runtime** — the ONE runtime that would let the 18–25 floor path
-      RUN rather than only compile (§7.3). E, 2026-09-11, of the older-runtime version of this row:
-      *"In a number of days in the future, I will install this."* **E asked on 2026-09-24 whether it
-      could be installed for E; it cannot from the CLI** — Xcode 26.6's `xcodebuild -downloadPlatform
-      iOS -buildVersion` answers "not available" for 18.0–18.6 and for the build numbers
-      22A3351 / 22F77 / 22G86 (all tried). The route left is the runtime DMG from
-      developer.apple.com/download/all under E's Apple ID, then `xcrun simctl runtime add <dmg>`.
-      Until then every `#available` fallback is compile-only by policy. (carried, re-pointed at 18)
+- [x] **Install the iOS 18 simulator runtime — DONE 2026-09-24.** iOS 18.0 (22A3351) is Ready,
+      "iPhone 16 Pro (iOS 18 floor)" exists, the full unit suite passes on it (**3,320 / 0, 6
+      iOS-26-only skips**) and the app boots and draws (`screenshots/floor-ios18-first-run/`). E
+      downloaded the DMG (Apple serves it only behind the developer sign-in; `-downloadPlatform`
+      offers no 18.x) and keeps it at `/Volumes/Es-SSD/Ethan/Developer/Xcode iOS Runtimes/`; the
+      install took FIVE attempts because the portal DMG is two layers and each failed add leaked an
+      8 GB mount — the whole procedure is memory `simulator-runtime-install`. E also freed 13 GB
+      (both `iOS DeviceSupport` folders + the previews cache, regenerable). Internal disk: 19.4 GB
+      free after. (CLOSED)
 - [ ] **Optional, still not decided: an `.accessibilityHint` on the Celebration sounds row only.**
       (carried)
 - [x] **THE DEVICE SITTING — DONE 2026-09-12, and BOTH blocks PASSED with Reduce Motion OFF *and*

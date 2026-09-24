@@ -6471,7 +6471,7 @@ and `.swiftlint.yml` hold no floor reference (checked).
 - [x] A final repo-wide grep for `iOS 16|16\.0 floor|16 path|16\.1` over the GOVERNING set returns
       only spacing tokens and dated history, each explained in the report.
 - [x] Device smoke launch on E's phone (installed first); "Verified paths" line; no `firestore.rules`
-      change. *(Installed wirelessly and LAUNCHED 2026-09-24 at `442db4e`, `MinimumOSVersion 18.0` app + widget; the sprint / Live Activity / widget steps are E's — see register edition 80.)*
+      change. *(Installed wirelessly and LAUNCHED 2026-09-24 at `442db4e`, `MinimumOSVersion 18.0` app + widget; E's walk-through PASSED the same day. **And the iOS 18.0 runtime was installed the same day: the 18–25 path was RUN on the floor — suite 3,320 / 0 on sim 18.0, app boots; `screenshots/floor-ios18-first-run/`.**)*
 
 **Dependencies:** none before it; **`F-D2` waits for it.** Build it in a fresh session from the
 live opener.

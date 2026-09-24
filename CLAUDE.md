@@ -120,7 +120,8 @@ was installed there are **TWO** `iPhone 17 Pro` simulators — one on 26.5, one 
 write a destination without `OS=` again.** The two that matter:
 
 ```
--destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'   # the standard-run runtime (not the floor — no 18 runtime is installed)
+-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'   # the standard-run runtime
+-destination 'platform=iOS Simulator,name=iPhone 16 Pro (iOS 18 floor),OS=18.0'   # THE FLOOR (installed 2026-09-24)
 -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0'   # the current one
 ```
 
@@ -712,17 +713,18 @@ the rewrite, not what justifies it; the rule outlived the fact.) The skill-prece
   pass-through.
 - §5's ban on plain easing does not apply to a Reduce Motion opacity fade; §5 carries the clause.
 
-#### 7.3 Verification honesty — no floor runtime, and every report says so
+#### 7.3 Verification honesty — the floor runtime, and every report says so
 
-- **This machine has TWO simulator runtimes, iOS 26.5 and 27.0, and E's phone runs 27.** Neither
-  is the floor. So a floor branch is proved to COMPILE (the 18.0 target plus
-  `CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE` make every gate load-bearing) and to be
-  REACHED (the call-site tests, §7.4). Its CODE can be RUN on 26.5 by injecting the mode it would
-  select. It is **never run ON an iOS 18–25 OS, and that is compile-only by policy, not by
-  oversight** (E's call, 2026-09-11) until an iOS 18 simulator runtime is installed (register §A).
-  **Xcode 26.6's `-downloadPlatform` serves NO iOS 18 runtime** (checked 2026-09-24 by version
-  18.0–18.6 and by build number): the only route is the DMG from developer.apple.com under E's
-  Apple ID, then `xcrun simctl runtime add`.
+- **This machine has THREE simulator runtimes — iOS 18.0 (THE FLOOR, installed 2026-09-24 from
+  E's developer-portal download; the procedure and its traps are in memory
+  `simulator-runtime-install`), 26.5 and 27.0 — and E's phone runs 27.** So a floor branch is
+  proved to COMPILE (the 18.0 target plus `CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE`
+  make every gate load-bearing), to be REACHED (the call-site tests, §7.4), and — since
+  2026-09-24 — **to RUN on the floor OS**: the full unit suite passes on the "iPhone 16 Pro (iOS
+  18 floor)" simulator (3,320 / 0, six iOS-26-only tests skipping by design) and the app boots and
+  draws there (`screenshots/floor-ios18-first-run/`). Injection on 26.5 remains the cheap
+  per-block check; a block that adds or changes an `#available` site ALSO runs its floor branch on
+  the 18.0 simulator and says so. iOS 19–25 are still never run, and no report claims otherwise.
 - **Since 2026-09-12 the reduced path is no longer verified incidentally.** While E ran Reduce
   Motion ON, every reduced branch was tried on a real phone by the person reviewing the block,
   whether or not anyone planned it. With the setting off, a reduced path is exercised ONLY where a
@@ -750,8 +752,7 @@ the rewrite, not what justifies it; the rule outlived the fact.) The skill-prece
   shipped, for example:
 
   > `26 path: run on sim + E's phone (RM off). Reduced: run on sim (injected) + E's phone (RM on).
-  > 18–25 path: code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY — no 18 runtime
-  > installed.`
+  > 18–25 path: run on sim 18.0 (the floor); 19–25 never run.`
 
 - **Never write "works on iOS 18".** Nobody here can know that yet.
 
