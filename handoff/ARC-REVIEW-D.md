@@ -2,9 +2,9 @@
 
 *Written 2026-09-24 at the arc-D close, under E's per-arc bypass (CLAUDE.md › "Per-arc bypass"):
 the arc's three blocks were built back to back, each fully gated, and this is the ONE phone pass
-that reviews them together. **The build on E's phone is `main` @ `<SHA — filled at install>`**,
-installed and launched BEFORE this page was sent (memory `ask-for-device-checks-on-a-build-e-has`).
-Force-quit the app once before starting (memory `relaunch-before-judging-device`).*
+that reviews them together. **The build on E's phone is `main` @ `ca06c04`** (PR #202), built,
+installed and launched on `wishwashwacky15` on 2026-09-24 BEFORE this page was sent (memory
+`ask-for-device-checks-on-a-build-e-has`). Force-quit the app once before starting (memory `relaunch-before-judging-device`).*
 
 **Reduce Motion: leave it OFF for the whole pass.** No block in arc D adds or changes a reduced
 site — D1 and D2 have none (the composer's selection recolours in place), and D3's fold has no
