@@ -9,6 +9,13 @@
 //  rows made it the page's biggest overwhelm risk, so it renders only under the Open filter.
 //  Reuses `LifeAreaTaskGroup` so the list renders these with the machinery it already has.
 //
+//  *Annotated by `F-D3-TasksAnytimeRow` (2026-09-24):* "undated tasks" no longer belongs to that
+//  sentence; "tasks due beyond tomorrow" still does. Round 6 gave undated tasks a fourth bucket,
+//  Anytime, LAST on the board and folded by default in `TaskListView` — *"the tail stays folded,
+//  but a new task is visible where it was added."* Round 8b settled the scope so this could not
+//  widen b11's exclusion by accident: *"Undated tasks already live in Anytime, and future-dated
+//  tasks are untouched."*
+//
 
 import Foundation
 
@@ -17,15 +24,22 @@ enum MomentumTaskBuckets {
         case dueToday
         case tomorrow
         case closedToday
+        /// Undated open tasks (`F-D3`). LAST, so `allCases` renders it below the evidence pile.
+        case anytime
 
         var title: String {
             switch self {
             case .dueToday: return "Due today"
             case .tomorrow: return "Tomorrow"
             case .closedToday: return "Closed today"
+            case .anytime: return "Anytime"
             }
         }
     }
+
+    /// The Anytime bucket's group id — the one string `TaskListView` folds on, spelled once so the
+    /// bucket and the fold cannot drift apart (`F-D3-TasksAnytimeRow`).
+    static let anytimeGroupId = "momentum-anytime"
 
     static func group(
         tasks: [TaskItem],
@@ -90,14 +104,16 @@ enum MomentumTaskBuckets {
                   calendar.isDate(completedAt, inSameDayAs: now) else { return nil }
             return .closedToday
         }
-        // Undated tasks belong to the Open filter, not the board.
-        guard let due = task.dueDate else { return nil }
+        // Undated tasks are the board's folded tail (`F-D3`, round 6); the Open filter still
+        // lists them too.
+        guard let due = task.dueDate else { return .anytime }
         let dueDay = calendar.startOfDay(for: due)
         if dueDay <= today { return .dueToday }
         // Computed off the injected clock — `isDateInTomorrow` reads the wall clock and would
         // make this untestable and wrong at any other `asOf`.
         if dueDay == calendar.date(byAdding: .day, value: 1, to: today) { return .tomorrow }
-        // Due beyond tomorrow: same rule as undated — Open holds the tail.
+        // Due beyond tomorrow: Open holds this tail, and round 8b left it untouched — "future-dated
+        // tasks are untouched" — so it is NOT Anytime.
         return nil
     }
 

@@ -50,9 +50,14 @@ final class TasksServiceTests: XCTestCase {
         XCTAssertEqual(fake.fetchAllTasksCallCount, 1)
     }
 
-    /// F-V3-Tasks-rebuild: the Momentum board shows only Due today / Tomorrow / Closed today —
-    /// an undated open task is NOT on it, and lives under the Open filter instead (E's b11 call).
-    func testLoad_momentumExcludesUndatedTasks_openFilterShowsThem() async {
+    /// F-V3-Tasks-rebuild: the Momentum board showed only Due today / Tomorrow / Closed today —
+    /// an undated open task was NOT on it, and lived under the Open filter instead (E's b11 call).
+    ///
+    /// *Reversed by `F-D3-TasksAnytimeRow` (2026-09-24), not deleted.* Round 6: *"The Tasks board
+    /// gains one collapsed 'Anytime · N' row at the bottom: the tail stays folded, but a new task
+    /// is visible where it was added."* So the undated task now ALSO loads into Momentum's fourth
+    /// bucket, through the real service path — and the Open filter half is unchanged.
+    func testLoad_momentumShowsUndatedTasksUnderAnytime_openFilterStillShowsThem() async {
         let fake = FakeTasksClientAdapting()
         let work = LifeArea(id: UUID(), name: "Work", colour: "#123456", sortOrder: 0)
         let undated = makeTask(lifeAreaId: work.id, title: "No due date")
@@ -61,7 +66,12 @@ final class TasksServiceTests: XCTestCase {
         let sut = TasksService(client: fake)
 
         await sut.load()
-        XCTAssertEqual(sut.state, .loaded([]), "Momentum has nothing to say about the long tail")
+        XCTAssertEqual(sut.state, .loaded([
+            LifeAreaTaskGroup(
+                lifeAreaId: nil, lifeAreaName: "Anytime · 1", tasks: [undated],
+                customId: "momentum-anytime"
+            )
+        ]), "An undated task must be visible on Momentum, folded under Anytime (round 6)")
 
         sut.statusFilter = .open
         XCTAssertEqual(sut.state, .loaded([

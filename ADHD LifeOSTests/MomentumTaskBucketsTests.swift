@@ -10,6 +10,11 @@ import XCTest
 /// buckets instead of life areas — Due today, Tomorrow, and the evidence pile, Closed today. The
 /// long tail (later / undated) is deliberately NOT here (E's b11 call): Momentum is today's page,
 /// and the rest lives under the Open filter. Same `LifeAreaTaskGroup` container the list renders.
+///
+/// *Annotated by `F-D3-TasksAnytimeRow` (2026-09-24):* "undated" no longer belongs to that
+/// sentence; "later" still does. Round 6 gave undated tasks a fourth bucket, "Anytime · N", last
+/// on the board and folded by default — *"the tail stays folded, but a new task is visible where
+/// it was added."* Round 8b kept the other half of b11: *"future-dated tasks are untouched."*
 final class MomentumTaskBucketsTests: XCTestCase {
     private var calendar: Calendar {
         var cal = Calendar(identifier: .gregorian)
@@ -40,6 +45,7 @@ final class MomentumTaskBucketsTests: XCTestCase {
     func testGroup_bucketsByDueness_inFixedOrder() {
         let groups = MomentumTaskBuckets.group(
             tasks: [
+                task("Undated"),
                 task("Closed", status: .done, completedDaysAgo: 0),
                 task("Tomorrow", dueDaysFromNow: 1),
                 task("Today", dueDaysFromNow: 0)
@@ -47,21 +53,49 @@ final class MomentumTaskBucketsTests: XCTestCase {
             asOf: now, calendar: calendar
         )
 
+        // `F-D3`: the undated task is FIRST in the input and must still render LAST — Anytime is
+        // the folded tail, below the evidence pile (round 6).
         XCTAssertEqual(
             groups.map(\.lifeAreaName),
-            ["Due today · 1", "Tomorrow · 1", "Closed today · 1"]
+            ["Due today · 1", "Tomorrow · 1", "Closed today · 1", "Anytime · 1"]
         )
     }
 
-    /// The long tail is Momentum's biggest overwhelm risk, so it is excluded outright: tasks due
-    /// beyond tomorrow, and undated tasks, render only under the Open filter (E's b11 call).
-    func testGroup_excludesLaterAndUndatedTasks() {
+    /// The long tail is Momentum's biggest overwhelm risk (E's b11 call), and this test used to
+    /// assert that BOTH halves of it were excluded outright.
+    ///
+    /// *Reversed by `F-D3-TasksAnytimeRow` (2026-09-24), not deleted.* Round 6: *"The Tasks board
+    /// gains one collapsed 'Anytime · N' row at the bottom: the tail stays folded, but a new task
+    /// is visible where it was added."* Round 8b settled the scope: *"Undated tasks already live
+    /// in Anytime, and future-dated tasks are untouched."* So the point of the test is now
+    /// "undated is visible, beyond-tomorrow is not" — and the second half is b11, unchanged.
+    func testGroup_undatedGoesToAnytime_laterStaysExcluded() {
         let groups = MomentumTaskBuckets.group(
             tasks: [task("Undated"), task("Later", dueDaysFromNow: 3), task("Today", dueDaysFromNow: 0)],
             asOf: now, calendar: calendar
         )
 
-        XCTAssertEqual(groups.map(\.lifeAreaName), ["Due today · 1"])
+        XCTAssertEqual(groups.map(\.lifeAreaName), ["Due today · 1", "Anytime · 1"])
+        XCTAssertEqual(groups.last?.customId, "momentum-anytime")
+        XCTAssertEqual(groups.last?.tasks.map(\.title), ["Undated"])
+        XCTAssertFalse(
+            groups.flatMap(\.tasks).map(\.title).contains("Later"),
+            "A task due beyond tomorrow must stay off the board — round 8b: future-dated tasks are untouched"
+        )
+    }
+
+    /// Anytime is the undated OPEN bucket. A closed undated task is today's evidence (or the Done
+    /// filter's), never the tail — the done branch runs first and must keep doing so.
+    func testGroup_closedUndatedTaskIsEvidenceNotAnytime() {
+        let groups = MomentumTaskBuckets.group(
+            tasks: [
+                task("Closed undated today", status: .done, completedDaysAgo: 0),
+                task("Closed undated long ago", status: .done, completedDaysAgo: 3)
+            ],
+            asOf: now, calendar: calendar
+        )
+
+        XCTAssertEqual(groups.map(\.lifeAreaName), ["Closed today · 1"])
     }
 
     /// Overdue is not its own shame pile — it joins Due today, the same "due now" reading the
@@ -114,11 +148,14 @@ final class MomentumTaskBucketsTests: XCTestCase {
             tasks: [
                 task("Today", dueDaysFromNow: 0),
                 task("Tomorrow", dueDaysFromNow: 1),
-                task("Closed", status: .done, completedDaysAgo: 0)
+                task("Closed", status: .done, completedDaysAgo: 0),
+                task("Undated")
             ],
             asOf: now, calendar: calendar
         )
 
+        // `F-D3`: four buckets now, so four distinct ids — the count pins that Anytime is present.
+        XCTAssertEqual(groups.count, 4)
         XCTAssertEqual(Set(groups.map(\.id)).count, groups.count)
     }
 }

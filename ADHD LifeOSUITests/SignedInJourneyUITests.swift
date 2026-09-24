@@ -68,6 +68,12 @@ final class SignedInJourneyUITests: XCTestCase {
         // the one composer both doors now open still creates undated ("Not yet"), and round 6's
         // "Anytime · N" row that makes an undated task visible on Momentum is `F-D3`'s. That
         // block's report should revisit this comment.
+        // *Revisited by `F-D3-TasksAnytimeRow` (2026-09-24):* the first sentence above is no
+        // longer simply true. The undated task now ALSO appears on Momentum, under the new
+        // "Anytime · N" row — folded by default (round 6: "the tail stays folded"), so only its
+        // count is on screen until the row is opened. The Open filter still lists it
+        // (`TaskGrouping.groupTasksByLifeArea` is unaffected), so the assertions below are
+        // unchanged; only this comment needed to move.
         let openChip = app.buttons["Open"]
         XCTAssertTrue(openChip.waitForExistence(timeout: UITestSession.timeout), "The Open filter chip is missing")
         openChip.tap()
