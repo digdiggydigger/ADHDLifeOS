@@ -95,13 +95,15 @@ final class TasksAnytimeRowCallSiteTests: XCTestCase {
     /// id; this pins that nobody widens it to the new bucket.
     func testTheSprintLauncherStaysOnDueTodayOnly() throws {
         let code = try Self.taskListCode()
-        XCTAssertTrue(
-            code.contains(#"let showsSprintStart = group.customId == "momentum-dueToday""#),
-            "The ▶ sprint launcher must stay keyed to Due today alone"
-        )
+        // The WHOLE line, not a substring: `... == "momentum-dueToday" || <anytime>` contains the
+        // Due-today spelling too, and a `contains` check passed that widened build (red-checked).
+        let decisions = code
+            .split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { $0.contains("showsSprintStart =") }
         XCTAssertEqual(
-            code.components(separatedBy: "showsSprintStart =").count - 1, 1,
-            "`showsSprintStart` must be decided in exactly one place"
+            decisions, [#"let showsSprintStart = group.customId == "momentum-dueToday""#],
+            "The ▶ sprint launcher must be decided in exactly one place, keyed to Due today alone"
         )
     }
 
