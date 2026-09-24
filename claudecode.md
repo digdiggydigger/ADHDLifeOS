@@ -28,6 +28,11 @@ start-of-session checklist.*
    is an unverified claim, and E reads the output rather than re-running it.
 6. **Task completion.** Tick items in `TODO-CLAUDE-CODE.md` as you finish them. Once a FEATURE
    block is complete, **stop and wait for E's review** rather than starting the next one — unless E
+   says to bypass. **E has: per ARC, for arcs D–G (2026-09-24) — see CLAUDE.md "Per-arc bypass".
+   Build the arc's blocks back to back, each fully gated and landed, and stop at the arc's close
+   with the phone build installed and `handoff/ARC-REVIEW-<arc>.md` written.** The four mid-arc
+   stops (F-F1's Plan-Mode questioning, F-F5's render pass, a design-changing finding, a red gate)
+   are listed there. Until then the old wording continues: unless E
    says to bypass.
 7. **Close-out.** Commit AND push, then verify the push landed by comparing local `HEAD` to
    `origin/main` and pasting both. Update `handoff/OPEN-ITEMS-REGISTER.md`. See CLAUDE.md's

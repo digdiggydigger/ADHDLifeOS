@@ -87,7 +87,56 @@ archive for the same reason `TODO-ARCHIVE.md` exists: it is the record of WHY, n
    unclear, and stop — don't guess at unspecified acceptance criteria.
 
 Once a FEATURE block is completed, stop and wait for E's review rather than proceeding to the next
-item unprompted — unless E says to bypass.
+item unprompted — unless E says to bypass. **E HAS said to bypass, PER ARC, for the whole remaining
+audit (2026-09-24, "Per-arc bypass" below).**
+
+### Per-arc bypass — E's standing rule, 2026-09-24
+
+*E's call, after the floor landed and every Step 0 question was answered: the second of three
+speed levers, chosen over per-block review for arcs D through G.* **A session builds every block of
+an arc back to back, landing each through its own PR as before, and stops only when the arc
+closes.** E then reviews the whole arc on the phone in ONE pass. What this changes, and what it
+does not:
+
+- **Every block still meets the full bar on its own**: RED first, the red-check, SwiftLint 0, the
+  full unit suite (coverage may wait for the arc close), the build, the `apple-design` review, its
+  `screenshots/` folder, its TODO tick, its PR. Bypass removes the WAIT, never a gate.
+- **Device checks and RM-on passes are BATCHED to the arc close**, not skipped. At the close the
+  session installs the arc's final build on E's phone FIRST, then writes
+  **`handoff/ARC-REVIEW-<arc>.md`**: one numbered checklist covering every block's device checks
+  and every RM-on pass, ordered so E flips Reduce Motion once, with a verdict line per block for
+  E to fill. Ask for the whole pass in one message. Verdicts are recorded per block in the
+  register and the build log, exactly as they were per block before.
+- **Four things still STOP the session mid-arc**, because bypass covers review, not decisions:
+  (1) `F-F1`'s questioning round on checkpoints → heads-up, run in Plan Mode (E's directive);
+  (2) `F-F5`'s render pass for the slot picker; (3) any finding during a block that would change a
+  DESIGN E chose — put it to E with `AskUserQuestion`, never decide it; (4) a red gate that will
+  not go green — never scope down to keep moving.
+- **Arcs A and B are global sweeps and stay serial and last**; bypass applies within each, not
+  across the two.
+- **The register still gets an edition per block** (the outstanding list must never fall behind),
+  but the **opener is written once per arc**, at the close; mid-arc, a session that must stop
+  writes a `WIP:` opener for the next block of the same arc.
+
+### The build loop — three standing economies, 2026-09-24
+
+*The third lever, no decision needed. Build-wait was about half of a session's wall clock.*
+- **Targeted runs inside the loop, one full run per block.** RED → GREEN cycles run
+  `-only-testing:` the classes the change touches, `-enableCodeCoverage NO`. The full unit suite
+  runs ONCE per block before its PR (still pasted), and **coverage is measured once per ARC**, at
+  the close, in the register edition that closes the arc.
+- **Source-reading tests and red-checks use `test-without-building`.** Every `*CallSiteTests`,
+  `DeploymentFloorTests` and their kin read the tree at runtime, so a planted regression or a
+  restored file needs no rebuild to be observed — `xcodebuild test-without-building
+  -only-testing:…` after one `build-for-testing`.
+- **Close-out is ONE scripted chain, never idle between steps**: clean `build-for-testing` (all
+  four targets) → the red-checks by `test-without-building` → the full suite (with coverage at an
+  arc close) → lint → `plutil` reads where relevant → the device install. Write it to the
+  scratchpad, run it with `nohup`, wait on its sentinel. The `F-Floor18` close-out
+  (`verify.sh`, 2026-09-24) is the template.
+- **A block that touches an `#available` site also runs its floor branch on the iOS 18.0
+  simulator** (`name=iPhone 16 Pro (iOS 18 floor),OS=18.0`), targeted, and says so in its
+  "Verified paths" line (§7.3).
 
 ## Commands
 

@@ -7110,6 +7110,14 @@ behaviour they assert no longer exists. Every block below sorts its tests into:
 
 ## Every block below owes (not repeated per block)
 
+> **PER-ARC BYPASS is in force for every remaining arc (D through G) — E's standing rule,
+> 2026-09-24, in `CLAUDE.md` › "Per-arc bypass".** A session builds an arc's blocks back to back,
+> each fully gated and landed, and stops at the arc's close with the build on E's phone and
+> `handoff/ARC-REVIEW-<arc>.md` written for E's one-pass review. Device checks and RM-on passes
+> listed per block below are BATCHED to that page, not skipped. Mid-arc stops: `F-F1`'s Plan-Mode
+> questioning, `F-F5`'s render pass, a design-changing finding, a red gate. Coverage once per arc.
+
+
 - [ ] RED first; a red-check that restores the deleted/changed code and counts the failures, then
       restores from git.
 - [ ] SwiftLint 0, the full suite, and the build — real pasted terminal output, not a summary.

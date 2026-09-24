@@ -17,6 +17,13 @@ deployment target). Places and the routine screen are universal; `placesSupporte
 The only `#available` sites left are iOS 26, and their `else` means 18–25. `CLAUDE.md` §7 was
 rewritten for this; read it as it now stands, not as the design records quote it.
 
+**PER-ARC BYPASS is in force (E, 2026-09-24 — `CLAUDE.md` › "Per-arc bypass").** Build `F-D2`,
+land it, and go STRAIGHT ON to `F-D3-TasksAnytimeRow` without waiting; arc D closes when D3 lands.
+At the close: install the build on E's phone FIRST, write `handoff/ARC-REVIEW-D.md` (every device
+check from D2 and D3, any RM-on pass, one verdict line per block), and ask E for the one pass in
+one message. Use the three build-loop economies in the same CLAUDE.md section (targeted runs in
+the loop, `test-without-building` for the source-reading tests, one scripted close-out chain).
+
 **Build `F-D2-ComposerKeyboardLayout`** (`TODO-CLAUDE-CODE.md`, directly below the completed
 `F-Floor18` block). Its spec was rewritten in place by the floor block: **Step 0 is ONE question**,
 and its one `#available` site is the iOS 26 Liquid Glass container.
