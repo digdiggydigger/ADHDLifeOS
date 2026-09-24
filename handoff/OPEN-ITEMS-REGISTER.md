@@ -1462,6 +1462,9 @@ life areas, Journal's days and now Tasks' Anytime, so any change is ONE line in 
 pinning test — its own small block, never folded into an arc block unasked. **Colour-arc input beside it:** the
 `.tertiary` chevron measures **1.71:1 light / 2.47:1 dark** on `PageBackground` and is the fold's only visual state
 cue (VoiceOver hears the state). Contrast is HELD (round 9).
+**Stale prose for that block to fix:** `Theme/CollapsibleSectionHeader.swift` (its header comment and the
+`CollapsibleSection` doc) and `CollapsibleSectionTests.swift` still say "two screens" — it is THREE since `F-D3`
+(Home, Journal, Tasks' Anytime via `TasksAnytimeHeader`). Left out of the docs-only close PR on purpose.
 
 ### A-CAPSULE · The Undo capsule is INVISIBLE in the Tag Editor — **E DECIDED 2026-09-22: Option C, DEFERRED with a condition**
 
