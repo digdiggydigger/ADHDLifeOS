@@ -81,16 +81,11 @@ struct TaskCreateView: View {
                     ToolbarItem(placement: .cancellationAction) {
                         // **"Close", not "Cancel"** (E, round 2). `sheets.md › Best practices`:
                         // Cancel means *without saving*, and this control no longer discards.
-                        // 48 × 48 (round 7, "Corner controls → All to 48×48"), grown inside the
-                        // label, which is the only part of a bar item a view can size.
-                        Button {
-                            dismiss()
-                        } label: {
-                            Text("Close")
-                                .frame(minWidth: 48, minHeight: 48)
-                                .contentShape(Rectangle())
-                        }
-                        .accessibilityIdentifier("taskCreateCloseButton")
+                        // Round 7's 48 × 48 is NOT reached here: F-D2 grew the label and the bar
+                        // item still measured 72 × 36 on 27.0 (the system sizes a bar item, not the
+                        // view inside it). F-B1-TouchTargets owns the corner-control sweep.
+                        Button("Close") { dismiss() }
+                            .accessibilityIdentifier("taskCreateCloseButton")
                     }
                     ToolbarItem(placement: .principal) {
                         Text("New task")
