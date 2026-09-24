@@ -47,7 +47,13 @@ final class ComposerKeyboardBarUITests: XCTestCase {
         focus(field)
         field.typeText("Rides the keyboard")
         guard app.keyboards.element.waitForExistence(timeout: UITestSession.timeout) else {
-            return XCTFail("No software keyboard came up — check the simulator's Connect Hardware Keyboard")
+            return XCTFail("No keyboard at all came up")
+        }
+        // A simulator in hardware-keyboard mode keeps its keyboard below the screen (y 919 on the 18.0
+        // sim), so there is nothing for the bar to ride and nothing to settle from. That is the
+        // environment, not the app: skip rather than fail, and say so.
+        guard keyboardIsOnScreen(app) else {
+            throw XCTSkip("No SOFTWARE keyboard on this simulator (\(app.keyboards.element.frame)) — nothing to ride")
         }
         let places = RestingPlaces(app: app, bar: bar, settled: settled.minY, raised: bar.frame.minY)
         print("MEASURE pin settled=\(settled) raised=\(bar.frame) keys=\(app.keyboards.element.frame)")
@@ -260,12 +266,17 @@ final class ComposerKeyboardBarUITests: XCTestCase {
     /// A tap that lands while the sheet is still presenting leaves the field unfocused, and
     /// `typeText` then fails with "Neither element nor any descendant has keyboard focus" (the
     /// first probe run on 27.0). So tap until the field says it has focus.
+    /// Focus is read two ways because either can lag: at xxxLarge `hasKeyboardFocus` stayed false for
+    /// three seconds while the keyboard was already up and taking the typing (F-D2's XXXL re-render).
     @MainActor
     private func focus(_ field: XCUIElement) {
+        let app = XCUIApplication()
         for _ in 1...3 {
             field.tap()
             let focused = XCTNSPredicateExpectation(
-                predicate: NSPredicate { _, _ in (field.value(forKey: "hasKeyboardFocus") as? Bool) == true },
+                predicate: NSPredicate { _, _ in
+                    (field.value(forKey: "hasKeyboardFocus") as? Bool) == true || self.keyboardIsOnScreen(app)
+                },
                 object: nil
             )
             if XCTWaiter().wait(for: [focused], timeout: 3) == .completed { return }
@@ -283,6 +294,11 @@ final class ComposerKeyboardBarUITests: XCTestCase {
         let tenth = picker.buttons.matching(NSPredicate(format: "label MATCHES %@", ".*\\b10\\b.*")).firstMatch
         XCTAssertTrue(tenth.waitForExistence(timeout: UITestSession.timeout), "No 10th in next month's grid")
         tenth.tap()
+    }
+
+    @MainActor
+    private func keyboardIsOnScreen(_ app: XCUIApplication) -> Bool {
+        app.keyboards.element.exists && app.keyboards.element.frame.minY < app.windows.firstMatch.frame.maxY
     }
 
     /// A snapshot miss on a gone keyboard THROWS, whatever `continueAfterFailure` says — so every

@@ -29,6 +29,16 @@ struct ComposerMenuTile: View {
     /// Shared by every control in the composer, so the segments, the tiles and Add read as one set.
     static let cornerRadius: CGFloat = 16
 
+    /// How far the words may shrink before they clip. §1's 0.8 up to xLarge; 0.7 from xxLarge up,
+    /// where the compact third is narrowest and 0.7 of `.subheadline` is still at least 13pt. A
+    /// single 0.7 would let a long area name reach 10.5pt at the default size, under `typography.md`'s
+    /// 11pt minimum. At xxxLarge, 0.8 left "15 min" as "15…" (F-D2's XXXL render).
+    static func scaleFloor(at size: DynamicTypeSize) -> CGFloat {
+        size >= .xxLarge ? 0.7 : 0.8
+    }
+
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
         HStack(spacing: compact ? 4 : 8) {
@@ -36,18 +46,18 @@ struct ComposerMenuTile: View {
                 .foregroundStyle(Color.accentColor)
             // The words outrank the ornaments: at the largest ordinary text size (xxxLarge) the
             // compact third is ~123pt wide, and at 0.9 with no priority the value truncated to
-            // "No…" and "15…" (F-D2's XXXL render). §1: shrink to 0.8 before anything clips.
+            // "No…" and "15…" (F-D2's XXXL render). They shrink to `scaleFloor` before they clip.
             VStack(alignment: .leading, spacing: 0) {
                 Text(caption)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color("LabelSecondary"))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(Self.scaleFloor(at: typeSize))
                 Text(value)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color("LabelPrimary"))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(Self.scaleFloor(at: typeSize))
             }
             .layoutPriority(1)
             Spacer(minLength: 4)

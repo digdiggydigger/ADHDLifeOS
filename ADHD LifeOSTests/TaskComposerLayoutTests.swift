@@ -32,6 +32,19 @@ final class TaskComposerLayoutTests: XCTestCase {
         XCTAssertEqual(ComposerMenuTile.minHeight, 56)
     }
 
+    /// **A tile's words shrink before they clip, but never below legible.** At xxxLarge the compact
+    /// third is ~123pt and "15 min" truncated to "15…" at a 0.8 floor (F-D2's XXXL render). A single
+    /// 0.7 floor would let a long area name reach 10.5pt at the DEFAULT size, under the HIG's 11pt
+    /// minimum (`typography.md`), so the floor drops only where the text is already large.
+    func testTheTileTextShrinksFurtherOnlyAtLargeSizes() {
+        for size in [DynamicTypeSize.xSmall, .large, .xLarge] {
+            XCTAssertEqual(ComposerMenuTile.scaleFloor(at: size), 0.8, "\(size)")
+        }
+        for size in [DynamicTypeSize.xxLarge, .xxxLarge, .accessibility3] {
+            XCTAssertEqual(ComposerMenuTile.scaleFloor(at: size), 0.7, "\(size)")
+        }
+    }
+
     /// **Concentric corners.** The bar's container wraps 16pt-radius controls at an 8pt inset, so
     /// its own radius is their sum — any other value draws a corner whose curve does not follow the
     /// controls inside it.
