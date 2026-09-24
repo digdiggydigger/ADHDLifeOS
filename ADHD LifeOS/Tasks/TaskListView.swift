@@ -29,6 +29,11 @@ struct TaskListView: View {
     /// — the row can't be a `NavigationLink` (its own swipe `DragGesture` would fight the link's
     /// tap), so tap-to-inspect is programmatic.
     @State private var inspectingTask: TaskItem?
+    /// `F-D3-TasksAnytimeRow`: the Momentum board's "Anytime · N" fold. Stored, so a fold the user
+    /// opened stays open across launches, and defaulted CLOSED — the opposite of Home's life-area
+    /// fold — because round 6's own words are *"the tail stays folded"*. The count in the title is
+    /// what keeps a new undated task "visible where it was added" while the rows stay folded.
+    @AppStorage("tasks.anytimeCollapsed") private var anytimeCollapsed = true
 
     init(
         tasksClient: TasksClientAdapting,
@@ -193,15 +198,21 @@ struct TaskListView: View {
             LazyVStack(alignment: .leading, spacing: 24, pinnedViews: [.sectionHeaders]) {
                 ForEach(groups) { group in
                     Section {
-                        rowCard(for: group)
+                        if !isFolded(group) {
+                            rowCard(for: group)
+                        }
                     } header: {
-                        // v3's coloured bucket voice: warn for due-today, motion-blue for
-                        // tomorrow, closure-green for closed-today; everything else secondary.
-                        // The SURFACE is shared (`pinnedSectionHeader()`); only the tone is
-                        // this screen's, because only this screen's buckets speak in colour.
-                        Text(group.lifeAreaName)
-                            .foregroundStyle(headerTone(for: group))
-                            .pinnedSectionHeader()
+                        if group.customId == MomentumTaskBuckets.anytimeGroupId {
+                            TasksAnytimeHeader(title: group.lifeAreaName, isCollapsed: $anytimeCollapsed)
+                        } else {
+                            // v3's coloured bucket voice: warn for due-today, motion-blue for
+                            // tomorrow, closure-green for closed-today; everything else secondary.
+                            // The SURFACE is shared (`pinnedSectionHeader()`); only the tone is
+                            // this screen's, because only this screen's buckets speak in colour.
+                            Text(group.lifeAreaName)
+                                .foregroundStyle(headerTone(for: group))
+                                .pinnedSectionHeader()
+                        }
                     }
                 }
             }
@@ -210,6 +221,11 @@ struct TaskListView: View {
         }
         // Tasks carries the search row, so it reserves the row's height on top of the disc's.
         .captureDiscClearance()
+    }
+
+    /// Only the Anytime bucket folds, and only while its stored fold is closed.
+    private func isFolded(_ group: LifeAreaTaskGroup) -> Bool {
+        group.customId == MomentumTaskBuckets.anytimeGroupId && anytimeCollapsed
     }
 
     /// The tap-circle and the swipe both land here (`TaskRow.close(poppingFrom:)` funnels them),
@@ -266,6 +282,9 @@ struct TaskListView: View {
 
     /// Momentum's board deliberately holds only today/tomorrow/closed-today, so its empty state
     /// says where the rest went instead of implying there are no tasks at all.
+    /// *Annotated by `F-D3`:* the board now also holds Anytime (undated), so it is empty only when
+    /// there is no undated task either — and "the rest" is then exactly the future-dated tail the
+    /// Open filter holds, so the copy stays true unchanged.
     private var emptyState: some View {
         Text(tasksService.statusFilter == .momentum
                 ? "Nothing due today or tomorrow — the rest lives under Open"

@@ -54,6 +54,9 @@ final class TasksV3PresentationTests: XCTestCase {
         XCTAssertEqual(MomentumTaskBuckets.headerToneAssetName(customId: "momentum-dueToday"), "StateWarn")
         XCTAssertEqual(MomentumTaskBuckets.headerToneAssetName(customId: "momentum-tomorrow"), "AccentColor")
         XCTAssertEqual(MomentumTaskBuckets.headerToneAssetName(customId: "momentum-closedToday"), "StateGo")
+        // `F-D3`: Anytime speaks in the plain secondary voice — round 9's "quiet, no colour" for
+        // anything that is not due-now, tomorrow or closed.
+        XCTAssertNil(MomentumTaskBuckets.headerToneAssetName(customId: "momentum-anytime"))
         XCTAssertNil(MomentumTaskBuckets.headerToneAssetName(customId: "momentum-later"))
         XCTAssertNil(MomentumTaskBuckets.headerToneAssetName(customId: "momentum-someday"))
         XCTAssertNil(MomentumTaskBuckets.headerToneAssetName(customId: nil))

@@ -109,9 +109,9 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-D1-ComposerBothDoors` | one composer, both doors, and the settled content | **COMPLETE** (2026-09-23) | branch `feature/adhd-d1-composer` — see session 8 for the PR | **nothing owed.** The phone carries C3 + C4, not this block — install before any look |
-| `F-D2-ComposerKeyboardLayout` | L3 rides the keyboard; AX3 falls back; the Date segment | NOT STARTED | — | — |
-| `F-D3-TasksAnytimeRow` | the "Anytime · N" row on the Momentum board | NOT STARTED | — | — |
+| `F-D1-ComposerBothDoors` | one composer, both doors, and the settled content | **MERGED** (2026-09-23) | see session 8 | **the arc-D phone pass** (`handoff/ARC-REVIEW-D.md` §1) — never installed on its own |
+| `F-D2-ComposerKeyboardLayout` | L3 rides the keyboard; AX3 falls back; the Date segment | **MERGED** (2026-09-24) | PR #200 (`c25ed44`) | **the arc-D phone pass** (§2). No RM-on pass (no reduced site) |
+| `F-D3-TasksAnytimeRow` | the "Anytime · N" row on the Momentum board | **COMPLETE** (2026-09-24) — **arc D closes** | see session 11 | **the arc-D phone pass** (§3). No RM-on pass (no motion) |
 
 ### Arc E · Today
 
@@ -626,3 +626,63 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   stop mid-arc writes a `WIP:` opener: `handoff/START-HERE-adhd-audit-arc-D3-anytime.md`.
 - **Next session starts at:** `F-D3-TasksAnytimeRow`, then the arc-D close (install first, then
   `handoff/ARC-REVIEW-D.md`).
+
+### Session 11 — 2026-09-24, arc D, block `F-D3-TasksAnytimeRow` — **arc D closes**
+- **Landed:** `F-D3-TasksAnytimeRow`. Suite **3,344 / 0** (3,337 + 7 new), SwiftLint **0**, build
+  SUCCEEDED, **arc-D coverage 30.08% (15,101/50,195)**, measured once for the arc (economy 1),
+  emulator UP. `MomentumTaskBuckets.swift` is at 100% (111/111). Undated open tasks fold into
+  "Anytime · N": last on Momentum, collapsed by default and stored
+  (`@AppStorage("tasks.anytimeCollapsed") = true`). Beyond-tomorrow stays off the board (8b).
+- **The brief was checked first** and was accurate (edition 81, `5e5f924`). The emulator had been
+  up 6.5h and was restarted (memory `emulator-freshness`).
+- **Where the build departed from the spec, and why:**
+  - **A third test pinned the old exclusion and the spec missed it:**
+    `TasksServiceTests.testLoad_momentumExcludesUndatedTasks_openFilterShowsThem` asserted
+    `.loaded([])` by SHAPE, so no string grep finds it. Reversed in place, renamed, round 6 quoted.
+  - **`MomentumTaskBuckets.anytimeGroupId`** spells the id once. **`Tasks/TasksAnytimeHeader.swift`**
+    is its own view because `TaskListView` sat at 398/400 file lines and its struct went to 257/250.
+    The fold's STATE stays in `TaskListView`, bound in.
+  - **The header is painted the page** (`PinnedHeaderMetrics.surfaceAssetName`). The list pins
+    headers, and Anytime is the one bucket whose own rows scroll under its own header.
+- **RED:** 9 tests / 14 failures of 35. The two that passed first are guards on behaviour that
+  already existed: ▶ stays on Due today, and a closed undated task is evidence, not Anytime.
+- **Red-check — and a VACUOUS guard it caught.** The both-file pre-block restore is a COMPILE
+  failure (2 errors, `anytimeGroupId`). `TaskListView` alone gives 3 tests / 5 failures. Seven
+  compiling mutations: undated→nil 5/7, Anytime-first 2/4, fold default open 1/1, rows ungated 1/1,
+  pinned surface dropped 1/1, and **▶ widened to Anytime: first NOT caught.** The sprint guard used
+  `contains`, and `== "momentum-dueToday" || …anytime` still contains the Due-today spelling. It
+  now asserts the whole line: 1/1. Restored, 6 / 0. **Two harness slips of mine also contaminated
+  the first chain**: a UI file written mid-chain did not compile, so mutation E never ran and
+  `test-without-building` reused mutation C's binary. Everything was re-run clean.
+- **Frames, `screenshots/tasks-anytime-row/` (9 + README), on 27.0, L / D / Accessibility XL, all
+  PASSED:** folded "ANYTIME · 2", the count moving to 3 with the fold closed, and the new task
+  there once opened. Header **370 × 44.0pt** at both sizes. **No scrolled frame:** four tasks do
+  not scroll at the default size. At AX, a drag from the bottom row became the HOME gesture (the
+  "passing" frame was SpringBoard; deleted, and the harness now asserts the app stayed in front).
+  A drag from the new row was claimed by the row's swipe. The pinned surface rests on red-check H
+  and E's item 14. Traps met: `xcodebuild` HUNG after a failed UI run (killed; the chain now has a
+  watchdog). The restored sign-in broke the AX run, as the opener predicted (erase, then run).
+- **`apple-design` (HIG pages dated 2026-09-22, fresh; read `disclosure-controls`,
+  `lists-and-tables`, `accessibility`, `layout`): Good.** No Critical. What works: progressive
+  disclosure is exactly `layout.md › "Use progressive disclosure…"`. `disclosure-controls.md ›
+  Disclosure triangles` asks for a descriptive label, and "Anytime · N" says what is hidden and
+  how much. The target is 44pt. VoiceOver hears the state (`CollapsibleSection.hint`). Nothing
+  relies on colour.
+  **Medium — the chevron convention.** `disclosure-controls.md` says a disclosure TRIANGLE "points
+  inward from the leading edge when its content is hidden and down when its content is visible",
+  and a disclosure BUTTON "points down when its content is hidden and up when its content is
+  visible". The house fold (▲ folded / ▼ open, E 2026-08-28, "points AT the content") matches
+  neither. The decision predates the skill (installed 09-18) and was never checked against this
+  page. It is E's design and shared by Home, Journal and now Tasks, so **nothing was changed. It
+  goes to E as a question at the arc close.**
+  **Medium — contrast, HELD for the colour arc.** The title (bold `.caption2`, system `.secondary`
+  on `PageBackground`) is **3.30:1 light / 6.11:1 dark** and passes the 3:1 bold rule. The
+  `.tertiary` chevron is **1.71:1 light / 2.47:1 dark**, and it is the fold's only visual state
+  cue. It is the shared glyph on three screens, and round 9 says "Leave it to the colour arc", so
+  it is a register candidate. **Low — rhythm:** the 44pt fold sits ~8pt looser above its card than
+  the 8pt-padded plain headers. §3's floor wins; judgment, no change.
+- **Owed to E (batched):** the arc-D phone pass, `handoff/ARC-REVIEW-D.md` — D1, D2 and D3 in one
+  pass, **Reduce Motion OFF throughout** (no block adds a reduced site; D3 has no motion at all, and
+  grep finds no animation, transition or `#available` in its files). Plus the chevron question.
+  No rules change; no `#available` site, so no Verified-paths line.
+- **Next session starts at:** `F-E1-WeeklyChain`, from the arc-E opener written at this close.
