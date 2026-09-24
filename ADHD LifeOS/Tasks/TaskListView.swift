@@ -203,7 +203,7 @@ struct TaskListView: View {
                         }
                     } header: {
                         if group.customId == MomentumTaskBuckets.anytimeGroupId {
-                            anytimeHeader(for: group)
+                            TasksAnytimeHeader(title: group.lifeAreaName, isCollapsed: $anytimeCollapsed)
                         } else {
                             // v3's coloured bucket voice: warn for due-today, motion-blue for
                             // tomorrow, closure-green for closed-today; everything else secondary.
@@ -226,23 +226,6 @@ struct TaskListView: View {
     /// Only the Anytime bucket folds, and only while its stored fold is closed.
     private func isFolded(_ group: LifeAreaTaskGroup) -> Bool {
         group.customId == MomentumTaskBuckets.anytimeGroupId && anytimeCollapsed
-    }
-
-    /// The Anytime row (`F-D3`, round 6): the house fold, so the chevron points AT the content and
-    /// VoiceOver hears the state. `summary` is nil because the title, "Anytime · N", already says
-    /// what the fold holds. Quiet by design — no tone, per round 9's "no colour" for anything that
-    /// is not due-now, tomorrow or closed. The header is PINNED like its neighbours, and Anytime is
-    /// the one bucket whose own rows scroll under its own header once opened, so it is painted the
-    /// page exactly as `pinnedSectionHeader()` paints every other one.
-    private func anytimeHeader(for group: LifeAreaTaskGroup) -> some View {
-        CollapsibleSectionHeader(
-            title: group.lifeAreaName,
-            summary: nil,
-            isExpanded: !anytimeCollapsed,
-            onToggle: { anytimeCollapsed.toggle() }
-        )
-        .background(Color(PinnedHeaderMetrics.surfaceAssetName))
-        .accessibilityIdentifier("tasksAnytimeHeader")
     }
 
     /// The tap-circle and the swipe both land here (`TaskRow.close(poppingFrom:)` funnels them),

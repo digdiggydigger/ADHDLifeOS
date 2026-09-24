@@ -45,17 +45,24 @@ final class TasksAnytimeRowCallSiteTests: XCTestCase {
 
     /// The house fold, not a hand-rolled one: `CollapsibleSectionHeader` carries the chevron
     /// convention (it points AT the content, E 2026-08-28), the VoiceOver state hint and the 44pt
-    /// target. And it is chosen by the shared id.
+    /// target. `TasksAnytimeHeader` wraps it, and the board picks it by the shared id and hands it
+    /// the STORED fold — a header wired to `@State` would pass every other check here.
     func testTheAnytimeHeaderIsTheSharedCollapsibleHeader() throws {
-        let code = try Self.taskListCode()
-        XCTAssertTrue(code.contains("CollapsibleSectionHeader("), "Anytime must use the shared fold")
+        let header = try Self.appCode("Tasks/TasksAnytimeHeader.swift")
+        XCTAssertTrue(header.contains("CollapsibleSectionHeader("), "Anytime must use the shared fold")
         XCTAssertTrue(
-            code.contains("MomentumTaskBuckets.anytimeGroupId"),
+            header.contains("onToggle: { isCollapsed.toggle() }"),
+            "The header must toggle the fold it was handed"
+        )
+
+        let board = try Self.taskListCode()
+        XCTAssertTrue(
+            board.contains("if group.customId == MomentumTaskBuckets.anytimeGroupId {"),
             "The fold must be keyed on `MomentumTaskBuckets.anytimeGroupId`, not a re-typed string"
         )
         XCTAssertTrue(
-            code.contains("onToggle: { anytimeCollapsed.toggle() }"),
-            "The header must toggle the stored fold"
+            board.contains("TasksAnytimeHeader(title: group.lifeAreaName, isCollapsed: $anytimeCollapsed)"),
+            "The board must draw the Anytime header bound to the stored fold"
         )
     }
 
@@ -76,7 +83,7 @@ final class TasksAnytimeRowCallSiteTests: XCTestCase {
     /// own rows scroll under its own header once opened. So it must be painted the page, the same
     /// surface `pinnedSectionHeader()` gives every other header — or rows show through it.
     func testThePinnedFoldIsPaintedThePage() throws {
-        let code = try Self.taskListCode()
+        let code = try Self.appCode("Tasks/TasksAnytimeHeader.swift")
         XCTAssertTrue(
             code.contains(".background(Color(PinnedHeaderMetrics.surfaceAssetName))"),
             "The Anytime header is pinned; it must carry the pinned surface or rows show through"
@@ -101,10 +108,15 @@ final class TasksAnytimeRowCallSiteTests: XCTestCase {
     // MARK: - Reading the tree
 
     private static func taskListCode() throws -> String {
+        try appCode("Tasks/TaskListView.swift")
+    }
+
+    private static func appCode(_ relativePath: String) throws -> String {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()   // ADHD LifeOSTests
             .deletingLastPathComponent()   // repo root
-            .appendingPathComponent("ADHD LifeOS/Tasks/TaskListView.swift")
+            .appendingPathComponent("ADHD LifeOS")
+            .appendingPathComponent(relativePath)
         guard let text = try? String(contentsOf: url, encoding: .utf8) else {
             throw AnytimeSourceError.unreadable(url.path)
         }
