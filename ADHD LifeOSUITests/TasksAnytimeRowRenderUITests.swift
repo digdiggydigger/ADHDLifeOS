@@ -42,7 +42,9 @@ final class TasksAnytimeRowRenderUITests: XCTestCase {
         let header = anytimeHeader(in: app)
         XCTAssertTrue(header.waitForExistence(timeout: UITestSession.timeout), "No Anytime row on Momentum")
         if seeded.exists {
-            XCTAssertTrue(UITestSession.tap(header, untilGone: seeded), "Could not fold a fold a previous run left open")
+            XCTAssertTrue(
+                UITestSession.tap(header, untilGone: seeded), "Could not close a fold a previous run left open"
+            )
         }
 
         // 1 — folded by default: the count, and none of the rows.
@@ -66,7 +68,9 @@ final class TasksAnytimeRowRenderUITests: XCTestCase {
         attach(app, named: "new-task-counted-\(tag)")
 
         // 3 — opened: the new task is there, under the other two.
-        XCTAssertTrue(UITestSession.tap(header, untilExists: app.staticTexts[title]), "Opening the fold showed no new task")
+        XCTAssertTrue(
+            UITestSession.tap(header, untilExists: app.staticTexts[title]), "Opening the fold showed no new task"
+        )
         XCTAssertTrue(seeded.exists)
         print("MEASURE anytime-\(tag) expanded header=\(header.frame) new=\(app.staticTexts[title].frame)")
         attach(app, named: "expanded-\(tag)")
@@ -102,7 +106,9 @@ final class TasksAnytimeRowRenderUITests: XCTestCase {
         XCTAssertTrue(submit.isEnabled, "Add stayed disabled with a title entered")
         submit.tap()
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: field)
-        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout), .completed, "The composer never closed")
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [gone], timeout: UITestSession.timeout), .completed, "The composer never closed"
+        )
     }
 
     @MainActor
