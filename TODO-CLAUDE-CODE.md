@@ -6287,7 +6287,7 @@ it in the Anytime row).
 
 ---
 
-### FEATURE: F-Floor18 — raise the minimum iOS from 16 to 18, everywhere  [ ] NOT STARTED
+### FEATURE: F-Floor18 — raise the minimum iOS from 16 to 18, everywhere  [x] COMPLETED 2026-09-24
 
 **What E chose (2026-09-23, in chat, after `F-D1` merged):** *"iOS 18, before F-D2 — write the spec
 block. I need you to also Analyse and look everywhere else that the minimum floor of iOS 16 is within
@@ -6454,24 +6454,24 @@ and `.swiftlint.yml` hold no floor reference (checked).
 - **App Store consequence, for the register's §D:** iPhone 8, 8 Plus and X can no longer install.
 
 **Acceptance criteria:**
-- [ ] RED first: `DeploymentFloorTests` (both tests) failing on today's tree, counted.
-- [ ] Six `IPHONEOS_DEPLOYMENT_TARGET = 18.0` and no other value; the built app's `Info.plist`
+- [x] RED first: `DeploymentFloorTests` (both tests) failing on today's tree, counted.
+- [x] Six `IPHONEOS_DEPLOYMENT_TARGET = 18.0` and no other value; the built app's `Info.plist`
       shows `MinimumOSVersion 18.0` for the app AND the widget (`plutil -p`, pasted).
-- [ ] Zero availability annotations below iOS 18 in `ADHD LifeOS/` and `FocusTimerWidget/` (the new
+- [x] Zero availability annotations below iOS 18 in `ADHD LifeOS/` and `FocusTimerWidget/` (the new
       test, plus the grep pasted); the three iOS 26 gates intact with their `else` branches.
-- [ ] Zero `onChange` deprecation warnings: `grep -c "deprecated in iOS 17" <build log>` = 0, pasted.
-- [ ] `placesSupported`, `available(placesSupported:)` and `routineScreenAvailable` gone; Places and
+- [x] Zero `onChange` deprecation warnings: `grep -c "deprecated in iOS 17" <build log>` = 0, pasted.
+- [x] `placesSupported`, `available(placesSupported:)` and `routineScreenAvailable` gone; Places and
       routines reachable with no flag.
-- [ ] Every test in §3 reversed or updated in place with the reason quoted — none deleted to pass.
-- [ ] Red-check: plant a 17 gate and a 16.0 target → count the failures → restore with
+- [x] Every test in §3 reversed or updated in place with the reason quoted — none deleted to pass.
+- [x] Red-check: plant a 17 gate and a 16.0 target → count the failures → restore with
       `git checkout --`.
-- [ ] SwiftLint, the full suite, the build — and the widget and UI-test targets BUILD — all pasted.
-- [ ] Every governing document in §4 corrected; every record untouched (`git diff --stat` over
+- [x] SwiftLint, the full suite, the build — and the widget and UI-test targets BUILD — all pasted.
+- [x] Every governing document in §4 corrected; every record untouched (`git diff --stat` over
       `handoff/archive/`, `screenshots/`, `TODO-ARCHIVE.md` and `SESSION-OPENER-*` is EMPTY — paste it).
-- [ ] A final repo-wide grep for `iOS 16|16\.0 floor|16 path|16\.1` over the GOVERNING set returns
+- [x] A final repo-wide grep for `iOS 16|16\.0 floor|16 path|16\.1` over the GOVERNING set returns
       only spacing tokens and dated history, each explained in the report.
-- [ ] Device smoke launch on E's phone (installed first); "Verified paths" line; no `firestore.rules`
-      change.
+- [x] Device smoke launch on E's phone (installed first); "Verified paths" line; no `firestore.rules`
+      change. *(Installed wirelessly and LAUNCHED 2026-09-24 at `442db4e`, `MinimumOSVersion 18.0` app + widget; the sprint / Live Activity / widget steps are E's — see register edition 80.)*
 
 **Dependencies:** none before it; **`F-D2` waits for it.** Build it in a fresh session from the
 live opener.
@@ -6480,11 +6480,10 @@ live opener.
 
 ### FEATURE: F-D2-ComposerKeyboardLayout — L3 rides the keyboard; AX3 falls back; the Date segment  [ ] NOT STARTED
 
-> **⚠ Blocked on `F-Floor18` (E, 2026-09-23: *"iOS 18, before F-D2"*).** That block raises the
-> minimum to iOS 18 and rewrites this spec's floor lines in place. Until it lands, read this spec
-> with one correction: **Step 0 question 2 (the 16.0–16.3 popover) is VOID.** At an 18 floor
-> `presentationCompactAdaptation` (16.4) is always available, so there is no floor path to decide.
-> Ask E question 1 only.
+> **`F-Floor18` has LANDED (2026-09-24): the minimum is iOS 18.** This spec's floor lines were
+> rewritten in place by that block. Its former Step 0 question 2 (a popover floor path for
+> 16.0–16.3) is gone — `presentationCompactAdaptation` (16.4) is below the floor — so **Step 0 is
+> ONE question**, and the `#available` site here is the iOS 26 Liquid Glass container alone.
 
 **What E chose:**
 - **Layout → "L3 · Rides on the keyboard"** (Recommended, round 7b). *"The title owns the page.
@@ -6503,10 +6502,11 @@ live opener.
   keyboard, "or the bar drops 336pt and jumps back (research §3.2). A test pins it." Findings §L
   calls this **unverified**: *"SwiftUI `Menu`'s effect on the first responder was not checked here."*
 - **Platform notes (findings §L, quoted as build instructions):** the bar rides the keyboard through
-  `safeAreaInset(edge: .bottom)`, "which is the 16 floor"; `ToolbarItemPlacement.keyboard` "is a
+  `safeAreaInset(edge: .bottom)`, "which is the floor" (18); `ToolbarItemPlacement.keyboard` "is a
   single row, too small for L3's two"; the container "takes Liquid Glass behind `#available`" on 26+
-  and a standard material below; the when-choice picker "is a popover or menu, never a sheet (Q4)",
-  needing `presentationCompactAdaptation(.popover)` (16.4+) "with a floor path on 16.0–16.3."
+  and a standard material below (the 18–25 path); the when-choice picker "is a popover or menu,
+  never a sheet (Q4)", through `presentationCompactAdaptation(.popover)`, which is below the 18
+  floor and needs no gate (the findings' "floor path on 16.0–16.3" predates `F-Floor18`).
 
 **The shape (verify, do not trust):**
 - **The probe is the exact geometry and tokens to build from** (never import it —
@@ -6543,7 +6543,7 @@ live opener.
 - **The Liquid Glass gate is a new `#available(iOS 26, *)` site** — there is no existing
   `.glassEffect`/`GlassEffectContainer` call anywhere in the app target to copy from (checked; the
   only hit is a comment, `Celebrations/CelebrationFrame.swift:22`). Follow §7.1: the 26+ branch is
-  `.glassEffect(...)` on the bar's container, the floor branch is `Material.bar`/`.ultraThinMaterial`
+  `.glassEffect(...)` on the bar's container, the 18–25 branch is `Material.bar`/`.ultraThinMaterial`
   (the same surface `Theme/ComposerChips.swift:190-197`'s `ComposerFooterSurface` already uses for
   every other composer footer) — both branches carry the same information (a bar that reads as
   raised above the page).
@@ -6551,12 +6551,11 @@ live opener.
   slide), this block adds no reduced site — say so and skip the RM-on pass. If a sliding selection
   indicator is added instead, that IS an "appears/moves" site under §7.2 and both the fade and the
   RM-on device pass (§7.3) become owed; decide before building, don't discover it after.
-- **The Date picker's floor path (16.0–16.3, no `presentationCompactAdaptation`) is a Step 0
-  question below, not a build decision** — Q4 is E's verbatim HARD RULE ("Maximum 1 sheet deep as
-  the strict baseline"), so choosing to breach it for a narrow OS band is E's call to make, even
-  though real-world impact is near zero (16.4 shipped 2023-03).
+- **The Date popover has ONE path.** `presentationCompactAdaptation(.popover)` (16.4) is below
+  the 18 floor, so the popover never adapts to a sheet and Q4 ("Maximum 1 sheet deep") is met on
+  every OS without a decision. (Before `F-Floor18` this was a Step 0 question about 16.0–16.3.)
 
-**Step 0 — ask E (two questions, findings §L left both open):**
+**Step 0 — ask E (ONE question; findings §L's second was voided by `F-Floor18`):**
 
 **1. Does the Date popover offer a time, or only a day?**
 Today's `.custom` picker is `[.date, .hourAndMinute]` (`TaskCreateView.swift:99-106`), and
@@ -6574,20 +6573,8 @@ midnight as `.custom`. E's chosen segment shows a DAY ("Fri 26"), with no visibl
 If E does not answer before the build session, build option 1 and say so in the report rather than
 guessing at option 2 or 3's exact wording.
 
-**2. How does the Date popover behave on iOS 16.0–16.3 (no `presentationCompactAdaptation`)?**
-Without it, SwiftUI's `.popover` adapts to a full sheet on a compact-width iPhone — a second sheet
-inside a composer that is already a sheet or cover, which Q4 forbids outright. This is compile-only
-per §7.3 (no pre-16.4 runtime on this machine), so it cannot be shown, only decided. Options:
-1. **(Recommended) Accept the system's sheet-adaptation on 16.0–16.3 as a named, documented Q4
-   exception.** 16.4 shipped 2023-03; real-world 16.0–16.3 usage is now negligible, and the
-   exception is confined to a single popover on an OS band with an install base the audit's own
-   floor (16.0) was never trying to make comfortable, only compilable.
-2. A `.compact`-style `DatePicker` on the floor only — its calendar overlay is UIKit's own card, not
-   a SwiftUI sheet, so it never breaches Q4. More floor-specific code to maintain for a shrinking
-   population.
-3. A `Menu` of near dates (today + 1…14) on the floor only, no true calendar. Loses "pick any date"
-   below 16.4.
-If E does not answer before the build session, build option 1 and say so in the report.
+*(The former question 2 — the Date popover on iOS 16.0–16.3 without `presentationCompactAdaptation`
+— was VOIDED by `F-Floor18` and removed; nothing below the floor exists to decide.)*
 
 **Tests that must be REVERSED, not deleted:**
 - `ADHD LifeOSTests/TaskDueChoiceTests.swift:69-74` (`testTitles_areTheChipCopy`) —
@@ -6619,8 +6606,8 @@ If E does not answer before the build session, build option 1 and say so in the 
       per the shape section above.
 - [ ] **"Verified paths" line, required** (an `#available` site is touched):
       `26 path (Liquid Glass container): run on sim + [E's phone / sim-only, say which].`
-      `16 path (standard material): code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY
-      — no 16 runtime installed.`
+      `18–25 path (standard material): code run on 26.5 by injection; OS-level behaviour
+      COMPILE-ONLY — no 18 runtime installed.`
 - [ ] **Device check owed** — the record calls the keyboard-stays-up behaviour "also a phone check";
       confirm on E's phone that opening Area, Time and the date popover does not drop the keyboard.
 - [ ] No `firestore.rules` change.
@@ -7345,9 +7332,9 @@ removal; whatever remains (deadline/pause/isCompleted logic) must still pass unt
 emulator up or an accepted skip since `Firebase*` schema tests are in the reversed/stays-green set):**
 - [ ] `screenshots/focus-sprint-heads-up/` (F1: ring recolouring + notification, light/dark) and
       `screenshots/focus-live-activity-v2/` (F2: Lock Screen + both Island tiers, light/dark).
-- [ ] **Verified paths** line for F2's `#available(iOS 17.0, *)` (`FocusSprintControls`): the 17+
-      path (sim + device) and the 16.1–16.x floor (LA renders, no interactive button —
-      compile-checked only, §7.3, no older runtime installed).
+- [ ] No `#available` site touched: `FocusSprintControls` is ungated since `F-Floor18` (its old
+      iOS 17 gate and the display-only 16.x branch are gone), so the Lock Screen button is universal
+      and no "Verified paths" line is owed — say so.
 - [ ] No Reduce Motion site is added or changed by F1/F2 (the ring's colour change is a state swap,
       not a spring) — say so; no RM-on device pass owed here (it is owed in F4, RM-01).
 - [ ] F1's persisted-sprint decode test (above) is pasted as its own result, not folded into "suite
@@ -7537,7 +7524,9 @@ after those. Nothing here exists in the codebase today: `grep -rn "EventKit\|EKE
 event opens the task. The app writes ONLY to its own 'ADHD LifeOS' calendar and never edits or
 deletes the user's existing events. The purpose string says exactly that."* Build notes from round
 4b: *"Read + write is FULL calendar access: `requestFullAccessToEvents` on 17+,
-`requestAccess(to: .event)` on the 16 floor (§7.1)... asked in context, never at launch."*
+`requestAccess(to: .event)` on the 16 floor (§7.1)... asked in context, never at launch."* —
+**the floor half of that is void since `F-Floor18`**: `requestFullAccessToEvents` (17) is below the
+18 floor, so it is the ONLY request and needs no gate.
 
 **The shape — this is mostly new construction, so cite the seams to reuse rather than existing
 lines to edit:**
@@ -7549,14 +7538,13 @@ lines to edit:**
   `Settings/NotificationCenterAuthorizationReader.swift` /
   `Settings/NotificationAuthorizationReading.swift` is the second precedent (an OS-permission
   reader with its own protocol seam).
-  `#available(iOS 17.0, *)`: `EKEventStore().requestFullAccessToEvents { granted, error in }`.
-  Floor (16.0–16.4): `EKEventStore().requestAccess(to: .event) { granted, error in }`. Both branches
-  complete, per §7.1.
+  `EKEventStore().requestFullAccessToEvents { granted, error in }` — ungated, one path
+  (`F-Floor18`; the `requestAccess(to: .event)` floor branch is no longer needed).
 - **Info.plist purpose strings** — add beside the existing pattern in
   `ADHD LifeOS.xcodeproj/project.pbxproj:622-627` (and the duplicate Release block `:665-670`):
-  `INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription` (17+ full access) and
-  `INFOPLIST_KEY_NSCalendarsUsageDescription` (legacy key, still read on the 16 floor for
-  `requestAccess(to:.event)`). Both strings must say the app writes only to its own calendar and
+  `INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription` (the full-access key; the legacy
+  `NSCalendarsUsageDescription` was only read below iOS 17 and is not needed at the 18 floor).
+  The string must say the app writes only to its own calendar and
   never touches the user's existing events (round 4c's exact promise) — do not reuse the location
   string's tone (`:623-624`) verbatim, write one for calendars specifically.
 - **"Privacy-manifest line"** (round 4b's phrase): this repo has **no `PrivacyInfo.xcprivacy` file
@@ -7597,7 +7585,8 @@ pure functions over a supplied list of busy periods (no EventKit call in the pur
       photograph (not owed until then).
 - [ ] Device check on E's phone: the real permission dialog, a real calendar write, and "tap the
       calendar event, land on the task" — none of this is simulator-verifiable.
-- [ ] **Verified paths** line for the `#available(iOS 17.0, *)` permission-request split.
+- [ ] No `#available` site touched (the permission request has one path at the 18 floor) — no
+      "Verified paths" line owed, say so.
 - [ ] Confirm the `firestore.rules` reading above empirically before claiming "no rules change".
 
 **Step 0 — ask E (this whole block is gated on it):** round 4c names WHAT calendar write means
@@ -7965,10 +7954,9 @@ explanations"* (round 6). `SESSION-OPENER-adhd-ux-audit-design.md:303-322,518-56
       Settings Appearance row, a task detail's Delete/Keep-editing alert — light + dark.
 - [ ] `apple-design` review owed (§7.6) — cite `writing.md › Best practices` (one capitalisation
       style per element type) and `buttons.md › Content`.
-- [ ] No `#available` site touched — copy-only edits happen INSIDE the existing
-      `@available(iOS 17.0, *)` gates on `PlaceEditorView`/`PlaceActionsSection`; the gate itself is
-      untouched, so no "Verified paths" line is owed. No Reduce Motion site touched — RM-on pass not
-      owed, say so.
+- [ ] No `#available` site touched — copy-only edits on `PlaceEditorView`/`PlaceActionsSection`,
+      which carry no gate since `F-Floor18`; no "Verified paths" line is owed. No Reduce Motion site
+      touched — RM-on pass not owed, say so.
 
 **Dependencies:** none upstream (independent of A1/A2). A4 depends on this block's Appearance-footer
 edit landing first.
@@ -8048,7 +8036,7 @@ asserts non-empty and that the two cases differ, so shrinking `.body` is safe as
       `layout.md` guidance on progressive disclosure and confirm the disclosure trigger meets the
       44pt floor (§3) and reads correctly to VoiceOver (a single combined element, not "More about
       this" plus a chevron as two).
-- [ ] No `#available` site touched (target the 16.0 floor — `DisclosureGroup` is iOS 14+, no gate
+- [ ] No `#available` site touched (`DisclosureGroup` is far below the 18 floor, no gate
       needed). **This block DOES add a new Reduce Motion site** (the disclosure's reveal) — a
       reduced-path render (sim, injected) is required, and because it is a new/changed reduced
       site, **the RM-on device pass (§7.3) is owed**: ask E to look at one expanded footer with
@@ -8446,7 +8434,7 @@ and re-point at arc B's token once it lands.
 *"Edit place stays the one sheet. An action's editor, and the app's own app picker, push INSIDE
 it, with Back to return. Only Apple's system screens (the contact picker, the camera) open over
 it."* Sim-verified this session (board `67`): Places → Edit place (1) → Edit action (2) → Apple's
-contact picker (3) — three deep on 17+ (MODAL-2, Critical).
+contact picker (3) — three deep (MODAL-2, Critical).
 
 **The shape (verify, do not trust) — today's chain, each a separate `.sheet`:**
 - `Places/PlacesListView.swift:41-46` → `PlaceEditorView` (sheet 1, **stays a sheet**).
@@ -8495,8 +8483,8 @@ with a minted `id`) instead, adding `Hashable` there. Verify `PlaceAppCategory`/
 - [ ] `screenshots/places-one-sheet/` + README: the chain driven end to end, light/dark.
 - [ ] `apple-design` review owed (§7.6) — sheet chrome changes.
 - [ ] No Reduce Motion site touched (push transitions are UIKit's own) — **no RM-on pass owed.**
-- [ ] **Verified paths:** "16.0 floor untouched; Places is already `@available(iOS 17.0, *)`
-      whole-feature (absent shape, §7.1) — no new gate expected."
+- [ ] **Verified paths:** "no new gate; the 18 floor untouched — Places is ungated and universal
+      since `F-Floor18`."
 - [ ] SwiftLint 0, full suite green, build green, pasted.
 
 **Dependencies:** none. G2 depends on this landing first.
@@ -8605,7 +8593,7 @@ after the warning/error labels — can scroll away at large Dynamic Type. **Chan
       loading state, the promote sheet's pinned button — light/dark.
 - [ ] `apple-design` review owed (§7.6) — every sub-item is visible.
 - [ ] No Reduce Motion site added (say so, or name it if the build adds a transition to SET-02).
-- [ ] No new `#available` gate — **Verified paths: "no new gate; 16.0 floor untouched."**
+- [ ] No new `#available` gate — **Verified paths: "no new gate; the 18 floor untouched."**
 - [ ] SwiftLint 0, full suite green, build green, pasted.
 
 **Dependencies:** G1 (Places' toolbars must already be pushes before their Save moves). Coordinate
@@ -8671,8 +8659,8 @@ there instead.**
       Edit place's Delete + confirm — light/dark.
 - [ ] `apple-design` review owed (§7.6).
 - [ ] No Reduce Motion site added — say so, or name it if a disabled-state transition is added.
-- [ ] **Verified paths per surface** once arc E settles where life areas live; Places stays
-      `@available(iOS 17.0, *)` whole-feature.
+- [ ] **Verified paths per surface** once arc E settles where life areas live; Places is ungated
+      and universal since `F-Floor18`.
 - [ ] SwiftLint 0, full suite green, build green, pasted.
 
 **Dependencies:** arc E (life-areas half only). Do not start that half before arc E lands.
@@ -8770,7 +8758,7 @@ after a write, or that `AppTabContent`'s `.onChange(of: selection)` does nothing
 - [ ] No `screenshots/` owed — plumbing/timing only, nothing new to see; say so.
 - [ ] No `apple-design` review owed — say so.
 - [ ] No Reduce Motion site added — say so.
-- [ ] No new `#available` gate — **Verified paths: "no new gate; 16.0 floor untouched."**
+- [ ] No new `#available` gate — **Verified paths: "no new gate; the 18 floor untouched."**
 - [ ] SwiftLint 0, full suite green, build green, pasted.
 
 **Dependencies:** none.
@@ -8844,7 +8832,7 @@ every past-due open task lands in `.dueToday` unconditionally — extend it, don
       dark, plus the RM-on/RM-off pair for the card's appearance.
 - [ ] `apple-design` review owed (§7.6) — new visible surface.
 - [ ] **RM-on device pass owed** (§7.3) — new reduced site.
-- [ ] No new `#available` gate expected — **Verified paths: "no new gate; 16.0 floor untouched"**
+- [ ] No new `#available` gate expected — **Verified paths: "no new gate; the 18 floor untouched"**
       unless the build introduces one.
 - [ ] "firestore.rules changes; E republishes" **only if** Step 0.1 → (a) AND the rules actually
       validate field shape on tasks (verify, don't assume).

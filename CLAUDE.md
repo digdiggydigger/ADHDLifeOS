@@ -120,7 +120,7 @@ was installed there are **TWO** `iPhone 17 Pro` simulators — one on 26.5, one 
 write a destination without `OS=` again.** The two that matter:
 
 ```
--destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'   # the floor-side runtime
+-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'   # the standard-run runtime (not the floor — no 18 runtime is installed)
 -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0'   # the current one
 ```
 
@@ -461,12 +461,15 @@ before its push landed.
 
 ## Architecture notes
 
-- SwiftUI, Swift. **The deployment target is not one number:** the app target is
-  `IPHONEOS_DEPLOYMENT_TARGET = 16.0`, the **FocusTimerWidget extension is 16.1** (Live Activities
-  need 16.1). An API above either floor ships behind `#available` with a complete floor branch
-  beside it: **§7.1 is the rule, §7.2 the Reduce Motion half, §7.3 what can and cannot be verified
-  on this machine.** Widget code gates against the higher floor. Targets verified 2026-08-30 in
-  `project.pbxproj`.
+- SwiftUI, Swift. **The deployment target is ONE number: `IPHONEOS_DEPLOYMENT_TARGET = 18.0` on
+  every target** — the app, the unit and UI test targets, and the FocusTimerWidget extension —
+  since `F-Floor18` (E's call, 2026-09-23: *"iOS 18, before F-D2"*; it was app 16.0 / widget 16.1
+  until then, and the archive and the design records still say so where they describe that
+  time). `DeploymentFloorTests` pins all six settings and walks the tree for any availability
+  check below 18, because **the compiler never flags a `#available` made redundant by the
+  deployment target** — that test is the only guard. An API above the floor ships behind
+  `#available` with a complete floor branch beside it: **§7.1 is the rule, §7.2 the Reduce Motion
+  half, §7.3 what can and cannot be verified on this machine.** The only gates left are iOS 26.
 - **Backend: Firebase** (Auth + Firestore + Storage, project `adhdlifeos-acb49`;
   `GoogleService-Info.plist` is committed — private repo, client identifiers only). The Supabase
   and AWS layers this doc previously described were deleted at E's direction in commit `5244650`
@@ -581,7 +584,7 @@ Implement layouts as an elite Apple Design Engineer. Every view must look handcr
 
 ### 3. Hit Targets & Input Interaction
 - **Physical Bounds**: Ensure all touch interactions, custom buttons, and action cells maintain a minimum touch targets metric of `44x44pt`. Bind custom view hierarchies with `.contentShape(Rectangle())` to make entire container zones tap-responsive.
-- **Physical Sensory Feedback**: Deliver instant behavioral confirmation to reassure ADHD focus paths. Attach native tactile triggers to view interactions via the house helper, `.haptic(.solid, trigger: bindingState)` (`Theme/Haptics.swift`): it is `.sensoryFeedback` on iOS 17+ and the UIKit performer on 16, i.e. §7.1's two-branch pattern. Do not call `.sensoryFeedback` directly.
+- **Physical Sensory Feedback**: Deliver instant behavioral confirmation to reassure ADHD focus paths. Attach native tactile triggers to view interactions via the house helper, `.haptic(.solid, trigger: bindingState)` (`Theme/Haptics.swift`): `.sensoryFeedback` gated on the Settings toggle at fire time (ungated by OS since `F-Floor18` — 17 is below the 18 floor; it was §7.1's two-branch exemplar before). Do not call `.sensoryFeedback` directly.
 - **Button Visual States**: Write explicit custom primitive `ButtonStyle` structures to scale interactive objects (e.g., scale down slightly to `0.97` upon active press). Raw opacity filters are prohibited.
 
 ### 4. Semantic Color Assets & Accessibility
@@ -608,41 +611,49 @@ Implement layouts as an elite Apple Design Engineer. Every view must look handcr
 - **Data Execution Lifecycles**: Manage asynchronous operations via modern `.task` blocks instead of legacy `.onAppear` handlers.
 - **Preview Support**: Every view structure must include a functioning `#Preview` block rendering Light and Dark environment variants side by side.
 
-### 7. The iOS 16 floor, modern APIs, and Reduce Motion
+### 7. The iOS 18 floor, modern APIs, and Reduce Motion
 
 *Rewritten 2026-09-11 (E's call, `F-ModernIOS-1-Policy`).* This section used to be only "Design
 Skills — Precedence and Known Conflicts", and read together with the design records it amounted to
-a ban: nothing above iOS 16.0, and `reduceMotion ? nil : …` as the answer to Reduce Motion. Two
-things overturned that on the same day. **E's direction:** keep the 16.0 floor, but give users on
-recent iOS (the majority) the modern experience. **And E's own phone ran Reduce Motion ON at the time**, so
+a ban: nothing above the floor (then iOS 16.0), and `reduceMotion ? nil : …` as the answer to
+Reduce Motion. Two things overturned that on the same day. **E's direction:** keep the floor, but
+give users on recent iOS (the majority) the modern experience. **The floor itself moved on
+2026-09-23 (`F-Floor18`): the minimum is iOS 18 on every target.** Everything below reads "floor"
+as 18; the records of the 16.0 era are left as written. **And E's own phone ran Reduce Motion ON at the time**, so
 the focus card's celebration (`F-FocusCard-4`) had never once played for its author: E saw a hard
 cut plus a haptic. (**E turned Reduce Motion OFF on 2026-09-12** — see §7.2. That is what prompted
 the rewrite, not what justifies it; the rule outlived the fact.) The skill-precedence rules are unchanged in substance and now live in §7.5.
 
 #### 7.1 The rule — the best API per site, and a complete floor path beside it
 
-- **Use the best available API at each SITE, behind `if #available(iOS N, *)` (17, 18, 26), and
-  always ship a complete iOS 16 branch beside it.** "Complete" means the same information, the
-  same feedback and the same end state: plainer is fine, absent is not. The deployment target (app
-  16.0, widget 16.1) is a floor, not a ceiling.
+- **Use the best available API at each SITE, behind `if #available(iOS N, *)` (26 today), and
+  always ship a complete iOS 18 branch beside it.** "Complete" means the same information, the
+  same feedback and the same end state: plainer is fine, absent is not. The deployment target
+  (18.0, every target) is a floor, not a ceiling.
 - **Two shapes, and they must not be blurred:**
   - **Degraded:** a site with a modern and a floor rendering of the same thing. Always
-    `if #available { … } else { … }`. The exemplar is **`View.haptic(_:trigger:)`**
-    (`Theme/Haptics.swift`): `.sensoryFeedback` on 17+, the UIKit performer through `.onChange`
-    on 16. `ModernAPIPolicyCallSiteTests` pins it. `FocusCompletionCelebration` is the second
-    (16 spring / RM cross-fade / 26 draw-on), landed in `F-ModernIOS-2-Celebration` (PR #65).
-  - **Absent:** a feature whose WHOLE surface is above the floor (Places and the routine screen,
-    E's 2026-08-27 deviation recorded in `PlaceMapPicker`). It may have no `else`, but the absence
-    is announced by a flag in the `ToolsView.placesSupported` shape, so a 16.x user is never shown
-    a door to nothing. **Feedback is never absent.** A haptic, a celebration or a confirmation is
-    always a degraded site.
+    `if #available { … } else { … }`. The exemplar is **`FocusCompletionCelebration`'s tick**
+    (iOS 26 draw-on / RM cross-fade / the 18–25 spring), landed in `F-ModernIOS-2-Celebration`
+    (PR #65) and pinned by `FocusCelebrationModernPathCallSiteTests`. It used to be
+    `View.haptic(_:trigger:)`, whose `.sensoryFeedback` (17) and UIKit `else` (16) were the first
+    two-branch site; `F-Floor18` retired that `else` — `.sensoryFeedback` sits below the floor —
+    and `ModernAPIPolicyCallSiteTests` now pins the helper as ungated. Anything that ever needs a
+    17-or-18-only API needs no gate at all.
+  - **Absent:** a feature whose WHOLE surface is above the floor. It may have no `else`, but the
+    absence must be announced by a flag, so a floor user is never shown a door to nothing. **There
+    is no absent feature in the tree today.** Places and the routine screen were the one (E's
+    2026-08-27 deviation, recorded in `PlaceMapPicker`), announced through `ToolsView.placesSupported`
+    and `ToolsCatalog.available(placesSupported:)`; `F-Floor18` made them universal and deleted
+    both flags. **Feedback is never absent.** A haptic, a celebration or a confirmation is always a
+    degraded site.
 - **A modern branch longer than a few lines lives in its own `@available(iOS N, *)` type** beside
-  the call site (the `FocusSprintControls` shape in `FocusTimerWidgetLiveActivity.swift`), so the
-  `if #available` reads as a two-line choice rather than a wall.
+  the call site (the `FocusCompletionDrawOnTick` shape in `FocusCompletionCelebration.swift`), so
+  the `if #available` reads as a two-line choice rather than a wall.
 - **"Every tier that adds value" is a filter, not a quota.** A tier ships only when it shows the
   user something the tier below cannot. When a tier is considered and not added, the block report
-  says why. For example, the celebration's tick has no 17 tier: `.symbolEffect(.appear)` is a
-  scale-in with less life than the spring, and `.bounce` fires on the state change with no delay.
+  says why. For example, the celebration's floor path uses no symbol effect even though every
+  floor device has them: `.symbolEffect(.appear)` is a scale-in with less life than the spring,
+  and `.bounce` fires on the state change with no delay.
 - **No skill gets to skip the gate** (§7.5). `apple:modernize`'s Liquid Glass and current-OS
   adoption pushes are governed by exactly this filter.
 
@@ -701,14 +712,17 @@ the rewrite, not what justifies it; the rule outlived the fact.) The skill-prece
   pass-through.
 - §5's ban on plain easing does not apply to a Reduce Motion opacity fade; §5 carries the clause.
 
-#### 7.3 Verification honesty — one runtime, and every report says so
+#### 7.3 Verification honesty — no floor runtime, and every report says so
 
-- **This machine has ONE simulator runtime, iOS 26.5, and E's phone runs 26.** So a floor branch is
-  proved to COMPILE (the 16.0 target plus `CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE` make
-  every gate load-bearing) and to be REACHED (the call-site tests, §7.4). Its CODE can be RUN on
-  26.5 by injecting the mode it would select. It is **never run ON a 16 or 17 OS, and that is
-  compile-only by policy, not by oversight** (E's call, 2026-09-11) until an older simulator
-  runtime is installed (register §A, E's GUI job).
+- **This machine has TWO simulator runtimes, iOS 26.5 and 27.0, and E's phone runs 27.** Neither
+  is the floor. So a floor branch is proved to COMPILE (the 18.0 target plus
+  `CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE` make every gate load-bearing) and to be
+  REACHED (the call-site tests, §7.4). Its CODE can be RUN on 26.5 by injecting the mode it would
+  select. It is **never run ON an iOS 18–25 OS, and that is compile-only by policy, not by
+  oversight** (E's call, 2026-09-11) until an iOS 18 simulator runtime is installed (register §A).
+  **Xcode 26.6's `-downloadPlatform` serves NO iOS 18 runtime** (checked 2026-09-24 by version
+  18.0–18.6 and by build number): the only route is the DMG from developer.apple.com under E's
+  Apple ID, then `xcrun simctl runtime add`.
 - **Since 2026-09-12 the reduced path is no longer verified incidentally.** While E ran Reduce
   Motion ON, every reduced branch was tried on a real phone by the person reviewing the block,
   whether or not anyone planned it. With the setting off, a reduced path is exercised ONLY where a
@@ -736,10 +750,10 @@ the rewrite, not what justifies it; the rule outlived the fact.) The skill-prece
   shipped, for example:
 
   > `26 path: run on sim + E's phone (RM off). Reduced: run on sim (injected) + E's phone (RM on).
-  > 16 path: code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY — no 16 runtime
+  > 18–25 path: code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY — no 18 runtime
   > installed.`
 
-- **Never write "works on iOS 16".** Nobody here can know that yet.
+- **Never write "works on iOS 18".** Nobody here can know that yet.
 
 #### 7.4 Tests over two paths
 
@@ -751,7 +765,7 @@ the rewrite, not what justifies it; the rule outlived the fact.) The skill-prece
   `*CallSiteTests` files do. **A test that asserts only the modern branch stays green on a build
   that dropped the floor.**
 - **Render probes render the leaf with Reduce Motion as a parameter** (§7.2), one render per mode.
-  The floor-mode render doubles as the regression proof for the 16 path.
+  The floor-mode render doubles as the regression proof for the 18–25 path.
 
 #### 7.5 Design skills — precedence and known conflicts
 
@@ -768,7 +782,7 @@ and they never override this file.
 the record of settled decisions. The finished-view review pass `swiftui-pro` used to run belongs to
 `apple-design` now (§7.6).
 
-**Precedence, absolute:** `CLAUDE.md` §1–6, §7.1–7.4 and the **iOS 16.0 deployment target** beat
+**Precedence, absolute:** `CLAUDE.md` §1–6, §7.1–7.4 and the **iOS 18.0 deployment target** beat
 every skill and every agent. Never silently follow a skill over this doc, and never silently follow
 this doc without saying the skill disagreed. **Report every conflict in the build report.**
 
@@ -789,15 +803,16 @@ these per block; they are settled:**
 - **`swiftui-design-principles` pushes fixed `.font(.system(size:))` scales. §1 wins** — semantic
   Dynamic Type throughout.
 - **`swiftui-pro` asserts "iOS 26 is the default deployment target" and Swift 6.2. Ignore the
-  target claim entirely: this project is iOS 16.0** (`IPHONEOS_DEPLOYMENT_TARGET = 16.0`, set in
-  FEATURE-M2) and Swift 5. **A 17+ API it recommends is welcome behind a gate with a complete 16
-  path (§7.1)**, never as a raised floor and never ungated. This is the trap that made
-  `.sensoryFeedback` need gating in `345233b`. §3 prescribes `.sensoryFeedback`, and the house way
-  to use it is `.haptic(_:trigger:)` (`Theme/Haptics.swift`), which IS §7.1's two-branch pattern.
+  target claim entirely: this project is iOS 18.0** (`IPHONEOS_DEPLOYMENT_TARGET = 18.0` on every
+  target since `F-Floor18`; 16.0 from FEATURE-M2 until then) and Swift 5. **An API above 18 that it
+  recommends is welcome behind a gate with a complete 18 path (§7.1)**, never as a raised floor and
+  never ungated. This is the trap that made `.sensoryFeedback` need gating in `345233b` at the old
+  floor. §3 prescribes `.sensoryFeedback`, and the house way to use it is `.haptic(_:trigger:)`
+  (`Theme/Haptics.swift`), now ungated because 17 is below the floor.
 - **`apple:modernize`, and any skill or agent that pushes Liquid Glass, `Tab`, `@Observable`,
   interactive widgets or other current-OS adoption: §7.1's filter governs, and the skill does not
   get to skip the gate** (E, 2026-09-11). A modern API it recommends ships only behind
-  `#available`, only with a complete 16 path, and only where it adds value. Anything touching the
+  `#available`, only with a complete 18 path, and only where it adds value. Anything touching the
   tab bar is further constrained by the custom `AppTabBar`: adopting `Tab` /
   `.tabBarMinimizeBehavior` / `.glassEffect` there means replacing that bar, not augmenting it
   (register §B, the modern-API inventory). A skill's recommendation is a candidate for the

@@ -64,6 +64,10 @@ final class ModernAPIPolicyCallSiteTests: XCTestCase {
     /// `@available(iOS 17.0, *)` extension of its own.
     func testTheHapticsFileCarriesNoAvailabilityCheck() throws {
         let source = try Self.appCode("Theme/Haptics.swift")
+        XCTAssertTrue(
+            source.contains("var sensoryFeedback: SensoryFeedback {"),
+            "`HapticFeel.sensoryFeedback` is gone, so the negative below would pass on an empty file."
+        )
         XCTAssertFalse(
             source.contains("available(iOS"),
             "`Theme/Haptics.swift` names an iOS version in an availability check. Nothing in it"

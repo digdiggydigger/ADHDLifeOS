@@ -151,6 +151,11 @@ final class ToolsPageCallSiteTests: XCTestCase {
     /// annotation of its own.
     func testTheRoutinesSectionIsDrawnWithNoAvailabilityGate() throws {
         let tools = Self.collapsed(try Self.code("Tools/ToolsView.swift"))
+        XCTAssertTrue(
+            tools.contains("ToolsRoutinesSection(client: placesClient) { pushedDestination = .places }"),
+            "The Routines section is no longer drawn at all — the negative assertions below would"
+                + " pass on an empty page."
+        )
         XCTAssertFalse(
             tools.contains("#available(iOS 17.0, *) { ToolsRoutinesSection("),
             "The Routines section is back inside an iOS 17 check, which can never be false at"
