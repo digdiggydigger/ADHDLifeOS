@@ -1477,6 +1477,20 @@ the last four blocks is owed; three older ones still are, and none is urgent.**
 
 ## B · Real work, ready to start — recommended order
 
+- [ ] **🐞 CANDIDATE (found 2026-09-24, E said "add to the register") — an inbox area chip is LOST
+      when you tap Task it.** Found while filming the LifeOS brag video on the iPhone 18 Pro / iOS 27.0
+      simulator against the emulator (`main @ 1cc1564`). In Capture Inbox, tap an area chip under
+      *"WHERE DOES THIS LIVE?"* (e.g. 🫀 Health), then **Task it**. The **Make a task** sheet says
+      *"The new task inherits this capture's life area, tags and notes."*, but the created task has
+      **no `life_area_id`**, and the capture has no `lifeAreaId` either. **Cause, read, not yet
+      red-checked:** `CaptureInboxSections.topCardActions` computes the staged area
+      (`selectedArea(for:)` over `sortSelection`), but Task it only sets
+      `promotingCapture = capture`. The staged choice is written only by **Sorted**, so the sheet
+      reads the STORED capture's nil. Evidence: `brag-output/footage/B-sort.mp4` (outside the repo) and
+      the task document `B8330A5F…` in the exported emulator state. **Not built. Needs a spec and a
+      failing test first** (pass the staged area into the promote sheet, or persist it on chip tap).
+      (NEW)
+
 - [x] ~~**🐞 `F-FanXAtRest` — the × drops to its resting corner while the capture fan is open.**~~ **BUILT + MERGED 2026-09-17 (PR #147); ON THE PHONE at `4653433`; OWED: E's look incl. the RM-ON pass.** E's GIF
       and frame 19: in portrait any card pushes the disc (and so the ×) up, while the fan's tiles are
       anchored to the resting corner, so the × lands on a tile (TASK under the sprint bar, 9pt; TASK
