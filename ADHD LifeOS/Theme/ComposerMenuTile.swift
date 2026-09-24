@@ -34,16 +34,22 @@ struct ComposerMenuTile: View {
         HStack(spacing: compact ? 4 : 8) {
             Image(systemName: glyph)
                 .foregroundStyle(Color.accentColor)
+            // The words outrank the ornaments: at the largest ordinary text size (xxxLarge) the
+            // compact third is ~123pt wide, and at 0.9 with no priority the value truncated to
+            // "No…" and "15…" (F-D2's XXXL render). §1: shrink to 0.8 before anything clips.
             VStack(alignment: .leading, spacing: 0) {
                 Text(caption)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color("LabelSecondary"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Text(value)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color("LabelPrimary"))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.9)
+                    .minimumScaleFactor(0.8)
             }
+            .layoutPriority(1)
             Spacer(minLength: 4)
             Image(systemName: "chevron.up.chevron.down")
                 .font(.caption.weight(.semibold))
