@@ -111,6 +111,6 @@ struct AppTabContent<Content: View>: View {
                 }
             }
         }
-        .onChange(of: selection) { visitLog.select($0) }
+        .onChange(of: selection) { _, tab in visitLog.select(tab) }
     }
 }

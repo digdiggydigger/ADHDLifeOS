@@ -69,7 +69,7 @@ struct CaptureFiledInCard: View {
                 selection: $selectedLifeAreaId,
                 accessibilityID: "captureTriageLifeAreaPicker"
             )
-            .onChange(of: selectedLifeAreaId, perform: handleLifeAreaChange)
+            .onChange(of: selectedLifeAreaId) { _, newValue in handleLifeAreaChange(newValue) }
 
             Text("Applies to this capture and any task made from it.")
                 .font(.footnote)

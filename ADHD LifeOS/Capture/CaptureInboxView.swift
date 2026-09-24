@@ -135,7 +135,7 @@ struct CaptureInboxView: View {
         // another tab, where this screen is already on screen and nothing re-runs `.task`. A
         // filed draft's Reopen can arrive either way — the composers are reachable from every tab.
         .task { await drainReopenDoor() }
-        .onChange(of: pendingCaptureToInspect) { _ in Task { await drainReopenDoor() } }
+        .onChange(of: pendingCaptureToInspect) { Task { await drainReopenDoor() } }
         .sheet(isPresented: $isPresentingQuickCapture) {
             QuickCaptureView(client: captureClient) {
                 Task { await service.refresh() }
@@ -173,7 +173,7 @@ struct CaptureInboxView: View {
         // than on this screen: after an undo the area has to be chosen again. Leaving the pick
         // would let the next tap of Sorted file a capture into an area chosen for a DIFFERENT
         // one — and on the restored capture it would present a decision E had just taken back.
-        .onChange(of: service.triageUndoCount) { _ in sortSelection = nil }
+        .onChange(of: service.triageUndoCount) { sortSelection = nil }
         // Triage's failures were being published and rendered NOWHERE on this screen: a Sorted
         // that could not write, or an undo that could not restore, both set `triageErrorMessage`
         // and looked exactly like a button that does nothing. That mattered little while every

@@ -64,7 +64,7 @@ struct TaskFocusPlanSection: View {
                     + "so you stay grounded in the micro-step."
             )
         }
-        .onChange(of: durationSeconds) { newValue in
+        .onChange(of: durationSeconds) { _, newValue in
             // A preset tap or an external reseed can land on a value the current unit can't
             // represent truthfully (sub-minute, or not a whole minute) — follow it.
             if unit == .minutes, newValue % 60 != 0 {

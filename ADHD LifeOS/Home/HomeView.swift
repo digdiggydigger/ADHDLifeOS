@@ -212,7 +212,7 @@ struct HomeView: View {
                     .keyboardDismissal()
             }
             .onAppear { momentumPreferences = momentumPreferencesStore.read() }
-            .onChange(of: showSettings) { isPresented in
+            .onChange(of: showSettings) { _, isPresented in
                 if !isPresented { momentumPreferences = momentumPreferencesStore.read() }
             }
             // The full nudge surface, sharing Today's own service so a dismissal on either side
@@ -226,7 +226,7 @@ struct HomeView: View {
             )) {
                 inspectedCaptureDoor
             }
-            .onChange(of: inspectingHomeCapture) { capture in
+            .onChange(of: inspectingHomeCapture) { _, capture in
                 // Coming back from a capture the user may have promoted, journaled or binned —
                 // the card must not keep showing it as waiting.
                 if capture == nil { Task { await refreshInboxCount() } }
@@ -274,7 +274,7 @@ struct HomeView: View {
             // `nil` to the Home Screen at the exact moment a sprint started (caught in-simulator by
             // reading the App Group container, 2026-08-20). `@State`/`@StateObject` reads below are
             // unaffected: those go through storage that is always current.
-            .onChange(of: widgetSprint) { publishWidgetSnapshot(sprint: $0) }
+            .onChange(of: widgetSprint) { _, sprint in publishWidgetSnapshot(sprint: sprint) }
             .task {
                 await homeService.load()
                 // The Active Goal may have changed (a task closed, a new one topping the list),
@@ -305,15 +305,15 @@ struct HomeView: View {
             } message: {
                 Text(homeService.reorderErrorMessage ?? "")
             }
-            .onChange(of: homeService.reorderErrorMessage) { message in
+            .onChange(of: homeService.reorderErrorMessage) { _, message in
                 // A rejected reorder reloads the server's order in `HomeService`; leave arrange mode
                 // so the grid reflects that order rather than the one the backend refused.
                 if message != nil { isArranging = false }
             }
             // E's F7, and BOTH inputs are load-bearing — see `HomeView+DailyGoal`.
-            .onChange(of: ringCount) { _ in observeDailyGoal() }
-            .onChange(of: ringSettled) { _ in observeDailyGoal() }
-            .onChange(of: homeScenePhase) { phase in
+            .onChange(of: ringCount) { observeDailyGoal() }
+            .onChange(of: ringSettled) { observeDailyGoal() }
+            .onChange(of: homeScenePhase) { _, phase in
                 // Cheap and synchronous — one UserDefaults read, no network. See the property.
                 if phase == .active { refreshLiveRoutine() }
             }

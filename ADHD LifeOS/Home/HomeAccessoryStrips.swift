@@ -221,7 +221,7 @@ extension HomeView {
             // the user creating their very first nudge. Writing this in the body instead would
             // mutate state during view evaluation.
             .task { refreshNudgeFirstRunMarker(hasAny: hasAny) }
-            .onChange(of: hasAny) { any in
+            .onChange(of: hasAny) { _, any in
                 refreshNudgeFirstRunMarker(hasAny: any)
             }
         }

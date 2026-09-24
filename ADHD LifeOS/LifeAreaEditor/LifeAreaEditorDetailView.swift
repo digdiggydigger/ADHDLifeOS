@@ -148,7 +148,7 @@ struct LifeAreaEditorDetailView: View {
                 .accessibilityIdentifier("lifeAreaSaveButton")
             }
         }
-        .onChange(of: service.pendingRenameConflict) { conflict in
+        .onChange(of: service.pendingRenameConflict) { _, conflict in
             showRenameConflictAlert = (conflict != nil)
         }
         .alert(

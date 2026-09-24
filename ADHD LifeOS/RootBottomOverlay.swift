@@ -166,7 +166,7 @@ struct RootBottomOverlay: View {
         // **It asks; it never decides.** The Celebrations switch, the cooldown and the queue
         // all live in the centre, which is why E's #3 can keep the haptic above while
         // silencing the celebration: nothing on this line knows the switch exists.
-        .onChange(of: focusService.latestConfirmation) { confirmation in
+        .onChange(of: focusService.latestConfirmation) { _, confirmation in
             guard let confirmation else { return }
             celebrate.request(.confirm(clearedStack: confirmation.clearedStack), at: nil)
         }

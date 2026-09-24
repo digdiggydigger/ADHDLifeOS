@@ -277,7 +277,7 @@ extension QuickCaptureView {
             PhotosPicker("Choose Photo", selection: $photoPickerItem, matching: .images)
                 .buttonStyle(MomentumBorderedButtonStyle())
                 .accessibilityIdentifier("quickCapturePhotoPickerButton")
-                .onChange(of: photoPickerItem) { newItem in
+                .onChange(of: photoPickerItem) { _, newItem in
                     Task { await loadPickedPhoto(newItem) }
                 }
             if UIImagePickerController.isSourceTypeAvailable(.camera) {

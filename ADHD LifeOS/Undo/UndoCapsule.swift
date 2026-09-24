@@ -80,7 +80,7 @@ struct UndoCapsulePresenter<Fallback: View>: View {
         // and left out** (§7.1's filter): it adds only a priority, and an undo offer is not urgent
         // enough to interrupt a higher-priority utterance, so it would show the user nothing this
         // cannot. This API is not deprecated.
-        .onChange(of: center.pendingAction) { action in
+        .onChange(of: center.pendingAction) { _, action in
             guard let action else { return }
             UIAccessibility.post(notification: .announcement, argument: action.accessibilityAnnouncement)
         }

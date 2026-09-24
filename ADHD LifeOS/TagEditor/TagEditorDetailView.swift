@@ -97,7 +97,7 @@ struct TagEditorDetailView: View {
             }
         }
         // Drive the rename-clash alert from the service's single source of truth.
-        .onChange(of: service.pendingMergeConflict) { conflict in
+        .onChange(of: service.pendingMergeConflict) { _, conflict in
             showMergeAlert = (conflict != nil)
         }
         .alert(

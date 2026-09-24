@@ -163,7 +163,7 @@ struct EmojiPicker: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .accessibilityIdentifier("emojiFreeTypeField")
-                .onChange(of: freeTypeText) { newValue in
+                .onChange(of: freeTypeText) { _, newValue in
                     applyFreeType(newValue)
                 }
             if let freeTypeError {

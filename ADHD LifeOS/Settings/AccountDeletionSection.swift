@@ -90,7 +90,7 @@ struct AccountDeletionSection: View {
         } message: {
             Text(service.errorMessage ?? "")
         }
-        .onChange(of: service.phase) { phase in
+        .onChange(of: service.phase) { _, phase in
             switch phase {
             case .reauthRequired(let method) where service.errorMessage == nil:
                 presentReauthUI(for: method)

@@ -136,7 +136,7 @@ extension TaskDetailView {
     var addMoreInfoSection: some View {
         Section {
             Toggle("Due Date", isOn: $hasDueDate)
-                .onChange(of: hasDueDate) { newValue in
+                .onChange(of: hasDueDate) { _, newValue in
                     dueDate = newValue ? (dueDate ?? Date()) : nil
                 }
             if hasDueDate {

@@ -70,7 +70,7 @@ struct NudgeScheduleEditor: View {
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: isShowingDays)
         .animation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0), value: schedule.weekdays)
-        .onChange(of: isShowingDays) { showing in
+        .onChange(of: isShowingDays) { _, showing in
             onCustomDaysVisibilityChanged?(showing)
         }
     }
