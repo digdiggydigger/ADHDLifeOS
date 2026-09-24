@@ -6649,7 +6649,29 @@ guessing at option 2 or 3's exact wording.
 
 ---
 
-### FEATURE: F-D3-TasksAnytimeRow — the "Anytime · N" row on the Momentum board  [ ] NOT STARTED
+### FEATURE: F-D3-TasksAnytimeRow — the "Anytime · N" row on the Momentum board  [x] COMPLETED 2026-09-24
+
+> **Built 2026-09-24 (session 11, the arc-D close).** Undated open tasks fold into a fourth bucket,
+> "Anytime · N", LAST on Momentum and collapsed by default (`@AppStorage("tasks.anytimeCollapsed")
+> = true`); beyond-tomorrow stays off the board. Suite **3,344 / 0**, SwiftLint **0**, build
+> SUCCEEDED, arc coverage **30.08% (15,101/50,195)**; `MomentumTaskBuckets.swift` 100% (111/111).
+> **Where the build departed from the spec, and why:**
+> - **A THIRD test had to be reversed**, which the spec's list missed:
+>   `TasksServiceTests.testLoad_momentumExcludesUndatedTasks_openFilterShowsThem` pinned the old
+>   exclusion by SHAPE (`.loaded([])`), not by any string the spec grepped for. Reversed in place,
+>   renamed `…momentumShowsUndatedTasksUnderAnytime_openFilterStillShowsThem`, round 6 quoted.
+> - **`MomentumTaskBuckets.anytimeGroupId`** — the id spelled once, so the fold keys on a constant
+>   rather than a re-typed `"momentum-anytime"` (the sprint key keeps its literal, untouched).
+> - **The header is its own view, `Tasks/TasksAnytimeHeader.swift`**, not inline: `TaskListView`
+>   sat at 398 of SwiftLint's 400 file lines and its struct went to 257 of 250. The fold's STATE
+>   stays in `TaskListView`, bound in.
+> - **The header is painted the page** (`PinnedHeaderMetrics.surfaceAssetName`): the list pins
+>   section headers, and Anytime is the one bucket whose own rows scroll under its own header.
+> - **The view half is pinned by `TasksAnytimeRowCallSiteTests`** (comment-stripped source reads),
+>   not a snapshot: the fold's default, the shared header, the row gate, the pinned surface and the
+>   ▶ key. **Its sprint guard was VACUOUS as first written** — a `contains` check passed a build that
+>   widened ▶ to Anytime (`== "momentum-dueToday" || …anytime` still contains the Due-today
+>   spelling). The red-check caught it; it now asserts the whole line.
 
 **What E chose:**
 - Round 6: *"The Tasks board gains one collapsed 'Anytime · N' row at the bottom: the tail stays
@@ -6711,26 +6733,29 @@ guessing at option 2 or 3's exact wording.
   to reverse beyond the two files above.
 
 **Acceptance criteria:**
-- [ ] RED first: `testGroup_undatedGoesToAnytime_laterStaysExcluded` written to fail against
+- [x] RED first: `testGroup_undatedGoesToAnytime_laterStaysExcluded` written to fail against
       today's code (asserts `"Anytime · 1"` present); a view-level or snapshot test that the Anytime
-      section starts collapsed and that `showsSprintStart` is false for it. Count RED failures.
-- [ ] The reversed/annotated tests above updated in place, round 6 and round 8b quoted.
-- [ ] Red-check: restore `MomentumTaskBuckets.swift`/`TaskListView.swift` from the pre-block commit,
-      count failures, restore forward.
-- [ ] SwiftLint, the full suite and the build all pasted.
-- [ ] `screenshots/tasks-anytime-row/` + README: Momentum board with the row collapsed (showing only
+      section starts collapsed and that `showsSprintStart` is false for it. Count RED failures. *(RED: 9 tests / 14 failures of 35.)*
+- [x] The reversed/annotated tests above updated in place, round 6 and round 8b quoted.
+- [x] Red-check: restore `MomentumTaskBuckets.swift`/`TaskListView.swift` from the pre-block commit,
+      count failures, restore forward. *(Done: the both-file restore is a COMPILE failure, 2 errors —
+      `anytimeGroupId` is gone. `TaskListView` alone: 3 tests / 5 failures. Seven compiling
+      mutations each caught by exactly their test — undated→nil 5/7, Anytime-first 2/4, fold
+      default open 1/1, ▶ widened 1/1, rows ungated 1/1, pinned surface dropped 1/1. Restored 6/0.)*
+- [x] SwiftLint, the full suite and the build all pasted.
+- [x] `screenshots/tasks-anytime-row/` + README: Momentum board with the row collapsed (showing only
       the "Anytime · N" header), expanded, and a freshly-added undated task appearing in it —
       light/dark. This is exactly the kind of "a live rule applied to real data" a unit test cannot
       show (CLAUDE.md, "Visual evidence").
-- [ ] **`apple-design` review owed** (§7.6) — a new section header row appears on a screen already
+- [x] **`apple-design` review owed** (§7.6) — a new section header row appears on a screen already
       reviewed multiple times in this audit (findings §I, §G). Route through `hig-lookup.md` (§7.6
       step 2) for a disclosure/collapsible header rather than guessing a page name, and confirm the
       chevron direction matches `Theme/CollapsibleSectionHeader.swift:20-22`'s stated convention
       (points AT the hidden content, not at the gesture).
-- [ ] **RM-on device pass: none owed.** `CollapsibleSectionHeader` carries no motion of its own
+- [x] **RM-on device pass: none owed.** `CollapsibleSectionHeader` carries no motion of its own
       (a static chevron glyph, no slide/fade) — confirm this stays true rather than assuming it.
-- [ ] No `#available` site touched → no "Verified paths" line owed.
-- [ ] No `firestore.rules` change (bucketing is client-side only).
+- [x] No `#available` site touched → no "Verified paths" line owed.
+- [x] No `firestore.rules` change (bucketing is client-side only).
 
 **Dependencies:** None on D1/D2 technically (pure `MomentumTaskBuckets` + `TaskListView` change),
 but land it after D1 if practical — D1's screenshots are more convincing with an Anytime row to put

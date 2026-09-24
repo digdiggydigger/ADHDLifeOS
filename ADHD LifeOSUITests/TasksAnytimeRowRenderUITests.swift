@@ -75,14 +75,12 @@ final class TasksAnytimeRowRenderUITests: XCTestCase {
         print("MEASURE anytime-\(tag) expanded header=\(header.frame) new=\(app.staticTexts[title].frame)")
         attach(app, named: "expanded-\(tag)")
 
-        // 4 — the header is pinned: scrolled, the rows pass UNDER it and must not show through.
-        app.scrollViews.firstMatch.swipeUp()
-        print("MEASURE anytime-\(tag) scrolled header=\(header.frame)")
-        attach(app, named: "scrolled-\(tag)")
-
-        // Leave the device's fold as it was found — closed — for the next run.
-        app.scrollViews.firstMatch.swipeDown()
-        XCTAssertTrue(UITestSession.tap(anytimeHeader(in: app), untilGone: app.staticTexts[title]), "Could not re-fold")
+        // No "scrolled" frame, deliberately. Two drag shapes were tried (2026-09-24): from a seeded
+        // row, which at the accessibility size sat on the bottom edge and became the HOME gesture;
+        // and from the new row, which the row's own swipe gesture claimed, so nothing scrolled.
+        // A frame that shows nothing is not evidence. The pinned surface is guarded by
+        // `TasksAnytimeRowCallSiteTests.testThePinnedFoldIsPaintedThePage` (red-checked) and is
+        // the same `PinnedHeaderMetrics` surface every pinned header uses.
     }
 
     // MARK: - Plumbing
