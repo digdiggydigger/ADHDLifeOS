@@ -18,6 +18,12 @@
 > - **Nothing looks different on E's phone (27.0)**, so no `apple-design` review and no RM-on pass
 >   were owed; the device SMOKE launch (widget, Live Activities, App Intents all changed targets)
 >   is recorded in State.
+> - **E pulled the other two speed levers the same evening:** **per-arc BYPASS for arcs D–G** (build
+>   an arc's blocks back to back, each fully gated; stop at the arc close with the phone build
+>   installed and `handoff/ARC-REVIEW-<arc>.md` for E's one-pass review; F-F1's Plan-Mode round,
+>   F-F5's render pass, design-changing findings and red gates still stop) and the **three build-loop
+>   economies** (targeted runs in the loop, `test-without-building` for source-reading tests, one
+>   scripted close-out chain; coverage once per arc). Both are now standing rules in `CLAUDE.md`.
 > - **E's ask this session — install the iOS 18 sim runtime — DONE by the end of the day:** E downloaded
 >   the DMG, the install needed the inner image extracted and cloned (five attempts; §A, memory
 >   `simulator-runtime-install`), and **the suite passes on iOS 18.0: 3,320 / 0.** The floor path is no
