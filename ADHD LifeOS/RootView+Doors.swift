@@ -62,17 +62,12 @@ extension RootView {
         }
     }
 
-    /// ActivityKit is 16.1+ and the routine screen is 17-gated, so in practice this is always
-    /// the real presenter — the inert one keeps the type total rather than guarding at the
-    /// call site.
+    /// The SHARED instance: this factory is called from a `@ViewBuilder`, so a fresh presenter
+    /// here would be replaced on every re-render — along with its handle to the running
+    /// Activity. Always the real presenter since `F-Floor18` (ActivityKit sits below the 18
+    /// floor); `InertRoutineActivityPresenter` remains for previews only.
     func routineActivityPresenter() -> RoutineActivityPresenting {
-        if #available(iOS 16.1, *) {
-            // The SHARED instance: this factory is called from a `@ViewBuilder`, so a fresh
-            // presenter here would be replaced on every re-render — along with its handle to
-            // the running Activity.
-            return RoutineActivityKitPresenter.shared
-        }
-        return InertRoutineActivityPresenter()
+        RoutineActivityKitPresenter.shared
     }
 
     /// The place-action doors (F-PlaceActions-3): a tapped notification's in-app half.

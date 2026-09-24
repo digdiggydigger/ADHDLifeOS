@@ -8,11 +8,10 @@
 //  tested seams (`ShortcutIntentRunner`, `PlaceActionNotificationRouter`), the same thin-glue
 //  discipline as the notification delegate.
 //
-//  iOS floor check (app target is 16.0): `AppIntent`, `@Parameter`, `IntentDialog`,
-//  `ParameterSummary` and `openAppWhenRun` are all iOS 16.0. `AppShortcutsProvider` is 16.0 but
-//  the `shortTitle:systemImageName:` AppShortcut initialiser is 16.4 — hence the gate below;
-//  on 16.0–16.3 the intents still appear in the Shortcuts action library, they just aren't
-//  surfaced as ready-made App Shortcuts.
+//  iOS floor check (the minimum is 18, `F-Floor18`): everything here — `AppIntent`,
+//  `@Parameter`, `IntentDialog`, `ParameterSummary`, `openAppWhenRun` and the
+//  `shortTitle:systemImageName:` AppShortcut initialiser (16.4) — sits below the floor, so the
+//  provider carries no availability gate and the App Shortcuts are surfaced on every device.
 //
 
 import AppIntents
@@ -101,7 +100,6 @@ struct StartSprintIntent: AppIntent {
 
 /// Ready-made App Shortcuts, so the three intents show up under the app in Shortcuts (and to
 /// Siri) with zero setup.
-@available(iOS 16.4, *)
 struct LifeOSAppShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(

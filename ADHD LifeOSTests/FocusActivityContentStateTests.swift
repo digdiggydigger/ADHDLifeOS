@@ -9,7 +9,6 @@ import XCTest
 /// Locks the snapshot → ActivityKit content-state mapping and the presentation maths the widget
 /// renders from — the pure half of `FocusActivityKitMirror` (the `Activity` calls themselves
 /// need an entitled process and are covered by the seam's sequence tests instead).
-@available(iOS 16.1, *)
 @MainActor
 final class FocusActivityContentStateTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)

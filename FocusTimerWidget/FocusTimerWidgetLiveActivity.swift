@@ -67,7 +67,7 @@ struct FocusTimerWidgetLiveActivity: Widget {
 
                             Spacer(minLength: 0)
 
-                            if !isComplete, #available(iOS 17.0, *) {
+                            if !isComplete {
                                 FocusSprintControls(state: context.state)
                             }
                         }
@@ -92,11 +92,10 @@ struct FocusTimerWidgetLiveActivity: Widget {
         }
     }
 
-    /// `isStale` (16.2+) flips when the deadline-derived stale date passes while the app is
-    /// suspended — the one transition a locally-updated Activity can't be told about.
+    /// `isStale` flips when the deadline-derived stale date passes while the app is suspended —
+    /// the one transition a locally-updated Activity can't be told about.
     private func isStale(_ context: ActivityViewContext<FocusActivityAttributes>) -> Bool {
-        guard #available(iOS 16.2, *) else { return false }
-        return context.isStale
+        context.isStale
     }
 }
 
@@ -150,7 +149,7 @@ struct FocusLiveActivityLockScreenView: View {
 
                     Spacer(minLength: 0)
 
-                    if !isComplete, #available(iOS 17.0, *) {
+                    if !isComplete {
                         FocusSprintControls(state: state)
                     }
                 }
@@ -163,12 +162,11 @@ struct FocusLiveActivityLockScreenView: View {
 /// `LiveActivityIntent`s run in the app's process, so they drive the real engine — no push
 /// plumbing, works on the free account.
 ///
-/// iOS 17+ (`Button(intent:)`); on 16.x the Activity stays display-only. Two §-notes for the
-/// build report: §3's 44pt targets can't fit the Live Activity's 160pt height cap alongside the
-/// prominence layout (these sit at ~38pt, the size the system Timer Activity uses), and §3's
-/// custom pressed-scale ButtonStyle can't run in archived Activity rendering — the system
-/// provides its own press highlight.
-@available(iOS 17.0, *)
+/// `Button(intent:)` is iOS 17, below the 18 floor, so the controls are unconditional
+/// (`F-Floor18`). Two §-notes for the build report: §3's 44pt targets can't fit the Live
+/// Activity's 160pt height cap alongside the prominence layout (these sit at ~38pt, the size the
+/// system Timer Activity uses), and §3's custom pressed-scale ButtonStyle can't run in archived
+/// Activity rendering — the system provides its own press highlight.
 private struct FocusSprintControls: View {
     let state: FocusActivityAttributes.ContentState
 
