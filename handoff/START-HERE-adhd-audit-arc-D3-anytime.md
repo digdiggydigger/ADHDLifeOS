@@ -63,6 +63,10 @@ memory into the new session."*
 
 - `main` @ the merge of `F-D2`'s PR. Suite **3,337 / 0**, SwiftLint **0 / 892**, build green.
 - **E's phone still carries `F-Floor18` (`442db4e`)** — NOT D2. The install is part of the close.
-- UI-harness facts (memory `menus-dismiss-the-keyboard`): erase + boot + launch Settings + 30s
-  before a UI run, or the runner dies "waiting for AX loaded"; erase before each run (a restored
-  session breaks the sign-out at AX3); the iOS 18.0 sim's first boot shows no software keyboard.
+- UI-harness facts (memories `menus-dismiss-the-keyboard`, `build-machine-limits`): **erase each
+  simulator ONCE, not before every run.** D2 erased per run, and every fresh first boot on this 8 GB
+  Mac got system apps killed by watchdogs (E saw the "MobileCal quit unexpectedly" dialogs: 13 of
+  them, plus 12 `AccessibilityControlsExtension` crashes) and caused the runner's "Timed out waiting
+  for AX loaded" failures. After a fresh boot, launch Settings and wait 60s. Reuse the booted device
+  between runs; if a restored sign-in breaks an AX3 run, erase just before that one. The iOS 18.0
+  sim's first boot shows no software keyboard (the pin SKIPS then). E can click OK on the dialogs.
