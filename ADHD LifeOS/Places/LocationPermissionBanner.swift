@@ -12,7 +12,6 @@ import UIKit
 /// It watches `authorizationChanges` rather than polling: the delegate callback is the only signal
 /// that the user answered the system sheet, and without it the banner would sit there still asking
 /// for permission that had just been granted.
-@available(iOS 17.0, *)
 struct LocationPermissionBanner: View {
     /// Whether this screen needs the Always grant (arrival triggering) or just When In Use.
     let wantsTriggering: Bool

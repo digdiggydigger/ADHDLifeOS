@@ -13,7 +13,6 @@ import SwiftUI
 /// One app's destinations: the plain open first (the ADHD-friendly default — skippable in one
 /// tap means the DEFAULT is one tap), then the place-prefilled rows, then the type-a-value
 /// forms.
-@available(iOS 17.0, *)
 struct PlaceAppDestinationStep: View {
     let entry: PlaceAppDirectoryEntry
     let placeName: String

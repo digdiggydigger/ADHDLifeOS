@@ -8,17 +8,17 @@ import SwiftUI
 
 /// Tap the map to drop the pin; the circle shows the radius that will actually be geofenced.
 ///
-/// **§7 deviation, reported and authorised by E on 2026-08-27:** this view is gated to iOS 17,
-/// above the project's 16.0 floor. On iOS 16 SwiftUI has no supported way to turn a tap into a
-/// map coordinate — `MapProxy.convert(_:from:)` arrives in 17 — so true tap-to-drop would need an
-/// `MKMapView` wrapped in a `UIViewRepresentable`. E chose the modern API over that bridge. The
-/// project target stays 16.0 (raising it would churn the 40-odd `#available` gates across the
-/// shipped redesign); only the Places feature is gated, so an iOS 16 device simply never sees it.
+/// **The history of the Places gate.** On 2026-08-27 E authorised a §7 deviation: this view, and
+/// with it the whole Places feature, was gated to iOS 17 above the project's floor of the time,
+/// because `MapProxy.convert(_:from:)` — the only supported way to turn a tap into a map
+/// coordinate — arrives in 17, and E chose the modern API over an `MKMapView` bridge. That made
+/// Places the app's one "absent" feature (§7.1). On 2026-09-23 E raised the minimum to iOS 18
+/// (`F-Floor18`), so the gate is gone and Places is universal; the record of the deviation stays
+/// here because it is why the feature was ever optional.
 ///
 /// `MapCircle` renders the radius natively, which matters more than it sounds: the circle IS the
 /// trigger boundary, so seeing it at true scale is the difference between a fence that fires
 /// where E expects and one that doesn't.
-@available(iOS 17.0, *)
 struct PlaceMapPicker: View {
     @Binding var coordinate: PlaceCoordinate?
     let radiusMetres: Double

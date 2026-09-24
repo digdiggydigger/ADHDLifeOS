@@ -120,11 +120,9 @@ extension RootView {
 
     /// The routine door (F-Routines-3). The tap carries only the minted run key; the STORE is
     /// the source of truth, and a mismatch — an old notification, an ended run, a broken
-    /// payload, a pre-17 device — is the stale-tap rule: open Today, nothing else. Never a
-    /// blank routine screen.
+    /// payload — is the stale-tap rule: open Today, nothing else. Never a blank routine screen.
     func openRoutineDoor(_ runKey: UUID?) {
-        guard #available(iOS 17.0, *),
-              let runKey,
+        guard let runKey,
               let run = routineRunStore.readLiveRun(now: .now),
               run.id == runKey else {
             selectedTab = .today
@@ -151,31 +149,28 @@ extension RootView {
         }
     }
 
-    /// The routine screen behind its 17-gate (Places UI's floor; the door above never
-    /// presents below it, so the empty branch is unreachable belt-and-braces).
-    @ViewBuilder
+    /// The routine screen. It sat behind `if #available(iOS 17.0, *)` with the rest of the
+    /// Places UI until `F-Floor18`.
     func routineCover(_ run: RoutineRun) -> some View {
-        if #available(iOS 17.0, *) {
-            PlaceRoutineScreen(
-                run: run,
-                store: routineRunStore,
-                onOpenTab: { selectedTab = $0 },
-                onStartSprint: { minutes in
-                    let fallback = UserDefaultsMomentumPreferencesStore().read().defaultSprintMinutes
-                    startFocus(PlaceActionSprint.plan(minutes: minutes, defaultMinutes: fallback))
-                },
-                activity: routineActivityPresenter(),
-                recorder: FirebaseRoutineRunRecorder(),
-                // E's R4: the greeting says the ACCOUNT display name, the one Settings' account
-                // row shows — not the routine's. Defaulted `nil` on the screen, so forgetting it
-                // here would compile and greet everyone anonymously; `RoutineRecordCallSiteTests`
-                // reads this line for exactly that reason.
-                displayName: authService.signedInUser?.displayName,
-                history: FirebaseRoutineRunHistoryAdapter()
-            )
-            // This cover sits ABOVE the root layer, so a celebration started on the routine
-            // screen needs a layer of its own to be seen at all (E's ARCH answer).
-            .overlay { CelebrationLayer(surface: .routineCover) }
-        }
+        PlaceRoutineScreen(
+            run: run,
+            store: routineRunStore,
+            onOpenTab: { selectedTab = $0 },
+            onStartSprint: { minutes in
+                let fallback = UserDefaultsMomentumPreferencesStore().read().defaultSprintMinutes
+                startFocus(PlaceActionSprint.plan(minutes: minutes, defaultMinutes: fallback))
+            },
+            activity: routineActivityPresenter(),
+            recorder: FirebaseRoutineRunRecorder(),
+            // E's R4: the greeting says the ACCOUNT display name, the one Settings' account
+            // row shows — not the routine's. Defaulted `nil` on the screen, so forgetting it
+            // here would compile and greet everyone anonymously; `RoutineRecordCallSiteTests`
+            // reads this line for exactly that reason.
+            displayName: authService.signedInUser?.displayName,
+            history: FirebaseRoutineRunHistoryAdapter()
+        )
+        // This cover sits ABOVE the root layer, so a celebration started on the routine
+        // screen needs a layer of its own to be seen at all (E's ARCH answer).
+        .overlay { CelebrationLayer(surface: .routineCover) }
     }
 }

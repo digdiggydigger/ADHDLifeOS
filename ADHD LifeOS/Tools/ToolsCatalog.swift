@@ -61,17 +61,11 @@ enum ToolsCatalog {
         systemImage: "square.grid.2x2"
     )
 
-    /// The cards to draw.
+    /// The cards to draw, Places first: it is the door that MOVED, with no other way in, while
+    /// Life Areas still has its Settings row.
     ///
-    /// **`placesSupported` is the iOS 16 floor, not a preference.** `PlacesListView` and every
-    /// type under it are `@available(iOS 17.0, *)`, and this app's deployment target is 16.0, so
-    /// on a 16.x phone Places does not exist to push to. The caller answers with a real
-    /// `#available` check; passing a constant `true` here would compile perfectly on the 26.5
-    /// simulator every build in this project runs against and ship a dead card to the floor.
-    ///
-    /// Places leads when it is there: it is the door that MOVED, with no other way in, while Life
-    /// Areas still has its Settings row.
-    static func available(placesSupported: Bool) -> [Entry] {
-        placesSupported ? [places, lifeAreas] : [lifeAreas]
-    }
+    /// Until `F-Floor18` this was `available(placesSupported:)`, a `Bool` the caller answered with
+    /// a real `#available(iOS 17.0, *)` because Places sat above the old floor and the page had
+    /// to survive it not existing. At the 18 floor nothing is absent, so the list is a constant.
+    static let entries: [Entry] = [places, lifeAreas]
 }

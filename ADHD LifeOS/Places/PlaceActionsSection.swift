@@ -4,7 +4,7 @@
 //
 //  The Actions section of the Place editor (F-PlaceActions-2-Editor), split from the add/edit
 //  sheet's file when the block-4 automation rows tipped it over the 400-line lint bar. Gated to
-//  iOS 17 with the rest of the Places feature — see `PlaceMapPicker` for the §7 note.
+//  nothing since `F-Floor18` — see `PlaceMapPicker` for the history of the Places gate.
 //
 
 import SwiftUI
@@ -26,7 +26,6 @@ private struct PlaceAutomationGuideContext: Identifiable {
 }
 
 /// The Actions section of `PlaceEditorView`: what this place DOES on a crossing.
-@available(iOS 17.0, *)
 struct PlaceActionsSection: View {
     @Binding var actions: [PlaceAction]
     /// For the automation guides' location step — the fences don't transfer to Shortcuts, so

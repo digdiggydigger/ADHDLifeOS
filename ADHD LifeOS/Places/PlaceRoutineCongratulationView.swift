@@ -21,7 +21,6 @@
 
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct PlaceRoutineCongratulationView: View {
     let run: RoutineRun
     /// E's R4: the ACCOUNT display name, the one Settings' account row shows. `nil` is ordinary
@@ -155,7 +154,6 @@ struct PlaceRoutineCongratulationView: View {
 }
 
 #if DEBUG
-@available(iOS 17.0, *)
 enum PlaceRoutineCongratulationPreviewFixture {
     /// A real spread of action KINDS, not eight `openApp`s: `PlaceActionRowLabel` prefixes
     /// "Open " to an app action, so a fixture of nothing but apps renders "Open Open Snapchat"
@@ -199,7 +197,6 @@ enum PlaceRoutineCongratulationPreviewFixture {
     }
 }
 
-@available(iOS 17.0, *)
 #Preview("Congratulation — light and dark") {
     HStack(spacing: 0) {
         PlaceRoutineCongratulationView(
@@ -217,7 +214,6 @@ enum PlaceRoutineCongratulationPreviewFixture {
     }
 }
 
-@available(iOS 17.0, *)
 #Preview("Congratulation — 20 steps, and no display name") {
     HStack(spacing: 0) {
         PlaceRoutineCongratulationView(

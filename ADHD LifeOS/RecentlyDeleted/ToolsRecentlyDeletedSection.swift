@@ -9,10 +9,11 @@
 //  rather than a third bento card, so `ToolsCatalog` still pins exactly two CARDS and a third
 //  door stays a decision rather than a drift.
 //
-//  **Deliberately NOT gated `@available(iOS 17.0, *)`, unlike `ToolsRoutinesSection`.** That gate
-//  exists because the Places editor a routine row opens is 17+; Recently Deleted has no such
-//  dependency and must stay reachable on the 16.0 floor (§7.1). Copying the shape without the
-//  gate is the point.
+//  **Ungated, and it always was.** When it was written, `ToolsRoutinesSection` carried
+//  `@available(iOS 17.0, *)` because the Places editor a routine row opens sat above the floor of
+//  the time, and this section deliberately copied the shape WITHOUT the gate so a user on that
+//  floor kept the only route back from a delete (§7.1). `F-Floor18` ungated Routines too; nothing
+//  on this page is gated now.
 //
 
 import SwiftUI

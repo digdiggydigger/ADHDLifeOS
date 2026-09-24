@@ -12,7 +12,6 @@ import SwiftUI
 /// The routine screen's relative-time line. Moved out of `PlaceRoutineScreen` in
 /// `F-CTACelebrations-6` for the type-body budget — it takes the run as a PARAMETER, so
 /// nothing on the screen had to be relaxed from `private` to let it go.
-@available(iOS 17.0, *)
 enum PlaceRoutineSubline {
     static func text(for run: RoutineRun) -> Text {
         let moment = Text("\(PlaceRoutineScreenCopy.momentPrefix(for: run.direction)) ")
@@ -25,7 +24,6 @@ enum PlaceRoutineSubline {
     }
 }
 
-@available(iOS 17.0, *)
 struct PlaceRoutineResolvedRow: View {
     let step: RoutineRun.Step
     let onUndo: () -> Void
@@ -69,7 +67,6 @@ struct PlaceRoutineResolvedRow: View {
     }
 }
 
-@available(iOS 17.0, *)
 struct PlaceRoutineUpcomingRow: View {
     let step: RoutineRun.Step
     let stepNumber: Int
@@ -90,7 +87,6 @@ struct PlaceRoutineUpcomingRow: View {
     }
 }
 
-@available(iOS 17.0, *)
 struct PlaceRoutineStepCircle: View {
     let state: RoutineStepState
     /// **Defaulted, and the default is what keeps "reuse the existing circle" true.** E's

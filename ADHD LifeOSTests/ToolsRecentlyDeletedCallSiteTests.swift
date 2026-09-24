@@ -38,10 +38,11 @@ final class ToolsRecentlyDeletedCallSiteTests: XCTestCase {
         )
     }
 
-    /// **The one `#available` this section must NOT copy.** `ToolsRoutinesSection` is gated to
-    /// iOS 17 because the Places editor a routine row opens is; Recently Deleted has no such
-    /// dependency, and gating it would make a 16.0 user's only route back from a mistaken delete
-    /// disappear (§7.1 — a feature whose absence is not announced is the shape that rule forbids).
+    /// **No availability gate on this section, and none on the page since `F-Floor18`.** When it
+    /// was written, `ToolsRoutinesSection` carried an iOS 17 gate for the Places editor above the
+    /// old floor, and this section must NOT copy it: gating it would have made a user's only
+    /// route back from a mistaken delete disappear (§7.1). The floor is 18 now and Routines is
+    /// ungated too, so the assertion is simply that nothing here names an iOS version.
     func testTheRecentlyDeletedSectionIsNotGatedToTheModernOS() throws {
         // **`code`, not `appSource`** — this failed on its first full run because the file it
         // reads explains in a comment WHY it carries no `@available(iOS 17.0, *)`, and the raw
@@ -50,9 +51,9 @@ final class ToolsRecentlyDeletedCallSiteTests: XCTestCase {
         let section = try Self.code("RecentlyDeleted/ToolsRecentlyDeletedSection.swift")
         XCTAssertFalse(
             section.contains("@available(iOS"),
-            "The Recently Deleted section copied Routines' availability gate along with its"
-                + " shape. Routines is gated because the editor it opens is 17+; this screen has"
-                + " no such dependency and is a 16.0 user's only route back from a delete."
+            "The Recently Deleted section carries an availability gate. Nothing on the Tools"
+                + " page is gated at the 18 floor, and this screen is the only route back from"
+                + " a delete once the capsule is spent."
         )
         let tools = Self.collapsed(try Self.code("Tools/ToolsView.swift"))
         XCTAssertFalse(

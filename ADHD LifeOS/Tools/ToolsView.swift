@@ -73,15 +73,6 @@ struct ToolsView: View {
     /// also showed a flag push and closure links coexist in one stack, which value links do not.
     @State private var pushedDestination: Push?
 
-    /// **The iOS 16 floor, answered once.** `PlacesListView` and everything under it are
-    /// `@available(iOS 17.0, *)` while this app's deployment target is 16.0, so on a 16.x phone
-    /// there is nothing to push to and the card must not be drawn. A hardcoded `true` here would
-    /// compile and run perfectly on the 26.5 simulator every build in this project uses.
-    private var placesSupported: Bool {
-        if #available(iOS 17.0, *) { return true }
-        return false
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -91,21 +82,15 @@ struct ToolsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    ForEach(ToolsCatalog.available(placesSupported: placesSupported)) { entry in
+                    ForEach(ToolsCatalog.entries) { entry in
                         card(entry)
                     }
                     // Routines is a SECTION, not a card (E's 2026-09-05 call) — so it is here
-                    // rather than in `ToolsCatalog`, and the catalog still pins two cards.
-                    // The `if #available` is required rather than stylistic: the section is
-                    // iOS 17+ because the editor a row opens is, and `placesSupported` is a
-                    // `Bool`, which cannot narrow a type's availability.
-                    if #available(iOS 17.0, *) {
-                        ToolsRoutinesSection(client: placesClient) { pushedDestination = .places }
-                    }
+                    // rather than in `ToolsCatalog`, and the catalog still pins two cards. It sat
+                    // behind `if #available(iOS 17.0, *)` until `F-Floor18`, with the rest of Places.
+                    ToolsRoutinesSection(client: placesClient) { pushedDestination = .places }
                     // A SECTION with one row, E's own word (round 2: "One row in Tools"), so the
-                    // catalog still pins two cards. **Not `#available`-gated**, unlike Routines:
-                    // that gate exists because the Places editor is 17+, and this screen has no
-                    // such dependency and must stay reachable on the 16.0 floor (§7.1).
+                    // catalog still pins two cards.
                     ToolsRecentlyDeletedSection(client: recentlyDeletedClient) {
                         pushedDestination = .recentlyDeleted
                     }
@@ -199,12 +184,8 @@ struct ToolsView: View {
     private func destination(for destination: Push) -> some View {
         switch destination {
         case .places:
-            // Gated for the same reason `placesSupported` is: this whole screen is iOS 17+.
-            // Unreachable below 17 because the catalog never offers the card there.
-            if #available(iOS 17.0, *) {
-                PlacesListView(client: placesClient)
-                    .captureDiscClearance()
-            }
+            PlacesListView(client: placesClient)
+                .captureDiscClearance()
         case .lifeAreas:
             LifeAreaEditorListView(client: lifeAreaEditorClient)
                 .captureDiscClearance()

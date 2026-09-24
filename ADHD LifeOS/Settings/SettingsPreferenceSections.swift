@@ -217,9 +217,7 @@ extension SettingsView {
 
             // The toggle above only decides whether the app ASKS; iOS holds the real gate. Without
             // this row a switch left on while permission is denied looks like a broken feature.
-            if #available(iOS 17.0, *) {
-                LocationPermissionBanner(wantsTriggering: false)
-            }
+            LocationPermissionBanner(wantsTriggering: false)
         } header: {
             Text("Feedback")
         } footer: {

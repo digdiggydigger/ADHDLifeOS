@@ -17,7 +17,6 @@ import SwiftUI
 
 /// Preview scaffolding only. Built outside the `#Preview` body because a result-builder
 /// closure cannot carry an explicit `return`, and the fixture needs a mutation.
-@available(iOS 17.0, *)
 enum PlaceRoutineScreenPreviewFixture {
     static var run: RoutineRun {
         let gymId = UUID()
@@ -53,7 +52,6 @@ enum PlaceRoutineScreenPreviewFixture {
     }
 }
 
-@available(iOS 17.0, *)
 #Preview("Routine — light and dark") {
     HStack(spacing: 0) {
         PlaceRoutineScreen(

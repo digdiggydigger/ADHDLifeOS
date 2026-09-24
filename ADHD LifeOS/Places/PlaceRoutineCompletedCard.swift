@@ -20,7 +20,6 @@
 
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct PlaceRoutineCompletedCard: View {
     let run: RoutineRun
     /// Hands the screen the button's global centre, so the celebration leaves from the control
@@ -59,7 +58,6 @@ struct PlaceRoutineCompletedCard: View {
 }
 
 #if DEBUG
-@available(iOS 17.0, *)
 #Preview("Completed card — light and dark") {
     let run = PlaceRoutineCongratulationPreviewFixture.run(steps: 4)
     return VStack(spacing: 24) {

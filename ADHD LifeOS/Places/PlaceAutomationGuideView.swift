@@ -4,13 +4,11 @@
 //
 //  The "Make this automatic" walkthrough sheet (F-PlaceActions-4-Shortcuts). The words come
 //  from `PlaceAutomationGuide`, pure and pinned; this view only lays them out and holds the one
-//  step we can take for E — opening Apple's Shortcuts app. Gated to iOS 17 with the rest of the
-//  Places UI (E's standing authorisation).
+//  step we can take for E — opening Apple's Shortcuts app.
 //
 
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct PlaceAutomationGuideView: View {
     let guide: PlaceAutomationGuide
 
@@ -82,7 +80,6 @@ struct PlaceAutomationGuideView: View {
 }
 
 #if DEBUG
-@available(iOS 17.0, *)
 private var previewGuide: PlaceAutomationGuide? {
     PlaceAutomationGuide.make(
         for: PlaceAction(
@@ -93,7 +90,6 @@ private var previewGuide: PlaceAutomationGuide? {
     )
 }
 
-@available(iOS 17.0, *)
 #Preview("Guide — Light") {
     if let guide = previewGuide {
         PlaceAutomationGuideView(guide: guide)
@@ -101,7 +97,6 @@ private var previewGuide: PlaceAutomationGuide? {
     }
 }
 
-@available(iOS 17.0, *)
 #Preview("Guide — Dark") {
     if let guide = previewGuide {
         PlaceAutomationGuideView(guide: guide)

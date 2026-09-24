@@ -88,12 +88,12 @@ final class RoutineActivityCallSiteTests: XCTestCase {
         XCTAssertFalse(
             Self.code(of: bundle).contains("if #available"),
             "a conditional inside a WidgetBundle body can silently drop the widget from the"
-                + " bundle; the extension's floor is already 16.1, so it buys nothing"
+                + " bundle; the extension's floor is 18, so it buys nothing"
         )
     }
 
-    /// No buttons in this block: interactive App Intents are the settled fast-follow, and they
-    /// are iOS 17+ against the widget target's 16.1 floor.
+    /// No buttons in this block: interactive App Intents are the settled fast-follow — a design
+    /// decision, not a floor one since `F-Floor18`.
     func testTheActivityCarriesNoButtons() throws {
         let activity = try Self.source("FocusTimerWidget/RoutineLiveActivity.swift")
 

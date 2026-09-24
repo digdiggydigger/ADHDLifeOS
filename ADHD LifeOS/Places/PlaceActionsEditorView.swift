@@ -3,15 +3,13 @@
 //  ADHD LifeOS
 //
 //  The Place editor's action add/edit sheet (F-PlaceActions-2-Editor). The Actions section
-//  itself lives in `PlaceActionsSection.swift` since the block-4 split. Gated to iOS 17 with
-//  the rest of the Places feature — see `PlaceMapPicker` for the §7 note.
+//  itself lives in `PlaceActionsSection.swift` since the block-4 split.
 //
 
 import ContactsUI
 import SwiftUI
 
 /// Add or edit one action: direction, kind, and the kind's own details.
-@available(iOS 17.0, *)
 struct PlaceActionEditorSheet: View {
     /// `nil` when adding.
     let existing: PlaceAction?
@@ -300,7 +298,6 @@ private struct ContactPicker: UIViewControllerRepresentable {
 }
 
 #if DEBUG
-@available(iOS 17.0, *)
 #Preview("Sheet — Light") {
     PlaceActionEditorSheet(
         existing: nil, placeName: "Gym",
@@ -309,7 +306,6 @@ private struct ContactPicker: UIViewControllerRepresentable {
         .preferredColorScheme(.light)
 }
 
-@available(iOS 17.0, *)
 #Preview("Sheet — Dark") {
     PlaceActionEditorSheet(existing: nil, placeName: "Gym", placeCoordinate: nil) { _ in }
         .preferredColorScheme(.dark)

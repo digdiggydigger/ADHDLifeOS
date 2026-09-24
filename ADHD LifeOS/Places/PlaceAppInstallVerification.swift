@@ -2,8 +2,8 @@
 //  PlaceAppInstallVerification.swift
 //  ADHD LifeOS
 //
-//  Config-time install verification (F-AppDirectory-3-Verify). NOT 17-gated: pure logic plus
-//  a one-method UIKit adapter, all compiling at the 16.0 floor.
+//  Config-time install verification (F-AppDirectory-3-Verify). Pure logic plus a one-method
+//  UIKit adapter.
 //
 //  The iOS facts this file is shaped around: `canOpenURL` answers honestly ONLY for schemes
 //  declared in `LSApplicationQueriesSchemes`; for an undeclared scheme it returns `false`

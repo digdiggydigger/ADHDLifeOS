@@ -4,8 +4,7 @@
 //
 //  The searchable app directory sheet (F-AppDirectory-1-Directory), replacing the action
 //  editor's 10-entry inline Picker; the destination step (F-AppDirectory-2-Links) hangs off
-//  entries that offer one. Gated to iOS 17 with the rest of the Places feature — see
-//  `PlaceMapPicker` for the §7 note.
+//  entries that offer one.
 //
 
 import SwiftUI
@@ -13,7 +12,6 @@ import SwiftUI
 /// Pick one app from the directory — or one of its deep destinations — or step out to the
 /// custom path. A plain pick saves `.openApp` exactly as the old Picker did; only a
 /// destination pick produces a link.
-@available(iOS 17.0, *)
 struct PlaceAppPickerView: View {
     let entries: [PlaceAppDirectoryEntry]
     /// For the destination step's one-tap "Directions to <place>" row — the free synergy of
@@ -290,7 +288,6 @@ struct PlaceAppPickerView: View {
 /// The rows-card edges: clip FIRST so a row's own background cannot bleed past the corner,
 /// then the surface and its 1pt border. Matches the Tasks board's bucket card; no shadow,
 /// because these cards butt against a pinned header rather than float.
-@available(iOS 17.0, *)
 private extension View {
     func cardEdges() -> some View {
         clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -305,7 +302,6 @@ private extension View {
 }
 
 #if DEBUG
-@available(iOS 17.0, *)
 #Preview("Picker — Light") {
     PlaceAppPickerView(
         entries: PlaceAppDirectoryBundled.entries,
@@ -316,7 +312,6 @@ private extension View {
     .preferredColorScheme(.light)
 }
 
-@available(iOS 17.0, *)
 #Preview("Picker — Dark") {
     PlaceAppPickerView(
         entries: PlaceAppDirectoryBundled.entries,

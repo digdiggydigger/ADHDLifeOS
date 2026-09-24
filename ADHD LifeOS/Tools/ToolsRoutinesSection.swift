@@ -15,13 +15,13 @@
 //  house arrangement — `PlacesListView` builds its own too, and `DataChangeSignal` keeps them
 //  honest with each other.
 //
-//  Gated to iOS 17 with the rest of Places: the editor a row opens is `@available(iOS 17.0, *)`,
-//  so on the 16.0 floor there is nothing to open and the section must not draw.
+//  Ungated since `F-Floor18`. It used to carry `@available(iOS 17.0, *)` with the rest of Places,
+//  because the editor a row opens sat above the old floor and the section must not draw a door
+//  to nothing; at the 18 floor there is nothing to announce.
 //
 
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct ToolsRoutinesSection: View {
     @StateObject private var service: PlacesService
     /// The routine record (F-RoutineRecord-2): the rows' last-run line. Reconciled on load by
@@ -267,7 +267,6 @@ struct ToolsRoutinesSection: View {
     }
 }
 
-@available(iOS 17.0, *)
 #Preview("Routines section — Light") {
     NavigationStack {
         ScrollView {
@@ -279,7 +278,6 @@ struct ToolsRoutinesSection: View {
     .preferredColorScheme(.light)
 }
 
-@available(iOS 17.0, *)
 #Preview("Routines section — Nudges off") {
     NavigationStack {
         ScrollView {
@@ -295,7 +293,6 @@ struct ToolsRoutinesSection: View {
     .preferredColorScheme(.light)
 }
 
-@available(iOS 17.0, *)
 #Preview("Routines section — Dark") {
     NavigationStack {
         ScrollView {

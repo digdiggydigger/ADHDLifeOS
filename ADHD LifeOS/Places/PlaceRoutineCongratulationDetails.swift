@@ -15,7 +15,6 @@
 
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct PlaceRoutineCongratulationDetails: View {
     let timeline: PlaceRoutineRunTimeline
     let comparison: PlaceRoutineComparison.Verdict
@@ -103,7 +102,6 @@ struct PlaceRoutineCongratulationDetails: View {
 }
 
 #if DEBUG
-@available(iOS 17.0, *)
 #Preview("Routine details — light and dark") {
     let run = PlaceRoutineCongratulationPreviewFixture.run(steps: 4)
     let timeline = PlaceRoutineRunTimeline.make(run: run, confirmedAt: .now)

@@ -58,6 +58,45 @@ final class DeploymentFloorTests: XCTestCase {
         }
     }
 
+    // MARK: - The availability gates
+
+    /// Any `#available`, `#unavailable` or `@available` that names an iOS version below 18 is
+    /// dead against the floor: its modern branch always runs and its floor branch can never be
+    /// reached. Only the iOS 26 gates remain (`FocusCompletionCelebration`, `TabNavigation`,
+    /// `TabRootLargeTitleReTap`), and their `else` branches now mean iOS 18–25.
+    func testNoAvailabilityCheckBelowTheFloor() throws {
+        let pattern = try NSRegularExpression(
+            pattern: #"(?:#available|#unavailable|@available)\((?:[^)]*?,\s*)?iOS(?:ApplicationExtension)?\s+(\d+)"#
+        )
+        var offenders: [String] = []
+
+        for root in ["ADHD LifeOS", "FocusTimerWidget"] {
+            for file in try Self.swiftFiles(under: root) {
+                let lines = try String(contentsOf: file, encoding: .utf8)
+                    .split(separator: "\n", omittingEmptySubsequences: false)
+                for (index, line) in lines.enumerated()
+                where !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
+                    let text = String(line)
+                    let range = NSRange(text.startIndex..., in: text)
+                    for match in pattern.matches(in: text, range: range) {
+                        guard let majorRange = Range(match.range(at: 1), in: text),
+                              let major = Int(text[majorRange]), major < 18 else { continue }
+                        let location = "\(root)/\(Self.relativePath(of: file, under: root)):\(index + 1)"
+                        offenders.append("\(location): \(text.trimmingCharacters(in: .whitespaces))")
+                    }
+                }
+            }
+        }
+
+        XCTAssertTrue(
+            offenders.isEmpty,
+            "\(offenders.count) availability check(s) name an iOS version below the \(Self.floor)"
+                + " floor. The compiler will never flag these — a gate under the deployment target"
+                + " compiles silently and ships an unreachable branch. Delete the check and keep"
+                + " the modern body (`CLAUDE.md` §7.1):\n" + offenders.joined(separator: "\n")
+        )
+    }
+
     // MARK: - Reading the tree
 
     private static func repoRoot() -> URL {
@@ -72,6 +111,26 @@ final class DeploymentFloorTests: XCTestCase {
             throw FloorSourceError.unreadable(url.path)
         }
         return text
+    }
+
+    private static func swiftFiles(under root: String) throws -> [URL] {
+        let directory = repoRoot().appendingPathComponent(root)
+        guard let enumerator = FileManager.default.enumerator(
+            at: directory, includingPropertiesForKeys: nil
+        ) else {
+            throw FloorSourceError.unreadable(directory.path)
+        }
+        var files: [URL] = []
+        for case let url as URL in enumerator where url.pathExtension == "swift" {
+            files.append(url)
+        }
+        guard !files.isEmpty else { throw FloorSourceError.unreadable(directory.path) }
+        return files.sorted { $0.path < $1.path }
+    }
+
+    private static func relativePath(of file: URL, under root: String) -> String {
+        let prefix = repoRoot().appendingPathComponent(root).path + "/"
+        return file.path.hasPrefix(prefix) ? String(file.path.dropFirst(prefix.count)) : file.path
     }
 
     /// Loud rather than skipped — a guard that quietly disables itself is the failure mode this

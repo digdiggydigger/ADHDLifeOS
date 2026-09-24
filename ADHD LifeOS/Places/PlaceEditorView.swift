@@ -7,8 +7,7 @@ import SwiftUI
 
 /// Create or edit one place: name, identity emoji, where it is, and how big it is.
 ///
-/// Gated to iOS 17 with the rest of the Places feature — see `PlaceMapPicker` for the §7 note.
-@available(iOS 17.0, *)
+/// Ungated since `F-Floor18` — see `PlaceMapPicker` for the history of the Places gate.
 struct PlaceEditorView: View {
     /// `nil` when creating.
     let existing: Place?

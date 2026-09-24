@@ -4,7 +4,7 @@
 //
 //  The shared row furniture of the app-directory design pass: the monogram avatar disc and
 //  the directory row label, used by both the picker sheet and the action editor's chooser
-//  row so the two screens stay in visual lockstep. Gated to iOS 17 with the rest of Places.
+//  row so the two screens stay in visual lockstep.
 //
 
 import SwiftUI
@@ -12,7 +12,6 @@ import SwiftUI
 /// The app's identity mark: a 36pt rounded square carrying the name's initial. Quiet by
 /// design — every disc is the same secondary surface, because colour in this app carries
 /// state or life-area identity and an app row is neither.
-@available(iOS 17.0, *)
 struct PlaceAppMonogramDisc: View {
     let name: String
     /// A glyph instead of the initial — the custom row's dashed square, the chooser's
@@ -51,7 +50,6 @@ struct PlaceAppMonogramDisc: View {
 /// show one. Its only real caller decides via
 /// `PlaceAppPickerPresentation.showsInstalledCheck`, and that switch is OFF (E, 2026-09-02) —
 /// so in the running app no directory row currently carries a tick.
-@available(iOS 17.0, *)
 struct PlaceAppDirectoryRowLabel: View {
     let entry: PlaceAppDirectoryEntry
     let looksInstalled: Bool
@@ -81,7 +79,6 @@ struct PlaceAppDirectoryRowLabel: View {
 }
 
 #if DEBUG
-@available(iOS 17.0, *)
 #Preview("Rows — Light") {
     List {
         PlaceAppDirectoryRowLabel(
@@ -98,7 +95,6 @@ struct PlaceAppDirectoryRowLabel: View {
     .preferredColorScheme(.light)
 }
 
-@available(iOS 17.0, *)
 #Preview("Rows — Dark") {
     List {
         PlaceAppDirectoryRowLabel(
