@@ -109,9 +109,9 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-D1-ComposerBothDoors` | one composer, both doors, and the settled content | **MERGED** (2026-09-23) | see session 8 | **the arc-D phone pass** (`handoff/ARC-REVIEW-D.md` §1) — never installed on its own |
-| `F-D2-ComposerKeyboardLayout` | L3 rides the keyboard; AX3 falls back; the Date segment | **MERGED** (2026-09-24) | PR #200 (`c25ed44`) | **the arc-D phone pass** (§2). No RM-on pass (no reduced site) |
-| `F-D3-TasksAnytimeRow` | the "Anytime · N" row on the Momentum board | **COMPLETE** (2026-09-24) — **arc D closes** | see session 11 | **the arc-D phone pass** (§3). No RM-on pass (no motion) |
+| `F-D1-ComposerBothDoors` | one composer, both doors, and the settled content | **MERGED** (2026-09-23), + **E's DEVICE LOOK: PASSES** (2026-09-24, arc-D pass) | see session 8 | **nothing.** |
+| `F-D2-ComposerKeyboardLayout` | L3 rides the keyboard; AX3 falls back; the Date segment | **MERGED** (2026-09-24), + **E's DEVICE LOOK: PASSES** (2026-09-24, arc-D pass) | PR #200 (`c25ed44`) | **nothing.** No RM-on pass was owed |
+| `F-D3-TasksAnytimeRow` | the "Anytime · N" row on the Momentum board | **MERGED** (2026-09-24), + **E's DEVICE LOOK: PASSES** — **arc D CLOSED** | PR #202 (`ca06c04`) | **nothing.** |
 
 ### Arc E · Today
 
@@ -686,3 +686,5 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   grep finds no animation, transition or `#available` in its files). Plus the chevron question.
   No rules change; no `#available` site, so no Verified-paths line.
 - **Next session starts at:** `F-E1-WeeklyChain`, from the arc-E opener written at this close.
+- **E's verdicts, the same day (on `ca06c04`, RM off):** *"D1–D3 pass"* — all three blocks PASSED —
+  and on §A-CHEVRON, *"Keep the chevron as is."* **Arc D is closed with nothing owed to E.**

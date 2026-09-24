@@ -10,9 +10,8 @@ memory into the new session."*
 ## 0. Before anything else
 
 1. **Check the register against this brief:** `git log --oneline -8` and
-   `handoff/OPEN-ITEMS-REGISTER.md`'s header (edition 82). If E has sent the arc-D verdicts since,
-   they are recorded there and in build-log session 11. **If they are NOT recorded and E has
-   sent them, record them FIRST** (per block, register + build log), before any arc-E code.
+   `handoff/OPEN-ITEMS-REGISTER.md`'s header (edition 82). Arc D's verdicts (all PASSED) and the chevron
+   answer (KEEP) are already recorded there and in build-log session 11.
 2. **Branch:** `git checkout main && git pull --ff-only && git checkout -b feature/adhd-e1-chain`.
 3. **Read:** CLAUDE.md (Per-arc bypass, the build-loop economies, §7), `claudecode.md`, the arc-E
    preamble and **`### FEATURE: F-E1-WeeklyChain`** in `TODO-CLAUDE-CODE.md`, build-log session 11,
@@ -34,14 +33,12 @@ memory into the new session."*
 - At the arc-E close: coverage once, install on the phone FIRST, then `handoff/ARC-REVIEW-E.md`
   (one numbered checklist, RM-on items grouped so E flips it once, a verdict line per block).
 
-## 2. What is owed to E right now (from the arc-D close)
+## 2. Owed to E: NOTHING (arc D's verdicts are recorded)
 
-- **The arc-D phone pass**, `handoff/ARC-REVIEW-D.md`: D1, D2, D3 in one pass, Reduce Motion OFF
-  throughout. **The phone carries `ca06c04`** (PR #202, installed and launched 2026-09-24).
-- **The chevron question** (`apple-design`, D3): the house fold's ▲ folded / ▼ open (E, 2026-08-28)
-  matches neither of Apple's two disclosure conventions in `disclosure-controls.md`. It was put to
-  E at the close. Whatever E answers is a change to a SHARED control (Home, Journal, Tasks), so it
-  is its own small block, never folded into an arc-E block unasked. See register §A.
+- **E, 2026-09-24, on `ca06c04` with Reduce Motion off: *"D1–D3 pass."*** All three arc-D blocks
+  PASSED on the phone (recorded in `ARC-REVIEW-D.md`, the register and build-log session 11).
+- **§A-CHEVRON: E — *"Keep the chevron as is."*** ▲ folded / ▼ open stays on Home, Journal and
+  Tasks. A review names it as E's decision; never "fix" it toward `disclosure-controls.md`.
 
 ## 3. Lessons from D3 the next blocks will meet
 

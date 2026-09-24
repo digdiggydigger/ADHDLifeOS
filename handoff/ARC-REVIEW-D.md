@@ -20,7 +20,7 @@ it touched). So **no RM-on pass is owed**, and you do not need to flip the setti
 3. **The capture disc → Task** opens the same composer again.
 4. Tags, place and notes are NOT in the composer — they live on the task once it exists.
 
-**Verdict D1:** ______
+**Verdict D1: PASSED** — E, 2026-09-24: *"D1–D3 pass"* (Reduce Motion off).
 
 ## 2 · `F-D2-ComposerKeyboardLayout` — L3 rides the keyboard ("Let it settle", "Keep the panel")
 
@@ -39,7 +39,7 @@ Use either door from §1.
     segments one above the next, Area and Time full width, Add pinned alone. **Set the size back
     afterwards.**
 
-**Verdict D2:** ______
+**Verdict D2: PASSED** — E, 2026-09-24: *"D1–D3 pass"* (Reduce Motion off).
 
 ## 3 · `F-D3-TasksAnytimeRow` — "Anytime · N" at the bottom of Momentum
 
@@ -57,9 +57,14 @@ Use either door from §1.
 16. **A task due next week** is still NOT on Momentum (round 8b: *"future-dated tasks are
     untouched"*) — only under Open.
 
-**Verdict D3:** ______
+**Verdict D3: PASSED** — E, 2026-09-24: *"D1–D3 pass"* (Reduce Motion off).
 
 ---
 
 *Frames for §3: `screenshots/tasks-anytime-row/`. For §2: `screenshots/composer-l3-layout/`.
 For §1: `screenshots/composer-both-doors/`.*
+
+---
+
+**The chevron question (§A-CHEVRON): E, 2026-09-24 — *"Keep the chevron as is."*** The house fold stays
+▲ folded / ▼ open on Home, Journal and Tasks. Settled; a future review names it, never reopens it.
