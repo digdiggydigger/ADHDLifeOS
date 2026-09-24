@@ -1364,7 +1364,8 @@ focus widget; E5 18:00 + Settings override, pins, reappears; F1 own sound switch
 heads-up ≤ 5 min, +5m does not re-arm; F5 build the seam + write, render pass for the picker; A1 keep
 the age chip; A2 copy `StateGo` + drift guard; A4 "cannot be undone" always visible; B2 custom
 two-segment control; G5 `set_aside_at` task field, "not opened for 7+ days"). **The one thing still
-owed before a block is F-F1's questioning round, and F-F5's picker render pass.** No other block
+owed before a block is F-F1's questioning round — E, 2026-09-24: *"insists that we run in 'Plan Mode'"*,
+so that round is run in Plan Mode — and F-F5's picker render pass.** No other block
 waits on E. (CLOSED as a question; the two rounds are WORK, carried on their blocks.)
 
 ### A-CAPSULE · The Undo capsule is INVISIBLE in the Tag Editor — **E DECIDED 2026-09-22: Option C, DEFERRED with a condition**

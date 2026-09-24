@@ -7257,6 +7257,9 @@ stays a decodable field; these must still pass unmodified.
 > sound, the Live Activity's face, the ring — with rendered options where a look is involved
 > (memory: `ask-questions-directly`, `show-dont-describe-geometry`). Build nothing until E has
 > answered that round.
+> **E, 2026-09-24, verbatim: *"I recommend that for the arc f-1 questioning, Claude Code insists that we
+> run in 'Plan Mode'."*** So the F-F1 session opens in Plan Mode (`EnterPlanMode`) for that questioning,
+> collects E's answers there, and only leaves it with an approved plan.
 
 **Step 0 — ask E:**
 1. **The heads-up sound.** `Celebrations/CelebrationSound.swift` is scoped in its own header to
