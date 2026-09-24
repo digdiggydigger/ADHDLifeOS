@@ -114,9 +114,8 @@ gone from the spec. Do not ask it, and do not build a floor path for the popover
 - Suite, SwiftLint, build and coverage: **register edition 80** has the figures measured at the
   floor's close-out; nothing in Swift changes between that run and this opener.
 - **E's phone carries `F-Floor18`** (`442db4e`, installed wirelessly and launched 2026-09-24,
-  `MinimumOSVersion 18.0`). E's own walk-through of the sprint / Live Activity / widget is
-  recorded in edition 80 if it happened; if it did not, D2's device check should ride the same
-  install and ask for both in one message. The phone pairs WIRELESSLY (`available (paired)` in `devicectl list devices`);
+  `MinimumOSVersion 18.0`). E's walk-through PASSED the same day (*"Passes — all three checks work as
+  before"*), so nothing from the floor is owed on the phone. The phone pairs WIRELESSLY (`available (paired)` in `devicectl list devices`);
   probe with `devicectl device info details` before asking E for a cable (memory:
   `device-build-lag`). The free-account profile expires weekly; `-allowProvisioningUpdates`
   usually re-issues it, E's Xcode sign-in is the fallback.
