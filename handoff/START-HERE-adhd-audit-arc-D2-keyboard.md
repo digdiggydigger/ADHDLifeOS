@@ -81,10 +81,11 @@ gone from the spec. Do not ask it, and do not build a floor path for the popover
 2. **`onChange` is the two-parameter form everywhere now** (`{ _, new in … }`), or zero-parameter
    where the value is unused. The one-parameter `perform:` form is deprecated and the build is at
    **0** such warnings; do not add one back.
-3. **The "Verified paths" line** for D2's Liquid Glass gate reads: `26 path: run on sim 27.0 +
-   E's phone. 18–25 path: code run on 26.5 by injection; OS-level behaviour COMPILE-ONLY — no 18
-   runtime installed.` The iOS 18 simulator runtime cannot be fetched from the CLI (register §A
-   has the detail); never write "works on iOS 18".
+3. **The iOS 18.0 runtime IS installed** ("iPhone 16 Pro (iOS 18 floor)", destination
+   `platform=iOS Simulator,name=iPhone 16 Pro (iOS 18 floor),OS=18.0`). So D2's "Verified paths"
+   line for the Liquid Glass gate reads: `26 path: run on sim 27.0 + E's phone. 18–25 path: run on
+   sim 18.0 (the floor); 19–25 never run.` — and it may say that only if you actually ran the
+   floor branch there (CLAUDE.md §7.3). Never write "works on iOS 18" as a blanket claim.
 4. **Records still say 16.** `handoff/SESSION-OPENER-adhd-ux-audit-design.md` and the working
    findings talk about a "16 floor path" for the composer bar and the popover. They are records
    of what was true on 2026-09-19 and are not edited; the SPEC is what you build from.

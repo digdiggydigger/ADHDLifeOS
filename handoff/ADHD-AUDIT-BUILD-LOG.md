@@ -568,5 +568,13 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Owed to E:** nothing. The device smoke PASSED the same day — E: *"Passes — all three checks
   work as before"* (app, sprint Live Activity with Pause/Stop, Focus widget). **Owed to the code:**
   nothing.
+- **Later the same day — the iOS 18.0 runtime is INSTALLED and the floor path RAN.** E downloaded the
+  DMG; the add failed four times ("disk is almost full" at any free space — the portal DMG is two
+  layers and each failure leaked an 8 GB mount) and succeeded once the inner `Restore` image was
+  extracted to the internal disk and cloned (memory `simulator-runtime-install`). Suite on the
+  "iPhone 16 Pro (iOS 18 floor)": **3,320 / 0, 6 skipped** (the iOS-26-only large-title re-tap tests);
+  the app boots and draws the same door as on 26.5. **Also: E answered every open Step 0 question
+  ("take all the recommendations as written") and set two directives for F-F1: a thorough
+  questioning round on checkpoints → heads-up, run in Plan Mode.**
 - **Next session starts at:** `F-D2-ComposerKeyboardLayout`, from
-  `handoff/START-HERE-adhd-audit-arc-D2-keyboard.md`, with ONE Step 0 question.
+  `handoff/START-HERE-adhd-audit-arc-D2-keyboard.md`, with its one Step 0 question ALREADY ANSWERED.
