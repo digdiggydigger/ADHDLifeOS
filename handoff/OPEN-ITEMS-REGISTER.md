@@ -20,6 +20,11 @@
 >   is recorded in State.
 > - **E's ask this session — install the iOS 18 sim runtime for E — is NOT possible from the CLI**
 >   (`xcodebuild -downloadPlatform` serves no 18.x); the DMG route under E's Apple ID is in §A.
+> - **LATER THE SAME DAY: E answered EVERY open Step 0 question in one message** — *"Take all the
+>   recommendations as written"* — 17 questions across 10 blocks (D2, E3, E4, E5, F1, F5, A1, A2, A4,
+>   B2, G5), each written into its block in `TODO-CLAUDE-CODE.md` as **"E DECIDED 2026-09-24"**. Plus
+>   one directive: **F-F1 MUST open with a thorough questioning of E on the checkpoints → heads-up
+>   redesign before any code.** The biggest speed lever on the remaining build is now pulled.
 
 > ## Edition 79 in six lines (2026-09-23, the floor decision — docs only)
 >
@@ -1346,6 +1351,21 @@ Opener (this edition): **`handoff/START-HERE-three-device-looks.md`** — the si
   `F-Floor18`:** the bullet now says one number, 18.0, on every target.
 
 ## A · Decisions only E can make — minutes each
+
+### A-STEP0 · The open Step 0 questions — **ALL ANSWERED by E, 2026-09-24**
+
+> **E, verbatim:** *"Take all the recommendations as written. When building 'Arc F-F1' Claude Code
+> MUST Give Ethan a thorough questioning on the desired approach to redesigning the "Checkpoints"
+> System with the "Heads-up" System."*
+
+Every open block's Step 0 now carries an **"E DECIDED 2026-09-24"** banner with the chosen answer
+(D2 date-only; E3 Nudges door → Tools, arrival + routine cards count as the one card; E4 the Mon–Sun
+focus widget; E5 18:00 + Settings override, pins, reappears; F1 own sound switch default ON, no
+heads-up ≤ 5 min, +5m does not re-arm; F5 build the seam + write, render pass for the picker; A1 keep
+the age chip; A2 copy `StateGo` + drift guard; A4 "cannot be undone" always visible; B2 custom
+two-segment control; G5 `set_aside_at` task field, "not opened for 7+ days"). **The one thing still
+owed before a block is F-F1's questioning round, and F-F5's picker render pass.** No other block
+waits on E. (CLOSED as a question; the two rounds are WORK, carried on their blocks.)
 
 ### A-CAPSULE · The Undo capsule is INVISIBLE in the Tag Editor — **E DECIDED 2026-09-22: Option C, DEFERRED with a condition**
 

@@ -6482,6 +6482,8 @@ live opener.
 
 > **`F-Floor18` has LANDED (2026-09-24): the minimum is iOS 18.** This spec's floor lines were
 > rewritten in place by that block. Its former Step 0 question 2 (a popover floor path for
+> **E DECIDED 2026-09-24 — take the recommendation as written:** date only (`displayedComponents: [.date]`).
+
 > 16.0–16.3) is gone — `presentationCompactAdaptation` (16.4) is below the floor — so **Step 0 is
 > ONE question**, and the `#available` site here is the iOS 26 Liquid Glass container alone.
 
@@ -6933,6 +6935,8 @@ addendum 'closing is one-way'."*
   Screen widget's Active Goal from the same selection the hero uses — under pin semantics it must
   publish the slot-order WINNER (pinned beats suggestion), or the widget and the app disagree.
 
+> **E DECIDED 2026-09-24 — take the recommendation as written:** the Nudges manager door moves to **Tools**, beside Routines (b); the live-routine card and the arrival card together COUNT AS the one card, unchanged (a) — E's 2026-09-04 veto stands.
+
 **Step 0 — ask E (nudges reachability):** `grep -rn "NudgesView(" "ADHD LifeOS/"` returns exactly
 one production call site, `HomeAccessoryStrips.swift:216`, reached only through Today's nudges
 door, which Structure C removes. Options: (a) the manager door becomes its own "then"-list row; (b)
@@ -7001,6 +7005,8 @@ scoreboard. The weekly chain speaks through Week review and the done-today line.
   **closures**, over a **rolling** window, not the **focus-minutes, calendar Mon–Sun** chart named.
   Adding the widget as-is would leave two bar charts, contradicting "one".
 
+> **E DECIDED 2026-09-24 — take the recommendation as written:** the Mon–Sun focus widget (minus the trend line) replaces `barsCard` (a), shedding `currentStreak`, the minutes/hours toggle, and gating its goal bar on `focusDailyGoalMinutes`.
+
 **Step 0 — ask E:** which bar chart survives. (a) the Mon–Sun focus widget (minus the trend line)
 replaces `barsCard`; closures stay as text (`headline`/`dopamineWins`/`quietLine` already do this)
 — the record names Mon–Sun specifically, which only this widget is; (b) one new chart plots both
@@ -7048,6 +7054,8 @@ tomorrow. That pre-decides the morning."* The record is explicit this idea's sha
 as writing tomorrow's chosen task into the same pin store, read back as tomorrow's slot-order
 winner. No new model beyond a trigger hour and an answered-today marker (`NudgeFirstRunMarker`'s
 per-uid `UserDefaults` shape, keyed by date instead of a boolean).
+
+> **E DECIDED 2026-09-24 — take the recommendation as written:** (1) a fixed 18:00 default with a Settings override; (2) answering it PINS; (3) unanswered, it reappears every evening until answered or the "then" list is empty.
 
 **Step 0 — ask E, before any code:**
 1. **The hour** — fixed (e.g. 18:00), Settings-configurable, or device-signal-derived (no such
@@ -7238,6 +7246,17 @@ first" redesign; F1 must not touch them even though the file also holds the (del
 `FocusCheckpointDotState`. `FocusModels.swift`'s `CompletedFocusSession` Codable round-trip tests
 (`FirestoreDocumentCoderTests.swift`, `FirebaseFocusSessionAdapterTests.swift`) — `checkpointsReached`
 stays a decodable field; these must still pass unmodified.
+
+> **E DECIDED 2026-09-24 — take the recommendation as written:** (1) the heads-up sound gets its OWN switch, default ON (b); (2) no heads-up on a sprint of 5 minutes or less, silently; (3) +5m does NOT re-arm it — one alert per sprint.
+
+> **AND — E's directive, 2026-09-24, verbatim: *"When building 'Arc F-F1' Claude Code MUST Give
+> Ethan a thorough questioning on the desired approach to redesigning the 'Checkpoints' System
+> with the 'Heads-up' System."*** The three answers above settle the three OPEN points; they do NOT
+> settle the redesign itself. Before any F-F1 code, the build session runs a proper questioning
+> round with E on how checkpoints become the heads-up — what is kept, what goes, the timing, the
+> sound, the Live Activity's face, the ring — with rendered options where a look is involved
+> (memory: `ask-questions-directly`, `show-dont-describe-geometry`). Build nothing until E has
+> answered that round.
 
 **Step 0 — ask E:**
 1. **The heads-up sound.** `Celebrations/CelebrationSound.swift` is scoped in its own header to
@@ -7589,6 +7608,8 @@ pure functions over a supplied list of busy periods (no EventKit call in the pur
       "Verified paths" line owed, say so.
 - [ ] Confirm the `firestore.rules` reading above empirically before claiming "no rules change".
 
+> **E DECIDED 2026-09-24 — take the recommendation as written:** the build session builds the permission seam and the calendar-creation logic, STOPS there, and hands the slot-picker UI to a Step 0 RENDER pass (2–3 shapes, checked against `apple-design` first) before any picker is built.
+
 **Step 0 — ask E (this whole block is gated on it):** round 4c names WHAT calendar write means
 ("pick a free slot, it becomes an event") but there is **no rendered design and no chosen option**
 for the slot-picker UI itself — unlike every other block in this arc, which points at a board E
@@ -7673,6 +7694,8 @@ on A3's Appearance-footer edit landing first). Each is one reviewable unit.
 - `Capture/CaptureInboxSections.swift:204-222` `summaryHeader`'s big-count block — keep the
   two-`Text` shape (count + word), change `"left"` → `"to sort"`, change the count's
   `.foregroundStyle(Color("StateWarn"))` to a neutral label colour (`Color("LabelPrimary")`).
+
+> **E DECIDED 2026-09-24 — take the recommendation as written:** KEEP the top capture card's age chip (a); only the header's age line goes.
 
 **Step 0 — ask E:** does the top capture card's age chip ("18 hours old",
 `CaptureInboxSections.swift:22-28`, built from the SAME `oldestLine` function) also go, under the
@@ -7763,6 +7786,8 @@ the same X-COLOR finding, §I, also names "INBOX HEALTH" — include it as the s
   replaces checkpoints"). If arc F lands first, `FocusCheckpointDotState` and its widget mirror may
   already be deleted — confirm both still exist before editing; if gone, this job is only the first
   two sites.
+
+> **E DECIDED 2026-09-24 — take the recommendation as written:** COPY `StateGo.colorset` verbatim into the widget's catalog with the byte-for-byte drift-guard test; do NOT merge the catalogs.
 
 **Step 0 — ask E (or take the recommendation):** the brief says "spec SHARING the colorset (target
 membership) rather than copying." That does not fit the code: the app and the widget extension keep
@@ -8004,6 +8029,8 @@ build session verifies the exact wording):
 nudges is off), not the empty-Routines card the record names; its exact text is pinned by
 `ToolsRoutinesCatalogTests.swift:276-287` and must not change here.
 
+> **E DECIDED 2026-09-24 — take the recommendation as written:** YES — "Permanently deletes your account. This cannot be undone." stays always visible; only the itemised list folds away.
+
 **Step 0 — ask E:** the Delete Account footer's current text is a single safety-critical warning
 ("This cannot be undone.") embedded in an itemised list of what gets erased. Should the one-sentence
 lead keep "This cannot be undone" always visible (never behind the disclosure), with only the
@@ -8154,6 +8181,8 @@ found by grep for a pinned frame-size or geometry assertion.** Growing these fra
 - `ADHD LifeOSUITests/RenderHarnessUITests.swift:139` — `app.segmentedControls["authModePicker"].buttons["Create account"]`,
   commented *"addressed through the control rather than by an identifier of their own."* **REVERSE this test if the
   native `Picker` is replaced** (`.segmentedControls[...]` only resolves a real `UISegmentedControl`).
+
+> **E DECIDED 2026-09-24 — take the recommendation as written:** a custom two-segment control with wrapping labels (1).
 
 **Step 0 — ask E:** the record says the segments "grow", not how, and no custom segmented control exists to
 borrow (round 7b's composer segments are a different four-choice shape, arc D's).
@@ -8785,6 +8814,8 @@ active-day definition. **Do not build before both land.**
 - No existing "last active"/"last opened" tracker (grep for `lastOpenedAt`/`lastActiveDate`/
   `daysAway`/`daysSinceLast` — the only near-hit, `lastClosedAt`, is per-area derived task data,
   `MomentumScoreboard.swift:109,129,267-288`, not a global signal).
+
+> **E DECIDED 2026-09-24 — take the recommendation as written:** (1) "set aside" is a TASK FIELD, `set_aside_at`, synced through Firestore (a); (2) "7+ days away" = the app not OPENED for 7+ days, a local `lastOpenedAt` (a) — E chose the plain preference, no render needed.
 
 **Step 0 — ask E (two open points, neither settled by the record):**
 

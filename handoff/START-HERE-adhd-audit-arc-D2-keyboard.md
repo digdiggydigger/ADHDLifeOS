@@ -37,7 +37,11 @@ and its one `#available` site is the iOS 26 Liquid Glass container.
 5. **ERASE the simulator before the first unit run** if a UI run came before it:
    `xcrun simctl erase 9181EBF9-0F54-4A4D-A19C-19945D1BF155`.
 
-### 0.1 D2's ONE Step 0 question is E's, and it comes BEFORE any D2 code
+### 0.1 D2's ONE Step 0 question — **ANSWERED by E, 2026-09-24: date only**
+
+**E answered every open Step 0 question in the audit on 2026-09-24** (*"Take all the recommendations as
+written"*); each block carries an **"E DECIDED 2026-09-24"** banner. Do not re-ask any of them. For D2
+that means: build `displayedComponents: [.date]` and go straight to the code.
 
 Written out in full in the spec, with options and a recommendation. Put it to E with
 `AskUserQuestion` (memory: `ask-questions-directly`):
