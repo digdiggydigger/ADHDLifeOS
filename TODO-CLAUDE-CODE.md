@@ -6478,14 +6478,26 @@ live opener.
 
 ---
 
-### FEATURE: F-D2-ComposerKeyboardLayout — L3 rides the keyboard; AX3 falls back; the Date segment  [ ] NOT STARTED
+### FEATURE: F-D2-ComposerKeyboardLayout — L3 rides the keyboard; AX3 falls back; the Date segment  [x] COMPLETED 2026-09-24
 
 > **`F-Floor18` has LANDED (2026-09-24): the minimum is iOS 18.** This spec's floor lines were
 > rewritten in place by that block. Its former Step 0 question 2 (a popover floor path for
-> **E DECIDED 2026-09-24 — take the recommendation as written:** date only (`displayedComponents: [.date]`).
-
 > 16.0–16.3) is gone — `presentationCompactAdaptation` (16.4) is below the floor — so **Step 0 is
 > ONE question**, and the `#available` site here is the iOS 26 Liquid Glass container alone.
+
+> **E DECIDED 2026-09-24 — take the recommendation as written:** date only (`displayedComponents: [.date]`).
+
+> **E DECIDED 2026-09-24, mid-build (a design-changing finding, per-arc stop #3):**
+> 1. **"Let it settle."** The build's first run of the keyboard pin found the carried condition
+>    ("Opening Area, Time or the date picker must NOT dismiss the keyboard") is not achievable on
+>    iOS 27. A SwiftUI `Menu`, a UIKit `UIButton` menu tried in its place, and the popover ALL put
+>    the keyboard down, and it does not return. E chose, over "hold the bar and bring the keyboard
+>    back" and over "inline choices, no menus": the bar rides the keyboard while typing, the first
+>    choice lets it settle at the bottom (the approved keyboard-down frame), it stays there, and a
+>    tap on the title raises it again. **Nothing re-focuses the title programmatically.** The pin
+>    now asserts a stable rest, with no bounce, instead of the keyboard staying up.
+> 2. **"Keep the panel."** The Liquid Glass panel behind the bar (§L's build note), which board 64
+>    never drew, stays; on 18–25 it is the same panel in bar material with a hairline.
 
 **What E chose:**
 - **Layout → "L3 · Rides on the keyboard"** (Recommended, round 7b). *"The title owns the page.
@@ -6589,30 +6601,49 @@ guessing at option 2 or 3's exact wording.
   `ADHD LifeOSTests`/`ADHD LifeOSUITests`: **none found** beyond the file above.
 
 **Acceptance criteria:**
-- [ ] RED first: a pure test that `TaskDueChoice.custom.title == "Date"`; a call-site test (the
+- [x] RED first: a pure test that `TaskDueChoice.custom.title == "Date"`; a call-site test (the
       `*CallSiteTests` string-read pattern, §7.4) asserting the `if #available(iOS 26, *) { ... }
       else { ... }` pair exists around the bar's material; a test/assertion (unit or UI) that the
       title field keeps focus (or the bar keeps its keyboard-up height) while the Area/Time menu or
       the date popover is open. Count RED failures.
-- [ ] `TaskDueChoiceTests.swift` reversed in place, round 7b quoted.
-- [ ] Red-check: restore the pre-block `TaskCreateView.swift`, count failures, restore forward.
-- [ ] SwiftLint, the full suite and the build all pasted.
-- [ ] `screenshots/composer-l3-layout/` + README: keyboard up/down, light/dark, AX3 fallback, and
+      **Done: RED was 17 tests / 30 failures** against a compile-only scaffold (call-site 6/6, layout
+      3/3, `TaskDueChoiceTests` 7 of 11, the UI pin 1/1). **The keep-focus pin then FOUND that the
+      condition cannot hold on iOS 27** (every presentation drops the keyboard) and was rewritten to
+      E's "Let it settle": the bar rests where the keyboard says and does not bounce
+      (`ComposerKeyboardBarUITests.testAChoiceLetsTheBarSettleAndItStaysSettled`, plus the unit pin
+      `testAChoiceLetsTheBarSettleRatherThanBouncingBack`: no `@FocusState` in the composer).
+- [x] `TaskDueChoiceTests.swift` reversed in place, round 7b quoted.
+- [x] Red-check: restore the pre-block `TaskCreateView.swift`, count failures, restore forward.
+      **A COMPILE failure, as `F-D1`'s opener predicted**: 1 error, `extra argument 'popUpRowHeight'`
+      (the pruned seam). Then nine compiling mutations (the Date copy, selection-keyed label, day
+      normalisation, AX stacking, the floor material, a time in the picker, a `@FocusState`, the
+      popover's compact adaptation, 44pt segments): **16 failures across 9 tests, every mutation
+      caught**; restored with `git checkout --`, rebuilt, **28 / 0**.
+- [x] SwiftLint, the full suite and the build all pasted. **3,337 / 0; SwiftLint 0 / 892;
+      build-for-testing SUCCEEDED.**
+- [x] `screenshots/composer-l3-layout/` + README: keyboard up/down, light/dark, AX3 fallback, and
       the Date segment before/after a pick — matching board `64`'s naming
       (`<layout>-<up|down>-<L|D|A>.jpg` convention from `round-7b-composer-layouts/`).
-- [ ] **`apple-design` review owed** (§7.6) — re-run over the SHIPPED view (not the probe); confirm
+- [x] **`apple-design` review owed** (§7.6) — re-run over the SHIPPED view (not the probe); confirm
       the three findings §L cites against the Date segment (glyph+text mix, action-inside-selection,
       dual-meaning accent) are actually closed, and check the AX3 fallback and the 12pt-bezel-gap
-      note (§L "Low", accepted as-is per the record).
-- [ ] **RM-on device pass:** owed only if a sliding selection indicator was added — state which,
-      per the shape section above.
-- [ ] **"Verified paths" line, required** (an `#available` site is touched):
-      `26 path (Liquid Glass container): run on sim + [E's phone / sim-only, say which].`
-      `18–25 path (standard material): code run on 26.5 by injection; OS-level behaviour
-      COMPILE-ONLY — no 18 runtime installed.`
+      note (§L "Low", accepted as-is per the record). **Good; all three closed; it found the XXXL
+      truncation ("No…", "15…"), fixed in-block with a size-dependent scale floor (0.8, 0.7 from
+      xxLarge — `testTheTileTextShrinksFurtherOnlyAtLargeSizes`, RED 3 → GREEN).**
+- [x] **RM-on device pass:** owed only if a sliding selection indicator was added — state which,
+      per the shape section above. **None owed: the selection recolours in place (pinned by
+      `testTheSegmentsRecolourInPlace`).**
+- [x] **"Verified paths" line, required** (an `#available` site is touched). *(The template's
+      "COMPILE-ONLY — no 18 runtime installed" predates the runtime; as run:)*
+      `26 path (Liquid Glass panel): run on sim 27.0; E's phone at the arc-D close.`
+      `18–25 path (bar-material panel): run on sim 18.0 (the floor), light and dark, keyboard up and
+      down; the settle pin PASSED there too (rode at 394pt, settled at 696pt); 19–25 never run.`
 - [ ] **Device check owed** — the record calls the keyboard-stays-up behaviour "also a phone check";
       confirm on E's phone that opening Area, Time and the date popover does not drop the keyboard.
-- [ ] No `firestore.rules` change.
+      **Re-scoped by E's "Let it settle"** and BATCHED to `handoff/ARC-REVIEW-D.md` (per-arc bypass):
+      on the phone, the bar rides the keyboard while typing, settles once on the first choice, and
+      stays settled.
+- [x] No `firestore.rules` change.
 
 **Dependencies:** D1 (same file, same composer). Arc C for the leading header control.
 
@@ -8161,6 +8192,10 @@ found by grep for a pinned frame-size or geometry assertion.** Growing these fra
 - [ ] No `#available` site touched; no RM-on pass owed (no motion here).
 - [ ] Report which of the three native-toolbar controls cannot reach 48×48 within the system's own bar-item
       chrome — do not silently accept a smaller number.
+      **Measured already by `F-D2` (2026-09-24), for the task composer's Close:** a
+      `.frame(minWidth: 48, minHeight: 48)` label inside the `.cancellationAction` item left the item
+      at **72 × 36 on iOS 27.0** and **56 × 56 on iOS 18.0** — the system sizes the bar item, not the
+      view inside it. D2 reverted the frame; this block owns the answer.
 
 **Dependencies:** none. Land first among B's blocks — B2 also touches `Tasks/TaskDetailChipsRow.swift`'s neighbour,
 `Tasks/TaskRow.swift`.

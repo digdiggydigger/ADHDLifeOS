@@ -578,3 +578,51 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   questioning round on checkpoints → heads-up, run in Plan Mode.**
 - **Next session starts at:** `F-D2-ComposerKeyboardLayout`, from
   `handoff/START-HERE-adhd-audit-arc-D2-keyboard.md`, with its one Step 0 question ALREADY ANSWERED.
+
+### Session 10 — 2026-09-24, arc D, block `F-D2-ComposerKeyboardLayout` (per-arc bypass: straight on to `F-D3`)
+- **Landed:** `F-D2-ComposerKeyboardLayout`. Suite **3,337 / 0**, SwiftLint **0 / 892**,
+  build-for-testing SUCCEEDED; coverage waits for the arc close (economy 1). Round 7b's L3 is
+  built: the title owns the page (boxless `.title2` semibold), and the four "when" segments ride
+  over Area | Time | Add in one panel above the keyboard (`.safeAreaInset(edge: .bottom)`). The
+  keyboard-up bar spans **402–538pt**, against the approved 406–518pt. Accessibility sizes fall back
+  to L1's stacked form. The Date segment reads "Date" and becomes "Sat 10" once picked. The picker
+  offers a day only (E's Step 0), from a 320pt popover.
+- **The brief was checked first** and was accurate. Two stale lines were handled as the opener
+  warned: the spec's "Verified paths" template said "COMPILE-ONLY — no 18 runtime", and §0.1 still
+  carried "put it to E" under the ANSWERED banner. Neither was followed. The spec's "E DECIDED"
+  banner had been pasted mid-sentence into the block header, and that is now fixed.
+- **THE FINDING — a mid-arc stop (#3, a design-changing finding).** Findings §L had called
+  "opening Area, Time or the date picker must NOT dismiss the keyboard" UNVERIFIED, and E chose L3 on
+  that condition. The block's own pin measured it on iOS 27.0: **every presentation drops the
+  keyboard, and it does not come back.** That held for the SwiftUI `Menu`, for a UIKit `UIButton`
+  menu tried in its place (a throwaway probe, reverted), and for the popover. Frames in
+  `screenshots/composer-l3-layout/00-`. **E chose "Let it settle"** over "hold the bar and bring
+  the keyboard back" and over "inline choices, no menus": the bar rides the keyboard while typing,
+  settles once at the bottom, and stays there, and a tap on the title raises it. **Nothing
+  re-focuses the title.** E also chose **"Keep the panel"**: the Liquid Glass container §L carried,
+  which board 64 never drew.
+- **Also found and fixed in-block (all mine, none E's):** the popover drew a ~60pt calendar sliver
+  with Next Month off-screen (`minWidth: 320`, and the pin asserts it's whole and on screen). At
+  xxxLarge the compact tiles truncated "None"/"15 min" to "No…"/"15…" (`layoutPriority` + 0.8
+  scale). Close cannot reach round 7's 48 × 48 from inside a native bar item (72 × 36 on 27.0,
+  56 × 56 on 18.0), so the frame was reverted and the measurement handed to `F-B1`.
+- **Traps met (memory `menus-dismiss-the-keyboard`):** a Menu takes the app out of the
+  accessibility tree while it is open. `app.keyboards.element.frame` THROWS on a gone keyboard. A
+  vertical `TextField` is a text VIEW to XCUITest on iOS 18. A field tapped mid-presentation takes
+  no focus. A `UIViewRepresentable` button eats all offered height. A freshly erased simulator
+  needs a warm-up or the runner fails "waiting for AX loaded". The iOS 18.0 simulator's first boot
+  ignored the no-hardware-keyboard setting.
+- **Red-check:** the spec's restore of the pre-block `TaskCreateView` is a COMPILE failure (1
+  error: `popUpRowHeight`, the pruned seam). Nine compiling mutations gave **16 failures across 9
+  tests, all caught**; restored, **28 / 0**.
+- **`apple-design`:** Good. The three §L Date-segment findings are closed. It found the XXXL
+  truncation (fixed) and names the compact popover as a divergence E's Q4 governs.
+- **Owed to E (batched to the arc-D review page):** the phone check, which E's decision re-scoped:
+  the bar rides, settles once, and stays settled. **No RM-on pass is owed:** the selection
+  recolours in place.
+- **The floor behaves the same:** on iOS 18.0 the settle pin PASSED (the bar rode at 394pt, each
+  choice dropped the keyboard, and the bar settled at 696pt and stayed). E's decision holds on 18.
+- **Stopped at 65% context on E's warning, with D2 LANDED.** Per the bypass rule, a session that must
+  stop mid-arc writes a `WIP:` opener: `handoff/START-HERE-adhd-audit-arc-D3-anytime.md`.
+- **Next session starts at:** `F-D3-TasksAnytimeRow`, then the arc-D close (install first, then
+  `handoff/ARC-REVIEW-D.md`).
