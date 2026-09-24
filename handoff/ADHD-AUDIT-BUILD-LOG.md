@@ -565,7 +565,8 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   spec did not name (`AppSearchCallSiteTests` twice); `PlaceTriggerEventHandler` must not contain
   the word "activity" (a call-site test), so its rewritten comments avoid it.
 - **`apple-design` / RM-on:** neither owed — nothing visible changed on E's 27.0 phone.
-- **Owed to E:** nothing beyond the device smoke result in edition 80. **Owed to the code:**
+- **Owed to E:** nothing. The device smoke PASSED the same day — E: *"Passes — all three checks
+  work as before"* (app, sprint Live Activity with Pause/Stop, Focus widget). **Owed to the code:**
   nothing.
 - **Next session starts at:** `F-D2-ComposerKeyboardLayout`, from
   `handoff/START-HERE-adhd-audit-arc-D2-keyboard.md`, with ONE Step 0 question.
