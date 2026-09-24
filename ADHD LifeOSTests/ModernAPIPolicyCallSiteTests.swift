@@ -3,18 +3,23 @@
 //  ADHD LifeOSTests
 //
 //  F-ModernIOS-1-Policy — `CLAUDE.md` §7.1's worked example, pinned. The policy is "the best
-//  available API per site behind `#available`, with a complete iOS 16 branch beside it", and a
-//  policy with no test behind it decays back into prose. Until this block §7 read as a ban on
+//  available API per site behind `#available`, with a complete floor branch beside it", and a
+//  policy with no test behind it decays back into prose. Until that block §7 read as a ban on
 //  anything above the floor and `testTheCelebrationUsesNothingAboveTheiOS16Floor` enforced that
 //  reading; E repealed both together (2026-09-11) so the suite never contradicts the house rule.
 //
-//  The exemplar is `View.haptic(_:trigger:)` because it is the one site in the tree that already
-//  had both halves: `.sensoryFeedback` behind the gate and the UIKit performer in the `else`. Every
-//  other `#available(iOS 17…)` in the app is a wholesale-ABSENT feature (Places, the routine
-//  screen) — an `if` with no `else` — which §7.1 permits for whole features and never for feedback.
+//  **REVERSED by `F-Floor18` (E, 2026-09-23: "iOS 18, before F-D2").** The exemplar used to be
+//  `View.haptic(_:trigger:)`, the one site with both halves: `.sensoryFeedback` behind an iOS 17
+//  gate and the UIKit performer in the `else`. That floor branch is exactly what the block removed
+//  — `.sensoryFeedback` (iOS 17) now sits BELOW the 18 floor, so a gate around it would be dead
+//  code the compiler never flags (`DeploymentFloorTests` is the tree-wide guard). This file now
+//  pins the helper's NEW shape: still the house API §3 prescribes, still gated on Settings at fire
+//  time, and with no availability check and no UIKit fallback inside it. §7.1's exemplar pointer
+//  moved to the celebration tick (`FocusCelebrationModernPathCallSiteTests`), whose iOS 26 gate
+//  and iOS 18–25 `else` are the two-branch shape that remains.
 //
-//  Reads ORDER inside the helper, not bare presence: `} else {` is the commonest line in Swift, and
-//  a helper whose floor call drifted out of the `else` would still "contain" every string.
+//  Reads comment-stripped source, because this file's own history names the forms it asserts
+//  are gone.
 //
 
 import XCTest
@@ -22,42 +27,54 @@ import XCTest
 
 final class ModernAPIPolicyCallSiteTests: XCTestCase {
 
-    /// The gate, the modern API inside it, the `else`, then the floor call inside that — in that
-    /// order, inside `haptic(_:trigger:)` itself. Drop the `else` and a 16.x phone gets no haptic
-    /// at all: the "absent" shape §7.1 reserves for whole features, applied to feedback.
-    func testTheHouseHapticHelperIsTheTwoBranchExemplar() throws {
+    /// The helper exists, calls `.sensoryFeedback`, consults the Settings gate — and carries no
+    /// `#available` and no `Haptics.play` fallback. A gate reappearing here would compile and run
+    /// perfectly on every simulator this project uses while shipping an unreachable branch.
+    func testTheHouseHapticHelperIsUngatedSensoryFeedback() throws {
         let source = try Self.appCode("Theme/Haptics.swift")
         let start = try XCTUnwrap(
             source.range(of: "func haptic<"),
-            "`View.haptic(_:trigger:)` is gone from `Theme/Haptics.swift`. CLAUDE.md §7.1 names it as"
-                + " the two-branch exemplar — move the policy's pointer in the same change."
+            "`View.haptic(_:trigger:)` is gone from `Theme/Haptics.swift`. CLAUDE.md §3 names it as"
+                + " the house haptic API — move the pointer in the same change."
         )
         let rest = source[start.upperBound...]
         let helper = rest[..<(rest.range(of: "\n    func ")?.lowerBound ?? rest.endIndex)]
 
-        var cursor = helper.startIndex
-        for (form, meaning) in [
-            ("if #available(iOS 17.0, *) {", "the iOS 17 gate"),
-            (".sensoryFeedback(", "the modern API, inside the gate"),
-            ("} else {", "the iOS 16 branch"),
-            ("Haptics.play(feel)", "the UIKit performer, inside the iOS 16 branch")
-        ] {
-            guard let found = helper.range(of: form, range: cursor..<helper.endIndex) else {
-                XCTFail(
-                    "`haptic(_:trigger:)` has no `\(form)` where \(meaning) belongs — missing, or out"
-                        + " of order. §7.1: a degraded site ships BOTH branches, and the floor branch"
-                        + " carries the same feedback."
-                )
-                return
-            }
-            cursor = found.upperBound
+        XCTAssertTrue(
+            helper.contains("sensoryFeedback(feel.sensoryFeedback, trigger: trigger)"),
+            "`haptic(_:trigger:)` no longer calls `.sensoryFeedback` with the feel's mapping and"
+                + " the caller's trigger."
+        )
+        XCTAssertTrue(
+            helper.contains("AppFeedback.hapticsEnabled()"),
+            "`haptic(_:trigger:)` no longer consults the Settings gate at fire time, so switching"
+                + " haptics off in Settings would not silence state-driven feedback."
+        )
+        for form in ["#available(", "} else {", "Haptics.play(feel)"] {
+            XCTAssertFalse(
+                helper.contains(form),
+                "`haptic(_:trigger:)` carries `\(form)` again. The UIKit floor branch was removed by"
+                    + " F-Floor18: `.sensoryFeedback` is iOS 17 and the floor is 18, so the branch"
+                    + " can never run and the compiler will never say so."
+            )
         }
+    }
+
+    /// The whole file, not just the helper: `HapticFeel.sensoryFeedback` used to sit in an
+    /// `@available(iOS 17.0, *)` extension of its own.
+    func testTheHapticsFileCarriesNoAvailabilityCheck() throws {
+        let source = try Self.appCode("Theme/Haptics.swift")
+        XCTAssertFalse(
+            source.contains("available(iOS"),
+            "`Theme/Haptics.swift` names an iOS version in an availability check. Nothing in it"
+                + " needs one at the 18 floor (F-Floor18)."
+        )
     }
 
     // MARK: - Reading the tree
 
     /// The same source with every comment line removed, because `Haptics.swift` documents the
-    /// split in prose that names the very forms asserted above.
+    /// history of the split in prose that names the very forms asserted absent above.
     private static func appCode(_ relativePath: String) throws -> String {
         try appSource(relativePath)
             .split(separator: "\n", omittingEmptySubsequences: false)

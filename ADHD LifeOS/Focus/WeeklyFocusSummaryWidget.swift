@@ -12,7 +12,7 @@ import SwiftUI
 ///
 /// Deviations from the React source, per CLAUDE.md precedence:
 /// - §4 zero-hex: Recharts' fixed palette becomes `.tint` / semantic colour, so both schemes work.
-/// - Recharts → **Swift Charts** (`BarMark` + `RuleMark`), native since iOS 16 — no third-party
+/// - Recharts → **Swift Charts** (`BarMark` + `RuleMark`), native — no third-party
 ///   charting, no `ResponsiveContainer` equivalent needed.
 /// - The web summed *estimated* minutes off task fields that don't exist in this app's model;
 ///   this plots **measured** `CompletedFocusSession` time via `FocusAnalytics`.

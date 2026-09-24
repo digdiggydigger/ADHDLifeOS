@@ -8,20 +8,20 @@ import SwiftUI
 /// Which celebration a completion card plays: CLAUDE.md §7.1's ladder for this one site, with
 /// §7.2's Reduce Motion rule applied to it (F-ModernIOS-2-Celebration, E's 2026-09-11 decisions).
 ///
-/// - **`.full`: Reduce Motion off, below iOS 26. This is the 16 path: block 4's burst, at the
-///   longer length E asked for.**
+/// - **`.full`: Reduce Motion off, below iOS 26. This is the floor path (iOS 18–25): block 4's
+///   burst, at the longer length E asked for.**
 ///   The tick springs in from 0.6 while the halo radiates 1 → 1.6 and fades 0.8 → 0.
 /// - **`.reduced`: Reduce Motion ON, on any OS.** The same two beats as a cross-fade. The tick
 ///   fades in at full size and the halo fades out at its end scale; nothing grows or moves.
 /// - **`.modern`: Reduce Motion off, iOS 26+.** The tick draws itself on (`.drawOn`); the halo is
 ///   `.full`'s.
 ///
-/// **There is no iOS 17 tier, and that is §7.1's filter, not an oversight.** Of the 17 symbol
-/// effects, `.appear` is a scale-in without the spring's overshoot, which shows less than the floor
-/// already does, and `.bounce` fires on the state change itself, ignoring the 0.3s landing delay.
-/// Neither shows the user anything the 16 spring cannot, so iOS 17–25 get the floor. (The iOS 26
-/// draw-on turned out to ignore the delay too, and still passes the filter: a stroke drawing
-/// itself is something no 16 animation can show.)
+/// **The floor path uses no symbol effect, and that is §7.1's filter, not an oversight.** Of the
+/// symbol effects every floor device has, `.appear` is a scale-in without the spring's overshoot,
+/// which shows less than the spring already does, and `.bounce` fires on the state change itself,
+/// ignoring the 0.3s landing delay. Neither shows the user anything the spring cannot, so
+/// iOS 18–25 get the spring. (The iOS 26 draw-on turned out to ignore the delay too, and still
+/// passes the filter: a stroke drawing itself is something no spring animation can show.)
 enum FocusCompletionCelebrationMotion: CaseIterable, Equatable {
     case full, reduced, modern
 

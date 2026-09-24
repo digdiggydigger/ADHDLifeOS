@@ -120,7 +120,7 @@ struct SettingsView: View {
 
     private var notificationsSection: some View {
         Section {
-            // `LabeledContent` (iOS 16+) is the idiomatic Form title-value row: it lays the label
+            // `LabeledContent` is the idiomatic Form title-value row: it lays the label
             // and status out correctly and, unlike a hand-rolled HStack, reflows to a stacked
             // layout at accessibility Dynamic Type sizes instead of wrapping into narrow columns.
             LabeledContent("System Permission") {

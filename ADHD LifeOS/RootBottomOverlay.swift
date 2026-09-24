@@ -152,8 +152,7 @@ struct RootBottomOverlay: View {
         // changed observes no change — the first card after an empty stack would be silent.
         // Keyed on `confirmableCompletionCount`, never `completedSprintCount` (bumped by manual
         // stops, which raise no card) nor the stack's depth (falls on Confirm, so it would buzz
-        // on dismissal). `.haptic` is the `#available`-split helper — `.sensoryFeedback` itself
-        // is iOS 17+ against the 16.0 floor.
+        // on dismissal). `.haptic` is the house helper over `.sensoryFeedback` (§3).
         .haptic(.success, trigger: focusService.confirmableCompletionCount)
         // F-ConfirmCelebration-1 (E's decision 3): the success feel on EVERY Confirm, keyed on the
         // Confirm ordinal, which only a Confirm of a waiting card advances. Here beside the

@@ -12,8 +12,7 @@ import UniformTypeIdentifiers
 
 /// A wrapping row of chips that hug their words. Was an adaptive `LazyVGrid` until E's 2026-08-25
 /// review: its two rigid columns left a field of empty space around short chips, so it is now a
-/// true flow (`ChipFlowLayout` — the `Layout` protocol is iOS 16.0, inside the floor; the old
-/// comment here claiming otherwise was wrong).
+/// true flow (`ChipFlowLayout`, a `Layout`).
 struct FlowingChips<Content: View>: View {
     let spacing: CGFloat
     @ViewBuilder var content: () -> Content

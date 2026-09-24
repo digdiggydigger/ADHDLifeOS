@@ -7,7 +7,7 @@ import UIKit
 
 /// F-PillStay's scroll detector: one window-level `UIPanGestureRecognizer`, in the
 /// `KeyboardTapAway` mould and for the same reason — every tab, every pushed screen, and every
-/// screen added later, with zero per-screen wiring. SwiftUI on iOS 16 offers no scroll-activity
+/// screen added later, with zero per-screen wiring. SwiftUI offered no scroll-activity
 /// API, and threading an offset `PreferenceKey` through eleven scroll containers is exactly the
 /// per-screen drift the clearance work just finished stamping out.
 ///

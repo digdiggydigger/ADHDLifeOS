@@ -13,10 +13,11 @@ import WidgetKit
 /// A fresh install, an un-provisioned App Group and a payload from a different app version all land
 /// on the same honest empty state rather than on fabricated numbers.
 ///
-/// §7 / iOS floor: the widget target's deployment target is **16.1**, so `containerBackground`,
-/// `ColorResource`-generated colour symbols and `contentMarginsDisabled` (all iOS 17+) are either
-/// gated or avoided. Colours are consumed by catalog NAME (`Color("AccentColor")`) for the same
-/// reason — the generated `Color.accent` symbol needs iOS 17.
+/// §7 / iOS floor: colours are consumed by catalog NAME (`Color("AccentColor")`) rather than the
+/// generated `Color.accent` symbol, and `contentMarginsDisabled` is not used. Both started as
+/// floor-driven choices under the widget's old floor; since `F-Floor18` (floor 18) they are
+/// simply the shipped spellings, and the by-name accent stays because a Live Activity ignores the
+/// generated one anyway (`FocusActivityComponents`).
 struct FocusStatsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: FocusWidgetSnapshotStore.widgetKind, provider: FocusStatsProvider()) { entry in
@@ -167,7 +168,7 @@ struct FocusStatsMediumView: View {
 // MARK: - Pieces
 
 /// The prototype's uppercase mono section label, in coral. Consumed by catalog name (see the type
-/// doc): the generated colour symbol is iOS 17+ and this target floors at 16.1.
+/// doc).
 struct FocusWidgetLabel: View {
     let text: String
 
@@ -275,16 +276,10 @@ struct FocusWidgetStat: View {
 }
 
 extension View {
-    /// iOS 17 wants widget content to declare its background through `containerBackground`; on 16.1
-    /// the widget paints and pads itself. §7: the floor wins, so both paths ship.
-    @ViewBuilder
+    /// Widget content declares its background through `containerBackground` (iOS 17, below the
+    /// 18 floor — `F-Floor18` retired the self-painting branch that sat beside it).
     func focusWidgetBackground() -> some View {
-        if #available(iOS 17.0, *) {
-            self.containerBackground(Color("PageBackground"), for: .widget)
-        } else {
-            self.padding(16)
-                .background(Color("PageBackground"))
-        }
+        containerBackground(Color("PageBackground"), for: .widget)
     }
 }
 
@@ -301,8 +296,8 @@ private let previewSnapshot = FocusWidgetSnapshot(
     )
 )
 
-/// Previews the views at real widget dimensions rather than through `#Preview(as:)`, which is an
-/// iOS 17+ macro this 16.1 target can't adopt — the same call `FocusTimerWidgetLiveActivity` made.
+/// Previews the views at real widget dimensions rather than through `#Preview(as:)` — the same
+/// call `FocusTimerWidgetLiveActivity` made; the timeline macro is a candidate, not a fix here.
 private let previewSprint = FocusWidgetSnapshot.ActiveSprint(
     taskTitle: "Draft the quarterly review", emoji: "💼", durationSeconds: 900,
     deadline: Date().addingTimeInterval(420), pausedRemainingSeconds: nil,

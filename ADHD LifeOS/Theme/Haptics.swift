@@ -76,7 +76,7 @@ struct UIKitHapticPerformer: HapticPerforming {
 /// - `Haptics.play(_:)` — imperative, for the many sites that are already button actions. Adding a
 ///   `@State` trigger to each of ~50 buttons purely to satisfy `.sensoryFeedback` would be worse
 ///   code than calling this.
-/// - `.haptic(_:trigger:)` — the `#available`-split modifier below, for state-driven moments
+/// - `.haptic(_:trigger:)` — the `.sensoryFeedback` modifier below, for state-driven moments
 ///   (an async save landing, a confirmation appearing), which is what `CLAUDE.md` §3 prescribes.
 ///
 /// Both consult the gate at FIRE time, so flipping Settings takes effect on the very next tap.
@@ -93,9 +93,9 @@ enum Haptics {
     }
 }
 
-@available(iOS 17.0, *)
 extension HapticFeel {
-    /// The iOS 17+ equivalent of each feel. Kept beside the UIKit mapping so the two can't drift.
+    /// The `.sensoryFeedback` equivalent of each feel. Kept beside the UIKit mapping so the two
+    /// can't drift: `Haptics.play(_:)` still drives the UIKit performer for imperative sites.
     var sensoryFeedback: SensoryFeedback {
         switch self {
         case .selection: return .selection
@@ -109,21 +109,16 @@ extension HapticFeel {
 }
 
 extension View {
-    /// Fire `feel` whenever `trigger` changes. `.sensoryFeedback` is iOS 17+ and the deployment
-    /// target is 16.0 (`CLAUDE.md` §7), so on iOS 16 the same trigger drives the UIKit performer
-    /// through `.onChange` instead.
+    /// Fire `feel` whenever `trigger` changes, through `.sensoryFeedback`. Still the house way to
+    /// attach a state-driven haptic (`CLAUDE.md` §3): it used to be §7.1's two-branch exemplar,
+    /// with the UIKit performer in an `else` for the old 16.0 floor, and `F-Floor18` retired that
+    /// branch — `.sensoryFeedback` (iOS 17) sits below the 18 floor. The Settings gate is still
+    /// consulted at FIRE time, so flipping the toggle takes effect on the very next change.
     ///
     /// Replaces `saveSuccessHaptic` / `promoteSuccessHaptic`, which were the same code twice.
-    @ViewBuilder
     func haptic<T: Equatable>(_ feel: HapticFeel, trigger: T) -> some View {
-        if #available(iOS 17.0, *) {
-            self.sensoryFeedback(feel.sensoryFeedback, trigger: trigger) { _, _ in
-                AppFeedback.hapticsEnabled()
-            }
-        } else {
-            self.onChange(of: trigger) { _ in
-                Haptics.play(feel)
-            }
+        sensoryFeedback(feel.sensoryFeedback, trigger: trigger) { _, _ in
+            AppFeedback.hapticsEnabled()
         }
     }
 }

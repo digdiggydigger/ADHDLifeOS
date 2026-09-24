@@ -71,7 +71,7 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
-    /// for exactly this reason. The factory adds Live Activity mirroring on iOS 16.1+ (§7 gate),
+    /// for exactly this reason. The factory adds Live Activity mirroring,
     /// so the countdown also lives on the Lock Screen / Dynamic Island.
     /// Internal, not private: RootView+Doors' sprint door starts it.
     @StateObject var focusService = FocusSessionService.withLiveActivityMirroring(

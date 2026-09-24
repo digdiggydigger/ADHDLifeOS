@@ -104,7 +104,7 @@ struct QuickCaptureWidgetView: View {
 }
 
 #if DEBUG
-// Plain view preview: the widget-timeline preview macro is iOS 17+, this target's floor is 16.1.
+// Plain view preview rather than the widget-timeline macro — the same call `FocusStatsWidget` makes.
 #Preview("Quick Capture") {
     QuickCaptureWidgetView()
         .frame(width: 329, height: 155)

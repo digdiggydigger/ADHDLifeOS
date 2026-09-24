@@ -85,7 +85,8 @@ struct DailySummaryView: View {
             .foregroundStyle(.tint)
             .padding(.vertical, 4)
             .padding(.horizontal, 8)
-            // Color.accentColor.opacity, not .tint.opacity — ShapeStyle.opacity is iOS 17+, target is 16.
+            // Color.accentColor.opacity rather than .tint.opacity: a spelling from the old 16 floor,
+            // equivalent on every OS the app now runs on and left as shipped.
             .background(Color.accentColor.opacity(0.12), in: Capsule())
 
             Text("Daily Executive Summary")

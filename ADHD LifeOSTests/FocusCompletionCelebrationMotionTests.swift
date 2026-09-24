@@ -37,8 +37,8 @@ final class FocusCompletionCelebrationMotionTests: XCTestCase {
         }
     }
 
-    /// The floor's celebration is block 4's two-beat burst: iOS 16 through 25 with
-    /// Reduce Motion off. It was green before this block by design — the 16 path is today's code.
+    /// The floor's celebration is block 4's two-beat burst: iOS 18 through 25 with
+    /// Reduce Motion off. It was green before this block by design — the floor path is today's code.
     func testTheFloorGetsTheBurst() {
         XCTAssertEqual(
             FocusCompletionCelebrationMotion.resolve(reduceMotion: false, drawOnAvailable: false),
@@ -96,7 +96,7 @@ final class FocusCompletionCelebrationMotionTests: XCTestCase {
         XCTAssertEqual(
             metrics.checkmarkAnimation(for: .full),
             .spring(response: 0.4, dampingFraction: 0.6).delay(metrics.delay),
-            "The floor's spring changed. The 16 path is block 4's, untouched."
+            "The floor's spring changed. The floor path is block 4's, untouched."
         )
         XCTAssertEqual(
             metrics.checkmarkAnimation(for: .modern), metrics.checkmarkAnimation(for: .full),

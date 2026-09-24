@@ -2,10 +2,10 @@
 //  FocusCelebrationModernPathCallSiteTests.swift
 //  ADHD LifeOSTests
 //
-//  F-ModernIOS-2-Celebration — CLAUDE.md §7.4's call-site half, for §7.1's second two-branch
+//  F-ModernIOS-2-Celebration — CLAUDE.md §7.4's call-site half, for §7.1's two-branch
 //  exemplar. `FocusCompletionCelebrationMotionTests` proves WHICH mode a celebration resolves to;
 //  nothing there proves the view has a floor branch at all. A tick that exists only behind
-//  `#available(iOS 26.0, *)` passes every one of those tests and draws NOTHING on iOS 16–25 — the
+//  `#available(iOS 26.0, *)` passes every one of those tests and draws NOTHING on iOS 18–25 — the
 //  "absent" shape §7.1 forbids for feedback.
 //
 //  These read ORDER inside a scoped region, not bare presence, and the reason is concrete: the
@@ -52,7 +52,7 @@ final class FocusCelebrationModernPathCallSiteTests: XCTestCase {
             guard let found = site.range(of: form, range: cursor..<site.endIndex) else {
                 XCTFail(
                     "The celebration's tick site has no `\(form)` where \(meaning) belongs — missing, or"
-                        + " out of order. §7.1: a degraded site ships BOTH branches, and a 16–25 phone's"
+                        + " out of order. §7.1: a degraded site ships BOTH branches, and an 18–25 phone's"
                         + " celebration IS the floor branch."
                 )
                 return
