@@ -90,6 +90,11 @@ final class ComposerDraftCallSiteTests: XCTestCase {
     /// **"Close", not "Cancel", on all three** — E, round 2, carried by every option she was shown.
     /// `sheets.md › Best practices` is the reason she gave: Cancel means *without saving*, and
     /// these controls no longer discard.
+    ///
+    /// *Re-anchored by `F-D2-ComposerKeyboardLayout`:* the task composer's Close grew to round 7's
+    /// 48 × 48, which needs a label builder, so the literal `Button("Close") { dismiss() }` no
+    /// longer spells it. The claim was never the spelling. It is that the leading control SAYS
+    /// Close and DISMISSES, so this reads the cancellation item itself on all three.
     func testAllThreeComposersSayCloseRatherThanCancel() throws {
         let composers = [
             "Capture/QuickCaptureView.swift", "Tasks/TaskCreateView.swift",
@@ -97,7 +102,16 @@ final class ComposerDraftCallSiteTests: XCTestCase {
         ]
         for file in composers {
             let source = try Self.appCode(file)
-            XCTAssertTrue(source.contains("Button(\"Close\") { dismiss() }"), "\(file) still says Cancel.")
+            guard let start = source.range(of: "ToolbarItem(placement: .cancellationAction) {"),
+                  let end = source.range(of: ".accessibilityIdentifier(", range: start.upperBound..<source.endIndex)
+            else {
+                XCTFail("\(file) has no identified leading cancellation control")
+                continue
+            }
+            let item = source[start.lowerBound..<end.upperBound]
+            XCTAssertTrue(item.contains("\"Close\""), "\(file) still says Cancel.")
+            XCTAssertTrue(item.contains("dismiss()"), "\(file)'s Close no longer dismisses the composer.")
+            XCTAssertFalse(item.contains("\"Cancel\""), "\(file)'s leading control still says Cancel.")
             XCTAssertFalse(
                 source.contains("Button(\"Cancel\") { dismiss() }"),
                 "\(file) still carries the old Cancel button beside the new Close."

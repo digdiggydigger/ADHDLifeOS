@@ -84,20 +84,28 @@ final class ComposerBothDoorsCallSiteTests: XCTestCase {
     /// **Area is a Menu reading "None"** — the shared `LifeAreaPicker`, which IS a `Menu`, rather
     /// than `ComposerAreaChips`' chip flow; and round 10b's rename (*"'Decide later' and 'No life
     /// area' → 'None', as in the round 7b composer"*) lands here directly.
+    ///
+    /// *Re-anchored by `F-D2-ComposerKeyboardLayout`:* the controls moved to
+    /// `TaskComposerControls.swift`, shared by the keyboard bar and the stacked form, so the
+    /// positive claims read that file and the absences read both.
     func testTheAreaControlIsTheSharedMenuDefaultingToNone() throws {
-        let view = try Self.appCode("Tasks/TaskCreateView.swift")
-        XCTAssertTrue(view.contains("LifeAreaPicker("), "The composer's Area is not the shared Menu picker")
-        XCTAssertTrue(view.contains("noSelectionLabel: \"None\""), "The Area menu's empty choice is not \"None\"")
-        XCTAssertFalse(view.contains("ComposerAreaChips("), "The Area control is still a chip flow")
-        XCTAssertFalse(view.contains("Decide later"), "\"Decide later\" survived round 10b's rename")
+        let controls = try Self.appCode("Tasks/TaskComposerControls.swift")
+        XCTAssertTrue(controls.contains("LifeAreaPicker("), "The composer's Area is not the shared Menu picker")
+        XCTAssertTrue(controls.contains("noSelectionLabel: \"None\""), "The Area menu's empty choice is not \"None\"")
+        for file in ["Tasks/TaskCreateView.swift", "Tasks/TaskComposerControls.swift"] {
+            let source = try Self.appCode(file)
+            XCTAssertFalse(source.contains("ComposerAreaChips("), "\(file): the Area control is still a chip flow")
+            XCTAssertFalse(source.contains("Decide later"), "\(file): \"Decide later\" survived round 10b's rename")
+        }
     }
 
     /// **Time is a Menu**, the fan's three effort chips ported rather than re-drawn as chips.
+    /// *Re-anchored by `F-D2`:* the Time menu is `TaskComposerTimeMenu` now, in the controls file.
     func testTheTimeControlIsAMenu() throws {
-        let view = try Self.appCode("Tasks/TaskCreateView.swift")
-        XCTAssertTrue(view.contains("taskCreateTimeMenu"), "The composer has no Time control")
+        let controls = try Self.appCode("Tasks/TaskComposerControls.swift")
+        XCTAssertTrue(controls.contains("taskCreateTimeMenu"), "The composer has no Time control")
         let time = try Self.slice(
-            of: "Tasks/TaskCreateView.swift", from: "private var timeMenu", to: "taskCreateTimeMenu"
+            of: "Tasks/TaskComposerControls.swift", from: "struct TaskComposerTimeMenu", to: "taskCreateTimeMenu"
         )
         XCTAssertTrue(time.contains("Menu {"), "The Time control is not a Menu")
         XCTAssertTrue(time.contains("TaskEffortChoice.allCases"), "The Time menu does not offer the shared choices")
@@ -107,12 +115,17 @@ final class ComposerBothDoorsCallSiteTests: XCTestCase {
     /// holds no state for them. Round 6: *"The next step — tags, place and notes — live on the
     /// task"*, where `TaskDetailFormSections` already edits all three.
     func testTagsPlaceAndNotesLeftTheComposer() throws {
-        let view = try Self.appCode("Tasks/TaskCreateView.swift")
-        for gone in [
-            "taskCreateNotesField", "taskCreateAtPlacePicker", "taskCreateTagChip", "taskCreateNewTagField",
-            "taskCreateAddTagButton", "TaskAtPlacePicker(", "notesSection", "tagsSection", "placeSection"
-        ] {
-            XCTAssertFalse(view.contains(gone), "The composer still renders `\(gone)`")
+        let composerFiles = [
+            "Tasks/TaskCreateView.swift", "Tasks/TaskComposerControls.swift", "Tasks/TaskComposerKeyboardBar.swift"
+        ]
+        for file in composerFiles {
+            let view = try Self.appCode(file)
+            for gone in [
+                "taskCreateNotesField", "taskCreateAtPlacePicker", "taskCreateTagChip", "taskCreateNewTagField",
+                "taskCreateAddTagButton", "TaskAtPlacePicker(", "notesSection", "tagsSection", "placeSection"
+            ] {
+                XCTAssertFalse(view.contains(gone), "\(file) still renders `\(gone)`")
+            }
         }
         let service = try Self.appCode("Tasks/TaskCreateService.swift")
         for gone in [

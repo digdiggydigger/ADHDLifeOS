@@ -63,7 +63,8 @@ final class DeploymentFloorTests: XCTestCase {
     /// Any `#available`, `#unavailable` or `@available` that names an iOS version below 18 is
     /// dead against the floor: its modern branch always runs and its floor branch can never be
     /// reached. Only the iOS 26 gates remain (`FocusCompletionCelebration`, `TabNavigation`,
-    /// `TabRootLargeTitleReTap`), and their `else` branches now mean iOS 18–25.
+    /// `TabRootLargeTitleReTap`, and since `F-D2` the composer bar's Liquid Glass container in
+    /// `TaskComposerKeyboardBar`), and their `else` branches now mean iOS 18–25.
     func testNoAvailabilityCheckBelowTheFloor() throws {
         let pattern = try NSRegularExpression(
             pattern: #"(?:#available|#unavailable|@available)\((?:[^)]*?,\s*)?iOS(?:ApplicationExtension)?\s+(\d+)"#

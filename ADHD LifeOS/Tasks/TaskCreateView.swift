@@ -7,9 +7,14 @@
 //  the capture disc's Task tile (and the widget's door, which routes the same way) as a full-screen
 //  cover — same view, two chromes, inherited from the doors rather than chosen here.
 //
-//  Its content is round 6's, verbatim in intent: a title, the four "when" chips, and an Area and a
-//  Time menu ("menus, not sheets"). Tags, place and notes live on the task. The LAYOUT is still the
-//  v3 vertical one; round 7b's "rides on the keyboard" layout is `F-D2`.
+//  Its content is round 6's, verbatim in intent: a title, the four "when" choices, and an Area and
+//  a Time menu ("menus, not sheets"). Tags, place and notes live on the task.
+//
+//  Its LAYOUT is round 7b's since `F-D2-ComposerKeyboardLayout`. E chose L3: *"The title owns the
+//  page. Every choice and Add sit in one bar just above the keyboard."* At accessibility sizes the
+//  bar cannot share the screen with the keyboard, so the composer falls back to L1's stacked form,
+//  which was carried in the option E chose. The controls both layouts share are in
+//  `TaskComposerControls.swift`, and the bar is `TaskComposerKeyboardBar.swift`.
 //
 
 import SwiftUI
@@ -18,6 +23,7 @@ struct TaskCreateView: View {
     @StateObject var service: TaskCreateService
     let onCreated: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var dueChoice: TaskDueChoice = .notYet
 
     /// `F-C2-DraftsToInbox`: the seam an abandoned title is filed through. **Optional with an
@@ -59,207 +65,139 @@ struct TaskCreateView: View {
         self.onCreated = onCreated
     }
 
+    /// Round 7b's L3 up to the largest ordinary text size, and L1's stacked form at every
+    /// accessibility size. The design record: *"At AX3 the bar cannot share the screen with the
+    /// keyboard ... At accessibility sizes the build uses L1's stacked form instead."*
+    static func usesStackedForm(at size: DynamicTypeSize) -> Bool {
+        size.isAccessibilitySize
+    }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("One clear next action — every detail below is optional.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    ComposerTextBox(
-                        placeholder: "What needs doing?",
-                        text: $service.title,
-                        accessibilityID: "taskCreateTitleField"
-                    )
-                    dueSection
-                    areaAndTimeSection
-                    if let warningMessage = service.warningMessage {
-                        Text(warningMessage)
-                            .font(.footnote)
-                            .foregroundStyle(Color("StateWarn"))
-                            .accessibilityIdentifier("taskCreateWarningMessage")
-                    }
-                    if let errorMessage = service.errorMessage {
-                        Text(errorMessage)
-                            .font(.footnote)
-                            .foregroundStyle(Color("StateRisk"))
-                            .accessibilityIdentifier("taskCreateErrorMessage")
-                    }
-                }
-                .padding(16)
-            }
-            .background(Color.pageBackground.ignoresSafeArea())
-            .safeAreaInset(edge: .bottom) { footerBar }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    // **"Close", not "Cancel"** (E, round 2). `sheets.md › Best practices`:
-                    // Cancel means *without saving*, and this control no longer discards.
-                    Button("Close") { dismiss() }
+            layout
+                .background(Color.pageBackground.ignoresSafeArea())
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        // **"Close", not "Cancel"** (E, round 2). `sheets.md › Best practices`:
+                        // Cancel means *without saving*, and this control no longer discards.
+                        // 48 × 48 (round 7, "Corner controls → All to 48×48"), grown inside the
+                        // label, which is the only part of a bar item a view can size.
+                        Button {
+                            dismiss()
+                        } label: {
+                            Text("Close")
+                                .frame(minWidth: 48, minHeight: 48)
+                                .contentShape(Rectangle())
+                        }
                         .accessibilityIdentifier("taskCreateCloseButton")
-                }
-                ToolbarItem(placement: .principal) {
-                    Text("New task")
-                        .font(.headline)
-                }
-            }
-            // **`F-C2-DraftsToInbox`.** `.onDisappear` catches the swipe, the Close button and —
-            // since `F-D1` — the capture disc's full-screen cover alike (Step 0 answer 2: file
-            // once the composer has ACTUALLY gone, so a swipe keeps dismissing as it does today),
-            // and a half-swipe that springs back never calls it — so a cancelled dismissal files
-            // nothing by construction rather than by a guard.
-            .onDisappear { fileDraftIfNeeded() }
-            .task {
-                dueChoice = TaskDueChoice.choice(for: service.dueDate, asOf: .now)
-                await service.loadLifeAreas()
-            }
-        }
-    }
-
-    // MARK: - Due date
-
-    private var dueSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ComposerSectionHeader(title: "When is it due?", detail: "optional")
-            FlowingChips(spacing: 8) {
-                ForEach(TaskDueChoice.allCases, id: \.title) { choice in
-                    dueChip(choice)
-                }
-            }
-            if dueChoice == .custom {
-                DatePicker(
-                    "Due",
-                    selection: Binding(
-                        get: { service.dueDate ?? .now },
-                        set: { service.dueDate = $0 }
-                    ),
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .padding(16)
-                .background(Color("CardSurfaceSecondary"), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .accessibilityIdentifier("taskCreateDueDatePicker")
-            }
-        }
-    }
-
-    private func dueChip(_ choice: TaskDueChoice) -> some View {
-        let selected = dueChoice == choice
-        return Button {
-            Haptics.play(.selection)
-            dueChoice = choice
-            service.dueDate = choice.resolvedDueDate(existing: service.dueDate, asOf: .now)
-        } label: {
-            Text(choice.title)
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 16)
-                .frame(minHeight: 44)
-                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .buttonStyle(ChoiceChipButtonStyle(isSelected: selected))
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityIdentifier("taskCreateDue-\(choice.title)")
-    }
-
-    // MARK: - Area and time
-
-    /// Round 6's "area and time pop-up chips (menus, not sheets)". Carded like the custom date
-    /// picker above — this composer's treatment for a control that is not a chip — and 48pt,
-    /// because round 7 kept the composer's own controls at 48 ("the composer's own chips stay 48").
-    /// Both always show: Time has no empty state, and Area hides only when there are no areas to
-    /// offer, which is a question with no answers.
-    private var areaAndTimeSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ComposerSectionHeader(title: "Area and time", detail: "optional")
-            if !service.offeredLifeAreas.isEmpty {
-                LifeAreaPicker(
-                    title: "Area",
-                    noSelectionLabel: "None",
-                    lifeAreas: service.offeredLifeAreas,
-                    selection: $service.lifeAreaId,
-                    accessibilityID: "taskCreateLifeAreaPicker",
-                    popUpRowHeight: Self.menuRowHeight
-                )
-                .menuCard()
-            }
-            timeMenu
-                .menuCard()
-        }
-    }
-
-    /// Round 7: "the composer's own chips stay 48". The whole row is the tap target — see
-    /// `LifeAreaPicker.popUpRowHeight` for the build this was learned on.
-    static let menuRowHeight: CGFloat = 48
-
-    private var timeMenu: some View {
-        Menu {
-            ForEach(TaskEffortChoice.allCases, id: \.seconds) { choice in
-                Button {
-                    service.effort = choice
-                } label: {
-                    if service.effort == choice {
-                        Label(choice.title, systemImage: "checkmark")
-                    } else {
-                        Text(choice.title)
+                    }
+                    ToolbarItem(placement: .principal) {
+                        Text("New task")
+                            .font(.headline)
                     }
                 }
-            }
-        } label: {
-            // `LabeledContent` for the §7 house reason: it reflows at accessibility Dynamic Type
-            // sizes instead of clipping into narrow columns.
-            LabeledContent("Time") {
-                HStack(spacing: 4) {
-                    Text(service.effort.title)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.footnote.weight(.semibold))
-                        .accessibilityHidden(true)
+                // **`F-C2-DraftsToInbox`.** `.onDisappear` catches the swipe, the Close button
+                // and — since `F-D1` — the capture disc's full-screen cover alike (Step 0 answer 2:
+                // file once the composer has ACTUALLY gone, so a swipe keeps dismissing as it does
+                // today), and a half-swipe that springs back never calls it — so a cancelled
+                // dismissal files nothing by construction rather than by a guard.
+                .onDisappear { fileDraftIfNeeded() }
+                .task {
+                    dueChoice = TaskDueChoice.choice(for: service.dueDate, asOf: .now)
+                    await service.loadLifeAreas()
                 }
+        }
+    }
+
+    @ViewBuilder
+    private var layout: some View {
+        if Self.usesStackedForm(at: typeSize) {
+            stackedForm
+        } else {
+            keyboardForm
+        }
+    }
+
+    // MARK: - L3: the title owns the page
+
+    /// The title, boxless at `.title2` (round 7b's L3), with every choice in the bar that rides
+    /// the keyboard. The page scrolls, so a long title never pushes the bar off the screen.
+    private var keyboardForm: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                TextField("", text: $service.title, prompt: Text("What needs doing?"), axis: .vertical)
+                    .font(.title2.weight(.semibold))
+                    .lineLimit(1...6)
+                    .accessibilityIdentifier("taskCreateTitleField")
+                messages
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
-            .frame(maxWidth: .infinity, minHeight: Self.menuRowHeight)
-            .contentShape(Rectangle())
+            .padding(.top, 24)
         }
-        .accessibilityIdentifier("taskCreateTimeMenu")
+        .safeAreaInset(edge: .bottom) {
+            TaskComposerKeyboardBar(service: service, dueChoice: $dueChoice, onAdd: submit)
+        }
     }
 
-    // MARK: - Footer
+    // MARK: - L1 stacked, at accessibility sizes
 
-    private var footerBar: some View {
-        VStack(spacing: 8) {
-            Text("Lands in your list — nothing else happens until you decide it does.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Button(service.isSubmitting ? "Adding…" : "Add the task") {
-                Task {
-                    if await service.createTask() {
-                        didSubmit = true
-                        Haptics.play(.solid)
-                        onCreated()
-                        dismiss()
-                    } else {
-                        Haptics.play(.error)
-                    }
+    /// The board's L1 AX3 column: the boxed title, the segments one above the next, full-width
+    /// Area and Time, all scrolling, and Add pinned alone at the bottom where it rides the keyboard.
+    private var stackedForm: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                ComposerTextBox(
+                    placeholder: "What needs doing?",
+                    text: $service.title,
+                    accessibilityID: "taskCreateTitleField"
+                )
+                TaskWhenSegments(service: service, dueChoice: $dueChoice)
+                if !service.offeredLifeAreas.isEmpty {
+                    TaskComposerAreaMenu(service: service, compact: false)
                 }
+                TaskComposerTimeMenu(service: service, compact: false)
+                messages
             }
-            .buttonStyle(PrimaryActionButtonStyle())
-            .disabled(!service.isTitleValid || service.isSubmitting)
-            .accessibilityIdentifier("taskCreateSubmitButton")
+            .padding(16)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 4)
-        .composerFooterSurface()
+        .safeAreaInset(edge: .bottom) {
+            TaskComposerAddButton(service: service, compact: false, action: submit)
+                .padding(16)
+                .composerFooterSurface()
+        }
     }
-}
 
-private extension View {
-    /// The composer's card behind a Menu row, the label tinted primary so the row reads as a
-    /// setting with its value rather than as a run of accent-blue link text. **Paint only**: the
-    /// row's size lives inside each Menu's label, where it is also the tap target.
-    func menuCard() -> some View {
-        self
-            .tint(.primary)
-            .background(Color("CardSurfaceSecondary"), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    // MARK: - Shared
+
+    @ViewBuilder
+    private var messages: some View {
+        if let warningMessage = service.warningMessage {
+            Text(warningMessage)
+                .font(.footnote)
+                .foregroundStyle(Color("StateWarn"))
+                .accessibilityIdentifier("taskCreateWarningMessage")
+        }
+        if let errorMessage = service.errorMessage {
+            Text(errorMessage)
+                .font(.footnote)
+                .foregroundStyle(Color("StateRisk"))
+                .accessibilityIdentifier("taskCreateErrorMessage")
+        }
+    }
+
+    private func submit() {
+        Task {
+            if await service.createTask() {
+                didSubmit = true
+                Haptics.play(.solid)
+                onCreated()
+                dismiss()
+            } else {
+                Haptics.play(.error)
+            }
+        }
     }
 }
 
@@ -281,11 +219,24 @@ private struct PreviewTaskCreateDetailClient: TaskDetailClientAdapting {
     func removeTagFromTask(taskId: UUID, tagId: UUID) async throws {}
 }
 
+private let previewAreas = [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
+
+extension TaskCreateService {
+    /// A service the composer's previews can build, with one area and clients that are never called.
+    static func preview() -> TaskCreateService {
+        TaskCreateService(
+            client: PreviewTaskCreateClientAdapting(),
+            taskDetailClient: PreviewTaskCreateDetailClient(),
+            lifeAreas: previewAreas
+        )
+    }
+}
+
 #Preview("Light") {
     TaskCreateView(
         client: PreviewTaskCreateClientAdapting(),
         taskDetailClient: PreviewTaskCreateDetailClient(),
-        lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
+        lifeAreas: previewAreas
     ) {}
     .preferredColorScheme(.light)
 }
@@ -294,8 +245,17 @@ private struct PreviewTaskCreateDetailClient: TaskDetailClientAdapting {
     TaskCreateView(
         client: PreviewTaskCreateClientAdapting(),
         taskDetailClient: PreviewTaskCreateDetailClient(),
-        lifeAreas: [LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 0)]
+        lifeAreas: previewAreas
     ) {}
     .preferredColorScheme(.dark)
+}
+
+#Preview("Accessibility 3 — the stacked form") {
+    TaskCreateView(
+        client: PreviewTaskCreateClientAdapting(),
+        taskDetailClient: PreviewTaskCreateDetailClient(),
+        lifeAreas: previewAreas
+    ) {}
+    .dynamicTypeSize(.accessibility3)
 }
 #endif
