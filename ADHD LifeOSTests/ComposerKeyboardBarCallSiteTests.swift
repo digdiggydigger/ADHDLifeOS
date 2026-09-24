@@ -122,6 +122,18 @@ final class ComposerKeyboardBarCallSiteTests: XCTestCase {
         }
     }
 
+    /// **E, 2026-09-24: "Let it settle."** On iOS 27 opening a choice puts the keyboard down, and
+    /// E chose to let the bar rest at the bottom rather than re-focus the title, which would bring
+    /// the keyboard back and the bar with it on every choice (research §3.2's drop-and-jump). So
+    /// the composer must hold no focus state it could re-assert.
+    func testAChoiceLetsTheBarSettleRatherThanBouncingBack() throws {
+        for file in [Self.view, Self.bar, Self.controls] {
+            let source = try Self.appCode(file)
+            XCTAssertFalse(source.contains("@FocusState"), "\(file) holds focus state it could re-assert")
+            XCTAssertFalse(source.contains(".focused("), "\(file) binds the title's focus")
+        }
+    }
+
     // MARK: - Accessibility sizes
 
     /// **L1's stacked form at accessibility sizes** — carried in the option E chose: "At AX3 the bar

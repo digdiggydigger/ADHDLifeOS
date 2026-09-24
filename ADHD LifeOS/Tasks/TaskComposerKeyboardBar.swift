@@ -10,6 +10,15 @@
 //  avoidance lifts it on every OS the app runs on. It never goes in the `.keyboard` toolbar
 //  placement, which is one row and cannot hold two (findings §L, Platform notes).
 //
+//  **E's decision, 2026-09-24: "Let it settle."** L3 was chosen on the condition that opening
+//  Area, Time or the date picker would NOT put the keyboard down. The first run of the test that
+//  condition asked for found that on iOS 27 all three do: the SwiftUI menu, a UIKit menu tried in
+//  its place, and the popover. The keyboard does not come back afterwards. So the bar rides the
+//  keyboard while you type, the first choice lets it settle at the bottom (the approved
+//  keyboard-down frame), and it stays there for every later choice until a tap on the title raises
+//  it again. Nothing re-focuses the title behind the user's back: that would be research §3.2's
+//  drop-and-jump, the one thing worse than the drop.
+//
 
 import SwiftUI
 
@@ -30,6 +39,10 @@ enum TaskComposerMetrics {
     static let barPadding: CGFloat = 8
     /// Concentric with the controls it wraps: their radius plus the inset between them.
     static let barCornerRadius = controlCornerRadius + barPadding
+    /// The date popover's calendar. A popover sizes itself to its content's IDEAL size, and a
+    /// graphical `DatePicker` proposes almost none: the first build drew a calendar about 60pt wide,
+    /// with its Next Month control off the edge of the screen. 320 is the narrowest iPhone width.
+    static let datePickerWidth: CGFloat = 320
 }
 
 struct TaskComposerKeyboardBar: View {

@@ -4,17 +4,19 @@
 //
 //  `F-D2-ComposerKeyboardLayout`. Two things only a running app can say about round 7b's L3:
 //
-//  1. **The pin findings §L asked for** — *"Opening Area, Time or the date picker must NOT dismiss
-//     the keyboard, or the bar drops 336pt and jumps back (research §3.2). A test pins it."* The
-//     record called this UNVERIFIED: nobody had checked what a SwiftUI `Menu` or a popover does to
-//     the first responder.
+//  1. **The pin — and what it pins changed on E's word.** Findings §L asked for a test that
+//     *"Opening Area, Time or the date picker must NOT dismiss the keyboard"*, and called the claim
+//     UNVERIFIED. Its first run verified it FALSE: on iOS 27 the SwiftUI menu, a UIKit menu tried in
+//     its place and the popover all put the keyboard down, and it does not come back. E chose, on
+//     2026-09-24, **"Let it settle"**: the bar rides the keyboard while you type, the first choice
+//     lets it rest at the bottom, and it stays there. So this pins what E chose: after every choice
+//     the bar is at ONE of its two resting places, the one the keyboard says, and it does not move.
 //  2. **The frames** for `screenshots/composer-l3-layout/`, keyboard up and down, the Date segment
 //     before and after a pick, and the stacked form at an accessibility size.
 //
 //  **While a Menu is open, the app beneath it leaves the accessibility tree** — the text field and
-//  the bar cannot be queried until the menu closes. So the pin reads the keyboard (its own window)
-//  while a choice is open and the field's focus and the bar's frame once it has closed; and the
-//  frames record what the queries cannot.
+//  the bar cannot be queried until the menu closes. So the pin reads the bar once the choice has
+//  closed, and the frames record what the queries cannot.
 //
 //  Appearance is whatever the simulator is set to (`xcrun simctl ui <udid> appearance
 //  light|dark`), so one render run per appearance — `ComposerBothDoorsRenderUITests`' arrangement.
@@ -31,49 +33,130 @@ final class ComposerKeyboardBarUITests: XCTestCase {
     // MARK: - The pin
 
     @MainActor
-    func testTheKeyboardStaysUpWhileAChoiceIsOpen() throws {
+    func testAChoiceLetsTheBarSettleAndItStaysSettled() throws {
         try UITestEmulator.skipUnlessRunning()
+        // Every choice is checked on its own; the verdict comes after all of them.
+        continueAfterFailure = true
         let app = try UITestSession.launchSignedIn(label: "d2keyboard")
         let field = try openTheComposer(app)
-        field.tap()
-        field.typeText("Rides the keyboard")
         let bar = app.otherElements["taskComposerKeyboardBar"]
-        XCTAssertTrue(bar.waitForExistence(timeout: UITestSession.timeout), "The composer has no keyboard bar")
-        XCTAssertTrue(
-            app.keyboards.element.waitForExistence(timeout: UITestSession.timeout),
-            "No software keyboard came up — check the simulator's Connect Hardware Keyboard"
-        )
-        let raised = bar.frame
-        XCTAssertLessThanOrEqual(
-            raised.maxY, app.keyboards.element.frame.minY + 1,
-            "The bar is not above the keyboard: bar \(raised), keyboard \(app.keyboards.element.frame)"
+        guard bar.waitForExistence(timeout: UITestSession.timeout) else {
+            return XCTFail("The composer has no keyboard bar")
+        }
+        let settled = bar.frame
+        focus(field)
+        field.typeText("Rides the keyboard")
+        guard app.keyboards.element.waitForExistence(timeout: UITestSession.timeout) else {
+            return XCTFail("No software keyboard came up — check the simulator's Connect Hardware Keyboard")
+        }
+        let places = RestingPlaces(app: app, bar: bar, settled: settled.minY, raised: bar.frame.minY)
+        print("MEASURE pin settled=\(settled) raised=\(bar.frame) keys=\(app.keyboards.element.frame)")
+        XCTAssertLessThan(
+            places.raised, places.settled - 100,
+            "The bar did not ride the keyboard: raised at \(places.raised), settled at \(places.settled)"
         )
 
-        let none = app.buttons["None"]
-        XCTAssertTrue(
-            UITestSession.tap(app.buttons["taskCreateLifeAreaPicker"], untilExists: none), "Area opened no menu"
-        )
-        assertTheKeyboardIsUp(app, while: "the Area menu is open")
-        _ = UITestSession.tap(none, untilGone: none)
-        assertStillRaised(app, field: field, bar: bar, at: raised, after: "the Area menu closed")
-
-        let hour = app.buttons["1 hr"]
-        XCTAssertTrue(UITestSession.tap(app.buttons["taskCreateTimeMenu"], untilExists: hour), "Time opened no menu")
-        assertTheKeyboardIsUp(app, while: "the Time menu is open")
-        _ = UITestSession.tap(app.buttons["15 min"], untilGone: hour)
-        assertStillRaised(app, field: field, bar: bar, at: raised, after: "the Time menu closed")
-
-        let date = app.buttons["taskCreateDue-Date"]
-        XCTAssertEqual(date.label, "Date", "The Date segment does not read \"Date\" before a pick")
-        let picker = app.datePickers["taskCreateDueDatePicker"]
-        XCTAssertTrue(UITestSession.tap(date, untilExists: picker), "Date opened no picker")
-        assertTheKeyboardIsUp(app, while: "the date popover is open")
-        pickTheTenthOfNextMonth(in: picker)
-        XCTAssertTrue(waitUntilGone(picker), "Picking a day did not close the popover")
-        assertStillRaised(app, field: field, bar: bar, at: raised, after: "a day was picked")
+        choose(app.buttons["taskCreateLifeAreaPicker"], showing: app.buttons["None"], shot: "pin-area-open")
+        assertAtRest(places, after: "the Area menu")
+        choose(app.buttons["taskCreateTimeMenu"], showing: app.buttons["1 hr"], picking: app.buttons["30 min"])
+        assertAtRest(places, after: "the Time menu")
+        let date = pickADay(app)
+        assertAtRest(places, after: "a day was picked")
         XCTAssertNotEqual(date.label, "Date", "The Date segment did not take the picked day")
         XCTAssertTrue(date.label.contains("10"), "The Date segment reads \"\(date.label)\", not the 10th")
         XCTAssertTrue(date.isSelected, "The picked day did not become the selected segment")
+        XCTAssertEqual(field.value as? String, "Rides the keyboard", "A choice lost the typed title")
+
+        // The way back to typing is one tap on the title, and the bar rides the keyboard again.
+        focus(field)
+        XCTAssertTrue(
+            app.keyboards.element.waitForExistence(timeout: UITestSession.timeout), "The title raised no keyboard"
+        )
+        XCTAssertTrue(waitForBar(bar, at: places.raised), "The bar did not rise with the keyboard: \(bar.frame)")
+    }
+
+    /// Opens a menu, photographs it if asked, and closes it by picking a row (the menu's first
+    /// row, "None" for Area, when `picking` is nil).
+    @MainActor
+    private func choose(
+        _ control: XCUIElement, showing row: XCUIElement, picking: XCUIElement? = nil, shot: String? = nil
+    ) {
+        guard UITestSession.tap(control, untilExists: row) else {
+            return XCTFail("\(control) opened no menu")
+        }
+        if let shot { attach(XCUIApplication(), named: shot) }
+        let pick = picking ?? row
+        _ = UITestSession.tap(pick, untilGone: row)
+    }
+
+    /// Opens the Date segment's popover, checks the calendar is whole and on screen, and picks the
+    /// 10th of next month. Returns the segment, for the caller to read what it now says.
+    @MainActor
+    private func pickADay(_ app: XCUIApplication) -> XCUIElement {
+        let date = app.buttons["taskCreateDue-Date"]
+        XCTAssertEqual(date.label, "Date", "The Date segment does not read \"Date\" before a pick")
+        let picker = app.datePickers["taskCreateDueDatePicker"]
+        guard UITestSession.tap(date, untilExists: picker) else {
+            XCTFail("Date opened no picker")
+            return date
+        }
+        attach(app, named: "pin-date-popover")
+        assertOnScreen(picker, in: app)
+        pickTheTenthOfNextMonth(in: picker)
+        XCTAssertTrue(waitUntilGone(picker), "Picking a day did not close the popover")
+        return date
+    }
+
+    private struct RestingPlaces {
+        let app: XCUIApplication
+        let bar: XCUIElement
+        let settled: CGFloat
+        let raised: CGFloat
+    }
+
+    /// E's "Let it settle": once a choice has closed, the bar rests where the KEYBOARD says (down:
+    /// the bottom; up: above it) and STAYS there. Sampled twice, a second apart, because the failure
+    /// this exists for is the bounce: a title re-focused behind the user's back would bring the
+    /// keyboard, and the bar with it, back up after the choice.
+    @MainActor
+    private func assertAtRest(_ places: RestingPlaces, after moment: String) {
+        let first = restingState(places)
+        Thread.sleep(forTimeInterval: 1)
+        let second = restingState(places)
+        print("MEASURE pin after \(moment): keyboard=\(first.keyboard) barY=\(first.barY) then \(second.barY)")
+        let expected = first.keyboard ? places.raised : places.settled
+        XCTAssertEqual(first.barY, expected, accuracy: 1, "After \(moment) the bar is not at rest: \(first.barY)")
+        XCTAssertEqual(first.keyboard, second.keyboard, "After \(moment) the keyboard came and went")
+        XCTAssertEqual(first.barY, second.barY, accuracy: 1, "After \(moment) the bar moved on its own")
+    }
+
+    @MainActor
+    private func restingState(_ places: RestingPlaces) -> (keyboard: Bool, barY: CGFloat) {
+        // Give the settle its animation before reading where the bar ended up.
+        _ = waitForBar(places.bar, at: places.settled, timeout: 2)
+        let keyboard = places.app.keyboards.element.exists
+            && places.app.keyboards.element.frame.minY < places.app.frame.maxY
+        return (keyboard, places.bar.frame.minY)
+    }
+
+    @MainActor
+    private func waitForBar(
+        _ bar: XCUIElement, at minY: CGFloat, timeout: TimeInterval = UITestSession.timeout
+    ) -> Bool {
+        let there = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in bar.exists && abs(bar.frame.minY - minY) <= 1 }, object: nil
+        )
+        return XCTWaiter().wait(for: [there], timeout: timeout) == .completed
+    }
+
+    /// The first build's popover drew a calendar about 60pt wide with Next Month past the screen's
+    /// right edge. A frame is the only place that shows.
+    @MainActor
+    private func assertOnScreen(_ element: XCUIElement, in app: XCUIApplication) {
+        let screen = app.windows.firstMatch.frame
+        print("MEASURE popover=\(element.frame) screen=\(screen)")
+        XCTAssertGreaterThanOrEqual(element.frame.width, 300, "The calendar is \(element.frame.width)pt wide")
+        XCTAssertTrue(screen.contains(element.frame), "The calendar \(element.frame) runs off the screen \(screen)")
     }
 
     // MARK: - The frames
@@ -98,10 +181,10 @@ final class ComposerKeyboardBarUITests: XCTestCase {
         measureTheTargets(app, layout: layout)
         attach(app, named: "\(layout)-down-\(tag)")
 
-        field.tap()
+        focus(field)
         field.typeText("Call the dentist")
         XCTAssertTrue(app.keyboards.element.waitForExistence(timeout: UITestSession.timeout), "No keyboard came up")
-        print("MEASURE \(layout)-\(tag) keyboard=\(app.keyboards.element.frame) bar=\(bar.exists ? bar.frame : .zero)")
+        print("MEASURE \(layout)-\(tag) keyboard=\(keyboardFrame(app)) bar=\(bar.exists ? bar.frame : .zero)")
         attach(app, named: "\(layout)-up-\(tag)")
         guard bar.exists else { return }
 
@@ -119,7 +202,7 @@ final class ComposerKeyboardBarUITests: XCTestCase {
         attach(app, named: "\(layout)-date-before-\(tag)")
         let picker = app.datePickers["taskCreateDueDatePicker"]
         if UITestSession.tap(date, untilExists: picker) {
-            print("MEASURE \(layout)-\(tag) popover=\(picker.frame) keyboard=\(app.keyboards.element.frame)")
+            print("MEASURE \(layout)-\(tag) popover=\(picker.frame) keyboard=\(keyboardFrame(app))")
             attach(app, named: "\(layout)-date-popover-\(tag)")
             pickTheTenthOfNextMonth(in: picker)
             _ = waitUntilGone(picker)
@@ -161,32 +244,33 @@ final class ComposerKeyboardBarUITests: XCTestCase {
             "The signed-in tabs never appeared"
         )
         UITestSession.openTab("Tasks", in: app)
-        let field = app.textFields["taskCreateTitleField"]
+        // By identifier, not by type: a vertical-axis `TextField` is a text FIELD to XCUITest on
+        // 26+ and a text VIEW on iOS 18, so `app.textFields[…]` finds nothing on the floor.
+        let field = app.descendants(matching: .any).matching(identifier: "taskCreateTitleField").firstMatch
         // `continueAfterFailure = false`, so a composer that never opened ends the test here.
         XCTAssertTrue(
             UITestSession.tap(app.buttons["taskCreateButton"], untilExists: field),
             "The task composer never opened from Tasks"
         )
+        // The field exists from the sheet's first frame; Add is in the bar, which lays out last.
+        _ = app.buttons["taskCreateSubmitButton"].waitForExistence(timeout: UITestSession.timeout)
         return field
     }
 
-    /// The keyboard lives in its own window, so it stays queryable while a menu makes the app modal.
+    /// A tap that lands while the sheet is still presenting leaves the field unfocused, and
+    /// `typeText` then fails with "Neither element nor any descendant has keyboard focus" (the
+    /// first probe run on 27.0). So tap until the field says it has focus.
     @MainActor
-    private func assertTheKeyboardIsUp(_ app: XCUIApplication, while moment: String) {
-        attach(app, named: "keyboard-while-\(moment)")
-        XCTAssertTrue(app.keyboards.element.exists, "The keyboard went down while \(moment)")
-    }
-
-    @MainActor
-    private func assertStillRaised(
-        _ app: XCUIApplication, field: XCUIElement, bar: XCUIElement, at raised: CGRect, after moment: String
-    ) {
-        XCTAssertTrue(app.keyboards.element.waitForExistence(timeout: 2), "The keyboard is down after \(moment)")
-        XCTAssertEqual(
-            field.value(forKey: "hasKeyboardFocus") as? Bool, true,
-            "The title lost focus after \(moment)"
-        )
-        XCTAssertEqual(bar.frame.minY, raised.minY, accuracy: 1, "The bar moved after \(moment)")
+    private func focus(_ field: XCUIElement) {
+        for _ in 1...3 {
+            field.tap()
+            let focused = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in (field.value(forKey: "hasKeyboardFocus") as? Bool) == true },
+                object: nil
+            )
+            if XCTWaiter().wait(for: [focused], timeout: 3) == .completed { return }
+        }
+        XCTFail("The title field never took focus")
     }
 
     /// The 10th of NEXT month, whatever today is — a day the Today and Tomorrow segments can never
@@ -199,6 +283,13 @@ final class ComposerKeyboardBarUITests: XCTestCase {
         let tenth = picker.buttons.matching(NSPredicate(format: "label MATCHES %@", ".*\\b10\\b.*")).firstMatch
         XCTAssertTrue(tenth.waitForExistence(timeout: UITestSession.timeout), "No 10th in next month's grid")
         tenth.tap()
+    }
+
+    /// A snapshot miss on a gone keyboard THROWS, whatever `continueAfterFailure` says — so every
+    /// read that may meet no keyboard goes through here.
+    @MainActor
+    private func keyboardFrame(_ app: XCUIApplication) -> CGRect {
+        app.keyboards.element.exists ? app.keyboards.element.frame : .zero
     }
 
     private func waitUntilGone(_ element: XCUIElement) -> Bool {

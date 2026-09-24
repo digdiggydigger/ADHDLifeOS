@@ -88,6 +88,7 @@ struct TaskWhenSegments: View {
         )
         .datePickerStyle(.graphical)
         .labelsHidden()
+        .frame(minWidth: TaskComposerMetrics.datePickerWidth)
         .padding(8)
         // Round 7b and Q4: "a popover or menu, never a sheet". On iPhone a popover adapts to a sheet
         // unless told otherwise. This API is below the 18 floor, so every OS the app runs on gets it.
