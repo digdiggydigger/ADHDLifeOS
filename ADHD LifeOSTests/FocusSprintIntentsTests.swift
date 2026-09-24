@@ -20,7 +20,6 @@ import XCTest
 /// **The sweep's loop body is deliberately not asserted.** Ending a real `Activity` needs an
 /// entitled process, so `Activity.activities` is always empty here — the same exclusion
 /// `FocusActivityContentStateTests` records for the mirror's own `Activity` calls.
-@available(iOS 17.0, *)
 @MainActor
 final class FocusSprintIntentsTests: XCTestCase {
     /// Records a call instead of driving the engine — the house recording-fake pattern, sized to

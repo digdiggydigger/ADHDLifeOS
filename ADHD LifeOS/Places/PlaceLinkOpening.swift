@@ -2,9 +2,8 @@
 //  PlaceLinkOpening.swift
 //  ADHD LifeOS
 //
-//  How a tapped place-action URL actually opens (F-AppDirectory-2-Links). NOT 17-gated: the
-//  notification-tap path compiles at the app's 16.0 floor, and `.universalLinksOnly` is
-//  available from iOS 10.
+//  How a tapped place-action URL actually opens (F-AppDirectory-2-Links). Pure logic on the
+//  notification-tap path; `.universalLinksOnly` is available from iOS 10.
 //
 
 import Foundation

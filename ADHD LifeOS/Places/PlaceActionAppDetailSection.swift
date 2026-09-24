@@ -3,8 +3,7 @@
 //  ADHD LifeOS
 //
 //  The action editor's "Which app" section, split from `PlaceActionsEditorView.swift` when
-//  the block-2 link field tipped the sheet over the 250-line type bar. Gated to iOS 17 with
-//  the rest of the Places feature.
+//  the block-2 link field tipped the sheet over the 250-line type bar.
 //
 
 import SwiftUI
@@ -17,7 +16,6 @@ extension PlaceActionDraft {
 }
 
 /// The pick row plus, on the custom path, the scheme / pasted-link / shown-as fields.
-@available(iOS 17.0, *)
 struct PlaceActionAppDetailSection: View {
     @Binding var draft: PlaceActionDraft
     @Binding var isPickingApp: Bool

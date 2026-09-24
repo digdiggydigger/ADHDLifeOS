@@ -119,7 +119,7 @@ struct TaskListView: View {
             )
             // One writer: the shared query drives this screen's filter, which still runs through
             // `TaskListRefinement` exactly as it did when `.searchable` fed it.
-            .onChange(of: searchModel.query) { tasksService.searchText = $0 }
+            .onChange(of: searchModel.query) { _, query in tasksService.searchText = query }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {

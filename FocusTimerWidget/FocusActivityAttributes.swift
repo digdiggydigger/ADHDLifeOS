@@ -11,7 +11,6 @@
 import ActivityKit
 import Foundation
 
-@available(iOS 16.1, *)
 nonisolated struct FocusActivityAttributes: ActivityAttributes {
     /// Everything sprint-specific lives in the content state — a replacement sprint is just a
     /// fresh Activity with fresh state — so the fixed attributes carry nothing.
@@ -145,7 +144,6 @@ private enum FocusActivityContentStateKey: String, CodingKey {
 /// `nonisolated` for the same reason the type itself is: the app module compiles with default
 /// MainActor isolation, so a plain extension would make these two methods main-actor-bound — and
 /// the OS encodes and decodes this state off the main actor.
-@available(iOS 16.1, *)
 nonisolated extension FocusActivityAttributes.ContentState {
     /// Codable is hand-written purely to tolerate a payload from a build that predates
     /// `checkpointSeconds`.

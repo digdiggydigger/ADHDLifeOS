@@ -12,7 +12,6 @@ import XCTest
 /// The resolution deliberately lives on the SHARED content state rather than in the widget's view
 /// code: the extension has no test bundle of its own, so this is the only place the rule can be
 /// asserted — and it is the rule, not the drawing, that can be wrong.
-@available(iOS 16.1, *)
 final class FocusActivityCheckpointMarkTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 

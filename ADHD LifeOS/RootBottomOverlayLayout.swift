@@ -154,7 +154,7 @@ enum RootBottomOverlayLayout {
 /// detail sheet's `@State` — so a rotation with that sheet open would dismiss it. A `Layout`
 /// whose arrangement is a property keeps the children through the change, and animates it.
 ///
-/// `Layout` is iOS 16.0, the app's floor, so no `#available` gate is needed (§7.1). The
+/// `Layout` sits below the 18 floor, so no `#available` gate is needed (§7.1). The
 /// geometry is delegated to `RootBottomOverlayLayout` so it can be unit-tested; nothing here
 /// decides a number.
 struct RootBottomOverlayArrangement: Layout {

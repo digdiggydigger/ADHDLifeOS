@@ -71,7 +71,7 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     /// App-level so a running sprint survives tab switches — the web kept it in `useLifeOSState`
-    /// for exactly this reason. The factory adds Live Activity mirroring on iOS 16.1+ (§7 gate),
+    /// for exactly this reason. The factory adds Live Activity mirroring,
     /// so the countdown also lives on the Lock Screen / Dynamic Island.
     /// Internal, not private: RootView+Doors' sprint door starts it.
     @StateObject var focusService = FocusSessionService.withLiveActivityMirroring(
@@ -170,7 +170,7 @@ struct RootView: View {
                 // F-PillStay's one non-scroll restore: a fresh tab starts with the full disc —
                 // a sticky pill over a page the user never scrolled reads as a bug. (Judgment
                 // call beyond E's stated rule; E can veto.)
-                .onChange(of: selectedTab) { _ in
+                .onChange(of: selectedTab) {
                     discScrollActivity.reset()
                     tabBarScrollActivity.reset()
                 }
@@ -178,7 +178,7 @@ struct RootView: View {
                 // `AppTabContent` keeps every visited tab alive, so appearance callbacks fire once
                 // and then effectively never again — a screen registering its own scope would
                 // leave whichever tab registered last in charge forever.
-                .onChange(of: searchScope) { searchModel.activate($0) }
+                .onChange(of: searchScope) { _, scope in searchModel.activate(scope) }
                 // Our bar, in the space the system's used to occupy. A bottom safe-area INSET:
                 // it positions the bar correctly, insets every scroll view so the last row still
                 // clears it, and — the point of E's last verdict — leaves the content itself
@@ -238,7 +238,9 @@ struct RootView: View {
                 // above it mount layers of their own (E's ARCH answer: one layer per surface).
                 .overlay { CelebrationLayer(surface: .root) }
                 // F-FanHoldsCelebration: the fan is an overlay no probe can see, so say when it is up.
-                .onChange(of: capturesHoldCelebrations) { celebrationCenter.captureChanged(isOpen: $0) }
+                .onChange(of: capturesHoldCelebrations) { _, isOpen in
+                    celebrationCenter.captureChanged(isOpen: isOpen)
+                }
                 .fullScreenCover(
                     item: $presentedRoutineRun,
                     onDismiss: { celebrationCenter.surfaceDismissed(.routineCover) },
@@ -379,7 +381,7 @@ struct RootView: View {
         // ticker is suspended with the app, so without this the finished sprint stayed "running" —
         // and its Live Activity stayed on the Lock Screen at 0:00, complete with live Pause/Stop
         // buttons — until the next ticker beat (E's bug, 2026-08-20).
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 focusService.syncNow()
                 // Foregrounding is also the moment a fresh Always grant (given in Settings while

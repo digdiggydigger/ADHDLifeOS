@@ -70,12 +70,7 @@ final class ForegroundNotificationPresenter: NSObject, UNUserNotificationCenterD
         // Foreground presentations follow the same Settings sound gate as scheduled content.
         let sound: UNNotificationPresentationOptions =
             AppFeedback.notificationSound() == nil ? [] : .sound
-        let base: UNNotificationPresentationOptions
-        if #available(iOS 14.0, *) {
-            base = [.banner, .list]
-        } else {
-            base = .alert
-        }
+        let base: UNNotificationPresentationOptions = [.banner, .list]
         completionHandler(base.union(sound))
     }
 

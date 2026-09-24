@@ -6,8 +6,9 @@
 //  mechanism by E's own framing: the routine follows you out of the app, so coming back is one
 //  tap from wherever you are.
 //
-//  DISPLAY ONLY. No buttons: interactive App Intents are the settled fast-follow, and they are
-//  iOS 17+ against this target's 16.1 floor.
+//  DISPLAY ONLY. No buttons: interactive App Intents are the settled fast-follow. (They were
+//  once above the widget's floor; since `F-Floor18` the floor is 18, and the omission is a
+//  design decision alone.)
 //
 //  §4 note: a Live Activity IGNORES the widget target's global accent, so the accent is read
 //  from this target's OWN catalog by name (`Color("AccentColor")`) rather than via `.tint` or
@@ -18,7 +19,6 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
-@available(iOS 16.1, *)
 struct RoutineLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: RoutineActivityAttributes.self) { context in
@@ -131,7 +131,6 @@ struct RoutineLiveActivity: Widget {
 
 /// The Lock Screen banner. Kept flat and quiet — it is a glance, and its whole job is to say
 /// where you are in the list and offer the way back.
-@available(iOS 16.1, *)
 struct RoutineActivityLockScreenView: View {
     let state: RoutineActivityAttributes.ContentState
 
@@ -162,7 +161,6 @@ struct RoutineActivityLockScreenView: View {
 
 /// The shared 0–1 track. A plain capsule rather than `ProgressView` so the fill colour is the
 /// catalog accent in both presentations — see the §4 note in this file's header.
-@available(iOS 16.1, *)
 struct RoutineActivityProgressTrack: View {
     let progress: Double
 

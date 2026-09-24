@@ -76,7 +76,7 @@ final class AppSearchCallSiteTests: XCTestCase {
                 + " screenshot, 2026-09-08): the root never learns the tab has gone deeper."
         )
         XCTAssertTrue(
-            root.contains(".onChange(of: searchScope) { searchModel.activate($0) }"),
+            root.contains(".onChange(of: searchScope) { _, scope in searchModel.activate(scope) }"),
             "The derived scope never reaches the model. Registering it from a screen's"
                 + " `onAppear` looks equivalent and is not: `AppTabContent` keeps every visited"
                 + " tab alive, so appearance callbacks fire once and then never again."
@@ -124,7 +124,7 @@ final class AppSearchCallSiteTests: XCTestCase {
             "Tasks never presents the search surface, so the row opens nothing."
         )
         XCTAssertTrue(
-            tasks.contains("tasksService.searchText = $0"),
+            tasks.contains(".onChange(of: searchModel.query) { _, query in tasksService.searchText = query }"),
             "The shared query no longer reaches `TasksService`, so typing filters nothing."
         )
     }

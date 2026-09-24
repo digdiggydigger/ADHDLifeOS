@@ -256,7 +256,7 @@ struct LogComposerView: View {
                 }
             }
             .tint(Color(chips.selectedFill))
-            .onChange(of: journalService.composerAttachLocation) { _ in
+            .onChange(of: journalService.composerAttachLocation) {
                 Haptics.play(.selection)
                 Task { await journalService.refreshComposerLocationPreview() }
             }

@@ -212,7 +212,7 @@ struct CapturePromoteSheet: View {
                 Text("Exact day")
                     .font(.subheadline)
             }
-            .onChange(of: hasDueDate) { newValue in
+            .onChange(of: hasDueDate) { _, newValue in
                 dueDate = newValue ? (dueDate ?? Date()) : nil
             }
             if hasDueDate {

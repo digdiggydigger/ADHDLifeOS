@@ -12,7 +12,6 @@ import XCTest
 /// buttons — interactive App Intents are the settled fast-follow. The resolution lives on the
 /// SHARED payload precisely so this app-side target can assert it; the widget extension has no
 /// test bundle of its own (the `FocusActivityAttributes` precedent).
-@available(iOS 16.1, *)
 final class RoutineActivityTests: XCTestCase {
 
     private let noon = Date(timeIntervalSince1970: 1_756_296_000)

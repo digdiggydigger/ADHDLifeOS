@@ -11,8 +11,7 @@ import SwiftUI
 
 /// The coral token, consumed by catalog NAME rather than `.tint`/`Color.accentColor` — Live Activity
 /// presentations don't apply the widget's global accent (verified in-simulator: they fall back to
-/// system blue) — and rather than the generated `Color.accent` symbol, whose `ColorResource` is
-/// iOS 17+ against this target's 16.1 floor. Still the colorset token; zero hex in Swift (§4).
+/// system blue). Still the colorset token; zero hex in Swift (§4).
 extension Color {
     static let sprintAccent = Color("AccentColor")
 }
@@ -23,7 +22,6 @@ extension Color {
 /// renders time per second), frozen while paused and full when complete. The markers are drawn on
 /// top from the content state's positions — before this, the banner showed a bare bar and the
 /// checkpoints the sprint was actually built around were invisible on the Lock Screen.
-@available(iOS 16.1, *)
 struct FocusSprintProgressTrack: View {
     let state: FocusActivityAttributes.ContentState
     let isComplete: Bool
@@ -125,7 +123,6 @@ struct FocusCheckpointMarker: View {
 
 /// The single countdown readout every presentation shares. While paused it renders a static string;
 /// when complete, a checkmark replaces it.
-@available(iOS 16.1, *)
 struct FocusCountdownReadout: View {
     let state: FocusActivityAttributes.ContentState
     let isComplete: Bool
@@ -162,7 +159,6 @@ struct FocusCountdownReadout: View {
 /// The "N of M checkpoints" caption. One view rather than two copies of the same modifiers, because
 /// it now appears on the Lock Screen banner, in the island's expanded region, and on both surfaces'
 /// completed frame.
-@available(iOS 16.1, *)
 struct FocusCheckpointCaption: View {
     let state: FocusActivityAttributes.ContentState
     let isComplete: Bool
@@ -180,7 +176,6 @@ struct FocusCheckpointCaption: View {
 
 /// Status copy shared by the Lock Screen and expanded island headers, so state is never conveyed
 /// by colour alone.
-@available(iOS 16.1, *)
 enum FocusActivityCopy {
     static func status(
         for state: FocusActivityAttributes.ContentState, isComplete: Bool

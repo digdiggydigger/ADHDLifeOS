@@ -25,27 +25,31 @@ final class ToolsPageCallSiteTests: XCTestCase {
     func testToolsViewBuildsItsCardsFromTheCatalog() throws {
         let source = try Self.appSource("Tools/ToolsView.swift")
         XCTAssertTrue(
-            source.contains("ToolsCatalog.available("),
+            source.contains("ToolsCatalog.entries"),
             "`ToolsView` no longer asks `ToolsCatalog` what to draw. The catalog can then be"
                 + " perfectly correct and perfectly tested while the page hand-rolls a second,"
                 + " drifting copy of the list — this repo's most repeated defect."
         )
     }
 
-    /// The gate that never shows up on this machine. Every simulator here is iOS 26.5, so a
-    /// hardcoded `placesSupported: true` would look completely correct in every build, every
-    /// test run and every screenshot, and ship a card that pushes nothing to a 16.x phone.
-    func testPlacesSupportIsAskedOfTheSystemAndNotHardcoded() throws {
-        let source = try Self.appSource("Tools/ToolsView.swift")
-        XCTAssertTrue(
-            source.contains("if #available(iOS 17.0, *)"),
-            "`ToolsView` no longer checks availability. `PlacesListView` is iOS 17+ and the app"
-                + " floor is 16.0."
+    /// **REVERSED by `F-Floor18`** (E, 2026-09-23: *"iOS 18, before F-D2"*). Until then this was
+    /// `testPlacesSupportIsAskedOfTheSystemAndNotHardcoded`: `ToolsView` HAD to carry a real
+    /// `if #available(iOS 17.0, *)` because Places sat above the old 16.0 floor and a hardcoded
+    /// `placesSupported: true` would have shipped a dead card to a phone no simulator here could
+    /// show. At the 18 floor the gate is dead code the compiler never flags, so the pin inverts:
+    /// no availability check and no support flag anywhere on the page. Comment-stripped, because
+    /// this very history names both.
+    func testPlacesIsUngatedAndTheSupportFlagIsGone() throws {
+        let source = try Self.code("Tools/ToolsView.swift")
+        XCTAssertFalse(
+            source.contains("#available(iOS 17"),
+            "`ToolsView` checks for iOS 17 again. The minimum is 18 (F-Floor18); the check can"
+                + " never be false and the branch under it can never run."
         )
         XCTAssertFalse(
-            source.contains("available(placesSupported: true)"),
-            "`placesSupported` is hardcoded true. That compiles and runs perfectly on the 26.5"
-                + " simulator and breaks the 16.0 floor — the one case nothing here can see."
+            source.contains("placesSupported"),
+            "`placesSupported` is back. Places is universal at the 18 floor; a flag here reopens"
+                + " the one case nothing on this machine can see."
         )
     }
 
@@ -141,16 +145,26 @@ final class ToolsPageCallSiteTests: XCTestCase {
         )
     }
 
-    /// The section is iOS 17+ because the editor a row opens is. `placesSupported` is a `Bool`
-    /// and cannot narrow availability, so this needs a real `if #available` — and every
-    /// simulator on this machine is 26.5, so nothing else would ever notice.
-    func testTheRoutinesSectionIsBehindTheSameFloorAsPlaces() throws {
-        let source = try Self.code("Tools/ToolsView.swift")
+    /// **REVERSED by `F-Floor18`.** This was `testTheRoutinesSectionIsBehindTheSameFloorAsPlaces`,
+    /// pinning `if #available(iOS 17.0, *) { ToolsRoutinesSection(` because the editor a row
+    /// opens sat above the old floor. At 18 the section is drawn unconditionally and carries no
+    /// annotation of its own.
+    func testTheRoutinesSectionIsDrawnWithNoAvailabilityGate() throws {
+        let tools = Self.collapsed(try Self.code("Tools/ToolsView.swift"))
         XCTAssertTrue(
-            Self.collapsed(source).contains("if #available(iOS 17.0, *) { ToolsRoutinesSection("),
-            "The Routines section is no longer directly inside an availability check. It pushes"
-                + " `PlaceEditorView`, which is iOS 17+, and the app floor is 16.0 — and every"
-                + " simulator on this machine is 26.5, so nothing else here would ever notice."
+            tools.contains("ToolsRoutinesSection(client: placesClient) { pushedDestination = .places }"),
+            "The Routines section is no longer drawn at all — the negative assertions below would"
+                + " pass on an empty page."
+        )
+        XCTAssertFalse(
+            tools.contains("#available(iOS 17.0, *) { ToolsRoutinesSection("),
+            "The Routines section is back inside an iOS 17 check, which can never be false at"
+                + " the 18 floor (F-Floor18)."
+        )
+        let section = try Self.code("Tools/ToolsRoutinesSection.swift")
+        XCTAssertFalse(
+            section.contains("@available(iOS"),
+            "`ToolsRoutinesSection` carries an availability annotation again."
         )
     }
 

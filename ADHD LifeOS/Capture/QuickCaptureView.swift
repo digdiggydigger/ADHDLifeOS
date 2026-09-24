@@ -95,7 +95,7 @@ struct QuickCaptureView: View {
                         .foregroundStyle(service.attachLocation ? Color.accentColor : .secondary)
                 }
             }
-            .onChange(of: service.attachLocation) { _ in Haptics.play(.selection) }
+            .onChange(of: service.attachLocation) { Haptics.play(.selection) }
             .accessibilityIdentifier("captureLocationToggle")
         }
     }

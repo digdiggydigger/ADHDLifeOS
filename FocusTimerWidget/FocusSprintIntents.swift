@@ -22,23 +22,17 @@ enum FocusSprintIntentActions {
     static var stop: (() async -> Void)?
 }
 
-@available(iOS 16.1, *)
 extension FocusActivityAttributes {
     /// Ends every Activity of this type immediately. Used by the mirror's launch cleanup and by
     /// intents that arrive in a cold-launched app with no live engine — in both cases whatever is
     /// on the Lock Screen is an orphan of a killed sprint.
     static func endAllActivities() async {
         for activity in Activity<FocusActivityAttributes>.activities {
-            if #available(iOS 16.2, *) {
-                await activity.end(nil, dismissalPolicy: .immediate)
-            } else {
-                await activity.end(using: nil, dismissalPolicy: .immediate)
-            }
+            await activity.end(nil, dismissalPolicy: .immediate)
         }
     }
 }
 
-@available(iOS 17.0, *)
 struct PauseResumeFocusSprintIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Pause or Resume Focus Sprint"
     /// Lock Screen plumbing, not a user-facing shortcut — keep it out of Spotlight/Shortcuts.
@@ -54,7 +48,6 @@ struct PauseResumeFocusSprintIntent: LiveActivityIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct StopFocusSprintIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Stop Focus Sprint"
     static let isDiscoverable = false

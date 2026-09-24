@@ -76,11 +76,11 @@ struct UndoCapsulePresenter<Fallback: View>: View {
         // and on Tasks it replaces the search row, so both halves of what just happened are out of
         // a VoiceOver user's way unless they are told.
         //
-        // **`UIAccessibility.post` on every tier, and the 17 one was considered and left out**
-        // (§7.1's filter). `AccessibilityNotification.Announcement` is iOS 17+ and adds only a
-        // priority; an undo offer is not urgent enough to interrupt a higher-priority utterance,
-        // so the tier would show the user nothing the floor cannot. This API is not deprecated.
-        .onChange(of: center.pendingAction) { action in
+        // **`UIAccessibility.post`, and `AccessibilityNotification.Announcement` was considered
+        // and left out** (§7.1's filter): it adds only a priority, and an undo offer is not urgent
+        // enough to interrupt a higher-priority utterance, so it would show the user nothing this
+        // cannot. This API is not deprecated.
+        .onChange(of: center.pendingAction) { _, action in
             guard let action else { return }
             UIAccessibility.post(notification: .announcement, argument: action.accessibilityAnnouncement)
         }

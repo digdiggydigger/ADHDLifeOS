@@ -73,8 +73,8 @@ final class FocusSessionService: ObservableObject {
     /// mutations and checkpoint crossings, cleared on end, read back after a process death.
     let sprintStore: FocusSprintPersisting?
     /// Mirrors sprint lifecycle events into the Lock Screen / Dynamic Island Live Activity.
-    /// Optional because ActivityKit is iOS 16.1+ against the 16.0 floor (§7) — and so tests can
-    /// substitute a fake.
+    /// Optional so tests can substitute a fake; the app always injects the live mirror
+    /// (`F-Floor18` — ActivityKit sits below the 18 floor).
     let activityMirror: FocusActivityMirroring?
     /// Where the sprint ran (block 3 remainder) — a closure for the `CaptureInboxService`
     /// reason: the default does the real work, a test hands over a fixed stamp. Applied only on

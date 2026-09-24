@@ -220,7 +220,7 @@ struct ComposerTextBox: View {
 
     /// The prompt as its own `Text`, which is the only way to recolour it independently:
     /// `.foregroundStyle` on the `TextField` paints the TYPED TEXT as well, so the pad's ink would
-    /// go with it. `prompt:` is iOS 15+, comfortably under this project's 16.0 floor.
+    /// go with it.
     private var prompt: Text {
         guard let placeholderAsset else { return Text(placeholder) }
         return Text(placeholder).foregroundColor(Color(placeholderAsset))

@@ -43,8 +43,7 @@ enum ChipFlowArithmetic {
 
 /// A true content-hugging flow (E's 2026-08-25 note): each chip is exactly as wide as its words
 /// and the row wraps when full — replacing the adaptive-grid arrangement whose two rigid columns
-/// left a field of empty space around short chips. `Layout` is iOS 16.0, inside the deployment
-/// floor.
+/// left a field of empty space around short chips.
 struct ChipFlowLayout: Layout {
     let spacing: CGFloat
 

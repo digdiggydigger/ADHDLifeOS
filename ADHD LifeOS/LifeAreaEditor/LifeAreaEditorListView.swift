@@ -209,7 +209,7 @@ private struct AddLifeAreaSheet: View {
                     .accessibilityIdentifier("addLifeAreaSaveButton")
                 }
             }
-            .onChange(of: service.pendingCreateConflict) { conflict in
+            .onChange(of: service.pendingCreateConflict) { _, conflict in
                 showConflictAlert = (conflict != nil)
             }
             .alert(

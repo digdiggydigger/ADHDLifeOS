@@ -8,8 +8,7 @@ import SwiftUI
 /// The places E has defined. Reached from Settings, alongside Life Areas and Tags — the
 /// established home for "things you configure once and pick from later".
 ///
-/// Gated to iOS 17 with the rest of the Places feature — see `PlaceMapPicker` for the §7 note.
-@available(iOS 17.0, *)
+/// Ungated since `F-Floor18` — see `PlaceMapPicker` for the history of the Places gate.
 struct PlacesListView: View {
     @StateObject private var service: PlacesService
     @State private var editingPlace: Place?
@@ -238,7 +237,6 @@ struct PlacesListView: View {
 }
 
 /// One place: identity glyph, name, and the radius that will actually be geofenced.
-@available(iOS 17.0, *)
 private struct PlaceRow: View {
     let place: Place
 

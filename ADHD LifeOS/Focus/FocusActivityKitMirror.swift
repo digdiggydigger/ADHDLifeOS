@@ -9,15 +9,13 @@ import Foundation
 /// The live `FocusActivityMirroring`: projects sprint lifecycle events onto an ActivityKit Live
 /// Activity (Lock Screen banner + Dynamic Island).
 ///
-/// §7 availability: ActivityKit is iOS 16.1+ against the app's 16.0 floor, so the whole type is
-/// gated — same trap class as `.sensoryFeedback`. Within it, `ActivityContent`/`staleDate` are
-/// 16.2+, hence the inner branches (on 16.1 the content is pushed without staleness, so a locked
-/// phone shows 00:00 instead of "complete" until the app next opens).
+/// §7 availability: ActivityKit (16.1) and `ActivityContent`/`staleDate` (16.2) both sit below
+/// the 18 floor (`F-Floor18`), so the type is ungated and every push carries a stale date — a
+/// locked phone shows "complete" the moment the deadline passes, never a frozen 00:00.
 ///
 /// Free-developer-account constraint: locally-updated Activities only — no push token, no
 /// remote-update or frequent-updates plumbing. The OS renders the countdown itself from the
 /// deadline, so pause/resume/extend/stop/checkpoint updates are all it ever needs.
-@available(iOS 16.1, *)
 final class FocusActivityKitMirror: FocusActivityMirroring {
     /// A finished sprint's Activity is dismissed IMMEDIATELY, on every ending.
     ///
@@ -57,16 +55,10 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
         let state = FocusActivityAttributes.ContentState(snapshot: snapshot, now: now())
         lastState = state
         do {
-            if #available(iOS 16.2, *) {
-                activity = try Activity.request(
-                    attributes: FocusActivityAttributes(),
-                    content: ActivityContent(state: state, staleDate: staleDate(for: state))
-                )
-            } else {
-                activity = try Activity.request(
-                    attributes: FocusActivityAttributes(), contentState: state
-                )
-            }
+            activity = try Activity.request(
+                attributes: FocusActivityAttributes(),
+                content: ActivityContent(state: state, staleDate: staleDate(for: state))
+            )
         } catch {
             // The request can fail (user disabled Live Activities, per-app budget exhausted).
             // The sprint itself is unaffected — the in-app bar remains the source of truth.
@@ -91,11 +83,7 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
         lastState = state
         let staleDate = staleDate(for: state)
         lastActivityTask = Task {
-            if #available(iOS 16.2, *) {
-                await activity.update(ActivityContent(state: state, staleDate: staleDate))
-            } else {
-                await activity.update(using: state)
-            }
+            await activity.update(ActivityContent(state: state, staleDate: staleDate))
         }
     }
 
@@ -112,14 +100,10 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
         self.activity = nil
         lastState = nil
         lastActivityTask = Task {
-            if #available(iOS 16.2, *) {
-                await activity.end(
-                    finalState.map { ActivityContent(state: $0, staleDate: nil) },
-                    dismissalPolicy: policy
-                )
-            } else {
-                await activity.end(using: finalState, dismissalPolicy: policy)
-            }
+            await activity.end(
+                finalState.map { ActivityContent(state: $0, staleDate: nil) },
+                dismissalPolicy: policy
+            )
         }
     }
 
@@ -131,7 +115,6 @@ final class FocusActivityKitMirror: FocusActivityMirroring {
     }
 }
 
-@available(iOS 16.1, *)
 extension FocusActivityAttributes.ContentState {
     /// Maps the engine's snapshot onto the wire state. While paused there is no live deadline, so
     /// one is synthesized from `now` plus the frozen remainder and the display is pinned to `now`
@@ -154,42 +137,33 @@ extension FocusActivityAttributes.ContentState {
 }
 
 extension FocusSessionService {
-    /// RootView's app-wide instance: Firebase history logging plus, where the OS has ActivityKit,
-    /// Live Activity mirroring (§7: 16.1+ API over the 16.0 floor, so the mirror is opt-in).
+    /// RootView's app-wide instance: Firebase history logging plus Live Activity mirroring —
+    /// ActivityKit sits below the 18 floor, so the mirror is unconditional (`F-Floor18`).
     ///
-    /// On iOS 17+ this also arms the Lock Screen buttons: their `LiveActivityIntent`s run in this
-    /// app process and reach the live engine through `FocusSprintIntentActions`. Each action
-    /// awaits the mirror's pending ActivityKit call so the redraw lands before the system
-    /// re-suspends the app.
+    /// This also arms the Lock Screen buttons: their `LiveActivityIntent`s run in this app
+    /// process and reach the live engine through `FocusSprintIntentActions`. Each action awaits
+    /// the mirror's pending ActivityKit call so the redraw lands before the system re-suspends
+    /// the app.
     static func withLiveActivityMirroring(logger: FocusSessionLogging) -> FocusSessionService {
         let notifications = NotificationCenterFocusNudgeAdapter()
         let sprintStore = UserDefaultsFocusSprintStore()
-        guard #available(iOS 16.1, *) else {
-            let service = FocusSessionService(
-                logger: logger, notificationScheduler: notifications, sprintStore: sprintStore
-            )
-            connectNotificationTaps(to: service)
-            return service
-        }
         let mirror = FocusActivityKitMirror()
         let service = FocusSessionService(
             logger: logger, activityMirror: mirror,
             notificationScheduler: notifications, sprintStore: sprintStore
         )
         connectNotificationTaps(to: service)
-        if #available(iOS 17.0, *) {
-            FocusSprintIntentActions.pauseResume = { [weak service, weak mirror] in
-                service?.togglePause()
-                await mirror?.waitForPendingUpdates()
-                // A pause must also WITHDRAW the pending nudges before the app is re-suspended,
-                // or the OS still fires them while the sprint sits frozen.
-                await service?.pendingNotificationWork()
-            }
-            FocusSprintIntentActions.stop = { [weak service, weak mirror] in
-                await service?.stop()
-                await mirror?.waitForPendingUpdates()
-                await service?.pendingNotificationWork()
-            }
+        FocusSprintIntentActions.pauseResume = { [weak service, weak mirror] in
+            service?.togglePause()
+            await mirror?.waitForPendingUpdates()
+            // A pause must also WITHDRAW the pending nudges before the app is re-suspended,
+            // or the OS still fires them while the sprint sits frozen.
+            await service?.pendingNotificationWork()
+        }
+        FocusSprintIntentActions.stop = { [weak service, weak mirror] in
+            await service?.stop()
+            await mirror?.waitForPendingUpdates()
+            await service?.pendingNotificationWork()
         }
         return service
     }
@@ -197,8 +171,8 @@ extension FocusSessionService {
     /// Arms the "Sprint complete" notification as the route out of a lingering Live Activity: a tap
     /// settles the sprint against the wall clock, which ends the Activity.
     ///
-    /// Wired on BOTH branches above — notifications are not gated on 16.1, so a device without
-    /// ActivityKit still gets a tap that finishes a sprint whose countdown expired while suspended.
+    /// Kept separate from the mirror on purpose: a user who has Live Activities switched OFF still
+    /// gets a tap that finishes a sprint whose countdown expired while suspended.
     /// `weak` because the router outlives nothing in particular but the engine is RootView's.
     private static func connectNotificationTaps(to service: FocusSessionService) {
         FocusNotificationRouter.shared.connect { [weak service] in service?.syncNow() }

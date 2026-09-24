@@ -40,11 +40,6 @@ final class PlaceTriggerEventHandler {
     private let store: ArrivalNudgeStateStoring
     private let runStore: RoutineRunStoring
     private let isEnabled: () -> Bool
-    /// The routine screen is 17-gated but crossings are not, and an account's places can come
-    /// from another device — a 16.x device receiving a qualifying crossing keeps today's
-    /// per-action notifications (never a notification whose tap can do nothing). Injectable
-    /// so both branches are pinned without an iOS 16 simulator.
-    private let routineScreenAvailable: Bool
     /// The auto-run writes, shared with the notification-tap path (`PlaceRoutineActivator`) so
     /// the two can never drift apart on stamping or validation.
     private let executor: PlaceAutoRunExecutor
@@ -60,8 +55,6 @@ final class PlaceTriggerEventHandler {
         // injection) exercises the routine branch against the REAL run store for free.
         runStore: RoutineRunStoring? = nil,
         isEnabled: @escaping () -> Bool = { AppFeedback.arrivalNudgesEnabled() },
-        routineScreenAvailable: Bool = { if #available(iOS 17.0, *) { return true }
-                                         return false }(),
         journalWriter: ((NormalizedCreateLogInput) async -> Bool)? = nil,
         captureWriter: ((NormalizedCreateCaptureInput) async -> Bool)? = nil,
         routineRecorder: RoutineRunRecording? = nil
@@ -72,7 +65,6 @@ final class PlaceTriggerEventHandler {
         self.store = store ?? UserDefaultsArrivalNudgeStateStore()
         self.runStore = runStore ?? UserDefaultsRoutineRunStore()
         self.isEnabled = isEnabled
-        self.routineScreenAvailable = routineScreenAvailable
         let live = PlaceAutoRunExecutor.live()
         executor = PlaceAutoRunExecutor(
             journalWriter: journalWriter ?? live.journalWriter,
@@ -180,14 +172,15 @@ final class PlaceTriggerEventHandler {
     /// Minting the id here rather than composing one from place + direction + date is load
     /// bearing: a `Date` serialised two ways would make every tap mismatch.
     ///
-    /// Gated on the 17-only routine screen for the shipped reason — an account's places sync
-    /// from other devices, and a 16.x device must keep today's per-action notifications rather
-    /// than post one whose tap can do nothing.
+    /// Until `F-Floor18` this was also gated on an injected `routineScreenAvailable` flag, because
+    /// the routine screen sat above the old floor and a device that could not show it had to keep
+    /// the per-action notifications instead. Every device can show it now, so the only gate left
+    /// is the routine threshold itself.
     private func offeredRoutine(
         for event: PlaceTriggerEvent, entry: AtPlaceSnapshot.PlaceEntry?
     ) -> RoutineRun? {
         let routinePlan = PlaceRoutinePlan.make(entry?.actions, for: event.kind)
-        guard routineScreenAvailable, routinePlan.qualifiesAsRoutine else { return nil }
+        guard routinePlan.qualifiesAsRoutine else { return nil }
         return RoutineRun.make(event: event, entry: entry, plan: routinePlan)
     }
 

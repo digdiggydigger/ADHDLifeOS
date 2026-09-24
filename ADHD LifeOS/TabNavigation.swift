@@ -96,8 +96,8 @@ private struct TabRootModifier: ViewModifier {
             content
                 .environment(\.tabRootScrollHandle, scrollHandle)
                 .onAppear { coordinator.report(tab, isAtRoot: isAtRoot) }
-                .onChange(of: isAtRoot) { coordinator.report(tab, isAtRoot: $0) }
-                .onChange(of: coordinator.reselectionCount(for: tab)) { _ in
+                .onChange(of: isAtRoot) { _, atRoot in coordinator.report(tab, isAtRoot: atRoot) }
+                .onChange(of: coordinator.reselectionCount(for: tab)) {
                     switch TabReselectionResponse.response(isAtRoot: isAtRoot) {
                     case .popToRoot:
                         onPopToRoot()
@@ -152,7 +152,7 @@ private struct JournalEntryRequestListener: ViewModifier {
     @EnvironmentObject private var coordinator: TabNavigationCoordinator
 
     func body(content: Content) -> some View {
-        content.onChange(of: coordinator.journalEntryRequests) { _ in onRequest() }
+        content.onChange(of: coordinator.journalEntryRequests) { onRequest() }
     }
 }
 

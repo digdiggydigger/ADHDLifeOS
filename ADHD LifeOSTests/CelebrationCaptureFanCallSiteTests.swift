@@ -17,7 +17,8 @@ final class CelebrationCaptureFanCallSiteTests: XCTestCase {
     func testRootViewTellsTheCentreWhenTheCaptureFlowOpensAndCloses() throws {
         XCTAssertTrue(
             try Self.flattened("RootView.swift").contains(
-                ".onChange(of: capturesHoldCelebrations) { celebrationCenter.captureChanged(isOpen: $0) }"
+                ".onChange(of: capturesHoldCelebrations) { _, isOpen in"
+                    + " celebrationCenter.captureChanged(isOpen: isOpen) }"
             ),
             "Nothing tells the centre the capture fan is open, so a celebration still plays over it."
         )

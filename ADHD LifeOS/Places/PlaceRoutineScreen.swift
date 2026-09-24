@@ -9,12 +9,11 @@
 //
 //  Presented as a fullScreenCover, so it sits ABOVE the capture disc and the tab bar — no
 //  clearance calls, by design (the CaptureDiscClearanceCallSiteTests table stays untouched).
-//  17-gated with the rest of the Places UI.
+//  Ungated since `F-Floor18`, with the rest of the Places UI.
 //
 
 import SwiftUI
 
-@available(iOS 17.0, *)
 struct PlaceRoutineScreen: View {
     @State private var run: RoutineRun
     private let store: RoutineRunStoring

@@ -12,8 +12,8 @@
 //  and the layer are rarely in the same space, and a `TaskDetail` Form row is drawn by the ROOT
 //  layer precisely so row clipping cannot cut the pop in half.
 //
-//  **No `#available` (§7.1).** `onGeometryChange(for:of:action:)` is back-deployed to iOS 16.0 in
-//  the 26.5 SDK, so the floor gets the same code and no tier adds anything.
+//  **No `#available` (§7.1).** `onGeometryChange(for:of:action:)` is back-deployed well below the
+//  18 floor in the 26.5 SDK, so every OS gets the same code and no tier adds anything.
 //
 
 import SwiftUI

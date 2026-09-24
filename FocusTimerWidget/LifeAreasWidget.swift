@@ -122,8 +122,8 @@ struct LifeAreasWidgetView: View {
 }
 
 #if DEBUG
-// Plain view previews: the `#Preview(as: .systemMedium)` widget-timeline macro is iOS 17+ and
-// this target's floor is 16.1 — same constraint `FocusStatsWidget` documents.
+// Plain view previews rather than the `#Preview(as: .systemMedium)` widget-timeline macro —
+// the same call `FocusStatsWidget` makes.
 #Preview("Populated") {
     LifeAreasWidgetView(
         snapshot: LifeAreasWidgetSnapshot(

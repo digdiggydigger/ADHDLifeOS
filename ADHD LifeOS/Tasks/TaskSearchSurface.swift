@@ -206,7 +206,7 @@ struct TaskSearchSurface: View {
         }
         // The surface covers the tab bar and the capture disc entirely, so it needs neither
         // clearance — the reason sheets are absent from `CaptureDiscClearanceCallSiteTests`.
-        .scrollDismissesKeyboardIfAvailable()
+        .scrollDismissesKeyboard(.immediately)
     }
 }
 
@@ -214,19 +214,5 @@ struct TaskSearchSurface: View {
 enum TaskSearchCopy {
     static func resultCount(_ count: Int) -> String {
         count == 1 ? "1 match" : "\(count) matches"
-    }
-}
-
-private extension View {
-    /// `scrollDismissesKeyboard` is iOS 16+, but the interactive mode this wants reads best with
-    /// `.immediately` on a results list. Gated because §7's floor is 16.0 and the modifier's
-    /// behaviour is only what we want from 16 up — below that the extension is a no-op.
-    @ViewBuilder
-    func scrollDismissesKeyboardIfAvailable() -> some View {
-        if #available(iOS 16.0, *) {
-            scrollDismissesKeyboard(.immediately)
-        } else {
-            self
-        }
     }
 }

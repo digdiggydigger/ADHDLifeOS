@@ -18,7 +18,6 @@
 
 import SwiftUI
 
-@available(iOS 17.0, *)
 extension PlaceRoutineScreen {
     /// Opens a step's destination through the shared `PlaceLinkOpener`, notifying rather than
     /// alerting when the app it names is not installed.

@@ -10,7 +10,6 @@
 
 import Foundation
 
-@available(iOS 16.1, *)
 extension RoutineActivityAttributes.ContentState {
     init(run: RoutineRun) {
         self.init(

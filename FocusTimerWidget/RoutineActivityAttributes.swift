@@ -9,14 +9,13 @@
 //  encodes/decodes this state off the main actor.
 //
 //  A DISPLAY Activity (F-Routines-5): progress, the next step, and a tap that returns to the
-//  screen. Deliberately NO buttons — interactive App Intents are the settled fast-follow, and
-//  they are a different capability (iOS 17+) against this target's 16.1 floor.
+//  screen. Deliberately NO buttons — interactive App Intents are the settled fast-follow, a
+//  design decision rather than a floor one since `F-Floor18`.
 //
 
 import ActivityKit
 import Foundation
 
-@available(iOS 16.1, *)
 nonisolated struct RoutineActivityAttributes: ActivityAttributes {
     /// Everything routine-specific lives in the content state — a replacement routine is just a
     /// fresh Activity with fresh state — so the fixed attributes carry nothing.

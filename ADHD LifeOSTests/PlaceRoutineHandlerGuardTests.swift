@@ -7,7 +7,7 @@ import XCTest
 @testable import ADHD_LifeOS
 
 /// The routine branch's GUARDS (F-Routines-2-Notify): everything that must keep today's
-/// behaviour byte-for-byte — below the 2-step threshold, below iOS 17 — plus the kill switch
+/// behaviour byte-for-byte — below the 2-step threshold — plus the kill switch
 /// and newest-wins replacement, both of which Block A moved. The branch's own behaviour lives
 /// in `PlaceRoutineHandlerTests`; the shared rig in `RoutineHandlerHarness`.
 @MainActor
@@ -68,21 +68,27 @@ final class PlaceRoutineHandlerGuardTests: XCTestCase {
         )
     }
 
-    func testBelowIOS17_keepsThePerActionSpray_andWritesNoRun() async {
-        let harness = RoutineHandlerHarness(routineScreenAvailable: false)
+    /// **REVERSED by `F-Floor18`** (E, 2026-09-23: *"iOS 18, before F-D2"*). Until then this
+    /// pinned the branch below the routine screen's iOS 17 gate: a device that could not show the
+    /// screen was handed `routineScreenAvailable: false` and had to keep the per-action spray,
+    /// never a notification whose tap could do nothing. At the 18 floor every device can show
+    /// the screen, the injected flag is gone from the handler and the harness, and a qualifying
+    /// crossing offers the routine on EVERY device — one routine notification, no spray, and
+    /// still no run written at the crossing (Block A).
+    func testEveryDeviceIsOfferedTheRoutine_theScreenGateIsGone() async {
+        let harness = RoutineHandlerHarness()
         harness.installGym(actions: [harness.spotifyAction(), harness.textAction()])
+        let event = harness.event(.arrival)
 
-        await harness.sut.handle(harness.event(.arrival))
+        await harness.sut.handle(event)
 
-        XCTAssertTrue(
-            harness.runStore.writes.isEmpty,
-            "a run keyed to a screen this device cannot show would be a notification whose"
-                + " tap can do nothing — below iOS 17 the spray stays"
+        XCTAssertTrue(harness.runStore.writes.isEmpty, "Block A: the crossing still writes no run")
+        XCTAssertEqual(
+            harness.notifier.posted.map(\.identifier),
+            [PlaceRoutineNotificationContent.identifier(placeId: event.placeId, kind: .arrival)],
+            "one routine notification and nothing else — the per-action spray was the branch"
+                + " for devices below the old gate, and no such device can run this build"
         )
-        XCTAssertEqual(harness.notifier.posted.count, 2)
-        XCTAssertTrue(harness.notifier.posted.allSatisfy {
-            $0.identifier.hasPrefix(PlaceActionNotificationContent.identifierPrefix)
-        })
     }
 
     /// Newest-wins survives Block A but moves to the tap with everything else: another place's

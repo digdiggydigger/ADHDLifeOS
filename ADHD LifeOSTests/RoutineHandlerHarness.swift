@@ -148,7 +148,7 @@ final class RoutineHandlerHarness {
     /// both halves against one store is the only way to assert the two agree.
     let activator: PlaceRoutineActivator
 
-    init(enabled: Bool = true, routineScreenAvailable: Bool = true) {
+    init(enabled: Bool = true) {
         let log = self.log
         let writers = self.writers
         runStore = RoutineFakeRunStore(log: log)
@@ -160,7 +160,7 @@ final class RoutineHandlerHarness {
         sut = PlaceTriggerEventHandler(
             recorder: recorder, notifier: notifier, store: store,
             runStore: runStore,
-            isEnabled: { enabled }, routineScreenAvailable: routineScreenAvailable,
+            isEnabled: { enabled },
             journalWriter: executor.journalWriter,
             captureWriter: executor.captureWriter,
             routineRecorder: routineRecorder

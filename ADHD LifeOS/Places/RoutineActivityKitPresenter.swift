@@ -10,7 +10,6 @@
 import ActivityKit
 import Foundation
 
-@available(iOS 16.1, *)
 @MainActor
 final class RoutineActivityKitPresenter: RoutineActivityPresenting {
     /// ONE instance, app-wide — the `PlaceActionNotificationRouter.shared` shape.
@@ -30,16 +29,10 @@ final class RoutineActivityKitPresenter: RoutineActivityPresenting {
         guard ActivityAuthorizationInfo().areActivitiesEnabled, activity == nil else { return }
         let state = RoutineActivityAttributes.ContentState(run: run)
         do {
-            if #available(iOS 16.2, *) {
-                activity = try Activity.request(
-                    attributes: RoutineActivityAttributes(),
-                    content: ActivityContent(state: state, staleDate: nil)
-                )
-            } else {
-                activity = try Activity.request(
-                    attributes: RoutineActivityAttributes(), contentState: state
-                )
-            }
+            activity = try Activity.request(
+                attributes: RoutineActivityAttributes(),
+                content: ActivityContent(state: state, staleDate: nil)
+            )
         } catch {
             // The request can fail (Live Activities disabled, per-app budget exhausted). The
             // routine itself is unaffected — the screen and Today's card remain the truth.
@@ -51,11 +44,7 @@ final class RoutineActivityKitPresenter: RoutineActivityPresenting {
         guard let activity else { return }
         let state = RoutineActivityAttributes.ContentState(run: run)
         Task {
-            if #available(iOS 16.2, *) {
-                await activity.update(ActivityContent(state: state, staleDate: nil))
-            } else {
-                await activity.update(using: state)
-            }
+            await activity.update(ActivityContent(state: state, staleDate: nil))
         }
     }
 
@@ -65,11 +54,7 @@ final class RoutineActivityKitPresenter: RoutineActivityPresenting {
         activity = nil
         Task {
             for live in Activity<RoutineActivityAttributes>.activities {
-                if #available(iOS 16.2, *) {
-                    await live.end(nil, dismissalPolicy: .immediate)
-                } else {
-                    await live.end(using: nil, dismissalPolicy: .immediate)
-                }
+                await live.end(nil, dismissalPolicy: .immediate)
             }
         }
     }

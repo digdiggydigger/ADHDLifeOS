@@ -7,8 +7,8 @@ import Foundation
 
 /// A value snapshot of the running sprint, handed to the Live Activity mirror on every lifecycle
 /// event. Pure data with no ActivityKit dependency, so `FocusSessionService`'s mirroring stays
-/// unit-testable on the iOS 16.0 floor with a fake — the same seam convention as
-/// `FocusSessionLogging` and the rest of the `*Adapting` family.
+/// unit-testable with a fake — the same seam convention as `FocusSessionLogging` and the rest
+/// of the `*Adapting` family.
 struct FocusActivitySnapshot: Equatable, Sendable {
     let taskTitle: String
     let lifeAreaEmoji: String

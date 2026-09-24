@@ -70,13 +70,17 @@ final class RoutineRecordSiteTests: XCTestCase {
         XCTAssertTrue(harness.routineRecorder.events.isEmpty, "one step is not a routine, so no record")
     }
 
-    func testBelowTheScreenGate_recordsNoOffer() async {
-        let harness = RoutineHandlerHarness(routineScreenAvailable: false)
+    /// **REVERSED by `F-Floor18`** (E, 2026-09-23). This used to inject
+    /// `routineScreenAvailable: false` and assert that a device below the routine screen's old
+    /// iOS 17 gate recorded no offer, because it posted none. The gate and the flag are gone at
+    /// the 18 floor: the same two-step crossing now offers, and records, on every device.
+    func testEveryDeviceRecordsTheOffer_theScreenGateIsGone() async {
+        let harness = RoutineHandlerHarness()
         harness.installGym(actions: [harness.spotifyAction(), harness.textAction()])
 
         await harness.sut.handle(harness.event(.arrival))
 
-        XCTAssertTrue(harness.routineRecorder.events.isEmpty)
+        XCTAssertEqual(harness.routineRecorder.events, ["offered"])
     }
 
     // MARK: - Site 2: the tap records the START

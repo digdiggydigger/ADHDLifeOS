@@ -536,3 +536,36 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Next session starts at:** `F-Floor18`, THEN `F-D2-ComposerKeyboardLayout`, from
   `handoff/START-HERE-floor18-then-D2.md`.
 
+### Session 9 — 2026-09-24, the floor: `F-Floor18` (iOS 16 → 18), BEFORE `F-D2`
+- **Landed:** `F-Floor18`, six commits on `chore/floor-ios18`, one PR. Suite **3,320 / 0**,
+  SwiftLint **0 / 886**, CLEAN build of all four targets SUCCEEDED, coverage **30.18%
+  (15,074/49,955)** — register edition 80 has every figure. **Not an audit block, but E's call
+  put it in front of the whole audit** (*"do it in the fresh session BEFORE anything else"*).
+- **The brief was checked first** and was accurate on the block; `main` was one docs-only PR
+  ahead of the SHA E quoted (#193, a register candidate). E answered four questions at the start:
+  proceed with the six-commit order; keep `InertRoutineActivityPresenter` for previews; install
+  on the phone as soon as the code commits were green; and *"Can you install for me?"* for the
+  iOS 18 simulator runtime — which turned out to be impossible from the CLI (register §A).
+- **What moved, in numbers:** six build settings 16.0/16.1 → 18.0; **89** availability checks
+  below 18 (the RED count; the spec's "~95" was a grep that included four comment lines) → **0**;
+  Places' 54 `@available(iOS 17.0, *)` and the three absence flags gone; **35** deprecated
+  `onChange` spellings → 0 on a clean build; eleven tests REVERSED with the reason quoted, none
+  deleted; ~50 comments that stated the old floor rewritten in the same commits as their code.
+- **TDD as run:** `DeploymentFloorTests` written first, RED on the untouched tree (7 failures: six
+  settings + one 89-offender list), the settings test GREEN in commit 1, the gate test held in the
+  working copy (backed up) and GREEN in commit 4 when the last gate went. Red-checked both ways at
+  the end: a planted 17 gate → 1 failure; a planted 16.0 target → 1 failure; both restored and
+  re-run green.
+- **Where it departed from the spec:** `ToolsCatalog.entries` (a constant) instead of a
+  parameterless `available()`; the ActivityKit files' 17 sites went with their files in commit 2;
+  the inert presenter KEPT for previews (E); one widget-bundle comment caught by the final grep
+  after the coverage run and fixed comment-only in the docs commit.
+- **Traps met:** BSD `sed` has no `0,/re/` — the first red-check planted only the gate half, so
+  the target half was re-run with a Python edit; the compiler's `onChange` list had two pins the
+  spec did not name (`AppSearchCallSiteTests` twice); `PlaceTriggerEventHandler` must not contain
+  the word "activity" (a call-site test), so its rewritten comments avoid it.
+- **`apple-design` / RM-on:** neither owed — nothing visible changed on E's 27.0 phone.
+- **Owed to E:** nothing beyond the device smoke result in edition 80. **Owed to the code:**
+  nothing.
+- **Next session starts at:** `F-D2-ComposerKeyboardLayout`, from
+  `handoff/START-HERE-adhd-audit-arc-D2-keyboard.md`, with ONE Step 0 question.

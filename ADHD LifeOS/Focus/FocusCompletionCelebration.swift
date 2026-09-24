@@ -19,10 +19,11 @@ import SwiftUI
 /// Confirm, one restored by a relaunch) opens in that pose from its first frame, in every mode. So
 /// the celebration is something that happens TO the approved card, never a change to it.
 ///
-/// **CLAUDE.md §7.1's second two-branch exemplar.** iOS 16.0 is a floor, not a ceiling, and this is
-/// a DEGRADED site (feedback is never absent), so the tick always has an `else`. The three modes and
-/// why there is no iOS 17 tier are `FocusCompletionCelebrationMotion`:
-/// - **`.full`**, the 16 path: block 4's burst, at the longer length E asked for.
+/// **CLAUDE.md §7.1's two-branch exemplar** — the only one left since `F-Floor18` retired
+/// `.haptic`'s floor branch. iOS 18 is a floor, not a ceiling, and this is a DEGRADED site
+/// (feedback is never absent), so the tick always has an `else`. The three modes and why the floor
+/// path uses no symbol effect are `FocusCompletionCelebrationMotion`:
+/// - **`.full`**, the floor path (iOS 18–25): block 4's burst, at the longer length E asked for.
 /// - **`.reduced`**, Reduce Motion ON on any OS: the same two beats as a cross-fade. Geometry is
 ///   pinned at rest and only opacity travels (§7.2).
 /// - **`.modern`**, iOS 26: the tick draws itself on (`FocusCompletionDrawOnTick`, below).
@@ -71,8 +72,8 @@ struct FocusCompletionCelebration: View {
         geometryPinned = opening.geometryPinned
     }
 
-    /// The `ToolsView.placesSupported` shape. It only feeds `resolve`: a `Bool` cannot narrow
-    /// availability, so the tick site still carries its own `#available`.
+    /// Feeds `resolve` only: a `Bool` cannot narrow availability, so the tick site still carries
+    /// its own `#available`.
     static var drawOnAvailable: Bool {
         if #available(iOS 26.0, *) { return true }
         return false

@@ -121,7 +121,7 @@ struct AreasView: View {
                 Task { await service.load() }
             }
             .onAppear { momentumPreferences = momentumPreferencesStore.read() }
-            .onChange(of: isPresentingEditor) { presented in
+            .onChange(of: isPresentingEditor) { _, presented in
                 if !presented { Task { await service.load() } }
             }
             .tabRoot(.areas, isAtRoot: !isPresentingEditor && areasPath.isEmpty) {
