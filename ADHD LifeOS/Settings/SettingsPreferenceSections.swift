@@ -14,32 +14,42 @@ extension SettingsView {
 
     var momentumSection: some View {
         Section {
-            Stepper(
-                value: Binding(
-                    get: { momentumPreferences.dailyGoal },
-                    set: { newValue in
-                        momentumPreferences.dailyGoal = newValue
-                        momentumPreferencesStore.write(momentumPreferences)
-                    }
-                ),
-                in: MomentumPreferences.goalRange,
-                onEditingChanged: { editing in
-                    // E's 2026-08-27 call: a stepper confirms ONCE, on release — holding to ramp a
-                    // value must not machine-gun. `onEditingChanged` goes false when the press ends,
-                    // which is also the end of a single tap, so every interaction ticks exactly once.
-                    if !editing { Haptics.play(.selection) }
-                },
-                label: {
-                    LabeledContent(
-                        "Daily goal",
-                        value: "\(momentumPreferences.dailyGoal) "
-                            + (momentumPreferences.dailyGoal == 1 ? "item" : "items")
-                    )
+            // `F-E1-WeeklyChain` (E's round 3, "Off until you set one"): the goal is OFF by default
+            // and the Stepper appears only once it is on — a Stepper cannot show "no goal".
+            Toggle("Set a daily goal", isOn: Binding(
+                get: { momentumPreferences.dailyGoal != nil },
+                set: { newValue in
+                    momentumPreferences.setDailyGoalEnabled(newValue)
+                    momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                 }
-            )
-            .accessibilityIdentifier("settingsMomentumGoalStepper")
+            ))
+            .accessibilityIdentifier("settingsMomentumGoalToggle")
 
-            Toggle("Show streaks", isOn: Binding(
+            if let dailyGoal = momentumPreferences.dailyGoal {
+                Stepper(
+                    value: Binding(
+                        get: { dailyGoal },
+                        set: { newValue in
+                            momentumPreferences.dailyGoal = newValue
+                            momentumPreferencesStore.write(momentumPreferences)
+                        }
+                    ),
+                    in: MomentumPreferences.goalRange,
+                    onEditingChanged: { editing in
+                        // E's 2026-08-27 call: a stepper confirms ONCE, on release — holding to ramp
+                        // a value must not machine-gun. `onEditingChanged` goes false when the press
+                        // ends, which is also the end of a single tap, so every interaction ticks once.
+                        if !editing { Haptics.play(.selection) }
+                    },
+                    label: {
+                        LabeledContent("Daily goal", value: "\(dailyGoal) " + (dailyGoal == 1 ? "item" : "items"))
+                    }
+                )
+                .accessibilityIdentifier("settingsMomentumGoalStepper")
+            }
+
+            Toggle("Show weekly chain", isOn: Binding(
                 get: { momentumPreferences.showStreaks },
                 set: { newValue in
                     momentumPreferences.showStreaks = newValue
@@ -48,6 +58,29 @@ extension SettingsView {
                 }
             ))
             .accessibilityIdentifier("settingsMomentumStreaksToggle")
+
+            // Round 5b: "Weekly streak N → '3 days' (the default; changeable in Settings)".
+            Stepper(
+                value: Binding(
+                    get: { momentumPreferences.weeklyActiveDayGoal },
+                    set: { newValue in
+                        momentumPreferences.weeklyActiveDayGoal = newValue
+                        momentumPreferencesStore.write(momentumPreferences)
+                    }
+                ),
+                in: WeeklyActiveChain.goalRange,
+                onEditingChanged: { editing in
+                    if !editing { Haptics.play(.selection) }
+                },
+                label: {
+                    LabeledContent(
+                        "Active days a week",
+                        value: "\(momentumPreferences.weeklyActiveDayGoal) "
+                            + (momentumPreferences.weeklyActiveDayGoal == 1 ? "day" : "days")
+                    )
+                }
+            )
+            .accessibilityIdentifier("settingsMomentumChainStepper")
 
             Toggle("Count cleared captures", isOn: Binding(
                 get: { momentumPreferences.countClearedCaptures },
@@ -82,8 +115,10 @@ extension SettingsView {
             Text("What counts as momentum")
         } footer: {
             Text(
-                "Turn streaks off and the app keeps every number but stops counting consecutive "
-                    + "days. Counting cleared captures lets anything you archive, promote or "
+                "A week joins your chain once you're active on that many days: closing a task, "
+                    + "finishing a sprint, writing in your journal or sorting a capture. One missed "
+                    + "week a month is repaired automatically. Hide the chain and every number "
+                    + "stays. Counting cleared captures lets anything you archive, promote or "
                     + "journal from the inbox advance the ring too. Counting nudges does the same "
                     + "for every nudge you dismiss today. Weekly charts can be hidden without "
                     + "losing any numbers."
@@ -95,27 +130,36 @@ extension SettingsView {
 
     var focusSection: some View {
         Section {
-            Stepper(
-                value: Binding(
-                    get: { momentumPreferences.focusDailyGoalMinutes },
-                    set: { newValue in
-                        momentumPreferences.focusDailyGoalMinutes = newValue
-                        momentumPreferencesStore.write(momentumPreferences)
-                    }
-                ),
-                in: MomentumPreferences.focusGoalRange,
-                step: 5,
-                onEditingChanged: { editing in
-                    // E's 2026-08-27 call: a stepper confirms ONCE, on release — holding to ramp a
-                    // value must not machine-gun. `onEditingChanged` goes false when the press ends,
-                    // which is also the end of a single tap, so every interaction ticks exactly once.
-                    if !editing { Haptics.play(.selection) }
-                },
-                label: {
-                    LabeledContent("Daily focus goal", value: "\(momentumPreferences.focusDailyGoalMinutes) min")
+            Toggle("Set a daily focus goal", isOn: Binding(
+                get: { momentumPreferences.focusDailyGoalMinutes != nil },
+                set: { newValue in
+                    momentumPreferences.setFocusGoalEnabled(newValue)
+                    momentumPreferencesStore.write(momentumPreferences)
+                    Haptics.play(.selection)
                 }
-            )
-            .accessibilityIdentifier("settingsFocusGoalStepper")
+            ))
+            .accessibilityIdentifier("settingsFocusGoalToggle")
+
+            if let focusGoal = momentumPreferences.focusDailyGoalMinutes {
+                Stepper(
+                    value: Binding(
+                        get: { focusGoal },
+                        set: { newValue in
+                            momentumPreferences.focusDailyGoalMinutes = newValue
+                            momentumPreferencesStore.write(momentumPreferences)
+                        }
+                    ),
+                    in: MomentumPreferences.focusGoalRange,
+                    step: 5,
+                    onEditingChanged: { editing in
+                        if !editing { Haptics.play(.selection) }
+                    },
+                    label: {
+                        LabeledContent("Daily focus goal", value: "\(focusGoal) min")
+                    }
+                )
+                .accessibilityIdentifier("settingsFocusGoalStepper")
+            }
 
             Stepper(
                 value: Binding(
@@ -139,8 +183,9 @@ extension SettingsView {
             Text("Focus")
         } footer: {
             Text(
-                "The daily goal is what the focus charts and the Home Screen widget's ring measure "
-                    + "against. The sprint length is where a one-tap start begins for a task with "
+                "Set a focus goal and the focus charts and the Home Screen widget measure your "
+                    + "day against it; without one they show only what you did. The sprint length "
+                    + "is where a one-tap start begins for a task with "
                     + "no plan of its own — a task's saved plan always wins."
             )
         }

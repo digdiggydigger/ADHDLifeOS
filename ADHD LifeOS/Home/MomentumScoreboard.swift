@@ -3,8 +3,10 @@
 //  ADHD LifeOS
 //
 //  The pure arithmetic behind Home's Momentum scoreboard (Concept C, 2026-08-24): closure ring,
-//  streak, best-next-move and per-area weekly rates. Everything derives from fields the app
-//  already stores — `completed_at` stamps and `focus_duration_seconds` — no new backend data.
+//  best-next-move and per-area weekly rates. Everything derives from fields the app already
+//  stores — `completed_at` stamps and `focus_duration_seconds` — no new backend data. The daily
+//  streak, its best run and its line were retired by `F-E1-WeeklyChain` for E's weekly chain
+//  (`WeeklyActiveChain`).
 //  Palette note: the original "structure only" call was superseded 2026-08-24 by E's v3
 //  palette decision (Option A) — the views now render these numbers in the v3 State and Area
 //  tokens (F-V3-Today).
@@ -13,33 +15,6 @@
 import Foundation
 
 enum MomentumScoreboard {
-    /// The ring's denominator until the Momentum settings block makes it a persisted preference.
-    static let defaultDailyGoal = 5
-
-    /// Consecutive days with at least one closure, counting back from today — or from yesterday
-    /// when today is still empty, because an unfinished day is not yet a miss. Days, not items:
-    /// three closures on Tuesday are one day of streak. Honest-counterweight rule: a streak never
-    /// counts a miss, it just stops.
-    static func streak(tasks: [TaskItem], asOf now: Date = .now, calendar: Calendar = .current) -> Int {
-        let closedDays = Set(
-            tasks.compactMap { task -> Date? in
-                guard task.status == .done, let completedAt = task.completedAt else { return nil }
-                return calendar.startOfDay(for: completedAt)
-            }
-        )
-        let today = calendar.startOfDay(for: now)
-        var cursor = closedDays.contains(today)
-            ? today
-            : calendar.date(byAdding: .day, value: -1, to: today) ?? today
-        var run = 0
-        while closedDays.contains(cursor) {
-            run += 1
-            guard let previous = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
-            cursor = previous
-        }
-        return run
-    }
-
     /// How full the closure ring draws. A non-positive goal degrades to "any closure fills it"
     /// rather than dividing by zero.
     static func ringProgress(closed: Int, goal: Int) -> Double {
@@ -134,25 +109,6 @@ enum MomentumScoreboard {
         }
     }
 
-    /// Which of the trailing seven days saw a closure — oldest first, today last, the dot row
-    /// under the streak.
-    static func trailingWeekClosureFlags(
-        tasks: [TaskItem],
-        asOf now: Date = .now,
-        calendar: Calendar = .current
-    ) -> [Bool] {
-        let today = calendar.startOfDay(for: now)
-        let closedDays = Set(
-            tasks.compactMap { task -> Date? in
-                guard task.status == .done, let completedAt = task.completedAt else { return nil }
-                return calendar.startOfDay(for: completedAt)
-            }
-        )
-        return (0..<7).reversed().compactMap { back in
-            calendar.date(byAdding: .day, value: -back, to: today).map { closedDays.contains($0) }
-        }
-    }
-
     /// Captures whose inbox-exit stamp is today — the ring's capture contribution when the
     /// Settings toggle counts them. Only the stamp counts: a processed capture with no
     /// `clearedAt` predates the stamp and belongs to no particular day.
@@ -213,43 +169,6 @@ enum MomentumScoreboard {
         let minutes = todays.reduce(0) { $0 + $1.focusedSeconds } / 60
         guard minutes >= 1 else { return "\(sessionsPart) today" }
         return "\(sessionsPart) · \(minutes) min today"
-    }
-
-    /// The longest run of consecutive closure days anywhere in history — derived, never stored,
-    /// from the same `completed_at` stamps as the live streak (E's v3 call: ship it by deriving).
-    static func bestStreak(tasks: [TaskItem], calendar: Calendar = .current) -> Int {
-        let closedDays = Set(
-            tasks.compactMap { task -> Date? in
-                guard task.status == .done, let completedAt = task.completedAt else { return nil }
-                return calendar.startOfDay(for: completedAt)
-            }
-        )
-        var best = 0
-        for day in closedDays {
-            // Only run starts pay the walk, so the scan stays O(n) in closure days.
-            guard let previous = calendar.date(byAdding: .day, value: -1, to: day),
-                  !closedDays.contains(previous) else { continue }
-            var run = 1
-            var cursor = day
-            while let next = calendar.date(byAdding: .day, value: 1, to: cursor),
-                  closedDays.contains(next) {
-                run += 1
-                cursor = next
-            }
-            best = max(best, run)
-        }
-        return best
-    }
-
-    /// The line beside the streak count. After a close it names the best-ever run (v3's
-    /// "Streak kept. Best is 9.") — clamped so it never reads below the run you are on.
-    static func streakLine(streak: Int, best: Int, closedToday: Int) -> String {
-        if closedToday > 0, streak > 0 {
-            return "Streak kept. Best is \(max(best, streak))."
-        }
-        return streak == 1
-            ? "One day closed. Keep it alive today."
-            : "\(streak) days closed in a row."
     }
 
     /// A life-area row's status line, tone included. The staleness clause only speaks from a real

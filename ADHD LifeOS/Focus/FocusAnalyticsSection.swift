@@ -48,7 +48,7 @@ struct FocusAnalyticsSection: View {
             case .loaded(let sessions) where !sessions.isEmpty:
                 WeeklyFocusSummaryWidget(
                     buckets: FocusAnalytics.currentWeek(sessions: sessions),
-                    dailyGoalMinutes: UserDefaultsMomentumPreferencesStore().read().focusDailyGoalMinutes
+                    dailyGoalMinutes: UserDefaultsMomentumPreferencesStore().read().focusDailyGoalMinutes ?? 0
                 )
                 ProductivityTrendChart(buckets: FocusAnalytics.rollingDays(sessions: sessions))
             case .failed(let message):

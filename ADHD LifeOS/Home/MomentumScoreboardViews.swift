@@ -96,25 +96,31 @@ struct MomentumChip: View {
     }
 }
 
-/// The scoreboard header: today's closure ring beside the streak (or, with no streak alive, the
-/// honest "still open" counterweight — nothing here ever counts a miss). v3 draws this naked on
-/// the page, not in a card, and paints the counts green the moment something closes today.
+/// The scoreboard header: today's closed count beside the honest "still open" counterweight. v3
+/// draws this naked on the page, not in a card, and paints the count green the moment something
+/// closes today.
+///
+/// `F-E1-WeeklyChain` changed it twice over, both by E's round 3. **The ring is drawn only once a
+/// daily goal is SET** (*"No ring and no percentage until the user chooses a goal in Settings"*),
+/// and every install decodes to "no goal", so the plain count is what nearly everyone sees. **The
+/// streak column is gone** (*"the closing streak '6 days · Best is 6'"* goes), so the counterweight
+/// is no longer the no-streak fallback but the column itself. `F-E3` retires the whole card.
 struct MomentumRingCard: View {
     let closedToday: Int
-    let goal: Int
-    let streak: Int
-    /// Best-ever run, derived from history — named in the streak line after a close.
-    let bestStreak: Int
+    /// `nil` = no daily goal set: no ring, no "of N".
+    let goal: Int?
     let openCount: Int
-    /// Trailing seven days, oldest first — the dot row.
-    let weekFlags: [Bool]
     /// The shortest due task's effort ("15 min"), feeding the counterweight line.
     let nextEffortLabel: String?
-    /// Where the RING is, globally (`F-CTACelebrations-5`). Reported rather than read, because the
-    /// daily goal is requested from `HomeView` and R-h's fallback pop has to leave from the ring
-    /// and not from the middle of a card that spans the screen. Defaulted, so every preview and
-    /// every existing call site is unchanged.
+    /// Where the COUNT is, globally (`F-CTACelebrations-5`). Reported rather than read, because the
+    /// daily goal is requested from `HomeView` and R-h's fallback pop has to leave from here and
+    /// not from the middle of a card that spans the screen. Defaulted, so every preview and every
+    /// existing call site is unchanged.
     var onRingOrigin: (CGPoint) -> Void = { _ in }
+
+    /// The ring's diameter — kept as the count's footprint when no ring is drawn, so setting a
+    /// goal in Settings adds the ring around the number without moving anything else.
+    private static let countSize: CGFloat = 126
 
     private var countColor: Color {
         closedToday > 0 ? Color("StateGo") : Color("LabelPrimary")
@@ -122,58 +128,23 @@ struct MomentumRingCard: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            ClosureRing(
-                progress: MomentumScoreboard.ringProgress(closed: closedToday, goal: goal),
-                size: 126,
-                lineWidth: 10,
-                arcStyle: AnyShapeStyle(Color("StateGoVivid"))
-            ) {
-                VStack(spacing: 0) {
-                    Text("\(closedToday)")
-                        .font(.largeTitle.bold())
+            count
+                .celebrationPopOrigin(onRingOrigin)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Still open")
+                    .sectionLabel()
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("\(openCount)")
+                        .font(.title.bold())
                         .tracking(-1)
                         .monospacedDigit()
-                        .foregroundStyle(countColor)
-                    Text("of \(goal) closed")
-                        .sectionLabel()
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .celebrationPopOrigin(onRingOrigin)
-            VStack(alignment: .leading, spacing: 4) {
-                if streak > 0 {
-                    Text("Streak")
-                        .sectionLabel()
-                        .foregroundStyle(.secondary)
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(streak)")
-                            .font(.title.bold())
-                            .tracking(-1)
-                            .monospacedDigit()
-                            .foregroundStyle(countColor)
-                        Text(streak == 1 ? "day" : "days")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    dotRow
-                    Text(MomentumScoreboard.streakLine(streak: streak, best: bestStreak, closedToday: closedToday))
+                    Text(openCount == 1 ? "item" : "items")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    Text("Still open")
-                        .sectionLabel()
-                        .foregroundStyle(.secondary)
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(openCount)")
-                            .font(.title.bold())
-                            .tracking(-1)
-                            .monospacedDigit()
-                        Text(openCount == 1 ? "item" : "items")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    Text(nextEffortLabel.map { "One of them is \($0)." } ?? "Close one to start a streak.")
+                }
+                if let nextEffortLabel {
+                    Text("One of them is \(nextEffortLabel).")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -185,16 +156,34 @@ struct MomentumRingCard: View {
         .accessibilityIdentifier("homeMomentumRing")
     }
 
-    private var dotRow: some View {
-        HStack(spacing: 4) {
-            ForEach(Array(weekFlags.enumerated()), id: \.offset) { _, closed in
-                Circle()
-                    .fill(closed ? Color("StateGoVivid") : Color("TrackNeutralStrong"))
-                    .frame(width: 8, height: 8)
+    @ViewBuilder
+    private var count: some View {
+        if let goal {
+            ClosureRing(
+                progress: MomentumScoreboard.ringProgress(closed: closedToday, goal: goal),
+                size: Self.countSize,
+                lineWidth: 10,
+                arcStyle: AnyShapeStyle(Color("StateGoVivid"))
+            ) {
+                countLabel(caption: "of \(goal) closed")
             }
+        } else {
+            countLabel(caption: "closed today")
+                .frame(width: Self.countSize, height: Self.countSize)
         }
-        .padding(.vertical, 4)
-        .accessibilityHidden(true)
+    }
+
+    private func countLabel(caption: String) -> some View {
+        VStack(spacing: 0) {
+            Text("\(closedToday)")
+                .font(.largeTitle.bold())
+                .tracking(-1)
+                .monospacedDigit()
+                .foregroundStyle(countColor)
+            Text(caption)
+                .sectionLabel()
+                .foregroundStyle(.secondary)
+        }
     }
 }
 

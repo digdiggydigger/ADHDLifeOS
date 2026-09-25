@@ -34,22 +34,20 @@ final class MomentumTaskContextTests: XCTestCase {
 
     // MARK: - Close button
 
-    /// Only open tasks carry the button now — closing is one-way (E's b11 addendum removed
-    /// Reopen everywhere), so the label no longer takes a status.
-    func testCloseButtonLabel_statesTheStreakConsequence() {
+    /// REVERSED (`F-E1-WeeklyChain`) from `testCloseButtonLabel_statesTheStreakConsequence`. E,
+    /// round 8b: *"'Close it — makes today count'"* — shown only while today has no activity yet,
+    /// *"the gamification principle framed as a gain toward the weekly chain, never a loss."*
+    func testCloseButtonLabel_namesTheGainWhileTodayHasNotCounted() {
         XCTAssertEqual(
-            MomentumTaskContext.closeButtonLabel(streak: 7),
-            "Close it — keeps a 7-day streak"
-        )
-        XCTAssertEqual(
-            MomentumTaskContext.closeButtonLabel(streak: 1),
-            "Close it — keeps a 1-day streak"
+            MomentumTaskContext.closeButtonLabel(hasCountedToday: false),
+            "Close it — makes today count"
         )
     }
 
-    /// No streak, no invented consequence.
-    func testCloseButtonLabel_withoutAStreak() {
-        XCTAssertEqual(MomentumTaskContext.closeButtonLabel(streak: 0), "Close it")
+    /// REVERSED from `testCloseButtonLabel_withoutAStreak`: once today counts, closing another task
+    /// adds nothing to the chain — so the button claims nothing.
+    func testCloseButtonLabel_isPlainOnceTodayCounts() {
+        XCTAssertEqual(MomentumTaskContext.closeButtonLabel(hasCountedToday: true), "Close it")
     }
 
     // MARK: - Area line
@@ -64,7 +62,7 @@ final class MomentumTaskContextTests: XCTestCase {
 
         let context = MomentumTaskContext.build(
             lifeAreaId: work.id, tasks: tasks, lifeAreas: [work],
-            showStreaks: true, asOf: now, calendar: calendar
+            showStreaks: true, hasCountedToday: true, asOf: now, calendar: calendar
         )
 
         XCTAssertEqual(context.areaLine, "💼 Work: 2 of 3 closed this week. Last closed 2 days ago.")
@@ -75,11 +73,11 @@ final class MomentumTaskContextTests: XCTestCase {
 
         let today = MomentumTaskContext.build(
             lifeAreaId: work.id, tasks: [doneTask(daysAgo: 0, lifeAreaId: work.id)],
-            lifeAreas: [work], showStreaks: true, asOf: now, calendar: calendar
+            lifeAreas: [work], showStreaks: true, hasCountedToday: true, asOf: now, calendar: calendar
         )
         let yesterday = MomentumTaskContext.build(
             lifeAreaId: work.id, tasks: [doneTask(daysAgo: 1, lifeAreaId: work.id)],
-            lifeAreas: [work], showStreaks: true, asOf: now, calendar: calendar
+            lifeAreas: [work], showStreaks: true, hasCountedToday: true, asOf: now, calendar: calendar
         )
 
         XCTAssertEqual(today.areaLine, "💼 Work: 1 of 1 closed this week. Last closed today.")
@@ -92,7 +90,7 @@ final class MomentumTaskContextTests: XCTestCase {
 
         let context = MomentumTaskContext.build(
             lifeAreaId: work.id, tasks: [openTask(lifeAreaId: work.id)],
-            lifeAreas: [work], showStreaks: true, asOf: now, calendar: calendar
+            lifeAreas: [work], showStreaks: true, hasCountedToday: true, asOf: now, calendar: calendar
         )
 
         XCTAssertEqual(context.areaLine, "💼 Work: nothing closed this week yet. 1 open.")
@@ -100,25 +98,42 @@ final class MomentumTaskContextTests: XCTestCase {
 
     func testBuild_noAreaMeansNoLine() {
         let context = MomentumTaskContext.build(
-            lifeAreaId: nil, tasks: [], lifeAreas: [], showStreaks: true, asOf: now, calendar: calendar
+            lifeAreaId: nil, tasks: [], lifeAreas: [], showStreaks: true, hasCountedToday: true,
+            asOf: now, calendar: calendar
         )
 
         XCTAssertNil(context.areaLine)
     }
 
-    // MARK: - Streak gating
+    // MARK: - Chain gating
 
-    func testBuild_respectsTheStreakToggle() {
-        let tasks = [doneTask(daysAgo: 0), doneTask(daysAgo: 1)]
-
+    /// REVERSED from `testBuild_respectsTheStreakToggle`. `showStreaks` now gates the weekly
+    /// CHAIN's display, and "makes today count" speaks for the chain — so with the chain hidden
+    /// the button claims nothing either, whatever today holds.
+    func testBuild_respectsTheChainToggle() {
         let counted = MomentumTaskContext.build(
-            lifeAreaId: nil, tasks: tasks, lifeAreas: [], showStreaks: true, asOf: now, calendar: calendar
+            lifeAreaId: nil, tasks: [], lifeAreas: [], showStreaks: true, hasCountedToday: false,
+            asOf: now, calendar: calendar
         )
-        let uncounted = MomentumTaskContext.build(
-            lifeAreaId: nil, tasks: tasks, lifeAreas: [], showStreaks: false, asOf: now, calendar: calendar
+        let hidden = MomentumTaskContext.build(
+            lifeAreaId: nil, tasks: [], lifeAreas: [], showStreaks: false, hasCountedToday: false,
+            asOf: now, calendar: calendar
         )
 
-        XCTAssertEqual(counted.streak, 2)
-        XCTAssertEqual(uncounted.streak, 0, "streaks off keeps every number but stops counting")
+        XCTAssertEqual(counted.closeButtonTitle, "Close it — makes today count")
+        XCTAssertEqual(hidden.closeButtonTitle, "Close it", "a hidden chain gets no gain line")
+    }
+
+    /// The caller's answer is carried, never recomputed: `build` holds only tasks, and today may
+    /// already count on a journal line or a sorted capture it cannot see.
+    func testBuild_carriesTheCallersHasCountedToday() {
+        let already = MomentumTaskContext.build(
+            lifeAreaId: nil, tasks: [], lifeAreas: [], showStreaks: true, hasCountedToday: true,
+            asOf: now, calendar: calendar
+        )
+
+        XCTAssertTrue(already.hasCountedToday)
+        XCTAssertEqual(already.closeButtonTitle, "Close it")
+        XCTAssertEqual(MomentumTaskContext.Context.empty.closeButtonTitle, "Close it")
     }
 }

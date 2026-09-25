@@ -156,7 +156,6 @@ struct FocusStatsMediumView: View {
                         value: FocusWidgetFormatting.human(seconds: snapshot?.week.dailyAverageSeconds ?? 0),
                         caption: "avg"
                     )
-                    FocusWidgetStat(value: "\(snapshot?.week.streak ?? 0)", caption: "streak")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -200,23 +199,28 @@ struct FocusWidgetWeekTotal: View {
     }
 }
 
-/// The daily-goal progress bar — the same 30m/day target the in-app weekly widget shows.
+/// The daily-goal progress bar — the same target the in-app weekly widget shows. `F-E1-WeeklyChain`
+/// (E's round 3): the bar is drawn only once the user has SET a focus goal ("No ring and no
+/// percentage until the user chooses a goal"), and the focus streak beside it went with the other
+/// retired streaks ("the focus '2 Day Streak'"). The active-day count stays: it is what was done.
 struct FocusWidgetGoalBar: View {
     let week: FocusWidgetSnapshot.WeekStats?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color("CardSurface"))
-                    Capsule()
-                        .fill(Color("AccentColor"))
-                        .frame(width: geometry.size.width * (week?.goalProgress ?? 0))
+            if week?.hasDailyGoal == true {
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color("CardSurface"))
+                        Capsule()
+                            .fill(Color("AccentColor"))
+                            .frame(width: geometry.size.width * (week?.goalProgress ?? 0))
+                    }
                 }
+                .frame(height: 6)
             }
-            .frame(height: 6)
-            Text("\(week?.activeDayCount ?? 0)/7 days · \(week?.streak ?? 0) streak")
+            Text("\(week?.activeDayCount ?? 0)/7 days")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

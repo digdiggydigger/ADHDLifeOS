@@ -105,7 +105,7 @@ extension TaskDetailView {
                         Task { await service.close() }
                     } label: {
                         Label(
-                            MomentumTaskContext.closeButtonLabel(streak: momentumContext.streak),
+                            momentumContext.closeButtonTitle,
                             systemImage: "checkmark.circle.fill"
                         )
                         .lineLimit(1)

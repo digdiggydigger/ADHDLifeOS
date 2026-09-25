@@ -13,11 +13,9 @@ private struct MomentumScoreboardGallery: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                MomentumRingCard(
-                    closedToday: 2, goal: 5, streak: 7, bestStreak: 9, openCount: 3,
-                    weekFlags: [true, true, true, true, true, true, false],
-                    nextEffortLabel: "15 min"
-                )
+                // No goal set — what every install sees until Settings turns one on (`F-E1`).
+                MomentumRingCard(closedToday: 2, goal: nil, openCount: 3, nextEffortLabel: "15 min")
+                MomentumRingCard(closedToday: 2, goal: 5, openCount: 3, nextEffortLabel: nil)
                 BestNextMoveCard(
                     task: TaskSummary(
                         lifeAreaId: nil,

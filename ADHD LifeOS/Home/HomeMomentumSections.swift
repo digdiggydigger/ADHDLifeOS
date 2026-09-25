@@ -70,16 +70,7 @@ extension HomeView {
         MomentumRingCard(
             closedToday: closedToday.count + capturesClearedToday + nudgesDismissedToday,
             goal: momentumPreferences.dailyGoal,
-            // Streaks off keeps every number but stops counting consecutive days — rendering the
-            // "still open" counterweight is exactly what a zero streak already does.
-            streak: momentumPreferences.showStreaks
-                ? MomentumScoreboard.streak(tasks: homeService.allTasks)
-                : 0,
-            bestStreak: momentumPreferences.showStreaks
-                ? MomentumScoreboard.bestStreak(tasks: homeService.allTasks)
-                : 0,
             openCount: homeService.openTasks.count,
-            weekFlags: MomentumScoreboard.trailingWeekClosureFlags(tasks: homeService.allTasks),
             nextEffortLabel: MomentumScoreboard.effortLabel(
                 seconds: MomentumScoreboard.bestNextMove(in: homeService.openTasks)?.focusDurationSeconds
             ),
@@ -241,6 +232,9 @@ extension HomeView {
             inboxPeek = HomeInboxPeek.peek(waiting)
         }
         await refreshClearedCaptureCount()
+        // `F-E1`: the chain's journal signal is Home-only too, and rides every path that refreshes
+        // the captures — so no reload can bring one signal up to date and leave the other stale.
+        await refreshJournalLines()
     }
 
     /// Two extra fetches, failure-tolerant like every scoreboard input. No longer gated on the
@@ -253,6 +247,10 @@ extension HomeView {
         let processedCaptures = try? await processed
         let cleared = (seenCaptures ?? []) + (processedCaptures ?? [])
         inboxHandledToday = MomentumScoreboard.clearedToday(captures: cleared)
+        // A fetch that failed outright keeps the last known stamps rather than erasing a day.
+        if seenCaptures != nil || processedCaptures != nil {
+            clearedCaptureStamps = cleared.compactMap(\.clearedAt)
+        }
         // The card keeps showing whatever it can, exactly as before — but the daily goal has to
         // know the difference between "nothing cleared today" and "the fetch failed", because a
         // dip and its recovery look like a rise across the goal.
@@ -295,7 +293,8 @@ extension HomeView {
                 lifeAreaId: task.lifeAreaId,
                 tasks: homeService.allTasks,
                 lifeAreas: homeService.lifeAreas,
-                showStreaks: momentumPreferences.showStreaks
+                showStreaks: momentumPreferences.showStreaks,
+                hasCountedToday: hasCountedToday
             )
         ) {
             Task { await homeService.load() }

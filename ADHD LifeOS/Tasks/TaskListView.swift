@@ -168,7 +168,13 @@ struct TaskListView: View {
                             lifeAreaId: task.lifeAreaId,
                             tasks: tasksService.tasks,
                             lifeAreas: tasksService.lifeAreas,
-                            showStreaks: UserDefaultsMomentumPreferencesStore().read().showStreaks
+                            showStreaks: UserDefaultsMomentumPreferencesStore().read().showStreaks,
+                            // Tasks holds only tasks, so a day that counted on a journal line or
+                            // a sprint alone reads as not-yet here: the gain line then shows on a
+                            // day that already counts — an under-report, never a claimed day.
+                            hasCountedToday: WeeklyActiveChain.hasCountedToday(
+                                WeeklyActiveChain.Signals(tasks: tasksService.tasks)
+                            )
                         )
                     ) {
                         Task { await tasksService.load() }

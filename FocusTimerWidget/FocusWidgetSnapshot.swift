@@ -43,10 +43,16 @@ nonisolated struct FocusWidgetSnapshot: Codable, Equatable, Sendable {
         let sessionCount: Int
         let activeDayCount: Int
         let dailyAverageSeconds: Int
+        /// Still carried so an older widget binary decodes the payload, but no longer RENDERED —
+        /// the focus streak was retired with the others in `F-E1-WeeklyChain` (E, round 3).
         let streak: Int
+        /// `0` means no goal set (`F-E1`, "Off until you set one") — the wire's "none".
         let dailyGoalMinutes: Int
         /// Monday-first, always exactly 7 entries — the medium widget's spark bars.
         let dailyFocusedSeconds: [Int]
+
+        /// Whether the user has set a focus goal — the goal bar is drawn only then.
+        var hasDailyGoal: Bool { dailyGoalMinutes > 0 }
 
         /// Derived rather than stored: one less number that can arrive stale or inconsistent with
         /// the totals beside it. Mirrors `FocusAnalytics.goalProgress`.

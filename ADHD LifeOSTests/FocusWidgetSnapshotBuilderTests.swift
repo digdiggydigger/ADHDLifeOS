@@ -138,8 +138,12 @@ final class FocusWidgetSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(week.focusedSeconds, 600, "last month's focus is not this week's")
     }
 
-    func testWeekStats_carryTheSameDailyGoalTheInAppWidgetUses() {
-        XCTAssertEqual(build(activeGoal: nil).week.dailyGoalMinutes, 30)
+    /// REVERSED (`F-E1-WeeklyChain`): the builder used to default to a 30-minute goal nobody set.
+    /// Round 3 — *"Off until you set one"* — reaches the Home Screen widget too: a caller that
+    /// passes no goal publishes none, and 0 is the wire's "no goal" (`goalProgress` already reads it).
+    func testWeekStats_carryNoDailyGoalUnlessTheCallerPassesOne() {
+        XCTAssertEqual(build(activeGoal: nil).week.dailyGoalMinutes, 0)
+        XCTAssertFalse(build(activeGoal: nil).week.hasDailyGoal)
     }
 
     // MARK: - Active sprint

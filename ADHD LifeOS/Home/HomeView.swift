@@ -89,6 +89,9 @@ struct HomeView: View {
     /// count as well as the value a failed `try?` leaves, so without this the daily goal cannot
     /// tell a quiet day from a dropped connection. Internal: `HomeView+DailyGoal` reads it.
     @State var hasLoadedClearedCaptures = false
+    /// `F-E1`: the capture and journal stamps behind the weekly chain (`HomeView+WeeklyChain`).
+    @State var clearedCaptureStamps: [Date] = []
+    @State var journalLineStamps: [Date] = []
     /// Home's memory of the ring between reloads (`F-CTACelebrations-5`, E's F7). `@State`, so it
     /// starts again on relaunch — the once-per-day rule is `CelebrationDayMarking`'s, not this.
     @State var dailyGoalTracker = DailyGoalTracker()

@@ -20,7 +20,7 @@ import SwiftUI
 ///   trend actually benefits from an area; a 7-bar week reads better as bars only.
 struct WeeklyFocusSummaryWidget: View {
     let buckets: [FocusDayBucket]
-    var dailyGoalMinutes: Int = 30
+    var dailyGoalMinutes: Int = 0
 
     private enum DisplayUnit: String, CaseIterable, Identifiable {
         case minutes, hours
@@ -43,7 +43,11 @@ struct WeeklyFocusSummaryWidget: View {
             header
             statStrip
             chart
-            goalBar
+            // `F-E1`: no goal set, no goal bar — "No ring and no percentage until the user chooses a
+            // goal" (E, round 3). The chart's rule mark below is gated the same way.
+            if dailyGoalMinutes > 0 {
+                goalBar
+            }
         }
         .bentoCard()
         .accessibilityIdentifier("weeklyFocusSummaryWidget")

@@ -60,6 +60,7 @@ extension HomeView {
     /// direction.
     func observeDailyGoal() {
         guard dailyGoalTracker.observe(count: ringCount, rules: ringRules, settled: ringSettled),
+              let goal = ringRules.goal,
               let uid = authService.signedInUser?.id.uuidString,
               !CelebrationDayMarking.hasCelebrated(.dailyGoal, uid: uid)
         else { return }
@@ -74,7 +75,7 @@ extension HomeView {
         // celebration is `accessibilityHidden`; this site has no haptic of its own (R-d puts that
         // in the centre) and no guaranteed on-screen change, because it can fire on any tab.
         // Posted after the request so VoiceOver speaks over a celebration that is already running.
-        let reached = DailyGoalAnnouncement.text(count: ringCount, goal: ringRules.goal)
+        let reached = DailyGoalAnnouncement.text(count: ringCount, goal: goal)
         UIAccessibility.post(notification: .announcement, argument: reached)
     }
 }

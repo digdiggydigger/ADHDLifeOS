@@ -36,7 +36,7 @@ final class DailyGoalTrackerTests: XCTestCase {
         calendar.date(from: DateComponents(year: 2026, month: 9, day: 12, hour: 12))!
     }
 
-    private func rules(goal: Int, captures: Bool = true, nudges: Bool = true) -> DailyGoalRules {
+    private func rules(goal: Int?, captures: Bool = true, nudges: Bool = true) -> DailyGoalRules {
         DailyGoalRules(goal: goal, countsClearedCaptures: captures, countsNudges: nudges)
     }
 
@@ -203,6 +203,37 @@ final class DailyGoalTrackerTests: XCTestCase {
     }
 
     // MARK: - What VoiceOver is told (E's call, 2026-09-12)
+
+    // MARK: - Goals off until set (`F-E1-WeeklyChain`)
+
+    /// E, round 3: *"No ring and no percentage until the user chooses a goal in Settings."* With no
+    /// goal there is nothing to cross, so F7's full-screen celebration cannot fire — however far
+    /// the count moves.
+    func testNoGoalIsNeverCrossed() {
+        XCTAssertFalse(DailyGoalCrossing.crossed(previous: 0, current: 12, goal: nil))
+        var tracker = DailyGoalTracker()
+        _ = tracker.observe(count: 0, rules: rules(goal: nil), settled: true)
+        XCTAssertFalse(tracker.observe(count: 1, rules: rules(goal: nil), settled: true))
+        XCTAssertFalse(tracker.observe(count: 9, rules: rules(goal: nil), settled: true))
+    }
+
+    /// Turning a goal ON in Settings with the count already past it is rule change (4) in the
+    /// file's own list — a number that suddenly means something, not an achievement. It
+    /// re-baselines, and the next real crossing (tomorrow's) still counts.
+    func testSettingAGoalWithTheCountAlreadyPastItCelebratesNothing() {
+        var tracker = DailyGoalTracker()
+        _ = tracker.observe(count: 6, rules: rules(goal: nil), settled: true)
+        XCTAssertFalse(tracker.observe(count: 6, rules: rules(goal: 5), settled: true))
+        XCTAssertFalse(tracker.observe(count: 7, rules: rules(goal: 5), settled: true))
+    }
+
+    /// The control that keeps the two tests above honest: a SET goal still crosses.
+    func testASetGoalStillCrossesAfterStartingFromNone() {
+        var tracker = DailyGoalTracker()
+        _ = tracker.observe(count: 2, rules: rules(goal: nil), settled: true)
+        _ = tracker.observe(count: 2, rules: rules(goal: 3), settled: true)
+        XCTAssertTrue(tracker.observe(count: 3, rules: rules(goal: 3), settled: true))
+    }
 
     /// **E chose "the daily goal only".** The other two milestones leave the user on a screen that
     /// states the outcome — an empty inbox, a card reading "7 of 7 days" — and each has a haptic of

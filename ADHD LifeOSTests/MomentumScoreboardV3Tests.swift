@@ -34,58 +34,14 @@ final class MomentumScoreboardV3Tests: XCTestCase {
         )
     }
 
-    // MARK: - Best-ever streak
+    // MARK: - Retired with the daily streak (`F-E1-WeeklyChain`, 2026-09-25)
 
-    func testBestStreak_zeroWithNoHistory() {
-        XCTAssertEqual(MomentumScoreboard.bestStreak(tasks: [], calendar: calendar), 0)
-    }
-
-    func testBestStreak_findsTheLongestRunAnywhereInHistory() {
-        // A 3-day run two weeks back beats the current 2-day run.
-        let tasks = [
-            doneTask(daysAgo: 16), doneTask(daysAgo: 15), doneTask(daysAgo: 14),
-            doneTask(daysAgo: 1), doneTask(daysAgo: 0)
-        ]
-        XCTAssertEqual(MomentumScoreboard.bestStreak(tasks: tasks, calendar: calendar), 3)
-    }
-
-    func testBestStreak_countsDaysNotItems() {
-        // Three closures on one day are one day of streak.
-        let tasks = [doneTask(daysAgo: 2, hour: 7), doneTask(daysAgo: 2, hour: 9), doneTask(daysAgo: 2, hour: 20)]
-        XCTAssertEqual(MomentumScoreboard.bestStreak(tasks: tasks, calendar: calendar), 1)
-    }
-
-    func testBestStreak_currentRunCanBeTheBest() {
-        let tasks = [doneTask(daysAgo: 2), doneTask(daysAgo: 1), doneTask(daysAgo: 0), doneTask(daysAgo: 10)]
-        XCTAssertEqual(MomentumScoreboard.bestStreak(tasks: tasks, calendar: calendar), 3)
-    }
-
-    // MARK: - Streak line
-
-    func testStreakLine_afterACloseNamesTheBest() {
-        XCTAssertEqual(
-            MomentumScoreboard.streakLine(streak: 7, best: 9, closedToday: 3),
-            "Streak kept. Best is 9."
-        )
-    }
-
-    func testStreakLine_bestNeverReadsBelowTheCurrentStreak() {
-        XCTAssertEqual(
-            MomentumScoreboard.streakLine(streak: 7, best: 0, closedToday: 1),
-            "Streak kept. Best is 7."
-        )
-    }
-
-    func testStreakLine_quietDayStatesTheRun() {
-        XCTAssertEqual(
-            MomentumScoreboard.streakLine(streak: 7, best: 9, closedToday: 0),
-            "7 days closed in a row."
-        )
-        XCTAssertEqual(
-            MomentumScoreboard.streakLine(streak: 1, best: 9, closedToday: 0),
-            "One day closed. Keep it alive today."
-        )
-    }
+    // `bestStreak(tasks:)` and `streakLine(streak:best:closedToday:)` were DELETED, and their seven
+    // tests REVERSED into absence assertions in `WeeklyChainRetirementTests`. E's round 3: *"The
+    // other two streaks go: the closing streak '6 days · Best is 6'"*, and round 8b sends the three
+    // day-streak lines *"with the scoreboard"*. The only caller of either was `MomentumRingCard`'s
+    // streak column, which this block removed; the rules those tests pinned (days, not items; a
+    // best that never reads below the current run) have no reader left to protect.
 
     // MARK: - Area status line
 

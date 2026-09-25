@@ -12,17 +12,110 @@ import XCTest
 /// behind a protocol seam, the `DailySummaryStoring` arrangement.
 final class MomentumPreferencesTests: XCTestCase {
 
-    func testDefaults_matchTheConceptsSeed() {
-        XCTAssertEqual(MomentumPreferences.default.dailyGoal, 5)
-        XCTAssertTrue(MomentumPreferences.default.showStreaks)
+    /// REVERSED (`F-E1-WeeklyChain`). The seed was a daily goal of 5 that nobody chose — HOME-10.
+    /// E's round 3: *"Preset goals → 'Off until you set one.' No ring and no percentage until the
+    /// user chooses a goal in Settings."* Round 5b: the weekly chain's N is *"3 days"*.
+    func testDefaults_goalsAreOffUntilSetAndTheChainAsksForThreeDays() {
+        XCTAssertNil(MomentumPreferences.default.dailyGoal, "no daily close goal until the user sets one")
+        XCTAssertNil(MomentumPreferences.default.focusDailyGoalMinutes, "no daily focus goal until set")
+        XCTAssertEqual(MomentumPreferences.default.weeklyActiveDayGoal, 3)
+        XCTAssertTrue(MomentumPreferences.default.showStreaks, "the chain's display is on by default")
     }
 
-    /// The ring divides by this number and the Stepper can't be trusted to be the only writer —
-    /// a decoded document, a migration, or a future writer all pass through `normalized()`.
+    /// REVERSED: the clamp still guards a SET goal, and an unset one passes through as unset —
+    /// `normalized()` must never turn "no goal" into a goal of 1.
     func testNormalized_clampsTheGoalIntoTheSupportedRange() {
         XCTAssertEqual(MomentumPreferences(dailyGoal: 0, showStreaks: true).normalized().dailyGoal, 1)
         XCTAssertEqual(MomentumPreferences(dailyGoal: 99, showStreaks: true).normalized().dailyGoal, 12)
         XCTAssertEqual(MomentumPreferences(dailyGoal: 7, showStreaks: false).normalized().dailyGoal, 7)
+        XCTAssertNil(MomentumPreferences(dailyGoal: nil, showStreaks: true).normalized().dailyGoal)
+        var focus = MomentumPreferences.default
+        focus.focusDailyGoalMinutes = nil
+        XCTAssertNil(focus.normalized().focusDailyGoalMinutes)
+    }
+
+    func testNormalized_clampsTheWeeklyChainGoalIntoOneToSeven() {
+        var preferences = MomentumPreferences.default
+        preferences.weeklyActiveDayGoal = 0
+        XCTAssertEqual(preferences.normalized().weeklyActiveDayGoal, 1)
+        preferences.weeklyActiveDayGoal = 9
+        XCTAssertEqual(preferences.normalized().weeklyActiveDayGoal, 7)
+        preferences.weeklyActiveDayGoal = 4
+        XCTAssertEqual(preferences.normalized().weeklyActiveDayGoal, 4)
+    }
+
+    // MARK: - Goals off until set: the migration (`F-E1-WeeklyChain`)
+
+    /// Every install before E1 stored 5 and 30 because those were the defaults, not because anyone
+    /// chose them (HOME-10) — so they decode as "no goal". A stored value the user DID move the
+    /// Stepper to is a choice, and survives (the `…keepTheirValues` tests below hold that line).
+    func testDecode_preChainPayloadWithTheOldDefaultsReadsAsNoGoal() throws {
+        let legacy = Data(#"{"dailyGoal":5,"showStreaks":true,"focusDailyGoalMinutes":30}"#.utf8)
+
+        let decoded = try JSONDecoder().decode(MomentumPreferences.self, from: legacy)
+
+        XCTAssertNil(decoded.dailyGoal)
+        XCTAssertNil(decoded.focusDailyGoalMinutes)
+        XCTAssertEqual(decoded.weeklyActiveDayGoal, 3, "a pre-chain payload gains the chain's default")
+    }
+
+    func testDecode_preChainPayloadKeepsAGoalTheUserMoved() throws {
+        let legacy = Data(#"{"dailyGoal":8,"showStreaks":true,"focusDailyGoalMinutes":45}"#.utf8)
+
+        let decoded = try JSONDecoder().decode(MomentumPreferences.self, from: legacy)
+
+        XCTAssertEqual(decoded.dailyGoal, 8)
+        XCTAssertEqual(decoded.focusDailyGoalMinutes, 45)
+    }
+
+    /// **The trap the naive rule falls into.** "Stored 5 means nobody chose it" is only true of a
+    /// document written BEFORE E1. After it, 5 is exactly what someone who turns the goal on and
+    /// leaves the Stepper alone has chosen — and erasing it on the next launch would be a silent
+    /// reset of a real choice. The chain's key is the version marker: present means post-E1.
+    func testDecode_postChainPayloadKeepsAGoalOfFiveThatWasChosen() throws {
+        let chosen = MomentumPreferences(dailyGoal: 5, showStreaks: true, focusDailyGoalMinutes: 30)
+
+        let decoded = try JSONDecoder().decode(
+            MomentumPreferences.self, from: JSONEncoder().encode(chosen)
+        )
+
+        XCTAssertEqual(decoded.dailyGoal, 5)
+        XCTAssertEqual(decoded.focusDailyGoalMinutes, 30)
+    }
+
+    func testStore_roundTripsGoalsLeftOff() {
+        let (store, _) = makeStore()
+        var prefs = MomentumPreferences.default
+        prefs.weeklyActiveDayGoal = 5
+
+        store.write(prefs)
+
+        XCTAssertEqual(store.read(), prefs)
+        XCTAssertNil(store.read().dailyGoal)
+        XCTAssertNil(store.read().focusDailyGoalMinutes)
+    }
+
+    /// Settings' "Set a daily goal" toggle: on starts the Stepper at the old seed, off clears it —
+    /// and turning it on again after moving the Stepper keeps nothing stale.
+    func testSettingTheDailyGoalOnAndOff() {
+        var prefs = MomentumPreferences.default
+        prefs.setDailyGoalEnabled(true)
+        XCTAssertEqual(prefs.dailyGoal, MomentumPreferences.dailyGoalStartingValue)
+        XCTAssertEqual(MomentumPreferences.dailyGoalStartingValue, 5)
+        prefs.dailyGoal = 9
+        prefs.setDailyGoalEnabled(true)
+        XCTAssertEqual(prefs.dailyGoal, 9, "an already-set goal is not reset by a redundant on")
+        prefs.setDailyGoalEnabled(false)
+        XCTAssertNil(prefs.dailyGoal)
+    }
+
+    func testSettingTheFocusGoalOnAndOff() {
+        var prefs = MomentumPreferences.default
+        prefs.setFocusGoalEnabled(true)
+        XCTAssertEqual(prefs.focusDailyGoalMinutes, MomentumPreferences.focusGoalStartingMinutes)
+        XCTAssertEqual(MomentumPreferences.focusGoalStartingMinutes, 30)
+        prefs.setFocusGoalEnabled(false)
+        XCTAssertNil(prefs.focusDailyGoalMinutes)
     }
 
     func testDefaults_captureCountingStartsOff() {
@@ -94,7 +187,8 @@ final class MomentumPreferencesTests: XCTestCase {
 
     func testDefaults_settingsAdditionsStartAtTodaysBehaviour() {
         let defaults = MomentumPreferences.default
-        XCTAssertEqual(defaults.focusDailyGoalMinutes, 30, "the analytics goal ships at its old constant")
+        // REVERSED (`F-E1-WeeklyChain`): the focus goal was always on at 30; round 3 turns it off.
+        XCTAssertNil(defaults.focusDailyGoalMinutes, "the analytics goal is off until the user sets one")
         XCTAssertEqual(defaults.defaultSprintMinutes, 15, "the sprint default ships at standardDurationSeconds")
         XCTAssertTrue(defaults.hapticsEnabled)
         XCTAssertTrue(defaults.soundEnabled)
@@ -107,7 +201,7 @@ final class MomentumPreferencesTests: XCTestCase {
 
         XCTAssertEqual(decoded.dailyGoal, 7, "existing choices must survive the upgrade")
         XCTAssertFalse(decoded.showStreaks)
-        XCTAssertEqual(decoded.focusDailyGoalMinutes, 30)
+        XCTAssertNil(decoded.focusDailyGoalMinutes, "REVERSED (F-E1): an absent focus goal is no goal")
         XCTAssertEqual(decoded.defaultSprintMinutes, 15)
         XCTAssertTrue(decoded.hapticsEnabled)
         XCTAssertTrue(decoded.soundEnabled)
