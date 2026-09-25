@@ -132,7 +132,13 @@ final class TaskNextStepFieldTests: XCTestCase {
     /// Save and autosave through `currentEditedFields`.
     func testTaskDetailDrawsSeedsAndStagesTheLine() throws {
         let form = try flattened("Tasks/TaskDetailFormSections.swift")
-        XCTAssertTrue(form.contains("TextField(\"Next Step\", text: $nextStep, axis: .vertical)"))
+        XCTAssertTrue(form.contains("TextField(\"What to do first\", text: $nextStep, axis: .vertical)"))
+        // Named outside the field, because a placeholder vanishes once there is a line
+        // (`text-fields.md` › Best practices) — and named ONCE for VoiceOver, on the field.
+        let caption = "Text(\"Next Step\") .font(.footnote) .foregroundStyle(.secondary) .accessibilityHidden(true)"
+        XCTAssertTrue(form.contains(caption), "the row lost its visible name")
+        let named = ".accessibilityLabel(\"Next Step\") .accessibilityIdentifier(\"taskDetailNextStepField\")"
+        XCTAssertTrue(form.contains(named), "VoiceOver would hear the placeholder, not the name")
         XCTAssertTrue(form.contains("nextStep = task.nextStep ?? \"\""), "the stored line never seeds the field")
         let view = try flattened("Tasks/TaskDetailView.swift")
         XCTAssertTrue(view.contains("atPlaceId: atPlaceId, nextStep: nextStep"), "Save never sees the line")

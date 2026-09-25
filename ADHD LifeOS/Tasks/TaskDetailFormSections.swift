@@ -150,8 +150,18 @@ extension TaskDetailView {
 
             // `F-E2` (E's round 5a): the one line that says what to do first. Beside Notes and
             // staged exactly like it — behind Save, and autosaved on the way out (`F-C2`).
-            TextField("Next Step", text: $nextStep, axis: .vertical)
-                .accessibilityIdentifier("taskDetailNextStepField")
+            // Labelled OUTSIDE the field: a placeholder vanishes once there is a line, and the
+            // saved line then read as an unnamed note (`text-fields.md` › Best practices, found in
+            // the block's own frame). VoiceOver hears the name once, on the field itself.
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Next Step")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                TextField("What to do first", text: $nextStep, axis: .vertical)
+                    .accessibilityLabel("Next Step")
+                    .accessibilityIdentifier("taskDetailNextStepField")
+            }
 
             TextField("Notes", text: $notes, axis: .vertical)
                 .accessibilityIdentifier("taskDetailNotesField")
