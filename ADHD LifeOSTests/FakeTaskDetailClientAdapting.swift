@@ -61,6 +61,7 @@ final class FakeTaskDetailClientAdapting: TaskDetailClientAdapting, @unchecked S
             var updated = try fetchTaskResult.get()
             if let title = payload.title { updated.title = title }
             if let notes = payload.notes { updated.notes = notes }
+            if let nextStep = payload.nextStep { updated.nextStep = nextStep }
             if let lifeAreaId = payload.lifeAreaId { updated.lifeAreaId = lifeAreaId }
             if let priority = payload.priority { updated.priority = priority }
             if let dueDate = payload.dueDate { updated.dueDate = dueDate }

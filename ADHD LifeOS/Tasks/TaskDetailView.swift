@@ -35,6 +35,7 @@ struct TaskDetailView: View {
     @State var hasInitializedFields = false
     @State var title = ""
     @State var notes = ""
+    @State var nextStep = ""
     @State var lifeAreaId: UUID?
     @State var priority: TaskPriority = .p4
     @State var dueDate: Date?
@@ -129,7 +130,7 @@ struct TaskDetailView: View {
         TaskEditedFields(
             title: title, notes: notes, lifeAreaId: lifeAreaId, priority: priority, dueDate: dueDate,
             focusDurationSeconds: focusDurationSeconds, nudgesCount: focusNudgeCount,
-            atPlaceId: atPlaceId
+            atPlaceId: atPlaceId, nextStep: nextStep
         )
     }
 

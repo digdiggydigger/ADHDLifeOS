@@ -37,6 +37,7 @@ extension TaskDetailView {
             guard !hasInitializedFields else { return }
             title = task.title
             notes = task.notes ?? ""
+            nextStep = task.nextStep ?? ""
             lifeAreaId = task.lifeAreaId
             priority = task.priority
             dueDate = task.dueDate
@@ -146,6 +147,11 @@ extension TaskDetailView {
                     displayedComponents: [.date, .hourAndMinute]
                 )
             }
+
+            // `F-E2` (E's round 5a): the one line that says what to do first. Beside Notes and
+            // staged exactly like it — behind Save, and autosaved on the way out (`F-C2`).
+            TextField("Next Step", text: $nextStep, axis: .vertical)
+                .accessibilityIdentifier("taskDetailNextStepField")
 
             TextField("Notes", text: $notes, axis: .vertical)
                 .accessibilityIdentifier("taskDetailNotesField")

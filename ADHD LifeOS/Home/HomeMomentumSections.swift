@@ -277,7 +277,8 @@ extension HomeView {
         inspectingTask = TaskSummary(
             id: task.id, lifeAreaId: task.lifeAreaId, status: task.status,
             title: task.title, priority: task.priority, dueDate: task.dueDate,
-            focusDurationSeconds: task.focusDurationSeconds, nudgesCount: task.nudgesCount
+            focusDurationSeconds: task.focusDurationSeconds, nudgesCount: task.nudgesCount,
+            nextStep: task.nextStep
         )
     }
 

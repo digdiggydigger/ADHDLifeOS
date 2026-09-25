@@ -75,6 +75,10 @@ struct TaskSummary: Codable, Equatable, Sendable {
     /// document written before this block has no such key, so absence is the ordinary state.
     /// Read through `SoftDelete.isLive(deletedAt:)`, never compared inline.
     var deletedAt: Date?
+    /// The task's "Next step" (`F-E2-NextStepField`, E's round 5a): *"One optional line on a
+    /// task, editable from the card and from task detail."* `nil` on every document written before
+    /// it existed, and whenever the line is cleared (the key is DELETED, never written empty).
+    var nextStep: String?
 
     init(
         id: UUID = UUID(),
@@ -86,7 +90,8 @@ struct TaskSummary: Codable, Equatable, Sendable {
         dueDate: Date? = nil,
         focusDurationSeconds: Int? = nil,
         nudgesCount: Int? = nil,
-        deletedAt: Date? = nil
+        deletedAt: Date? = nil,
+        nextStep: String? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -98,10 +103,12 @@ struct TaskSummary: Codable, Equatable, Sendable {
         self.focusDurationSeconds = focusDurationSeconds
         self.nudgesCount = nudgesCount
         self.deletedAt = deletedAt
+        self.nextStep = nextStep
     }
 
     enum CodingKeys: String, CodingKey {
         case id, status, title, priority, notes
+        case nextStep = "next_step"
         case lifeAreaId = "life_area_id"
         case deletedAt = "deleted_at"
         case dueDate = "due_date"

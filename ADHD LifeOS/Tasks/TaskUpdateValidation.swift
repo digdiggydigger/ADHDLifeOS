@@ -43,12 +43,27 @@ enum TaskUpdateValidation {
         if edited.atPlaceId != original.atPlaceId {
             payload.atPlaceId = .some(edited.atPlaceId)
         }
+        applyNextStepDiff(from: edited, against: original, to: &payload)
 
         applyFocusConfigDiff(
             from: edited, against: original, defaultSprintSeconds: defaultSprintSeconds, to: &payload
         )
 
         return .success(payload)
+    }
+
+    /// `F-E2`: the "Next step" line, normalized exactly as `notes` is (trimmed, empty = none). An
+    /// UNSTAGED line (`nil`) is not an edit. Split out so the main diff stays inside SwiftLint's
+    /// complexity budget, as the focus diff below was.
+    private static func applyNextStepDiff(
+        from edited: TaskEditedFields, against original: TaskDetail, to payload: inout TaskUpdatePayload
+    ) {
+        guard let staged = edited.nextStep else { return }
+        let trimmed = staged.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalized: String? = trimmed.isEmpty ? nil : trimmed
+        if normalized != original.nextStep {
+            payload.nextStep = .some(normalized)
+        }
     }
 
     /// Focus config diffs against the RESOLVED original, not the raw stored value: a task with no
