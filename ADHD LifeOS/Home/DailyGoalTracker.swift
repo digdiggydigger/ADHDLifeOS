@@ -31,7 +31,8 @@ import Foundation
 /// A change to any of these moves the count without anything having been done, so it re-baselines
 /// rather than counts — the goal and the two Settings toggles are part of what the number MEANS.
 struct DailyGoalRules: Equatable {
-    let goal: Int
+    /// `nil` = no goal set (`F-E1`, E's round 3 "Off until you set one") — nothing to cross.
+    let goal: Int?
     let countsClearedCaptures: Bool
     let countsNudges: Bool
 }
@@ -41,9 +42,10 @@ enum DailyGoalCrossing {
     ///
     /// `previous < goal` is what makes a goal lowered under the count a non-event: the count was
     /// already past the new goal, so nothing crossed it. A goal of zero is crossed by standing
-    /// still, so it is not treated as a goal at all.
-    static func crossed(previous: Int, current: Int, goal: Int) -> Bool {
-        goal > 0 && previous < goal && current >= goal
+    /// still, so it is not treated as a goal at all — and no goal (`nil`) is not one either.
+    static func crossed(previous: Int, current: Int, goal: Int?) -> Bool {
+        guard let goal else { return false }
+        return goal > 0 && previous < goal && current >= goal
     }
 }
 

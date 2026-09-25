@@ -80,6 +80,12 @@ final class FocusWidgetSnapshotTests: XCTestCase {
         )
 
         XCTAssertEqual(week.goalProgress, 0)
+        XCTAssertFalse(week.hasDailyGoal, "`F-E1`: the widget hides its goal bar on this")
+    }
+
+    /// The control for the line above: a set goal is a goal the widget draws.
+    func testHasDailyGoal_isTrueForAnyPositiveGoal() {
+        XCTAssertTrue(sampleSnapshot().week.hasDailyGoal)
     }
 
     func testPlaceholder_hasNoFabricatedHistory() {

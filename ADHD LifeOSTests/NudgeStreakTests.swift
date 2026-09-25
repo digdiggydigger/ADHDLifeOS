@@ -29,10 +29,13 @@ final class NudgeStreakTests: XCTestCase {
         XCTAssertEqual(flags, [false, false, false, false, true, false, true])
     }
 
-    func testRuns_currentAndBest() {
+    /// REVERSED (`F-E1-WeeklyChain`) from `testRuns_currentAndBest`: `bestRun` was deleted with the
+    /// "· best N" tail it fed — E, round 3, *"The nudge 'best 2' goes too"* — so only the current
+    /// run remains, and it survives because the seven-day milestone (`landsOnSeven`) reads it.
+    /// An older, longer run does not leak into the current one.
+    func testCurrentRun_countsOnlyTheRunEndingToday() {
         let dates = [day(0), day(1), day(2), day(10), day(11), day(12), day(13)]
         XCTAssertEqual(NudgeStreak.currentRun(dates: dates, asOf: now, calendar: calendar), 3)
-        XCTAssertEqual(NudgeStreak.bestRun(dates: dates, calendar: calendar), 4)
     }
 
     func testCurrentRun_toleratesAnUnfinishedToday() {
@@ -46,11 +49,15 @@ final class NudgeStreakTests: XCTestCase {
         XCTAssertNil(NudgeSchedule.summary(cronString: "not-cron"))
     }
 
-    func testLine_countsTheWeekAndNamesTheBest() {
+    /// REVERSED (`F-E1-WeeklyChain`) from `testLine_countsTheWeekAndNamesTheBest`. E's round 3:
+    /// *"The nudge 'best 2' goes too."* The week's count stays — it is what was DONE — and the
+    /// best-ever tally goes with the other two retired streaks. The seven-day MILESTONE is a
+    /// separate, E-approved celebration (`F-CTACelebrations-5`, R-b) and is untouched.
+    func testLine_countsTheWeekAndNamesNoBest() {
         let dates = [day(0), day(1), day(2), day(3), day(4), day(6)]
         XCTAssertEqual(
             NudgeStreak.line(dates: dates, asOf: now, calendar: calendar),
-            "6 of 7 days · best 5"
+            "6 of 7 days"
         )
         XCTAssertNil(NudgeStreak.line(dates: [], asOf: now, calendar: calendar))
     }

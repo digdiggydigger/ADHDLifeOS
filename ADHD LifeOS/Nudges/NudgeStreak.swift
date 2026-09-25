@@ -42,26 +42,9 @@ enum NudgeStreak {
         return run
     }
 
-    /// The longest consecutive-day run anywhere in the stamps.
-    static func bestRun(dates: [Date], calendar: Calendar = .current) -> Int {
-        let days = daySet(dates, calendar: calendar)
-        var best = 0
-        for day in days {
-            guard let previous = calendar.date(byAdding: .day, value: -1, to: day),
-                  !days.contains(previous) else { continue }
-            var run = 1
-            var cursor = day
-            while let next = calendar.date(byAdding: .day, value: 1, to: cursor), days.contains(next) {
-                run += 1
-                cursor = next
-            }
-            best = max(best, run)
-        }
-        return best
-    }
-
-    /// "6 of 7 days · best 12" — `nil` before the first completion, so old nudges show nothing
-    /// rather than a wall of zeroes (the stamps only accrue going forward).
+    /// "6 of 7 days" — `nil` before the first completion, so old nudges show nothing rather than
+    /// a wall of zeroes (the stamps only accrue going forward). The "· best 12" tail went in
+    /// `F-E1-WeeklyChain` — E's round 3, *"The nudge 'best 2' goes too."*
     static func line(
         dates: [Date],
         asOf now: Date = .now,
@@ -69,9 +52,7 @@ enum NudgeStreak {
     ) -> String? {
         guard !dates.isEmpty else { return nil }
         let week = weekFlags(dates: dates, asOf: now, calendar: calendar).filter { $0 }.count
-        let current = currentRun(dates: dates, asOf: now, calendar: calendar)
-        let best = max(bestRun(dates: dates, calendar: calendar), current)
-        return "\(week) of 7 days · best \(best)"
+        return "\(week) of 7 days"
     }
 
     /// **R-b: exactly seven.** Whether 14 and 21 also fire is E's call and is parked in the

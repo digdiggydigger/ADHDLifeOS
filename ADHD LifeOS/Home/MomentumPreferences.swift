@@ -3,10 +3,13 @@
 //  ADHD LifeOS
 //
 //  "What counts as momentum" (Concept C, blocks M2/M7/M9): the preferences the scoreboard
-//  honours — the daily goal behind the closure ring, whether streaks are counted at all, and the
-//  two counting toggles the concept asked for, each shipped only once its event stamp existed
+//  honours — the daily goal behind the closure ring, whether the weekly chain is shown at all, and
+//  the two counting toggles the concept asked for, each shipped only once its event stamp existed
 //  (captures' `clearedAt` in M7, nudges' `last_fired_at` in M9). Shipping a switch without its
 //  data would have been a lie in a Form row.
+//
+//  `F-E1-WeeklyChain` (E's round 3, *"Preset goals → 'Off until you set one.'"*): both daily goals
+//  are OPTIONAL now, `nil` until the user turns one on, and the weekly chain's N joined them.
 //
 
 import Foundation
@@ -22,15 +25,25 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// planner treats as real; the ceiling is the config's own two-hour cap.
     static let sprintMinutesRange = 5...120
 
+    /// Where each goal's Stepper starts when its toggle is turned on — the values that used to be
+    /// the always-on defaults, now only a starting point the user moves from.
+    static let dailyGoalStartingValue = 5
+    static let focusGoalStartingMinutes = 30
+
     static let `default` = MomentumPreferences(
-        dailyGoal: 5, showStreaks: true, countClearedCaptures: false, countNudges: false,
+        dailyGoal: nil, showStreaks: true, countClearedCaptures: false, countNudges: false,
         showCharts: true
     )
 
-    var dailyGoal: Int
-    /// Off keeps every number but stops counting consecutive days — the scoreboard shows the
-    /// "still open" counterweight instead of a streak.
+    /// `nil` = no daily close goal (HOME-10: nobody ever chose the old 5). No ring, no percentage,
+    /// and no crossing for F7's celebration to fire on, until the user sets one.
+    var dailyGoal: Int?
+    /// Whether the weekly CHAIN is shown (`F-E1`). The field keeps its old name so no stored
+    /// choice resets; it gated a daily streak until E retired that in round 3. Off keeps every
+    /// number and drops the chain's gain line ("makes today count") along with the chain.
     var showStreaks: Bool
+    /// Round 5b's N: how many active days make a week count toward the chain. 1…7, default 3.
+    var weeklyActiveDayGoal: Int
     /// M7: whether captures cleared today (seen, promoted or journaled — anything that stamps
     /// `clearedAt`) count toward the closure ring alongside closed tasks.
     var countClearedCaptures: Bool
@@ -42,9 +55,9 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// it ships at the concept's own default (on) — unlike the counting toggles, an enabled
     /// chart cannot misstate anything.
     var showCharts: Bool
-    /// Minutes-per-day the focus analytics and the Home Screen widget's ring measure against
-    /// (E's 2026-08-25 Settings audit) — ships at the old hardcoded 30.
-    var focusDailyGoalMinutes: Int
+    /// Minutes-per-day the focus analytics and the Home Screen widget's bar measure against (E's
+    /// 2026-08-25 Settings audit). `nil` = no focus goal (`F-E1`): the bar is not drawn at all.
+    var focusDailyGoalMinutes: Int?
     /// The sprint length the one-tap start uses for a task with no stored config — ships at the
     /// old `FocusNudgeCadence.standardDurationSeconds` (15 minutes). A task's own config always
     /// wins; this is only the starting point.
@@ -83,14 +96,13 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     /// session unable to stick off (found 2026-08-27, pinned in `MomentumPreferencesTests`).
     func normalized() -> MomentumPreferences {
         MomentumPreferences(
-            dailyGoal: min(max(dailyGoal, Self.goalRange.lowerBound), Self.goalRange.upperBound),
+            dailyGoal: dailyGoal.map { Self.clamp($0, to: Self.goalRange) },
             showStreaks: showStreaks,
+            weeklyActiveDayGoal: Self.clamp(weeklyActiveDayGoal, to: WeeklyActiveChain.goalRange),
             countClearedCaptures: countClearedCaptures,
             countNudges: countNudges,
             showCharts: showCharts,
-            focusDailyGoalMinutes: min(
-                max(focusDailyGoalMinutes, Self.focusGoalRange.lowerBound), Self.focusGoalRange.upperBound
-            ),
+            focusDailyGoalMinutes: focusDailyGoalMinutes.map { Self.clamp($0, to: Self.focusGoalRange) },
             defaultSprintMinutes: min(
                 max(defaultSprintMinutes, Self.sprintMinutesRange.lowerBound), Self.sprintMinutesRange.upperBound
             ),
@@ -103,16 +115,32 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         )
     }
 
+    /// Settings' "Set a daily goal" toggle. On starts the Stepper at the old seed — unless a goal
+    /// is already set, which a redundant "on" must never reset; off clears it.
+    mutating func setDailyGoalEnabled(_ enabled: Bool) {
+        dailyGoal = enabled ? (dailyGoal ?? Self.dailyGoalStartingValue) : nil
+    }
+
+    /// Settings' "Set a daily focus goal" toggle — the same contract.
+    mutating func setFocusGoalEnabled(_ enabled: Bool) {
+        focusDailyGoalMinutes = enabled ? (focusDailyGoalMinutes ?? Self.focusGoalStartingMinutes) : nil
+    }
+
+    private static func clamp(_ value: Int, to range: ClosedRange<Int>) -> Int {
+        min(max(value, range.lowerBound), range.upperBound)
+    }
+
     /// Hand-written so preferences stored by earlier builds (M2 predates `countClearedCaptures`,
     /// M7 predates `countNudges`) decode with the user's choices INTACT rather than resetting
     /// to defaults.
     init(
-        dailyGoal: Int,
+        dailyGoal: Int?,
         showStreaks: Bool,
+        weeklyActiveDayGoal: Int = WeeklyActiveChain.defaultGoal,
         countClearedCaptures: Bool = false,
         countNudges: Bool = false,
         showCharts: Bool = true,
-        focusDailyGoalMinutes: Int = 30,
+        focusDailyGoalMinutes: Int? = nil,
         defaultSprintMinutes: Int = 15,
         hapticsEnabled: Bool = true,
         soundEnabled: Bool = true,
@@ -123,6 +151,7 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
     ) {
         self.dailyGoal = dailyGoal
         self.showStreaks = showStreaks
+        self.weeklyActiveDayGoal = weeklyActiveDayGoal
         self.countClearedCaptures = countClearedCaptures
         self.countNudges = countNudges
         self.showCharts = showCharts
@@ -136,14 +165,30 @@ struct MomentumPreferences: Codable, Equatable, Sendable {
         self.celebrationSoundsEnabled = celebrationSoundsEnabled
     }
 
+    /// **The goals-off migration (`F-E1`), keyed on the chain's field rather than on the values.**
+    /// A document with no `weeklyActiveDayGoal` was written before E1, when 5 and 30 were defaults
+    /// nobody chose (HOME-10) — so those two values decode as "no goal", and anything the user
+    /// DID move the Stepper to survives. A document WITH the key was written after, when 5 is
+    /// exactly what someone who turned the goal on and left the Stepper alone chose; testing the
+    /// value alone would erase that choice on the next launch.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        dailyGoal = try container.decode(Int.self, forKey: .dailyGoal)
+        let chainGoal = try container.decodeIfPresent(Int.self, forKey: .weeklyActiveDayGoal)
+        let storedGoal = try container.decodeIfPresent(Int.self, forKey: .dailyGoal)
+        let storedFocusGoal = try container.decodeIfPresent(Int.self, forKey: .focusDailyGoalMinutes)
+        if let chainGoal {
+            weeklyActiveDayGoal = chainGoal
+            dailyGoal = storedGoal
+            focusDailyGoalMinutes = storedFocusGoal
+        } else {
+            weeklyActiveDayGoal = WeeklyActiveChain.defaultGoal
+            dailyGoal = storedGoal == Self.dailyGoalStartingValue ? nil : storedGoal
+            focusDailyGoalMinutes = storedFocusGoal == Self.focusGoalStartingMinutes ? nil : storedFocusGoal
+        }
         showStreaks = try container.decode(Bool.self, forKey: .showStreaks)
         countClearedCaptures = try container.decodeIfPresent(Bool.self, forKey: .countClearedCaptures) ?? false
         countNudges = try container.decodeIfPresent(Bool.self, forKey: .countNudges) ?? false
         showCharts = try container.decodeIfPresent(Bool.self, forKey: .showCharts) ?? true
-        focusDailyGoalMinutes = try container.decodeIfPresent(Int.self, forKey: .focusDailyGoalMinutes) ?? 30
         defaultSprintMinutes = try container.decodeIfPresent(Int.self, forKey: .defaultSprintMinutes) ?? 15
         hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled) ?? true
         soundEnabled = try container.decodeIfPresent(Bool.self, forKey: .soundEnabled) ?? true

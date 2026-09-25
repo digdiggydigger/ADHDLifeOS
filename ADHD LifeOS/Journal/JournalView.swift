@@ -175,7 +175,17 @@ struct JournalView: View {
                             lifeAreaId: tasks.first { $0.id == taskId }?.lifeAreaId,
                             tasks: tasks,
                             lifeAreas: journalService.lifeAreas,
-                            showStreaks: UserDefaultsMomentumPreferencesStore().read().showStreaks
+                            showStreaks: UserDefaultsMomentumPreferencesStore().read().showStreaks,
+                            // Journal holds all four of the chain's signals — the line the user
+                            // just wrote among them — so its door answers from every one.
+                            hasCountedToday: WeeklyActiveChain.hasCountedToday(
+                                WeeklyActiveChain.Signals(
+                                    tasks: tasks,
+                                    sessions: journalService.focusSessions,
+                                    capturesCleared: journalService.captures.compactMap(\.clearedAt),
+                                    journalLines: allLogs.map(\.createdAt)
+                                )
+                            )
                         )
                     ) {
                         Task { await reload() }

@@ -13,16 +13,13 @@ import WidgetKit
 /// Lives on the app side (not in the shared widget file) because `TaskSummary` and `LifeArea` are
 /// app-target types the extension neither has nor needs; it only ever sees the flattened result.
 enum FocusWidgetSnapshotBuilder {
-    /// The daily target `WeeklyFocusSummaryWidget` shows; kept in one place so both readouts move
-    /// together if it ever becomes a setting.
-    static let dailyGoalMinutes = 30
-
     static func snapshot(
         activeGoal: TaskSummary?,
         lifeAreas: [LifeArea],
         sessions: [CompletedFocusSession],
         activeSprint: FocusWidgetSnapshot.ActiveSprint? = nil,
-        dailyGoalMinutes: Int = FocusWidgetSnapshotBuilder.dailyGoalMinutes,
+        // `0` = no focus goal (`F-E1`): the old always-on 30 was a goal nobody set.
+        dailyGoalMinutes: Int = 0,
         defaultSprintSeconds: Int = FocusSprintConfiguration.defaultDurationSeconds,
         now: Date = Date(),
         calendar: Calendar = .current

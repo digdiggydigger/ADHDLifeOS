@@ -688,3 +688,62 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Next session starts at:** `F-E1-WeeklyChain`, from the arc-E opener written at this close.
 - **E's verdicts, the same day (on `ca06c04`, RM off):** *"D1–D3 pass"* — all three blocks PASSED —
   and on §A-CHEVRON, *"Keep the chevron as is."* **Arc D is closed with nothing owed to E.**
+
+### Session 12 — 2026-09-25, arc E, block `F-E1-WeeklyChain` (per-arc bypass: straight on to `F-E2`)
+
+- **Landed:** `F-E1-WeeklyChain`. Suite **3,366 / 0** (3,344 + 22), SwiftLint **0 / 900**, build
+  SUCCEEDED; coverage waits for the arc close (economy 1). The brief was checked first and was
+  accurate (edition 82, `4e5f453`); the emulator had been up 13h and was restarted.
+- **What shipped:** `Home/WeeklyActiveChain.swift` (a day is active on a closed task, a finished
+  sprint, a sorted capture or a journal line; a week counts at N = 3 by default; ONE missed week
+  per rolling four weeks is bridged when the week before it counted, and a bridged week adds
+  nothing to the length). `MomentumPreferences.dailyGoal`/`focusDailyGoalMinutes` are `Int?`, and
+  `weeklyActiveDayGoal` (1…7) is new. **The migration is keyed on the chain's field, not on the
+  values:** a document without `weeklyActiveDayGoal` is pre-E1, so its 5/30 decode as `nil` and a
+  moved Stepper survives; a post-E1 document keeps a chosen 5 (the advisor caught the naive rule
+  erasing it). Close reads **"Close it — makes today count"** until today counts, and plain when
+  the chain is hidden. Settings: "Set a daily goal" / "Set a daily focus goal" toggles reveal their
+  Steppers; "Show weekly chain" reveals "Active days a week".
+- **Where the build departed from the spec, and why:**
+  - **The spec's "no review beyond Settings" did not survive decode→nil.** Every install now reads
+    "no goal", so `MomentumRingCard` had to change: no ring and no "of N" without a goal, and the
+    streak column gone (round 3). It keeps the ring's 126pt footprint, so setting a goal moves
+    nothing. Reviewed and framed. E3 retires the card.
+  - **Three `MomentumTaskContext.build` doors, not two** — Journal's too. Home answers from all
+    four signals (`HomeView+WeeklyChain`, with a new `fetchLogs()` plumb riding every capture
+    refresh), Journal from all four it holds, Tasks from its tasks only: an under-report shows the
+    gain line on a day that already counts, and never claims a day that did not happen.
+  - **Round 3's other retirements landed here:** the nudge line's "· best N" (and the now-dead
+    `NudgeStreak.bestRun`), and the Home Screen widget's focus streak (the stat and the goal bar's
+    "· N streak"; the wire field stays so an old widget binary decodes). The widget's goal bar is
+    now gated on a set goal (`WeekStats.hasDailyGoal`), and so is the in-app focus widget's.
+    **`streakLine` is deleted, so E4's "delete `streakLine`" item is already done.**
+  - **Two more tests reversed than listed:** `testTrailingWeekClosureFlags_…` (the compiler found
+    it) and `NudgeStreakTests.testRuns_currentAndBest`. Every reversal names its origin; the seven
+    `bestStreak`/`streakLine` tests became `WeeklyChainCallSiteTests`' absence sweep.
+- **RED:** the new tests against the old code are a COMPILE failure (72 error lines across six
+  files). **Red-check, eleven compiling mutations, all caught, restored 90 / 0:** chain reads tasks
+  only 12 tests; repair always 1 (the widening case — exactly one test sees it); repair never 4;
+  label inverted 4; nil goal crosses 1; migration always legacy 2; legacy 5 kept 1; current week
+  never counts 1; Home drops the journal 1; chain toggle ignored 1; "· best" restored 2. No test
+  survives both halves of a pair.
+- **Frames, `screenshots/weekly-chain-goals-off/` (5 × L/D + README), on 27.0, both PASSED.** Three
+  harness traps cost reruns, none an app bug: my watchdog matched the suite's START line and
+  killed a run mid-test (now keys on passed/failed/TEST lines with a 900s ceiling); "Close it"
+  matched Today's hero on the parked tab, so the detail was never opened; and the seeded title's
+  `firstMatch` was Today's copy at x≈10,032. **The hidden Today tab stays in the hierarchy — pick
+  the ON-SCREEN match** (`onScreen(_:)`). The UI simulator was erased after.
+- **`apple-design` (pages dated 2026-09-22, fresh; `toggles`, `steppers`, `settings`, `layout`,
+  `writing`, `accessibility`, `typography`): Good.** No Critical, no High. What works: switches only
+  in list rows (`toggles.md › Mobile`), the value beside each Stepper (`steppers.md › Best
+  practices`: "Make the value that a stepper affects obvious"), defaults that give "the best
+  experience to the largest number of people" (`settings.md`) — no goal nobody chose; rows 52pt,
+  the close 370 × 70pt. Sentence case matches the section's existing rows (`writing.md`: one style
+  per element type). **Fixed in-block (Medium):** "Active days a week" stayed visible with the chain
+  hidden — now revealed with it (`layout.md`: "Use progressive disclosure"), pinned by a call-site
+  assertion. **Low, left:** the momentum footer runs nine lines (judgment); the no-goal count's
+  fixed 126pt frame may crowd at accessibility sizes, as the ring always did — E3 retires the card.
+  **For E3:** Today's hero reads plain "Close it" while Task Detail reads the gain line.
+- **Owed to E (batched to `handoff/ARC-REVIEW-E.md`):** the device look — Settings' reveal rows,
+  Today's no-goal count, the gain line. No `#available` site, no reduced site, no rules change.
+- **Next:** `F-E2-NextStepField`, same session.

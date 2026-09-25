@@ -55,53 +55,11 @@ final class MomentumScoreboardTests: XCTestCase {
         )
     }
 
-    // MARK: - Streak
+    // MARK: - Streak (REVERSED into `WeeklyActiveChainTests`, `F-E1-WeeklyChain`)
 
-    func testStreak_zeroWhenNothingEverClosed() {
-        XCTAssertEqual(MomentumScoreboard.streak(tasks: [], asOf: now, calendar: calendar), 0)
-    }
-
-    func testStreak_countsConsecutiveDaysWithAtLeastOneClosure() {
-        let tasks = [doneTask(daysAgo: 0), doneTask(daysAgo: 1), doneTask(daysAgo: 2)]
-
-        XCTAssertEqual(MomentumScoreboard.streak(tasks: tasks, asOf: now, calendar: calendar), 3)
-    }
-
-    /// Two closures on one day are one day of streak — it counts days, not items.
-    func testStreak_multipleClosuresOnOneDayCountOnce() {
-        let tasks = [doneTask(daysAgo: 0), doneTask(daysAgo: 0, hour: 6), doneTask(daysAgo: 1)]
-
-        XCTAssertEqual(MomentumScoreboard.streak(tasks: tasks, asOf: now, calendar: calendar), 2)
-    }
-
-    /// Nothing closed TODAY yet must not read as a broken streak at 09:41 — the day isn't over.
-    /// The chain just starts counting from yesterday.
-    func testStreak_aliveWhenTodayIsStillEmpty() {
-        let tasks = [doneTask(daysAgo: 1), doneTask(daysAgo: 2)]
-
-        XCTAssertEqual(MomentumScoreboard.streak(tasks: tasks, asOf: now, calendar: calendar), 2)
-    }
-
-    func testStreak_gapBreaksTheChain() {
-        let tasks = [doneTask(daysAgo: 0), doneTask(daysAgo: 2), doneTask(daysAgo: 3)]
-
-        XCTAssertEqual(MomentumScoreboard.streak(tasks: tasks, asOf: now, calendar: calendar), 1)
-    }
-
-    func testStreak_deadWhenLastClosureIsTwoDaysBack() {
-        let tasks = [doneTask(daysAgo: 2), doneTask(daysAgo: 3)]
-
-        XCTAssertEqual(MomentumScoreboard.streak(tasks: tasks, asOf: now, calendar: calendar), 0)
-    }
-
-    /// Open tasks and stampless documents contribute nothing, whatever their status claims.
-    func testStreak_ignoresOpenAndStamplessTasks() {
-        var stampless = doneTask(daysAgo: 0)
-        stampless.completedAt = nil
-        let tasks = [stampless]
-
-        XCTAssertEqual(MomentumScoreboard.streak(tasks: tasks, asOf: now, calendar: calendar), 0)
-    }
+    // The six `testStreak_*` pinned a DAILY, task-closure-only streak E retired in round 3 for a
+    // weekly active-day chain with auto repair. Each rule they held survives one level up, and each
+    // reversed test in `WeeklyActiveChainTests` names the test it came from.
 
     // MARK: - Ring
 
@@ -211,14 +169,10 @@ final class MomentumScoreboardTests: XCTestCase {
         XCTAssertNil(items[1].rate, "a dormant area has no rate, which is not the same claim as 0%")
     }
 
-    /// Oldest first, today last — the dot row under the streak reads left to right like a calendar.
-    func testTrailingWeekClosureFlags_marksEachOfTheLastSevenDays() {
-        let tasks = [doneTask(daysAgo: 0), doneTask(daysAgo: 2), doneTask(daysAgo: 6)]
-
-        let flags = MomentumScoreboard.trailingWeekClosureFlags(tasks: tasks, asOf: now, calendar: calendar)
-
-        XCTAssertEqual(flags, [true, false, false, false, true, false, true])
-    }
+    // `testTrailingWeekClosureFlags_marksEachOfTheLastSevenDays` — REVERSED (`F-E1-WeeklyChain`)
+    // into `WeeklyChainCallSiteTests`' absence sweep. The dot row existed only under the daily
+    // streak's count in `MomentumRingCard`; E retired that streak in round 3, the column went, and
+    // `trailingWeekClosureFlags` with it. A test the block spec did not list, found by the compiler.
 
     /// The ring's capture contribution: captures whose exit stamp is today. Only the stamp
     /// counts — a processed capture with no clearedAt predates M7 and belongs to no day.

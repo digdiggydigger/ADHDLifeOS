@@ -41,7 +41,7 @@ extension HomeView {
                 lifeAreas: homeService.lifeAreas,
                 sessions: publishedHistory,
                 activeSprint: sprint,
-                dailyGoalMinutes: momentumPreferences.focusDailyGoalMinutes,
+                dailyGoalMinutes: momentumPreferences.focusDailyGoalMinutes ?? 0,
                 defaultSprintSeconds: momentumPreferences.defaultSprintMinutes * 60
             )
         )
