@@ -6775,7 +6775,7 @@ what E3 leaves behind. **E3 also depends on arc C** (the shared undo capsule).
 
 ---
 
-### FEATURE: F-E1-WeeklyChain — the weekly active-day chain, goals off until set, and the gain-framed Close button  [ ] NOT STARTED
+### FEATURE: F-E1-WeeklyChain — the weekly active-day chain, goals off until set, and the gain-framed Close button  [x] COMPLETED 2026-09-25
 
 **What E chose.** Round 3, *"Streaks → 'Weekly chain + auto repair.'"*: *"A week 'counts' once the
 user is active on N days they choose. One missed week a month is repaired automatically. The other
@@ -6846,13 +6846,26 @@ missed."*
 - None found by grep for `FocusStatsWidget` in the widget's own test target — say so.
 
 **Acceptance criteria**
-- [ ] RED first: reversed tests above, red-checked by restoring old code, failures counted.
-- [ ] SwiftLint, full suite, build all pasted.
-- [ ] No `apple-design` review owed beyond the two new/changed Settings rows (Toggle + Stepper,
-      matching the existing pattern) — run it on those rows only, say why nothing else qualifies.
-- [ ] No `#available`/Reduce Motion site touched — no Verified-paths line, no RM-on pass owed.
-- [ ] `firestore.rules`: none — everything here is local (`MomentumPreferences`, `UserDefaults`)
+- [x] RED first: reversed tests above, red-checked by restoring old code, failures counted.
+      (RED = a compile failure of the new tests against the old code; then 11 compiling
+      mutations, every one caught — build-log session 12.)
+- [x] SwiftLint, full suite, build all pasted.
+- [x] ~~No `apple-design` review owed beyond the two new/changed Settings rows~~ — **the spec's
+      assumption did not survive decode→nil:** every install now reads "no goal", so Today's
+      `MomentumRingCard` changes too (no ring, no streak column). Reviewed with the Settings rows
+      and the gain line; `screenshots/weekly-chain-goals-off/` (5 frames × L/D + README).
+- [x] No `#available`/Reduce Motion site touched — no Verified-paths line, no RM-on pass owed.
+- [x] `firestore.rules`: none — everything here is local (`MomentumPreferences`, `UserDefaults`)
       and derived from data already fetched.
+
+**Built 2026-09-25 (`feature/adhd-e1-chain`).** Departures from the spec, each in build-log session
+12: a THIRD `MomentumTaskContext.build` site (Journal); two more tests reversed than listed
+(`testTrailingWeekClosureFlags_…`, `testRuns_currentAndBest`); the Home Screen widget's focus
+streak and the nudge "· best N" retired here (E's round-3 list); `streakLine` deleted here, so
+**E4's "delete `streakLine`" item is already done**. **For E3:** Today's hero still reads plain
+"Close it" while Task Detail reads "makes today count" — E3's one card must take its Close copy
+from `MomentumTaskContext.Context.closeButtonTitle` (Home's `hasCountedToday` is on
+`HomeView+WeeklyChain`).
 
 **Dependencies:** none upstream. E3 and E4 both consume `weeklyActiveDayGoal`, the chain function,
 and the goals-off model.

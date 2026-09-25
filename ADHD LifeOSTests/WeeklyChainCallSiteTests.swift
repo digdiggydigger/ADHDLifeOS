@@ -69,6 +69,9 @@ final class WeeklyChainCallSiteTests: XCTestCase {
         XCTAssertTrue(settings.contains("setFocusGoalEnabled("))
         XCTAssertTrue(settings.contains("momentumPreferences.weeklyActiveDayGoal = newValue"))
         XCTAssertTrue(settings.contains("in: WeeklyActiveChain.goalRange"))
+        // The apple-design review's in-scope fix: the chain's N is revealed with the chain, the
+        // same way each goal's Stepper is revealed with its toggle.
+        XCTAssertTrue(settings.contains("if momentumPreferences.showStreaks { Stepper("))
     }
 
     // MARK: - "Makes today count": every door into Task Detail answers it

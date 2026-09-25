@@ -59,28 +59,32 @@ extension SettingsView {
             ))
             .accessibilityIdentifier("settingsMomentumStreaksToggle")
 
-            // Round 5b: "Weekly streak N → '3 days' (the default; changeable in Settings)".
-            Stepper(
-                value: Binding(
-                    get: { momentumPreferences.weeklyActiveDayGoal },
-                    set: { newValue in
-                        momentumPreferences.weeklyActiveDayGoal = newValue
-                        momentumPreferencesStore.write(momentumPreferences)
+            // Round 5b: "Weekly streak N → '3 days' (the default; changeable in Settings)". Shown
+            // only while the chain is — the same reveal the two goal toggles use (`layout.md` ›
+            // progressive disclosure): a number for something hidden is a control for nothing.
+            if momentumPreferences.showStreaks {
+                Stepper(
+                    value: Binding(
+                        get: { momentumPreferences.weeklyActiveDayGoal },
+                        set: { newValue in
+                            momentumPreferences.weeklyActiveDayGoal = newValue
+                            momentumPreferencesStore.write(momentumPreferences)
+                        }
+                    ),
+                    in: WeeklyActiveChain.goalRange,
+                    onEditingChanged: { editing in
+                        if !editing { Haptics.play(.selection) }
+                    },
+                    label: {
+                        LabeledContent(
+                            "Active days a week",
+                            value: "\(momentumPreferences.weeklyActiveDayGoal) "
+                                + (momentumPreferences.weeklyActiveDayGoal == 1 ? "day" : "days")
+                        )
                     }
-                ),
-                in: WeeklyActiveChain.goalRange,
-                onEditingChanged: { editing in
-                    if !editing { Haptics.play(.selection) }
-                },
-                label: {
-                    LabeledContent(
-                        "Active days a week",
-                        value: "\(momentumPreferences.weeklyActiveDayGoal) "
-                            + (momentumPreferences.weeklyActiveDayGoal == 1 ? "day" : "days")
-                    )
-                }
-            )
-            .accessibilityIdentifier("settingsMomentumChainStepper")
+                )
+                .accessibilityIdentifier("settingsMomentumChainStepper")
+            }
 
             Toggle("Count cleared captures", isOn: Binding(
                 get: { momentumPreferences.countClearedCaptures },
