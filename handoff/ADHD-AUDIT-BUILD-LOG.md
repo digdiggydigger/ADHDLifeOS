@@ -747,3 +747,44 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Owed to E (batched to `handoff/ARC-REVIEW-E.md`):** the device look — Settings' reveal rows,
   Today's no-goal count, the gain line. No `#available` site, no reduced site, no rules change.
 - **Next:** `F-E2-NextStepField`, same session.
+
+### Session 13 — 2026-09-25, arc E, block `F-E2-NextStepField` (same session as 12; stops here, E3 in a fresh session)
+
+- **Landed:** `F-E2-NextStepField`. Suite **3,375 / 0** (3,366 + 9) after a CLEAN build, SwiftLint
+  **0 / 902**; coverage waits for the arc close.
+- **What shipped:** `next_step` (tasks' snake_case) on `TaskItem`, `TaskSummary` and `TaskDetail`;
+  `TaskUpdatePayload.nextStep: String??` (cleared = `FieldValue.delete()`), in `isEmpty`, written by
+  `FirestoreFieldPayloads.taskUpdate`; `TaskEditedFields.nextStep: String?` where `nil` = never
+  staged, so no older constructor can read as an edit; trimmed like `notes`. Task Detail's row sits
+  beside Notes, staged behind Save and autosaved on the way out (`F-C2`). **No rules change** —
+  `firestore.rules` grants owner CRUD on the whole `tasks` document.
+- **RED:** 19 compile errors in the new file. **Red-check, six compiling mutations, all caught,
+  restored 56 / 0:** camelCase key 2; `isEmpty` blind to it 2; unstaged counted as an edit 1;
+  untrimmed 2; detail never seeds 1; `TaskSummary` key dropped 1.
+- **`apple-design` (pages 2026-09-22, fresh; `text-fields`, `writing`, `accessibility`,
+  `typography`, `layout`): Good, after one in-block fix.** **High, fixed — found in the block's own
+  frame:** once saved, the placeholder "Next Step" vanished and the line read as an unnamed note.
+  `text-fields.md › Best practices`: *"Because placeholder text disappears when people start typing,
+  it can also be useful to include a separate label describing the field to remind people of its
+  purpose."* Now a footnote caption "Next Step" (hidden from VoiceOver) over a field whose
+  placeholder is "What to do first", with `.accessibilityLabel("Next Step")`, pinned by the
+  call-site test. Title case matches the form's other rows ("Due Date", "Life Area") —
+  `writing.md`: one style per element type. **Low, left:** Notes has the same placeholder-only
+  shape (pre-existing; a register candidate, not this block's).
+- **Machine traps, none of them app bugs:** (1) **the Firebase emulator had half-died** — the
+  session-start restart ORPHANED the old Firestore JVM on 8080, the new emulator later crashed, and
+  Auth/Storage were down while 8080 said 200: 32 emulator tests FAILED instead of skipping and every
+  UI render died at sign-up. Killed (after checking its `--project_id`), restarted, all three ports
+  probed; memory `emulator-freshness`. (2) **A stale incremental build CRASHED the app** after the
+  label fix: wrapping the `TextField` in a `VStack` changed `addMoreInfoSection`'s underlying type
+  and `TaskDetailView.body` was not recompiled (`initializeWithCopy for TextField`, SIGSEGV) — the
+  unit suite stayed green because no unit test renders that body. Clean build; memory
+  `opaque-type-incremental-segv`. (3) A lazily built Form has no Save element below the fold until
+  scrolled to. (4) Accessibility XL needs an erased, warmed simulator.
+- **Frames, `screenshots/next-step-field/` (3 × L/D + README), on 27.0, after a clean build: light
+  and dark PASSED.** Accessibility XL measured the field at 338 × 48pt (it grows) but failed at the
+  typing step and its bundle was cut short by the watchdog — no AX frame; left for E's pass.
+- **Owed to E (batched to `handoff/ARC-REVIEW-E.md`):** the Next Step row and its caption on the
+  phone, including at a large text size. No `#available` site, no reduced site, no rules change.
+- **Next session starts at:** `F-E3-OneCardToday`, from `handoff/START-HERE-adhd-audit-arc-E3-onecard.md`
+  (a `WIP:` opener; this session stopped at ~55% context on E's note, at a clean line).

@@ -35,7 +35,9 @@ final class NextStepFieldRenderUITests: XCTestCase {
         // 1 — an untouched task: the empty row, beside Notes, with nothing to Save.
         try openTheWalk(app)
         let field = row("taskDetailNextStepField", in: app)
-        UITestSession.scrollUntilHittable(field, in: app)
+        // Twenty swipes, not the default eight: at Accessibility XL "Add More Info" is far below
+        // the fold, under the whole focus-sprint planner.
+        UITestSession.scrollUntilHittable(field, in: app, attempts: 20)
         XCTAssertTrue(field.exists, "Task Detail draws no Next Step row")
         print("MEASURE nextstep-\(tag) field=\(field.frame)")
         attach(app, named: "01-empty-row-\(tag)")
@@ -58,7 +60,7 @@ final class NextStepFieldRenderUITests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
         try openTheWalk(app)
         let reopened = row("taskDetailNextStepField", in: app)
-        UITestSession.scrollUntilHittable(reopened, in: app)
+        UITestSession.scrollUntilHittable(reopened, in: app, attempts: 20)
         let persisted = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "value == %@", line), object: reopened
         )
@@ -83,6 +85,10 @@ final class NextStepFieldRenderUITests: XCTestCase {
         )
         let title = row("taskDetailTitleField", in: app)
         XCTAssertTrue(UITestSession.tap(walk, untilExists: title), "Task detail never opened")
+        // iOS's "Save Password?" sheet can land AFTER the detail opens — at Accessibility XL it
+        // did, covering the page so nothing below the fold could be scrolled to.
+        let prompt = app.sheets.matching(NSPredicate(format: "label CONTAINS[c] 'password'")).firstMatch
+        if prompt.waitForExistence(timeout: 6) { _ = UITestSession.dismissSystemPasswordPromptIfPresent() }
     }
 
     @MainActor
