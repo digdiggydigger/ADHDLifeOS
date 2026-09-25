@@ -35,6 +35,7 @@ enum FirestoreFieldPayloads {
             fields["priority"] = priority.rawValue
         }
         setNullable(payload.notes, forKey: "notes", in: &fields)
+        setNullable(payload.nextStep, forKey: "next_step", in: &fields)
         setNullable(payload.lifeAreaId, forKey: "life_area_id", in: &fields) { $0.uuidString }
         setNullable(payload.dueDate, forKey: "due_date", in: &fields) { Timestamp(date: $0) }
         setNullable(payload.atPlaceId, forKey: "at_place_id", in: &fields) { $0.uuidString }

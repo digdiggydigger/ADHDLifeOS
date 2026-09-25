@@ -44,6 +44,10 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
     /// `FieldValue.delete()` — an explicit null would leave the collection in two shapes.
     /// Read through `SoftDelete.isLive(deletedAt:)`, never compared inline.
     var deletedAt: Date?
+    /// The task's "Next step" (`F-E2-NextStepField`, E's round 5a): *"One optional line on a
+    /// task, editable from the card and from task detail."* `nil` on every document written before
+    /// it existed, and whenever the line is cleared (the key is DELETED, never written empty).
+    var nextStep: String?
 
     init(
         id: UUID,
@@ -59,7 +63,8 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         placeId: UUID? = nil,
         latitude: Double? = nil,
         longitude: Double? = nil,
-        deletedAt: Date? = nil
+        deletedAt: Date? = nil,
+        nextStep: String? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
@@ -67,6 +72,7 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         self.status = status
         self.priority = priority
         self.dueDate = dueDate
+        self.nextStep = nextStep
         self.focusDurationSeconds = focusDurationSeconds
         self.nudgesCount = nudgesCount
         self.completedAt = completedAt
@@ -87,6 +93,7 @@ struct TaskItem: Codable, Identifiable, Equatable, Hashable, Sendable {
         case completedAt = "completed_at"
         case atPlaceId = "at_place_id"
         case placeId = "place_id"
+        case nextStep = "next_step"
     }
 }
 

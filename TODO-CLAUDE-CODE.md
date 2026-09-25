@@ -6872,7 +6872,7 @@ and the goals-off model.
 
 ---
 
-### FEATURE: F-E2-NextStepField — the task's "Next step" field  [ ] NOT STARTED
+### FEATURE: F-E2-NextStepField — the task's "Next step" field  [x] COMPLETED 2026-09-25
 
 **What E chose.** Round 5a: *"Next step → 'A "Next step" field.' One optional line on a task,
 editable from the card and from task detail. Time comes from the task's stored sprint length
@@ -6911,13 +6911,24 @@ convention the file's tests already run for `life_area_id`), a `TaskUpdatePayloa
 of `ActiveGoalSelectionTests.swift:61` `testTaskSummaryDecoding_readsHeroFields_...`).
 
 **Acceptance criteria**
-- [ ] RED first: the new field/payload/decode tests, run red before the field exists.
-- [ ] SwiftLint, full suite, build all pasted.
-- [ ] `apple-design` review owed for the new Task Detail row (Dynamic Type, VoiceOver label,
-      `writing.md` capitalisation for the row title).
-- [ ] No Reduce Motion site — none owed.
-- [ ] **"firestore.rules changes; E republishes" does NOT apply here** — state the verification
-      above in the report instead.
+- [x] RED first: the new field/payload/decode tests, run red before the field exists (19 compile
+      errors); then six compiling mutations, all caught (build-log session 13).
+- [x] SwiftLint, full suite, build all pasted.
+- [x] `apple-design` review owed for the new Task Detail row — **it found a High in the block's own
+      frame and it was fixed in-block**: once saved, the placeholder was the row's only name, so the
+      line read as an unnamed note (`text-fields.md` › Best practices). The row now has a footnote
+      caption "Next Step" over a field whose placeholder is "What to do first"; VoiceOver hears
+      "Next Step" once. `screenshots/next-step-field/` + README.
+- [x] No Reduce Motion site — none owed.
+- [x] **"firestore.rules changes; E republishes" does NOT apply here** — `firestore.rules` grants
+      owner CRUD on the whole `tasks` document by collection; there is no per-field allowlist.
+
+**Built 2026-09-25 (`feature/adhd-e2-nextstep`).** Beyond the spec: `TaskItem` carries the field
+too (Home's `allTasks` and Tasks decode it), `TaskEditedFields.nextStep` is optional so an
+UNSTAGED line is never an edit (the focus-config rule — the dirty-state and every old constructor
+stay honest), Home's arrival-row projection carries it, and the test fake merges it the way
+production's refetch does. **For E3:** the card-side editing reads and writes the same field and
+should say "Next Step" the same way.
 
 **Dependencies:** none upstream. E3's card-side editing needs this block's model + payload work
 done first.

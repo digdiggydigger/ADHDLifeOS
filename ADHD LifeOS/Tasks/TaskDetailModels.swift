@@ -29,6 +29,10 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
     /// document written before this block has no such key, so absence is the ordinary state.
     /// Read through `SoftDelete.isLive(deletedAt:)`, never compared inline.
     var deletedAt: Date?
+    /// The task's "Next step" (`F-E2-NextStepField`, E's round 5a): *"One optional line on a
+    /// task, editable from the card and from task detail."* `nil` on every document written before
+    /// it existed, and whenever the line is cleared (the key is DELETED, never written empty).
+    var nextStep: String?
 
     init(
         id: UUID,
@@ -45,12 +49,14 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
         placeId: UUID? = nil,
         latitude: Double? = nil,
         longitude: Double? = nil,
-        deletedAt: Date? = nil
+        deletedAt: Date? = nil,
+        nextStep: String? = nil
     ) {
         self.id = id
         self.lifeAreaId = lifeAreaId
         self.title = title
         self.notes = notes
+        self.nextStep = nextStep
         self.status = status
         self.priority = priority
         self.dueDate = dueDate
@@ -74,6 +80,7 @@ struct TaskDetail: Codable, Identifiable, Equatable, Sendable {
         case nudgesCount = "nudges_count"
         case atPlaceId = "at_place_id"
         case placeId = "place_id"
+        case nextStep = "next_step"
     }
 }
 
@@ -99,6 +106,10 @@ struct TaskEditedFields: Equatable, Sendable {
     /// Staged at-place (block 4a). Diffed like `lifeAreaId` — plain optional, nil is a real value
     /// ("no place") — so every constructor must stage the ORIGINAL's value, not leave the default.
     var atPlaceId: UUID?
+    /// Staged "Next step" (`F-E2`). `nil` = never staged, which the diff treats as "unchanged" —
+    /// the focus-config rule — so an older constructor that knows nothing of the field can never
+    /// read as an edit. The detail view always stages the concrete line.
+    var nextStep: String?
 
     init(
         title: String,
@@ -108,10 +119,12 @@ struct TaskEditedFields: Equatable, Sendable {
         dueDate: Date?,
         focusDurationSeconds: Int? = nil,
         nudgesCount: Int? = nil,
-        atPlaceId: UUID? = nil
+        atPlaceId: UUID? = nil,
+        nextStep: String? = nil
     ) {
         self.title = title
         self.notes = notes
+        self.nextStep = nextStep
         self.lifeAreaId = lifeAreaId
         self.priority = priority
         self.dueDate = dueDate
@@ -133,10 +146,12 @@ struct TaskUpdatePayload: Equatable, Sendable {
     var nudgesCount: Int?
     /// Nested-optional like `lifeAreaId`: outer `nil` = untouched, `.some(nil)` = cleared.
     var atPlaceId: UUID??
+    /// Nested-optional like `notes` (`F-E2`): outer `nil` = untouched, `.some(nil)` = cleared.
+    var nextStep: String??
 
     var isEmpty: Bool {
         title == nil && notes == nil && lifeAreaId == nil && priority == nil && dueDate == nil
-            && focusDurationSeconds == nil && nudgesCount == nil && atPlaceId == nil
+            && focusDurationSeconds == nil && nudgesCount == nil && atPlaceId == nil && nextStep == nil
     }
 }
 
