@@ -76,7 +76,8 @@ final class WeekReviewOneChartRenderUITests: XCTestCase {
         let toggle = app.switches["settingsFocusGoalToggle"].firstMatch
         UITestSession.scrollUntilHittable(toggle, in: app)
         let stepper = app.steppers["settingsFocusGoalStepper"].firstMatch
-        XCTAssertTrue(flip(toggle, until: stepper, exists: enabled), "The focus goal toggle did not \(enabled ? "set" : "clear")")
+        let verb = enabled ? "set" : "clear"
+        XCTAssertTrue(flip(toggle, until: stepper, exists: enabled), "The focus goal toggle did not \(verb)")
         done.tap()
     }
 
