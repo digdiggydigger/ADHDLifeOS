@@ -90,7 +90,19 @@ memory into the new session."*
    `SignedInJourneyUITests/testDueNudge_appearsOnHomeAndCanBeDismissed`,
    `RenderHarnessUITests/testRenderFirstRunNudgesDoor`, `UndoCapsuleRenderUITests`,
    `WeeklyChainRenderUITests`. (`IOS27CompatSweepUITests` also changed — a long sweep; judge.)
-5. **Close-out:** full suite (+ the scripted chain), lint, TODO tick with the **"Built … departs
+5. **`CLAUDE.md` — three small edits, ON THIS BRANCH so they land with E3** (E agreed 2026-09-26;
+   `CLAUDE.md` describes `main`, so it changes when the code it describes merges). **Read the LIVE
+   version first** — `git fetch && git diff origin/main -- CLAUDE.md` must be empty, or merge `main`
+   in before editing; it was last changed at `3943579` (2026-09-24) when this was written.
+   - **Project status (line ~9):** "Home (Active Goal hero, life-area grid + reorder, daily summary,
+     focus analytics)" is stale — Today is one card, a "then" list and a done line; Nudges opens
+     from Tools; Week review opens from Today's done line and the top of Areas.
+   - **"The build loop" section:** its close-out bullet names `verify.sh` (2026-09-24) as the
+     template — that lived in a past session's scratchpad and is gone. Point at
+     `scripts/build-loop/` (`t.sh`, `full.sh`, `ui.sh`; README there) instead.
+   - **Repo layout, the `scripts/` row (line ~33):** add "the build-loop drivers" beside the
+     emulator harness.
+6. **Close-out:** full suite (+ the scripted chain), lint, TODO tick with the **"Built … departs
    from the spec"** note (list in build-log session 14), register edition, build-log entry, PR +
    merge + the `origin/main` paste.
 
