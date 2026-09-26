@@ -6,14 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Feature-complete native port, on Firebase, running on E's physical iPhone.** The React prototype
 (`legacy/src/`, reference-only — see `legacy/README.md`) was fully ported to SwiftUI by 2026-08-19:
-Home (Active Goal hero, life-area grid + reorder, daily summary, focus analytics), Tasks (swipeable
+Home (at the time: Active Goal hero, life-area grid + reorder, daily summary, focus analytics — all
+since retired from Today, see below), Tasks (swipeable
 cards, search/sort, detail with focus-sprint planner), Capture inbox triage, Journal, Nudges,
 Settings (incl. account deletion), auth (email/password live; Sign in with Apple built but dormant —
 free dev account), the app-wide focus timer, and a design-token layer mirroring the prototype
 palette.
 
 **Much has shipped since that line was first written, and it is not a prototype port any more.**
-Merged arcs, newest first: the **Routines** arc (location-triggered routines — one notification per
+Merged arcs, newest first: the **ADHD audit build** (`handoff/ADHD-AUDIT-BUILD-LOG.md`) — one undo
+capsule for every close, drafts filed to the inbox, Recently Deleted, one task composer, a weekly
+chain in place of day streaks, and **Today as ONE card** (`F-E3`): the slot-order winner (the
+live routine / arrival pair, a paused sprint's Resume, a pinned task, or a suggestion with "Not
+this one"), a short "then" list with due nudges first, and a done line that opens Week review.
+Life areas, the ring, the inbox peek and the charts left Today; **Nudges opens from Tools**, and
+**Week review opens from Today's done line and from the top of Areas**. Before it, the **Routines** arc (location-triggered routines — one notification per
 crossing rather than N, an ordered routine screen, a Today recovery card, a display Live Activity;
 then Block A's deferred logging, where a crossing writes NOTHING until its notification is tapped;
 then Block B, the Routines section on Tools); the **Tools tab** and the app's own six-item tab bar,
@@ -30,7 +37,7 @@ three weeks it carried that project's web app at its root. Sorted 2026-09-06:
 | path | status |
 |---|---|
 | `ADHD LifeOS/`, `ADHD LifeOSTests/`, `ADHD LifeOSUITests/`, `FocusTimerWidget/` | **The app.** |
-| `functions/`, `shortcuts/`, `scripts/` | **Live.** Firebase functions (self-contained, own `package.json`), the capture Shortcut, the emulator harness. |
+| `functions/`, `shortcuts/`, `scripts/` | **Live.** Firebase functions (self-contained, own `package.json`), the capture Shortcut, the emulator harness, the build-loop drivers (`scripts/build-loop/`). |
 | `handoff/` | **Live.** Session openers, design records, and `OPEN-ITEMS-REGISTER.md` — the outstanding list. See "Session handoff". |
 | `screenshots/` | **Live.** Visual evidence. See "Visual evidence". |
 | `docs/` | **ARCHIVE.** A legacy build's Supabase/AWS design docs. Never read for context. |
@@ -132,8 +139,10 @@ does not:
 - **Close-out is ONE scripted chain, never idle between steps**: clean `build-for-testing` (all
   four targets) → the red-checks by `test-without-building` → the full suite (with coverage at an
   arc close) → lint → `plutil` reads where relevant → the device install. Write it to the
-  scratchpad, run it with `nohup`, wait on its sentinel. The `F-Floor18` close-out
-  (`verify.sh`, 2026-09-24) is the template.
+  scratchpad, run it with `nohup`, wait on its sentinel. **The drivers live in
+  `scripts/build-loop/`** (`t.sh` targeted classes, `full.sh` the suite, `ui.sh` a UI class on the
+  27.0 sim with appearance and text size set; its README has the rules) — the `F-Floor18`
+  `verify.sh` this bullet used to name lived in a session scratchpad and is gone.
 - **A block that touches an `#available` site also runs its floor branch on the iOS 18.0
   simulator** (`name=iPhone 16 Pro (iOS 18 floor),OS=18.0`), targeted, and says so in its
   "Verified paths" line (§7.3).
