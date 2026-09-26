@@ -7195,6 +7195,48 @@ per-uid `UserDefaults` shape, keyed by date instead of a boolean).
 **Do not build past Step 0 in this block.** Once answered, this is a state variant of E3's card,
 not a new screen — write the shape/tests/acceptance list in a follow-up pass.
 
+**The follow-up pass (2026-09-26, written after `F-E3` landed, before any RED).** E's three answers
+fix the model; the rest below is the plainest variant inside them. Each "Build default" is batched
+to E's arc-close look (`ARC-REVIEW-E.md`), not asked mid-arc — none changes a design E chose.
+
+*Shape.*
+- **When:** the card becomes the question when ALL hold — the local time is at or past the hour
+  (`MomentumPreferences.eveningPromptHour`, default **18**, E's answer 1); today's answer is not
+  recorded; the "then" list holds at least one TASK (E's answer 3: *"or the 'then' list is
+  empty"*); and the slot would otherwise be `.suggested`. **Build default:** a pinned card, a
+  paused sprint, the place pair and leave-by all keep the slot — a pin IS tomorrow already decided,
+  and a live sprint or a place must never be hidden by a planning prompt.
+- **What it asks:** eyebrow "Tonight", title "What goes first tomorrow?", one 48pt row button per
+  "then"-list task (E's idea 6: *"which then-list item"*), in the list's order, capped at four.
+  **Build default:** no dismiss control — E's answer 3 is that it returns until answered.
+- **Answering** (E's answer 2): pins the chosen task through `TodayPinStore.pin` — the card then
+  shows it as the pinned winner tonight and tomorrow — and records the evening answered.
+- **The answered marker:** per-uid, per-DAY `UserDefaults` (`today.eveningAnswered.<uid>` = the day
+  key), the skip store's shape with an injected `now` so a test rolls the day. A new day, unanswered,
+  asks again (answer 3).
+- **Settings** (answer 1's override): a Stepper "Tomorrow's first thing · after 18:00" beside the
+  focus goal, **15…23** (build default range). Old stored preferences decode with 18.
+- **AX3:** the compact card's order (title, then the choices); rows wrap, never truncate.
+- **Pure first:** `TodayEveningPrompt.shows(now:hour:answeredToday:slot:thenTasks:calendar:)` and the
+  choice list, unit-tested; the card only renders the resolved state.
+
+*Tests (RED first).* The rule both ways at the hour boundary (17:59 no, 18:00 yes); answered today
+no, answered yesterday yes; empty "then" list no; pinned / paused / place / leave-by slots no; the
+hour follows the preference; the choices are then-list tasks only, in order, at most four; answering
+pins and marks answered for that uid only; the marker rolls at midnight; preferences without the key
+decode to 18. Call-site: Today resolves the prompt with the preference's hour and a real clock;
+Settings' Stepper writes the preference; the choice buttons reach the pin action.
+
+*Acceptance.*
+- [ ] RED first, red-checked (a mutation per rule), failures counted.
+- [ ] SwiftLint, full suite, build pasted.
+- [ ] `screenshots/evening-first-thing/` + README: the evening card L / D / AX3, and the card after
+      answering (pinned).
+- [ ] `apple-design` review (`buttons.md`, `layout.md`, `writing.md`).
+- [ ] RM-on pass: none owed unless a transition is added — the card swaps state unanimated, like
+      E3's pin; say so.
+- [ ] No `firestore.rules` change (pin + marker are `UserDefaults`).
+
 **Tests that must be REVERSED, not deleted.** None found by grep for "tomorrow"/"evening" — new
 surface, no prior implementation.
 
