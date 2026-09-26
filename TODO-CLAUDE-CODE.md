@@ -7031,6 +7031,14 @@ addendum 'closing is one-way'."*
 > held). Shown both real frames, **E chose "B · Follows the count"**: "✓ 0 done today · Week
 > review ›" on one line, left-aligned — round 5b's own wording — stacking only where one line cannot
 > hold both. Board `E3-Q3-done-line-vs-disc` in `screenshots/today-one-card/`.
+>
+> **E DECIDED 2026-09-26, at the `apple-design` review (Q4):** the card's "Close it" words are
+> `StateGo` on their own 12% `StateGo` tint — **2.74:1 in light** (under even the 3:1 bold bar),
+> 5.41:1 in dark; new in E3 (Close was a solid green button before). The catalog holds no darker
+> "go" green. Shown a primary-colour-words render (16.89:1) beside the build, **E chose "A · Keep,
+> send to colour arc"**: the green words ship as the Q1 board showed, and the fix is the colour
+> arc's (register §colour arc, a Critical). Do NOT "fix" it outside that arc. Board
+> `E3-Q4-close-contrast` in `screenshots/today-one-card/`.
 
 **Step 0 — ask E (nudges reachability):** `grep -rn "NudgesView(" "ADHD LifeOS/"` returns exactly
 one production call site, `HomeAccessoryStrips.swift:216`, reached only through Today's nudges
