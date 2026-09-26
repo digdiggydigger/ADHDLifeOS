@@ -43,6 +43,53 @@ final class TodayOneCardCallSiteTests: XCTestCase {
                        "Round 3: *\"Both charts come off Today.\"* (`F-E4` moves one into Week review.)")
     }
 
+    // MARK: - Nudges stays reachable: its door moved to Tools (E, 2026-09-24)
+
+    /// `NudgesView(` had exactly one production door, Today's nudges card, and Structure C removes
+    /// it. E's Step 0 answer: *"the Nudges manager door moves to Tools, beside Routines."* A feature
+    /// with no door is `F-FirstNudgeReachable`'s defect exactly.
+    func testToolsHasTheNudgesDoorBesideRoutines() throws {
+        let tools = try flattened("Tools/ToolsView.swift")
+        let routines = try XCTUnwrap(tools.range(of: "ToolsRoutinesSection(")?.lowerBound)
+        let nudges = try XCTUnwrap(tools.range(of: "ToolsNudgesSection(")?.lowerBound,
+                                   "Tools draws no Nudges door, so the Nudges screen is unreachable.")
+        XCTAssertLessThan(routines, nudges, "Beside Routines — directly after it.")
+        XCTAssertTrue(tools.contains("case .nudges: NudgesView(service: nudgesService) .captureDiscClearance()"),
+                      "The Nudges push must reach `NudgesView` with Tools' service, under the disc's clearance.")
+    }
+
+    /// Tools builds its `NudgesService` in `init`, where no `@Environment` value can be read — so,
+    /// like Home, it hands the service the centre (the seven-day streak) and the undo slot in
+    /// `.task`. Without them a dismissal on the Tools-pushed screen celebrates and records nothing.
+    func testToolsHandsItsNudgesServiceTheCentreAndTheUndoSlot() throws {
+        let tools = try flattened("Tools/ToolsView.swift")
+        XCTAssertTrue(tools.contains("nudgesService.celebrate = celebrate"))
+        XCTAssertTrue(tools.contains("nudgesService.recordAction = recordAction"))
+    }
+
+    // MARK: - Two week-review doors, one review (round 5b: "Both")
+
+    /// Today's done line and the Areas row must open the SAME review — so both build it through
+    /// `WeekReviewView(inputs:)`, and nothing else constructs one from loose parts.
+    func testBothWeekReviewDoorsBuildTheReviewTheSameWay() throws {
+        let doors = try occurrences(of: "WeekReviewView(", under: "").filter { $0 != "WeekReviewView.swift" }
+        XCTAssertEqual(doors, ["AreasWeekReviewDoor.swift", "HomeWeekReviewRow.swift"])
+        for door in doors {
+            let path = door == "HomeWeekReviewRow.swift" ? "Home/\(door)" : "Areas/\(door)"
+            XCTAssertTrue(try flattened(path).contains("WeekReviewView(inputs:"),
+                          "\(door) builds the review from loose parts, so the two doors can drift.")
+        }
+    }
+
+    /// *"...AND a row sits at the top of the Areas tab."*
+    func testTheAreasRowSitsAtTheTopOfTheTab() throws {
+        let areas = try flattened("Areas/AreasView.swift")
+        let row = try XCTUnwrap(areas.range(of: "identifier: \"areasWeekReviewRow\"")?.lowerBound,
+                                "The Areas tab has no Week review row.")
+        let grid = try XCTUnwrap(areas.range(of: "grid(items: items)")?.lowerBound)
+        XCTAssertLessThan(row, grid, "The row sits at the TOP — above the area grid.")
+    }
+
     // MARK: - Reading the tree
 
     private func occurrences(of needle: String, under folder: String) throws -> [String] {

@@ -80,9 +80,10 @@ final class ToolsPageCallSiteTests: XCTestCase {
     func testEveryPushedScreenAsksForCaptureDiscClearance() throws {
         let source = try Self.appSource("Tools/ToolsView.swift")
         XCTAssertEqual(
-            source.components(separatedBy: ".captureDiscClearance()").count - 1, 4,
-            "The Tools page should call `.captureDiscClearance()` four times: once on its own"
-                + " scroll, and once at each of the three pushes. A missing one puts that"
+            source.components(separatedBy: ".captureDiscClearance()").count - 1, 5,
+            "The Tools page should call `.captureDiscClearance()` five times: once on its own"
+                + " scroll, and once at each of the four pushes (Nudges joined in `F-E3-OneCardToday`,"
+                + " when its door moved here from Today). A missing one puts that"
                 + " screen's last row under an opaque 60pt circle with nothing below it to"
                 + " scroll to."
         )

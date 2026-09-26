@@ -35,6 +35,8 @@ struct AreasView: View {
     @State var momentumPreferences: MomentumPreferences = .default
     @State private var showSettings = false
     @State private var isPresentingEditor = false
+    /// `F-E3-OneCardToday`'s second Week review door (round 5b: "Both").
+    @State private var isPresentingWeekReview = false
     /// The grid's rows push by value; the re-tap resets this to pop them (E, 2026-09-08).
     @State private var areasPath = NavigationPath()
 
@@ -49,7 +51,8 @@ struct AreasView: View {
         taskCreateClient: TaskCreateClientAdapting? = nil,
         lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
         onOpenCaptures: (() -> Void)? = nil,
-        momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
+        momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore(),
+        nudgesClient: NudgesClientAdapting? = nil
     ) {
         self.onOpenCaptures = onOpenCaptures
         self.authService = authService
@@ -63,8 +66,11 @@ struct AreasView: View {
         // Same defaulting pattern as SettingsView: the live adapter unless a test injects one.
         self.lifeAreaEditorClient = lifeAreaEditorClient ?? FirebaseLifeAreaEditorClientAdapter()
         self.momentumPreferencesStore = momentumPreferencesStore
+        // The live nudges adapter unless a test injects one, the editor client's pattern above:
+        // it is read only when the Week review door is used, for the summary's due count.
         _service = StateObject(wrappedValue: AreasService(
-            homeClient: homeClient, journalClient: journalClient, captureClient: captureClient
+            homeClient: homeClient, journalClient: journalClient, captureClient: captureClient,
+            nudgesClient: nudgesClient ?? FirebaseNudgesClientAdapter()
         ))
     }
 
@@ -103,6 +109,9 @@ struct AreasView: View {
                     // which is inside a sheet and covers the disc entirely.
                     .captureDiscClearance()
             }
+            .navigationDestination(isPresented: $isPresentingWeekReview) {
+                AreasWeekReviewDoor { await service.weekReviewInputs() }
+            }
             .navigationDestination(for: LifeArea.self) { lifeArea in
                 LifeAreaDetailView(
                     lifeArea: lifeArea,
@@ -124,8 +133,9 @@ struct AreasView: View {
             .onChange(of: isPresentingEditor) { _, presented in
                 if !presented { Task { await service.load() } }
             }
-            .tabRoot(.areas, isAtRoot: !isPresentingEditor && areasPath.isEmpty) {
+            .tabRoot(.areas, isAtRoot: !isPresentingEditor && !isPresentingWeekReview && areasPath.isEmpty) {
                 isPresentingEditor = false
+                isPresentingWeekReview = false
                 areasPath = NavigationPath()
             }
         }
@@ -135,6 +145,11 @@ struct AreasView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
+                // Round 5b: *"...AND a row sits at the top of the Areas tab."* The same review
+                // Today's done line opens (`WeekReviewView(inputs:)`).
+                doorRow(icon: "calendar", title: "Week review", identifier: "areasWeekReviewRow") {
+                    isPresentingWeekReview = true
+                }
                 Text("Every task, note and capture lives in one of these. Tap an area to work inside it.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)

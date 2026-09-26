@@ -31,20 +31,17 @@ extension HomeView {
         .accessibilityIdentifier("homeWeekReviewRow")
     }
 
+    /// Through `WeekReviewView(inputs:)`, the one construction both doors share (`F-E3`), so
+    /// Today's review and the Areas tab's can never be built from different parts.
     var weekReviewDestination: some View {
-        WeekReviewView(
-            review: MomentumWeekReview.build(
-                tasks: homeService.allTasks,
-                lifeAreas: homeService.lifeAreas,
-                sessions: publishedHistory,
-                inboxCount: inboxCount
-            ),
-            summaryCounts: WeekReviewSummaryCounts(
-                open: homeService.openTasks.count,
-                areas: homeService.activeAreas.count,
-                inbox: inboxCount,
-                dueNudges: nudgesService.dueNudges().count
-            )
-        )
+        WeekReviewView(inputs: WeekReviewInputs(
+            tasks: homeService.allTasks,
+            lifeAreas: homeService.lifeAreas,
+            sessions: publishedHistory,
+            inboxCount: inboxCount,
+            openTaskCount: homeService.openTasks.count,
+            areaCount: homeService.activeAreas.count,
+            dueNudgeCount: nudgesService.dueNudges().count
+        ))
     }
 }

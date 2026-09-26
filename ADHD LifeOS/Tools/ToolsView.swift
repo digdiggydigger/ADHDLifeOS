@@ -32,19 +32,33 @@ struct ToolsView: View {
     private let placesClient: PlacesClientAdapting
     private let lifeAreaEditorClient: LifeAreaEditorClientAdapting
     private let recentlyDeletedClient: RecentlyDeletedClientAdapting
+    /// `F-E3-OneCardToday`: the Nudges screen's door moved here from Today (E, 2026-09-24), so
+    /// Tools owns a service for it — shared by the row's count and the pushed screen, as
+    /// `NudgesView` expects of its host.
+    @StateObject private var nudgesService: NudgesService
+    /// Wired into `nudgesService` in `.task`: an `@Environment` value cannot be read in `init`,
+    /// where the service is built. Home does the same for `recordAction`.
+    @Environment(\.celebrate) private var celebrate
+    @Environment(\.recordAction) private var recordAction
 
     init(
         placesClient: PlacesClientAdapting? = nil,
         lifeAreaEditorClient: LifeAreaEditorClientAdapting? = nil,
-        recentlyDeletedClient: RecentlyDeletedClientAdapting? = nil
+        recentlyDeletedClient: RecentlyDeletedClientAdapting? = nil,
+        nudgesClient: NudgesClientAdapting? = nil,
+        nudgeNotificationSchedulingClient: NudgeNotificationSchedulingAdapting? = nil
     ) {
         self.placesClient = placesClient ?? FirebasePlacesClientAdapter()
         self.lifeAreaEditorClient = lifeAreaEditorClient ?? FirebaseLifeAreaEditorClientAdapter()
         self.recentlyDeletedClient = recentlyDeletedClient ?? FirebaseRecentlyDeletedClientAdapter()
+        _nudgesService = StateObject(wrappedValue: NudgesService(
+            client: nudgesClient ?? FirebaseNudgesClientAdapter(),
+            notificationSchedulingClient: nudgeNotificationSchedulingClient ?? NotificationCenterNudgeAdapter()
+        ))
     }
 
-    /// Everything this page can push: the catalog's two CARDS plus the Recently Deleted
-    /// SECTION's one row.
+    /// Everything this page can push: the catalog's two CARDS plus the Recently Deleted and
+    /// Nudges SECTIONS' one row each.
     ///
     /// **A local superset rather than a third `ToolsCatalog.Destination`**, because
     /// `ToolsCatalogTests.testEveryDestinationHasAnEntry` holds the catalog's case list and its
@@ -56,6 +70,7 @@ struct ToolsView: View {
         case places
         case lifeAreas
         case recentlyDeleted
+        case nudges
 
         init(_ destination: ToolsCatalog.Destination) {
             switch destination {
@@ -89,6 +104,9 @@ struct ToolsView: View {
                     // rather than in `ToolsCatalog`, and the catalog still pins two cards. It sat
                     // behind `if #available(iOS 17.0, *)` until `F-Floor18`, with the rest of Places.
                     ToolsRoutinesSection(client: placesClient) { pushedDestination = .places }
+                    // Beside Routines, E's Step 0 answer (2026-09-24): Today's one card left the
+                    // Nudges screen no door, and this is its only one now.
+                    ToolsNudgesSection(service: nudgesService) { pushedDestination = .nudges }
                     // A SECTION with one row, E's own word (round 2: "One row in Tools"), so the
                     // catalog still pins two cards.
                     ToolsRecentlyDeletedSection(client: recentlyDeletedClient) {
@@ -117,6 +135,11 @@ struct ToolsView: View {
                 }
             }
             .tabRoot(.tools, isAtRoot: pushedDestination == nil, onPopToRoot: { pushedDestination = nil })
+            .task {
+                // Before anything can be dismissed: the seven-day streak and the undo capsule.
+                nudgesService.celebrate = celebrate
+                nudgesService.recordAction = recordAction
+            }
         }
     }
 
@@ -191,6 +214,9 @@ struct ToolsView: View {
                 .captureDiscClearance()
         case .recentlyDeleted:
             RecentlyDeletedView(client: recentlyDeletedClient)
+                .captureDiscClearance()
+        case .nudges:
+            NudgesView(service: nudgesService)
                 .captureDiscClearance()
         }
     }

@@ -58,6 +58,29 @@ final class NudgesServiceStreakTests: XCTestCase {
         return service
     }
 
+    /// `F-E3-OneCardToday`: the Nudges screen's door moved to Tools, which builds its own service
+    /// in `init` — where `@Environment(\.celebrate)` cannot be read — and wires the centre in
+    /// `.task`, as every host already wires `recordAction`. A centre handed over late must still
+    /// hear the seventh day, or dismissing from the Tools-pushed screen celebrates nothing.
+    func testACentreHandedOverAfterInitStillHearsTheStreak() async {
+        let nudge = nudge(completions: runEndingYesterday(6))
+        let client = FakeNudgesClientAdapting()
+        client.fetchNudgesResult = .success([nudge])
+        var fired = nudge
+        fired.completionDates = (nudge.completionDates ?? []) + [noon]
+        client.markFiredResult = .success(fired)
+        let service = NudgesService(
+            client: client, notificationSchedulingClient: FakeNudgeNotificationSchedulingAdapting()
+        )
+        let celebrate = RecordingCelebrationRequester()
+        service.celebrate = celebrate
+
+        await service.load()
+        await service.dismiss(nudge)
+
+        XCTAssertEqual(celebrate.milestones, [.streakSeven])
+    }
+
     func testTheSeventhConsecutiveDoneForNowCelebratesTheStreak() async {
         let celebrate = RecordingCelebrationRequester()
         _ = await dismissing(nudge(completions: runEndingYesterday(6)), celebrate: celebrate)
