@@ -26,7 +26,8 @@ final class AreasWeekReviewTests: XCTestCase {
 
     private func rig(
         nudges: Result<[Nudge], Error>? = .success([]),
-        sessions: Result<[CompletedFocusSession], Error> = .success([])
+        sessions: Result<[CompletedFocusSession], Error> = .success([]),
+        focusGoal: Int? = nil
     ) -> Rig {
         let home = FakeHomeClientAdapting()
         let capture = FakeCaptureClientAdapting()
@@ -37,8 +38,11 @@ final class AreasWeekReviewTests: XCTestCase {
             nudgesClient = FakeNudgesClientAdapting()
             nudgesClient?.fetchNudgesResult = nudges
         }
+        var preferences = MomentumPreferences.default
+        preferences.focusDailyGoalMinutes = focusGoal
         let service = AreasService(
-            homeClient: home, journalClient: journal, captureClient: capture, nudgesClient: nudgesClient
+            homeClient: home, journalClient: journal, captureClient: capture, nudgesClient: nudgesClient,
+            preferencesStore: FakePreferencesStore(preferences)
         )
         return Rig(service: service, home: home, capture: capture)
     }
@@ -99,6 +103,26 @@ final class AreasWeekReviewTests: XCTestCase {
         let inputs = await service.weekReviewInputs(asOf: now)
         XCTAssertEqual(inputs.sessions, [])
         XCTAssertEqual(inputs.dueNudgeCount, 0)
+    }
+
+    /// `F-E4`: Week review's one chart draws its goal bar only for a SET focus goal, so the Areas
+    /// door must carry the same preference Today's does — read when the door is used.
+    func testTheAreasDoorCarriesTheFocusGoal() async {
+        let unset = rig().service
+        await unset.load()
+        let noGoal = await unset.weekReviewInputs(asOf: now)
+        XCTAssertNil(noGoal.focusDailyGoalMinutes)
+        let set = rig(focusGoal: 30).service
+        await set.load()
+        let withGoal = await set.weekReviewInputs(asOf: now)
+        XCTAssertEqual(withGoal.focusDailyGoalMinutes, 30)
+    }
+
+    private final class FakePreferencesStore: MomentumPreferencesStoring {
+        private var preferences: MomentumPreferences
+        init(_ preferences: MomentumPreferences) { self.preferences = preferences }
+        func read() -> MomentumPreferences { preferences }
+        func write(_ preferences: MomentumPreferences) { self.preferences = preferences }
     }
 
     func testWithNoNudgesClientNothingIsDue() async {

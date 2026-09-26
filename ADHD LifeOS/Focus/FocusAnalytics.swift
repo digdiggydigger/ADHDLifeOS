@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// One day's worth of focus history, the unit both analytics charts plot.
+/// One day's worth of focus history, the unit Week review's chart plots.
 struct FocusDayBucket: Identifiable, Equatable, Sendable {
     /// Start of the day, in the calendar the bucket was built with.
     let date: Date
@@ -18,8 +18,9 @@ struct FocusDayBucket: Identifiable, Equatable, Sendable {
     var focusedMinutes: Int { focusedSeconds / 60 }
 }
 
-/// Pure aggregation behind `WeeklyFocusSummaryWidget` and `ProductivityTrendChart`, ported from
-/// the date-bucketing `useMemo` blocks in their React counterparts.
+/// Pure aggregation behind `WeeklyFocusSummaryWidget` (and the Home Screen widget's stats), ported
+/// from the date-bucketing `useMemo` blocks in its React counterpart. `F-E4` retired the trend
+/// chart and its rolling window with it.
 ///
 /// One deliberate improvement over the web: those components inferred focus minutes from task
 /// fields (`focusMinutesLogged` / `focusMinutesTarget`, defaulting to a hardcoded 15) because the
@@ -42,19 +43,6 @@ enum FocusAnalytics {
             return []
         }
         return buckets(from: monday, count: 7, sessions: sessions, calendar: calendar)
-    }
-
-    /// The trailing `days`-day window ending today (oldest first) — the trend chart's range.
-    static func rollingDays(
-        sessions: [CompletedFocusSession],
-        days: Int = 7,
-        now: Date = Date(),
-        calendar: Calendar = .current
-    ) -> [FocusDayBucket] {
-        guard days > 0 else { return [] }
-        let today = calendar.startOfDay(for: now)
-        guard let first = calendar.date(byAdding: .day, value: -(days - 1), to: today) else { return [] }
-        return buckets(from: first, count: days, sessions: sessions, calendar: calendar)
     }
 
     private static func buckets(
@@ -95,11 +83,6 @@ enum FocusAnalytics {
     static func dailyAverageSeconds(_ buckets: [FocusDayBucket]) -> Int {
         guard !buckets.isEmpty else { return 0 }
         return totalFocusedSeconds(buckets) / buckets.count
-    }
-
-    /// The single best day in the window; `nil` when nothing was logged at all.
-    static func peakDay(_ buckets: [FocusDayBucket]) -> FocusDayBucket? {
-        buckets.filter { $0.focusedSeconds > 0 }.max { $0.focusedSeconds < $1.focusedSeconds }
     }
 
     /// Consecutive days with focus, counting back from the newest bucket. A gap on the newest day

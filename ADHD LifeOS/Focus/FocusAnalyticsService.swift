@@ -6,8 +6,8 @@
 import Combine
 import Foundation
 
-/// Loads focus history once for the analytics widgets, so `WeeklyFocusSummaryWidget` and
-/// `ProductivityTrendChart` render from one Firestore read rather than fetching separately.
+/// Loads focus history once for a screen that charts it — Tasks' focus week today. (Week review's
+/// chart takes its sessions from `WeekReviewInputs`; the trend chart went in `F-E4`.)
 @MainActor
 final class FocusAnalyticsService: ObservableObject {
     enum State: Equatable {

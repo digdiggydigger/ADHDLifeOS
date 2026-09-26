@@ -36,7 +36,7 @@ struct AreasWeekReviewDoor: View {
 private enum AreasWeekReviewDoorPreviewData {
     static let inputs = WeekReviewInputs(
         tasks: [], lifeAreas: [], sessions: [], inboxCount: 2,
-        openTaskCount: 5, areaCount: 4, dueNudgeCount: 1
+        openTaskCount: 5, areaCount: 4, dueNudgeCount: 1, focusDailyGoalMinutes: nil
     )
 }
 

@@ -38,17 +38,22 @@ final class AreasService: ObservableObject {
     /// Read only when the Week review door is used, for the summary's due count. `nil` (previews,
     /// most tests) counts nothing due.
     private let nudgesClient: NudgesClientAdapting?
+    /// The Settings focus goal, read when the Week review door is used (`F-E4`): the review's one
+    /// chart draws its goal bar only for a set goal, as Today's door does.
+    private let preferencesStore: MomentumPreferencesStoring
 
     init(
         homeClient: HomeClientAdapting,
         journalClient: JournalClientAdapting?,
         captureClient: CaptureClientAdapting,
-        nudgesClient: NudgesClientAdapting? = nil
+        nudgesClient: NudgesClientAdapting? = nil,
+        preferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore()
     ) {
         self.homeClient = homeClient
         self.journalClient = journalClient
         self.captureClient = captureClient
         self.nudgesClient = nudgesClient
+        self.preferencesStore = preferencesStore
     }
 
     func load() async {
@@ -99,7 +104,8 @@ final class AreasService: ObservableObject {
             inboxCount: inboxCount,
             openTaskCount: openTaskCount,
             areaCount: activeAreaCount,
-            dueNudgeCount: nudges.filter { NudgeDueness.isNudgeDue(nudge: $0, now: now) }.count
+            dueNudgeCount: nudges.filter { NudgeDueness.isNudgeDue(nudge: $0, now: now) }.count,
+            focusDailyGoalMinutes: preferencesStore.read().focusDailyGoalMinutes
         )
     }
 }

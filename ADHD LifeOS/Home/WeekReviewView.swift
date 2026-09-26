@@ -22,12 +22,30 @@ struct WeekReviewView: View {
     /// When present, the AI summary card moves here from Today (v3's S5: the recap is weekly
     /// evidence, not a daily verdict). `nil` hides it (previews).
     var summaryCounts: WeekReviewSummaryCounts?
+    /// The review's ONE chart (`F-E4`): Monday–Sunday focus minutes, oldest first.
+    var focusWeek: [FocusDayBucket] = []
+    /// 0 = no goal set, so no goal bar (`F-E1`).
+    var focusDailyGoalMinutes: Int = 0
+
+    init(
+        review: MomentumWeekReview,
+        summaryCounts: WeekReviewSummaryCounts? = nil,
+        focusWeek: [FocusDayBucket] = [],
+        dailyGoalMinutes: Int = 0
+    ) {
+        self.review = review
+        self.summaryCounts = summaryCounts
+        self.focusWeek = focusWeek
+        self.focusDailyGoalMinutes = dailyGoalMinutes
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 header
-                barsCard
+                // Round 3: "One bar chart in Week review" — the Mon–Sun focus bars replace the
+                // rolling closures bars; closures stay as words below (the headline, the wins).
+                WeeklyFocusSummaryWidget(buckets: focusWeek, dailyGoalMinutes: focusDailyGoalMinutes)
                 if !review.dopamineWins.isEmpty {
                     winsSection
                 }
@@ -84,30 +102,6 @@ struct WeekReviewView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("weekReviewHeader")
-    }
-
-    /// One bar per day, oldest to today. Heights are proportional to the week's own best day —
-    /// the chart compares this week with itself, not with an imagined quota.
-    private var barsCard: some View {
-        let peak = max(review.dayCounts.max() ?? 0, 1)
-        return HStack(alignment: .bottom, spacing: 8) {
-            ForEach(Array(zip(review.dayLabels, review.dayCounts).enumerated()), id: \.offset) { _, day in
-                VStack(spacing: 4) {
-                    Capsule()
-                        .fill(day.1 > 0 ? AnyShapeStyle(Color("StateGoVivid")) : AnyShapeStyle(Color("TrackNeutral")))
-                        .frame(height: max(8, CGFloat(day.1) / CGFloat(peak) * 64))
-                        .frame(maxHeight: 64, alignment: .bottom)
-                    Text(day.0)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(day.0), \(day.1) closed")
-            }
-        }
-        .bentoCard()
-        .accessibilityIdentifier("weekReviewBars")
     }
 
     private var winsSection: some View {
@@ -170,18 +164,27 @@ struct WeekReviewView: View {
 }
 
 #if DEBUG
+/// A deterministic Monday-first week — no `Date()` drift between snapshots.
+private func previewFocusWeek() -> [FocusDayBucket] {
+    let monday = Date(timeIntervalSince1970: 1_786_924_800)
+    return [25, 50, 0, 75, 30, 0, 45].enumerated().map { index, minutes in
+        FocusDayBucket(
+            date: monday.addingTimeInterval(TimeInterval(index * 86_400)),
+            focusedSeconds: minutes * 60, sessionCount: minutes > 0 ? 1 : 0, completedCount: minutes > 0 ? 1 : 0
+        )
+    }
+}
+
 #Preview("Light") {
     NavigationStack {
         WeekReviewView(review: MomentumWeekReview(
             headline: "8 closed · 220 focus minutes",
-            dayCounts: [1, 0, 2, 1, 0, 3, 1],
-            dayLabels: ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"],
             dopamineWins: ["Synthesized the user research", "Hydration goal two days running"],
             staminaLine: "83% of targeted minutes actually logged",
             quietLine: "Nothing closed in Hobbies this week, and 4 captures are still unfiled. "
                 + "Neither is a failure — they are just what next week starts with.",
             kickstart: ["15 min · Sort the mail pile", "5 min · Bin the two oldest captures"]
-        ))
+        ), focusWeek: previewFocusWeek(), dailyGoalMinutes: 45)
     }
     .preferredColorScheme(.light)
 }
@@ -190,8 +193,6 @@ struct WeekReviewView: View {
     NavigationStack {
         WeekReviewView(review: MomentumWeekReview(
             headline: "0 closed · 0 focus minutes",
-            dayCounts: [0, 0, 0, 0, 0, 0, 0],
-            dayLabels: ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"],
             dopamineWins: [],
             staminaLine: nil,
             quietLine: nil,

@@ -55,8 +55,10 @@ final class WeeklyChainCallSiteTests: XCTestCase {
         XCTAssertTrue(widget.contains("hasDailyGoal"), "the goal bar must be gated on a set goal")
         let refresh = try flattened(Self.appRoot.appendingPathComponent("Home/HomeView+Refresh.swift"))
         XCTAssertTrue(refresh.contains("dailyGoalMinutes: momentumPreferences.focusDailyGoalMinutes ?? 0"))
-        let analytics = try flattened(Self.appRoot.appendingPathComponent("Focus/FocusAnalyticsSection.swift"))
-        XCTAssertTrue(analytics.contains(".focusDailyGoalMinutes ?? 0"))
+        // `F-E4`: the in-app chart moved from Today's (deleted) analytics section into Week review,
+        // which turns "no goal" into the widget's 0 the same way.
+        let review = try flattened(Self.appRoot.appendingPathComponent("Home/WeekReviewInputs.swift"))
+        XCTAssertTrue(review.contains("dailyGoalMinutes: inputs.focusDailyGoalMinutes ?? 0"))
     }
 
     /// The two "Set a … goal" toggles and the chain's Stepper are the only writers of the three new

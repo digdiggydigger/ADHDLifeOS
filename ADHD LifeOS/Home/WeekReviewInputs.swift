@@ -20,23 +20,31 @@ struct WeekReviewInputs: Equatable {
     /// Unarchived areas only — what Today has always counted for the summary.
     let areaCount: Int
     let dueNudgeCount: Int
+    /// The Settings focus goal, minutes a day (`F-E4`). NOT defaulted, so neither door can forget
+    /// it: `nil` is "no goal", and the one chart draws no goal bar at all (`F-E1`).
+    let focusDailyGoalMinutes: Int?
 }
 
 extension WeekReviewView {
-    init(inputs: WeekReviewInputs) {
+    init(inputs: WeekReviewInputs, asOf now: Date = .now, calendar: Calendar = .current) {
         self.init(
             review: MomentumWeekReview.build(
                 tasks: inputs.tasks,
                 lifeAreas: inputs.lifeAreas,
                 sessions: inputs.sessions,
-                inboxCount: inputs.inboxCount
+                inboxCount: inputs.inboxCount,
+                asOf: now,
+                calendar: calendar
             ),
             summaryCounts: WeekReviewSummaryCounts(
                 open: inputs.openTaskCount,
                 areas: inputs.areaCount,
                 inbox: inputs.inboxCount,
                 dueNudges: inputs.dueNudgeCount
-            )
+            ),
+            // `F-E4`, round 3: "Keep the Mon–Sun bars" — the calendar week of measured focus.
+            focusWeek: FocusAnalytics.currentWeek(sessions: inputs.sessions, now: now, calendar: calendar),
+            dailyGoalMinutes: inputs.focusDailyGoalMinutes ?? 0
         )
     }
 }

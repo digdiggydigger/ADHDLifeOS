@@ -125,17 +125,15 @@ final class FocusCompletionRecordTests: XCTestCase {
     // MARK: - The field is inert to every existing reader
 
     /// **Banked time is banked.** The confirmation is a UI acknowledgement, not a data gate: a
-    /// sprint the user never confirms still counts in the weekly totals, the trend chart and the
-    /// widget. Filtering on the new field is the plausible next step and it would silently
+    /// sprint the user never confirms still counts in the weekly totals, Week review's chart and
+    /// the widget. Filtering on the new field is the plausible next step and it would silently
     /// rewrite E's history the moment an unconfirmed card was left on screen.
     func testAnalyticsCountProvisionalAndConfirmedRecordsAlike() {
         let day = Date(timeIntervalSince1970: 1_800_000_000)
         let provisional = record(focusedSeconds: 600)
         let confirmed = record(focusedSeconds: 900).confirmed(at: day)
 
-        let buckets = FocusAnalytics.rollingDays(
-            sessions: [provisional, confirmed], days: 7, now: day
-        )
+        let buckets = FocusAnalytics.currentWeek(sessions: [provisional, confirmed], now: day)
         let total = buckets.reduce(0) { $0 + $1.focusedSeconds }
 
         XCTAssertEqual(

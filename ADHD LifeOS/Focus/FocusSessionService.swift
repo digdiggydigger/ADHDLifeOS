@@ -27,8 +27,8 @@ final class FocusSessionService: ObservableObject {
     /// Set when persisting a finished sprint fails — the sprint itself still ended cleanly.
     @Published var logErrorMessage: String?
     /// Bumped once per ENDED sprint (manual stop or natural completion, regardless of whether
-    /// the history write landed). Home threads it into `FocusAnalyticsSection` as a reload
-    /// token, so the analytics refresh right after a sprint instead of on the next cold launch.
+    /// the history write landed). Home folds it into its focus-history reload (`HomeView+FocusHistory`),
+    /// so Today's chain signal and Week review refresh right after a sprint, not on the next launch.
     @Published private(set) var completedSprintCount = 0
     /// A sprint that ran out while dead — feeds the confirmation card, persisted until acknowledged.
     @Published var offlineCompletionSummary: CompletedFocusSession?

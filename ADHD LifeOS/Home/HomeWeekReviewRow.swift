@@ -46,7 +46,8 @@ extension HomeView {
             inboxCount: inboxCount,
             openTaskCount: homeService.openTasks.count,
             areaCount: homeService.activeAreas.count,
-            dueNudgeCount: nudgesService.dueNudges().count
+            dueNudgeCount: nudgesService.dueNudges().count,
+            focusDailyGoalMinutes: momentumPreferences.focusDailyGoalMinutes
         ))
     }
 }

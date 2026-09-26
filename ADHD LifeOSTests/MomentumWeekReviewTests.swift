@@ -54,18 +54,6 @@ final class MomentumWeekReviewTests: XCTestCase {
         XCTAssertEqual(review.headline, "2 closed · 20 focus minutes")
     }
 
-    /// Oldest first, today last — the bars read like a calendar, and the labels name the days.
-    func testBuild_dayBarsCoverSevenDays() {
-        let review = MomentumWeekReview.build(
-            tasks: [doneTask("A", daysAgo: 0), doneTask("B", daysAgo: 0), doneTask("C", daysAgo: 2)],
-            lifeAreas: [], sessions: [], inboxCount: 0, asOf: now, calendar: calendar
-        )
-
-        XCTAssertEqual(review.dayCounts, [0, 0, 0, 0, 1, 0, 2])
-        XCTAssertEqual(review.dayLabels.count, 7)
-        XCTAssertEqual(review.dayLabels.last, "Fri", "the review runs up to the asOf day")
-    }
-
     /// The wins are named, newest first, capped at three — a dopamine list, not a ledger.
     func testBuild_dopamineWins_newestFirstCappedAtThree() {
         let review = MomentumWeekReview.build(

@@ -7,8 +7,10 @@ import Charts
 import SwiftUI
 
 /// SwiftUI port of the web prototype's `src/components/WeeklyFocusSummaryWidget.tsx`: the
-/// Monday–Sunday focus bar chart with its daily-goal reference line, the minutes/hours toggle,
-/// and the stat strip (week total, active days, daily average, streak).
+/// Monday–Sunday focus bar chart with its daily-goal reference line and the stat strip (week total,
+/// active days, daily average). **Week review's ONE chart since `F-E4`** (round 3), which shed its
+/// day-streak stat (HOME-04, a fourth streak reading), its minutes/hours toggle (one of HOME-09's
+/// three toggles — minutes only), and its companion trend line.
 ///
 /// Deviations from the React source, per CLAUDE.md precedence:
 /// - §4 zero-hex: Recharts' fixed palette becomes `.tint` / semantic colour, so both schemes work.
@@ -16,24 +18,13 @@ import SwiftUI
 ///   charting, no `ResponsiveContainer` equivalent needed.
 /// - The web summed *estimated* minutes off task fields that don't exist in this app's model;
 ///   this plots **measured** `CompletedFocusSession` time via `FocusAnalytics`.
-/// - Its area/bar style switch lives on `ProductivityTrendChart` instead, where a continuous
-///   trend actually benefits from an area; a 7-bar week reads better as bars only.
 struct WeeklyFocusSummaryWidget: View {
     let buckets: [FocusDayBucket]
     var dailyGoalMinutes: Int = 0
 
-    private enum DisplayUnit: String, CaseIterable, Identifiable {
-        case minutes, hours
-        var id: String { rawValue }
-        var label: String { rawValue.capitalized }
-    }
-
-    @State private var unit: DisplayUnit = .minutes
-
     private var totalSeconds: Int { FocusAnalytics.totalFocusedSeconds(buckets) }
     private var activeDays: Int { FocusAnalytics.activeDayCount(buckets) }
     private var averageSeconds: Int { FocusAnalytics.dailyAverageSeconds(buckets) }
-    private var streak: Int { FocusAnalytics.currentStreak(buckets) }
     private var goalProgress: Double {
         FocusAnalytics.goalProgress(buckets, dailyGoalMinutes: dailyGoalMinutes)
     }
@@ -54,35 +45,24 @@ struct WeeklyFocusSummaryWidget: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 4) {
-                Label("This Week's Focus", systemImage: "timer")
-                    .font(.caption.monospaced().weight(.bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(.tint)
-                Text(FocusTimeFormatting.duration(seconds: totalSeconds))
-                    .font(.title.bold())
-                    .tracking(-0.5)
-                    .minimumScaleFactor(0.8)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 8)
-            Picker("Unit", selection: $unit) {
-                ForEach(DisplayUnit.allCases) { option in
-                    Text(option.label).tag(option)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(maxWidth: 160)
-            .accessibilityIdentifier("weeklyFocusUnitPicker")
+        VStack(alignment: .leading, spacing: 4) {
+            Label("This Week's Focus", systemImage: "timer")
+                .font(.caption.monospaced().weight(.bold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+            Text(FocusTimeFormatting.duration(seconds: totalSeconds))
+                .font(.title.bold())
+                .tracking(-0.5)
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var statStrip: some View {
         HStack(spacing: 8) {
             stat(value: "\(activeDays)/\(max(1, buckets.count))", label: "Active Days")
             stat(value: FocusTimeFormatting.duration(seconds: averageSeconds), label: "Daily Avg")
-            stat(value: "\(streak)", label: "Day Streak")
         }
     }
 
@@ -99,7 +79,7 @@ struct WeeklyFocusSummaryWidget: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
+        .padding(8)
         .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .combine)
     }
@@ -109,13 +89,13 @@ struct WeeklyFocusSummaryWidget: View {
             ForEach(buckets) { bucket in
                 BarMark(
                     x: .value("Day", bucket.date, unit: .day),
-                    y: .value(unit.label, chartValue(for: bucket))
+                    y: .value("Minutes", bucket.focusedMinutes)
                 )
                 .foregroundStyle(.tint)
                 .cornerRadius(4)
             }
             if dailyGoalMinutes > 0 {
-                RuleMark(y: .value("Goal", goalValue))
+                RuleMark(y: .value("Goal", dailyGoalMinutes))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .foregroundStyle(.secondary)
             }
@@ -145,21 +125,6 @@ struct WeeklyFocusSummaryWidget: View {
                 .tint(goalProgress >= 1 ? .green : .accentColor)
         }
         .accessibilityElement(children: .combine)
-    }
-
-    /// Hours are shown to one decimal so a 45-minute day doesn't flatten to "0".
-    private func chartValue(for bucket: FocusDayBucket) -> Double {
-        switch unit {
-        case .minutes: return Double(bucket.focusedMinutes)
-        case .hours: return Double(bucket.focusedSeconds) / 3600
-        }
-    }
-
-    private var goalValue: Double {
-        switch unit {
-        case .minutes: return Double(dailyGoalMinutes)
-        case .hours: return Double(dailyGoalMinutes) / 60
-        }
     }
 }
 

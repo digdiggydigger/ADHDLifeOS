@@ -6,7 +6,7 @@
 import XCTest
 @testable import ADHD_LifeOS
 
-/// Covers the date-bucketing behind `WeeklyFocusSummaryWidget` and `ProductivityTrendChart`.
+/// Covers the date-bucketing behind `WeeklyFocusSummaryWidget` (Week review's one chart since `F-E4`).
 /// Everything runs against a fixed UTC calendar and a fixed `now`, so results never depend on the
 /// machine's timezone or the day the suite happens to run.
 final class FocusAnalyticsTests: XCTestCase {
@@ -63,34 +63,18 @@ final class FocusAnalyticsTests: XCTestCase {
         XCTAssertEqual(FocusAnalytics.totalFocusedSeconds(buckets), 0)
     }
 
-    // MARK: - Rolling window
-
-    func testRollingDays_endsTodayAndCountsBack() {
-        let buckets = FocusAnalytics.rollingDays(sessions: [], days: 7, now: now, calendar: utc)
-
-        XCTAssertEqual(buckets.count, 7)
-        XCTAssertEqual(buckets.last?.date, utc.startOfDay(for: now), "newest bucket is today")
-        XCTAssertEqual(buckets.first?.date, utc.date(byAdding: .day, value: -6, to: utc.startOfDay(for: now)))
-    }
-
-    func testRollingDays_includesSixDaysAgoButNotSeven() {
-        let sessions = [session(daysAgo: 6, minutes: 20), session(daysAgo: 7, minutes: 99)]
-
-        let buckets = FocusAnalytics.rollingDays(sessions: sessions, days: 7, now: now, calendar: utc)
-
-        XCTAssertEqual(FocusAnalytics.totalFocusedSeconds(buckets), 20 * 60)
-    }
-
-    func testRollingDays_zeroOrNegative_isEmpty() {
-        XCTAssertTrue(FocusAnalytics.rollingDays(sessions: [], days: 0, now: now, calendar: utc).isEmpty)
-        XCTAssertTrue(FocusAnalytics.rollingDays(sessions: [], days: -3, now: now, calendar: utc).isEmpty)
-    }
-
     // MARK: - Aggregates
 
+    /// Seven buckets, oldest first, ending today — built directly since `F-E4` retired
+    /// `rollingDays`, the trend chart's window, with the chart. The aggregates take any buckets.
     private func week(_ minutesPerDayAgo: [Int: Int]) -> [FocusDayBucket] {
-        let sessions = minutesPerDayAgo.map { session(daysAgo: $0.key, minutes: $0.value) }
-        return FocusAnalytics.rollingDays(sessions: sessions, days: 7, now: now, calendar: utc)
+        (0..<7).reversed().map { daysAgo in
+            let minutes = minutesPerDayAgo[daysAgo] ?? 0
+            return FocusDayBucket(
+                date: utc.startOfDay(for: utc.date(byAdding: .day, value: -daysAgo, to: now)!),
+                focusedSeconds: minutes * 60, sessionCount: minutes > 0 ? 1 : 0, completedCount: minutes > 0 ? 1 : 0
+            )
+        }
     }
 
     func testTotalsAndActiveDays() {
@@ -110,16 +94,6 @@ final class FocusAnalyticsTests: XCTestCase {
 
     func testDailyAverage_emptyWindow_isZero() {
         XCTAssertEqual(FocusAnalytics.dailyAverageSeconds([]), 0)
-    }
-
-    func testPeakDay_findsTheBusiestDay() {
-        let buckets = week([0: 30, 2: 95, 4: 60])
-
-        XCTAssertEqual(FocusAnalytics.peakDay(buckets)?.focusedSeconds, 95 * 60)
-    }
-
-    func testPeakDay_noSessions_isNil() {
-        XCTAssertNil(FocusAnalytics.peakDay(week([:])))
     }
 
     func testCurrentStreak_countsConsecutiveDaysBackFromToday() {

@@ -13,10 +13,6 @@ import Foundation
 struct MomentumWeekReview: Equatable {
     /// "8 closed · 220 focus minutes"
     let headline: String
-    /// Closures per trailing day, oldest first — the bars.
-    let dayCounts: [Int]
-    /// "Sat"…"Fri", aligned with `dayCounts`.
-    let dayLabels: [String]
     /// The week's named wins, newest first, capped at three — a dopamine list, not a ledger.
     let dopamineWins: [String]
     /// "83% of targeted minutes actually logged" — `nil` with no sprints to measure.
@@ -46,8 +42,6 @@ struct MomentumWeekReview: Equatable {
 
         return MomentumWeekReview(
             headline: "\(weekClosures.count) closed · \(focusMinutes) focus minutes",
-            dayCounts: dayCounts(closures: weekClosures, asOf: now, calendar: calendar),
-            dayLabels: dayLabels(asOf: now, calendar: calendar),
             dopamineWins: weekClosures
                 .sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
                 .prefix(3)
@@ -59,27 +53,6 @@ struct MomentumWeekReview: Equatable {
             ),
             kickstart: kickstart(tasks: tasks)
         )
-    }
-
-    private static func dayCounts(closures: [TaskItem], asOf now: Date, calendar: Calendar) -> [Int] {
-        let today = calendar.startOfDay(for: now)
-        return (0..<7).reversed().map { back in
-            guard let day = calendar.date(byAdding: .day, value: -back, to: today) else { return 0 }
-            return closures.filter { task in
-                guard let completedAt = task.completedAt else { return false }
-                return calendar.isDate(completedAt, inSameDayAs: day)
-            }.count
-        }
-    }
-
-    private static func dayLabels(asOf now: Date, calendar: Calendar) -> [String] {
-        let symbols = calendar.shortWeekdaySymbols
-        let today = calendar.startOfDay(for: now)
-        return (0..<7).reversed().compactMap { back in
-            calendar.date(byAdding: .day, value: -back, to: today).map {
-                symbols[calendar.component(.weekday, from: $0) - 1]
-            }
-        }
     }
 
     private static func staminaLine(for sessions: [CompletedFocusSession]) -> String? {
