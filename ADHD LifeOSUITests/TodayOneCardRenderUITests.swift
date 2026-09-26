@@ -55,7 +55,13 @@ final class TodayOneCardRenderUITests: XCTestCase {
         let close = app.buttons["homeCloseTaskButton"].firstMatch
         let start = app.buttons["homeStartSessionButton"].firstMatch
         XCTAssertEqual(start.label, "Start 15 min", "Start does not name the sprint it launches")
-        XCTAssertEqual(close.frame.height, skip.frame.height, accuracy: 0.5, "The quiet pair is ragged")
+        if tag == "A" {
+            // The compact AX3 card STACKS the pair (`buttons(compact: true)`), so one height is not
+            // its rule — a side-by-side pair at 137pt beside 51pt was the first AX run's reading.
+            XCTAssertLessThanOrEqual(close.frame.maxY, skip.frame.minY, "The AX3 pair is not stacked")
+        } else {
+            XCTAssertEqual(close.frame.height, skip.frame.height, accuracy: 0.5, "The quiet pair is ragged")
+        }
         print("MEASURE today-\(tag) card=\(card.frame) start=\(start.frame) close=\(close.frame) skip=\(skip.frame)")
         if tag == "A" { try assertStartAboveTheFold(start, in: app) }
         attach(app, named: "01-suggested-\(tag)")
@@ -125,6 +131,11 @@ final class TodayOneCardRenderUITests: XCTestCase {
         let nudges = app.buttons["toolsNudgesRow"].firstMatch
         UITestSession.scrollUntilHittable(nudges, in: app)
         XCTAssertTrue(nudges.exists, "Tools draws no Nudges row")
+        // Frame 05's close leaves the undo capsule up until the next action — correctly — and
+        // "hittable" stopped the row UNDER it. Lift the row to mid-screen so the frame shows it.
+        let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let lifted = middle.withOffset(CGVector(dx: 0, dy: -(nudges.frame.midY - app.frame.midY)))
+        if nudges.frame.midY > app.frame.midY { middle.press(forDuration: 0.05, thenDragTo: lifted) }
         print("MEASURE today-\(tag) toolsNudgesRow=\(nudges.frame) label=\(nudges.label)")
         attach(app, named: "06-tools-nudges-row-\(tag)")
 
@@ -230,7 +241,10 @@ final class TodayOneCardRenderUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
+    /// Clears iOS's "Save Password?" sheet first, EVERY frame: the first L and D runs dismissed it
+    /// once, before frame 01, and the system raised it again over frame 02 in both appearances.
     private func attach(_ app: XCUIApplication, named name: String) {
+        UITestSession.dismissSystemPasswordPromptIfPresent()
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name
         shot.lifetime = .keepAlways
