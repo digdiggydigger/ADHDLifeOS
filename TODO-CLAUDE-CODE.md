@@ -6935,7 +6935,7 @@ done first.
 
 ---
 
-### FEATURE: F-E3-OneCardToday — Today collapses to one card, a "then" list, and nothing else  [ ] NOT STARTED
+### FEATURE: F-E3-OneCardToday — Today collapses to one card, a "then" list, and nothing else  [ ] IN PROGRESS — built on `feature/adhd-e3-onecard`, NOT landed (2026-09-26; frames, `apple-design`, red-check owed — `handoff/START-HERE-adhd-audit-arc-E3-finish.md`)
 
 **What E chose.** Round 3, *"Structure → 'C · One next thing.' Today shows ONE card, then a short
 'then' list, and nothing else."* *"At a place, the live routine takes the slot; elsewhere the hero

@@ -119,7 +119,7 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 |---|---|---|---|---|
 | `F-E1-WeeklyChain` | the weekly active-day chain, goals off until set, and the gain-framed Close button | NOT STARTED | — | — |
 | `F-E2-NextStepField` | the task's "Next step" field | NOT STARTED | — | — |
-| `F-E3-OneCardToday` | Today collapses to one card, a "then" list, and nothing else | NOT STARTED | — | — |
+| `F-E3-OneCardToday` | Today collapses to one card, a "then" list, and nothing else | **BUILT, NOT LANDED (WIP)** — frames, `apple-design`, red-check owed | branch `feature/adhd-e3-onecard` | batched to ARC-REVIEW-E |
 | `F-E4-WeekReviewConsolidation` | one bar chart, the Areas door, the streak-copy removals | NOT STARTED | — | — |
 | `F-E5-EveningFirstThing` | evening "tomorrow's first thing" prompt | NOT STARTED | — | — |
 
@@ -788,3 +788,44 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   phone, including at a large text size. No `#available` site, no reduced site, no rules change.
 - **Next session starts at:** `F-E3-OneCardToday`, from `handoff/START-HERE-adhd-audit-arc-E3-onecard.md`
   (a `WIP:` opener; this session stopped at ~55% context on E's note, at a clean line).
+
+### Session 14 — 2026-09-26, arc E, block `F-E3-OneCardToday` (BUILT; stopped at ~71% on E's note, NOT landed)
+
+- **Where it stopped:** every commit green and pushed to `feature/adhd-e3-onecard` (`9e1cdd5` →
+  `b0219a9` + this hand-off); **no PR** — three gates still owed: the evidence frames
+  (`screenshots/today-one-card/`), the `apple-design` review over them, and the mutation red-check
+  (scripted: `scripts/build-loop/e3-mutations.py`). Opener: `handoff/START-HERE-adhd-audit-arc-E3-finish.md`.
+- **The brief checked out** against git (`df2ab2f`) and edition 84; emulator restarted (12h51m old,
+  JVM exited cleanly, all three ports probed on the new processes); unit sim erased.
+- **Subagents mapped the block first** (three Explore agents: retirement call sites, slot-order
+  inputs, tests that read Today's files) — which is how the build found what the spec did not say:
+  1. **`FocusAnalyticsSection` was the ONLY writer of `publishedHistory`** — the weekly chain's
+     sprint signal, the gain line, the week review and the widget all read it. Deleting the section
+     as specced would have blanked all four with no test failing. Home reads it itself now, BEFORE
+     the section's call went (the advisor's ordering: every commit shippable, Nudges never
+     unreachable).
+  2. The widget already disagreed with Today (`topTask` vs `bestNextMove`); it now publishes the
+     card's `headlineTask`.
+  3. `NudgesService.celebrate` was a `let` set in `init` — Tools could not have handed it the centre,
+     so a dismissal on the Tools-pushed screen would have lost the seven-day streak. Now a `var`
+     wired in `.task`, like `recordAction`.
+  4. The Home reorder chain was Today-only down to `FirebaseManager.reorderLifeAreas` — retired
+     whole, not left dead.
+- **RED → GREEN, four stages:** 70 compile errors → 41 / 0 (pure); 3 / 3 → 10 / 0 (history); 6
+  compile errors + 5 guards → 130 / 0 (doors); 13 compile errors + 15 guards / 46 assertions →
+  **full suite 3,395 / 0**; Q2: 6 compile errors → 32 / 0. SwiftLint **0 / 908**.
+- **E took two decisions mid-build** (rendered with a throwaway `ImageRenderer` probe, HIG-checked,
+  asked): **Q1 "A · Side by side"** — the gain line wraps inside H1's half-width Close (2 lines;
+  3 at xxxLarge); the render caught the pair going RAGGED at xxxLarge (84pt beside 48pt), fixed with
+  one-height pairing (`buttons.md › Style`: same size = one set of choices). **Q2 "B · '3 of 5 done
+  today'"** once a goal is set — with the ring gone the line is the only place a chosen goal shows.
+- **`apple-design` pages refreshed 2026-09-26** (layout decision rule): only `hig-lookup.md`'s date
+  changed; no page a settled decision rests on moved.
+- **Machine:** `scripts/build-loop/` now holds `t.sh`, `full.sh`, `ui.sh` and the E3 mutations, so
+  the next session does not re-derive them. **The first harness run (`TodayOneCardRenderUITests`,
+  light, 27.0) produced no frames and no app verdict:** the walk SKIPPED on "emulator not running"
+  while 8080 answered 200, and the Resume test failed on `kAXErrorIPCTimeout` — both consistent
+  with load during a cache-cleared simulator's first boot, cause unverified. Sim erased after.
+- **Owed to E (batched to `handoff/ARC-REVIEW-E.md`):** all of E3's states on the phone, and the
+  RM-on pass the spec names for the close-from-card capsule.
+
