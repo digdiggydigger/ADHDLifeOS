@@ -21,9 +21,9 @@ memory into the new session."*
    session 14, register edition 85, `scripts/build-loop/README.md`.
 4. **Emulator:** restart it (it will be old), then probe 8080, 9099 AND 9199 and check `lsof` shows
    the NEW processes (`emulator-freshness`). It was started with `--import scripts/audit/emulator-state`.
-5. **Simulators:** erase the unit sim (`9181EBF9…`, 26.5) before the first unit run, AND erase the
-   27.0 sim (`0ACE7E5C…`) — the last session's UI harness run left it signed in. `export SP=<your
-   scratchpad>` for the `scripts/build-loop/` drivers.
+5. **Simulators:** erase the unit sim (`9181EBF9…`, 26.5) before the first unit run. The 27.0 sim
+   (`0ACE7E5C…`) was already erased after the last UI run; warm it before `ui.sh` (§2.1).
+   `export SP=<your scratchpad>` for the `scripts/build-loop/` drivers.
 
 ## 1. What is built (and verified) — do not redo
 
@@ -66,7 +66,13 @@ memory into the new session."*
    `kAXErrorIPCTimeout`. Both fit machine load during the first boot of a simulator whose dyld
    cache E had cleared; the cause is NOT verified. So: boot the 27.0 sim and let it idle ~60s
    (warm) BEFORE `ui.sh`, re-run, and if the skip recurs read `UITestEmulator.skipUnlessRunning`'s
-   probe timeout before blaming the app. The sim was erased after the run. Pull frames with
+   probe timeout before blaming the app. The sim was erased after the run. **The harness has
+   never run green — expect to tune two assertions before blaming the card:** frame 04's
+   `value == "Book the photo booth"` is on a VERTICAL-axis `TextField`, whose XCUI `value` can carry
+   the placeholder or a trailing newline (E2's harness used it on a single-line field); and
+   `assertStartAboveTheFold` takes the fold as the Today PILL's `minY`, a few points below the tab
+   bar card's top edge. (The Resume test got past `skipUnlessRunning` while the walk did not —
+   evidence for load, not a dead emulator.) Pull frames with
    `xcrun xcresulttool` into `screenshots/today-one-card/` (JPEG), plus the two question boards
    (`E3-Q1-close-layout.jpg`, `E3-Q2-done-line.jpg` — re-render if lost: they came from a
    throwaway `ImageRenderer` probe, deleted, never committed). README per CLAUDE.md "Visual evidence".
@@ -98,10 +104,18 @@ feeds it; the time bar is F5's); `nextFire`, `ringProgress`, `closedCaption`, th
 chain and `NudgeFirstRunMarker` retired as dead code; the pin is 44pt per round 5a (round 7's
 48pt corner rule → `F-B1`); the empty Today (all done) is header + done line only — for E's look.
 
+**Say so in the Built note (the spec's last acceptance boxes):** no `firestore.rules` change (the
+pin and "Not this one" are `UserDefaults`, the next step reuses `F-E2`'s field); no `#available`
+site, so no Verified-paths line; no reduced-motion site of the card's own (the pin swaps its glyph
+without animation; the 0.97 press scale is every house button's precedent) — the RM-on pass owed is
+the undo capsule's arrival from the card's Close, and nothing else.
+
 ## 4. Then E4, E5 and the ARC-E CLOSE
 
 - **E4** (`F-E4-WeekReviewConsolidation`): its Step 0 is answered; it also deletes
-  `FocusAnalyticsSection` (callerless since E3) and `ProductivityTrendChart`; `streakLine` is
+  `FocusAnalyticsSection` (callerless since E3) and `ProductivityTrendChart` — **and must reverse
+  `WeeklyChainCallSiteTests:58`, which reads `Focus/FocusAnalyticsSection.swift` BY PATH for
+  `.focusDailyGoalMinutes ?? 0`** (re-point it at wherever the goal-gated bar lands); `streakLine` is
   already gone (E1). Both Week review doors now build through `WeekReviewInputs` — add the
   sessions-driven chart there once and both doors get it.
 - **E5** (`F-E5-EveningFirstThing`): Step 0 answered — a state variant of E3's card on
