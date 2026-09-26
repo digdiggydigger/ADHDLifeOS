@@ -107,9 +107,18 @@ final class TodayCardCopyTests: XCTestCase {
         XCTAssertNil(TodayCardCopy.thenMeta(area: nil, focusDurationSeconds: nil))
     }
 
-    /// Idea 9, board `59`: *"✓ 3 done today · Week review ›"*.
+    /// Idea 9, board `59`: *"✓ 3 done today · Week review ›"* — with no daily goal set, which is
+    /// every install until Settings turns one on (`F-E1`).
     func testTheDoneLineCountsWhatWasDone() {
-        XCTAssertEqual(TodayCardCopy.doneTodayLine(count: 3), "3 done today")
-        XCTAssertEqual(TodayCardCopy.doneTodayLine(count: 0), "0 done today")
+        XCTAssertEqual(TodayCardCopy.doneTodayLine(count: 3, goal: nil), "3 done today")
+        XCTAssertEqual(TodayCardCopy.doneTodayLine(count: 0, goal: nil), "0 done today")
+    }
+
+    /// E, 2026-09-26 (Q2, board `E3-Q2`): *"'3 of 5 done today' once a daily goal is set"*. With the
+    /// ring gone this line is the only place a chosen goal can be seen; it counts what was done
+    /// against it, never what is missing, and it keeps counting past the goal.
+    func testWithADailyGoalTheDoneLineSaysTheGoal() {
+        XCTAssertEqual(TodayCardCopy.doneTodayLine(count: 3, goal: 5), "3 of 5 done today")
+        XCTAssertEqual(TodayCardCopy.doneTodayLine(count: 7, goal: 5), "7 of 5 done today")
     }
 }

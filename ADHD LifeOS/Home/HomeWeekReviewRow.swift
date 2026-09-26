@@ -13,13 +13,16 @@ extension HomeView {
     /// **The count is `ringCount`, the daily goal's own number.** The goal's celebration pops from
     /// this line now that the ring is gone, so the line must say the number that crossed — never a
     /// different sum beside it. It is also the number board `59` drew: the round-3 simulator's ring
-    /// read "3 of 5" when those frames were made, and the board says "3 done today".
+    /// read "3 of 5" when those frames were made, and the board says "3 done today". A set goal
+    /// shows as "3 of 5 done today" (E, 2026-09-26).
     var doneTodayLine: some View {
-        Button {
+        // One string for the line and its VoiceOver label, so the two can never say different sums.
+        let done = TodayCardCopy.doneTodayLine(count: ringCount, goal: momentumPreferences.dailyGoal)
+        return Button {
             isPresentingWeekReview = true
         } label: {
             HStack(spacing: 8) {
-                Label(TodayCardCopy.doneTodayLine(count: ringCount), systemImage: "checkmark.circle")
+                Label(done, systemImage: "checkmark.circle")
                     .font(.subheadline)
                     .foregroundStyle(Color("LabelSecondary"))
                     // R-h: a downgraded daily goal pops from here, so the line reports where it is.
@@ -38,7 +41,7 @@ extension HomeView {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(TodayCardCopy.doneTodayLine(count: ringCount)). Week review")
+        .accessibilityLabel("\(done). Week review")
         .accessibilityHint("Opens your week review")
         // The identifier the old row carried: it is still Today's week-review door and still the
         // last thing on the page (`CaptureDiscClearanceUITests`).

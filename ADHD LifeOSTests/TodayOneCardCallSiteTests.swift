@@ -180,7 +180,10 @@ final class TodayOneCardCallSiteTests: XCTestCase {
     /// contradicts it.
     func testTheDoneLineCountsTheGoalsNumberAndHostsItsPop() throws {
         let line = try flattened("Home/HomeWeekReviewRow.swift")
-        XCTAssertTrue(line.contains("TodayCardCopy.doneTodayLine(count: ringCount"))
+        XCTAssertTrue(
+            line.contains("TodayCardCopy.doneTodayLine(count: ringCount, goal: momentumPreferences.dailyGoal)"),
+            "The line must count against the goal the daily goal celebrates (E's Q2, 2026-09-26)."
+        )
         XCTAssertTrue(line.contains(".celebrationPopOrigin { doneLineOrigin = $0 }"))
         XCTAssertTrue(try flattened("Home/HomeView+DailyGoal.swift")
             .contains("CelebrationPopOrigin.onScreen(doneLineOrigin)"))

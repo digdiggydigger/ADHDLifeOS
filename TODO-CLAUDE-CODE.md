@@ -7017,6 +7017,14 @@ addendum 'closing is one-way'."*
 
 > **E DECIDED 2026-09-24 — take the recommendation as written:** the Nudges manager door moves to **Tools**, beside Routines (b); the live-routine card and the arrival card together COUNT AS the one card, unchanged (a) — E's 2026-09-04 veto stands.
 
+> **E DECIDED 2026-09-26, mid-build (two collisions between E's own decisions, rendered and asked):**
+> **Q1 — "A · Side by side"**: in the Suggested card, `F-E1`'s gain line "Close it — makes today
+> count" stays in H1's half-width pair beside "Not this one", wrapping to two lines (three at the
+> largest standard size); the pair keeps one height. **Q2 — "B · '3 of 5 done today'"**: once a
+> daily goal is set the done line says the goal ("3 done today" otherwise) — with the ring gone it
+> is the only place a chosen goal can be seen. Boards `E3-Q1-close-layout` / `E3-Q2-done-line` in
+> `screenshots/today-one-card/`.
+
 **Step 0 — ask E (nudges reachability):** `grep -rn "NudgesView(" "ADHD LifeOS/"` returns exactly
 one production call site, `HomeAccessoryStrips.swift:216`, reached only through Today's nudges
 door, which Structure C removes. Options: (a) the manager door becomes its own "then"-list row; (b)

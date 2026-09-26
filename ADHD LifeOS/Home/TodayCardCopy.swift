@@ -81,8 +81,11 @@ enum TodayCardCopy {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    /// Idea 9, board `59`: *"✓ 3 done today · Week review ›"*.
-    static func doneTodayLine(count: Int) -> String {
-        "\(count) done today"
+    /// Idea 9, board `59`: *"✓ 3 done today · Week review ›"*. Once a daily goal is set, E's call
+    /// (2026-09-26, Q2): *"'3 of 5 done today'"* — with the ring gone this is the only place a
+    /// chosen goal can be seen, and it keeps counting past the goal rather than stopping at it.
+    static func doneTodayLine(count: Int, goal: Int?) -> String {
+        guard let goal else { return "\(count) done today" }
+        return "\(count) of \(goal) done today"
     }
 }

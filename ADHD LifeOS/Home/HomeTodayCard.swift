@@ -195,10 +195,14 @@ struct TodayTaskCard: View {
                 .accessibilityIdentifier("homeStartSessionButton")
             }
             if offersNotThisOne && !compact {
+                // One height for the pair: the gain line ("Close it — makes today count") wraps to
+                // two or three lines where "Not this one" takes one, and a ragged pair reads as two
+                // unrelated controls. The row takes its tallest child's height; each fills it.
                 HStack(spacing: 8) {
                     closeButton
                     notThisOneButton
                 }
+                .fixedSize(horizontal: false, vertical: true)
             } else {
                 closeButton
                 if offersNotThisOne { notThisOneButton }
@@ -315,7 +319,9 @@ struct TodayTintedButtonStyle: ButtonStyle {
             .multilineTextAlignment(.center)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .frame(maxWidth: .infinity, minHeight: 48)
+            // `maxHeight: .infinity` only fills a height a parent FIXED (the side-by-side pair); in
+            // the card's stack the proposal is open and the button keeps its own height.
+            .frame(maxWidth: .infinity, minHeight: 48, maxHeight: .infinity)
             .modifier(TodayTint(tint: tint))
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
