@@ -243,6 +243,7 @@ final class TodayOneCardRenderUITests: XCTestCase {
 
     /// Clears iOS's "Save Password?" sheet first, EVERY frame: the first L and D runs dismissed it
     /// once, before frame 01, and the system raised it again over frame 02 in both appearances.
+    @MainActor
     private func attach(_ app: XCUIApplication, named name: String) {
         UITestSession.dismissSystemPasswordPromptIfPresent()
         let shot = XCTAttachment(screenshot: app.screenshot())
