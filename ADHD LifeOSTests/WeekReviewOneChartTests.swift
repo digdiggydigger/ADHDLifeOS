@@ -71,7 +71,8 @@ final class WeekReviewOneChartTests: XCTestCase {
 
     func testWeekReviewDrawsTheOneFocusChartInPlaceOfTheClosureBars() throws {
         let review = try flattened("Home/WeekReviewView.swift")
-        XCTAssertTrue(review.contains("WeeklyFocusSummaryWidget(buckets: focusWeek, dailyGoalMinutes: focusDailyGoalMinutes)"))
+        let chart = "WeeklyFocusSummaryWidget(buckets: focusWeek, dailyGoalMinutes: focusDailyGoalMinutes)"
+        XCTAssertTrue(review.contains(chart))
         XCTAssertFalse(review.contains("barsCard"), "Two bar charts would contradict \"one\"")
         XCTAssertFalse(review.contains("weekReviewBars"))
     }
