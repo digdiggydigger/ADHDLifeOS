@@ -43,7 +43,7 @@ final class WeekReviewOneChartRenderUITests: XCTestCase {
         attach(app, named: "01-no-goal-from-areas-\(tag)")
 
         // 2 — set a focus goal in Settings, then through TODAY's door: the goal bar appears.
-        setTheFocusGoal(on: true, in: app)
+        setTheFocusGoal(enabled: true, in: app)
         let doneLine = app.buttons["homeWeekReviewRow"].firstMatch
         let header = element("weekReviewHeader", in: app)
         XCTAssertTrue(UITestSession.tap(doneLine, untilExists: header), "Today's done line opened no review")
@@ -53,7 +53,7 @@ final class WeekReviewOneChartRenderUITests: XCTestCase {
         attach(app, named: "02-goal-set-from-today-\(tag)")
 
         app.navigationBars.buttons.firstMatch.tap()
-        setTheFocusGoal(on: false, in: app)
+        setTheFocusGoal(enabled: false, in: app)
     }
 
     // MARK: - Assertions
@@ -68,7 +68,7 @@ final class WeekReviewOneChartRenderUITests: XCTestCase {
     // MARK: - Settings
 
     @MainActor
-    private func setTheFocusGoal(on: Bool, in app: XCUIApplication) {
+    private func setTheFocusGoal(enabled: Bool, in app: XCUIApplication) {
         UITestSession.openTab("Today", in: app)
         let gear = app.buttons["settingsButton"].firstMatch
         let done = app.buttons["settingsDoneButton"].firstMatch
@@ -76,7 +76,7 @@ final class WeekReviewOneChartRenderUITests: XCTestCase {
         let toggle = app.switches["settingsFocusGoalToggle"].firstMatch
         UITestSession.scrollUntilHittable(toggle, in: app)
         let stepper = app.steppers["settingsFocusGoalStepper"].firstMatch
-        XCTAssertTrue(flip(toggle, until: stepper, exists: on), "The focus goal toggle did not \(on ? "set" : "clear")")
+        XCTAssertTrue(flip(toggle, until: stepper, exists: enabled), "The focus goal toggle did not \(enabled ? "set" : "clear")")
         done.tap()
     }
 
