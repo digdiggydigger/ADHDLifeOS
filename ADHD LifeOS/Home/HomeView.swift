@@ -49,10 +49,13 @@ struct HomeView: View {
     /// holding BOTH halves of what the widget shows — the Active Goal and the week's focus history.
     /// Internal, not private: `HomeView+Refresh` publishes through it.
     let widgetPublisher: FocusWidgetPublishing
-    /// The most recent history read, kept so a life-areas reload can republish without refetching.
-    /// Internal, not private: the week review reads it from `HomeMomentumSections`.
+    /// The most recent history read (`HomeView+FocusHistory`), kept so a life-areas reload can
+    /// republish without refetching. Internal: the chain, the week review and the widget read it.
     @State var publishedHistory: [CompletedFocusSession] = []
-    /// Internal, not private: `HomeView+Refresh` bumps it to fold the analytics section
+    /// `F-E3`: Home's own read of the focus history, now that the charts that used to fetch it
+    /// have left Today. Internal for `HomeView+FocusHistory`.
+    let focusHistoryReader: FocusHistoryReading
+    /// Internal, not private: `HomeView+Refresh` bumps it to fold the focus-history read
     /// into every reload.
     @State var pullRefreshCount = 0
     /// Internal, not private: the v3 header lives in `HomeMomentumSections.swift`.
@@ -157,9 +160,11 @@ struct HomeView: View {
         taskCreateClient: TaskCreateClientAdapting? = nil,
         widgetPublisher: FocusWidgetPublishing = AppGroupFocusWidgetPublisher(),
         momentumPreferencesStore: MomentumPreferencesStoring = UserDefaultsMomentumPreferencesStore(),
+        focusHistoryReader: FocusHistoryReading = FirebaseFocusSessionAdapter(),
         celebrate: any CelebrationRequesting = InertCelebrationRequester()
     ) {
         self.celebrate = celebrate
+        self.focusHistoryReader = focusHistoryReader
         self.momentumPreferencesStore = momentumPreferencesStore
         self.authService = authService
         self.captureClient = captureClient
@@ -289,6 +294,7 @@ struct HomeView: View {
             .task {
                 await refreshInboxCount()
             }
+            .task(id: focusReloadToken + pullRefreshCount) { await loadFocusHistory() }
             .task {
                 // `F-C1-UndoCapsule`: the service owns the recording rule (both `NudgeDueCard`
                 // hosts share this one service), and an `@Environment` value cannot be read in the
@@ -366,13 +372,6 @@ struct HomeView: View {
                     // The AI summary lives in the week review now (F-V3-WeekReview) — Today
                     // stays the scoreboard, the review carries the recap.
                     weekReviewRow
-                    FocusAnalyticsSection(reloadToken: focusReloadToken + pullRefreshCount) { sessions in
-                        // Fires on first load, on pull-to-refresh, and on every finished sprint
-                        // (`focusReloadToken` is RootView's completedSprintCount) — so the Home
-                        // Screen widget follows the same three triggers the in-app charts do.
-                        publishedHistory = sessions
-                        publishWidgetSnapshot(sprint: widgetSprint)
-                    }
                 }
                 .padding()
                 .tabRootScrollAnchor()

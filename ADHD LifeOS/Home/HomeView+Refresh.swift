@@ -14,7 +14,7 @@ import SwiftUI
 extension HomeView {
     /// Every Home data source in parallel — the pull gesture and the app-wide `DataChangeSignal`
     /// run the same reload, so the two paths can never drift. Bumping `pullRefreshCount` folds
-    /// the analytics section (and its widget republish) into both.
+    /// the focus-history read (and its widget republish) into both.
     func refreshEverything() async {
         pullRefreshCount += 1
         async let home: Void = homeService.load()
