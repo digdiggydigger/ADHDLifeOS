@@ -18,13 +18,15 @@ struct NudgeDueCard: View {
     /// The Settings charts/streaks preference, resolved by the caller — this view reads no
     /// defaults of its own so a preview can render both faces.
     let showStreaks: Bool
+    /// Today's "then" list marks a due nudge with a bell (round 5a: *"Due nudges sit at the top of
+    /// the 'then' list with a bell"*), so it reads as a reminder among tasks. The Nudges screen is
+    /// all nudges and needs no marker, so it is off by default.
+    var showsBell = false
     let onDismiss: () async -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(nudge.label)
-                .font(.title3.bold())
-                .tracking(-0.3)
+            title
             Text(NudgeSchedule.summary(cronString: nudge.schedule) ?? nudge.schedule)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -48,6 +50,24 @@ struct NudgeDueCard: View {
         // Urgent, not plain: since the nudges door below became a real card (E, 2026-08-28), a due
         // nudge sharing its surface would read as equally optional. This is what keeps it above.
         .urgentBentoCard()
+    }
+
+    @ViewBuilder
+    private var title: some View {
+        if showsBell {
+            Label {
+                Text(nudge.label)
+            } icon: {
+                Image(systemName: "bell.fill")
+                    .foregroundStyle(Color("StateWarn"))
+            }
+            .font(.title3.bold())
+            .tracking(-0.3)
+        } else {
+            Text(nudge.label)
+                .font(.title3.bold())
+                .tracking(-0.3)
+        }
     }
 
     @ViewBuilder
@@ -86,7 +106,7 @@ private struct NudgeDueCardPreview: View {
     var body: some View {
         VStack(spacing: 16) {
             NudgeDueCard(nudge: Self.sample, showStreaks: true, onDismiss: {})
-            NudgeDueCard(nudge: Self.sample, showStreaks: false, onDismiss: {})
+            NudgeDueCard(nudge: Self.sample, showStreaks: false, showsBell: true, onDismiss: {})
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

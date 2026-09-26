@@ -6,8 +6,12 @@
 //  any tab", about a second after the action, once per day.
 //
 //  In its own file on the `HomeView+Refresh` arrangement: only methods and computed views can leave
-//  `HomeView.swift`, so the three stored properties this needs (`dailyGoalTracker`, `ringOrigin`,
+//  `HomeView.swift`, so the three stored properties this needs (`dailyGoalTracker`, `doneLineOrigin`,
 //  `hasLoadedClearedCaptures`) stay on the type and everything else lives here.
+//
+//  The "ring" names are historical: `F-E3-OneCardToday` retired the Momentum ring with the
+//  scoreboard (round 8b), and the count is now said by the done line under the "then" list. It is
+//  the same number, so `ringCount` keeps its name — and the call-site tests that hold it.
 //
 //  **"Any tab" costs nothing, and that is a property of the container rather than of this code.**
 //  `AppTabContent` builds a tab once and then KEEPS it, merely offsetting the hidden ones off
@@ -19,7 +23,7 @@
 import SwiftUI
 
 extension HomeView {
-    /// The ring's number, named once so the scoreboard and the milestone can never read a
+    /// The daily goal's number, named once so the done line and the milestone can never read a
     /// different sum. Both Settings toggles are already folded into the two counts it adds.
     var ringCount: Int {
         closedToday.count + capturesClearedToday + nudgesDismissedToday
@@ -65,12 +69,12 @@ extension HomeView {
               !CelebrationDayMarking.hasCelebrated(.dailyGoal, uid: uid)
         else { return }
         CelebrationDayMarking.markCelebrated(.dailyGoal, uid: uid)
-        // R-h: with E's switch off, or inside the cooldown, this becomes a pop — and the ring is
-        // one of the two sites with no pop of its own, so it hands over where it is. Through
+        // R-h: with E's switch off, or inside the cooldown, this becomes a pop — and the done line
+        // is one of the two sites with no pop of its own, so it hands over where it is. Through
         // `onScreen` because this is the one site that fires from a tab the user may not be
         // looking at: `AppTabContent` parks a hidden tab 10,000 pt away, and that offset reaches
         // the recorded origin (measured, see `CelebrationPopOrigin`).
-        celebrate.request(.milestone(.dailyGoal), at: CelebrationPopOrigin.onScreen(ringOrigin))
+        celebrate.request(.milestone(.dailyGoal), at: CelebrationPopOrigin.onScreen(doneLineOrigin))
         // E's call, 2026-09-12: the daily goal is the ONE milestone that announces itself. The
         // celebration is `accessibilityHidden`; this site has no haptic of its own (R-d puts that
         // in the centre) and no guaranteed on-screen change, because it can fire on any tab.

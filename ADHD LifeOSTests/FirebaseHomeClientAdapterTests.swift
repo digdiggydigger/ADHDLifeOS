@@ -22,8 +22,9 @@ final class FirebaseHomeClientAdapterTests: XCTestCase {
         super.tearDown()
     }
 
-    /// Home needs archived areas too: the reorder payload must carry the COMPLETE ordering, so an
-    /// archived area missing from the fetch would be missing from the write.
+    /// Home needs archived areas too: the pickers Home feeds must still be able to name an area
+    /// that has been archived. (The reorder payload that also needed them left with Today's life
+    /// areas in `F-E3-OneCardToday`.)
     func testFetchLifeAreas_includesArchivedAreas() async throws {
         store.lifeAreas = [LifeArea(id: UUID(), name: "Admin", colour: "🗂", sortOrder: 0, archived: true)]
 
@@ -45,17 +46,6 @@ final class FirebaseHomeClientAdapterTests: XCTestCase {
         XCTAssertEqual(tasks, [summary])
     }
 
-    /// TRAP 2 from `HomeClientAdapting`: one bulk write, never N per-row updates. The store's
-    /// `reorderLifeAreas` is a single atomic batch, so "one call" is the assertion that protects it.
-    func testReorder_isASingleBulkWriteCarryingTheWholeOrdering() async throws {
-        let order = [UUID(), UUID(), UUID()]
-
-        try await adapter.reorder(order: order)
-
-        XCTAssertEqual(store.reorderCalls.count, 1, "must never fan out into per-row writes")
-        XCTAssertEqual(store.reorderCalls.first, order, "the complete ordering is passed through unchanged")
-    }
-
     /// `fetchAllTasks` was the Home adapter's 3 uncovered lines (12/15 on 2026-09-07) — the only
     /// method here with no test. Unlike `fetchOpenTasks` it is deliberately UNFILTERED: the daily
     /// summary and the momentum scoreboard both count done work, so a status filter creeping in
@@ -75,11 +65,6 @@ final class FirebaseHomeClientAdapterTests: XCTestCase {
         XCTAssertEqual(tasks.filter { $0.status == .done }.count, 1)
     }
 
-    func testReorder_propagatesFailure() async {
-        store.reorderError = FirebaseManagerError.notSignedIn
-
-        await XCTAssertThrowsErrorAsync(try await adapter.reorder(order: [UUID()])) { error in
-            XCTAssertEqual(error as? FirebaseManagerError, .notSignedIn)
-        }
-    }
+    // The two `testReorder_*` pinned Today's arrange-mode write. It left with Today's life areas
+    // (`F-E3-OneCardToday`); `TodayOneCardCallSiteTests` holds `reorderLifeAreas(`'s absence.
 }

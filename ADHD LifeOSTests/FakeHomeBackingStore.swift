@@ -14,10 +14,8 @@ final class FakeHomeBackingStore: HomeBackingStore {
 
     var fetchLifeAreasError: Error?
     var fetchOpenTasksError: Error?
-    var reorderError: Error?
 
     private(set) var includeArchivedArguments: [Bool] = []
-    private(set) var reorderCalls: [[UUID]] = []
 
     func fetchLifeAreas(includeArchived: Bool) async throws -> [LifeArea] {
         includeArchivedArguments.append(includeArchived)
@@ -32,10 +30,5 @@ final class FakeHomeBackingStore: HomeBackingStore {
 
     func fetchTasks() async throws -> [TaskItem] {
         allTasks
-    }
-
-    func reorderLifeAreas(orderedIds: [UUID]) async throws {
-        reorderCalls.append(orderedIds)
-        if let reorderError { throw reorderError }
     }
 }

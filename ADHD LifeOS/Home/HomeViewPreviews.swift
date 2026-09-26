@@ -43,7 +43,6 @@ private struct PreviewHomeClientAdapting: HomeClientAdapting {
         lifeAreas.map { TaskSummary(lifeAreaId: $0.id, status: .open) }
     }
 
-    func reorder(order: [UUID]) async throws {}
 }
 
 private struct PreviewCaptureClientAdapting: CaptureClientAdapting {
@@ -102,11 +101,6 @@ private struct PreviewNudgeNotificationSchedulingClient: NudgeNotificationSchedu
     func hasScheduledNotifications(nudgeId: UUID) async -> Bool { false }
 }
 
-private struct PreviewLifeAreaDetailClientAdapting: LifeAreaDetailClientAdapting {
-    func fetchTasks(lifeAreaId: UUID) async throws -> [TaskItem] { [] }
-    func fetchLogs(lifeAreaId: UUID) async throws -> [Log] { [] }
-}
-
 private struct PreviewTaskDetailClientAdapting: TaskDetailClientAdapting {
     func fetchTask(id: UUID) async throws -> TaskDetail { fatalError("unused in preview") }
     func fetchTagsForTask(taskId: UUID) async throws -> [Tag] { [] }
@@ -129,7 +123,6 @@ private struct PreviewTaskDetailClientAdapting: TaskDetailClientAdapting {
         captureClient: PreviewCaptureClientAdapting(),
         nudgesClient: PreviewNudgesClientAdapting(),
         nudgeNotificationSchedulingClient: PreviewNudgeNotificationSchedulingClient(),
-        lifeAreaDetailClient: PreviewLifeAreaDetailClientAdapting(),
         taskDetailClient: PreviewTaskDetailClientAdapting()
     )
 }

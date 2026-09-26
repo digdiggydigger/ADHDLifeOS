@@ -99,7 +99,6 @@ struct RootView: View {
                             journalClient: journalClient,
                             nudgesClient: nudgesClient,
                             nudgeNotificationSchedulingClient: nudgeNotificationSchedulingClient,
-                            lifeAreaDetailClient: lifeAreaDetailClient,
                             taskDetailClient: taskDetailClient,
                             onStartFocus: startFocus,
                             focusReloadToken: focusService.completedSprintCount,
@@ -108,8 +107,6 @@ struct RootView: View {
                             },
                             widgetSprint: focusService.widgetSprint,
                             onToggleSprintPause: { focusService.togglePause() },
-                            onOpenCaptures: { selectedTab = .captures },
-                            taskCreateClient: taskCreateClient,
                             celebrate: celebrationCenter
                         )
                     case .tasks:

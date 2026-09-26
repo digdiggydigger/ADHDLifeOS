@@ -2,17 +2,18 @@
 //  MomentumScoreboardViews.swift
 //  ADHD LifeOS
 //
-//  Home's Momentum scoreboard sections in the v3 handoff's language (F-V3-Today, 2026-08-24):
-//  the closure ring is green — the State palette's "closed" — the streak line names the best-ever
-//  run after a close, the life areas render as rows with their identity hue's tint well and
-//  progress bar, and the celebration is a green-washed moment with Undo one tap away. Spacing is
+//  The Momentum v3 building blocks (F-V3-Today, 2026-08-24): the ring, the solid and bordered
+//  buttons and the chip, shared by the sprint ring, the area screens, the inbox and more. Spacing is
 //  snapped to the §2 grid (v3's 20/22px rhythm → 16/24); every colour is a catalog token.
+//
+//  Today's own cards that lived here — the ring card and the Best-next-move card — were retired by
+//  `F-E3-OneCardToday` (round 8b: the scoreboard goes; round 5a: the one card replaces the hero).
 //
 
 import SwiftUI
 
-/// Track + progress arc + whatever belongs in the middle. The same ring draws at 126pt for the
-/// day, 52pt per area and 64pt for the focus sprint (S4), so all three read as one instrument.
+/// Track + progress arc + whatever belongs in the middle. It drew at 126pt for the day until
+/// `F-E3`, and still draws 52pt per area and 64pt for the focus sprint (S4), one instrument.
 struct ClosureRing<Center: View>: View {
     let progress: Double
     let size: CGFloat
@@ -93,208 +94,5 @@ struct MomentumChip: View {
             .padding(.vertical, 4)
             .background(background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .foregroundStyle(foreground)
-    }
-}
-
-/// The scoreboard header: today's closed count beside the honest "still open" counterweight. v3
-/// draws this naked on the page, not in a card, and paints the count green the moment something
-/// closes today.
-///
-/// `F-E1-WeeklyChain` changed it twice over, both by E's round 3. **The ring is drawn only once a
-/// daily goal is SET** (*"No ring and no percentage until the user chooses a goal in Settings"*),
-/// and every install decodes to "no goal", so the plain count is what nearly everyone sees. **The
-/// streak column is gone** (*"the closing streak '6 days · Best is 6'"* goes), so the counterweight
-/// is no longer the no-streak fallback but the column itself. `F-E3` retires the whole card.
-struct MomentumRingCard: View {
-    let closedToday: Int
-    /// `nil` = no daily goal set: no ring, no "of N".
-    let goal: Int?
-    let openCount: Int
-    /// The shortest due task's effort ("15 min"), feeding the counterweight line.
-    let nextEffortLabel: String?
-    /// Where the COUNT is, globally (`F-CTACelebrations-5`). Reported rather than read, because the
-    /// daily goal is requested from `HomeView` and R-h's fallback pop has to leave from here and
-    /// not from the middle of a card that spans the screen. Defaulted, so every preview and every
-    /// existing call site is unchanged.
-    var onRingOrigin: (CGPoint) -> Void = { _ in }
-
-    /// The ring's diameter — kept as the count's footprint when no ring is drawn, so setting a
-    /// goal in Settings adds the ring around the number without moving anything else.
-    private static let countSize: CGFloat = 126
-
-    private var countColor: Color {
-        closedToday > 0 ? Color("StateGo") : Color("LabelPrimary")
-    }
-
-    var body: some View {
-        HStack(spacing: 16) {
-            count
-                .celebrationPopOrigin(onRingOrigin)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Still open")
-                    .sectionLabel()
-                    .foregroundStyle(.secondary)
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(openCount)")
-                        .font(.title.bold())
-                        .tracking(-1)
-                        .monospacedDigit()
-                    Text(openCount == 1 ? "item" : "items")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                if let nextEffortLabel {
-                    Text("One of them is \(nextEffortLabel).")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("homeMomentumRing")
-    }
-
-    @ViewBuilder
-    private var count: some View {
-        if let goal {
-            ClosureRing(
-                progress: MomentumScoreboard.ringProgress(closed: closedToday, goal: goal),
-                size: Self.countSize,
-                lineWidth: 10,
-                arcStyle: AnyShapeStyle(Color("StateGoVivid"))
-            ) {
-                countLabel(caption: "of \(goal) closed")
-            }
-        } else {
-            countLabel(caption: "closed today")
-                .frame(width: Self.countSize, height: Self.countSize)
-        }
-    }
-
-    private func countLabel(caption: String) -> some View {
-        VStack(spacing: 0) {
-            Text("\(closedToday)")
-                .font(.largeTitle.bold())
-                .tracking(-1)
-                .monospacedDigit()
-                .foregroundStyle(countColor)
-            Text(caption)
-                .sectionLabel()
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-/// The one task Home leads with. v3's card: effort in solid motion-blue, the area in its tint,
-/// the due chip in warn, and one green full-width close. Start-session stays underneath — the
-/// sprint funnel is this app's, not the mock's, and it must not vanish (hybrid adaptation).
-struct BestNextMoveCard: View {
-    let task: TaskSummary
-    let lifeArea: LifeArea?
-    let isDueNow: Bool
-    let isClosing: Bool
-    let showsStartSession: Bool
-    /// "2 sessions · 35 min today" once focus has been logged against this task today (b10);
-    /// nil renders no chip and keeps the plain "Start session" button.
-    let loggedTodayLabel: String?
-    let onClose: () -> Void
-    let onStartSession: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Best next move")
-                .sectionLabel()
-                .foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    if let effort = MomentumScoreboard.effortLabel(seconds: task.focusDurationSeconds) {
-                        // Solid motion-blue: effort is a promise of minutes, and blue carries
-                        // "in motion" in the State palette. Accent IS the work hue, so its
-                        // on-colour is the right constant white.
-                        MomentumChip(
-                            text: effort,
-                            background: .accentColor,
-                            foreground: AreaPalette.work.onColor
-                        )
-                    }
-                    if let lifeArea {
-                        areaChip(lifeArea)
-                    }
-                    if isDueNow {
-                        MomentumChip(
-                            text: "due today",
-                            background: Color("CardSurfaceSecondary"),
-                            foreground: Color("StateWarn")
-                        )
-                    }
-                }
-                Text(task.title)
-                    .font(.title3.bold())
-                    .tracking(-0.5)
-                    .minimumScaleFactor(0.8)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let notes = task.notes, !notes.isEmpty {
-                    Text(notes)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-                if let loggedTodayLabel {
-                    // Its own row, not a fourth chip in the top HStack — that row already
-                    // carries effort + area + due and this label is the longest of the four.
-                    MomentumChip(
-                        text: "✓ \(loggedTodayLabel)",
-                        background: Color("CardSurfaceSecondary"),
-                        foreground: Color("StateGo")
-                    )
-                    .accessibilityLabel("Focus logged: \(loggedTodayLabel)")
-                    .accessibilityIdentifier("homeFocusLoggedChip")
-                }
-                CelebrationPopSource { handle in
-                    Button {
-                        Haptics.play(.taskClose)
-                        handle.pop()
-                        onClose()
-                    } label: {
-                        if isClosing {
-                            ProgressView()
-                                .tint(Color("OnStateGo"))
-                        } else {
-                            Label("Close it", systemImage: "checkmark.circle.fill")
-                        }
-                    }
-                    .buttonStyle(
-                        MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo"))
-                    )
-                    .disabled(isClosing)
-                    .accessibilityIdentifier("homeCloseTaskButton")
-                }
-                if showsStartSession {
-                    Button(action: onStartSession) {
-                        // "another" is the tracking half of b10: the button itself confirms a
-                        // completed session was recorded against this task.
-                        Label(
-                            loggedTodayLabel == nil ? "Start session" : "Start another session",
-                            systemImage: "play.fill"
-                        )
-                    }
-                    .buttonStyle(MomentumBorderedButtonStyle())
-                    .accessibilityIdentifier("homeStartSessionButton")
-                }
-            }
-            .bentoCard()
-        }
-        .accessibilityIdentifier("homeBestNextMoveCard")
-    }
-
-    private func areaChip(_ area: LifeArea) -> some View {
-        let family = AreaPalette.family(for: area)
-        return MomentumChip(
-            text: "\(area.colour) \(area.name)",
-            background: family.tint,
-            foreground: family.color
-        )
     }
 }

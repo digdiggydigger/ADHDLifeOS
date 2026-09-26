@@ -44,13 +44,14 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
         )
     }
 
-    /// Home's inbox peek and the Journal timeline both push a capture detail, and a detail screen
-    /// can Sort, Journal it or Create Task exactly as the tab can.
-    func testBothPushedCaptureDoorsCarryTheCentreToTheirService() throws {
-        try assertPasses(
-            "celebrate: celebrate", toCall: "JournalCaptureDoor(", in: "Home/HomeCaptureDoor.swift",
-            because: "a capture cleared from Today's peek empties the same inbox"
-        )
+    /// The Journal timeline pushes a capture detail, and a detail screen can Sort, Journal it or
+    /// Create Task exactly as the tab can.
+    ///
+    /// **REVERSED by `F-E3-OneCardToday`:** this was "both pushed capture doors" — Home's inbox peek
+    /// was the other. Round 3 took the peek off Today (*"Life areas leave Today... and so does the
+    /// inbox peek"*), so `Home/HomeCaptureDoor.swift` is deleted; `TodayOneCardCallSiteTests` holds
+    /// its absence (`inspectedCaptureDoor`).
+    func testThePushedCaptureDoorCarriesTheCentreToItsService() throws {
         try assertPasses(
             "celebrate: celebrate", toCall: "JournalCaptureDoor(", in: "Journal/JournalView.swift",
             because: "a capture cleared from the Journal timeline empties the same inbox"
@@ -133,25 +134,26 @@ final class CelebrationMilestoneCallSiteTests: XCTestCase {
     }
 
     /// **R-h.** With E's switch off — or inside the cooldown — a milestone gets the fallback pop,
-    /// and this is the one milestone site with no pop of its own. Passing the ring's measured
-    /// origin is what makes that pop come from the ring rather than the middle of the screen.
-    func testADowngradedDailyGoalPopsFromTheRingItself() throws {
+    /// and this is the one milestone site with no pop of its own. Passing the measured origin is
+    /// what makes that pop come from the count rather than the middle of the screen.
+    ///
+    /// **REVERSED by `F-E3-OneCardToday`:** the origin was the Momentum ring's. Round 8b retired
+    /// the ring with the scoreboard, and the count now lives in the done line under the "then"
+    /// list (*"✓ 3 done today · Week review ›"*) — so the pop leaves from there. The guarantee is
+    /// unchanged: an origin is recorded, and the request carries it, guarded.
+    func testADowngradedDailyGoalPopsFromTheDoneLine() throws {
         let observer = try flattened("Home/HomeView+DailyGoal.swift")
         XCTAssertTrue(
             observer.contains(
-                "celebrate.request(.milestone(.dailyGoal), at: CelebrationPopOrigin.onScreen(ringOrigin))"
+                "celebrate.request(.milestone(.dailyGoal), at: CelebrationPopOrigin.onScreen(doneLineOrigin))"
             ),
-            "The daily goal is requested without the ring's origin, guarded. Unguarded it throws"
+            "The daily goal is requested without the done line's origin, guarded. Unguarded it throws"
                 + " R-h's fallback pop 10,000 pt off screen whenever Home is not the visible tab;"
-                + " with no origin at all it leaves from the middle of the screen, not the ring."
+                + " with no origin at all it leaves from the middle of the screen, not the count."
         )
         XCTAssertTrue(
-            try flattened("Home/MomentumScoreboardViews.swift").contains(".celebrationPopOrigin("),
-            "The ring never records where it is, so `ringOrigin` is always nil."
-        )
-        XCTAssertTrue(
-            try flattened("Home/HomeMomentumSections.swift").contains("onRingOrigin:"),
-            "Home never asks the ring card for its origin, so nothing reaches `ringOrigin`."
+            try flattened("Home/HomeWeekReviewRow.swift").contains(".celebrationPopOrigin { doneLineOrigin = $0 }"),
+            "The done line never records where it is, so `doneLineOrigin` is always nil."
         )
     }
 

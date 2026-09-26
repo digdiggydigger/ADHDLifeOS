@@ -12,8 +12,11 @@ import XCTest
 
 final class HomeRoutineCardCallSiteTests: XCTestCase {
 
+    /// **Re-pointed by `F-E3-OneCardToday`:** Today's body now draws one card, and the routine
+    /// and arrival pair IS that card when you are somewhere (E, 2026-09-24) — so the render moved
+    /// from `HomeView.swift` into the one card's switch.
     func testTodayRendersTheRoutineCard() throws {
-        let home = try Self.appSource("Home/HomeView.swift")
+        let home = try Self.appSource("Home/HomeView+Today.swift")
 
         XCTAssertTrue(
             home.contains("arrivalAndRoutineCards"),
