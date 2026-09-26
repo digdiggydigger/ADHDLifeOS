@@ -829,3 +829,104 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 - **Owed to E (batched to `handoff/ARC-REVIEW-E.md`):** all of E3's states on the phone, and the
   RM-on pass the spec names for the close-from-card capsule.
 
+
+### Session 15 — 2026-09-26, arc E, block `F-E3-OneCardToday` FINISHED and landed (per-arc bypass: straight on to `F-E4`)
+
+- **The brief checked out** against git (`b1b7e49` on the branch, `main` `df2ab2f`) and edition 85.
+  Emulator restarted (2h35m old; the parent TERM left NO orphaned JVM this time — `lsof` showed the
+  new PIDs on 8080 / 9099 / 9199). Unit sim erased; 27.0 sim booted and left idle before every UI run.
+- **Warming the simulator fixed last session's frameless run:** the first light run went 2 / 2 with
+  frame 04's `value` and the one-height pair asserting as written — neither needed the tuning the
+  opener feared. That supports first-boot load as last time's cause; it does not prove it.
+- **The frames found two things no test had, and E decided both from real renders:**
+  - **Q3 — the capture disc covered "Week review ›" at rest** in EVERY Today frame with a two-row
+    "then" list, light and dark. `CaptureDiscClearanceUITests` stayed green: it asserts the row is
+    clear once scrolled to rest, and it was (~50pt). **E: "B · Follows the count"** — built RED
+    (3 failures) → GREEN (33 / 0) as `TodayDoneLineLabel`, ONE view tree whose layout switches
+    (`AnyLayout`), stacking from xxLarge — not a `ViewThatFits` of two copies, because the daily
+    goal's pop is an `onGeometryChange` reporter and a hidden copy must never report a position.
+  - **Q4 — "Close it" measures 2.74:1 in light** (`StateGo` on its own 12% tint; from the colorsets).
+    New in E3: Close was a solid green button before. **E: "A · Keep, send to colour arc"** — the
+    colour arc's first item, register §A0.
+- **Three harness faults fixed** (committed separately): the "Save Password?" sheet re-appeared over
+  frame 02 (now cleared inside `attach`); the Tools row sat under frame 05's undo capsule (lifted);
+  the AX3 card STACKS its pair by design, so "one height" is a side-by-side rule (now asserted as
+  stacked at AX3). **A slip, owned:** the first harness commit did not compile (`attach` must be
+  `@MainActor` to call the prompt helper) — pushed unbuilt, caught by the next run, fixed in `e519b2f`.
+- **Red-check** (`scripts/build-loop/e3-mutations.py`, everything committed first): pure batch →
+  exactly its six tests (8 assertions), incl. the WIDENING case; restored + rebuilt 67 / 0. Source
+  batch by `test-without-building` → exactly its six guards (Q3's added); restored 20 / 0.
+- **UI chain, one scripted run** (erase + warm between steps): frames L / D / AX3 green; seven journey
+  classes, **11 tests, 0 failed, 0 skipped**. `IOS27CompatSweepUITests` NOT run — its only change is
+  `openNudgesFromTools`, exercised by `FirstRunJourneyUITests` and `CaptureDiscClearanceUITests` here.
+- **Figures:** full suite **3,397 / 0**; SwiftLint **0 / 908**. Coverage waits for the arc close.
+- **`CLAUDE.md`, landed with E3** (E agreed 2026-09-26): Project status says what Today is now; the
+  build-loop bullet points at `scripts/build-loop/`; the repo-layout row names the drivers.
+
+#### `apple-design` review (§7.6) — Today's one card
+
+##### Design review: Today — one card, a "then" list, a done line (`F-E3-OneCardToday`)
+
+Pages: refreshed 2026-09-26 (`hig-lookup.md` "Generated … on 2026-09-26"). Read for this review:
+`accessibility.md`, `layout.md`, `typography.md`, `color.md`, `buttons.md`, plus the always-load set.
+Artifact: real harness frames (iPhone 17 Pro · iOS 27.0, light / dark / AX3) + colorset hex values.
+
+##### Summary
+**Good**, with one Critical that E has decided to hold for the colour arc. The thesis is exactly
+round 3's: *one next thing* — a single prominent Start, a quiet pair, a short "then" list and a
+done line, where Today used to show ~50 numbers (HOME-03). The one thing it is remembered by is the
+card itself: one blue button on a calm page.
+
+##### Critical
+- **"Close it" words, light: 2.74:1** (`StateGo` #0AA84E on its own 12% tint over `CardSurface`
+  #FFFFFF). Under even the 3:1 bar for bold text. Dark reads 5.41:1.
+  - **Why:** `accessibility.md › Vision`: *"Strive to meet color contrast minimum standards"* —
+    its table: up to 17pt 4.5:1; 18pt 3:1; bold 3:1. New in E3: Close was a solid `StateGo` fill with `OnStateGo` words before.
+  - **Status: E's decision (Q4, 2026-09-26) — "A · Keep, send to colour arc".** Shown the
+    primary-words alternative (16.89:1). Recorded in register §A0 as the colour arc's FIRST item.
+    Not fixed here, by E's call.
+
+##### Improvements
+- **High — fixed in-block (E's Q3):** the capture disc covered the done line's "Week review ›" at
+  rest in every Today frame with a two-row "then" list. `layout.md › Visual hierarchy`: *"Group
+  related items to clearly express related information or functions."* The link now follows the
+  count on one line and stacks from xxLarge (`typography.md › Supporting Dynamic Type`: *"Keep
+  text truncation to a minimum as font size increases."*).
+- **Medium — register §A0 (colour arc):** "Not this one" 3.97:1 light (passes 3:1 at 15pt
+  semibold, under 4.5:1); the done line's count 4.04:1 light (`LabelSecondary` on the page, 15pt
+  regular — the app-wide secondary label, the same relationship §A0 already holds at 4.25:1).
+- **Low — at AX3 the capture disc sits over the right end of "Not this one" at rest** (measured:
+  the stacked pair runs to y=769 against the disc's band). The page is long at AX3 and scrolls it
+  clear, and the button's left two-thirds stays hittable — the same class as Q3, recorded rather
+  than re-asked; register candidate beside `F-B1`.
+- **Low — register candidate for `F-B1`:** the corner pin is 44 × 44pt, round 5a's number;
+  round 7 set 48pt for corner controls. `accessibility.md › Mobility` (*"Offer sufficiently sized controls"*):
+  iOS default 44 × 44 — so it meets Apple's bar and misses only the house's stricter one.
+
+##### Craft notes
+- **Boldness spent in one place.** Exactly one filled, accent-coloured control per screen state
+  (Start or Resume); `buttons.md › Style`: *"Keep the number of prominent buttons to one or two per
+  view."* The pair is the SAME size, so it reads as one set of choices (*"Use style — not size —
+  to visually distinguish the preferred choice"*); the one-height rule held at xxxLarge.
+- **Structure encodes information.** The eyebrow says why this task has the slot ("Suggested · Due
+  today", "Next · Pinned", "Paused · 5 min in") — true, and `.secondary` rather than accent (round 9:
+  blue means tap me).
+- **Remove one accessory:** nothing obvious. The chips carry time and area the Start label and
+  the "then" rows also need; the next-step caption earns its place (`F-E2`'s High).
+
+##### What works
+- AX3: the compact card moves the buttons under the title with nothing dropped — Start above the
+  fold is ASSERTED by the harness, not eyeballed (`typography.md`: *"keep primary elements toward
+  the top of a view even when the font size is very large"*).
+- Every close raises the same undo capsule as the other three closes (round 1).
+- The Resume card offers no "Not this one" — a paused sprint is not a suggestion.
+
+##### Named, not findings (settled here)
+- The custom six-item `AppTabBar` (its AX3 "To…" truncation is the approved bar's own behaviour), the in-app appearance override, and `.ultraThinMaterial` in
+  content (§7.6) — not reported. No Confirm celebration on this screen.
+
+##### Platform notes
+- SwiftUI, iOS 18 floor; no `#available` site in this block, so no Verified-paths line. The
+  press scale (0.97, spring) is every house button's; the card adds no appear animation of its own.
+  RM-on pass owed: the undo capsule's arrival from the card's Close, and the pin/skip swaps (no
+  animation — a glyph swap and a content swap).

@@ -1584,6 +1584,24 @@ Time menu rows, same method (colorsets, not a JPEG; iOS `secondaryLabel` as `#3C
 Not new to the app: it is the composer's existing card treatment (the old place row and the custom
 date card sat on the same surface with the same value styling). Round 9 holds it for the colour arc.
 
+**Added 2026-09-26 by `F-E3-OneCardToday`'s `apple-design` review** — Today's card, same method
+(colorsets; the tints are `AppTabBarMetrics.chipTint*`, 12% light / 20% dark, over `CardSurface`):
+
+| what | light | dark | the bar |
+|---|---|---|---|
+| **"Close it" — `StateGo` on its own `StateGo` tint** | **2.74:1** | 5.41:1 | 3:1 (15pt semibold) — **FAILS even that** |
+| "Not this one" — `LabelSecondary` on its own tint | **3.97:1** | 4.52:1 | 3:1 bold passes; 4.5:1 does not |
+| The done line's count — `LabelSecondary` on `PageBackground` | **4.04:1** | 5.79:1 | 4.5:1 (15pt regular) |
+| *(candidate shown to E)* `LabelPrimary` words on the green tint | 16.89:1 | 10.04:1 | passes comfortably |
+
+**The first row is a Critical, and it is E's decision, not an open question (Q4, 2026-09-26):**
+it is NEW in E3 (Close was a solid `StateGo` fill with `OnStateGo` text before), because the
+tab-bar tint recipe that reads well with blue is too light with `#0AA84E`. The catalog holds no
+darker "go" green (`AreaGreen` is a life area's colour — borrowing it would give one colour two
+meanings). Shown primary-colour words beside the build (`screenshots/today-one-card/00-E3-Q4-close-contrast.jpg`),
+**E chose "A · Keep, send to colour arc"**. So the colour arc owes a text-strength "go" green (or
+the primary-words treatment) FIRST among its items; nothing outside that arc changes it.
+
 ### A1 · Everything below predates edition 68
 
 **Every device check on the CTA-CELEBRATIONS ARC and the FOCUS CARD is clear** — E settled four at
