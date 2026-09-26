@@ -2,9 +2,15 @@
 //  HomeMomentumSections.swift
 //  ADHD LifeOS
 //
-//  HomeView's Momentum scoreboard sections and the close-from-Home flow, in their own file so the
-//  view stays inside its type-body budget (the `HomeAccessoryStrips` arrangement). The state and
-//  clients these touch are internal on `HomeView` for exactly this split.
+//  HomeView's daily counts and the close-from-Today flow, in their own file so the view stays
+//  inside its type-body budget (the `HomeAccessoryStrips` arrangement). The state and clients these
+//  touch are internal on `HomeView` for exactly this split.
+//
+//  `F-E3-OneCardToday` moved the drawing out: the ring, the Best-next-move card, "Due now" and the
+//  week chart gave way to the one card, the "then" list and the done line (`HomeView+Today`,
+//  `HomeWeekReviewRow`). What stays here is what those read: the counts, the close, the arrival
+//  refresh, and the ONE `MomentumTaskContext` build both Task Detail and the card take Close's
+//  words from.
 //
 
 import SwiftUI
@@ -37,160 +43,11 @@ extension HomeView {
         return MomentumScoreboard.dismissedToday(nudges: nudgesService.nudges)
     }
 
-    /// The concept's `chartsOn` Today chart: closures per trailing day with the focus-minute
-    /// counterweight underneath. Hidden while the week is empty — a flat rail is noise, not
-    /// evidence — and gated on the Settings toggle.
-    @ViewBuilder
-    var closedWeekChartSection: some View {
-        let counts = MomentumWeekCharts.closedPerDay(tasks: homeService.allTasks)
-        if momentumPreferences.showCharts, counts.contains(where: { $0 > 0 }) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Closed this week · \(counts.reduce(0, +))")
-                    .sectionLabel()
-                    .foregroundStyle(.secondary)
-                VStack(alignment: .leading, spacing: 8) {
-                    WeekBarStrip(
-                        fractions: MomentumWeekCharts.barFractions(counts),
-                        barColor: Color("StateGoVivid")
-                    )
-                    Text(MomentumWeekCharts.closedCaption(sessions: publishedHistory))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .bentoCard()
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("homeClosedWeekChart")
-        }
-    }
-
-    var scoreboardSection: some View {
-        MomentumRingCard(
-            closedToday: closedToday.count + capturesClearedToday + nudgesDismissedToday,
-            goal: momentumPreferences.dailyGoal,
-            openCount: homeService.openTasks.count,
-            nextEffortLabel: MomentumScoreboard.effortLabel(
-                seconds: MomentumScoreboard.bestNextMove(in: homeService.openTasks)?.focusDurationSeconds
-            ),
-            onRingOrigin: { ringOrigin = $0 }
-        )
-        // Un-carded, so nothing holds it apart from the cards above and below: 8 here plus
-        // Today's 16 stack gap is §2's 24pt macro separation on both sides (E, round-2 walk).
-        .padding(.vertical, 8)
-    }
-
-    /// The Active Goal hero's successor: same top-task slot and the same start-session funnel
-    /// into `RootView`'s `FocusSessionService`, plus the concept's close-it-from-here. Start is
-    /// hidden while any sprint is running — this card must not offer a second one over the top.
-    @ViewBuilder
-    var bestNextMoveSection: some View {
-        if let task = MomentumScoreboard.bestNextMove(in: homeService.openTasks) {
-            let area = homeService.activeAreas.first { $0.id == task.lifeAreaId }
-            BestNextMoveCard(
-                task: task,
-                lifeArea: area,
-                isDueNow: task.dueDate.map { due in
-                    Calendar.current.startOfDay(for: due) <= Calendar.current.startOfDay(for: .now)
-                } ?? false,
-                isClosing: isClosingTask,
-                showsStartSession: activeSprint == nil,
-                // Rides the same history the analytics charts read (`publishedHistory`), which
-                // refetches on every finished sprint — including one settled from a dead launch,
-                // because the offline path bumps `completedSprintCount` too (b10).
-                loggedTodayLabel: MomentumScoreboard.focusLoggedTodayLabel(
-                    sessions: publishedHistory,
-                    taskId: task.id
-                ),
-                onClose: { Task { await closeTask(task) } },
-                onStartSession: {
-                    onStartFocus?(FocusSprintPlan(
-                        summary: task, lifeArea: area,
-                        defaultDurationSeconds: momentumPreferences.defaultSprintMinutes * 60
-                    ))
-                }
-            )
-        }
-    }
-
-    /// Open tasks already due (today or overdue), the concept's "Due now" — each row pushes the
-    /// task detail. Excludes whichever task the Best-next-move card is already headlining.
-    @ViewBuilder
-    var dueNowSection: some View {
-        // Unconditional since `F-C1-UndoCapsule` retired the closure card: the lead section is
-        // always the Best-next-move card now, so the task it headlines is always the one to
-        // exclude. The old `celebratedTask == nil ?` guard existed because the card REPLACED the
-        // hero, which meant nothing was being headlined while it was up.
-        let headline = MomentumScoreboard.bestNextMove(in: homeService.openTasks)?.id
-        let today = Calendar.current.startOfDay(for: .now)
-        let dueNow = homeService.openTasks.filter { task in
-            guard task.id != headline, let due = task.dueDate else { return false }
-            return Calendar.current.startOfDay(for: due) <= today
-        }
-        // Nudges left this card when they left the tab bar: a due nudge is now its own dismissable
-        // card in `nudgesSection` below, not a chevron row promising a screen that no longer exists.
-        if !dueNow.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Due now")
-                    .sectionLabel()
-                    .foregroundStyle(.secondary)
-                VStack(spacing: 0) {
-                    ForEach(dueNow, id: \.id) { task in
-                        dueNowRow(task)
-                        if task.id != dueNow.last?.id {
-                            Divider()
-                                .padding(.leading, 16)
-                        }
-                    }
-                }
-                .background(Color.cardSurface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Color.cardBorder, lineWidth: 1)
-                )
-            }
-        }
-    }
-
-    func dueNowRow(_ task: TaskSummary) -> some View {
-        HStack(spacing: 8) {
-            if let effort = MomentumScoreboard.effortLabel(seconds: task.focusDurationSeconds) {
-                MomentumChip(
-                    text: effort,
-                    background: Color("CardSurfaceSecondary"),
-                    foreground: Color("LabelSecondary")
-                )
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
-                    .font(.subheadline)
-                    .lineLimit(2)
-                if let area = homeService.activeAreas.first(where: { $0.id == task.lifeAreaId }) {
-                    Text("\(area.colour) \(area.name)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .frame(minHeight: 54)
-        .contentShape(Rectangle())
-        .onTapGesture { inspectingTask = task }
-        .accessibilityAddTraits(.isButton)
-        .accessibilityIdentifier("homeDueNowRow-\(task.id)")
-    }
-
-    // MARK: - Close-from-Home
+    // MARK: - Close-from-Today
 
     /// **Recorded AFTER the write lands, and this is the one site of the five that waits.** The
     /// other four are optimistic — their row flips before the network answers, so a capsule that
-    /// waited would arrive after the thing it names had gone. Home is not: the hero's button holds
+    /// waited would arrive after the thing it names had gone. Home is not: the card's Close holds
     /// a spinner (`isClosingTask`) until the write returns and surfaces `closeTaskErrorMessage` if
     /// it fails, so a capsule offered on the optimistic edge would sit beside an error saying the
     /// close never happened. Recording on success is what the user is already being shown.
@@ -211,7 +68,8 @@ extension HomeView {
 
     /// The capsule's way back. **Reopening was never new capability here** — this method predates
     /// `F-C1-UndoCapsule` and drove the retired closure card's own Undo button; all that changed
-    /// is who calls it.
+    /// is who calls it. A pinned task closed and then undone comes back PINNED: the pin is left in
+    /// its store on a close (`TodayPlan`).
     @discardableResult
     func undoClose(_ task: TaskSummary) async -> Bool {
         do {
@@ -225,11 +83,9 @@ extension HomeView {
     }
 
     func refreshInboxCount() async {
-        // One fetch feeds both the header badge and Today's inbox card; failure keeps the last
-        // known state rather than blanking a card the user was just looking at.
+        // The week review's summary counts the waiting captures; a failure keeps the last known.
         if let waiting = try? await captureClient.fetchUnprocessedCaptures() {
             inboxCount = waiting.count
-            inboxPeek = HomeInboxPeek.peek(waiting)
         }
         await refreshClearedCaptureCount()
         // `F-E1`: the chain's journal signal is Home-only too, and rides every path that refreshes
@@ -237,9 +93,8 @@ extension HomeView {
         await refreshJournalLines()
     }
 
-    /// Two extra fetches, failure-tolerant like every scoreboard input. No longer gated on the
-    /// toggle — Today's inbox card names the day's throughput regardless (E's 2026-08-25
-    /// follow-up); the toggle still governs what COUNTS toward the ring, exactly as before.
+    /// Two extra fetches, failure-tolerant like every scoreboard input. Ungated: the Settings
+    /// toggle governs what COUNTS toward the daily goal, and the chain reads the stamps regardless.
     func refreshClearedCaptureCount() async {
         async let seen = captureClient.fetchSeenCaptures()
         async let processed = captureClient.fetchProcessedCaptures()
@@ -271,7 +126,7 @@ extension HomeView {
         arrivalSurface = ArrivalSurface.refreshed(previous: arrivalSurface, fix: fix, tasks: homeService.allTasks)
     }
 
-    /// An arrival-card row is a door into its task, through the same pushed detail the Due-now
+    /// An arrival-card row is a door into its task, through the same pushed detail the "then"
     /// rows use — projected down to the `TaskSummary` that destination expects.
     func openArrivalTask(_ task: TaskItem) {
         inspectingTask = TaskSummary(
@@ -282,27 +137,30 @@ extension HomeView {
         )
     }
 
-    /// The Due-now push's destination, with the S3 Momentum context built from the history Home
-    /// already holds.
+    /// The pushed task detail's destination, with the S3 Momentum context built from the history
+    /// Home already holds.
     func inspectedTaskDetail(_ task: TaskSummary) -> some View {
         TaskDetailView(
             taskId: task.id,
             lifeAreas: homeService.lifeAreas,
             client: taskDetailClient,
             onStartFocus: onStartFocus,
-            momentumContext: MomentumTaskContext.build(
-                lifeAreaId: task.lifeAreaId,
-                tasks: homeService.allTasks,
-                lifeAreas: homeService.lifeAreas,
-                showStreaks: momentumPreferences.showStreaks,
-                hasCountedToday: hasCountedToday
-            )
+            momentumContext: momentumContext(for: task.lifeAreaId)
         ) {
             Task { await homeService.load() }
         }
     }
 
-    /// The S5 entry point: one quiet row under the daily card — the review derives on demand,
-    /// so it is always available rather than gated to Sunday (the concept's Sunday cadence
-    /// governed AI generation, which stayed with the daily card).
+    /// Home's ONE Momentum context build (`WeeklyChainCallSiteTests` counts the doors by file).
+    /// Task Detail takes its area line from it and the one card takes Close's words from it, so
+    /// "Close it — makes today count" reads the same on both (`F-E1`'s hand-off to `F-E3`).
+    func momentumContext(for lifeAreaId: UUID?) -> MomentumTaskContext.Context {
+        MomentumTaskContext.build(
+            lifeAreaId: lifeAreaId,
+            tasks: homeService.allTasks,
+            lifeAreas: homeService.lifeAreas,
+            showStreaks: momentumPreferences.showStreaks,
+            hasCountedToday: hasCountedToday
+        )
+    }
 }

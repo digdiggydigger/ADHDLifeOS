@@ -117,9 +117,9 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-E1-WeeklyChain` | the weekly active-day chain, goals off until set, and the gain-framed Close button | NOT STARTED | — | — |
-| `F-E2-NextStepField` | the task's "Next step" field | NOT STARTED | — | — |
-| `F-E3-OneCardToday` | Today collapses to one card, a "then" list, and nothing else | NOT STARTED | — | — |
+| `F-E1-WeeklyChain` | the weekly active-day chain, goals off until set, and the gain-framed Close button | **LANDED** 2026-09-25 | PR #205 (`8d1df83`) | batched to ARC-REVIEW-E |
+| `F-E2-NextStepField` | the task's "Next step" field | **LANDED** 2026-09-25 | PR #206 (`df2ab2f`) | batched to ARC-REVIEW-E |
+| `F-E3-OneCardToday` | Today collapses to one card, a "then" list, and nothing else | **LANDED** 2026-09-26 (E answered Q1–Q4) | PR #207 | batched to ARC-REVIEW-E (+ RM-on: the capsule from Close) |
 | `F-E4-WeekReviewConsolidation` | one bar chart, the Areas door, the streak-copy removals | NOT STARTED | — | — |
 | `F-E5-EveningFirstThing` | evening "tomorrow's first thing" prompt | NOT STARTED | — | — |
 
@@ -788,3 +788,145 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
   phone, including at a large text size. No `#available` site, no reduced site, no rules change.
 - **Next session starts at:** `F-E3-OneCardToday`, from `handoff/START-HERE-adhd-audit-arc-E3-onecard.md`
   (a `WIP:` opener; this session stopped at ~55% context on E's note, at a clean line).
+
+### Session 14 — 2026-09-26, arc E, block `F-E3-OneCardToday` (BUILT; stopped at ~71% on E's note, NOT landed)
+
+- **Where it stopped:** every commit green and pushed to `feature/adhd-e3-onecard` (`9e1cdd5` →
+  `b0219a9` + this hand-off); **no PR** — three gates still owed: the evidence frames
+  (`screenshots/today-one-card/`), the `apple-design` review over them, and the mutation red-check
+  (scripted: `scripts/build-loop/e3-mutations.py`). Opener: `handoff/START-HERE-adhd-audit-arc-E3-finish.md`.
+- **The brief checked out** against git (`df2ab2f`) and edition 84; emulator restarted (12h51m old,
+  JVM exited cleanly, all three ports probed on the new processes); unit sim erased.
+- **Subagents mapped the block first** (three Explore agents: retirement call sites, slot-order
+  inputs, tests that read Today's files) — which is how the build found what the spec did not say:
+  1. **`FocusAnalyticsSection` was the ONLY writer of `publishedHistory`** — the weekly chain's
+     sprint signal, the gain line, the week review and the widget all read it. Deleting the section
+     as specced would have blanked all four with no test failing. Home reads it itself now, BEFORE
+     the section's call went (the advisor's ordering: every commit shippable, Nudges never
+     unreachable).
+  2. The widget already disagreed with Today (`topTask` vs `bestNextMove`); it now publishes the
+     card's `headlineTask`.
+  3. `NudgesService.celebrate` was a `let` set in `init` — Tools could not have handed it the centre,
+     so a dismissal on the Tools-pushed screen would have lost the seven-day streak. Now a `var`
+     wired in `.task`, like `recordAction`.
+  4. The Home reorder chain was Today-only down to `FirebaseManager.reorderLifeAreas` — retired
+     whole, not left dead.
+- **RED → GREEN, four stages:** 70 compile errors → 41 / 0 (pure); 3 / 3 → 10 / 0 (history); 6
+  compile errors + 5 guards → 130 / 0 (doors); 13 compile errors + 15 guards / 46 assertions →
+  **full suite 3,395 / 0**; Q2: 6 compile errors → 32 / 0. SwiftLint **0 / 908**.
+- **E took two decisions mid-build** (rendered with a throwaway `ImageRenderer` probe, HIG-checked,
+  asked): **Q1 "A · Side by side"** — the gain line wraps inside H1's half-width Close (2 lines;
+  3 at xxxLarge); the render caught the pair going RAGGED at xxxLarge (84pt beside 48pt), fixed with
+  one-height pairing (`buttons.md › Style`: same size = one set of choices). **Q2 "B · '3 of 5 done
+  today'"** once a goal is set — with the ring gone the line is the only place a chosen goal shows.
+- **`apple-design` pages refreshed 2026-09-26** (layout decision rule): only `hig-lookup.md`'s date
+  changed; no page a settled decision rests on moved.
+- **Machine:** `scripts/build-loop/` now holds `t.sh`, `full.sh`, `ui.sh` and the E3 mutations, so
+  the next session does not re-derive them. **The first harness run (`TodayOneCardRenderUITests`,
+  light, 27.0) produced no frames and no app verdict:** the walk SKIPPED on "emulator not running"
+  while 8080 answered 200, and the Resume test failed on `kAXErrorIPCTimeout` — both consistent
+  with load during a cache-cleared simulator's first boot, cause unverified. Sim erased after.
+- **Owed to E (batched to `handoff/ARC-REVIEW-E.md`):** all of E3's states on the phone, and the
+  RM-on pass the spec names for the close-from-card capsule.
+
+
+### Session 15 — 2026-09-26, arc E, block `F-E3-OneCardToday` FINISHED and landed (per-arc bypass: straight on to `F-E4`)
+
+- **The brief checked out** against git (`b1b7e49` on the branch, `main` `df2ab2f`) and edition 85.
+  Emulator restarted (2h35m old; the parent TERM left NO orphaned JVM this time — `lsof` showed the
+  new PIDs on 8080 / 9099 / 9199). Unit sim erased; 27.0 sim booted and left idle before every UI run.
+- **Warming the simulator fixed last session's frameless run:** the first light run went 2 / 2 with
+  frame 04's `value` and the one-height pair asserting as written — neither needed the tuning the
+  opener feared. That supports first-boot load as last time's cause; it does not prove it.
+- **The frames found two things no test had, and E decided both from real renders:**
+  - **Q3 — the capture disc covered "Week review ›" at rest** in EVERY Today frame with a two-row
+    "then" list, light and dark. `CaptureDiscClearanceUITests` stayed green: it asserts the row is
+    clear once scrolled to rest, and it was (~50pt). **E: "B · Follows the count"** — built RED
+    (3 failures) → GREEN (33 / 0) as `TodayDoneLineLabel`, ONE view tree whose layout switches
+    (`AnyLayout`), stacking from xxLarge — not a `ViewThatFits` of two copies, because the daily
+    goal's pop is an `onGeometryChange` reporter and a hidden copy must never report a position.
+  - **Q4 — "Close it" measures 2.74:1 in light** (`StateGo` on its own 12% tint; from the colorsets).
+    New in E3: Close was a solid green button before. **E: "A · Keep, send to colour arc"** — the
+    colour arc's first item, register §A0.
+- **Three harness faults fixed** (committed separately): the "Save Password?" sheet re-appeared over
+  frame 02 (now cleared inside `attach`); the Tools row sat under frame 05's undo capsule (lifted);
+  the AX3 card STACKS its pair by design, so "one height" is a side-by-side rule (now asserted as
+  stacked at AX3). **A slip, owned:** the first harness commit did not compile (`attach` must be
+  `@MainActor` to call the prompt helper) — pushed unbuilt, caught by the next run, fixed in `e519b2f`.
+- **Red-check** (`scripts/build-loop/e3-mutations.py`, everything committed first): pure batch →
+  exactly its six tests (8 assertions), incl. the WIDENING case; restored + rebuilt 67 / 0. Source
+  batch by `test-without-building` → exactly its six guards (Q3's added); restored 20 / 0.
+- **UI chain, one scripted run** (erase + warm between steps): frames L / D / AX3 green; seven journey
+  classes, **11 tests, 0 failed, 0 skipped**. `IOS27CompatSweepUITests` NOT run — its only change is
+  `openNudgesFromTools`, exercised by `FirstRunJourneyUITests` and `CaptureDiscClearanceUITests` here.
+- **Figures:** full suite **3,397 / 0**; SwiftLint **0 / 908**. Coverage waits for the arc close.
+- **`CLAUDE.md`, landed with E3** (E agreed 2026-09-26): Project status says what Today is now; the
+  build-loop bullet points at `scripts/build-loop/`; the repo-layout row names the drivers.
+
+#### `apple-design` review (§7.6) — Today's one card
+
+##### Design review: Today — one card, a "then" list, a done line (`F-E3-OneCardToday`)
+
+Pages: refreshed 2026-09-26 (`hig-lookup.md` "Generated … on 2026-09-26"). Read for this review:
+`accessibility.md`, `layout.md`, `typography.md`, `color.md`, `buttons.md`, plus the always-load set.
+Artifact: real harness frames (iPhone 17 Pro · iOS 27.0, light / dark / AX3) + colorset hex values.
+
+##### Summary
+**Good**, with one Critical that E has decided to hold for the colour arc. The thesis is exactly
+round 3's: *one next thing* — a single prominent Start, a quiet pair, a short "then" list and a
+done line, where Today used to show ~50 numbers (HOME-03). The one thing it is remembered by is the
+card itself: one blue button on a calm page.
+
+##### Critical
+- **"Close it" words, light: 2.74:1** (`StateGo` #0AA84E on its own 12% tint over `CardSurface`
+  #FFFFFF). Under even the 3:1 bar for bold text. Dark reads 5.41:1.
+  - **Why:** `accessibility.md › Vision`: *"Strive to meet color contrast minimum standards"* —
+    its table: up to 17pt 4.5:1; 18pt 3:1; bold 3:1. New in E3: Close was a solid `StateGo` fill with `OnStateGo` words before.
+  - **Status: E's decision (Q4, 2026-09-26) — "A · Keep, send to colour arc".** Shown the
+    primary-words alternative (16.89:1). Recorded in register §A0 as the colour arc's FIRST item.
+    Not fixed here, by E's call.
+
+##### Improvements
+- **High — fixed in-block (E's Q3):** the capture disc covered the done line's "Week review ›" at
+  rest in every Today frame with a two-row "then" list. `layout.md › Visual hierarchy`: *"Group
+  related items to clearly express related information or functions."* The link now follows the
+  count on one line and stacks from xxLarge (`typography.md › Supporting Dynamic Type`: *"Keep
+  text truncation to a minimum as font size increases."*).
+- **Medium — register §A0 (colour arc):** "Not this one" 3.97:1 light (passes 3:1 at 15pt
+  semibold, under 4.5:1); the done line's count 4.04:1 light (`LabelSecondary` on the page, 15pt
+  regular — the app-wide secondary label, the same relationship §A0 already holds at 4.25:1).
+- **Low — at AX3 the capture disc sits over the right end of "Not this one" at rest** (measured:
+  the stacked pair runs to y=769 against the disc's band). The page is long at AX3 and scrolls it
+  clear, and the button's left two-thirds stays hittable — the same class as Q3, recorded rather
+  than re-asked; register candidate beside `F-B1`.
+- **Low — register candidate for `F-B1`:** the corner pin is 44 × 44pt, round 5a's number;
+  round 7 set 48pt for corner controls. `accessibility.md › Mobility` (*"Offer sufficiently sized controls"*):
+  iOS default 44 × 44 — so it meets Apple's bar and misses only the house's stricter one.
+
+##### Craft notes
+- **Boldness spent in one place.** Exactly one filled, accent-coloured control per screen state
+  (Start or Resume); `buttons.md › Style`: *"Keep the number of prominent buttons to one or two per
+  view."* The pair is the SAME size, so it reads as one set of choices (*"Use style — not size —
+  to visually distinguish the preferred choice"*); the one-height rule held at xxxLarge.
+- **Structure encodes information.** The eyebrow says why this task has the slot ("Suggested · Due
+  today", "Next · Pinned", "Paused · 5 min in") — true, and `.secondary` rather than accent (round 9:
+  blue means tap me).
+- **Remove one accessory:** nothing obvious. The chips carry time and area the Start label and
+  the "then" rows also need; the next-step caption earns its place (`F-E2`'s High).
+
+##### What works
+- AX3: the compact card moves the buttons under the title with nothing dropped — Start above the
+  fold is ASSERTED by the harness, not eyeballed (`typography.md`: *"keep primary elements toward
+  the top of a view even when the font size is very large"*).
+- Every close raises the same undo capsule as the other three closes (round 1).
+- The Resume card offers no "Not this one" — a paused sprint is not a suggestion.
+
+##### Named, not findings (settled here)
+- The custom six-item `AppTabBar` (its AX3 "To…" truncation is the approved bar's own behaviour), the in-app appearance override, and `.ultraThinMaterial` in
+  content (§7.6) — not reported. No Confirm celebration on this screen.
+
+##### Platform notes
+- SwiftUI, iOS 18 floor; no `#available` site in this block, so no Verified-paths line. The
+  press scale (0.97, spring) is every house button's; the card adds no appear animation of its own.
+  RM-on pass owed: the undo capsule's arrival from the card's Close, and the pin/skip swaps (no
+  animation — a glyph swap and a content swap).

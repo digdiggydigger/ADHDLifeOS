@@ -6935,7 +6935,31 @@ done first.
 
 ---
 
-### FEATURE: F-E3-OneCardToday — Today collapses to one card, a "then" list, and nothing else  [ ] NOT STARTED
+### FEATURE: F-E3-OneCardToday — Today collapses to one card, a "then" list, and nothing else  [x] COMPLETED 2026-09-26
+
+> **Built 2026-09-26 (sessions 14–15) — departs from the spec as follows, each a finding or E's call:**
+> `ClosureCelebrationCard` was already gone (`F-C1`); the "then" list keeps the board's bordered
+> card; the eyebrow is `.secondary` (round 9: blue means tap me); the paused card is **Resume only**
+> (the board drew End, but "End" is arc F's rename and the focus bar's confirm still says "Stop");
+> b10's "focus logged today" chip is kept on the card; leave-by is a resolver rank only, with no view
+> (`F-F5` feeds it and owns the time bar); `nextFire`, `ringProgress`, `closedCaption`, the whole Home
+> reorder chain down to `FirebaseManager.reorderLifeAreas` and `NudgeFirstRunMarker` were retired as
+> dead code; `FocusAnalyticsSection` was the ONLY writer of `publishedHistory`, so Home reads its own
+> history now and the section is callerless until `F-E4` deletes it; the widget publishes the card's
+> `headlineTask` (it disagreed with Today before); the pin is 44pt per round 5a (round 7's 48pt corner
+> rule → `F-B1`); the empty Today (all done) is header + done line only — for E's look. **Four E
+> decisions mid-block (banners below): Q1 side by side, Q2 "3 of 5", Q3 the link follows the count,
+> Q4 Close's light contrast held for the colour arc.**
+> **Say-so lines:** no `firestore.rules` change (pin and "Not this one" are `UserDefaults`; the next
+> step reuses `F-E2`'s field). No `#available` site, so no Verified-paths line. No reduced-motion site
+> of the card's own (the pin swaps its glyph, "Not this one" swaps content, both unanimated; the 0.97
+> press spring is every house button's) — **the RM-on pass owed is the undo capsule's arrival from the
+> card's Close, batched to `handoff/ARC-REVIEW-E.md`.**
+> **Gates:** RED first in five stages (see build-log 14–15); red-check scripted (`scripts/build-loop/e3-mutations.py`):
+> pure batch caught by exactly its six tests, source batch by exactly its six guards, restores green;
+> full suite **3,397 / 0**, SwiftLint **0 / 908**; frames L / D / AX3 and seven affected UI journeys
+> (11 tests) green on iPhone 17 Pro · iOS 27.0; `screenshots/today-one-card/` + README;
+> `apple-design` review in build-log session 15.
 
 **What E chose.** Round 3, *"Structure → 'C · One next thing.' Today shows ONE card, then a short
 'then' list, and nothing else."* *"At a place, the live routine takes the slot; elsewhere the hero
@@ -7017,6 +7041,29 @@ addendum 'closing is one-way'."*
 
 > **E DECIDED 2026-09-24 — take the recommendation as written:** the Nudges manager door moves to **Tools**, beside Routines (b); the live-routine card and the arrival card together COUNT AS the one card, unchanged (a) — E's 2026-09-04 veto stands.
 
+> **E DECIDED 2026-09-26, mid-build (two collisions between E's own decisions, rendered and asked):**
+> **Q1 — "A · Side by side"**: in the Suggested card, `F-E1`'s gain line "Close it — makes today
+> count" stays in H1's half-width pair beside "Not this one", wrapping to two lines (three at the
+> largest standard size); the pair keeps one height. **Q2 — "B · '3 of 5 done today'"**: once a
+> daily goal is set the done line says the goal ("3 done today" otherwise) — with the ring gone it
+> is the only place a chosen goal can be seen. Boards `E3-Q1-close-layout` / `E3-Q2-done-line` in
+> `screenshots/today-one-card/`.
+>
+> **E DECIDED 2026-09-26, at the evidence frames (Q3):** the first harness frames drew "Week review ›"
+> on the done line's right edge, and with a two-row "then" list the capture disc covered "review" at
+> rest in every Today frame, light and dark (reachable by scrolling ~50pt, so the clearance guard
+> held). Shown both real frames, **E chose "B · Follows the count"**: "✓ 0 done today · Week
+> review ›" on one line, left-aligned — round 5b's own wording — stacking only where one line cannot
+> hold both. Board `E3-Q3-done-line-vs-disc` in `screenshots/today-one-card/`.
+>
+> **E DECIDED 2026-09-26, at the `apple-design` review (Q4):** the card's "Close it" words are
+> `StateGo` on their own 12% `StateGo` tint — **2.74:1 in light** (under even the 3:1 bold bar),
+> 5.41:1 in dark; new in E3 (Close was a solid green button before). The catalog holds no darker
+> "go" green. Shown a primary-colour-words render (16.89:1) beside the build, **E chose "A · Keep,
+> send to colour arc"**: the green words ship as the Q1 board showed, and the fix is the colour
+> arc's (register §colour arc, a Critical). Do NOT "fix" it outside that arc. Board
+> `E3-Q4-close-contrast` in `screenshots/today-one-card/`.
+
 **Step 0 — ask E (nudges reachability):** `grep -rn "NudgesView(" "ADHD LifeOS/"` returns exactly
 one production call site, `HomeAccessoryStrips.swift:216`, reached only through Today's nudges
 door, which Structure C removes. Options: (a) the manager door becomes its own "then"-list row; (b)
@@ -7053,16 +7100,16 @@ reopening E's veto. **Recommend (a)** — smallest change, keeps the veto intact
   once both Step 0s are answered.
 
 **Acceptance criteria**
-- [ ] RED first: reversed tests + new slot-order/pin/"Not this one" tests, red-checked, counted.
-- [ ] SwiftLint, full suite, build all pasted.
-- [ ] `screenshots/today-one-card/` + README: light/dark, default and AX3, suggested state with
+- [x] RED first: reversed tests + new slot-order/pin/"Not this one" tests, red-checked, counted.
+- [x] SwiftLint, full suite, build all pasted.
+- [x] `screenshots/today-one-card/` + README: light/dark, default and AX3, suggested state with
       "Not this one", pinned state, paused-sprint Resume state.
-- [ ] `apple-design` review owed — cite `layout.md` (HOME-03's ~50-numbers scroll),
+- [x] `apple-design` review owed — cite `layout.md` (HOME-03's ~50-numbers scroll),
       `typography.md`/AX3 (HOME-01), `buttons.md › Style` (HOME-08, H1 has exactly two).
-- [ ] RM-on device pass owed for the close-from-hero feedback (arc C's capsule) and any new
+- [ ] (BATCHED to `ARC-REVIEW-E.md`) RM-on device pass owed for the close-from-hero feedback (arc C's capsule) and any new
       appear/pin-toggle transitions — name each site; do not claim "verified on E's phone" unless
       E actually toggled Reduce Motion ON and said so.
-- [ ] No `firestore.rules` change from this block alone (pin/"not this one" are local) — say so.
+- [x] No `firestore.rules` change from this block alone (pin/"not this one" are local) — say so.
 
 **Dependencies:** E1, E2. **Arc C** must land first — this block retires `ClosureCelebrationCard`'s
 Undo/Next swap for arc C's shared capsule. Both Step 0s must be answered before this block starts.

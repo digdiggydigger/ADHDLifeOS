@@ -29,7 +29,7 @@ final class FirstRunJourneyUITests: XCTestCase {
     /// never rendered the nudges door", which was true.
     ///
     /// **Seeds nothing on purpose.** The moment this test arranges a nudge it stops testing the
-    /// thing it exists for.
+    /// thing it exists for. (Since `F-E3-OneCardToday` the door is the Tools page's Nudges row.)
     @MainActor
     func testNewAccount_canReachTheNudgesScreenWithNoNudges() throws {
         try UITestEmulator.skipUnlessRunning()
@@ -40,23 +40,14 @@ final class FirstRunJourneyUITests: XCTestCase {
             "The signed-in tabs never appeared"
         )
 
-        // Today is a LazyVStack: a row below the fold does not exist until it is scrolled into
-        // being, so hunt for the door rather than asserting on where the fold happens to fall.
-        let door = app.buttons["homeManageNudgesRow"]
-        // One call, and it settles between swipes. The hand-rolled loop this replaces swiped in a
-        // tight loop, which does not scroll AT ALL — see `UITestSession.scrollUntilHittable`.
-        let reachable = UITestSession.scrollUntilHittable(
-            door, in: app, tabToSelect: UITestSession.tabButton("Today", in: app)
-        )
+        // **Reversed by `F-E3-OneCardToday`:** the door was Today's nudges card, which round 3's one
+        // card removed; E moved it to Tools, beside Routines (2026-09-24). The guarantee is the
+        // same one — a brand-new account, with nothing seeded, reaches the Nudges screen — and the
+        // Tools row is drawn in every state, so there is no first-run gate left to get wrong.
         XCTAssertTrue(
-            door.exists,
-            "A brand-new account cannot see the nudges door, so it can never create a first nudge."
-                + " The section is gated on already having one, and nothing else routes there."
-        )
-        XCTAssertTrue(reachable, "The nudges door never came into reach on a brand-new account")
-        XCTAssertTrue(
-            UITestSession.tap(door, untilExists: app.buttons["nudgeAddButton"]),
-            "The nudges door did not open the Nudges screen"
+            UITestSession.openNudgesFromTools(in: app),
+            "A brand-new account cannot open the Nudges screen from Tools, so it can never create a"
+                + " first nudge."
         )
 
         // And the sheet behind it actually opens, because reaching a dead screen is no better.

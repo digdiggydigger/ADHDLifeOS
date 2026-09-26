@@ -28,27 +28,20 @@ final class RenderHarnessUITests: XCTestCase {
         // journal entry but never a nudge, and `loadedNudgesSection` is gated on
         // `!due.isEmpty || scheduled > 0` — so on a fresh account the whole nudges section,
         // door included, does not render at all. The first run of this harness failed on exactly
-        // that, and said so accurately: "Today never rendered the nudges door".
+        // that, and said so accurately: "Today never rendered the nudges door". (Since `F-E3` the
+        // door is on Tools and has no such gate.)
         let account = try UITestSession.createAccount(label: "render")
         try seedScheduledNudge(id: UUID(), label: "Drink water", uid: account.uid)
         let app = try UITestSession.launchSignedIn(as: account)
 
-        // Today → the nudges door, using the navigation `CaptureDiscClearanceUITests` proved out:
-        // Today is a LazyVStack, so a row below the fold does not merely fail to be hittable, it
-        // does not EXIST — scroll it into being, then into reach, and use the header's add button
-        // as the arrival landmark rather than anything below the fold.
+        // Tools → the Nudges row (`F-E3-OneCardToday`: the door left Today with round 3's one card,
+        // and E moved it beside Routines), with the header's add button as the arrival landmark
+        // rather than anything below the fold.
         XCTAssertTrue(
             app.buttons["quickCaptureButton"].waitForExistence(timeout: UITestSession.timeout),
             "The signed-in tabs never appeared"
         )
-        let door = app.buttons["homeManageNudgesRow"]
-        // Settles between swipes; a tight loop does not scroll at all.
-        UITestSession.scrollUntilHittable(door, in: app)
-        XCTAssertTrue(door.exists, "Today never rendered the nudges door, even scrolled to the end")
-        XCTAssertTrue(
-            UITestSession.tap(door, untilExists: app.buttons["nudgeAddButton"]),
-            "The nudges screen never opened"
-        )
+        XCTAssertTrue(UITestSession.openNudgesFromTools(in: app), "The nudges screen never opened")
 
         // The header + button, rather than the row at the bottom of the list: it is present
         // without scrolling, so it cannot be the source of a below-the-fold miss.
@@ -100,7 +93,10 @@ final class RenderHarnessUITests: XCTestCase {
         )
     }
 
-    /// The first-run nudges door: muted card, lit "Add your first nudge".
+    /// The Nudges door on a brand-new account. It was Today's muted first-run card with a lit "Add
+    /// your first nudge"; `F-E3-OneCardToday` retired that card with Today's door and moved the door
+    /// to Tools (E, 2026-09-24), where the row is drawn in every state — so the first-run question
+    /// this frame answers is the same ("can a new account find it?") and the answer is the row.
     ///
     /// Seeds NOTHING — the whole point is what a brand-new account sees.
     @MainActor
@@ -112,15 +108,18 @@ final class RenderHarnessUITests: XCTestCase {
             app.buttons["quickCaptureButton"].waitForExistence(timeout: UITestSession.timeout),
             "The signed-in tabs never appeared"
         )
-        let door = app.buttons["homeManageNudgesRow"]
-        // Settles between swipes; a tight loop does not scroll at all.
-        UITestSession.scrollUntilHittable(door, in: app)
-        XCTAssertTrue(door.exists, "No nudges door on a fresh account")
-        XCTAssertTrue(
-            app.buttons["homeNudgesFirstRunDirective"].waitForExistence(timeout: UITestSession.timeout),
-            "The first-run door showed no 'Add your first nudge' direction"
+        UITestSession.openTab("Tools", in: app)
+        let row = app.buttons["toolsNudgesRow"].firstMatch
+        UITestSession.scrollUntilHittable(row, in: app)
+        XCTAssertTrue(row.exists, "No Nudges row on Tools for a fresh account")
+        let empty = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label CONTAINS %@", "No nudges yet"), object: row
         )
-        attach(app, named: "4-first-run-nudges-door")
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [empty], timeout: UITestSession.timeout), .completed,
+            "A fresh account's Nudges row should say \"No nudges yet\" (reads \"\(row.label)\")"
+        )
+        attach(app, named: "4-first-run-tools-nudges-row")
     }
 
     /// The Create-account form with the keyboard UP — the two things E marked on device:

@@ -11,9 +11,6 @@ protocol HomeBackingStore {
     func fetchLifeAreas(includeArchived: Bool) async throws -> [LifeArea]
     func fetchOpenTaskSummaries() async throws -> [TaskSummary]
     func fetchTasks() async throws -> [TaskItem]
-    /// One atomic batch write of the complete ordering — never N per-row updates (TRAP 2 in
-    /// `HomeClientAdapting`).
-    func reorderLifeAreas(orderedIds: [UUID]) async throws
 }
 
 extension FirebaseManager: HomeBackingStore {}

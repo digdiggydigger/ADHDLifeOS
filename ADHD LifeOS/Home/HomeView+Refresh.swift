@@ -14,7 +14,7 @@ import SwiftUI
 extension HomeView {
     /// Every Home data source in parallel — the pull gesture and the app-wide `DataChangeSignal`
     /// run the same reload, so the two paths can never drift. Bumping `pullRefreshCount` folds
-    /// the analytics section (and its widget republish) into both.
+    /// the focus-history read (and its widget republish) into both.
     func refreshEverything() async {
         pullRefreshCount += 1
         async let home: Void = homeService.load()
@@ -23,6 +23,7 @@ extension HomeView {
         _ = await (home, nudges, inbox)
         // After the parallel block, so the card is built from the tasks that just landed.
         await refreshArrivalSurface()
+        refreshTodayChoices()
         publishWidgetSnapshot(sprint: widgetSprint)
     }
 
@@ -37,7 +38,10 @@ extension HomeView {
     func publishWidgetSnapshot(sprint: FocusWidgetSnapshot.ActiveSprint?) {
         widgetPublisher.publish(
             FocusWidgetSnapshotBuilder.snapshot(
-                activeGoal: homeService.activeGoal,
+                // The one card's headline, not a ranking of its own (`F-E3`): the widget used
+                // `topTask` while Today led with `bestNextMove`, so the two disagreed whenever
+                // anything was due.
+                activeGoal: todayPlan.headlineTask,
                 lifeAreas: homeService.lifeAreas,
                 sessions: publishedHistory,
                 activeSprint: sprint,

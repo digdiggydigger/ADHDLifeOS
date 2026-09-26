@@ -26,19 +26,29 @@ final class AreasService: ObservableObject {
     @Published private(set) var weekShare: AreasGrid.WeekShare?
     /// The full unarchived set, for pushes that need it (detail, triage picker).
     @Published private(set) var lifeAreas: [LifeArea] = []
+    /// `F-E3-OneCardToday`: what the last load fetched and used only for the grid, kept for the
+    /// Week review door so it opens without refetching them.
+    private var allTasks: [TaskItem] = []
+    private var openTaskCount = 0
+    private var activeAreaCount = 0
 
     private let homeClient: HomeClientAdapting
     private let journalClient: JournalClientAdapting?
     private let captureClient: CaptureClientAdapting
+    /// Read only when the Week review door is used, for the summary's due count. `nil` (previews,
+    /// most tests) counts nothing due.
+    private let nudgesClient: NudgesClientAdapting?
 
     init(
         homeClient: HomeClientAdapting,
         journalClient: JournalClientAdapting?,
-        captureClient: CaptureClientAdapting
+        captureClient: CaptureClientAdapting,
+        nudgesClient: NudgesClientAdapting? = nil
     ) {
         self.homeClient = homeClient
         self.journalClient = journalClient
         self.captureClient = captureClient
+        self.nudgesClient = nudgesClient
     }
 
     func load() async {
@@ -58,6 +68,9 @@ final class AreasService: ObservableObject {
             }
             let captures = (try? await captureClient.fetchUnprocessedCaptures()) ?? []
             lifeAreas = areas
+            self.allTasks = all
+            openTaskCount = open.count
+            activeAreaCount = active.count
             inboxCount = captures.count
             unfiledCount = AreasGrid.unfiledCount(captures: captures)
             weekShare = AreasGrid.weekShare(areas: active, allTasks: all)
@@ -69,5 +82,24 @@ final class AreasService: ObservableObject {
                 (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             )
         }
+    }
+
+    /// Round 5b's second Week review door (*"AND a row sits at the top of the Areas tab"*). The two
+    /// streams this tab never needed — focus sessions and nudges — are read HERE, when the door is
+    /// used, not on every refresh of the tab; like every garnish, a failed read counts as empty.
+    func weekReviewInputs(asOf now: Date = .now) async -> WeekReviewInputs {
+        async let fetchedSessions = journalClient?.fetchFocusSessions()
+        async let fetchedNudges = nudgesClient?.fetchNudges()
+        let sessions = (try? await fetchedSessions) ?? []
+        let nudges = (try? await fetchedNudges) ?? []
+        return WeekReviewInputs(
+            tasks: allTasks,
+            lifeAreas: lifeAreas,
+            sessions: sessions,
+            inboxCount: inboxCount,
+            openTaskCount: openTaskCount,
+            areaCount: activeAreaCount,
+            dueNudgeCount: nudges.filter { NudgeDueness.isNudgeDue(nudge: $0, now: now) }.count
+        )
     }
 }

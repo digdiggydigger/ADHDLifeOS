@@ -87,33 +87,20 @@ final class CaptureDiscClearanceUITests: XCTestCase {
 
     // MARK: - Helpers
 
-    /// Pushes the nudges screen through Today's door, retried — a tap taken while Today is still
+    /// Pushes the nudges screen through its door, retried — a tap taken while a tab is still
     /// settling is a silent no-op (`UITestSession.tap(_:untilExists:)`'s whole reason to exist).
+    ///
+    /// **The door moved in `F-E3-OneCardToday`:** it was Today's nudges card, and is now the Tools
+    /// page's Nudges row (E, 2026-09-24). The screen pushed is the same, and so is what this journey
+    /// measures on it. The arrival landmark is still the header's add button, NOT the row being
+    /// measured: with ten nudges seeded, `nudgesNewNudgeRow` is below the fold on arrival.
     @MainActor
     private func openNudges(in app: XCUIApplication) {
-        let door = app.buttons["homeManageNudgesRow"]
-        // Today is a `LazyVStack`, so a row below the fold does not merely fail to be hittable —
-        // it does not EXIST, and `waitForExistence` waits out its whole timeout for something
-        // that will never arrive. It has to be scrolled into being first, then into reach.
         XCTAssertTrue(
             app.buttons["quickCaptureButton"].waitForExistence(timeout: UITestSession.timeout),
             "The signed-in tabs never appeared"
         )
-        // Into REACH, not merely into existence — `scrollUntilHittable` settles between swipes.
-        // The hand-rolled version here swiped six times with no settle and then tapped, which is
-        // the defect that made this test read as "the row is never hittable" (see the helper).
-        XCTAssertTrue(
-            UITestSession.scrollUntilHittable(door, in: app, tabToSelect: UITestSession.tabButton("Today", in: app)),
-            "Today never brought the nudges door into reach, even scrolled to the end"
-        )
-        // The arrival landmark is the header's add button, NOT the row this journey measures.
-        // With ten nudges seeded, `nudgesNewNudgeRow` is below the fold on the screen being
-        // opened, so it does not exist on arrival — and waiting for it reported "the door never
-        // opened" about a door that had opened perfectly well.
-        XCTAssertTrue(
-            UITestSession.tap(door, untilExists: app.buttons["nudgeAddButton"]),
-            "The nudges door never opened the nudges screen"
-        )
+        XCTAssertTrue(UITestSession.openNudgesFromTools(in: app), "The Tools door never opened the nudges screen")
     }
 
     /// One overdue nudge, written straight to Firestore before the app launches.

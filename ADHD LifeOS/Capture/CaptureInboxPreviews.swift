@@ -58,7 +58,6 @@ private struct PreviewHomeClient: HomeClientAdapting {
         [LifeArea(id: UUID(), name: "Health", colour: "#4A90D9", sortOrder: 0)]
     }
     func fetchOpenTasks() async throws -> [TaskSummary] { [] }
-    func reorder(order: [UUID]) async throws {}
 }
 
 #Preview("Light") {

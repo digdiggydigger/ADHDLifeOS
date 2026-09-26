@@ -28,7 +28,11 @@ final class NudgesService: ObservableObject {
     /// pushed `NudgesView` — share Today's one service, so a listener in the card would fire twice
     /// or once depending on which copy the user tapped. Defaulted inert, so every preview and every
     /// existing test builds this service unchanged.
-    private let celebrate: any CelebrationRequesting
+    ///
+    /// **A `var` since `F-E3-OneCardToday`**, for `recordAction`'s reason: the Nudges screen's door
+    /// moved to Tools, whose service is a `@StateObject` built in `init` where `@Environment(\.celebrate)`
+    /// cannot be read, so Tools wires it in `.task`. Home still hands it over through `init`.
+    var celebrate: any CelebrationRequesting
 
     /// **The undo capsule's door** (`F-C1-UndoCapsule`, E's Step 0 answer 3). Held by the SERVICE
     /// for the same reason `celebrate` is: both `NudgeDueCard` hosts — Today's section and the

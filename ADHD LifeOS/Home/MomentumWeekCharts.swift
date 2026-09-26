@@ -3,10 +3,10 @@
 //  ADHD LifeOS
 //
 //  The pure arithmetic behind the concept's `chartsOn` weekly bars (Concept C, 2026-08-24):
-//  closures per trailing day on Today, focus minutes per trailing day on Tasks, and the honest
-//  caption under each. Everything derives from data the app already stores — `completed_at`
-//  stamps and completed focus sessions — over the same rolling seven-day window as the rest of
-//  the scoreboard.
+//  closures per trailing day (a life area's screen; Today's chart left with `F-E3`), focus minutes
+//  per trailing day on Tasks, and the honest caption under the focus bars. Everything derives
+//  from data the app already stores — `completed_at` stamps and completed focus sessions — over
+//  the same rolling seven-day window as the rest of the scoreboard.
 //
 
 import Foundation
@@ -49,19 +49,6 @@ enum MomentumWeekCharts {
         return counts.map { Double($0) / Double(peak) }
     }
 
-    /// "Sat–Fri, items closed. 220 focus minutes logged." — the day range names the window, and
-    /// the week's focus minutes ride along as the counterweight, zero included (an honest zero).
-    static func closedCaption(
-        sessions: [CompletedFocusSession],
-        asOf now: Date = .now,
-        calendar: Calendar = .current
-    ) -> String {
-        let minutes = weekSessions(sessions, asOf: now, calendar: calendar)
-            .map(\.focusedSeconds)
-            .reduce(0, +) / 60
-        return "\(windowLabel(asOf: now, calendar: calendar)), items closed. \(minutes) focus minutes logged."
-    }
-
     /// "220 minutes logged against 265 targeted." — the week review's stamina pairing, stated in
     /// minutes rather than a percent. `nil` with no sprints in the window: nothing was targeted,
     /// so there is nothing to compare, which is not the same claim as zero.
@@ -90,14 +77,5 @@ enum MomentumWeekCharts {
         let today = calendar.startOfDay(for: now)
         guard let windowStart = calendar.date(byAdding: .day, value: -6, to: today) else { return [] }
         return sessions.filter { $0.endedAt >= windowStart }
-    }
-
-    private static func windowLabel(asOf now: Date, calendar: Calendar) -> String {
-        let symbols = calendar.shortWeekdaySymbols
-        let today = calendar.startOfDay(for: now)
-        guard let oldest = calendar.date(byAdding: .day, value: -6, to: today) else { return "" }
-        let startLabel = symbols[calendar.component(.weekday, from: oldest) - 1]
-        let endLabel = symbols[calendar.component(.weekday, from: today) - 1]
-        return "\(startLabel)–\(endLabel)"
     }
 }

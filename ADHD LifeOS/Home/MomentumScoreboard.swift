@@ -15,14 +15,6 @@
 import Foundation
 
 enum MomentumScoreboard {
-    /// How full the closure ring draws. A non-positive goal degrades to "any closure fills it"
-    /// rather than dividing by zero.
-    static func ringProgress(closed: Int, goal: Int) -> Double {
-        guard closed > 0 else { return 0 }
-        guard goal > 0 else { return 1 }
-        return min(Double(closed) / Double(goal), 1)
-    }
-
     /// The one task Home leads with. Due-now (today or overdue) beats everything, and among those
     /// the SHORTEST estimated effort wins — the cheapest real win, not the scariest priority;
     /// unknown effort ranks last because it cannot be the promised fifteen minutes. With nothing

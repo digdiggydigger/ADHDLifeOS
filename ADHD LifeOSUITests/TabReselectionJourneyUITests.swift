@@ -21,40 +21,48 @@ final class TabReselectionJourneyUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// E's example, exactly: into Nudges from Today, then the Today tab brings Today back.
+    /// E's rule: from anything Today pushed, the Today tab brings Today back.
+    ///
+    /// **Reversed by `F-E3-OneCardToday`:** E's example was "into Nudges from Today", and Today no
+    /// longer pushes Nudges — round 3's one card took its door away and E moved it to Tools
+    /// (2026-09-24). The rule is unchanged, so it is held here on the push Today still has: the
+    /// week review, behind the done line.
     @MainActor
-    func testReTappingTodayFromNudgesReturnsToTodaysTopLevel() throws {
+    func testReTappingTodayFromTheWeekReviewReturnsToTodaysTopLevel() throws {
         try UITestEmulator.skipUnlessRunning()
-        let account = try UITestSession.createAccount(label: "retap-nudges")
+        let account = try UITestSession.createAccount(label: "retap-weekreview")
         let app = try UITestSession.launchSignedIn(as: account)
 
-        let (door, nudges) = openNudgesFromToday(app)
-        attach(app, "1-nudges-pushed-from-today")
+        let (door, review) = openWeekReviewFromToday(app)
+        attach(app, "1-week-review-pushed-from-today")
 
         XCTAssertTrue(
             reTapToday(app, untilExists: door),
-            "Re-tapping Today with Nudges pushed did not bring Today back — E's report, unchanged."
+            "Re-tapping Today with the week review pushed did not bring Today back."
         )
-        XCTAssertFalse(nudges.exists, "Nudges is still on screen after the Today re-tap.")
+        XCTAssertFalse(review.exists, "The week review is still on screen after the Today re-tap.")
         attach(app, "2-today-back-after-retap")
     }
 
-    /// The pushed Nudges screen has a visible way back of its own now, not only the re-tap.
+    /// The pushed Nudges screen has a visible way back of its own, not only a re-tap — now from
+    /// Tools, where its door moved in `F-E3-OneCardToday`.
     @MainActor
     func testNudgesShowsABackControl() throws {
         try UITestEmulator.skipUnlessRunning()
         let account = try UITestSession.createAccount(label: "retap-nudges-back")
         let app = try UITestSession.launchSignedIn(as: account)
 
-        let (door, _) = openNudgesFromToday(app)
-
+        XCTAssertTrue(UITestSession.openNudgesFromTools(in: app), "Nudges did not push from Tools")
         let back = app.buttons["nudgesBackButton"]
         XCTAssertTrue(
             back.waitForExistence(timeout: UITestSession.timeout),
             "Nudges draws no back control; the edge swipe is the only way out."
         )
         settleSystemSurfaces(until: back)
-        XCTAssertTrue(UITestSession.tap(back, untilExists: door), "Back from Nudges did not return to Today")
+        XCTAssertTrue(
+            UITestSession.tap(back, untilExists: app.buttons["toolsNudgesRow"].firstMatch),
+            "Back from Nudges did not return to Tools"
+        )
     }
 
     /// At the top-level page, a re-tap scrolls to the top: the title's frame comes back to where
@@ -64,16 +72,21 @@ final class TabReselectionJourneyUITests: XCTestCase {
     func testReTappingTodayAtTheTopLevelScrollsToTheTop() throws {
         try UITestEmulator.skipUnlessRunning()
         let account = try UITestSession.createAccount(label: "retap-scroll")
+        // Today is one card, a "then" list and a done line since `F-E3-OneCardToday`, and a fresh
+        // account's seed has nothing due — too short to scroll. Eight tasks due today fill the list.
+        for index in 1...8 {
+            try UITestSession.seedTask(id: UUID(), title: "Due today \(index)", uid: account.uid)
+        }
         let app = try UITestSession.launchSignedIn(as: account)
 
         // The page title by identifier — `staticTexts["Today"]` also matches the tab bar's pill
         // label, which sits at the bottom of the screen and never scrolls.
         let title = app.staticTexts["homeTitle"]
         XCTAssertTrue(title.waitForExistence(timeout: UITestSession.timeout), "Today's title never appeared")
-        // Today loads its sections after the title; on a fresh account the page is too short
-        // to scroll until they land. The nudges door is the last card, so its existence is the
-        // "content is here" landmark.
-        let door = app.buttons["homeNudgesFirstRunDirective"]
+        // Today loads its sections after the title; the page is too short to scroll until they
+        // land. The done line is the last thing on the page, so its existence is the "content is
+        // here" landmark.
+        let door = app.buttons["homeWeekReviewRow"]
         XCTAssertTrue(
             door.waitForExistence(timeout: UITestSession.timeout),
             "Today's content never loaded, so there is nothing to scroll."
@@ -105,7 +118,7 @@ final class TabReselectionJourneyUITests: XCTestCase {
     /// A tap on the tab that is ALREADY selected. `UITestSession.openTab` returns early when the
     /// slot reports `isSelected`, which is the right behaviour for every other journey and the
     /// exact thing this one must not do — the first run of this file passed nothing through it.
-    /// Today's Nudges door, tapped when it is genuinely hittable, and the pushed Nudges screen.
+    /// Today's done line, tapped when it is genuinely hittable, and the pushed week review.
     ///
     /// Two system surfaces can steal every hit-test in this window and both are known to this
     /// harness: iOS's late "Save Password?" sheet after a fresh-credential sign-in (a remote view
@@ -114,14 +127,14 @@ final class TabReselectionJourneyUITests: XCTestCase {
     /// — so this waits for it to be HITTABLE, sweeping both surfaces on each poll, before the
     /// retrying tap.
     @MainActor
-    private func openNudgesFromToday(_ app: XCUIApplication) -> (door: XCUIElement, nudges: XCUIElement) {
-        let door = app.buttons["homeNudgesFirstRunDirective"]
+    private func openWeekReviewFromToday(_ app: XCUIApplication) -> (door: XCUIElement, review: XCUIElement) {
+        let door = app.buttons["homeWeekReviewRow"]
         UITestSession.scrollUntilHittable(door, in: app)
-        XCTAssertTrue(door.waitForExistence(timeout: UITestSession.timeout), "Today's Nudges door never appeared")
+        XCTAssertTrue(door.waitForExistence(timeout: UITestSession.timeout), "Today's done line never appeared")
         settleSystemSurfaces(until: door)
-        let nudges = app.staticTexts["nudgesEmptyState"]
-        XCTAssertTrue(UITestSession.tap(door, untilExists: nudges), "Nudges did not push from Today's door")
-        return (door, nudges)
+        let review = app.descendants(matching: .any).matching(identifier: "weekReviewHeader").firstMatch
+        XCTAssertTrue(UITestSession.tap(door, untilExists: review), "The week review did not push from Today")
+        return (door, review)
     }
 
     /// Sweeps the password sheet and any springboard alert until `element` reports hittable,

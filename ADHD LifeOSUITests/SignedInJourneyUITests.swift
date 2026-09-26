@@ -214,8 +214,9 @@ final class SignedInJourneyUITests: XCTestCase {
         // whole scroll view is absent until `HomeService` reaches `.loaded`. Waiting on a
         // load-bearing Today element first separates "Home never loaded" from "the nudge did not
         // render", which the same 45s timeout on the card alone cannot tell apart.
+        // The done line since `F-E3-OneCardToday` retired the ring: always drawn once Today loads.
         XCTAssertTrue(
-            app.staticTexts["homeMomentumRing"].waitForExistence(timeout: UITestSession.timeout),
+            app.buttons["homeWeekReviewRow"].waitForExistence(timeout: UITestSession.timeout),
             "Today never finished loading, so the nudge had nowhere to appear"
         )
 
@@ -229,8 +230,8 @@ final class SignedInJourneyUITests: XCTestCase {
                 + (app.otherElements["homeNudgesFailureCard"].exists
                     ? " (the nudge list failed to LOAD — this is the emulator or the fetch, not"
                         + " the section)"
-                    : app.otherElements["homeNudgesSection"].exists
-                        ? " (the section rendered, so the card's identifier is the problem —"
+                    : app.otherElements["homeThenSection"].exists
+                        ? " (the \"then\" list rendered, so the card's identifier is the problem —"
                             + " check nothing above it swallowed the children's identifiers)"
                         : app.staticTexts[nudgeLabel].exists
                             ? " (its label rendered without the section)"

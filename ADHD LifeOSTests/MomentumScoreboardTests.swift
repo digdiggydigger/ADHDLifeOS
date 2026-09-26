@@ -61,19 +61,9 @@ final class MomentumScoreboardTests: XCTestCase {
     // weekly active-day chain with auto repair. Each rule they held survives one level up, and each
     // reversed test in `WeeklyActiveChainTests` names the test it came from.
 
-    // MARK: - Ring
-
-    func testRingProgress_isClosedOverGoal_cappedAtFull() {
-        XCTAssertEqual(MomentumScoreboard.ringProgress(closed: 2, goal: 5), 0.4, accuracy: 0.001)
-        XCTAssertEqual(MomentumScoreboard.ringProgress(closed: 9, goal: 5), 1.0)
-        XCTAssertEqual(MomentumScoreboard.ringProgress(closed: 0, goal: 5), 0.0)
-    }
-
-    /// A zero or negative goal must not divide by zero — it reads as "any closure fills the ring".
-    func testRingProgress_toleratesAbsurdGoals() {
-        XCTAssertEqual(MomentumScoreboard.ringProgress(closed: 1, goal: 0), 1.0)
-        XCTAssertEqual(MomentumScoreboard.ringProgress(closed: 0, goal: 0), 0.0)
-    }
+    // The two `testRingProgress_*` pinned the Momentum ring's fill. Round 8b retired the ring with
+    // the scoreboard (`F-E3-OneCardToday`); the daily count is said by Today's done line, and
+    // `TodayOneCardCallSiteTests` holds `ringProgress(`'s absence.
 
     // MARK: - Best next move
 

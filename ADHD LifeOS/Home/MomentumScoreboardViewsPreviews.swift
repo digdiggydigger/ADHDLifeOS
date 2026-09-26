@@ -2,8 +2,9 @@
 //  MomentumScoreboardViewsPreviews.swift
 //  ADHD LifeOS
 //
-//  The scoreboard gallery previews, split out on the house pattern to keep
-//  MomentumScoreboardViews.swift inside the 400-line file budget.
+//  The Momentum building blocks' gallery, split out on the house pattern. Today's ring card, the
+//  Best-next-move card and the area list it once showed left with `F-E3-OneCardToday`; Today's
+//  one card has its own previews in `HomeTodayCard.swift`.
 //
 
 import SwiftUI
@@ -13,28 +14,19 @@ private struct MomentumScoreboardGallery: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                // No goal set — what every install sees until Settings turns one on (`F-E1`).
-                MomentumRingCard(closedToday: 2, goal: nil, openCount: 3, nextEffortLabel: "15 min")
-                MomentumRingCard(closedToday: 2, goal: 5, openCount: 3, nextEffortLabel: nil)
-                BestNextMoveCard(
-                    task: TaskSummary(
-                        lifeAreaId: nil,
-                        status: .open, title: "Sort through mail pile on kitchen counter",
-                        priority: .p2, notes: "Trash junk mail immediately. Only keep bills to scan.",
-                        dueDate: Date(), focusDurationSeconds: 900
-                    ),
-                    lifeArea: LifeArea(id: UUID(), name: "Admin", colour: "📝", sortOrder: 0),
-                    isDueNow: true, isClosing: false, showsStartSession: true,
-                    loggedTodayLabel: "1 session · 12 min today",
-                    onClose: {}, onStartSession: {}
-                )
-                AreaMomentumList(items: MomentumScoreboard.areaMomentum(
-                    areas: [
-                        LifeArea(id: UUID(), name: "Work", colour: "💼", sortOrder: 0),
-                        LifeArea(id: UUID(), name: "Health", colour: "🫀", sortOrder: 1)
-                    ],
-                    openTasks: [], allTasks: []
-                ))
+                ClosureRing(progress: 0.6, size: 64, lineWidth: 8) {
+                    Text("12:00").font(.callout.monospacedDigit().weight(.semibold))
+                }
+                HStack(spacing: 8) {
+                    MomentumChip(text: "15 min", background: .accentColor, foreground: AreaPalette.work.onColor)
+                    MomentumChip(
+                        text: "📝 Admin", background: Color("CardSurfaceSecondary"), foreground: Color("LabelSecondary")
+                    )
+                }
+                Button("Solid") {}
+                    .buttonStyle(MomentumSolidButtonStyle(fill: Color("StateGo"), foreground: Color("OnStateGo")))
+                Button("Bordered") {}
+                    .buttonStyle(MomentumBorderedButtonStyle())
             }
             .padding(16)
         }

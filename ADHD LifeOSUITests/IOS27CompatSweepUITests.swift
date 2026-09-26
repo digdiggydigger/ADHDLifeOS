@@ -158,11 +158,9 @@ final class IOS27CompatSweepUITests: XCTestCase {
     /// (`NudgesView:300`, the one detent site with a SELECTION binding).
     @MainActor
     private func sweepNudgesAndDetents(_ app: XCUIApplication) throws {
-        let door = app.buttons["homeManageNudgesRow"]
-        UITestSession.scrollUntilHittable(door, in: app, tabToSelect: UITestSession.tabButton("Today", in: app))
-        XCTAssertTrue(door.exists, "Today never rendered the nudges door")
+        // Through Tools since `F-E3-OneCardToday` moved the door there (E, 2026-09-24).
         let add = app.buttons["nudgeAddButton"]
-        XCTAssertTrue(UITestSession.tap(door, untilExists: add), "The nudges screen never opened")
+        XCTAssertTrue(UITestSession.openNudgesFromTools(in: app), "The nudges screen never opened")
         settle()
         attach(app, "10-nudges")
 

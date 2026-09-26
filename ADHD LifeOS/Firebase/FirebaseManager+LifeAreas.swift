@@ -23,22 +23,6 @@ extension FirebaseManager {
         try await update(id: id, fields: fields, in: .lifeAreas)
     }
 
-    /// Persists a Home-screen reorder as one atomic batch: each area's `sort_order` becomes its
-    /// index in `orderedIds`.
-    func reorderLifeAreas(orderedIds: [UUID]) async throws {
-        // `firestoreBatch()`, not `firestore.batch()`: the client is file-private to
-        // `FirebaseManager.swift`, and this method reached it directly while it still lived
-        // there — against that file's own stated rule that "extension files that need
-        // multi-document atomicity get a batch through this instead of direct client access".
-        let batch = firestoreBatch()
-        let areas = try collection(.lifeAreas)
-        for (index, id) in orderedIds.enumerated() {
-            batch.updateData(["sort_order": index], forDocument: areas.document(id.uuidString))
-        }
-        try await batch.commit()
-        DataChangeSignal.post()
-    }
-
     func deleteLifeArea(id: UUID) async throws {
         try await delete(id: id, from: .lifeAreas)
     }

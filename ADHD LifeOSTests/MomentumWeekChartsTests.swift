@@ -94,21 +94,9 @@ final class MomentumWeekChartsTests: XCTestCase {
 
     // MARK: - Captions
 
-    /// "Sat–Fri, items closed. 25 focus minutes logged." — the day range names the window, and
-    /// the focus minutes ride along as the counterweight, zero included (an honest zero).
-    func testClosedCaption_namesTheWindowAndTheWeeksFocusMinutes() {
-        XCTAssertEqual(
-            MomentumWeekCharts.closedCaption(
-                sessions: [session(daysAgo: 0, focusedSeconds: 1500), session(daysAgo: 8, focusedSeconds: 6000)],
-                asOf: now, calendar: calendar
-            ),
-            "Sat–Fri, items closed. 25 focus minutes logged."
-        )
-        XCTAssertEqual(
-            MomentumWeekCharts.closedCaption(sessions: [], asOf: now, calendar: calendar),
-            "Sat–Fri, items closed. 0 focus minutes logged."
-        )
-    }
+    // `testClosedCaption_*` pinned the caption under Today's "Closed this week" chart. Round 3
+    // took both charts off Today (`F-E3-OneCardToday`); `TodayOneCardCallSiteTests` holds
+    // `closedCaption(`'s absence. (The focus caption below still captions the Tasks bars.)
 
     /// "25 minutes logged against 50 targeted." — the staminaLine's honest pairing, minutes not
     /// percent. `nil` with no sprints in the window: nothing targeted means nothing to compare.

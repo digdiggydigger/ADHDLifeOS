@@ -56,11 +56,14 @@ final class CelebrationPopCallSiteTests: XCTestCase {
         )
     }
 
-    func testHomesBestNextMoveCloseItButtonPops() throws {
+    /// **REVERSED by `F-E3-OneCardToday`:** this was Home's Best-next-move card, which Today's one
+    /// card (H1, *"Start first, Close quiet"*) replaced. The pop moved with the close — it is still
+    /// the fourth way to close a task, and still pops.
+    func testTodaysOneCardCloseItButtonPops() throws {
         try assertPops(
-            in: "Home/MomentumScoreboardViews.swift", afterHaptic: "Button { Haptics.play(.taskClose)",
+            in: "Home/HomeTodayCard.swift", afterHaptic: "Button { Haptics.play(.taskClose)",
             upTo: "} label: {", pop: "handle.pop()",
-            because: "Home's Best-next-move is the fourth way to close a task"
+            because: "Today's one card is the fourth way to close a task"
         )
     }
 
@@ -184,14 +187,15 @@ final class CelebrationPopCallSiteTests: XCTestCase {
                 + " .celebrationPopOrigin instead because its circle and swipe share one close()."
         )
         // The needle has no brace: `F-CTACelebrations-5` added a site that passes a closure by
-        // NAME (`.celebrationPopOrigin(onRingOrigin)`) rather than writing one inline, and a
+        // NAME (then `.celebrationPopOrigin(onRingOrigin)`) rather than writing one inline, and a
         // count that could not see it would have gone on reading 2 for ever.
         let origins = try appTargetOccurrences(of: ".celebrationPopOrigin")
         XCTAssertEqual(
             origins.count, 4,
             "The app records \(origins.count) pop origins by hand, not 4 (the wrapper's own,"
-                + " TaskRow's circle, the Momentum ring — which R-h's fallback pop leaves from"
-                + " when the daily goal is downgraded — and, since `F-CTACelebrations-6`, the"
+                + " TaskRow's circle, Today's done line — which R-h's fallback pop leaves from"
+                + " when the daily goal is downgraded, the Momentum ring's job until `F-E3` — and,"
+                + " since `F-CTACelebrations-6`, the"
                 + " routine's Completed button, whose milestone the wrapper could not carry"
                 + " because the wrapper's handle only ever requests `.pop`)."
                 + " Recorded in: \(origins.map(\.file).sorted().joined(separator: ", "))."

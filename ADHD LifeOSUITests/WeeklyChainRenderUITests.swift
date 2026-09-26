@@ -33,12 +33,13 @@ final class WeeklyChainRenderUITests: XCTestCase {
             "The signed-in tabs never appeared"
         )
 
-        // 1 — Today on a fresh account: a count, no ring, no "of N".
+        // 1 — Today on a fresh account: a count, no "of N". Since `F-E3-OneCardToday` the count is
+        // the done line under the "then" list (the ring left with the scoreboard, round 8b).
         UITestSession.openTab("Today", in: app)
-        let card = app.descendants(matching: .any).matching(identifier: "homeMomentumRing").firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout: UITestSession.timeout), "Today drew no scoreboard")
-        XCTAssertTrue(card.label.contains("closed today"), "No-goal count reads \"\(card.label)\"")
-        XCTAssertFalse(card.label.contains(" of "), "A ring's \"of N\" was drawn with no goal set")
+        let card = app.buttons["homeWeekReviewRow"].firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: UITestSession.timeout), "Today drew no done line")
+        XCTAssertTrue(card.label.contains("done today"), "No-goal count reads \"\(card.label)\"")
+        XCTAssertFalse(card.label.contains(" of "), "An \"of N\" was drawn with no goal set")
         print("MEASURE chain-\(tag) card=\(card.frame) label=\(card.label)")
         attach(app, named: "01-today-no-goal-\(tag)")
 
@@ -55,22 +56,27 @@ final class WeeklyChainRenderUITests: XCTestCase {
         // satisfied before the row was ever tapped — the first run photographed the Tasks list.
         let titleField = app.descendants(matching: .any).matching(identifier: "taskDetailTitleField").firstMatch
         XCTAssertTrue(UITestSession.tap(seeded, untilExists: titleField), "Task detail never opened")
-        let gain = app.buttons["Close it — makes today count"].firstMatch
-        XCTAssertTrue(gain.waitForExistence(timeout: UITestSession.timeout), "Task detail shows no gain line")
+        // ON-SCREEN, because since `F-E3` Today's one card carries the SAME gain line on the hidden
+        // tab, parked ~10,000pt away — `firstMatch` would pass on Today's copy.
+        let gain = try XCTUnwrap(
+            onScreen(app.buttons.matching(NSPredicate(format: "label == %@", "Close it — makes today count"))),
+            "Task detail shows no gain line"
+        )
         print("MEASURE chain-\(tag) close=\(gain.frame)")
         attach(app, named: "02-task-detail-gain-line-\(tag)")
         app.navigationBars.buttons.firstMatch.tap()
 
         renderSettings(app, tag: tag)
 
-        // 5 — Today again: the ring arrives around the same number, with its "of 5".
+        // 5 — Today again: the done line says the goal (E, 2026-09-26, `F-E3` Q2: "3 of 5 done
+        // today" once a goal is set).
         UITestSession.openTab("Today", in: app)
         let ringed = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label CONTAINS %@", "of 5 closed"), object: card
+            predicate: NSPredicate(format: "label CONTAINS %@", "of 5 done today"), object: card
         )
         XCTAssertEqual(
             XCTWaiter().wait(for: [ringed], timeout: UITestSession.timeout), .completed,
-            "The ring never drew its goal (card reads \"\(card.label)\")"
+            "The done line never said its goal (reads \"\(card.label)\")"
         )
         attach(app, named: "05-today-goal-set-\(tag)")
 
