@@ -189,6 +189,26 @@ final class TodayOneCardCallSiteTests: XCTestCase {
             .contains("CelebrationPopOrigin.onScreen(doneLineOrigin)"))
     }
 
+    /// **E's Q3, 2026-09-26: "B · Follows the count".** The first harness frames drew the link on the
+    /// right edge, and with a two-row "then" list the capture disc covered "review" at rest in every
+    /// Today frame, light and dark. The link now follows the count on one line — round 5b's own
+    /// "✓ 3 done today · Week review ›" — and stacks under it only when one line cannot hold both
+    /// (§1: never truncate). Nothing may push it back to the edge.
+    func testTheDoneLinesDoorFollowsTheCount() throws {
+        let line = try flattened("Home/HomeWeekReviewRow.swift")
+        // ONE tree whose layout switches — a `ViewThatFits` of two copies could let the hidden copy
+        // report the daily goal's pop origin.
+        XCTAssertTrue(line.contains("AnyLayout(VStackLayout(alignment: .leading, spacing: 4))"), "Stacked where not")
+        XCTAssertTrue(line.contains("AnyLayout(HStackLayout(spacing: 8))"), "One line where it fits")
+        XCTAssertFalse(line.contains("ViewThatFits"), "Two copies of the line, one of them hidden")
+        XCTAssertFalse(line.contains("Spacer(minLength: 8)"), "A spacer pushes the link back under the disc")
+        let count = try XCTUnwrap(line.range(of: "Label(done, systemImage: \"checkmark.circle\")"))
+        let dot = try XCTUnwrap(line.range(of: "Text(\"·\")"))
+        let link = try XCTUnwrap(line.range(of: "Text(\"Week review\")"))
+        XCTAssertLessThan(count.lowerBound, dot.lowerBound, "The count leads")
+        XCTAssertLessThan(dot.lowerBound, link.lowerBound, "The link follows the count")
+    }
+
     func testTheNextStepIsEditableFromTheCard() throws {
         let today = try flattened("Home/HomeView+Today.swift")
         XCTAssertTrue(today.contains("TodayNextStep.payload("))

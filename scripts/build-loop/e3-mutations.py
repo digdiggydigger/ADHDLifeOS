@@ -55,6 +55,12 @@ BATCHES = {
         ("Home/HomeView+Refresh.swift",  # the widget stops following the card -> testTheWidgetPublishesWhatTheCardLeadsWith
          """                activeGoal: todayPlan.headlineTask,""",
          """                activeGoal: homeService.openTasks.first,"""),
+        ("Home/HomeWeekReviewRow.swift",  # E's Q3 undone: the link pushed back to the edge -> testTheDoneLinesDoorFollowsTheCount
+         """            if !stacks {
+                Text("·")""",
+         """            Spacer(minLength: 8)
+            if !stacks {
+                Text("·")"""),
         ("Home/HomeView+Today.swift",  # a paused sprint never reaches the plan -> testTheCardIsChosenByOnePlanFedEveryInput
          """            pausedSprint: TodayPausedSprint.from(status: activeSprint, sprint: widgetSprint),""",
          """            pausedSprint: nil,"""),

@@ -7024,6 +7024,13 @@ addendum 'closing is one-way'."*
 > daily goal is set the done line says the goal ("3 done today" otherwise) — with the ring gone it
 > is the only place a chosen goal can be seen. Boards `E3-Q1-close-layout` / `E3-Q2-done-line` in
 > `screenshots/today-one-card/`.
+>
+> **E DECIDED 2026-09-26, at the evidence frames (Q3):** the first harness frames drew "Week review ›"
+> on the done line's right edge, and with a two-row "then" list the capture disc covered "review" at
+> rest in every Today frame, light and dark (reachable by scrolling ~50pt, so the clearance guard
+> held). Shown both real frames, **E chose "B · Follows the count"**: "✓ 0 done today · Week
+> review ›" on one line, left-aligned — round 5b's own wording — stacking only where one line cannot
+> hold both. Board `E3-Q3-done-line-vs-disc` in `screenshots/today-one-card/`.
 
 **Step 0 — ask E (nudges reachability):** `grep -rn "NudgesView(" "ADHD LifeOS/"` returns exactly
 one production call site, `HomeAccessoryStrips.swift:216`, reached only through Today's nudges
