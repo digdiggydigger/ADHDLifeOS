@@ -117,9 +117,9 @@ stop, paste the real output, wait for E. Two blocks in a session means two revie
 
 | block | what it is | status | landed | owed to E |
 |---|---|---|---|---|
-| `F-E1-WeeklyChain` | the weekly active-day chain, goals off until set, and the gain-framed Close button | NOT STARTED | — | — |
-| `F-E2-NextStepField` | the task's "Next step" field | NOT STARTED | — | — |
-| `F-E3-OneCardToday` | Today collapses to one card, a "then" list, and nothing else | **BUILT, NOT LANDED (WIP)** — frames, `apple-design`, red-check owed | branch `feature/adhd-e3-onecard` | batched to ARC-REVIEW-E |
+| `F-E1-WeeklyChain` | the weekly active-day chain, goals off until set, and the gain-framed Close button | **LANDED** 2026-09-25 | PR #205 (`8d1df83`) | batched to ARC-REVIEW-E |
+| `F-E2-NextStepField` | the task's "Next step" field | **LANDED** 2026-09-25 | PR #206 (`df2ab2f`) | batched to ARC-REVIEW-E |
+| `F-E3-OneCardToday` | Today collapses to one card, a "then" list, and nothing else | **LANDED** 2026-09-26 (E answered Q1–Q4) | PR #207 | batched to ARC-REVIEW-E (+ RM-on: the capsule from Close) |
 | `F-E4-WeekReviewConsolidation` | one bar chart, the Areas door, the streak-copy removals | NOT STARTED | — | — |
 | `F-E5-EveningFirstThing` | evening "tomorrow's first thing" prompt | NOT STARTED | — | — |
 
